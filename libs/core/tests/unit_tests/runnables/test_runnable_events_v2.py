@@ -1854,7 +1854,7 @@ async def test_runnable_with_message_history() -> None:
         # where it re-instantiates a list, so mutating the list doesn't end up mutating
         # the content in the store!
 
-        # Using Any type here rather than List[BaseMessage] due to pydantic issue!
+        # Using Any type here rather than list[BaseMessage] due to pydantic issue!
         messages: Any
 
         def add_message(self, message: BaseMessage) -> None:

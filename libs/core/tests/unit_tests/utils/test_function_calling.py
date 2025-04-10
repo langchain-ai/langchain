@@ -2,7 +2,7 @@
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as ExtensionsAnnotated
+from typing_extensions import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Callable,

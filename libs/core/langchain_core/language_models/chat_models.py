@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -171,7 +170,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | Method                    | Input                                                          | Output                                                              | Description                                                                                      |
         +===========================+================================================================+=====================================================================+==================================================================================================+
-        | `invoke`                  | str | List[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
+        | `invoke`                  | str | list[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | `ainvoke`                 | '''                                                            | BaseMessage                                                         | Defaults to running invoke in an async executor.                                                 |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -181,13 +180,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | `astream_events`          | '''                                                            | AsyncIterator[StreamEvent]                                          | Event types: 'on_chat_model_start', 'on_chat_model_stream', 'on_chat_model_end'.                 |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch`                   | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
+        | `batch`                   | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch`                  | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
+        | `abatch`                  | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch_as_completed`      | List[''']                                                      | Iterator[Tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
+        | `batch_as_completed`      | list[''']                                                      | Iterator[tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch_as_completed`     | List[''']                                                      | AsyncIterator[Tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
+        | `abatch_as_completed`     | list[''']                                                      | AsyncIterator[tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
 
         This table provides a brief overview of the main imperative methods. Please see the base Runnable reference for full documentation.
@@ -1254,7 +1253,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def bind_tools(
         self,
         tools: Sequence[
-            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            Union[dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
         *,
         tool_choice: Optional[Union[str]] = None,
@@ -1273,11 +1272,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: Union[typing.Dict, type],  # noqa: UP006
+        schema: Union[dict, type],  # noqa: UP006
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:

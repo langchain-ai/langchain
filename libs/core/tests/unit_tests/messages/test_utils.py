@@ -667,7 +667,7 @@ class FakeTokenCountingModel(FakeChatModel):
         messages: list[BaseMessage],
         tools: Optional[
             Sequence[
-                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+                Union[dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
             ]
         ] = None,
     ) -> int:

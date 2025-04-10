@@ -48,7 +48,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        Tuple[str, str]: The literal and the template.
+        tuple[str, str]: The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -122,7 +122,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        Tuple[Tuple[str, str], str]: The tag and the template.
+        tuple[tuple[str, str], str]: The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.

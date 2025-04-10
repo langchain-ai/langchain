@@ -140,7 +140,7 @@ def tool(
                 return
 
             @tool(response_format="content_and_artifact")
-            def search_api(query: str) -> Tuple[str, dict]:
+            def search_api(query: str) -> tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
     .. versionadded:: 0.2.14

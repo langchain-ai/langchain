@@ -243,12 +243,12 @@ def get_config_list(
      It is useful for subclasses overriding batch() or abatch().
 
     Args:
-        config (Optional[Union[RunnableConfig, List[RunnableConfig]]]):
+        config (Optional[Union[RunnableConfig, list[RunnableConfig]]]):
           The config or list of configs.
         length (int): The length of the list.
 
     Returns:
-        List[RunnableConfig]: The list of configs.
+        list[RunnableConfig]: The list of configs.
 
     Raises:
         ValueError: If the length of the list is not equal to the length of the inputs.
@@ -302,7 +302,7 @@ def patch_config(
         max_concurrency (Optional[int], optional): The max concurrency to set.
           Defaults to None.
         run_name (Optional[str], optional): The run name to set. Defaults to None.
-        configurable (Optional[Dict[str, Any]], optional): The configurable to set.
+        configurable (Optional[dict[str, Any]], optional): The configurable to set.
           Defaults to None.
 
     Returns:

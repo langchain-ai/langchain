@@ -46,7 +46,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             The sequence of run evaluators to be executed.
         executor : ThreadPoolExecutor
             The thread pool executor used for running the evaluators.
-        futures : Set[Future]
+        futures : set[Future]
             The set of futures representing the running evaluators.
         skip_unfinished : bool
             Whether to skip runs that are not finished or raised

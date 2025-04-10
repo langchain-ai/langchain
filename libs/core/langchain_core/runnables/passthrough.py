@@ -360,7 +360,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -371,14 +371,13 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         .. code-block:: python
 
             # This is a RunnableAssign
-            from typing import Dict
             from langchain_core.runnables.passthrough import (
                 RunnableAssign,
                 RunnableParallel,
             )
             from langchain_core.runnables.base import RunnableLambda
 
-            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+            def add_ten(x: dict[str, int]) -> dict[str, int]:
                 return {"added": x["input"] + 10}
 
             mapper = RunnableParallel(
@@ -676,7 +675,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from dict[str, Any] inputs.
 
     RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract

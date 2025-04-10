@@ -460,7 +460,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
         Args:
             bar: int
-            baz: List[str]
+            baz: list[str]
         """
         raise NotImplementedError
 
@@ -2581,8 +2581,6 @@ def test_title_property_preserved() -> None:
 
     https://github.com/langchain-ai/langchain/issues/30456
     """
-    from typing import Any
-
     from langchain_core.tools import tool
 
     schema_to_be_extracted = {

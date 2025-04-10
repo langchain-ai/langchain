@@ -630,7 +630,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
 
     async def aget(
@@ -656,7 +656,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
         return await run_in_executor(
             None,
