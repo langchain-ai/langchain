@@ -29,7 +29,7 @@ from langchain_core.messages.base import (
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.content_blocks import (
     DataContentBlock,
-    convert_image_content_block_to_image_url,
+    convert_to_openai_image_block,
     is_data_content_block,
 )
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
@@ -80,7 +80,7 @@ __all__ = [
     "ToolMessageChunk",
     "RemoveMessage",
     "_message_from_dict",
-    "convert_image_content_block_to_image_url",
+    "convert_to_openai_image_block",
     "convert_to_messages",
     "get_buffer_string",
     "is_data_content_block",

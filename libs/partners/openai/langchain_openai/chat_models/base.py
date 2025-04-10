@@ -68,7 +68,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_image_content_block_to_image_url,
+    convert_to_openai_image_block,
     is_data_content_block,
 )
 from langchain_core.messages.ai import (
@@ -196,7 +196,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
     if block["type"] == "image":
-        formatted_block = convert_image_content_block_to_image_url(block)  # type: ignore[arg-type]
+        formatted_block = convert_to_openai_image_block(block)  # type: ignore[arg-type]
 
     elif block["type"] == "file":
         if block["source_type"] == "base64":

@@ -52,8 +52,8 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
-    convert_image_content_block_to_image_url,
     convert_to_messages,
+    convert_to_openai_image_block,
     is_data_content_block,
     message_chunk_to_message,
 )
@@ -129,7 +129,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                 ):
                     message_to_trace = message.model_copy(deep=True)
                     message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
-                        convert_image_content_block_to_image_url(block)  # type: ignore[arg-type]
+                        convert_to_openai_image_block(block)  # type: ignore[arg-type]
                     )
         messages_to_trace.append(message_to_trace)
     return messages_to_trace
