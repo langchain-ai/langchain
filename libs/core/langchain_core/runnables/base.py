@@ -326,7 +326,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_input_schema()
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate input to the Runnable.
 
@@ -398,7 +399,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_output_schema()
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
@@ -4200,7 +4202,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     @override
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RunnableGenerator):
             if hasattr(self, "_transform") and hasattr(other, "_transform"):
                 return self._transform == other._transform
@@ -4582,7 +4584,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return graph
 
     @override
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
                 return self.func == other.func
@@ -4751,11 +4753,6 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         return cast("Output", output)
 
-    def _config(
-        self, config: Optional[RunnableConfig], callable: Callable[..., Any]
-    ) -> RunnableConfig:
-        return ensure_config(config)
-
     @override
     def invoke(
         self,
@@ -4780,7 +4777,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return self._call_with_config(
                 self._invoke,
                 input,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         msg = "Cannot invoke a coroutine function synchronously.Use `ainvoke` instead."
@@ -4803,11 +4800,10 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The output of this Runnable.
         """
-        the_func = self.afunc if hasattr(self, "afunc") else self.func
         return await self._acall_with_config(
             self._ainvoke,
             input,
-            self._config(config, the_func),
+            ensure_config(config),
             **kwargs,
         )
 
@@ -4884,7 +4880,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield from self._transform_stream_with_config(
                 input,
                 self._transform,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         else:
@@ -5012,7 +5008,7 @@ class RunnableLambda(Runnable[Input, Output]):
         async for output in self._atransform_stream_with_config(
             input,
             self._atransform,
-            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            ensure_config(config),
             **kwargs,
         ):
             yield output
@@ -5880,22 +5876,24 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
 
 
 class _RunnableCallableSync(Protocol[Input, Output]):
-    def __call__(self, __in: Input, *, config: RunnableConfig) -> Output: ...
+    def __call__(self, _in: Input, /, *, config: RunnableConfig) -> Output: ...
 
 
 class _RunnableCallableAsync(Protocol[Input, Output]):
-    def __call__(self, __in: Input, *, config: RunnableConfig) -> Awaitable[Output]: ...
+    def __call__(
+        self, _in: Input, /, *, config: RunnableConfig
+    ) -> Awaitable[Output]: ...
 
 
 class _RunnableCallableIterator(Protocol[Input, Output]):
     def __call__(
-        self, __in: Iterator[Input], *, config: RunnableConfig
+        self, _in: Iterator[Input], /, *, config: RunnableConfig
     ) -> Iterator[Output]: ...
 
 
 class _RunnableCallableAsyncIterator(Protocol[Input, Output]):
     def __call__(
-        self, __in: AsyncIterator[Input], *, config: RunnableConfig
+        self, _in: AsyncIterator[Input], /, *, config: RunnableConfig
     ) -> AsyncIterator[Output]: ...
 
 

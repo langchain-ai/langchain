@@ -53,7 +53,7 @@ class ChatGeneration(Generation):
             text = ""
             if isinstance(self.message.content, str):
                 text = self.message.content
-            # HACK: Assumes text in content blocks in OpenAI format.
+            # Assumes text in content blocks in OpenAI format.
             # Uses first text block.
             elif isinstance(self.message.content, list):
                 for block in self.message.content:

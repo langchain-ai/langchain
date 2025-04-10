@@ -88,7 +88,12 @@ class NoLock:
     async def __aenter__(self) -> None:
         """Do nothing."""
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Exception not handled."""
         return False
 
@@ -237,7 +242,12 @@ class Tee(Generic[T]):
         """Return the tee instance."""
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Close all child iterators."""
         await self.aclose()
         return False

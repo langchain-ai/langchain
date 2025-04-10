@@ -17,7 +17,7 @@ readme = "README.md"
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/deepseek"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22deepseek%3D%3D0%22&expanded=true"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-deepseek%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]

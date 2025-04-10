@@ -16,8 +16,8 @@ from langchain_core._api.deprecation import deprecated
     ),
 )
 def try_load_from_hub(
-    *args: Any,
-    **kwargs: Any,
+    *args: Any,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
 ) -> Any:
     """[DEPRECATED] Try to load from the old Hub."""
     warnings.warn(

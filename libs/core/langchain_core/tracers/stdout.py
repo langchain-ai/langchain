@@ -7,6 +7,8 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.input import get_bolded_text, get_colored_text
 
+MILLISECONDS_IN_SECOND = 1000
+
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
     """Try to stringify an object to JSON.
@@ -36,10 +38,10 @@ def elapsed(run: Any) -> str:
 
     """
     elapsed_time = run.end_time - run.start_time
-    milliseconds = elapsed_time.total_seconds() * 1000
-    if milliseconds < 1000:
-        return f"{milliseconds:.0f}ms"
-    return f"{(milliseconds / 1000):.2f}s"
+    seconds = elapsed_time.total_seconds()
+    if seconds < 1:
+        return f"{seconds * MILLISECONDS_IN_SECOND:.0f}ms"
+    return f"{seconds:.2f}s"
 
 
 class FunctionCallbackHandler(BaseTracer):

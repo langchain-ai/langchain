@@ -515,7 +515,7 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co:
+    def __add__(self, x: _T_contra, /) -> _T_co:
         """Add the object to another object."""
 
 

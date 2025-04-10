@@ -65,7 +65,8 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
+    IS_PYDANTIC_V1,
+    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -2017,7 +2018,7 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
@@ -2086,7 +2087,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     assert actual == expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Testing pydantic v1.")
+@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
 def test__get_all_basemodel_annotations_v1() -> None:
     A = TypeVar("A")
 
@@ -2214,7 +2215,7 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
@@ -2300,7 +2301,7 @@ def test_injected_arg_with_complex_type() -> None:
             self.value = "bar"
 
     @tool
-    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:  # noqa: ARG001
         """Tool that has an injected tool arg."""
         return foo.value
 
@@ -2368,7 +2369,7 @@ def test_tool_return_output_mixin() -> None:
         def __init__(self, x: int) -> None:
             self.x = x
 
-        def __eq__(self, other: Any) -> bool:
+        def __eq__(self, other: object) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
 
     @tool
@@ -2476,7 +2477,7 @@ def test_simple_tool_args_schema_dict() -> None:
 
 def test_empty_string_tool_call_id() -> None:
     @tool
-    def foo(x: int) -> str:
+    def foo(x: int) -> str:  # noqa: ARG001
         """Foo."""
         return "hi"
 
@@ -2488,7 +2489,7 @@ def test_empty_string_tool_call_id() -> None:
 def test_tool_decorator_description() -> None:
     # test basic tool
     @tool
-    def foo(x: int) -> str:
+    def foo(x: int) -> str:  # noqa: ARG001
         """Foo."""
         return "hi"
 
@@ -2500,7 +2501,7 @@ def test_tool_decorator_description() -> None:
 
     # test basic tool with description
     @tool(description="description")
-    def foo_description(x: int) -> str:
+    def foo_description(x: int) -> str:  # noqa: ARG001
         """Foo."""
         return "hi"
 
@@ -2519,7 +2520,7 @@ def test_tool_decorator_description() -> None:
         x: int
 
     @tool(args_schema=ArgsSchema)
-    def foo_args_schema(x: int) -> str:
+    def foo_args_schema(x: int) -> str:  # noqa: ARG001
         return "hi"
 
     assert foo_args_schema.description == "Bar."
@@ -2531,7 +2532,7 @@ def test_tool_decorator_description() -> None:
     )
 
     @tool(description="description", args_schema=ArgsSchema)
-    def foo_args_schema_description(x: int) -> str:
+    def foo_args_schema_description(x: int) -> str:  # noqa: ARG001
         return "hi"
 
     assert foo_args_schema_description.description == "description"
@@ -2553,11 +2554,11 @@ def test_tool_decorator_description() -> None:
     }
 
     @tool(args_schema=args_json_schema)
-    def foo_args_jsons_schema(x: int) -> str:
+    def foo_args_jsons_schema(x: int) -> str:  # noqa: ARG001
         return "hi"
 
     @tool(description="description", args_schema=args_json_schema)
-    def foo_args_jsons_schema_with_description(x: int) -> str:
+    def foo_args_jsons_schema_with_description(x: int) -> str:  # noqa: ARG001
         return "hi"
 
     assert foo_args_jsons_schema.description == "JSON Schema."
@@ -2619,10 +2620,10 @@ def test_title_property_preserved() -> None:
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool asynchronously."""
 
-    def sync_no_op(foo: int) -> str:
+    def sync_no_op(foo: int) -> str:  # noqa: ARG001
         return "good"
 
-    async def async_no_op(foo: int) -> str:
+    async def async_no_op(foo: int) -> str:  # noqa: ARG001
         return "good"
 
     tool = StructuredTool(
@@ -2667,10 +2668,10 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
 def test_tool_invoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool synchronously."""
 
-    def sync_no_op(foo: int) -> str:
+    def sync_no_op(foo: int) -> str:  # noqa: ARG001
         return "good"
 
-    async def async_no_op(foo: int) -> str:
+    async def async_no_op(foo: int) -> str:  # noqa: ARG001
         return "good"
 
     tool = StructuredTool(
