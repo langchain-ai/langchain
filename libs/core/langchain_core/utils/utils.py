@@ -13,6 +13,7 @@ from typing import Any, Callable, Optional, Union, overload
 from packaging.version import parse
 from pydantic import SecretStr
 from requests import HTTPError, Response
+from typing_extensions import override
 
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
@@ -91,6 +92,7 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
+        @override
         def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
             # Create a copy of dt_value.
             return MockDateTime(

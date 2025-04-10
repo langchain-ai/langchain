@@ -127,6 +127,7 @@ class BasePromptTemplate(
         """Return the output type of the prompt."""
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:

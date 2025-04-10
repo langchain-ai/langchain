@@ -6,6 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -40,6 +41,11 @@ class CosmosDBQueryType(str, Enum):
     HYBRID = "hybrid"
 
 
+@deprecated(
+    since="0.3.22",
+    removal="1.0",
+    alternative_import="langchain_azure_ai.vectorstores.AzureCosmosDBNoSqlVectorSearch",
+)
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     """`Azure Cosmos DB for NoSQL` vector store.
 
