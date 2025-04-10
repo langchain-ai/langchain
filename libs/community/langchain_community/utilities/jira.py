@@ -29,11 +29,14 @@ class JiraOauth2(TypedDict):
 class JiraAPIWrapper(BaseModel):
     """
     Wrapper for Jira API. You can connect to Jira with either an API token or OAuth2.
-    - with API token, you need to provide the JIRA_USERNAME and JIRA_API_TOKEN environment variables or arguments.
+    - with API token, you need to provide the JIRA_USERNAME and JIRA_API_TOKEN
+        environment variables or arguments.
     ex: JIRA_USERNAME=your_username JIRA_API_TOKEN=your_api_token
-    - with OAuth2, you need to provide the JIRA_OAUTH2 environment variable or argument as a dict having as fields
-    "client_id" and "token" which is a dict containing at least "access_token" and "token_type".
-    ex: JIRA_OAUTH2='{"client_id": "your_client_id", "token": {"access_token": "your_access_token", "token_type": "bearer"}}'
+    - with OAuth2, you need to provide the JIRA_OAUTH2 environment variable or
+        argument as a dict having as fields "client_id" and "token" which is
+        a dict containing at least "access_token" and "token_type".
+    ex: JIRA_OAUTH2='{"client_id": "your_client_id", "token": {"access_token": "your_access_token",
+        "token_type": "bearer"}}'
     """
 
     jira: Any = None  #: :meta private:
