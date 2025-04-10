@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.retry import ExponentialJitterParams
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
     from langchain_core.tracers.log_stream import (
@@ -1742,7 +1743,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
-        exponential_jitter_params: Optional[dict[str, Any]] = None,
+        exponential_jitter_params: Optional[ExponentialJitterParams] = None,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original Runnable on exceptions.

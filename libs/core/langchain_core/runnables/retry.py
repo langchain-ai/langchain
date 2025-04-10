@@ -18,7 +18,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
-from typing_extensions import override
+from typing_extensions import TypedDict, override
 
 from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
@@ -31,6 +31,19 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")
+
+
+class ExponentialJitterParams(TypedDict, total=False):
+    """Parameters for ``tenacity.wait_exponential_jitter``."""
+
+    initial: float
+    """Initial wait."""
+    max: float
+    """Maximum wait."""
+    exp_base: float
+    """Base for exponential backoff."""
+    jitter: float
+    """Random additional wait sampled from random.uniform(0, jitter)."""
 
 
 class RunnableRetry(RunnableBindingBase[Input, Output]):
@@ -111,9 +124,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     wait_exponential_jitter: bool = True
     """Whether to add jitter to the exponential backoff."""
 
-    exponential_jitter_params: Optional[dict[str, Any]] = None
-    """Parameters for tenacity.wait_exponential_jitter. Namely: ``initial``, ``max``,
-    ``exp_base``, and ``jitter`` (all float values).
+    exponential_jitter_params: Optional[ExponentialJitterParams] = None
+    """Parameters for ``tenacity.wait_exponential_jitter``. Namely: ``initial``,
+    ``max``, ``exp_base``, and ``jitter`` (all float values).
     """
 
     max_attempt_number: int = 3
@@ -127,7 +140,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
 
         if self.wait_exponential_jitter:
-            kwargs["wait"] = wait_exponential_jitter(**(self.exponential_jitter_params or {}))
+            kwargs["wait"] = wait_exponential_jitter(
+                **(self.exponential_jitter_params or {})
+            )
 
         if self.retry_exception_types:
             kwargs["retry"] = retry_if_exception_type(self.retry_exception_types)
