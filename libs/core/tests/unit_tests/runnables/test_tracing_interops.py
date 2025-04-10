@@ -375,7 +375,7 @@ class TestRunnableSequenceParallelTraceNesting:
     def test_sync(
         self, method: Callable[[RunnableLambda, list[BaseCallbackHandler]], int]
     ) -> None:
-        def other_thing(a: int) -> Generator[int, None, None]:  # type: ignore
+        def other_thing(_: int) -> Generator[int, None, None]:  # type: ignore
             yield 1
 
         parent = self._create_parent(other_thing)
@@ -407,7 +407,7 @@ class TestRunnableSequenceParallelTraceNesting:
             [RunnableLambda, list[BaseCallbackHandler]], Coroutine[Any, Any, int]
         ],
     ) -> None:
-        async def other_thing(a: int) -> AsyncGenerator[int, None]:
+        async def other_thing(_: int) -> AsyncGenerator[int, None]:
             yield 1
 
         parent = self._create_parent(other_thing)

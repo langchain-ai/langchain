@@ -92,7 +92,7 @@ structured_model = model.with_structured_output(Questions)
 
 # Define the system prompt
 system = """You are a helpful assistant that generates multiple sub-questions related to an input question. \n
-The goal is to break down the input into a set of sub-problems / sub-questions that can be answers in isolation. \n"""
+The goal is to break down the input into a set of sub-problems / sub-questions that can be answered independently. \n"""
 
 # Pass the question to the model
 question = """What are the main components of an LLM-powered autonomous agent system?"""

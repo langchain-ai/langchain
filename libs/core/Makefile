@@ -64,6 +64,9 @@ spell_check:
 spell_fix:
 	uv run --all-groups codespell --toml pyproject.toml -w
 
+benchmark:
+	uv run pytest tests/benchmarks --codspeed
+
 ######################
 # HELP
 ######################

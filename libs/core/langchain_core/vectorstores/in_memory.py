@@ -285,7 +285,7 @@ class InMemoryVectorStore(VectorStore):
         since="0.2.29",
         removal="1.0",
     )
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], /, **_kwargs: Any) -> UpsertResponse:
         """[DEPRECATED] Upsert documents into the store.
 
         Args:
@@ -319,7 +319,7 @@ class InMemoryVectorStore(VectorStore):
         removal="1.0",
     )
     async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
+        self, items: Sequence[Document], /, **_kwargs: Any
     ) -> UpsertResponse:
         """[DEPRECATED] Upsert documents into the store.
 
@@ -364,7 +364,6 @@ class InMemoryVectorStore(VectorStore):
         embedding: list[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
     ) -> list[tuple[Document, float, list[float]]]:
         # get all docs with fixed order in list
         docs = list(self.store.values())
@@ -404,7 +403,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: list[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for the most similar documents to the given embedding.
 
@@ -419,7 +418,7 @@ class InMemoryVectorStore(VectorStore):
         return [
             (doc, similarity)
             for doc, similarity, _ in self._similarity_search_with_score_by_vector(
-                embedding=embedding, k=k, filter=filter, **kwargs
+                embedding=embedding, k=k, filter=filter
             )
         ]
 
@@ -490,12 +489,14 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        *,
+        filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
-            **kwargs,
+            filter=filter,
         )
 
         try:

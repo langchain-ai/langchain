@@ -9,10 +9,9 @@ from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, create_model
 
-import langchain_core.utils.mustache as mustache
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.utils import get_colored_text
+from langchain_core.utils import get_colored_text, mustache
 from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
 
