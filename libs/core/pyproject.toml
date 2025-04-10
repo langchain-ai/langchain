@@ -54,9 +54,11 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster~=1.5.18",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
+    "pytest-benchmark",
+    "pytest-codspeed",
 ]
 test_integration = []
 
@@ -96,13 +98,12 @@ ignore = [
     # TODO rules
     "A",
     "ANN401",
-    "ARG",
     "BLE",
     "ERA",
     "FBT001",
     "FBT002",
     "PGH003",
-    "PLR",
+    "PLR2004",
     "RUF",
     "SLF",
 ]
@@ -117,7 +118,7 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
@@ -130,5 +131,6 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D", "S",]
 "scripts/**" = [ "INP", "S",]

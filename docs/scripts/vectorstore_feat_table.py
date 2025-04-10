@@ -6,7 +6,7 @@ from langchain_astradb import AstraDBVectorStore
 from langchain_chroma import Chroma
 from langchain_community import vectorstores
 from langchain_core.vectorstores import VectorStore
-from langchain_couchbase import CouchbaseVectorStore
+from langchain_couchbase import CouchbaseSearchVectorStore
 from langchain_milvus import Milvus
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_pinecone import PineconeVectorStore
@@ -28,7 +28,7 @@ from_partners = [
     ("PineconeVectorStore", PineconeVectorStore),
     ("Milvus", Milvus),
     ("MongoDBAtlasVectorSearch", MongoDBAtlasVectorSearch),
-    ("CouchbaseVectorStore", CouchbaseVectorStore),
+    ("CouchbaseSearchVectorStore", CouchbaseSearchVectorStore),
 ]
 
 VECTORSTORE_TEMPLATE = """\
@@ -184,7 +184,7 @@ def get_vectorstore_table():
             "Local/Cloud": "Local",
             "IDs in add Documents": True,
         },
-        "CouchbaseVectorStore": {
+        "CouchbaseSearchVectorStore": {
             "Delete by ID": True,
             "Filtering": True,
             "similarity_search_by_vector": True,

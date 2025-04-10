@@ -58,6 +58,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     def __repr__(self) -> str:
         return str(self.usage_metadata)
 
+    @override
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
         # Check for usage_metadata (langchain-core >= 0.2.2)

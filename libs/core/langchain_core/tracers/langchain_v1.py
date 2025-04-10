@@ -6,7 +6,7 @@ Please use LangChainTracer instead.
 from typing import Any
 
 
-def get_headers(*args: Any, **kwargs: Any) -> Any:
+def get_headers(*args: Any, **kwargs: Any) -> Any:  # noqa: ARG001
     """Throw an error because this has been replaced by get_headers."""
     msg = (
         "get_headers for LangChainTracerV1 is no longer supported. "
@@ -15,7 +15,7 @@ def get_headers(*args: Any, **kwargs: Any) -> Any:
     raise RuntimeError(msg)
 
 
-def LangChainTracerV1(*args: Any, **kwargs: Any) -> Any:  # noqa: N802
+def LangChainTracerV1(*args: Any, **kwargs: Any) -> Any:  # noqa: N802,ARG001
     """Throw an error because this has been replaced by LangChainTracer."""
     msg = (
         "LangChainTracerV1 is no longer supported. Please use LangChainTracer instead."

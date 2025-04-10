@@ -78,20 +78,19 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                 escaped = not escaped
             else:
                 escaped = False
-        else:
-            if char == '"':
-                is_inside_string = True
-                escaped = False
-            elif char == "{":
-                stack.append("}")
-            elif char == "[":
-                stack.append("]")
-            elif char == "}" or char == "]":
-                if stack and stack[-1] == char:
-                    stack.pop()
-                else:
-                    # Mismatched closing character; the input is malformed.
-                    return None
+        elif char == '"':
+            is_inside_string = True
+            escaped = False
+        elif char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in {"}", "]"}:
+            if stack and stack[-1] == char:
+                stack.pop()
+            else:
+                # Mismatched closing character; the input is malformed.
+                return None
 
         # Append the processed character to the new string.
         new_chars.append(new_char)
