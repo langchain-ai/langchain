@@ -1754,6 +1754,9 @@ class Runnable(Generic[Input, Output], ABC):
                 time between retries. Defaults to True.
             stop_after_attempt: The maximum number of attempts to make before
                 giving up. Defaults to 3.
+            exponential_jitter_params: Parameters for
+                ``tenacity.wait_exponential_jitter``. Namely: ``initial``, ``max``,
+                ``exp_base``, and ``jitter`` (all float values).
 
         Returns:
             A new Runnable that retries the original Runnable on exceptions.
@@ -1787,18 +1790,6 @@ class Runnable(Generic[Input, Output], ABC):
 
             assert (count == 2)
 
-
-        Args:
-            retry_if_exception_type: A tuple of exception types to retry on
-            wait_exponential_jitter: Whether to add jitter to the wait time
-                                     between retries
-            stop_after_attempt: The maximum number of attempts to make before giving up
-            exponential_jitter_params: Parameters for tenacity.wait_exponential_jitter.
-                Namely: ``initial``, ``max``, ``exp_base``, and ``jitter``
-                (all float values).
-
-        Returns:
-            A new Runnable that retries the original Runnable on exceptions.
         """
         from langchain_core.runnables.retry import RunnableRetry
 
