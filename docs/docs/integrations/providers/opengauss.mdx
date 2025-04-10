@@ -1,6 +1,3 @@
-
-
-```markdown
 # openGauss Vector Store for LangChain
 
 [openGauss](https://opengauss.org/en/) is a high-performance relational database with native vector storage and retrieval capabilities. This integration enables ACID-compliant vector operations within LangChain applications, combining traditional SQL functionality with modern AI-driven similarity search.
@@ -27,8 +24,7 @@ pip install langchain-opengauss
 
 ### 1. Launch openGauss Container
 ```bash
-docker run --name opengauss \
-  --privileged=true \
+docker run --name opengauss
   -d \
   -e GS_PASSWORD=MyStrongPass@123 \
   -p 8888:5432 \
@@ -37,7 +33,7 @@ docker run --name opengauss \
 
 ### 2. Basic Vector Operations
 ```python
-rom langchain_opengauss import OpenGauss, OpenGaussSettings
+from langchain_opengauss import OpenGauss, OpenGaussSettings
 from langchain_core.documents import Document
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
