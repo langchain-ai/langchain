@@ -1,6 +1,8 @@
 """Hugging Face Chat Wrapper."""
 
 import json
+from dataclasses import dataclass
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -52,7 +54,9 @@ from langchain_core.messages.tool import (
 from langchain_core.messages.tool import (
     tool_call_chunk as create_tool_call_chunk,
 )
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
     make_invalid_tool_call,
     parse_tool_call,
 )
@@ -62,14 +66,39 @@ from langchain_core.outputs import (
     ChatResult,
     LLMResult,
 )
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import Field, model_validator
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    convert_to_openai_tool,
+)
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    Field,
+    model_validator,
+)
 from typing_extensions import Self
 
 from ..llms.huggingface_endpoint import HuggingFaceEndpoint
 from ..llms.huggingface_pipeline import HuggingFacePipeline
+
+
+@dataclass
+class TGI_RESPONSE:
+    """Response from the TextGenInference API."""
+
+    choices: List[Any]
+    usage: Dict
+
+
+@dataclass
+class TGI_MESSAGE:
+    """Message to send to the TextGenInference API."""
+
+    role: str
+    content: str
+    tool_calls: List[Dict]
 
 
 def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
@@ -559,6 +588,7 @@ class ChatHuggingFace(BaseChatModel):
                 return generate_from_stream(stream_iter)
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {
+                "stop": stop,
                 **params,
                 **({"stream": stream} if stream is not None else {}),
                 **kwargs,
@@ -848,6 +878,136 @@ class ChatHuggingFace(BaseChatModel):
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class (support added in 0.1.7),
+
+                Pydantic class is currently supported.
+
+            method: The method for steering model generation, one of:
+
+                - "function_calling":
+                    Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
+                - "json_schema":
+                    Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                - "json_mode":
+                    Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
+
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
+
+        """  # noqa: E501
+        _ = kwargs.pop("strict", None)
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
+            if is_pydantic_schema:
+                raise NotImplementedError(
+                    "Pydantic schema is not supported for function calling"
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+            formatted_schema = convert_to_json_schema(schema)
+            llm = self.bind(
+                response_format={"type": "json_object", "schema": formatted_schema},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_schema"},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        elif method == "json_mode":
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_mode"},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

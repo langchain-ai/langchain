@@ -200,27 +200,9 @@ class HuggingFaceEndpoint(LLM):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that package is installed and that the API token is valid."""
-        try:
-            from huggingface_hub import login  # type: ignore[import]
-
-        except ImportError:
-            raise ImportError(
-                "Could not import huggingface_hub python package. "
-                "Please install it with `pip install huggingface_hub`."
-            )
-
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
         )
-
-        if huggingfacehub_api_token is not None:
-            try:
-                login(token=huggingfacehub_api_token)
-            except Exception as e:
-                raise ValueError(
-                    "Could not authenticate with huggingface_hub. "
-                    "Please check your API token."
-                ) from e
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
@@ -229,7 +211,7 @@ class HuggingFaceEndpoint(LLM):
         self.client = InferenceClient(
             model=self.model,
             timeout=self.timeout,
-            token=huggingfacehub_api_token,
+            api_key=huggingfacehub_api_token,
             provider=self.provider,
             **{
                 key: value
@@ -242,7 +224,7 @@ class HuggingFaceEndpoint(LLM):
         self.async_client = AsyncInferenceClient(
             model=self.model,
             timeout=self.timeout,
-            token=huggingfacehub_api_token,
+            api_key=huggingfacehub_api_token,
             provider=self.provider,
             **{
                 key: value
