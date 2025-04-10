@@ -2,21 +2,21 @@
 
 from typing import Literal
 
-from typing_extensions import Required, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 
-class DataContentBlock(TypedDict, total=False):
+class DataContentBlock(TypedDict):
     """Data content block."""
 
-    type: Required[Literal["image", "audio", "file"]]
+    type: Literal["image", "audio", "file"]
     """Type of the content block."""
-    source_type: Required[Literal["url", "base64", "id", "text"]]
+    source_type: Literal["url", "base64", "id", "text"]
     """Source type."""
-    source: Required[str]
+    source: str
     """Data as a URL or data-URI, identifier, or plain-text."""
-    mime_type: str
+    mime_type: NotRequired[str]
     """MIME type of the content block (if block represents base64 data.)"""
-    metadata: dict
+    metadata: NotRequired[dict]
     """Provider-specific metadata such as citations or filenames."""
 
 
