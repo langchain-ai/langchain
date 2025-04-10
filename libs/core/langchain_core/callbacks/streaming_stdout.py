@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import override
+
 from langchain_core.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
@@ -41,6 +43,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
             **kwargs (Any): Additional keyword arguments.
         """
 
+    @override
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled.
 

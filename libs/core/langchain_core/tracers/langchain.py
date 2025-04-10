@@ -19,6 +19,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
@@ -252,13 +253,13 @@ class LangChainTracer(BaseTracer):
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
 
+    @override
     def _llm_run_with_token_event(
         self,
         token: str,
         run_id: UUID,
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
     ) -> Run:
         """Append token event to LLM run and return the run."""
         return super()._llm_run_with_token_event(
@@ -267,7 +268,6 @@ class LangChainTracer(BaseTracer):
             run_id,
             chunk=None,
             parent_run_id=parent_run_id,
-            **kwargs,
         )
 
     def _on_chat_model_start(self, run: Run) -> None:

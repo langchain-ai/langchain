@@ -326,7 +326,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_input_schema()
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate input to the Runnable.
 
@@ -398,7 +399,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_output_schema()
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
@@ -4751,11 +4753,6 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         return cast("Output", output)
 
-    def _config(
-        self, config: Optional[RunnableConfig], callable: Callable[..., Any]
-    ) -> RunnableConfig:
-        return ensure_config(config)
-
     @override
     def invoke(
         self,
@@ -4780,7 +4777,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return self._call_with_config(
                 self._invoke,
                 input,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         msg = "Cannot invoke a coroutine function synchronously.Use `ainvoke` instead."
@@ -4803,11 +4800,10 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The output of this Runnable.
         """
-        the_func = self.afunc if hasattr(self, "afunc") else self.func
         return await self._acall_with_config(
             self._ainvoke,
             input,
-            self._config(config, the_func),
+            ensure_config(config),
             **kwargs,
         )
 
@@ -4884,7 +4880,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield from self._transform_stream_with_config(
                 input,
                 self._transform,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         else:
@@ -5012,7 +5008,7 @@ class RunnableLambda(Runnable[Input, Output]):
         async for output in self._atransform_stream_with_config(
             input,
             self._atransform,
-            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            ensure_config(config),
             **kwargs,
         ):
             yield output

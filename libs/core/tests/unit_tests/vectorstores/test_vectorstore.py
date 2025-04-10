@@ -10,6 +10,7 @@ import uuid
 from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
@@ -25,6 +26,7 @@ class CustomAddTextsVectorstore(VectorStore):
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
@@ -51,6 +53,7 @@ class CustomAddTextsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
+    @override
     def from_texts(  # type: ignore
         cls,
         texts: list[str],
@@ -74,6 +77,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_documents(
         self,
         documents: list[Document],
@@ -95,6 +99,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
+    @override
     def from_texts(  # type: ignore
         cls,
         texts: list[str],
