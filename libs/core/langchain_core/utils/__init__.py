@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from langchain_core.utils.iter import batch_iterate
     from langchain_core.utils.loading import try_load_from_hub
     from langchain_core.utils.pydantic import pre_init
+    from langchain_core.utils.requests import raise_for_status_with_text
     from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
     from langchain_core.utils.utils import (
         build_extra_kwargs,
@@ -32,7 +33,6 @@ if TYPE_CHECKING:
         get_pydantic_field_names,
         guard_import,
         mock_now,
-        raise_for_status_with_text,
         secret_from_env,
         xor_args,
     )
