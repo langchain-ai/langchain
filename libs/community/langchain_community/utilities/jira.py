@@ -35,8 +35,8 @@ class JiraAPIWrapper(BaseModel):
     - with OAuth2, you need to provide the JIRA_OAUTH2 environment variable or
         argument as a dict having as fields "client_id" and "token" which is
         a dict containing at least "access_token" and "token_type".
-    ex: JIRA_OAUTH2='{"client_id": "your_client_id", "token": {"access_token": "your_access_token",
-        "token_type": "bearer"}}'
+    ex: JIRA_OAUTH2='{"client_id": "your_client_id", "token":
+        {"access_token": "your_access_token","token_type": "bearer"}}'
     """
 
     jira: Any = None  #: :meta private:
@@ -167,7 +167,7 @@ class JiraAPIWrapper(BaseModel):
             except Exception:
                 assignee = "None"
             rel_issues = {}
-            for related_issue in issue["fields"]["issuelinks"]:
+            for related_issue in issue["fields"].get("issuelinks", []):
                 if "inwardIssue" in related_issue.keys():
                     rel_type = related_issue["type"]["inward"]
                     rel_key = related_issue["inwardIssue"]["key"]
