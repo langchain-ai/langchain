@@ -17,7 +17,7 @@ dependencies = [
     "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
 ]
 name = "langchain-core"
-version = "0.3.49"
+version = "0.3.51"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -54,9 +54,11 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster~=1.5.18",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
+    "pytest-benchmark",
+    "pytest-codspeed",
 ]
 test_integration = []
 
@@ -77,18 +79,46 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "AIR", "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INP","INT", "ISC", "LOG", "N", "NPY", "PD", "PIE", "PLW", "PTH", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T20", "TC", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "ANN401", "COM812", "FA100", "ISC001", "S110", "S112", "TC001", "TC002", "TC003", "UP007",]
+select = [ "ALL",]
+ignore = [
+    "C90", # McCabe complexity
+    "COM812", # Messes with the formatter
+    "FA100", # Can't activate since we exclude UP007 for now
+    "FIX002", # Line contains TODO
+    "ISC001", # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09", # Too many something (arg, statements, etc)
+    "TC001", # Doesn't play well with Pydantic
+    "TC002", # Doesn't play well with Pydantic
+    "TC003", # Doesn't play well with Pydantic
+    "TD002", # Missing author in TODO
+    "TD003", # Missing issue link in TODO
+    "UP007", # Doesn't play well with Pydantic in Python 3.9
+
+    # TODO rules
+    "A",
+    "ANN401",
+    "BLE",
+    "ERA",
+    "FBT001",
+    "FBT002",
+    "PGH003",
+    "PLR2004",
+    "RUF",
+    "SLF",
+]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+pydocstyle.convention = "google"
+pydocstyle.ignore-var-parameters = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
@@ -101,5 +131,6 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "S",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
+"tests/**" = [ "D", "S",]
 "scripts/**" = [ "INP", "S",]

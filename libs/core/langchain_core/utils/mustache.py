@@ -1,4 +1,5 @@
-"""Adapted from https://github.com/noahmorrison/chevron
+"""Adapted from https://github.com/noahmorrison/chevron.
+
 MIT License.
 """
 
@@ -64,7 +65,11 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     return (literal, template)
 
 
-def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
+def l_sa_check(
+    template: str,  # noqa: ARG001
+    literal: str,
+    is_standalone: bool,
+) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
     Args:
@@ -83,8 +88,7 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
@@ -106,8 +110,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
@@ -323,14 +326,15 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
 def _get_key(
     key: str,
     scopes: Scopes,
+    *,
     warn: bool,
     keep: bool,
     def_ldel: str,
@@ -455,12 +459,11 @@ def render(
         # Then we don't need to tokenize it
         # But it does need to be a generator
         tokens: Iterator[tuple[str, str]] = (token for token in template)
+    elif template in g_token_cache:
+        tokens = (token for token in g_token_cache[template])
     else:
-        if template in g_token_cache:
-            tokens = (token for token in g_token_cache[template])
-        else:
-            # Otherwise make a generator
-            tokens = tokenize(template, def_ldel, def_rdel)
+        # Otherwise make a generator
+        tokens = tokenize(template, def_ldel, def_rdel)
 
     output = ""
 

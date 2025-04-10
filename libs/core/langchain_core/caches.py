@@ -1,4 +1,5 @@
-"""
+"""Cache classes.
+
 .. warning::
   Beta Feature!
 
@@ -25,6 +26,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, Optional
+
+from typing_extensions import override
 
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor
@@ -193,6 +196,7 @@ class InMemoryCache(BaseCache):
             del self._cache[next(iter(self._cache))]
         self._cache[(prompt, llm_string)] = return_val
 
+    @override
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
@@ -226,6 +230,7 @@ class InMemoryCache(BaseCache):
         """
         self.update(prompt, llm_string, return_val)
 
+    @override
     async def aclear(self, **kwargs: Any) -> None:
         """Async clear cache."""
         self.clear()

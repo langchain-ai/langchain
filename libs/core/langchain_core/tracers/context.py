@@ -1,3 +1,5 @@
+"""Context management for tracers."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -39,7 +41,7 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
     """Throw an error because this has been replaced by tracing_v2_enabled."""
     msg = (
@@ -134,7 +136,7 @@ def _get_trace_callbacks(
                 isinstance(handler, LangChainTracer)
                 for handler in callback_manager.handlers
             ):
-                callback_manager.add_handler(tracer, True)
+                callback_manager.add_handler(tracer)
                 # If it already has a LangChainTracer, we don't need to add another one.
                 # this would likely mess up the trace hierarchy.
             cb = callback_manager
@@ -217,4 +219,4 @@ def register_configure_hook(
     )
 
 
-register_configure_hook(run_collector_var, False)
+register_configure_hook(run_collector_var, inheritable=False)

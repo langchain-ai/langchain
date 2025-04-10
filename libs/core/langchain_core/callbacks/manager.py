@@ -1,3 +1,5 @@
+"""Run managers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,6 +22,7 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
+from typing_extensions import Self, override
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -68,6 +71,7 @@ def trace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
+
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
 
@@ -148,6 +152,7 @@ async def atrace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
+
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
 
@@ -359,19 +364,16 @@ async def _ahandle_event_for_handler(
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
+            elif handler.run_inline:
+                event(*args, **kwargs)
             else:
-                if handler.run_inline:
-                    event(*args, **kwargs)
-                else:
-                    await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        cast(
-                            "Callable",
-                            functools.partial(
-                                copy_context().run, event, *args, **kwargs
-                            ),
-                        ),
-                    )
+                await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    cast(
+                        "Callable",
+                        functools.partial(copy_context().run, event, *args, **kwargs),
+                    ),
+                )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
@@ -440,9 +442,6 @@ async def ahandle_event(
     )
 
 
-BRM = TypeVar("BRM", bound="BaseRunManager")
-
-
 class BaseRunManager(RunManagerMixin):
     """Base class for run manager (a bound callback manager)."""
 
@@ -485,7 +484,7 @@ class BaseRunManager(RunManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     @classmethod
-    def get_noop_manager(cls: type[BRM]) -> BRM:
+    def get_noop_manager(cls) -> Self:
         """Return a manager that doesn't perform any operations.
 
         Returns:
@@ -571,7 +570,7 @@ class ParentRunManager(RunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -652,7 +651,7 @@ class AsyncParentRunManager(AsyncRunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -1399,6 +1398,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     def on_tool_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -1454,6 +1454,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     def on_retriever_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -1574,11 +1575,11 @@ class CallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -1925,6 +1926,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     async def on_tool_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -2015,6 +2017,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             metadata=self.metadata,
         )
 
+    @override
     async def on_retriever_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -2098,11 +2101,11 @@ class AsyncCallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -2240,18 +2243,16 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
-H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
-
-
 def _configure(
     callback_manager_cls: type[T],
     inheritable_callbacks: Callbacks = None,
     local_callbacks: Callbacks = None,
-    verbose: bool = False,
     inheritable_tags: Optional[list[str]] = None,
     local_tags: Optional[list[str]] = None,
     inheritable_metadata: Optional[dict[str, Any]] = None,
     local_metadata: Optional[dict[str, Any]] = None,
+    *,
+    verbose: bool = False,
 ) -> T:
     """Configure the callback manager.
 
@@ -2325,13 +2326,13 @@ def _configure(
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(handler, False)
+            callback_manager.add_handler(handler, inherit=False)
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
-        callback_manager.add_tags(local_tags or [], False)
+        callback_manager.add_tags(local_tags or [], inherit=False)
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
-        callback_manager.add_metadata(local_metadata or {}, False)
+        callback_manager.add_metadata(local_metadata or {}, inherit=False)
     if tracing_metadata:
         callback_manager.add_metadata(tracing_metadata.copy())
     if tracing_tags:
@@ -2366,18 +2367,18 @@ def _configure(
             if debug:
                 pass
             else:
-                callback_manager.add_handler(StdOutCallbackHandler(), False)
+                callback_manager.add_handler(StdOutCallbackHandler(), inherit=False)
         if debug and not any(
             isinstance(handler, ConsoleCallbackHandler)
             for handler in callback_manager.handlers
         ):
-            callback_manager.add_handler(ConsoleCallbackHandler(), True)
+            callback_manager.add_handler(ConsoleCallbackHandler())
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
-                callback_manager.add_handler(tracer_v2, True)
+                callback_manager.add_handler(tracer_v2)
             else:
                 try:
                     handler = LangChainTracer(
@@ -2389,7 +2390,7 @@ def _configure(
                         ),
                         tags=tracing_tags,
                     )
-                    callback_manager.add_handler(handler, True)
+                    callback_manager.add_handler(handler)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
@@ -2422,12 +2423,11 @@ def _configure(
                     for handler in callback_manager.handlers
                 ):
                     callback_manager.add_handler(var_handler, inheritable)
-            else:
-                if not any(
-                    isinstance(handler, handler_class)
-                    for handler in callback_manager.handlers
-                ):
-                    callback_manager.add_handler(var_handler, inheritable)
+            elif not any(
+                isinstance(handler, handler_class)
+                for handler in callback_manager.handlers
+            ):
+                callback_manager.add_handler(var_handler, inheritable)
     return callback_manager
 
 

@@ -51,14 +51,13 @@ def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
         return v["type"]
-    elif hasattr(v, "type"):
+    if hasattr(v, "type"):
         return v.type
-    else:
-        msg = (
-            f"Expected either a dictionary with a 'type' key or an object "
-            f"with a 'type' attribute. Instead got type {type(v)}."
-        )
-        raise TypeError(msg)
+    msg = (
+        f"Expected either a dictionary with a 'type' key or an object "
+        f"with a 'type' attribute. Instead got type {type(v)}."
+    )
+    raise TypeError(msg)
 
 
 AnyMessage = Annotated[
@@ -83,7 +82,7 @@ AnyMessage = Annotated[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    """Convert a sequence of Messages to strings and concatenate them into one string.
+    r"""Convert a sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
@@ -138,33 +137,32 @@ def _message_from_dict(message: dict) -> BaseMessage:
     _type = message["type"]
     if _type == "human":
         return HumanMessage(**message["data"])
-    elif _type == "ai":
+    if _type == "ai":
         return AIMessage(**message["data"])
-    elif _type == "system":
+    if _type == "system":
         return SystemMessage(**message["data"])
-    elif _type == "chat":
+    if _type == "chat":
         return ChatMessage(**message["data"])
-    elif _type == "function":
+    if _type == "function":
         return FunctionMessage(**message["data"])
-    elif _type == "tool":
+    if _type == "tool":
         return ToolMessage(**message["data"])
-    elif _type == "remove":
+    if _type == "remove":
         return RemoveMessage(**message["data"])
-    elif _type == "AIMessageChunk":
+    if _type == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
-    elif _type == "HumanMessageChunk":
+    if _type == "HumanMessageChunk":
         return HumanMessageChunk(**message["data"])
-    elif _type == "FunctionMessageChunk":
+    if _type == "FunctionMessageChunk":
         return FunctionMessageChunk(**message["data"])
-    elif _type == "ToolMessageChunk":
+    if _type == "ToolMessageChunk":
         return ToolMessageChunk(**message["data"])
-    elif _type == "SystemMessageChunk":
+    if _type == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
-    elif _type == "ChatMessageChunk":
+    if _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
-    else:
-        msg = f"Got unexpected message type: {_type}"
-        raise ValueError(msg)
+    msg = f"Got unexpected message type: {_type}"
+    raise ValueError(msg)
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
@@ -387,8 +385,7 @@ def _runnable_support(func: Callable) -> Callable:
 
         if messages is not None:
             return func(messages, **kwargs)
-        else:
-            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
+        return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -472,8 +469,6 @@ def filter_messages(
             or (exclude_ids and msg.id in exclude_ids)
         ):
             continue
-        else:
-            pass
 
         if exclude_tool_calls is True and (
             (isinstance(msg, AIMessage) and msg.tool_calls)
@@ -532,7 +527,7 @@ def merge_message_runs(
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
-    """Merge consecutive Messages of the same type.
+    r"""Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
     can't be merged.
@@ -682,7 +677,7 @@ def trim_messages(
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
 
-            Note:
+            .. note::
                 Use `count_tokens_approximately` to get fast, approximate token counts.
                 This is recommended for using `trim_messages` on the hot path, where
                 exact token counting is not necessary.
@@ -926,7 +921,7 @@ def trim_messages(
             partial_strategy="first" if allow_partial else None,
             end_on=end_on,
         )
-    elif strategy == "last":
+    if strategy == "last":
         return _last_max_tokens(
             messages,
             max_tokens=max_tokens,
@@ -937,9 +932,8 @@ def trim_messages(
             end_on=end_on,
             text_splitter=text_splitter_fn,
         )
-    else:
-        msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
-        raise ValueError(msg)
+    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+    raise ValueError(msg)
 
 
 def convert_to_openai_messages(
@@ -1036,231 +1030,222 @@ def convert_to_openai_messages(
                 content = message.content
             else:
                 content = [{"type": "text", "text": message.content}]
-        else:
-            if text_format == "string" and all(
-                isinstance(block, str) or block.get("type") == "text"
+        elif text_format == "string" and all(
+            isinstance(block, str) or block.get("type") == "text"
+            for block in message.content
+        ):
+            content = "\n".join(
+                block if isinstance(block, str) else block["text"]
                 for block in message.content
-            ):
-                content = "\n".join(
-                    block if isinstance(block, str) else block["text"]
-                    for block in message.content
-                )
-            else:
-                content = []
-                for j, block in enumerate(message.content):
-                    # OpenAI format
-                    if isinstance(block, str):
-                        content.append({"type": "text", "text": block})
-                    elif block.get("type") == "text":
-                        if missing := [k for k in ("text",) if k not in block]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'text' "
-                                f"but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        content.append({"type": block["type"], "text": block["text"]})
-                    elif block.get("type") == "image_url":
-                        if missing := [k for k in ("image_url",) if k not in block]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'image_url' "
-                                f"but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        content.append(
-                            {
-                                "type": "image_url",
-                                "image_url": block["image_url"],
-                            }
+            )
+        else:
+            content = []
+            for j, block in enumerate(message.content):
+                # OpenAI format
+                if isinstance(block, str):
+                    content.append({"type": "text", "text": block})
+                elif block.get("type") == "text":
+                    if missing := [k for k in ("text",) if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'text' "
+                            f"but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
                         )
-                    # Anthropic and Bedrock converse format
-                    elif (block.get("type") == "image") or "image" in block:
-                        # Anthropic
-                        if source := block.get("source"):
-                            if missing := [
-                                k
-                                for k in ("media_type", "type", "data")
-                                if k not in source
-                            ]:
-                                err = (
-                                    f"Unrecognized content block at "
-                                    f"messages[{i}].content[{j}] has 'type': 'image' "
-                                    f"but 'source' is missing expected key(s) "
-                                    f"{missing}. Full content block:\n\n{block}"
-                                )
-                                raise ValueError(err)
-                            content.append(
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": (
-                                            f"data:{source['media_type']};"
-                                            f"{source['type']},{source['data']}"
-                                        )
-                                    },
-                                }
-                            )
-                        # Bedrock converse
-                        elif image := block.get("image"):
-                            if missing := [
-                                k for k in ("source", "format") if k not in image
-                            ]:
-                                err = (
-                                    f"Unrecognized content block at "
-                                    f"messages[{i}].content[{j}] has key 'image', "
-                                    f"but 'image' is missing expected key(s) "
-                                    f"{missing}. Full content block:\n\n{block}"
-                                )
-                                raise ValueError(err)
-                            b64_image = _bytes_to_b64_str(image["source"]["bytes"])
-                            content.append(
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": (
-                                            f"data:image/{image['format']};"
-                                            f"base64,{b64_image}"
-                                        )
-                                    },
-                                }
-                            )
-                        else:
+                        raise ValueError(err)
+                    content.append({"type": block["type"], "text": block["text"]})
+                elif block.get("type") == "image_url":
+                    if missing := [k for k in ("image_url",) if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'image_url' "
+                            f"but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": block["image_url"],
+                        }
+                    )
+                # Anthropic and Bedrock converse format
+                elif (block.get("type") == "image") or "image" in block:
+                    # Anthropic
+                    if source := block.get("source"):
+                        if missing := [
+                            k for k in ("media_type", "type", "data") if k not in source
+                        ]:
                             err = (
                                 f"Unrecognized content block at "
                                 f"messages[{i}].content[{j}] has 'type': 'image' "
-                                f"but does not have a 'source' or 'image' key. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                    elif block.get("type") == "tool_use":
-                        if missing := [
-                            k for k in ("id", "name", "input") if k not in block
-                        ]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'tool_use', but is missing expected key(s) "
+                                f"but 'source' is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
                             raise ValueError(err)
-                        if not any(
-                            tool_call["id"] == block["id"]
-                            for tool_call in cast("AIMessage", message).tool_calls
-                        ):
-                            oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
-                            oai_msg["tool_calls"].append(
-                                {
-                                    "type": "function",
-                                    "id": block["id"],
-                                    "function": {
-                                        "name": block["name"],
-                                        "arguments": json.dumps(block["input"]),
-                                    },
-                                }
-                            )
-                    elif block.get("type") == "tool_result":
-                        if missing := [
-                            k for k in ("content", "tool_use_id") if k not in block
-                        ]:
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'tool_result', but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        tool_message = ToolMessage(
-                            block["content"],
-                            tool_call_id=block["tool_use_id"],
-                            status="error" if block.get("is_error") else "success",
-                        )
-                        # Recurse to make sure tool message contents are OpenAI format.
-                        tool_messages.extend(
-                            convert_to_openai_messages(
-                                [tool_message], text_format=text_format
-                            )
-                        )
-                    elif (block.get("type") == "json") or "json" in block:
-                        if "json" not in block:
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'json' "
-                                f"but does not have a 'json' key. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        content.append(
-                            {
-                                "type": "text",
-                                "text": json.dumps(block["json"]),
-                            }
-                        )
-                    elif (
-                        block.get("type") == "guard_content"
-                    ) or "guard_content" in block:
-                        if (
-                            "guard_content" not in block
-                            or "text" not in block["guard_content"]
-                        ):
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'guard_content' but does not have a "
-                                f"messages[{i}].content[{j}]['guard_content']['text'] "
-                                f"key. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        text = block["guard_content"]["text"]
-                        if isinstance(text, dict):
-                            text = text["text"]
-                        content.append({"type": "text", "text": text})
-                    # VertexAI format
-                    elif block.get("type") == "media":
-                        if missing := [
-                            k for k in ("mime_type", "data") if k not in block
-                        ]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'media' but does not have key(s) {missing}. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        if "image" not in block["mime_type"]:
-                            err = (
-                                f"OpenAI messages can only support text and image data."
-                                f" Received content block with media of type:"
-                                f" {block['mime_type']}"
-                            )
-                            raise ValueError(err)
-                        b64_image = _bytes_to_b64_str(block["data"])
                         content.append(
                             {
                                 "type": "image_url",
                                 "image_url": {
                                     "url": (
-                                        f"data:{block['mime_type']};base64,{b64_image}"
+                                        f"data:{source['media_type']};"
+                                        f"{source['type']},{source['data']}"
                                     )
                                 },
                             }
                         )
-                    elif block.get("type") == "thinking":
-                        content.append(block)
+                    # Bedrock converse
+                    elif image := block.get("image"):
+                        if missing := [
+                            k for k in ("source", "format") if k not in image
+                        ]:
+                            err = (
+                                f"Unrecognized content block at "
+                                f"messages[{i}].content[{j}] has key 'image', "
+                                f"but 'image' is missing expected key(s) "
+                                f"{missing}. Full content block:\n\n{block}"
+                            )
+                            raise ValueError(err)
+                        b64_image = _bytes_to_b64_str(image["source"]["bytes"])
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": (
+                                        f"data:image/{image['format']};"
+                                        f"base64,{b64_image}"
+                                    )
+                                },
+                            }
+                        )
                     else:
                         err = (
                             f"Unrecognized content block at "
-                            f"messages[{i}].content[{j}] does not match OpenAI, "
-                            f"Anthropic, Bedrock Converse, or VertexAI format. Full "
+                            f"messages[{i}].content[{j}] has 'type': 'image' "
+                            f"but does not have a 'source' or 'image' key. Full "
                             f"content block:\n\n{block}"
                         )
                         raise ValueError(err)
-                if text_format == "string" and not any(
-                    block["type"] != "text" for block in content
-                ):
-                    content = "\n".join(block["text"] for block in content)
+                elif block.get("type") == "tool_use":
+                    if missing := [
+                        k for k in ("id", "name", "input") if k not in block
+                    ]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'tool_use', but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    if not any(
+                        tool_call["id"] == block["id"]
+                        for tool_call in cast("AIMessage", message).tool_calls
+                    ):
+                        oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
+                        oai_msg["tool_calls"].append(
+                            {
+                                "type": "function",
+                                "id": block["id"],
+                                "function": {
+                                    "name": block["name"],
+                                    "arguments": json.dumps(block["input"]),
+                                },
+                            }
+                        )
+                elif block.get("type") == "tool_result":
+                    if missing := [
+                        k for k in ("content", "tool_use_id") if k not in block
+                    ]:
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'tool_result', but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    tool_message = ToolMessage(
+                        block["content"],
+                        tool_call_id=block["tool_use_id"],
+                        status="error" if block.get("is_error") else "success",
+                    )
+                    # Recurse to make sure tool message contents are OpenAI format.
+                    tool_messages.extend(
+                        convert_to_openai_messages(
+                            [tool_message], text_format=text_format
+                        )
+                    )
+                elif (block.get("type") == "json") or "json" in block:
+                    if "json" not in block:
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'json' "
+                            f"but does not have a 'json' key. Full "
+                            f"content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": json.dumps(block["json"]),
+                        }
+                    )
+                elif (block.get("type") == "guard_content") or "guard_content" in block:
+                    if (
+                        "guard_content" not in block
+                        or "text" not in block["guard_content"]
+                    ):
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'guard_content' but does not have a "
+                            f"messages[{i}].content[{j}]['guard_content']['text'] "
+                            f"key. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    text = block["guard_content"]["text"]
+                    if isinstance(text, dict):
+                        text = text["text"]
+                    content.append({"type": "text", "text": text})
+                # VertexAI format
+                elif block.get("type") == "media":
+                    if missing := [k for k in ("mime_type", "data") if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'media' but does not have key(s) {missing}. Full "
+                            f"content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    if "image" not in block["mime_type"]:
+                        err = (
+                            f"OpenAI messages can only support text and image data."
+                            f" Received content block with media of type:"
+                            f" {block['mime_type']}"
+                        )
+                        raise ValueError(err)
+                    b64_image = _bytes_to_b64_str(block["data"])
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": (f"data:{block['mime_type']};base64,{b64_image}")
+                            },
+                        }
+                    )
+                elif block.get("type") == "thinking":
+                    content.append(block)
+                else:
+                    err = (
+                        f"Unrecognized content block at "
+                        f"messages[{i}].content[{j}] does not match OpenAI, "
+                        f"Anthropic, Bedrock Converse, or VertexAI format. Full "
+                        f"content block:\n\n{block}"
+                    )
+                    raise ValueError(err)
+            if text_format == "string" and not any(
+                block["type"] != "text" for block in content
+            ):
+                content = "\n".join(block["text"] for block in content)
         oai_msg["content"] = content
         if message.content and not oai_msg["content"] and tool_messages:
             oai_messages.extend(tool_messages)
@@ -1269,8 +1254,7 @@ def convert_to_openai_messages(
 
     if is_single:
         return oai_messages[0]
-    else:
-        return oai_messages
+    return oai_messages
 
 
 def _first_max_tokens(
@@ -1347,7 +1331,7 @@ def _first_max_tokens(
                     if isinstance(block, str):
                         text = block
                         break
-                    elif isinstance(block, dict) and block.get("type") == "text":
+                    if isinstance(block, dict) and block.get("type") == "text":
                         text = block.get("text")
                         break
 
@@ -1517,19 +1501,18 @@ def _bytes_to_b64_str(bytes_: bytes) -> str:
 def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, AIMessage):
         return "assistant"
-    elif isinstance(message, HumanMessage):
+    if isinstance(message, HumanMessage):
         return "user"
-    elif isinstance(message, ToolMessage):
+    if isinstance(message, ToolMessage):
         return "tool"
-    elif isinstance(message, SystemMessage):
+    if isinstance(message, SystemMessage):
         return message.additional_kwargs.get("__openai_role__", "system")
-    elif isinstance(message, FunctionMessage):
+    if isinstance(message, FunctionMessage):
         return "function"
-    elif isinstance(message, ChatMessage):
+    if isinstance(message, ChatMessage):
         return message.role
-    else:
-        msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)  # noqa: TRY004
+    msg = f"Unknown BaseMessage type {message.__class__}."
+    raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

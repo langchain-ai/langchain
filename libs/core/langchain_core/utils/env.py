@@ -1,3 +1,5 @@
+"""Utilities for environment variables."""
+
 from __future__ import annotations
 
 import os
@@ -70,12 +72,11 @@ def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
     """
     if env_key in os.environ and os.environ[env_key]:
         return os.environ[env_key]
-    elif default is not None:
+    if default is not None:
         return default
-    else:
-        msg = (
-            f"Did not find {key}, please add an environment variable"
-            f" `{env_key}` which contains it, or pass"
-            f" `{key}` as a named parameter."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Did not find {key}, please add an environment variable"
+        f" `{env_key}` which contains it, or pass"
+        f" `{key}` as a named parameter."
+    )
+    raise ValueError(msg)

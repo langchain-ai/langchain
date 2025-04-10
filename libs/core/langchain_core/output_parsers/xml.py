@@ -1,3 +1,5 @@
+"""Output parser for XML format."""
+
 import contextlib
 import re
 import xml
@@ -280,5 +282,4 @@ def nested_element(path: list[str], elem: ET.Element) -> Any:
     """
     if len(path) == 0:
         return AddableDict({elem.tag: elem.text})
-    else:
-        return AddableDict({path[0]: [nested_element(path[1:], elem)]})
+    return AddableDict({path[0]: [nested_element(path[1:], elem)]})

@@ -1,3 +1,5 @@
+"""Context management for runnables."""
+
 import asyncio
 import threading
 from collections import defaultdict
@@ -13,6 +15,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
@@ -56,11 +59,10 @@ def _key_from_id(id_: str) -> str:
     wout_prefix = id_.split(CONTEXT_CONFIG_PREFIX, maxsplit=1)[1]
     if wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_GET):
         return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_GET)]
-    elif wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
+    if wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
         return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_SET)]
-    else:
-        msg = f"Invalid context config id {id_}"
-        raise ValueError(msg)
+    msg = f"Invalid context config id {id_}"
+    raise ValueError(msg)
 
 
 def _config_with_context(
@@ -161,11 +163,13 @@ class ContextGet(RunnableSerializable):
 
     key: Union[str, list[str]]
 
+    @override
     def __str__(self) -> str:
         return f"ContextGet({_print_keys(self.key)})"
 
     @property
     def ids(self) -> list[str]:
+        """The context getter ids."""
         prefix = self.prefix + "/" if self.prefix else ""
         keys = self.key if isinstance(self.key, list) else [self.key]
         return [
@@ -174,6 +178,7 @@ class ContextGet(RunnableSerializable):
         ]
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         return super().config_specs + [
             ConfigurableFieldSpec(
@@ -183,6 +188,7 @@ class ContextGet(RunnableSerializable):
             for id_ in self.ids
         ]
 
+    @override
     def invoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -190,9 +196,9 @@ class ContextGet(RunnableSerializable):
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
-        else:
-            return configurable[self.ids[0]]()
+        return configurable[self.ids[0]]()
 
+    @override
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -201,8 +207,7 @@ class ContextGet(RunnableSerializable):
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
             return dict(zip(self.key, values))
-        else:
-            return await configurable[self.ids[0]]()
+        return await configurable[self.ids[0]]()
 
 
 SetValue = Union[
@@ -238,6 +243,14 @@ class ContextSet(RunnableSerializable):
         prefix: str = "",
         **kwargs: SetValue,
     ):
+        """Create a context setter.
+
+        Args:
+            key: The context setter key.
+            value: The context setter value.
+            prefix: The context setter prefix.
+            **kwargs: Additional context setter key-value pairs.
+        """
         if key is not None:
             kwargs[key] = value
         super().__init__(  # type: ignore[call-arg]
@@ -248,11 +261,13 @@ class ContextSet(RunnableSerializable):
             prefix=prefix,
         )
 
+    @override
     def __str__(self) -> str:
         return f"ContextSet({_print_keys(list(self.keys.keys()))})"
 
     @property
     def ids(self) -> list[str]:
+        """The context setter ids."""
         prefix = self.prefix + "/" if self.prefix else ""
         return [
             f"{CONTEXT_CONFIG_PREFIX}{prefix}{key}{CONTEXT_CONFIG_SUFFIX_SET}"
@@ -260,6 +275,7 @@ class ContextSet(RunnableSerializable):
         ]
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         mapper_config_specs = [
             s
@@ -281,6 +297,7 @@ class ContextSet(RunnableSerializable):
             for id_ in self.ids
         ]
 
+    @override
     def invoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -293,6 +310,7 @@ class ContextSet(RunnableSerializable):
                 configurable[id_](input)
         return input
 
+    @override
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -361,6 +379,11 @@ class Context:
 
     @staticmethod
     def getter(key: Union[str, list[str]], /) -> ContextGet:
+        """Return a context getter.
+
+        Args:
+            key: The context getter key.
+        """
         return ContextGet(key=key)
 
     @staticmethod
@@ -370,6 +393,13 @@ class Context:
         /,
         **kwargs: SetValue,
     ) -> ContextSet:
+        """Return a context setter.
+
+        Args:
+            _key: The context setter key.
+            _value: The context setter value.
+            **kwargs: Additional context setter key-value pairs.
+        """
         return ContextSet(_key, _value, prefix="", **kwargs)
 
 
@@ -379,9 +409,19 @@ class PrefixContext:
     prefix: str = ""
 
     def __init__(self, prefix: str = ""):
+        """Create a prefix context.
+
+        Args:
+            prefix: The prefix.
+        """
         self.prefix = prefix
 
     def getter(self, key: Union[str, list[str]], /) -> ContextGet:
+        """Return a prefixed context getter.
+
+        Args:
+            key: The context getter key.
+        """
         return ContextGet(key=key, prefix=self.prefix)
 
     def setter(
@@ -391,11 +431,17 @@ class PrefixContext:
         /,
         **kwargs: SetValue,
     ) -> ContextSet:
+        """Return a prefixed context setter.
+
+        Args:
+            _key: The context setter key.
+            _value: The context setter value.
+            **kwargs: Additional context setter key-value pairs.
+        """
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
 
 
 def _print_keys(keys: Union[str, Sequence[str]]) -> str:
     if isinstance(keys, str):
         return f"'{keys}'"
-    else:
-        return ", ".join(f"'{k}'" for k in keys)
+    return ", ".join(f"'{k}'" for k in keys)

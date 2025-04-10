@@ -1,3 +1,5 @@
+"""Base classes for output parsers that can handle streaming input."""
+
 from __future__ import annotations
 
 from typing import (
@@ -6,6 +8,8 @@ from typing import (
     Optional,
     Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
@@ -46,6 +50,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                     None, self.parse_result, [Generation(text=chunk)]
                 )
 
+    @override
     def transform(
         self,
         input: Iterator[Union[str, BaseMessage]],
@@ -66,6 +71,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             input, self._transform, config, run_type="parser"
         )
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[Union[str, BaseMessage]],
@@ -97,8 +103,9 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     """
 
     def _diff(self, prev: Optional[T], next: T) -> T:
-        """Convert parsed outputs into a diff format. The semantics of this are
-        up to the output parser.
+        """Convert parsed outputs into a diff format.
+
+        The semantics of this are up to the output parser.
 
         Args:
             prev: The previous parsed output.
