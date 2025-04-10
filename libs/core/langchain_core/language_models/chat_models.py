@@ -576,7 +576,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
 
     def _get_invocation_params(
@@ -955,13 +955,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._generate).parameters.get("run_manager"):
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._generate).parameters.get("run_manager"):
-                result = self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = self._generate(messages, stop=stop, **kwargs)
+            result = self._generate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1028,13 +1027,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._agenerate).parameters.get("run_manager"):
-                result = await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = await self._agenerate(messages, stop=stop, **kwargs)
+            result = await self._agenerate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1246,6 +1244,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
+    @override
     def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)

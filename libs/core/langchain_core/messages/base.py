@@ -170,17 +170,16 @@ def merge_content(
             # If both are lists
             merged = merge_lists(cast("list", merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
+        # If the last element of the first content is a string
+        # Add the second content to the last element
+        elif merged and isinstance(merged[-1], str):
+            merged[-1] += content
+        # If second content is an empty string, treat as a no-op
+        elif content == "":
+            pass
         else:
-            # If the last element of the first content is a string
-            # Add the second content to the last element
-            if merged and isinstance(merged[-1], str):
-                merged[-1] += content
-            # If second content is an empty string, treat as a no-op
-            elif content == "":
-                pass
-            else:
-                # Otherwise, add the second content as a new element of the list
-                merged.append(content)
+            # Otherwise, add the second content as a new element of the list
+            merged.append(content)
     return merged
 
 

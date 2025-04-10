@@ -74,6 +74,7 @@ async def test_async_custom_event_implicit_config() -> None:
     # a decorator for async functions
     @RunnableLambda  # type: ignore[arg-type]
     async def foo(x: int, config: RunnableConfig) -> int:
+        assert "callbacks" in config
         await adispatch_custom_event("event1", {"x": x})
         await adispatch_custom_event("event2", {"x": x})
         return x
