@@ -22,12 +22,28 @@ from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore
         ),
         pytest.param(
             "from langchain_core.prompts import ChatPromptTemplate",
-            id="PromChatPromptTemplateptTemplate",
+            id="ChatPromptTemplate",
         ),
         pytest.param("from langchain_core.documents import Document", id="Document"),
         pytest.param(
             "from langchain_core.vectorstores import InMemoryVectorStore",
             id="InMemoryVectorStore",
+        ),
+        pytest.param(
+            "from langchain_core.runnables import RunnableLambda",
+            id="RunnableLambda",
+        ),
+        pytest.param(
+            "from langchain_core.tracers import LangChainTracer",
+            id="LangChainTracer",
+        ),
+        pytest.param(
+            "from langchain_core.output_parsers import PydanticOutputParser",
+            id="PydanticOutputParser",
+        ),
+        pytest.param(
+            "from langchain_core.rate_limiters import InMemoryRateLimiter",
+            id="InMemoryRateLimiter",
         ),
     ],
 )
