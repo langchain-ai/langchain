@@ -59,7 +59,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         Returns:
             Structured output.
         """
-        return await run_in_executor(None, self.parse_result, result)
+        return await run_in_executor(None, self.parse_result, result, partial=partial)
 
 
 class BaseGenerationOutputParser(
@@ -231,6 +231,7 @@ class BaseOutputParser(
             run_type="parser",
         )
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -290,7 +291,11 @@ class BaseOutputParser(
         return await run_in_executor(None, self.parse, text)
 
     # TODO: rename 'completion' -> 'text'.
-    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
+    def parse_with_prompt(
+        self,
+        completion: str,
+        prompt: PromptValue,  # noqa: ARG002
+    ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
 
         The prompt is largely provided in the event the OutputParser wants

@@ -30,8 +30,6 @@ test = [
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
     "langchain-core",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []

@@ -112,11 +112,8 @@ def pytest_collection_modifyitems(
                             pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test.")
-                )
+        elif only_extended:
+            item.add_marker(pytest.mark.skip(reason="Skipping not an extended test."))
 
 
 @pytest.fixture

@@ -18,7 +18,8 @@ dependencies = [
     "pydantic-settings<3.0.0,>=2.4.0",
     "langsmith<0.4,>=0.1.125",
     "httpx-sse<1.0.0,>=0.4.0",
-    "numpy<3,>=1.26.2",
+    "numpy>=1.26.2; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-community"
 version = "0.3.21"

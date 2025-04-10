@@ -33,8 +33,8 @@ test = [
     "pytest-retry<1.8.0,>=1.7.0",
     "pytest-socket<1.0.0,>=0.6.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-core",
     "langchain-tests",
 ]
@@ -44,8 +44,8 @@ dev = ["langchain-core"]
 test_integration = [
     "httpx<1.0.0,>=0.27.0",
     "pillow<11.0.0,>=10.3.0",
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version < '3.13'",
+    "numpy>=2.1.0; python_version >= '3.13'",
 ]
 typing = ["mypy<2.0,>=1.10", "types-tqdm<5.0.0.0,>=4.66.0.5", "langchain-core"]
 

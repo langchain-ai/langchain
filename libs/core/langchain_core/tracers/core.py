@@ -231,8 +231,7 @@ class _TracerCore(ABC):
         token: str,
         run_id: UUID,
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
+        parent_run_id: Optional[UUID] = None,  # noqa: ARG002
     ) -> Run:
         """Append token event to LLM run and return the run."""
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
@@ -252,7 +251,6 @@ class _TracerCore(ABC):
         self,
         retry_state: RetryCallState,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         llm_run = self._get_run(run_id)
         retry_d: dict[str, Any] = {
@@ -369,7 +367,6 @@ class _TracerCore(ABC):
         outputs: dict[str, Any],
         run_id: UUID,
         inputs: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
     ) -> Run:
         """Update a chain run with outputs and end time."""
         chain_run = self._get_run(run_id)
@@ -385,7 +382,6 @@ class _TracerCore(ABC):
         error: BaseException,
         inputs: Optional[dict[str, Any]],
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         chain_run = self._get_run(run_id)
         chain_run.error = self._get_stacktrace(error)
@@ -439,7 +435,6 @@ class _TracerCore(ABC):
         self,
         output: dict[str, Any],
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a tool run with outputs and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
@@ -452,7 +447,6 @@ class _TracerCore(ABC):
         self,
         error: BaseException,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
@@ -494,7 +488,6 @@ class _TracerCore(ABC):
         self,
         documents: Sequence[Document],
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a retrieval run with outputs and end time."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
@@ -507,7 +500,6 @@ class _TracerCore(ABC):
         self,
         error: BaseException,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)
@@ -523,75 +515,75 @@ class _TracerCore(ABC):
         """Copy the tracer."""
         return self
 
-    def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """End a trace for a run."""
         return None
 
-    def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process a run upon creation."""
         return None
 
-    def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process a run upon update."""
         return None
 
-    def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the LLM Run upon start."""
         return None
 
     def _on_llm_new_token(
         self,
-        run: Run,
-        token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        run: Run,  # noqa: ARG002
+        token: str,  # noqa: ARG002
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],  # noqa: ARG002
     ) -> Union[None, Coroutine[Any, Any, None]]:
         """Process new LLM token."""
         return None
 
-    def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the LLM Run."""
         return None
 
-    def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the LLM Run upon error."""
         return None
 
-    def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Chain Run upon start."""
         return None
 
-    def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Chain Run."""
         return None
 
-    def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Chain Run upon error."""
         return None
 
-    def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Tool Run upon start."""
         return None
 
-    def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Tool Run."""
         return None
 
-    def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Tool Run upon error."""
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Chat Model Run upon start."""
         return None
 
-    def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Retriever Run upon start."""
         return None
 
-    def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Retriever Run."""
         return None
 
-    def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002
         """Process the Retriever Run upon error."""
         return None
