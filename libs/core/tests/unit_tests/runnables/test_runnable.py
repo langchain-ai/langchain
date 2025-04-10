@@ -3883,6 +3883,7 @@ def test_retrying(mocker: MockerFixture) -> None:
         runnable.with_retry(
             stop_after_attempt=2,
             retry_if_exception_type=(ValueError,),
+            exponential_jitter_params={"initial": 0.1},
         ).invoke(1)
 
     assert _lambda_mock.call_count == 2  # retried
