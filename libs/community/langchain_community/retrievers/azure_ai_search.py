@@ -92,14 +92,14 @@ class AzureAISearchRetriever(BaseRetriever):
     """Name of Azure AI Search service"""
     index_name: str = ""
     """Name of Index inside Azure AI Search service"""
-    api_key: Optional[str] = ""
+    api_key: str = ""
     """API Key. Both Admin and Query keys work, but for reading data it's
     recommended to use a Query key."""
     api_version: str = "2023-11-01"
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
-    azure_ad_token: Optional[str] = ""
+    azure_ad_token: str = ""
     """Your Azure Active Directory token.
 
         Automatically inferred from env var `AZURE_AI_SEARCH_AD_TOKEN` if not provided.
@@ -169,7 +169,7 @@ class AzureAISearchRetriever(BaseRetriever):
         headers = {
             "Content-Type": "application/json",
         }
-        if self.azure_ad_token != "":
+        if not self.azure_ad_token:
             headers["Authorization"] = f"Bearer {self.azure_ad_token}"
         else:
             headers["api-key"] = f"{self.api_key}"
