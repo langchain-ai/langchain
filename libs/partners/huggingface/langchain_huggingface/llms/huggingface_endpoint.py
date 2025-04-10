@@ -204,7 +204,10 @@ class HuggingFaceEndpoint(LLM):
             "HF_TOKEN"
         )
 
-        from huggingface_hub import AsyncInferenceClient, InferenceClient
+        from huggingface_hub import (  # type: ignore[import]
+            AsyncInferenceClient,
+            InferenceClient,
+        )
 
         # Instantiate clients with supported kwargs
         sync_supported_kwargs = set(inspect.signature(InferenceClient).parameters)
