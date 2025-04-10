@@ -401,7 +401,7 @@ def _render_mermaid_using_api(
         f"?type={file_type}&bgColor={background_color}"
     )
     response = requests.get(image_url, timeout=10)
-    if response.status_code == 200:
+    if response.status_code == requests.codes.ok:
         img_bytes = response.content
         if output_file_path is not None:
             Path(output_file_path).write_bytes(response.content)

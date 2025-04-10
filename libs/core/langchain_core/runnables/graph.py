@@ -351,9 +351,7 @@ class Graph:
         """
         self.nodes.pop(node.id)
         self.edges = [
-            edge
-            for edge in self.edges
-            if edge.source != node.id and edge.target != node.id
+            edge for edge in self.edges if node.id not in (edge.source, edge.target)
         ]
 
     def add_edge(

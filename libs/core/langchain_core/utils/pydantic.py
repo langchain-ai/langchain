@@ -38,6 +38,7 @@ from pydantic.json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema
@@ -233,6 +234,7 @@ class _IgnoreUnserializable(GenerateJsonSchema):
     https://docs.pydantic.dev/latest/concepts/json_schema/#customizing-the-json-schema-generation-process
     """
 
+    @override
     def handle_invalid_for_json_schema(
         self, schema: core_schema.CoreSchema, error_info: str
     ) -> JsonSchemaValue:

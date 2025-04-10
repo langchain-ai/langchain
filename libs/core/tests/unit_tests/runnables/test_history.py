@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional, Union
 import pytest
 from packaging import version
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -39,7 +40,7 @@ def _get_get_session_history(
     chat_history_store = store if store is not None else {}
 
     def get_session_history(
-        session_id: str, **kwargs: Any
+        session_id: str, **_kwargs: Any
     ) -> InMemoryChatMessageHistory:
         if session_id not in chat_history_store:
             chat_history_store[session_id] = InMemoryChatMessageHistory()
@@ -253,6 +254,7 @@ async def test_output_message_async() -> None:
 class LengthChatModel(BaseChatModel):
     """A fake chat model that returns the length of the messages passed in."""
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -856,7 +858,7 @@ def test_get_output_messages_no_value_error() -> None:
 
 def test_get_output_messages_with_value_error() -> None:
     illegal_bool_message = False
-    runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_bool_message)
+    runnable = _RunnableLambdaWithRaiseError(lambda _: illegal_bool_message)
     store: dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
@@ -874,7 +876,7 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
 
     illegal_int_message = 123
-    runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_int_message)
+    runnable = _RunnableLambdaWithRaiseError(lambda _: illegal_int_message)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
 
     with pytest.raises(
