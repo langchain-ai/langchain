@@ -2,11 +2,8 @@
 
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
@@ -23,8 +20,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -285,7 +282,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     )
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
         For example,
@@ -294,17 +291,17 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return {"xai_api_key": "XAI_API_KEY"}
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain_xai", "chat_models"]
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
         """
-        attributes: Dict[str, Any] = {}
+        attributes: dict[str, Any] = {}
 
         if self.xai_api_base:
             attributes["xai_api_base"] = self.xai_api_base
@@ -322,7 +319,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return "xai-chat"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)

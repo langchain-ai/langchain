@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from .core import (
     Frontmatter,
@@ -120,7 +120,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
 def prepare(
     prompt: Prompty,
-    inputs: Dict[str, Any] = {},
+    inputs: dict[str, Any] = {},
 ) -> Any:
     """Prepare the inputs for the prompty.
 
@@ -166,9 +166,9 @@ def prepare(
 
 def run(
     prompt: Prompty,
-    content: Union[Dict, List, str],
-    configuration: Dict[str, Any] = {},
-    parameters: Dict[str, Any] = {},
+    content: Union[dict, list, str],
+    configuration: dict[str, Any] = {},
+    parameters: dict[str, Any] = {},
     raw: bool = False,
 ) -> Any:
     """Run the prompty.
@@ -219,9 +219,9 @@ def run(
 
 def execute(
     prompt: Union[str, Prompty],
-    configuration: Dict[str, Any] = {},
-    parameters: Dict[str, Any] = {},
-    inputs: Dict[str, Any] = {},
+    configuration: dict[str, Any] = {},
+    parameters: dict[str, Any] = {},
+    inputs: dict[str, Any] = {},
     raw: bool = False,
     connection: str = "default",
 ) -> Any:

@@ -1,7 +1,5 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
-
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
@@ -17,7 +15,7 @@ rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 
 class BaseTestGroq(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq
 
     @pytest.mark.xfail(reason="Not yet implemented.")

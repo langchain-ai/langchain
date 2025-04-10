@@ -1,7 +1,5 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
-
 import pytest  # type: ignore[import-not-found]
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
@@ -20,7 +18,7 @@ rate_limiter = InMemoryRateLimiter(
 
 class TestXAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatXAI
 
     @property
