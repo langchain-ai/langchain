@@ -17,9 +17,9 @@ dependencies = [
     "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
 ]
 name = "langchain-core"
-version = "0.3.51"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
+dynamic = ['version']
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
@@ -62,10 +62,13 @@ test = [
 ]
 test_integration = []
 
+[tool.pdm.version]
+source = "file"
+path = "langchain_core/__init__.py"
+
 [tool.uv.sources]
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
-
 
 [tool.mypy]
 exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
