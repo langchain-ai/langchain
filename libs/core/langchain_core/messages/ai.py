@@ -406,7 +406,7 @@ def add_ai_message_chunks(
                 name=rtc.get("name"),
                 args=rtc.get("args"),
                 index=rtc.get("index"),
-                id=rtc.get("chunk_id"),
+                id=rtc.get("id"),
             )
             for rtc in raw_tool_calls
         ]
