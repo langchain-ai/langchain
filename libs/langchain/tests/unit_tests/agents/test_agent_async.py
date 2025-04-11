@@ -1,6 +1,6 @@
 """Unit tests for agents."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.agents import AgentAction, AgentStep
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
@@ -16,13 +16,13 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
-    responses: List[str]
+    responses: list[str]
     i: int = -1
 
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -40,7 +40,7 @@ class FakeListLLM(LLM):
         return self._call(*args, **kwargs)
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {}
 
     @property

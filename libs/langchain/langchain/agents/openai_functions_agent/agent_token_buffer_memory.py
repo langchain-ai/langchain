@@ -1,6 +1,6 @@
 """Memory used to save agent output AND intermediate steps."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -43,19 +43,19 @@ class AgentTokenBufferMemory(BaseChatMemory):  # type: ignore[override]
     format_as_tools: bool = False
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> list[BaseMessage]:
         """String buffer of memory."""
         return self.chat_memory.messages
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer.
 
         Args:
@@ -74,7 +74,7 @@ class AgentTokenBufferMemory(BaseChatMemory):  # type: ignore[override]
             )
         return {self.memory_key: final_buffer}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, Any]) -> None:
         """Save context from this conversation to buffer. Pruned.
 
         Args:

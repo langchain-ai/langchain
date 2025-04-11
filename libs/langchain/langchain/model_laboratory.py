@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.prompts.prompt import PromptTemplate
@@ -15,7 +16,7 @@ from langchain.chains.llm import LLMChain
 class ModelLaboratory:
     """A utility to experiment with and compare the performance of different models."""
 
-    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
+    def __init__(self, chains: Sequence[Chain], names: Optional[list[str]] = None):
         """Initialize the ModelLaboratory with chains to experiment with.
 
         Args:
@@ -58,7 +59,7 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: List[BaseLLM], prompt: Optional[PromptTemplate] = None
+        cls, llms: list[BaseLLM], prompt: Optional[PromptTemplate] = None
     ) -> ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 

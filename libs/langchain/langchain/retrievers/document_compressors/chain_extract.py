@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, cast
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
@@ -19,7 +20,7 @@ from langchain.retrievers.document_compressors.chain_extract_prompt import (
 )
 
 
-def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
+def default_get_input(query: str, doc: Document) -> dict[str, Any]:
     """Return the compression chain input."""
     return {"question": query, "context": doc.page_content}
 

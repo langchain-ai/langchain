@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -142,14 +142,14 @@ class MultiPromptChain(MultiRouteChain):
     """  # noqa: E501
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return ["text"]
 
     @classmethod
     def from_prompts(
         cls,
         llm: BaseLanguageModel,
-        prompt_infos: List[Dict[str, str]],
+        prompt_infos: list[dict[str, str]],
         default_chain: Optional[Chain] = None,
         **kwargs: Any,
     ) -> MultiPromptChain:

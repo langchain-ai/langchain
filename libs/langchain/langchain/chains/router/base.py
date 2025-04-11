@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import Any, NamedTuple, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -17,17 +18,17 @@ from langchain.chains.base import Chain
 
 class Route(NamedTuple):
     destination: Optional[str]
-    next_inputs: Dict[str, Any]
+    next_inputs: dict[str, Any]
 
 
 class RouterChain(Chain, ABC):
     """Chain that outputs the name of a destination chain and the inputs to it."""
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return ["destination", "next_inputs"]
 
-    def route(self, inputs: Dict[str, Any], callbacks: Callbacks = None) -> Route:
+    def route(self, inputs: dict[str, Any], callbacks: Callbacks = None) -> Route:
         """
         Route inputs to a destination chain.
 
@@ -42,7 +43,7 @@ class RouterChain(Chain, ABC):
         return Route(result["destination"], result["next_inputs"])
 
     async def aroute(
-        self, inputs: Dict[str, Any], callbacks: Callbacks = None
+        self, inputs: dict[str, Any], callbacks: Callbacks = None
     ) -> Route:
         result = await self.acall(inputs, callbacks=callbacks)
         return Route(result["destination"], result["next_inputs"])
@@ -67,7 +68,7 @@ class MultiRouteChain(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Will be whatever keys the router chain prompt expects.
 
         :meta private:
@@ -75,7 +76,7 @@ class MultiRouteChain(Chain):
         return self.router_chain.input_keys
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Will always return text key.
 
         :meta private:
@@ -84,9 +85,9 @@ class MultiRouteChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         route = self.router_chain.route(inputs, callbacks=callbacks)
@@ -109,9 +110,9 @@ class MultiRouteChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         route = await self.router_chain.aroute(inputs, callbacks=callbacks)

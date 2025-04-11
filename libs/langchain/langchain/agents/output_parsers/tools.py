@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -21,12 +21,12 @@ class ToolAgentAction(AgentActionMessageLog):  # type: ignore[override]
 
 def parse_ai_message_to_tool_action(
     message: BaseMessage,
-) -> Union[List[AgentAction], AgentFinish]:
+) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):
         raise TypeError(f"Expected an AI message got {type(message)}")
 
-    actions: List = []
+    actions: list = []
     if message.tool_calls:
         tool_calls = message.tool_calls
     else:
@@ -91,12 +91,12 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         return "tools-agent-output-parser"
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Union[List[AgentAction], AgentFinish]:
+        self, result: list[Generation], *, partial: bool = False
+    ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError("This output parser only works on ChatGeneration output")
         message = result[0].message
         return parse_ai_message_to_tool_action(message)
 
-    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+    def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         raise ValueError("Can only parse messages")

@@ -1,6 +1,7 @@
 import json
 import re
-from typing import Pattern, Union
+from re import Pattern
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
