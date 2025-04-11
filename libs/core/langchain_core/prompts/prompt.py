@@ -297,7 +297,7 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=input_variables,
             template=template,
-            template_format=template_format,  # type: ignore[arg-type]
+            template_format=template_format,
             partial_variables=_partial_variables,
             **kwargs,
         )

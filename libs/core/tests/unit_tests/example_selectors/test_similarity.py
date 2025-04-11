@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -132,7 +132,7 @@ def test_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast("DummyVectorStore", selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -158,7 +158,7 @@ async def test_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast("DummyVectorStore", selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -212,7 +212,7 @@ def test_mmr_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast("DummyVectorStore", selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -240,7 +240,7 @@ async def test_mmr_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast("DummyVectorStore", selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]

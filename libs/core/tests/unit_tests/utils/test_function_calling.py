@@ -1,4 +1,3 @@
-# mypy: disable-error-code="annotation-unchecked"
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -15,12 +14,11 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import (
-    TypedDict as ExtensionsTypedDict,
-)
+from typing_extensions import TypeAlias
+from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
-    from typing import Annotated as TypingAnnotated  # type: ignore[attr-defined]
+    from typing import Annotated as TypingAnnotated
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
@@ -387,8 +385,8 @@ def test_convert_to_openai_function(
     assert actual == runnable_expected
 
     # Test simple Tool
-    def my_function(input_string: str) -> str:
-        pass
+    def my_function(_: str) -> str:
+        return ""
 
     tool = Tool(
         name="dummy_function",
@@ -738,20 +736,25 @@ def test_tool_outputs() -> None:
     assert not response.tool_calls
 
 
-@pytest.mark.parametrize("use_extension_typed_dict", [True, False])
-@pytest.mark.parametrize("use_extension_annotated", [True, False])
+@pytest.mark.parametrize(
+    "typed_dict",
+    [ExtensionsTypedDict, TypingTypedDict],
+    ids=["typing_extensions.TypedDict", "typing.TypedDict"],
+)
+@pytest.mark.parametrize(
+    "annotated",
+    [ExtensionsAnnotated, TypingAnnotated],
+    ids=["typing_extensions.Annotated", "typing.Annotated"],
+)
 def test__convert_typed_dict_to_openai_function(
-    *, use_extension_typed_dict: bool, use_extension_annotated: bool
+    typed_dict: TypeAlias, annotated: TypeAlias
 ) -> None:
-    typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
-    annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
-
-    class SubTool(typed_dict):
+    class SubTool(typed_dict):  # type: ignore[misc]
         """Subtool docstring."""
 
         args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722
 
-    class Tool(typed_dict):
+    class Tool(typed_dict):  # type: ignore[misc]
         """Docstring.
 
         Args:
@@ -981,7 +984,7 @@ def test__convert_typed_dict_to_openai_function(
 
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
-    class Tool(typed_dict):
+    class Tool(typed_dict):  # type: ignore[misc]
         arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
     # Error should be raised since we're using v1 code path here
@@ -994,11 +997,12 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(input: int | str) -> str:  # noqa: FA102
+    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
         """Compute a magic function."""
+        return ""
 
     result = convert_to_openai_function(magic_function)
-    assert result["parameters"]["properties"]["input"] == {
+    assert result["parameters"]["properties"]["value"] == {
         "anyOf": [{"type": "integer"}, {"type": "string"}]
     }
 

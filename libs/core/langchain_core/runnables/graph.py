@@ -288,7 +288,7 @@ class Graph:
                 "target": stable_node_ids[edge.target],
             }
             if edge.data is not None:
-                edge_dict["data"] = edge.data
+                edge_dict["data"] = edge.data  # type: ignore[assignment]
             if edge.conditional:
                 edge_dict["conditional"] = True
             edges.append(edge_dict)
@@ -359,7 +359,7 @@ class Graph:
         source: Node,
         target: Node,
         data: Optional[Stringifiable] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
 

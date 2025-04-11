@@ -152,7 +152,10 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
+        from langchain_core.utils.pydantic import (  # type: ignore[attr-defined]
+            FieldInfoV1,
+            FieldInfoV2,
+        )
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -395,10 +398,8 @@ def deprecated(
 """
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast("T", finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 

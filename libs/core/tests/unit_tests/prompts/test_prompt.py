@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 from packaging import version
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat

@@ -388,7 +388,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 module_name=self.__class__.__module__,
                 root=(Sequence[BaseMessage], ...),
             )
-        return create_model_v2(  # type: ignore[call-overload]
+        return create_model_v2(
             "RunnableWithChatHistoryInput",
             field_definitions=fields,
             module_name=self.__class__.__module__,

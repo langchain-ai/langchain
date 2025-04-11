@@ -56,7 +56,6 @@ def test_pre_init_decorator_with_more_defaults() -> None:
             return v
 
     # Try to create an instance of Foo
-    # nothing is required, but mypy can't track the default for `c`
     Foo()
 
 
@@ -177,7 +176,7 @@ def test_fields_pydantic_v1() -> None:
         x: int
 
     fields = get_fields(Foo)
-    assert fields == {"x": Foo.model_fields["x"]}  # type: ignore[index]
+    assert fields == {"x": Foo.model_fields["x"]}
 
 
 @pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Only tests Pydantic v2")

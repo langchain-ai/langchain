@@ -455,9 +455,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             for name, field_info in map_output_schema.model_fields.items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            return create_model_v2(  # type: ignore[call-overload]
-                "RunnableAssignOutput", field_definitions=fields
-            )
+            return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly

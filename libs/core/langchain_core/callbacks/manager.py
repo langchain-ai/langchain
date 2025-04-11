@@ -1547,7 +1547,7 @@ class CallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
@@ -2073,7 +2073,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
@@ -2408,7 +2408,7 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = cast("Run", run_tree)
+                    handler.run_map[str(run_tree.id)] = run_tree
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
