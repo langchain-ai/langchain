@@ -142,7 +142,7 @@ class Tool(BaseTool):
         func: Optional[Callable],
         name: str,  # We keep these required to support backwards compatibility
         description: str,
-        return_direct: bool = False,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
         args_schema: Optional[ArgsSchema] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]

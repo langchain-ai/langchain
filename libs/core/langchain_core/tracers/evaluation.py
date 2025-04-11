@@ -62,7 +62,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         evaluators: Sequence[langsmith.RunEvaluator],
         client: Optional[langsmith.Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
-        skip_unfinished: bool = True,
+        skip_unfinished: bool = True,  # noqa: FBT001,FBT002
         project_name: Optional[str] = "evaluators",
         max_concurrency: Optional[int] = None,
         **kwargs: Any,

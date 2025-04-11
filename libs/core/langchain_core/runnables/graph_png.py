@@ -104,7 +104,7 @@ class PngDrawer:
         source: str,
         target: str,
         label: Optional[str] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Adds an edge to the graph.
 

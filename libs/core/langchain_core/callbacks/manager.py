@@ -1547,7 +1547,7 @@ class CallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
@@ -2073,7 +2073,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
