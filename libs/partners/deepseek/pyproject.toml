@@ -45,8 +45,12 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "T201", "UP"]
+ignore = [ "UP007", ]
 
 [tool.coverage.run]
 omit = ["tests/*"]

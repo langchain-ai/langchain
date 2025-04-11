@@ -40,6 +40,9 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle
@@ -47,8 +50,9 @@ select = [
     "I",    # isort
     "T201", # print
     "D",    # pydocstyle
-
+    "UP",   # pyupgrade
 ]
+ignore = [ "UP007", ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
