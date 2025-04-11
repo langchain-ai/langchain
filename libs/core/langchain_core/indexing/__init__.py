@@ -5,14 +5,19 @@ a vectorstore while avoiding duplicated content and over-writing content
 if it's unchanged.
 """
 
-from langchain_core.indexing.api import IndexingResult, aindex, index
-from langchain_core.indexing.base import (
-    DeleteResponse,
-    DocumentIndex,
-    InMemoryRecordManager,
-    RecordManager,
-    UpsertResponse,
-)
+from typing import TYPE_CHECKING
+
+from langchain_core._lazy_imports import create_dynamic_getattr
+
+if TYPE_CHECKING:
+    from langchain_core.indexing.api import IndexingResult, aindex, index
+    from langchain_core.indexing.base import (
+        DeleteResponse,
+        DocumentIndex,
+        InMemoryRecordManager,
+        RecordManager,
+        UpsertResponse,
+    )
 
 __all__ = [
     "aindex",
@@ -24,3 +29,22 @@ __all__ = [
     "RecordManager",
     "UpsertResponse",
 ]
+
+__getattr__ = create_dynamic_getattr(
+    package_name="langchain_core",
+    module_path="indexing",
+    dynamic_imports={
+        "aindex": "api",
+        "index": "api",
+        "IndexingResult": "api",
+        "DeleteResponse": "base",
+        "DocumentIndex": "base",
+        "InMemoryRecordManager": "base",
+        "RecordManager": "base",
+        "UpsertResponse": "base",
+    },
+)
+
+
+def __dir__() -> list[str]:
+    return list(__all__)

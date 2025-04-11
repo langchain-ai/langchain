@@ -41,23 +41,31 @@ https://python.langchain.com/docs/how_to/custom_llm/
 
 """  # noqa: E501
 
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LangSmithParams,
-    LanguageModelInput,
-    LanguageModelLike,
-    LanguageModelOutput,
-    get_tokenizer,
-)
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
-from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
-from langchain_core.language_models.fake_chat_models import (
-    FakeListChatModel,
-    FakeMessagesListChatModel,
-    GenericFakeChatModel,
-    ParrotFakeChatModel,
-)
-from langchain_core.language_models.llms import LLM, BaseLLM
+from typing import TYPE_CHECKING
+
+from langchain_core._lazy_imports import create_dynamic_getattr
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.base import (
+        BaseLanguageModel,
+        LangSmithParams,
+        LanguageModelInput,
+        LanguageModelLike,
+        LanguageModelOutput,
+        get_tokenizer,
+    )
+    from langchain_core.language_models.chat_models import (
+        BaseChatModel,
+        SimpleChatModel,
+    )
+    from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
+    from langchain_core.language_models.fake_chat_models import (
+        FakeListChatModel,
+        FakeMessagesListChatModel,
+        GenericFakeChatModel,
+        ParrotFakeChatModel,
+    )
+    from langchain_core.language_models.llms import LLM, BaseLLM
 
 __all__ = [
     "BaseLanguageModel",
@@ -77,3 +85,30 @@ __all__ = [
     "GenericFakeChatModel",
     "ParrotFakeChatModel",
 ]
+
+__getattr__ = create_dynamic_getattr(
+    package_name="langchain_core",
+    module_path="language_models",
+    dynamic_imports={
+        "BaseLanguageModel": "base",
+        "LangSmithParams": "base",
+        "LanguageModelInput": "base",
+        "LanguageModelLike": "base",
+        "LanguageModelOutput": "base",
+        "get_tokenizer": "base",
+        "BaseChatModel": "chat_models",
+        "SimpleChatModel": "chat_models",
+        "FakeListLLM": "fake",
+        "FakeStreamingListLLM": "fake",
+        "FakeListChatModel": "fake_chat_models",
+        "FakeMessagesListChatModel": "fake_chat_models",
+        "GenericFakeChatModel": "fake_chat_models",
+        "ParrotFakeChatModel": "fake_chat_models",
+        "LLM": "llms",
+        "BaseLLM": "llms",
+    },
+)
+
+
+def __dir__() -> list[str]:
+    return list(__all__)

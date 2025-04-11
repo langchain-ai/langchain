@@ -43,22 +43,22 @@ __all__ = [
     "warn_deprecated",
 ]
 
-_dynamic_imports: dict[str, str] = {
-    "LangChainBetaWarning": "beta_decorator",
-    "beta": "beta_decorator",
-    "suppress_langchain_beta_warning": "beta_decorator",
-    "surface_langchain_beta_warnings": "beta_decorator",
-    "as_import_path": "path",
-    "get_relative_path": "path",
-    "LangChainDeprecationWarning": "deprecation",
-    "deprecated": "deprecation",
-    "surface_langchain_deprecation_warnings": "deprecation",
-    "suppress_langchain_deprecation_warning": "deprecation",
-    "warn_deprecated": "deprecation",
-}
-
 __getattr__ = create_dynamic_getattr(
-    package_name="langchain_core", module_path="_api", dynamic_imports=_dynamic_imports
+    package_name="langchain_core",
+    module_path="_api",
+    dynamic_imports={
+        "LangChainBetaWarning": "beta_decorator",
+        "beta": "beta_decorator",
+        "suppress_langchain_beta_warning": "beta_decorator",
+        "surface_langchain_beta_warnings": "beta_decorator",
+        "as_import_path": "path",
+        "get_relative_path": "path",
+        "LangChainDeprecationWarning": "deprecation",
+        "deprecated": "deprecation",
+        "surface_langchain_deprecation_warnings": "deprecation",
+        "suppress_langchain_deprecation_warning": "deprecation",
+        "warn_deprecated": "deprecation",
+    },
 )
 
 

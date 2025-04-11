@@ -17,42 +17,47 @@ creating more responsive UX.
 This module contains schema and implementation of LangChain Runnables primitives.
 """
 
-from langchain_core.runnables.base import (
-    Runnable,
-    RunnableBinding,
-    RunnableGenerator,
-    RunnableLambda,
-    RunnableMap,
-    RunnableParallel,
-    RunnableSequence,
-    RunnableSerializable,
-    chain,
-)
-from langchain_core.runnables.branch import RunnableBranch
-from langchain_core.runnables.config import (
-    RunnableConfig,
-    ensure_config,
-    get_config_list,
-    patch_config,
-    run_in_executor,
-)
-from langchain_core.runnables.fallbacks import RunnableWithFallbacks
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.runnables.passthrough import (
-    RunnableAssign,
-    RunnablePassthrough,
-    RunnablePick,
-)
-from langchain_core.runnables.router import RouterInput, RouterRunnable
-from langchain_core.runnables.utils import (
-    AddableDict,
-    ConfigurableField,
-    ConfigurableFieldMultiOption,
-    ConfigurableFieldSingleOption,
-    ConfigurableFieldSpec,
-    aadd,
-    add,
-)
+from typing import TYPE_CHECKING
+
+from langchain_core._lazy_imports import create_dynamic_getattr
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.base import (
+        Runnable,
+        RunnableBinding,
+        RunnableGenerator,
+        RunnableLambda,
+        RunnableMap,
+        RunnableParallel,
+        RunnableSequence,
+        RunnableSerializable,
+        chain,
+    )
+    from langchain_core.runnables.branch import RunnableBranch
+    from langchain_core.runnables.config import (
+        RunnableConfig,
+        ensure_config,
+        get_config_list,
+        patch_config,
+        run_in_executor,
+    )
+    from langchain_core.runnables.fallbacks import RunnableWithFallbacks
+    from langchain_core.runnables.history import RunnableWithMessageHistory
+    from langchain_core.runnables.passthrough import (
+        RunnableAssign,
+        RunnablePassthrough,
+        RunnablePick,
+    )
+    from langchain_core.runnables.router import RouterInput, RouterRunnable
+    from langchain_core.runnables.utils import (
+        AddableDict,
+        ConfigurableField,
+        ConfigurableFieldMultiOption,
+        ConfigurableFieldSingleOption,
+        ConfigurableFieldSpec,
+        aadd,
+        add,
+    )
 
 __all__ = [
     "chain",
@@ -85,3 +90,43 @@ __all__ = [
     "aadd",
     "add",
 ]
+
+__getattr__ = create_dynamic_getattr(
+    package_name="langchain_core",
+    module_path="runnables",
+    dynamic_imports={
+        "chain": "base",
+        "Runnable": "base",
+        "RunnableBinding": "base",
+        "RunnableGenerator": "base",
+        "RunnableLambda": "base",
+        "RunnableMap": "base",
+        "RunnableParallel": "base",
+        "RunnableSequence": "base",
+        "RunnableSerializable": "base",
+        "RunnableBranch": "branch",
+        "RunnableConfig": "config",
+        "ensure_config": "config",
+        "get_config_list": "config",
+        "patch_config": "config",
+        "run_in_executor": "config",
+        "RunnableWithFallbacks": "fallbacks",
+        "RunnableWithMessageHistory": "history",
+        "RunnableAssign": "passthrough",
+        "RunnablePassthrough": "passthrough",
+        "RunnablePick": "passthrough",
+        "RouterInput": "router",
+        "RouterRunnable": "router",
+        "AddableDict": "utils",
+        "ConfigurableField": "utils",
+        "ConfigurableFieldMultiOption": "utils",
+        "ConfigurableFieldSingleOption": "utils",
+        "ConfigurableFieldSpec": "utils",
+        "aadd": "utils",
+        "add": "utils",
+    },
+)
+
+
+def __dir__() -> list[str]:
+    return list(__all__)
