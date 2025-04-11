@@ -6,13 +6,10 @@ chain (LLMChain) to generate the reasoning and scores.
 """
 
 import re
+from collections.abc import Sequence
 from typing import (
     Any,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     TypedDict,
     Union,
     cast,
@@ -145,7 +142,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         # 0
     """
 
-    agent_tools: Optional[List[BaseTool]] = None
+    agent_tools: Optional[list[BaseTool]] = None
     """A list of tools available to the agent."""
     eval_chain: LLMChain
     """The language model chain used for evaluation."""
@@ -184,7 +181,7 @@ Description: {tool.description}"""
 
     @staticmethod
     def get_agent_trajectory(
-        steps: Union[str, Sequence[Tuple[AgentAction, str]]],
+        steps: Union[str, Sequence[tuple[AgentAction, str]]],
     ) -> str:
         """Get the agent trajectory as a formatted string.
 
@@ -263,7 +260,7 @@ The following is the expected answer. Use this to measure correctness:
         )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Get the input keys for the chain.
 
         Returns:
@@ -272,7 +269,7 @@ The following is the expected answer. Use this to measure correctness:
         return ["question", "agent_trajectory", "answer", "reference"]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Get the output keys for the chain.
 
         Returns:
@@ -280,16 +277,16 @@ The following is the expected answer. Use this to measure correctness:
         """
         return ["score", "reasoning"]
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
         """Validate and prep inputs."""
         inputs["reference"] = self._format_reference(inputs.get("reference"))
         return super().prep_inputs(inputs)
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the chain and generate the output.
 
         Args:
@@ -311,9 +308,9 @@ The following is the expected answer. Use this to measure correctness:
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the chain and generate the output.
 
         Args:
@@ -338,11 +335,11 @@ The following is the expected answer. Use this to measure correctness:
         *,
         prediction: str,
         input: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -380,11 +377,11 @@ The following is the expected answer. Use this to measure correctness:
         *,
         prediction: str,
         input: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:

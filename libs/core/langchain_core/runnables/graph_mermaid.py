@@ -36,7 +36,7 @@ def draw_mermaid(
 
     Args:
         nodes (dict[str, str]): List of node ids.
-        edges (List[Edge]): List of edges, object with a source,
+        edges (list[Edge]): List of edges, object with a source,
             target and data.
         first_node (str, optional): Id of the first node. Defaults to None.
         last_node (str, optional): Id of the last node. Defaults to None.

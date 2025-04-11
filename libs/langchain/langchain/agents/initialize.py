@@ -1,6 +1,7 @@
 """Load agent."""
 
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager

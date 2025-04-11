@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from langchain_core.agents import AgentAction
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -12,7 +12,7 @@ class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
         return False
 
     def _construct_agent_scratchpad(
-        self, intermediate_steps: List[Tuple[AgentAction, str]]
+        self, intermediate_steps: list[tuple[AgentAction, str]]
     ) -> str:
         if len(intermediate_steps) == 0:
             return ""
@@ -26,7 +26,7 @@ class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
             f"you return as final answer):\n{thoughts}"
         )
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
         intermediate_steps = kwargs.pop("intermediate_steps")
         kwargs["agent_scratchpad"] = self._construct_agent_scratchpad(
             intermediate_steps

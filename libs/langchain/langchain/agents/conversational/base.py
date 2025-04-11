@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -71,7 +72,7 @@ class ConversationalAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero-shot agent.
 
@@ -120,7 +121,7 @@ class ConversationalAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.

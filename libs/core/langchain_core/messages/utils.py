@@ -734,8 +734,6 @@ def trim_messages(
 
         .. code-block:: python
 
-            from typing import list
-
             from langchain_core.messages import (
                 AIMessage,
                 HumanMessage,

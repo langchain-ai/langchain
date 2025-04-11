@@ -6,7 +6,8 @@ then combines the results with another one.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
@@ -84,7 +85,7 @@ class MapReduceChain(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -92,7 +93,7 @@ class MapReduceChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -101,15 +102,15 @@ class MapReduceChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         # Split the larger text into smaller chunks.
         doc_text = inputs.pop(self.input_key)
         texts = self.text_splitter.split_text(doc_text)
         docs = [Document(page_content=text) for text in texts]
-        _inputs: Dict[str, Any] = {
+        _inputs: dict[str, Any] = {
             **inputs,
             self.combine_documents_chain.input_key: docs,
         }

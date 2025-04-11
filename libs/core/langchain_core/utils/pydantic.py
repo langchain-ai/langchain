@@ -190,10 +190,10 @@ def pre_init(func: Callable) -> Any:
 
             Args:
                 cls (Type[BaseModel]): The model class.
-                values (Dict[str, Any]): The values to initialize the model with.
+                values (dict[str, Any]): The values to initialize the model with.
 
             Returns:
-                Dict[str, Any]: The values to initialize the model with.
+                dict[str, Any]: The values to initialize the model with.
             """
             # Insert default values
             fields = cls.model_fields

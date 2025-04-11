@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from langchain_core.tools import BaseTool, tool
 
@@ -22,18 +20,18 @@ def calculator(expression: str) -> str:
 
 
 @pytest.fixture
-def tools() -> List[BaseTool]:
+def tools() -> list[BaseTool]:
     return [search, calculator]  # type: ignore
 
 
-def test_render_text_description(tools: List[BaseTool]) -> None:
+def test_render_text_description(tools: list[BaseTool]) -> None:
     tool_string = render_text_description(tools)
     expected_string = """search(query: str) -> str - Lookup things online.
 calculator(expression: str) -> str - Do math."""
     assert tool_string == expected_string
 
 
-def test_render_text_description_and_args(tools: List[BaseTool]) -> None:
+def test_render_text_description_and_args(tools: list[BaseTool]) -> None:
     tool_string = render_text_description_and_args(tools)
     expected_string = """search(query: str) -> str - Lookup things online., \
 args: {'query': {'title': 'Query', 'type': 'string'}}

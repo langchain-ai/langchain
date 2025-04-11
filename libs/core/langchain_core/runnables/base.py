@@ -1159,16 +1159,16 @@ class Runnable(Generic[Input, Output], ABC):
             the Runnable that emitted the event.
             A child Runnable that gets invoked as part of the execution of a
             parent Runnable is assigned its own unique ID.
-        - ``parent_ids``: **List[str]** - The IDs of the parent runnables that
+        - ``parent_ids``: **list[str]** - The IDs of the parent runnables that
             generated the event. The root Runnable will have an empty list.
             The order of the parent IDs is from the root to the immediate parent.
             Only available for v2 version of the API. The v1 version of the API
             will return an empty list.
-        - ``tags``: **Optional[List[str]]** - The tags of the Runnable that generated
+        - ``tags``: **Optional[list[str]]** - The tags of the Runnable that generated
             the event.
-        - ``metadata``: **Optional[Dict[str, Any]]** - The metadata of the Runnable
+        - ``metadata``: **Optional[dict[str, Any]]** - The metadata of the Runnable
             that generated the event.
-        - ``data``: **Dict[str, Any]**
+        - ``data``: **dict[str, Any]**
 
 
         Below is a table that illustrates some events that might be emitted by various
@@ -1231,7 +1231,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            def format_docs(docs: List[Document]) -> str:
+            def format_docs(docs: list[Document]) -> str:
                 '''Format the docs.'''
                 return ", ".join([doc.page_content for doc in docs])
 
@@ -2378,13 +2378,12 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from typing import List
             from typing_extensions import TypedDict
             from langchain_core.runnables import RunnableLambda
 
             class Args(TypedDict):
                 a: int
-                b: List[int]
+                b: list[int]
 
             def f(x: Args) -> str:
                 return str(x["a"] * max(x["b"]))
@@ -2397,18 +2396,18 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from typing import Any, Dict, List
+            from typing import Any
             from pydantic import BaseModel, Field
             from langchain_core.runnables import RunnableLambda
 
-            def f(x: Dict[str, Any]) -> str:
+            def f(x: dict[str, Any]) -> str:
                 return str(x["a"] * max(x["b"]))
 
             class FSchema(BaseModel):
                 \"\"\"Apply a function to an integer and list of integers.\"\"\"
 
                 a: int = Field(..., description="Integer")
-                b: List[int] = Field(..., description="List of ints")
+                b: list[int] = Field(..., description="List of ints")
 
             runnable = RunnableLambda(f)
             as_tool = runnable.as_tool(FSchema)
@@ -2418,14 +2417,14 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from typing import Any, Dict, List
+            from typing import Any
             from langchain_core.runnables import RunnableLambda
 
-            def f(x: Dict[str, Any]) -> str:
+            def f(x: dict[str, Any]) -> str:
                 return str(x["a"] * max(x["b"]))
 
             runnable = RunnableLambda(f)
-            as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+            as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
             as_tool.invoke({"a": 3, "b": [1, 2]})
 
         String input:
@@ -5279,17 +5278,17 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     )
     """The config factories to bind to the underlying Runnable."""
 
-    # Union[Type[Input], BaseModel] + things like List[str]
+    # Union[Type[Input], BaseModel] + things like list[str]
     custom_input_type: Optional[Any] = None
     """Override the input type of the underlying Runnable with a custom type.
 
-    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    The type can be a pydantic model, or a type annotation (e.g., `list[str]`).
     """
-    # Union[Type[Output], BaseModel] + things like List[str]
+    # Union[Type[Output], BaseModel] + things like list[str]
     custom_output_type: Optional[Any] = None
     """Override the output type of the underlying Runnable with a custom type.
 
-    The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
+    The type can be a pydantic model, or a type annotation (e.g., `list[str]`).
     """
 
     model_config = ConfigDict(

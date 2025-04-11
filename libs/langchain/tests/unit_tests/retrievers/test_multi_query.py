@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest as pytest
 from langchain_core.documents import Document
 
@@ -36,7 +34,7 @@ from langchain.retrievers.multi_query import LineListOutputParser, _unique_docum
         ),
     ],
 )
-def test__unique_documents(documents: List[Document], expected: List[Document]) -> None:
+def test__unique_documents(documents: list[Document], expected: list[Document]) -> None:
     assert _unique_documents(documents) == expected
 
 
@@ -48,6 +46,6 @@ def test__unique_documents(documents: List[Document], expected: List[Document]) 
         ("foo\n\nbar", ["foo", "bar"]),
     ],
 )
-def test_line_list_output_parser(text: str, expected: List[str]) -> None:
+def test_line_list_output_parser(text: str, expected: list[str]) -> None:
     parser = LineListOutputParser()
     assert parser.parse(text) == expected
