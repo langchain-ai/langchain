@@ -379,7 +379,7 @@ def _get_key(
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr] # noqa: SLF001
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):
