@@ -76,7 +76,7 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
     return await asyncio.gather(*(gated_coro(semaphore, c) for c in coros))
 
 
-def accepts_run_manager(callable: Callable[..., Any]) -> bool:
+def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a run_manager argument.
 
     Args:
@@ -91,7 +91,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_config(callable: Callable[..., Any]) -> bool:
+def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a config argument.
 
     Args:
@@ -106,7 +106,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_context(callable: Callable[..., Any]) -> bool:
+def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a context argument.
 
     Args:
@@ -692,7 +692,7 @@ def get_unique_config_specs(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
     unique: list[ConfigurableFieldSpec] = []
-    for id, dupes in grouped:
+    for spec_id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
         if len(others) == 0 or all(o == first for o in others):
@@ -700,7 +700,7 @@ def get_unique_config_specs(
         else:
             msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {spec_id}: {[first] + others}"
             )
             raise ValueError(msg)
     return unique
