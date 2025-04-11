@@ -649,6 +649,51 @@ def test_format_message_content() -> None:
     ]
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
+    # Standard multi-modal inputs
+    content = [{"type": "image", "source_type": "url", "source": "https://..."}]
+    expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
+    assert expected == _format_message_content(content)
+
+    content = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "source": "<base64 data>",
+            "mime_type": "image/png",
+        }
+    ]
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,<base64 data>"},
+        }
+    ]
+    assert expected == _format_message_content(content)
+
+    content = [
+        {
+            "type": "file",
+            "source_type": "base64",
+            "source": "<base64 data>",
+            "mime_type": "application/pdf",
+            "metadata": {"filename": "my_file"},
+        }
+    ]
+    expected = [
+        {
+            "type": "file",
+            "file": {
+                "filename": "my_file",
+                "file_data": "data:application/pdf;base64,<base64 data>",
+            },
+        }
+    ]
+    assert expected == _format_message_content(content)
+
+    content = [{"type": "file", "source_type": "id", "source": "file-abc123"}]
+    expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
+    assert expected == _format_message_content(content)
+
 
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
