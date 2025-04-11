@@ -90,17 +90,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             from langchain_core.documents import Document
             from langchain_core.retrievers import BaseRetriever
-            from typing import List
 
             class SimpleRetriever(BaseRetriever):
-                docs: List[Document]
+                docs: list[Document]
                 k: int = 5
 
-                def _get_relevant_documents(self, query: str) -> List[Document]:
+                def _get_relevant_documents(self, query: str) -> list[Document]:
                     \"\"\"Return the first k documents from the list of documents\"\"\"
                     return self.docs[:self.k]
 
-                async def _aget_relevant_documents(self, query: str) -> List[Document]:
+                async def _aget_relevant_documents(self, query: str) -> list[Document]:
                     \"\"\"(Optional) async native implementation.\"\"\"
                     return self.docs[:self.k]
 
@@ -112,14 +111,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             class TFIDFRetriever(BaseRetriever, BaseModel):
                 vectorizer: Any
-                docs: List[Document]
+                docs: list[Document]
                 tfidf_array: Any
                 k: int = 4
 
                 class Config:
                     arbitrary_types_allowed = True
 
-                def _get_relevant_documents(self, query: str) -> List[Document]:
+                def _get_relevant_documents(self, query: str) -> list[Document]:
                     # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
                     query_vec = self.vectorizer.transform([query])
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
