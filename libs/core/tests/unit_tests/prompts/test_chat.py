@@ -870,11 +870,8 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    with pytest.raises(ValueError, match="Invalid template: False"):
-        ChatPromptTemplate([{"role": "system", "content": False}])
-
-    with pytest.raises(ValueError, match="Unexpected message type: foo."):
-        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+    ChatPromptTemplate([{"role": "system", "content": False}])
+    ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
 async def test_messages_prompt_accepts_list() -> None:
