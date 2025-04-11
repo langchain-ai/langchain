@@ -14,6 +14,7 @@ on:
 jobs:
   codspeed:
     name: Run benchmarks
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks'))
     runs-on: codspeed-macro
     steps:
       - uses: actions/checkout@v4

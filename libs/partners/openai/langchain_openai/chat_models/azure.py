@@ -4,18 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypedDict,
-    TypeVar,
-    Union,
-)
+from collections.abc import Awaitable
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -34,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM]]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class _AllReturnType(TypedDict):
@@ -547,7 +537,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Used for tracing and token counting. Does NOT affect completion.
     """
 
-    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    disabled_params: Optional[dict[str, Any]] = Field(default=None)
     """Parameters of the OpenAI client or chat.completions endpoint that should be 
     disabled for the given model.
 
@@ -570,12 +560,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {
             "openai_api_key": "AZURE_OPENAI_API_KEY",
             "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
@@ -672,7 +662,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             **{"azure_deployment": self.deployment_name},
@@ -684,14 +674,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return "azure-openai-chat"
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         return {
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -710,7 +700,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
+        generation_info: Optional[dict] = None,
     ) -> ChatResult:
         chat_result = super()._create_chat_result(response, generation_info)
 

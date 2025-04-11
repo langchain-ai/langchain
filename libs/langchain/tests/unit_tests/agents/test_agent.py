@@ -3,7 +3,7 @@
 import asyncio
 import json
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -43,13 +43,13 @@ from tests.unit_tests.stubs import (
 class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
-    responses: List[str]
+    responses: list[str]
     i: int = -1
 
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -67,7 +67,7 @@ class FakeListLLM(LLM):
         return self._call(*args, **kwargs)
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {}
 
     @property
@@ -507,7 +507,7 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results: List[RunLogPatch] = [  # type: ignore[no-redef]
+    results: list[RunLogPatch] = [  # type: ignore[no-redef]
         r async for r in executor.astream_log({"question": "hello"})
     ]
     # # Let's stream just the llm tokens.
@@ -984,7 +984,7 @@ async def test_openai_agent_with_streaming() -> None:
     ]
 
 
-def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMessage:
+def _make_tools_invocation(name_to_arguments: dict[str, dict[str, Any]]) -> AIMessage:
     """Create an AIMessage that represents a tools invocation.
 
     Args:

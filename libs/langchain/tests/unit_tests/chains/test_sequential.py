@@ -1,6 +1,6 @@
 """Test pipeline functionality."""
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -18,24 +18,24 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 class FakeChain(Chain):
     """Fake Chain for testing purposes."""
 
-    input_variables: List[str]
-    output_variables: List[str]
+    input_variables: list[str]
+    output_variables: list[str]
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys this chain returns."""
         return self.input_variables
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Input keys this chain returns."""
         return self.output_variables
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]
@@ -44,9 +44,9 @@ class FakeChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]

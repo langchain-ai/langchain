@@ -32,9 +32,9 @@ def test_pre_init_decorator() -> None:
             return v
 
     # Type ignore initialization b/c y is marked as required
-    foo = Foo()  # type: ignore
+    foo = Foo()  # type: ignore[call-arg]
     assert foo.y == 6
-    foo = Foo(x=10)  # type: ignore
+    foo = Foo(x=10)  # type: ignore[call-arg]
     assert foo.y == 11
 
 
@@ -57,7 +57,7 @@ def test_pre_init_decorator_with_more_defaults() -> None:
 
     # Try to create an instance of Foo
     # nothing is required, but mypy can't track the default for `c`
-    Foo()  # type: ignore
+    Foo()
 
 
 def test_with_aliases() -> None:
@@ -78,19 +78,19 @@ def test_with_aliases() -> None:
 
     # Based on defaults
     # z is required
-    foo = Foo()  # type: ignore
+    foo = Foo()  # type: ignore[call-arg]
     assert foo.x == 1
     assert foo.z == 1
 
     # Based on field name
     # z is required
-    foo = Foo(x=2)  # type: ignore
+    foo = Foo(x=2)  # type: ignore[call-arg]
     assert foo.x == 2
     assert foo.z == 2
 
     # Based on alias
     # z is required
-    foo = Foo(y=2)  # type: ignore
+    foo = Foo(y=2)  # type: ignore[call-arg]
     assert foo.x == 2
     assert foo.z == 2
 

@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Callable, Optional
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
@@ -45,7 +46,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     )
 
     @pre_init
-    def validate_params(cls, values: Dict) -> Dict:
+    def validate_params(cls, values: dict) -> dict:
         """Validate similarity parameters."""
         if values["k"] is None and values["similarity_threshold"] is None:
             raise ValueError("Must specify one of `k` or `similarity_threshold`.")

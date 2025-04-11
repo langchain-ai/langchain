@@ -603,3 +603,6 @@ packages:
 - name: langchain-cloudflare
   repo: cloudflare/langchain-cloudflare
   path: .
+- name: langchain-ydb
+  path: .
+  repo: ydb-platform/langchain-ydb

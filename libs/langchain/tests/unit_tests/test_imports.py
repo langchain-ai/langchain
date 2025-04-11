@@ -2,7 +2,7 @@ import ast
 import importlib
 import warnings
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 # Attempt to recursively import all modules in langchain
 PKG_ROOT = Path(__file__).parent.parent.parent
@@ -107,7 +107,7 @@ def test_no_more_changes_to_proxy_community() -> None:
     )
 
 
-def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
+def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
     """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP
 
     This variable is located in the global namespace of a Python file.
@@ -118,7 +118,7 @@ def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
     Returns:
         dict or None: The value of DEPRECATED_LOOKUP if it exists, None otherwise.
     """
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         tree = ast.parse(file.read(), filename=file_path)
 
     for node in ast.walk(tree):
@@ -130,7 +130,7 @@ def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _dict_from_ast(node: ast.Dict) -> Dict[str, str]:
+def _dict_from_ast(node: ast.Dict) -> dict[str, str]:
     """Convert an AST dict node to a Python dictionary, assuming str to str format.
 
     Args:
@@ -139,7 +139,7 @@ def _dict_from_ast(node: ast.Dict) -> Dict[str, str]:
     Returns:
         dict: The corresponding Python dictionary.
     """
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for key, value in zip(node.keys, node.values):
         py_key = _literal_eval_str(key)  # type: ignore
         py_value = _literal_eval_str(value)

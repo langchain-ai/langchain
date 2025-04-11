@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -32,7 +32,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -58,7 +58,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents relevant for a query.
 
         Args:

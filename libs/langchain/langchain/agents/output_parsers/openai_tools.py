@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
@@ -15,12 +15,12 @@ OpenAIToolAgentAction = ToolAgentAction
 
 def parse_ai_message_to_openai_tool_action(
     message: BaseMessage,
-) -> Union[List[AgentAction], AgentFinish]:
+) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     tool_actions = parse_ai_message_to_tool_action(message)
     if isinstance(tool_actions, AgentFinish):
         return tool_actions
-    final_actions: List[AgentAction] = []
+    final_actions: list[AgentAction] = []
     for action in tool_actions:
         if isinstance(action, ToolAgentAction):
             final_actions.append(
@@ -54,12 +54,12 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
         return "openai-tools-agent-output-parser"
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Union[List[AgentAction], AgentFinish]:
+        self, result: list[Generation], *, partial: bool = False
+    ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError("This output parser only works on ChatGeneration output")
         message = result[0].message
         return parse_ai_message_to_openai_tool_action(message)
 
-    def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
+    def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         raise ValueError("Can only parse messages")

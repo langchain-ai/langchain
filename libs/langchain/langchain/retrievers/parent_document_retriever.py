@@ -1,5 +1,6 @@
 import uuid
-from typing import Any, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
@@ -71,10 +72,10 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     def _split_docs_for_adding(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
         add_to_docstore: bool = True,
-    ) -> Tuple[List[Document], List[Tuple[str, Document]]]:
+    ) -> tuple[list[Document], list[tuple[str, Document]]]:
         if self.parent_splitter is not None:
             documents = self.parent_splitter.split_documents(documents)
         if ids is None:
@@ -110,8 +111,8 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     def add_documents(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
         add_to_docstore: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -136,8 +137,8 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     async def aadd_documents(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
         add_to_docstore: bool = True,
         **kwargs: Any,
     ) -> None:

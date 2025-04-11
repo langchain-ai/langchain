@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -68,7 +69,7 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
         Args:
@@ -121,7 +122,7 @@ CRITERIA_TYPE = Union[
 
 def resolve_criteria(
     criteria: Optional[Union[CRITERIA_TYPE, str]],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Resolve the criteria to evaluate.
 
     Parameters
@@ -285,7 +286,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignor
     def resolve_criteria(
         cls,
         criteria: Optional[Union[CRITERIA_TYPE, str]],
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Resolve the criteria to evaluate.
 
         Parameters
@@ -404,8 +405,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignor
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -459,8 +460,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignor
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:

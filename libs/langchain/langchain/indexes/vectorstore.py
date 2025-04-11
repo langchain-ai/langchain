@@ -1,6 +1,6 @@
 """Vectorstore stubs for the indexing api."""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
@@ -33,7 +33,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore using the provided LLM.
@@ -65,7 +65,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Asynchronously query the vectorstore using the provided LLM.
@@ -97,7 +97,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and retrieve the answer along with sources.
@@ -129,7 +129,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously query the vectorstore and retrieve the answer and sources.
@@ -158,7 +158,7 @@ class VectorStoreIndexWrapper(BaseModel):
         return await chain.ainvoke({chain.question_key: question})
 
 
-def _get_in_memory_vectorstore() -> Type[VectorStore]:
+def _get_in_memory_vectorstore() -> type[VectorStore]:
     """Get the InMemoryVectorStore."""
     import warnings
 
@@ -179,7 +179,7 @@ def _get_in_memory_vectorstore() -> Type[VectorStore]:
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
-    vectorstore_cls: Type[VectorStore] = Field(
+    vectorstore_cls: type[VectorStore] = Field(
         default_factory=_get_in_memory_vectorstore
     )
     embedding: Embeddings
@@ -191,7 +191,7 @@ class VectorstoreIndexCreator(BaseModel):
         extra="forbid",
     )
 
-    def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+    def from_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from a list of loaders.
 
         Args:
@@ -205,7 +205,7 @@ class VectorstoreIndexCreator(BaseModel):
             docs.extend(loader.load())
         return self.from_documents(docs)
 
-    async def afrom_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+    async def afrom_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
         """Asynchronously create a vectorstore index from a list of loaders.
 
         Args:
@@ -220,7 +220,7 @@ class VectorstoreIndexCreator(BaseModel):
                 docs.append(doc)
         return await self.afrom_documents(docs)
 
-    def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
+    def from_documents(self, documents: list[Document]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from a list of documents.
 
         Args:
@@ -236,7 +236,7 @@ class VectorstoreIndexCreator(BaseModel):
         return VectorStoreIndexWrapper(vectorstore=vectorstore)
 
     async def afrom_documents(
-        self, documents: List[Document]
+        self, documents: list[Document]
     ) -> VectorStoreIndexWrapper:
         """Asynchronously create a vectorstore index from a list of documents.
 

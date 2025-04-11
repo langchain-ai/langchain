@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -49,7 +49,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_pairwise_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
+    criteria: Optional[Union[CRITERIA_TYPE, str, list[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -113,7 +113,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[
         """
         return "pairwise_string_result"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
         Args:
@@ -314,8 +314,8 @@ Performance may be significantly worse with other models."
         input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -356,8 +356,8 @@ Performance may be significantly worse with other models."
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:

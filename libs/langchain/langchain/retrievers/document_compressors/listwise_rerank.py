@@ -1,6 +1,7 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
 
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -17,7 +18,7 @@ _DEFAULT_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-def _get_prompt_input(input_: dict) -> Dict[str, Any]:
+def _get_prompt_input(input_: dict) -> dict[str, Any]:
     """Return the compression chain input."""
     documents = input_["documents"]
     context = ""
@@ -27,7 +28,7 @@ def _get_prompt_input(input_: dict) -> Dict[str, Any]:
     return {"query": input_["query"], "context": context}
 
 
-def _parse_ranking(results: dict) -> List[Document]:
+def _parse_ranking(results: dict) -> list[Document]:
     ranking = results["ranking"]
     docs = results["documents"]
     return [docs[i] for i in ranking.ranked_document_ids]
@@ -68,7 +69,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             assert "Steve" in compressed_docs[0].page_content
     """
 
-    reranker: Runnable[Dict, List[Document]]
+    reranker: Runnable[dict, list[Document]]
     """LLM-based reranker to use for filtering documents. Expected to take in a dict 
         with 'documents: Sequence[Document]' and 'query: str' keys and output a 
         List[Document]."""
@@ -121,7 +122,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             """Rank the documents by their relevance to the user question.
             Rank from most to least relevant."""
 
-            ranked_document_ids: List[int] = Field(
+            ranked_document_ids: list[int] = Field(
                 ...,
                 description=(
                     "The integer IDs of the documents, sorted from most to least "

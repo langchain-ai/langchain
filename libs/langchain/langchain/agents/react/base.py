@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -65,7 +66,7 @@ class ReActDocstoreAgent(Agent):
         return "Observation: "
 
     @property
-    def _stop(self) -> List[str]:
+    def _stop(self) -> list[str]:
         return ["\nObservation:"]
 
     @property
@@ -122,7 +123,7 @@ class DocstoreExplorer:
         return self._paragraphs[0]
 
     @property
-    def _paragraphs(self) -> List[str]:
+    def _paragraphs(self) -> list[str]:
         if self.document is None:
             raise ValueError("Cannot get paragraphs without a document")
         return self.document.page_content.split("\n\n")

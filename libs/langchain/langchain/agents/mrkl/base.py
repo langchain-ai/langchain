@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable, NamedTuple, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -83,7 +84,7 @@ class ZeroShotAgent(Agent):
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
 
@@ -118,7 +119,7 @@ class ZeroShotAgent(Agent):
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.
@@ -183,7 +184,7 @@ class MRKLChain(AgentExecutor):
 
     @classmethod
     def from_chains(
-        cls, llm: BaseLanguageModel, chains: List[ChainConfig], **kwargs: Any
+        cls, llm: BaseLanguageModel, chains: list[ChainConfig], **kwargs: Any
     ) -> AgentExecutor:
         """User-friendly way to initialize the MRKL chain.
 
