@@ -196,10 +196,6 @@ def _format_data_content_block(block: dict) -> dict:
             file = {"file_data": f"data:{block['mime_type']};base64,{block['source']}"}
             if metadata := block.get("metadata"):
                 file = {**file, **metadata}
-            # Hack to support cross-compatibility with providers that do not require
-            # filename (OpenAI requires one).
-            if "filename" not in file:
-                file["filename"] = ""
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
             formatted_block = {"type": "file", "file": {"file_id": block["source"]}}
@@ -3148,6 +3144,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         }
                         if block["image_url"].get("detail"):
                             new_block["detail"] = block["image_url"]["detail"]
+                        new_blocks.append(new_block)
+                    elif block["type"] == "file":
+                        new_block = {"type": "input_file", **block["file"]}
                         new_blocks.append(new_block)
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)

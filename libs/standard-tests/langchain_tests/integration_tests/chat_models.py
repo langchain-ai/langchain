@@ -2088,7 +2088,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
             ],
         )
-        model.invoke([message])
+        _ = model.invoke([message])
 
         # Standard format, base64 data
         message = HumanMessage(
