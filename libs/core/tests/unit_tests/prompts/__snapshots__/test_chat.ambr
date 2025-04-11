@@ -2976,6 +2976,7 @@
     ]),
     'kwargs': dict({
       'input_variables': list([
+        'bar',
         'file_path',
         'foo',
         'more_history',
@@ -3273,6 +3274,24 @@
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain_core',
+                  'prompts',
+                  'message',
+                  '_DictMessagePromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'template': dict({
+                    'random_type': dict({
+                      'foo': '{bar}',
+                    }),
+                  }),
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
                 'type': 'constructor',
               }),
             ]),
