@@ -5,7 +5,7 @@ import pytest
 from langchain_community.document_loaders.parsers.language.sql import SQLSegmenter
 
 
-@pytest.mark.requires("tree_sitter", "tree_sitter_languages")
+@pytest.mark.requires("tree_sitter", "tree_sitter_language_pack")
 class TestSQLSegmenter(unittest.TestCase):
     """Unit tests for the SQLSegmenter class."""
 
