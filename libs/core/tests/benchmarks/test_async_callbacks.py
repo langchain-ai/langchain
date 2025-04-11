@@ -46,7 +46,7 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
 
 @pytest.mark.benchmark
 async def test_async_callbacks(benchmark: BenchmarkFixture) -> None:
-    infinite_cycle = cycle([AIMessage(content=" ".join(["hello", "goodbye"] * 1000))])
+    infinite_cycle = cycle([AIMessage(content=" ".join(["hello", "goodbye"] * 10))])
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @benchmark

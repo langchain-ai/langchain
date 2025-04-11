@@ -6,6 +6,8 @@ on:
         - master
   pull_request:
     paths:
+      # right now, we only have core benchmarks, but in the future,
+      # we'd like to have benchmarks for partners and langchain
       - 'libs/core/**'
   # `workflow_dispatch` allows CodSpeed to trigger backtest
   # performance analysis in order to generate initial data.
