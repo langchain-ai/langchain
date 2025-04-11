@@ -6,6 +6,8 @@ on:
         - master
   pull_request:
     paths:
+      # right now, we only have core benchmarks, but in the future,
+      # we'd like to have benchmarks for partners and langchain
       - 'libs/core/**'
   # `workflow_dispatch` allows CodSpeed to trigger backtest
   # performance analysis in order to generate initial data.
@@ -14,8 +16,8 @@ on:
 jobs:
   codspeed:
     name: Run benchmarks
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks'))
-    runs-on: codspeed-macro
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks'))
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
