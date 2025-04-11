@@ -25,7 +25,6 @@ from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
-    BaseMessagePromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -33,6 +32,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message_template,
 )
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import (
     PYDANTIC_VERSION,
