@@ -121,6 +121,7 @@ EXPECTED_ALL = [
     "OracleAutonomousDatabaseLoader",
     "OracleDocLoader",
     "OracleTextSplitter",
+    "OutlineLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",

@@ -346,6 +346,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.org_mode import (
         UnstructuredOrgModeLoader,
     )
+    from langchain_community.document_loaders.outline import (
+        OutlineLoader,
+    )
     from langchain_community.document_loaders.pdf import (
         AmazonTextractPDFLoader,
         DedocPDFLoader,
@@ -651,6 +654,7 @@ _module_lookup = {
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OracleDocLoader": "langchain_community.document_loaders.oracleai",
     "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
+    "OutlineLoader": "langchain_community.document_loaders.outline",
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
@@ -859,6 +863,7 @@ __all__ = [
     "OracleAutonomousDatabaseLoader",
     "OracleDocLoader",
     "OracleTextSplitter",
+    "OutlineLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
