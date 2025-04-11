@@ -26,6 +26,14 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
     def supports_json_mode(self) -> bool:
         return True
 

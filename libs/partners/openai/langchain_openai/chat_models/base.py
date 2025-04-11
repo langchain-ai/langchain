@@ -189,7 +189,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
     if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)  # type: ignore[arg-type]
+        formatted_block = convert_to_openai_image_block(block)
 
     elif block["type"] == "file":
         if block["source_type"] == "base64":
