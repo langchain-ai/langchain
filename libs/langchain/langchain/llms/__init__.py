@@ -19,7 +19,7 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 
 import warnings
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.llms import BaseLLM
@@ -557,7 +557,7 @@ def __getattr__(name: str) -> Any:
 
     if name == "type_to_cls_dict":
         # for backwards compatibility
-        type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
+        type_to_cls_dict: dict[str, type[BaseLLM]] = {
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
@@ -650,7 +650,7 @@ __all__ = [
 ]
 
 
-def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
+def get_type_to_cls_dict() -> dict[str, Callable[[], type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
         "aleph_alpha": _import_aleph_alpha,

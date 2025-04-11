@@ -164,7 +164,7 @@ class InMemoryVectorStore(VectorStore):
             embedding: embedding function to use.
         """
         # TODO: would be nice to change to
-        # Dict[str, Document] at some point (will be a breaking change)
+        # dict[str, Document] at some point (will be a breaking change)
         self.store: dict[str, dict[str, Any]] = {}
         self.embedding = embedding
 

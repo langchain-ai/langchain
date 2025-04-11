@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -21,11 +21,11 @@ class Person(Serializable):
         return True
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"secret": "SECRET"}
 
     @property
-    def lc_attributes(self) -> Dict[str, str]:
+    def lc_attributes(self) -> dict[str, str]:
         return {"you_can_see_me": self.you_can_see_me}
 
 
@@ -35,17 +35,17 @@ class SpecialPerson(Person):
     another_visible: str = "bye"
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         return ["my", "special", "namespace"]
 
     # Gets merged with parent class's secrets
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"another_secret": "ANOTHER_SECRET"}
 
     # Gets merged with parent class's attributes
     @property
-    def lc_attributes(self) -> Dict[str, str]:
+    def lc_attributes(self) -> dict[str, str]:
         return {"another_visible": self.another_visible}
 
 
@@ -90,7 +90,7 @@ class TestClass(Serializable):
 
     @model_validator(mode="before")
     @classmethod
-    def get_from_env(cls, values: Dict) -> Any:
+    def get_from_env(cls, values: dict) -> Any:
         """Get the values from the environment."""
         if "my_favorite_secret" not in values:
             values["my_favorite_secret"] = os.getenv("MY_FAVORITE_SECRET")
@@ -103,11 +103,11 @@ class TestClass(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         return ["my", "special", "namespace"]
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {
             "my_favorite_secret": "MY_FAVORITE_SECRET",
             "my_other_secret": "MY_OTHER_SECRET",

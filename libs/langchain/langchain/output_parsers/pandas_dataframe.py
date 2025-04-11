@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -10,7 +10,7 @@ from langchain.output_parsers.format_instructions import (
 )
 
 
-class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
+class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
     """Parse an output using Pandas DataFrame format."""
 
     """The Pandas DataFrame to parse."""
@@ -33,8 +33,8 @@ class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
 
     def parse_array(
         self, array: str, original_request_params: str
-    ) -> Tuple[List[Union[int, str]], str]:
-        parsed_array: List[Union[int, str]] = []
+    ) -> tuple[list[Union[int, str]], str]:
+        parsed_array: list[Union[int, str]] = []
 
         # Check if the format is [1,3,5]
         if re.match(r"\[\d+(,\s*\d+)*\]", array):
@@ -78,7 +78,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
 
         return parsed_array, original_request_params.split("[")[0]
 
-    def parse(self, request: str) -> Dict[str, Any]:
+    def parse(self, request: str) -> dict[str, Any]:
         stripped_request_params = None
         splitted_request = request.strip().split(":")
         if len(splitted_request) != 2:

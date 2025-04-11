@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional
+from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
 
 
-class RegexParser(BaseOutputParser[Dict[str, str]]):
+class RegexParser(BaseOutputParser[dict[str, str]]):
     """Parse the output of an LLM call using a regex."""
 
     @classmethod
@@ -15,7 +15,7 @@ class RegexParser(BaseOutputParser[Dict[str, str]]):
 
     regex: str
     """The regex to use to parse the output."""
-    output_keys: List[str]
+    output_keys: list[str]
     """The keys to use for the output."""
     default_output_key: Optional[str] = None
     """The default key to use for the output."""
@@ -25,7 +25,7 @@ class RegexParser(BaseOutputParser[Dict[str, str]]):
         """Return the type key."""
         return "regex_parser"
 
-    def parse(self, text: str) -> Dict[str, str]:
+    def parse(self, text: str) -> dict[str, str]:
         """Parse the output of an LLM call."""
         match = re.search(self.regex, text)
         if match:

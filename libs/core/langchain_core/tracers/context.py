@@ -65,7 +65,7 @@ def tracing_v2_enabled(
             Defaults to "default".
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        tags (List[str], optional): The tags to add to the run.
+        tags (list[str], optional): The tags to add to the run.
             Defaults to None.
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.

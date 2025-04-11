@@ -305,7 +305,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "integer",
     }
 
-    fake_ret = FakeRetriever()  # str -> List[Document]
+    fake_ret = FakeRetriever()  # str -> list[Document]
 
     assert fake_ret.get_input_jsonschema() == {
         "title": "FakeRetrieverInput",
@@ -354,7 +354,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "array",
     }
 
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     assert _schema(fake_llm.input_schema) == snapshot(name="fake_llm_input_schema")
     assert _schema(fake_llm.output_schema) == {
@@ -362,7 +362,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "string",
     }
 
-    fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
+    fake_chat = FakeListChatModel(responses=["a"])  # str -> list[list[str]]
 
     assert _schema(fake_chat.input_schema) == snapshot(name="fake_chat_input_schema")
     assert _schema(fake_chat.output_schema) == snapshot(name="fake_chat_output_schema")
@@ -508,9 +508,9 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
 
 def test_passthrough_assign_schema() -> None:
-    retriever = FakeRetriever()  # str -> List[Document]
+    retriever = FakeRetriever()  # str -> list[Document]
     prompt = PromptTemplate.from_template("{context} {question}")
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     seq_w_assign: Runnable = (
         RunnablePassthrough.assign(context=itemgetter("question") | retriever)
@@ -652,7 +652,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
 
 def test_with_types_with_type_generics() -> None:
-    """Verify that with_types works if we use things like List[int]."""
+    """Verify that with_types works if we use things like list[int]."""
 
     def foo(x: int) -> None:
         """Add one to the input."""
@@ -746,7 +746,7 @@ def test_schema_complex_seq() -> None:
 
 
 def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     assert fake_llm.invoke("...") == "a"
 

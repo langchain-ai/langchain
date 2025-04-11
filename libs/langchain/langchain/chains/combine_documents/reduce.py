@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Optional, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -15,20 +15,20 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 class CombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+    def __call__(self, docs: list[Document], **kwargs: Any) -> str:
         """Interface for the combine_docs method."""
 
 
 class AsyncCombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    async def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+    async def __call__(self, docs: list[Document], **kwargs: Any) -> str:
         """Async interface for the combine_docs method."""
 
 
 def split_list_of_docs(
-    docs: List[Document], length_func: Callable, token_max: int, **kwargs: Any
-) -> List[List[Document]]:
+    docs: list[Document], length_func: Callable, token_max: int, **kwargs: Any
+) -> list[list[Document]]:
     """Split Documents into subsets that each meet a cumulative length constraint.
 
     Args:
@@ -59,7 +59,7 @@ def split_list_of_docs(
 
 
 def collapse_docs(
-    docs: List[Document],
+    docs: list[Document],
     combine_document_func: CombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
@@ -91,7 +91,7 @@ def collapse_docs(
 
 
 async def acollapse_docs(
-    docs: List[Document],
+    docs: list[Document],
     combine_document_func: AsyncCombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
@@ -229,11 +229,11 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     def combine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine multiple documents recursively.
 
         Args:
@@ -258,11 +258,11 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     async def acombine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Async combine multiple documents recursively.
 
         Args:
@@ -287,16 +287,16 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     def _collapse(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[List[Document], dict]:
+    ) -> tuple[list[Document], dict]:
         result_docs = docs
         length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+        def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return self._collapse_chain.run(
                 input_documents=docs, callbacks=callbacks, **kwargs
             )
@@ -322,16 +322,16 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     async def _acollapse(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[List[Document], dict]:
+    ) -> tuple[list[Document], dict]:
         result_docs = docs
         length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+        async def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return await self._collapse_chain.arun(
                 input_documents=docs, callbacks=callbacks, **kwargs
             )

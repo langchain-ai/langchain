@@ -869,7 +869,7 @@ def test_get_output_messages_with_value_error() -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+            "Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]."
             f" Got {illegal_bool_message}."
         ),
     ):
@@ -882,7 +882,7 @@ def test_get_output_messages_with_value_error() -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+            "Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]."
             f" Got {illegal_int_message}."
         ),
     ):

@@ -1,6 +1,7 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
 
-from typing import Any, Callable, Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable, Optional
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
@@ -27,7 +28,7 @@ def _get_default_chain_prompt() -> PromptTemplate:
     )
 
 
-def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
+def default_get_input(query: str, doc: Document) -> dict[str, Any]:
     """Return the compression chain input."""
     return {"question": query, "context": doc.page_content}
 

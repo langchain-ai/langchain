@@ -1,4 +1,5 @@
-from typing import Callable, List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Callable
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
@@ -12,7 +13,7 @@ from langchain.agents.format_scratchpad.tools import (
 )
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
-MessageFormatter = Callable[[Sequence[Tuple[AgentAction, str]]], List[BaseMessage]]
+MessageFormatter = Callable[[Sequence[tuple[AgentAction, str]]], list[BaseMessage]]
 
 
 def create_tool_calling_agent(
