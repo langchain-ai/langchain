@@ -2624,6 +2624,15 @@ def dispatch_custom_event(
 
 @functools.lru_cache(maxsize=1)
 def _executor() -> ThreadPoolExecutor:
-    cutie = ThreadPoolExecutor(max_workers=1)
+    # If the user is specifying ASYNC callback handlers to be run from a
+    # SYNC context, and an event loop is already running,
+    # we cannot submit the coroutine to the running loop, because it
+    # would result in a deadlock. Instead we have to schedule them
+    # on a background thread. To avoid creating & shutting down
+    # a new executor every time, we use a lazily-created, shared
+    # executor. If you're using regular langgchain parallelism (batch, etc.)
+    # you'd only ever need 1 worker, but we permit more for now to reduce the chance
+    # of slowdown if you are mixing with your own executor.
+    cutie = ThreadPoolExecutor(max_workers=10)
     atexit.register(cutie.shutdown, wait=True)
     return cutie
