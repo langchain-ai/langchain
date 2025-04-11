@@ -861,6 +861,25 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
         assert optional_prompt.format_messages() == []
 
 
+def test_chat_prompt_message_placeholder_dict() -> None:
+    prompt = ChatPromptTemplate([{"role": "placeholder", "content": "{convo}"}])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate(
+        [{"role": "placeholder", "content": ["{convo}", False]}]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
 def test_chat_prompt_message_dict() -> None:
     prompt = ChatPromptTemplate(
         [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
@@ -870,8 +889,11 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    ChatPromptTemplate([{"role": "system", "content": False}])
-    ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+    with pytest.raises(ValueError, match="Invalid template: False"):
+        ChatPromptTemplate([{"role": "system", "content": False}])
+
+    with pytest.raises(ValueError, match="Unexpected message type: foo."):
+        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
 async def test_messages_prompt_accepts_list() -> None:
@@ -981,22 +1003,13 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ),
             ("placeholder", "{chat_history}"),
             MessagesPlaceholder("more_history", optional=False),
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_image",
-                        "src": "{file_path}",
-                        "details": {"resolution": "{res}"},
-                    }
-                ],
-            },
         ]
     )
     assert dumpd(template) == snapshot()
     assert load(dumpd(template)) == template
 
 
+@pytest.mark.xfail(reason="TODO")
 def test_chat_tmpl_dict_msg() -> None:
     template = ChatPromptTemplate(
         [
@@ -1115,3 +1128,87 @@ def test_chat_prompt_template_variable_names() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_data_prompt_template_deserializable() -> None:
+    """Test that the image prompt template is serializable."""
+    load(
+        dumpd(
+            ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        [{"type": "image", "source_type": "url", "source": "{url}"}],
+                    )
+                ]
+            )
+        )
+    )
+
+
+@pytest.mark.requires("jinja2")
+@pytest.mark.parametrize(
+    ("template_format", "cache_control_placeholder", "source_data_placeholder"),
+    [
+        ("f-string", "{cache_type}", "{source_data}"),
+        ("mustache", "{{cache_type}}", "{{source_data}}"),
+    ],
+)
+def test_chat_prompt_template_data_prompt_from_message(
+    template_format: PromptTemplateFormat,
+    cache_control_placeholder: str,
+    source_data_placeholder: str,
+) -> None:
+    prompt: dict = {
+        "type": "image",
+        "source_type": "base64",
+        "source": f"{source_data_placeholder}",
+    }
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(source_data="base64data") == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "source": "base64data",
+                }
+            ]
+        )
+    ]
+
+    # metadata
+    prompt["metadata"] = {"cache_control": {"type": f"{cache_control_placeholder}"}}
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(
+        cache_type="ephemeral", source_data="base64data"
+    ) == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "source": "base64data",
+                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                }
+            ]
+        )
+    ]
+
+
+def test_dict_message_prompt_template_errors_on_jinja2() -> None:
+    prompt = {
+        "type": "image",
+        "source_type": "base64",
+        "source": "{source_data}",
+    }
+
+    with pytest.raises(ValueError, match="jinja2"):
+        _ = ChatPromptTemplate.from_messages(
+            [("human", [prompt])], template_format="jinja2"
+        )

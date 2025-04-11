@@ -123,6 +123,13 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
     def get_lc_namespace(cls) -> list[str]:
         return ["langchain_core", "prompts", "message"]
 
+    def format(
+        self,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Format the prompt with the inputs."""
+        return _insert_input_variables(self.template, kwargs, self.template_format)
+
 
 def _get_input_variables(
     template: dict, template_format: Literal["f-string", "mustache"]

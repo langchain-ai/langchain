@@ -393,7 +393,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate, list[Union[StringPromptTemplate, ImagePromptTemplate]]
+        StringPromptTemplate,
+        list[
+            Union[StringPromptTemplate, ImagePromptTemplate, _DictMessagePromptTemplate]
+        ],
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
@@ -404,7 +407,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     @classmethod
     def from_template(
         cls: type[Self],
-        template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
+        template: Union[
+            str,
+            list[Union[str, _TextTemplateParam, _ImageTemplateParam, dict[str, Any]]],
+        ],
         template_format: PromptTemplateFormat = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
@@ -487,6 +493,19 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         msg = f"Invalid image template: {tmpl}"
                         raise ValueError(msg)
                     prompt.append(img_template_obj)
+                elif isinstance(tmpl, dict):
+                    if template_format == "jinja2":
+                        msg = (
+                            "jinja2 is unsafe and is not supported for templates "
+                            "expressed as dicts. Please use 'f-string' or 'mustache' "
+                            "format."
+                        )
+                        raise ValueError(msg)
+                    data_template_obj = _DictMessagePromptTemplate(
+                        template=cast("dict[str, Any]", tmpl),
+                        template_format=template_format,
+                    )
+                    prompt.append(data_template_obj)
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)
@@ -564,11 +583,16 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: Union[str, ImageURL] = prompt.format(**inputs)
+                formatted: Union[str, ImageURL, dict[str, Any]] = prompt.format(
+                    **inputs
+                )
                 content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
                 formatted = prompt.format(**inputs)
                 content.append({"type": "image_url", "image_url": formatted})
+            elif isinstance(prompt, _DictMessagePromptTemplate):
+                formatted = prompt.format(**inputs)
+                content.append(formatted)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
         )
@@ -591,11 +615,16 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: Union[str, ImageURL] = await prompt.aformat(**inputs)
+                formatted: Union[str, ImageURL, dict[str, Any]] = await prompt.aformat(
+                    **inputs
+                )
                 content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
                 formatted = await prompt.aformat(**inputs)
                 content.append({"type": "image_url", "image_url": formatted})
+            elif isinstance(prompt, _DictMessagePromptTemplate):
+                formatted = prompt.format(**inputs)
+                content.append(formatted)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
         )
@@ -1378,7 +1407,15 @@ def _convert_to_message_template(
         _message = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
-    elif isinstance(message, tuple):
+    elif isinstance(message, (tuple, dict)):
+        if isinstance(message, dict):
+            if set(message.keys()) != {"content", "role"}:
+                msg = (
+                    "Expected dict to have exact keys 'role' and 'content'."
+                    f" Got: {message}"
+                )
+                raise ValueError(msg)
+            message = (message["role"], message["content"])
         if len(message) != 2:
             msg = f"Expected 2-tuple of (role, template), got {message}"
             raise ValueError(msg)
@@ -1393,17 +1430,6 @@ def _convert_to_message_template(
                     cast("str", template), template_format=template_format
                 )
             )
-    elif isinstance(message, dict):
-        if template_format == "jinja":
-            msg = (
-                f"{template_format} is unsafe and is not supported for templates "
-                f"expressed as dicts. Please use 'f-string' or 'mustache' format."
-            )
-            raise ValueError(msg)
-        _message = _DictMessagePromptTemplate(
-            template=message,
-            template_format=template_format,  # type: ignore[arg-type]
-        )
     else:
         msg = f"Unsupported message type: {type(message)}"
         raise NotImplementedError(msg)
