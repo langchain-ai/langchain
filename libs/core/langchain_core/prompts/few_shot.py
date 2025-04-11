@@ -10,6 +10,7 @@ from pydantic import (
     Field,
     model_validator,
 )
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -453,6 +454,7 @@ class FewShotChatMessagePromptTemplate(
         messages = await self.aformat_messages(**kwargs)
         return get_buffer_string(messages)
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the prompt template.
 

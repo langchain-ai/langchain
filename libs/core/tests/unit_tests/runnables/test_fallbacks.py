@@ -8,7 +8,7 @@ from typing import (
 
 import pytest
 from pydantic import BaseModel
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun

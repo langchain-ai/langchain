@@ -293,7 +293,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """
         return StringPromptValue(text=await self.aformat(**kwargs))
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get a pretty representation of the prompt.
 
         Args:

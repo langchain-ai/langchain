@@ -67,7 +67,10 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Human-readable representation.
 
         Args:
@@ -93,7 +96,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
 

@@ -119,10 +119,10 @@ class _MockStructuredTool(BaseTool):
     args_schema: type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
-    async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    async def _arun(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         raise NotImplementedError
 
 
@@ -146,11 +146,13 @@ def test_misannotated_base_tool_raises_error() -> None:
             args_schema: BaseModel = _MockSchema  # type: ignore[assignment]
             description: str = "A Structured Tool"
 
-            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+            def _run(
+                self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            ) -> str:
                 return f"{arg1} {arg2} {arg3}"
 
             async def _arun(
-                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+                self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
             ) -> str:
                 raise NotImplementedError
 
@@ -163,11 +165,11 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
         args_schema: "type[BaseModel]" = _MockSchema
         description: str = "A Structured Tool"
 
-        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
         ) -> str:
             raise NotImplementedError
 
@@ -180,11 +182,11 @@ def test_subclass_annotated_base_tool_accepted() -> None:
         args_schema: type[_MockSchema] = _MockSchema
         description: str = "A Structured Tool"
 
-        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
         ) -> str:
             raise NotImplementedError
 
@@ -197,14 +199,14 @@ def test_decorator_with_specified_schema() -> None:
     """Test that manually specified schemata are passed through to the tool."""
 
     @tool(args_schema=_MockSchema)
-    def tool_func(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def tool_func(*, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
     @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
-    def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def tool_func_v1(*, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
@@ -216,7 +218,7 @@ def test_decorated_function_schema_equivalent() -> None:
 
     @tool
     def structured_tool_input(
-        arg1: int, arg2: bool, arg3: Optional[dict] = None
+        *, arg1: int, arg2: bool, arg3: Optional[dict] = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
@@ -905,7 +907,7 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         _tool.run({})
 
@@ -970,7 +972,7 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         await _tool.arun({})
 
@@ -1397,14 +1399,17 @@ class _MockStructuredToolWithRawOutput(BaseTool):
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
-        self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        self,
+        arg1: int,
+        arg2: bool,  # noqa: FBT001
+        arg3: Optional[dict] = None,
     ) -> tuple[str, dict]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
 @tool("structured_api", response_format="content_and_artifact")
 def _mock_structured_tool_with_artifact(
-    arg1: int, arg2: bool, arg3: Optional[dict] = None
+    *, arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> tuple[str, dict]:
     """A Structured Tool."""
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
@@ -1896,7 +1901,7 @@ def test_args_schema_explicitly_typed() -> None:
         # type ignoring here since we're allowing overriding a type
         # signature of pydantic.v1.BaseModel with pydantic.BaseModel
         # for pydantic 2!
-        args_schema: type[BaseModel] = Foo  # type: ignore[assignment]
+        args_schema: type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
@@ -2152,7 +2157,7 @@ def test_tool_annotations_preserved() -> None:
         """Tool docstring."""
         return "foo"
 
-    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+    schema = my_tool.get_input_schema()
 
     func = my_tool.func  # type: ignore[attr-defined]
 

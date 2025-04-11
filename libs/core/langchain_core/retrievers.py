@@ -30,6 +30,7 @@ from pydantic import ConfigDict
 from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables import (
     Runnable,
@@ -43,7 +44,6 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
-        Callbacks,
     )
 
 RetrieverInput = str
@@ -160,10 +160,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             swap = cls.get_relevant_documents
-            cls.get_relevant_documents = (  # type: ignore[assignment]
+            cls.get_relevant_documents = (  # type: ignore[method-assign]
                 BaseRetriever.get_relevant_documents
             )
-            cls._get_relevant_documents = swap  # type: ignore[assignment]
+            cls._get_relevant_documents = swap  # type: ignore[method-assign]
         if (
             hasattr(cls, "aget_relevant_documents")
             and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
@@ -175,10 +175,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = (  # type: ignore[assignment]
+            cls.aget_relevant_documents = (  # type: ignore[method-assign]
                 BaseRetriever.aget_relevant_documents
             )
-            cls._aget_relevant_documents = aswap  # type: ignore[assignment]
+            cls._aget_relevant_documents = aswap  # type: ignore[method-assign]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
