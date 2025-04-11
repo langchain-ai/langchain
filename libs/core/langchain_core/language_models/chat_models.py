@@ -129,7 +129,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                 ):
                     message_to_trace = message.model_copy(deep=True)
                     message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
-                        convert_to_openai_image_block(block)  # type: ignore[arg-type]
+                        convert_to_openai_image_block(block)
                     )
         messages_to_trace.append(message_to_trace)
     return messages_to_trace

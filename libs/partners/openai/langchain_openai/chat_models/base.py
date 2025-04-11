@@ -217,7 +217,7 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking")
             ):
                 continue
-            elif is_data_content_block(block):
+            elif isinstance(block, dict) and is_data_content_block(block):
                 formatted_content.append(_format_data_content_block(block))
             # Anthropic image blocks
             elif (
