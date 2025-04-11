@@ -102,6 +102,12 @@ def test_serializable_mapping() -> None:
             "modifier",
             "RemoveMessage",
         ),
+        ("langchain", "prompts", "data", "DataPromptTemplate"): (
+            "langchain_core",
+            "prompts",
+            "data",
+            "DataPromptTemplate",
+        ),
         ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
             "langchain_mistralai",
             "chat_models",
