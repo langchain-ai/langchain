@@ -168,7 +168,7 @@ class FakeTracer(BaseTracer):
         self.runs.append(self._copy_run(run))
 
     def flattened_runs(self) -> list[Run]:
-        q = [] + self.runs
+        q = [*self.runs]
         result = []
         while q:
             parent = q.pop()

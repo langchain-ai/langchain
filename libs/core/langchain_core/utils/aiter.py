@@ -144,7 +144,7 @@ async def tee_peer(
             yield buffer.popleft()
     finally:
         async with lock:
-            # this peer is done – remove its buffer
+            # this peer is done - remove its buffer
             for idx, peer_buffer in enumerate(peers):  # pragma: no branch
                 if peer_buffer is buffer:
                     peers.pop(idx)
