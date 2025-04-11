@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type, Union, cast
+from typing import Any, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -21,7 +21,7 @@ class AnswerWithSources(BaseModel):
     """An answer to the question, with sources."""
 
     answer: str = Field(..., description="Answer to the question that was asked")
-    sources: List[str] = Field(
+    sources: list[str] = Field(
         ..., description="List of sources used to answer the question"
     )
 
@@ -37,7 +37,7 @@ class AnswerWithSources(BaseModel):
 )
 def create_qa_with_structure_chain(
     llm: BaseLanguageModel,
-    schema: Union[dict, Type[BaseModel]],
+    schema: Union[dict, type[BaseModel]],
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
     verbose: bool = False,

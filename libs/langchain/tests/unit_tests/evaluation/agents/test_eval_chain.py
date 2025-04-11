@@ -1,6 +1,6 @@
 """Test agent trajectory evaluation chain."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 from langchain_core.agents import AgentAction, BaseMessage
@@ -18,7 +18,7 @@ from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 
 @pytest.fixture
-def intermediate_steps() -> List[Tuple[AgentAction, str]]:
+def intermediate_steps() -> list[tuple[AgentAction, str]]:
     return [
         (
             AgentAction(
@@ -38,14 +38,14 @@ def foo(bar: str) -> str:
 
 
 class _FakeTrajectoryChatModel(FakeChatModel):
-    queries: Dict = Field(default_factory=dict)
+    queries: dict = Field(default_factory=dict)
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
     def _call(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -114,7 +114,7 @@ Score: One"""
 
 
 def test_trajectory_eval_chain(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -142,7 +142,7 @@ def test_trajectory_eval_chain(
 
 
 def test_trajectory_eval_chain_no_tools(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -167,7 +167,7 @@ def test_trajectory_eval_chain_no_tools(
     assert res["score"] == 0.0
 
 
-def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> None:
+def test_old_api_works(intermediate_steps: list[tuple[AgentAction, str]]) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
             "a": "Trajectory good\nScore: 5",

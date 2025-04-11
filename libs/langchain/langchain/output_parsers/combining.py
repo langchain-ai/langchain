@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
 
 
-class CombiningOutputParser(BaseOutputParser[Dict[str, Any]]):
+class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     """Combine multiple output parsers into one."""
 
-    parsers: List[BaseOutputParser]
+    parsers: list[BaseOutputParser]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
 
     @pre_init
-    def validate_parsers(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_parsers(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate the parsers."""
         parsers = values["parsers"]
         if len(parsers) < 2:
@@ -43,7 +43,7 @@ class CombiningOutputParser(BaseOutputParser[Dict[str, Any]]):
         )
         return f"{initial}\n{subsequent}"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output of an LLM call."""
         texts = text.split("\n\n")
         output = dict()

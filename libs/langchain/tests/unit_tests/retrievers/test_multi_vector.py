@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable
 
 from langchain_core.documents import Document
 
@@ -17,7 +17,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
             return []
@@ -25,7 +25,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         res = self.store.get(query)
         if res is None:
             return []

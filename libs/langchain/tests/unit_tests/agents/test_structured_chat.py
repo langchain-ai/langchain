@@ -1,7 +1,7 @@
 """Unittests for langchain.agents.chat package."""
 
 from textwrap import dedent
-from typing import Any, Tuple
+from typing import Any
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.prompts.chat import (
@@ -17,7 +17,7 @@ from langchain.agents.structured_chat.output_parser import StructuredChatOutputP
 output_parser = StructuredChatOutputParser()
 
 
-def get_action_and_input(text: str) -> Tuple[str, str]:
+def get_action_and_input(text: str) -> tuple[str, str]:
     output = output_parser.parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)

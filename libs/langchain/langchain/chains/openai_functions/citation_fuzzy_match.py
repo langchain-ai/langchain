@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from collections.abc import Iterator
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseChatModel, BaseLanguageModel
@@ -21,7 +21,7 @@ class FactWithEvidence(BaseModel):
     """
 
     fact: str = Field(..., description="Body of the sentence, as part of a response")
-    substring_quote: List[str] = Field(
+    substring_quote: list[str] = Field(
         ...,
         description=(
             "Each source should be a direct quote from the context, "
@@ -54,7 +54,7 @@ class QuestionAnswer(BaseModel):
     each sentence contains a body and a list of sources."""
 
     question: str = Field(..., description="Question that was asked")
-    answer: List[FactWithEvidence] = Field(
+    answer: list[FactWithEvidence] = Field(
         ...,
         description=(
             "Body of the answer, each fact should be "

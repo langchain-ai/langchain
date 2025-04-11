@@ -134,7 +134,8 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "D"]
+select = ["E", "F", "I", "T201", "D", "UP"]
+ignore = ["UP007", ]
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]

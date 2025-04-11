@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.memory import BaseMemory
 
@@ -8,16 +8,16 @@ class SimpleMemory(BaseMemory):
     ever change between prompts.
     """
 
-    memories: Dict[str, Any] = dict()
+    memories: dict[str, Any] = dict()
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         return list(self.memories.keys())
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         return self.memories
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Nothing should be saved or changed, my memory is set in stone."""
         pass
 

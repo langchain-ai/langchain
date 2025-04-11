@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -21,7 +21,7 @@ from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import RUN_KEY
 
 
-def _get_messages_from_run_dict(messages: List[dict]) -> List[BaseMessage]:
+def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
     if not messages:
         return []
     first_message = messages[0]
@@ -35,15 +35,15 @@ class StringRunMapper(Serializable):
     """Extract items to evaluate from the run object."""
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """The keys to extract from the run."""
         return ["prediction", "input"]
 
     @abstractmethod
-    def map(self, run: Run) -> Dict[str, str]:
+    def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
 
-    def __call__(self, run: Run) -> Dict[str, str]:
+    def __call__(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
@@ -53,7 +53,7 @@ class StringRunMapper(Serializable):
 class LLMStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object."""
 
-    def serialize_chat_messages(self, messages: List[Dict]) -> str:
+    def serialize_chat_messages(self, messages: list[dict]) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
             if isinstance(messages[0], dict):
@@ -66,7 +66,7 @@ class LLMStringRunMapper(StringRunMapper):
             return get_buffer_string(chat_messages)
         raise ValueError(f"Could not extract messages to evaluate {messages}")
 
-    def serialize_inputs(self, inputs: Dict) -> str:
+    def serialize_inputs(self, inputs: dict) -> str:
         if "prompts" in inputs:  # Should we even accept this?
             input_ = "\n\n".join(inputs["prompts"])
         elif "prompt" in inputs:
@@ -77,13 +77,13 @@ class LLMStringRunMapper(StringRunMapper):
             raise ValueError("LLM Run must have either messages or prompts as inputs.")
         return input_
 
-    def serialize_outputs(self, outputs: Dict) -> str:
+    def serialize_outputs(self, outputs: dict) -> str:
         if not outputs.get("generations"):
             raise ValueError("Cannot evaluate LLM Run without generations.")
-        generations: List[Dict] = outputs["generations"]
+        generations: list[dict] = outputs["generations"]
         if not generations:
             raise ValueError("Cannot evaluate LLM run with empty generations.")
-        first_generation: Dict = generations[0]
+        first_generation: dict = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
             # Whereas Runs from the API have a list of dicts
@@ -94,7 +94,7 @@ class LLMStringRunMapper(StringRunMapper):
             output_ = first_generation["text"]
         return output_
 
-    def map(self, run: Run) -> Dict[str, str]:
+    def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if run.run_type != "llm":
             raise ValueError("LLM RunMapper only supports LLM runs.")
@@ -135,7 +135,7 @@ class ChainStringRunMapper(StringRunMapper):
     If not provided, will use the only output key or raise an error
     if there are multiple."""
 
-    def _get_key(self, source: Dict, key: Optional[str], which: str) -> str:
+    def _get_key(self, source: dict, key: Optional[str], which: str) -> str:
         if key is not None:
             return source[key]
         elif len(source) == 1:
@@ -146,7 +146,7 @@ class ChainStringRunMapper(StringRunMapper):
                 f"{source}\nPlease manually specify a {which}_key"
             )
 
-    def map(self, run: Run) -> Dict[str, str]:
+    def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
             raise ValueError(
@@ -182,7 +182,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
-    def map(self, run: Run) -> Dict[str, str]:
+    def map(self, run: Run) -> dict[str, str]:
         if not run.outputs:
             raise ValueError(f"Run {run.id} has no outputs to evaluate.")
         return {"input": run.inputs["input"], "prediction": run.outputs["output"]}
@@ -194,16 +194,16 @@ class StringExampleMapper(Serializable):
     reference_key: Optional[str] = None
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """The keys to extract from the run."""
         return ["reference"]
 
-    def serialize_chat_messages(self, messages: List[Dict]) -> str:
+    def serialize_chat_messages(self, messages: list[dict]) -> str:
         """Extract the input messages from the run."""
         chat_messages = _get_messages_from_run_dict(messages)
         return get_buffer_string(chat_messages)
 
-    def map(self, example: Example) -> Dict[str, str]:
+    def map(self, example: Example) -> dict[str, str]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -230,7 +230,7 @@ class StringExampleMapper(Serializable):
             else output
         }
 
-    def __call__(self, example: Example) -> Dict[str, str]:
+    def __call__(self, example: Example) -> dict[str, str]:
         """Maps the Run and Example to a dictionary."""
         if not example.outputs:
             raise ValueError(
@@ -253,14 +253,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
     """The evaluation chain."""
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         return ["run", "example"]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return ["feedback"]
 
-    def _prepare_input(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _prepare_input(self, inputs: dict[str, Any]) -> dict[str, str]:
         run: Run = inputs["run"]
         example: Optional[Example] = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
@@ -277,7 +277,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
             )
         return evaluate_strings_inputs
 
-    def _prepare_output(self, output: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_output(self, output: dict[str, Any]) -> dict[str, Any]:
         evaluation_result = EvaluationResult(
             key=self.name, comment=output.get("reasoning"), **output
         )
@@ -288,9 +288,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
@@ -304,9 +304,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
@@ -318,7 +318,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
         )
         return self._prepare_output(chain_output)
 
-    def _prepare_evaluator_output(self, output: Dict[str, Any]) -> EvaluationResult:
+    def _prepare_evaluator_output(self, output: dict[str, Any]) -> EvaluationResult:
         feedback: EvaluationResult = output["feedback"]
         if RUN_KEY not in feedback.evaluator_info:
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
@@ -362,7 +362,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
         input_key: Optional[str] = None,
         prediction_key: Optional[str] = None,
         reference_key: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
     ) -> StringRunEvaluatorChain:
         """
         Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
