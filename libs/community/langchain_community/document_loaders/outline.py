@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List
+from typing import Any, Dict, Iterator, List, Tuple
 
 import requests
 from langchain_core.documents import Document
@@ -26,10 +26,11 @@ class OutlineLoader(BaseLoader):
     def __init__(
         self, outline_base_url: str, outline_api_key: str, page_size: int = 25
     ):
-        """Initialize with url, api_key and requested page size for API results pagination.
+        """Initialize with url, api_key and requested page size for API results
+        pagination.
 
         :param outline_base_url: The URL of the outline instance.
-        
+
         :param outline_api_key: API key for accessing the outline instance.
 
         :param page_size: How many outline documents should be retrieved per request
@@ -55,7 +56,7 @@ class OutlineLoader(BaseLoader):
             metadata = self._build_metadata(result)
             yield Document(page_content=text, metadata=metadata)
 
-    def _build_metadata(self, result: Any) -> dict:
+    def _build_metadata(self, result: Any) -> Dict:
         metadata = {"source": f"{self.outline_base_url}/{result['url']}"}
         metadata["id"] = result["id"]
         metadata["title"] = result["title"]
@@ -63,7 +64,7 @@ class OutlineLoader(BaseLoader):
         metadata["updatedAt"] = result["updatedAt"]
         return metadata
 
-    def _extract_pagination_info(self, pagination_data: dict) -> tuple[int, int]:
+    def _extract_pagination_info(self, pagination_data: Dict) -> Tuple[int, int]:
         next_path = pagination_data.get("nextPath", "")
         next_offset = 0
         if next_path:
@@ -77,9 +78,9 @@ class OutlineLoader(BaseLoader):
 
         return next_offset, total
 
-    def _fetch_all(self) -> Iterator[dict]:
+    def _fetch_all(self) -> Iterator[Dict]:
         starting_offset = 0
-        
+
         offset, total_documents, page_entries = self._fetch_page(starting_offset)
         yield from page_entries
 
@@ -87,7 +88,7 @@ class OutlineLoader(BaseLoader):
             offset, _, page_entries = self._fetch_page(offset)
             yield from page_entries
 
-    def _fetch_page(self, offset: int) -> tuple[int, int, List[dict]]:
+    def _fetch_page(self, offset: int) -> Tuple[int, int, List[Dict]]:
         payload = {
             "offset": offset,
             "limit": self.page_size,

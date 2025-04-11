@@ -1,3 +1,5 @@
+from typing import Dict
+
 import pytest
 import requests
 import requests_mock
@@ -6,14 +8,14 @@ from langchain_community.document_loaders import OutlineLoader
 
 
 @pytest.fixture
-def outline_loader():
+def outline_loader() -> OutlineLoader:
     return OutlineLoader(
         outline_base_url="http://outline.test", outline_api_key="test-api-key"
     )
 
 
 @pytest.fixture
-def mock_response_single_page():
+def mock_response_single_page() -> Dict:
     return {
         "data": [
             {
@@ -33,7 +35,7 @@ def mock_response_single_page():
 
 
 @pytest.fixture
-def mock_response_multiple_pages():
+def mock_response_multiple_pages() -> Dict:
     return {
         "data": [
             {
@@ -52,7 +54,9 @@ def mock_response_multiple_pages():
     }
 
 
-def test_fetch_single_page(outline_loader, mock_response_single_page):
+def test_fetch_single_page(
+    outline_loader: OutlineLoader, mock_response_single_page: Dict
+) -> None:
     with requests_mock.Mocker() as m:
         m.post("http://outline.test/api/documents.list", json=mock_response_single_page)
 
@@ -62,7 +66,9 @@ def test_fetch_single_page(outline_loader, mock_response_single_page):
         assert documents[0].page_content == "Test document 1"
 
 
-def test_fetch_multiple_pages(outline_loader, mock_response_multiple_pages):
+def test_fetch_multiple_pages(
+    outline_loader: OutlineLoader, mock_response_multiple_pages: Dict
+) -> None:
     with requests_mock.Mocker() as m:
         # Second page (last page)
         second_page = {
@@ -94,7 +100,7 @@ def test_fetch_multiple_pages(outline_loader, mock_response_multiple_pages):
         assert documents[1].page_content == "Test document 2"
 
 
-def test_api_error(outline_loader):
+def test_api_error(outline_loader: OutlineLoader) -> None:
     with requests_mock.Mocker() as m:
         m.post("http://outline.test/api/documents.list", status_code=401)
 
