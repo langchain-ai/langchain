@@ -1348,16 +1348,13 @@ class CassandraSemanticCache(BaseCache):
             return await self.embedding.aembed_query(text=text)
 
         self._aget_embedding = _acache_embedding
-
+        kwargs = {}
         embedding_dimension: Union[int, Awaitable[int], None] = None
         if setup_mode == CassandraSetupMode.ASYNC:
             embedding_dimension = self._aget_embedding_dimension()
+            kwargs["async_setup"] = True
         elif setup_mode == CassandraSetupMode.SYNC:
             embedding_dimension = self._get_embedding_dimension()
-
-        kwargs = {}
-        if setup_mode == CassandraSetupMode.ASYNC:
-            kwargs["async_setup"] = True
 
         self.table = MetadataVectorCassandraTable(
             session=self.session,

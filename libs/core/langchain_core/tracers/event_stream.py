@@ -789,7 +789,7 @@ async def _astream_events_implementation_v1(
 
     # Ignoring mypy complaint about too many different union combinations
     # This arises because many of the argument types are unions
-    async for log in _astream_log_implementation(  # type: ignore[misc]
+    async for log in _astream_log_implementation(
         runnable,
         input,
         config=config,

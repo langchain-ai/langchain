@@ -370,12 +370,12 @@ def _get_key(
                         resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        resolved_scope = resolved_scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):

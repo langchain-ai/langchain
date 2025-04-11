@@ -48,7 +48,11 @@ typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 langchain-core = { path = "../../core", editable = true }
 
 [tool.ruff]
-select = ["E", "F", "I"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201", "UP"]
+ignore = [ "UP007", ]
 
 [tool.mypy]
 disallow_untyped_defs = true

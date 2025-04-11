@@ -32,7 +32,10 @@ class AzureAISearchRetriever(BaseRetriever):
             pip install -U langchain-community azure-identity azure-search-documents
             export AZURE_AI_SEARCH_SERVICE_NAME="<YOUR_SEARCH_SERVICE_NAME>"
             export AZURE_AI_SEARCH_INDEX_NAME="<YOUR_SEARCH_INDEX_NAME>"
+
             export AZURE_AI_SEARCH_API_KEY="<YOUR_API_KEY>"
+            or
+            export AZURE_AI_SEARCH_BEARER_TOKEN="<YOUR_BEARER_TOKEN>"
 
     Key init args:
         content_key: str
@@ -96,6 +99,14 @@ class AzureAISearchRetriever(BaseRetriever):
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
+    azure_ad_token: str = ""
+    """Your Azure Active Directory token.
+
+        Automatically inferred from env var `AZURE_AI_SEARCH_AD_TOKEN` if not provided.
+
+        For more:
+        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+    """
     content_key: str = "content"
     """Key in a retrieved result to set as the Document page_content."""
     top_k: Optional[int] = None
@@ -118,9 +129,19 @@ class AzureAISearchRetriever(BaseRetriever):
         values["index_name"] = get_from_dict_or_env(
             values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
-        values["api_key"] = get_from_dict_or_env(
-            values, "api_key", "AZURE_AI_SEARCH_API_KEY"
+        values["azure_ad_token"] = get_from_dict_or_env(
+            values, "azure_ad_token", "AZURE_AI_SEARCH_AD_TOKEN", default=""
         )
+        values["api_key"] = get_from_dict_or_env(
+            values, "api_key", "AZURE_AI_SEARCH_API_KEY", default=""
+        )
+        if values["azure_ad_token"] == "" and values["api_key"] == "":
+            raise ValueError(
+                "Missing credentials. Please pass one of `api_key`, `azure_ad_token`, "
+                "or the `AZURE_AI_SEARCH_API_KEY` or `AZURE_AI_SEARCH_AD_TOKEN` "
+                "environment variables."
+            )
+
         return values
 
     def _build_search_url(self, query: str) -> str:
@@ -145,10 +166,14 @@ class AzureAISearchRetriever(BaseRetriever):
 
     @property
     def _headers(self) -> Dict[str, str]:
-        return {
+        headers = {
             "Content-Type": "application/json",
-            "api-key": self.api_key,
         }
+        if not self.azure_ad_token:
+            headers["Authorization"] = f"Bearer {self.azure_ad_token}"
+        else:
+            headers["api-key"] = f"{self.api_key}"
+        return headers
 
     def _search(self, query: str) -> List[dict]:
         search_url = self._build_search_url(query)

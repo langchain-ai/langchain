@@ -1,7 +1,5 @@
 """Standard LangChain interface tests."""
 
-from typing import Type
-
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
@@ -11,7 +9,7 @@ from langchain_perplexity import ChatPerplexity
 
 class TestPerplexityStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatPerplexity
 
     @property

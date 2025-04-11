@@ -2,20 +2,8 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Literal, Optional, Union, cast
 
 import openai
 import tiktoken
@@ -29,19 +17,19 @@ logger = logging.getLogger(__name__)
 
 def _process_batched_chunked_embeddings(
     num_texts: int,
-    tokens: List[Union[List[int], str]],
-    batched_embeddings: List[List[float]],
-    indices: List[int],
+    tokens: list[Union[list[int], str]],
+    batched_embeddings: list[list[float]],
+    indices: list[int],
     skip_empty: bool,
-) -> List[Optional[List[float]]]:
+) -> list[Optional[list[float]]]:
     # for each text, this is the list of embeddings (list of list of floats)
     # corresponding to the chunks of the text
-    results: List[List[List[float]]] = [[] for _ in range(num_texts)]
+    results: list[list[list[float]]] = [[] for _ in range(num_texts)]
 
     # for each text, this is the token length of each chunk
     # for transformers tokenization, this is the string length
     # for tiktoken, this is the number of tokens
-    num_tokens_in_batch: List[List[int]] = [[] for _ in range(num_texts)]
+    num_tokens_in_batch: list[list[int]] = [[] for _ in range(num_texts)]
 
     for i in range(len(indices)):
         if skip_empty and len(batched_embeddings[i]) == 1:
@@ -50,10 +38,10 @@ def _process_batched_chunked_embeddings(
         num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
     # for each text, this is the final embedding
-    embeddings: List[Optional[List[float]]] = []
+    embeddings: list[Optional[list[float]]] = []
     for i in range(num_texts):
         # an embedding for each chunk
-        _result: List[List[float]] = results[i]
+        _result: list[list[float]] = results[i]
 
         if len(_result) == 0:
             # this will be populated with the embedding of an empty string
@@ -213,13 +201,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ),
     )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
-    allowed_special: Union[Literal["all"], Set[str], None] = None
-    disallowed_special: Union[Literal["all"], Set[str], Sequence[str], None] = None
+    allowed_special: Union[Literal["all"], set[str], None] = None
+    disallowed_special: Union[Literal["all"], set[str], Sequence[str], None] = None
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
+    request_timeout: Optional[Union[float, tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
@@ -240,7 +228,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     when tiktoken is called, you can specify a model name to use here."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     skip_empty: bool = False
     """Whether to skip empty strings when embedding or raise an error.
@@ -270,7 +258,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -354,15 +342,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return self
 
     @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        params: Dict = {"model": self.model, **self.model_kwargs}
+    def _invocation_params(self) -> dict[str, Any]:
+        params: dict = {"model": self.model, **self.model_kwargs}
         if self.dimensions is not None:
             params["dimensions"] = self.dimensions
         return params
 
     def _tokenize(
-        self, texts: List[str], chunk_size: int
-    ) -> Tuple[Iterable[int], List[Union[List[int], str]], List[int]]:
+        self, texts: list[str], chunk_size: int
+    ) -> tuple[Iterable[int], list[Union[list[int], str]], list[int]]:
         """
         Take the input `texts` and `chunk_size` and return 3 iterables as a tuple:
 
@@ -383,8 +371,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         indices: An iterable of the same length as `tokens` that maps each token-array
             to the index of the original text in `texts`.
         """
-        tokens: List[Union[List[int], str]] = []
-        indices: List[int] = []
+        tokens: list[Union[list[int], str]] = []
+        indices: list[int] = []
         model_name = self.tiktoken_model_name or self.model
 
         # If tiktoken flag set to False
@@ -403,11 +391,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
-                tokenized: List[int] = tokenizer.encode(text, add_special_tokens=False)
+                tokenized: list[int] = tokenizer.encode(text, add_special_tokens=False)
 
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
-                    token_chunk: List[int] = tokenized[
+                    token_chunk: list[int] = tokenized[
                         j : j + self.embedding_ctx_length
                     ]
 
@@ -420,7 +408,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
                 encoding = tiktoken.get_encoding("cl100k_base")
-            encoder_kwargs: Dict[str, Any] = {
+            encoder_kwargs: dict[str, Any] = {
                 k: v
                 for k, v in {
                     "allowed_special": self.allowed_special,
@@ -459,8 +447,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
+        self, texts: list[str], *, engine: str, chunk_size: Optional[int] = None
+    ) -> list[list[float]]:
         """
         Generate length-safe embeddings for a list of texts.
 
@@ -478,7 +466,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         _chunk_size = chunk_size or self.chunk_size
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
-        batched_embeddings: List[List[float]] = []
+        batched_embeddings: list[list[float]] = []
         for i in _iter:
             response = self.client.create(
                 input=tokens[i : i + _chunk_size], **self._invocation_params
@@ -490,9 +478,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
         )
-        _cached_empty_embedding: Optional[List[float]] = None
+        _cached_empty_embedding: Optional[list[float]] = None
 
-        def empty_embedding() -> List[float]:
+        def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
                 average_embedded = self.client.create(
@@ -508,8 +496,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
+        self, texts: list[str], *, engine: str, chunk_size: Optional[int] = None
+    ) -> list[list[float]]:
         """
         Asynchronously generate length-safe embeddings for a list of texts.
 
@@ -528,7 +516,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         _chunk_size = chunk_size or self.chunk_size
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
-        batched_embeddings: List[List[float]] = []
+        batched_embeddings: list[list[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
@@ -542,9 +530,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
         )
-        _cached_empty_embedding: Optional[List[float]] = None
+        _cached_empty_embedding: Optional[list[float]] = None
 
-        async def empty_embedding() -> List[float]:
+        async def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
                 average_embedded = await self.async_client.create(
@@ -558,8 +546,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
     def embed_documents(
-        self, texts: List[str], chunk_size: int | None = None
-    ) -> List[List[float]]:
+        self, texts: list[str], chunk_size: int | None = None
+    ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
@@ -572,7 +560,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
-            embeddings: List[List[float]] = []
+            embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
                 response = self.client.create(
                     input=texts[i : i + chunk_size_], **self._invocation_params
@@ -588,8 +576,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return self._get_len_safe_embeddings(texts, engine=engine)
 
     async def aembed_documents(
-        self, texts: List[str], chunk_size: int | None = None
-    ) -> List[List[float]]:
+        self, texts: list[str], chunk_size: int | None = None
+    ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
         Args:
@@ -602,7 +590,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
-            embeddings: List[List[float]] = []
+            embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
                 response = await self.async_client.create(
                     input=texts[i : i + chunk_size_], **self._invocation_params
@@ -617,7 +605,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         engine = cast(str, self.deployment)
         return await self._aget_len_safe_embeddings(texts, engine=engine)
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
 
         Args:
@@ -628,7 +616,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
 
         Args:
