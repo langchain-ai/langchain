@@ -2,7 +2,6 @@
 
 from typing import Optional, Type
 
-import pytest  # type: ignore[import-not-found]
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_core.rate_limiters import InMemoryRateLimiter
@@ -29,11 +28,8 @@ class TestXAIStandard(ChatModelIntegrationTests):
         return {
             "model": "grok-3",
             "rate_limiter": rate_limiter,
+            "stream_usage": True,
         }
-
-    @pytest.mark.xfail(reason="Not yet supported.")
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
 
 
 def test_reasoning_content() -> None:
