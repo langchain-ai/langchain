@@ -13,6 +13,8 @@ from langchain_core.language_models.chat_models import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -368,6 +370,44 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **async_specific,
             )
         return self
+
+    def _create_chat_result(
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[dict] = None,
+    ) -> ChatResult:
+        rtn = super()._create_chat_result(response, generation_info)
+
+        if not isinstance(response, openai.BaseModel):
+            return rtn
+
+        if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
+            rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                response.choices[0].message.reasoning_content  # type: ignore
+            )
+
+        return rtn
+
+    def _convert_chunk_to_generation_chunk(
+        self,
+        chunk: dict,
+        default_chunk_class: type,
+        base_generation_info: Optional[dict],
+    ) -> Optional[ChatGenerationChunk]:
+        generation_chunk = super()._convert_chunk_to_generation_chunk(
+            chunk,
+            default_chunk_class,
+            base_generation_info,
+        )
+        if (choices := chunk.get("choices")) and generation_chunk:
+            top = choices[0]
+            if isinstance(generation_chunk.message, AIMessageChunk):
+                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning_content
+                    )
+
+        return generation_chunk
 
     def with_structured_output(
         self,
