@@ -740,7 +740,9 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
+                        dict(stream_resp).pop("message", None)
+                        if stream_resp.get("done") is True
+                        else None
                     ),
                 )
                 if chunk.generation_info and (
@@ -792,7 +794,9 @@ class ChatOllama(BaseChatModel):
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
+                        dict(stream_resp).pop("message", None)
+                        if stream_resp.get("done") is True
+                        else None
                     ),
                 )
                 if chunk.generation_info and (
