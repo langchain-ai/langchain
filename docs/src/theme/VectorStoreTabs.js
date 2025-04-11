@@ -54,13 +54,6 @@ export default function VectorStoreTabs(props) {
             default: false,
         },
         {
-            value: "openGauss",
-            label: "openGauss",
-            text: `from langchain_opengauss import OpenGauss, OpenGaussSettings\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\nsettings = OpenGaussSettings()\n${vectorStoreVarName} = OpenGauss(\n    embedding=embeddings,\n    settings=settings)`,
-            packageName: "langchain-opengauss",
-            default: false,
-        },
-        {
             value: "PGVector",
             label: "PGVector",
             text: `from langchain_postgres import PGVector\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVector(\n    embeddings=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://...",\n)`,
