@@ -2,7 +2,6 @@
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
@@ -16,8 +15,8 @@ class TestLiteLLMStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "ollama/mistral"}
-
-    @pytest.mark.xfail(reason="Not yet implemented.")
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
+        return {
+            "model": "ollama/mistral",
+            # Needed to get the usage object when streaming. See https://docs.litellm.ai/docs/completion/usage#streaming-usage
+            "model_kwargs": {"stream_options": {"include_usage": True}},
+        }

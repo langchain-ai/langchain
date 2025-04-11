@@ -460,7 +460,11 @@ class ChatLiteLLM(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
+            usage = chunk.get("usage", {})
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if isinstance(chunk, AIMessageChunk):
+                chunk.response_metadata = {"model_name": self.model_name or self.model}
+                chunk.usage_metadata = _create_usage_metadata(usage)
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
@@ -486,7 +490,11 @@ class ChatLiteLLM(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
+            usage = chunk.get("usage", {})
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if isinstance(chunk, AIMessageChunk):
+                chunk.response_metadata = {"model_name": self.model_name or self.model}
+                chunk.usage_metadata = _create_usage_metadata(usage)
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
