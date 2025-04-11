@@ -1,7 +1,7 @@
-from typing import Any, Dict
+from typing import Any
 
 
-def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
+def _resolve_schema_references(schema: Any, definitions: dict[str, Any]) -> Any:
     """
     Resolve the $ref keys in a JSON schema object using the provided definitions.
     """

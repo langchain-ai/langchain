@@ -359,7 +359,7 @@ class Graph:
         source: Node,
         target: Node,
         data: Optional[Stringifiable] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
 

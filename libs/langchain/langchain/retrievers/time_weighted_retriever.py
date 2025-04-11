@@ -1,6 +1,6 @@
 import datetime
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -28,7 +28,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """Keyword arguments to pass to the vectorstore similarity search."""
 
     # TODO: abstract as a queue
-    memory_stream: List[Document] = Field(default_factory=list)
+    memory_stream: list[Document] = Field(default_factory=list)
     """The memory_stream of documents to search through."""
 
     decay_rate: float = Field(default=0.01)
@@ -37,7 +37,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     k: int = 4
     """The maximum number of documents to retrieve in a given call."""
 
-    other_score_keys: List[str] = []
+    other_score_keys: list[str] = []
     """Other keys in the metadata to factor into the score, e.g. 'importance'."""
 
     default_salience: Optional[float] = None
@@ -77,9 +77,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
             score += vector_relevance
         return score
 
-    def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
+    def get_salient_docs(self, query: str) -> dict[int, tuple[Document, float]]:
         """Return documents that are salient to the query."""
-        docs_and_scores: List[Tuple[Document, float]]
+        docs_and_scores: list[tuple[Document, float]]
         docs_and_scores = self.vectorstore.similarity_search_with_relevance_scores(
             query, **self.search_kwargs
         )
@@ -91,9 +91,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
                 results[buffer_idx] = (doc, relevance)
         return results
 
-    async def aget_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
+    async def aget_salient_docs(self, query: str) -> dict[int, tuple[Document, float]]:
         """Return documents that are salient to the query."""
-        docs_and_scores: List[Tuple[Document, float]]
+        docs_and_scores: list[tuple[Document, float]]
         docs_and_scores = (
             await self.vectorstore.asimilarity_search_with_relevance_scores(
                 query, **self.search_kwargs
@@ -108,8 +108,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         return results
 
     def _get_rescored_docs(
-        self, docs_and_scores: Dict[Any, Tuple[Document, Optional[float]]]
-    ) -> List[Document]:
+        self, docs_and_scores: dict[Any, tuple[Document, Optional[float]]]
+    ) -> list[Document]:
         current_time = datetime.datetime.now()
         rescored_docs = [
             (doc, self._get_combined_score(doc, relevance, current_time))
@@ -127,7 +127,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
             for doc in self.memory_stream[-self.k :]
@@ -138,7 +138,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
             for doc in self.memory_stream[-self.k :]
@@ -147,7 +147,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         docs_and_scores.update(await self.aget_salient_docs(query))
         return self._get_rescored_docs(docs_and_scores)
 
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time")
         if current_time is None:
@@ -164,8 +164,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         return self.vectorstore.add_documents(dup_docs, **kwargs)
 
     async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
+        self, documents: list[Document], **kwargs: Any
+    ) -> list[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time")
         if current_time is None:

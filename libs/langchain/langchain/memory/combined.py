@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Set
+from typing import Any
 
 from langchain_core.memory import BaseMemory
 from pydantic import field_validator
@@ -10,15 +10,15 @@ from langchain.memory.chat_memory import BaseChatMemory
 class CombinedMemory(BaseMemory):
     """Combining multiple memories' data together."""
 
-    memories: List[BaseMemory]
+    memories: list[BaseMemory]
     """For tracking all the memories that should be accessed."""
 
     @field_validator("memories")
     @classmethod
     def check_repeated_memory_variable(
-        cls, value: List[BaseMemory]
-    ) -> List[BaseMemory]:
-        all_variables: Set[str] = set()
+        cls, value: list[BaseMemory]
+    ) -> list[BaseMemory]:
+        all_variables: set[str] = set()
         for val in value:
             overlap = all_variables.intersection(val.memory_variables)
             if overlap:
@@ -32,7 +32,7 @@ class CombinedMemory(BaseMemory):
 
     @field_validator("memories")
     @classmethod
-    def check_input_key(cls, value: List[BaseMemory]) -> List[BaseMemory]:
+    def check_input_key(cls, value: list[BaseMemory]) -> list[BaseMemory]:
         """Check that if memories are of type BaseChatMemory that input keys exist."""
         for val in value:
             if isinstance(val, BaseChatMemory):
@@ -45,7 +45,7 @@ class CombinedMemory(BaseMemory):
         return value
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """All the memory variables that this instance provides."""
         """Collected from the all the linked memories."""
 
@@ -56,9 +56,9 @@ class CombinedMemory(BaseMemory):
 
         return memory_variables
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         """Load all vars from sub-memories."""
-        memory_data: Dict[str, Any] = {}
+        memory_data: dict[str, Any] = {}
 
         # Collect vars from all sub-memories
         for memory in self.memories:
@@ -72,7 +72,7 @@ class CombinedMemory(BaseMemory):
 
         return memory_data
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this session for every memory."""
         # Save context for all sub-memories
         for memory in self.memories:

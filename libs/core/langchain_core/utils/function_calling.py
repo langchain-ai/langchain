@@ -621,9 +621,9 @@ def tool_example_to_messages(
 
     Arguments:
         input: string, the user input
-        tool_calls: List[BaseModel], a list of tool calls represented as Pydantic
+        tool_calls: list[BaseModel], a list of tool calls represented as Pydantic
             BaseModels
-        tool_outputs: Optional[List[str]], a list of tool call outputs.
+        tool_outputs: Optional[list[str]], a list of tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
         ai_response: Optional[str], if provided, content for a final AIMessage.
@@ -635,7 +635,7 @@ def tool_example_to_messages(
 
         .. code-block:: python
 
-            from typing import List, Optional
+            from typing import Optional
             from pydantic import BaseModel, Field
             from langchain_openai import ChatOpenAI
 

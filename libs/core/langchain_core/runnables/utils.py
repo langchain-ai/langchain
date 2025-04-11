@@ -394,7 +394,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
         func: The function to check.
 
     Returns:
-        Optional[List[str]]: The keys of the first argument if it is a dict,
+        Optional[list[str]]: The keys of the first argument if it is a dict,
             None otherwise.
     """
     try:
@@ -438,7 +438,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         func: The function to check.
 
     Returns:
-        List[Any]: The nonlocal variables accessed by the function.
+        list[Any]: The nonlocal variables accessed by the function.
     """
     try:
         code = inspect.getsource(func)
@@ -683,7 +683,7 @@ def get_unique_config_specs(
         specs: The config specs.
 
     Returns:
-        List[ConfigurableFieldSpec]: The unique config specs.
+        list[ConfigurableFieldSpec]: The unique config specs.
 
     Raises:
         ValueError: If the runnable sequence contains conflicting config specs.

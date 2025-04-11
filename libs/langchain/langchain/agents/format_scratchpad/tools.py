@@ -1,5 +1,5 @@
 import json
-from typing import List, Sequence, Tuple
+from collections.abc import Sequence
 
 from langchain_core.agents import AgentAction
 from langchain_core.messages import (
@@ -40,8 +40,8 @@ def _create_tool_message(
 
 
 def format_to_tool_messages(
-    intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[BaseMessage]:
+    intermediate_steps: Sequence[tuple[AgentAction, str]],
+) -> list[BaseMessage]:
     """Convert (AgentAction, tool output) tuples into ToolMessages.
 
     Args:

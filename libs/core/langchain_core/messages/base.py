@@ -122,7 +122,10 @@ class BaseMessage(Serializable):
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get a pretty representation of the message.
 
         Args:

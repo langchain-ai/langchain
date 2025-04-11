@@ -16,7 +16,7 @@ _debug: bool = False
 _llm_cache: Optional["BaseCache"] = None
 
 
-def set_verbose(value: bool) -> None:
+def set_verbose(value: bool) -> None:  # noqa: FBT001
     """Set a new value for the `verbose` global setting.
 
     Args:
@@ -89,7 +89,7 @@ def get_verbose() -> bool:
     return _verbose or old_verbose
 
 
-def set_debug(value: bool) -> None:
+def set_debug(value: bool) -> None:  # noqa: FBT001
     """Set a new value for the `debug` global setting.
 
     Args:

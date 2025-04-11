@@ -857,7 +857,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         """
         if not isinstance(prompts, list):
             msg = (
-                "Argument 'prompts' is expected to be of type List[str], received"
+                "Argument 'prompts' is expected to be of type list[str], received"
                 f" argument of type {type(prompts)}."
             )
             raise ValueError(msg)  # noqa: TRY004

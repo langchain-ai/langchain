@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import yaml
 from langchain_core._api import deprecated
@@ -20,7 +20,7 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/age
 
 
 def _load_agent_from_tools(
-    config: dict, llm: BaseLanguageModel, tools: List[Tool], **kwargs: Any
+    config: dict, llm: BaseLanguageModel, tools: list[Tool], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
@@ -35,7 +35,7 @@ def _load_agent_from_tools(
 def load_agent_from_config(
     config: dict,
     llm: Optional[BaseLanguageModel] = None,
-    tools: Optional[List[Tool]] = None,
+    tools: Optional[list[Tool]] = None,
     **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Load agent from Config Dict.
@@ -130,7 +130,7 @@ def _load_agent_from_file(
         with open(file_path) as f:
             config = json.load(f)
     elif file_path.suffix[1:] == "yaml":
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError(f"Unsupported file type, must be one of {valid_suffixes}.")

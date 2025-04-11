@@ -91,7 +91,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     .. code-block:: python
 
         from operator import itemgetter
-        from typing import List
 
         from langchain_openai.chat_models import ChatOpenAI
 
@@ -111,9 +110,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         class InMemoryHistory(BaseChatMessageHistory, BaseModel):
             \"\"\"In memory implementation of chat message history.\"\"\"
 
-            messages: List[BaseMessage] = Field(default_factory=list)
+            messages: list[BaseMessage] = Field(default_factory=list)
 
-            def add_messages(self, messages: List[BaseMessage]) -> None:
+            def add_messages(self, messages: list[BaseMessage]) -> None:
                 \"\"\"Add a list of messages to the store\"\"\"
                 self.messages.extend(messages)
 
@@ -470,7 +469,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 return input_val[0]
             return list(input_val)
         msg = (
-            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {input_val}."
         )
         raise ValueError(msg)  # noqa: TRY004
@@ -505,7 +504,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if isinstance(output_val, (list, tuple)):
             return list(output_val)
         msg = (
-            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {output_val}."
         )
         raise ValueError(msg)  # noqa: TRY004
