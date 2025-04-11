@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -1253,7 +1254,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def bind_tools(
         self,
         tools: Sequence[
-            Union[dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
         *,
         tool_choice: Optional[Union[str]] = None,
@@ -1272,11 +1273,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: Union[dict, type],  # noqa: UP006
+        schema: Union[typing.Dict, type],  # noqa: UP006
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
