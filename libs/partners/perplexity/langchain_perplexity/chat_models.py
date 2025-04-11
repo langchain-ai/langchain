@@ -97,7 +97,9 @@ class ChatPerplexity(BaseChatModel):
 
                 from langchain_community.chat_models import ChatPerplexity
 
-                llm = ChatPerplexity(model="llama-3.1-sonar-small-128k-online", temperature=0.7)
+                llm = ChatPerplexity(
+                    model="llama-3.1-sonar-small-128k-online", temperature=0.7
+                )
 
         Invoke:
             .. code-block:: python

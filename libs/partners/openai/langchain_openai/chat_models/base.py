@@ -2808,8 +2808,10 @@ def _convert_to_openai_response_format(
         function["schema"] = function.pop("parameters")
         response_format = {"type": "json_schema", "json_schema": function}
 
-    if strict is not None and strict is not response_format["json_schema"].get(
-        "strict"
+    if (
+        strict is not None
+        and strict is not response_format["json_schema"].get("strict")
+        and isinstance(schema, dict)
     ):
         msg = (
             f"Output schema already has 'strict' value set to "
