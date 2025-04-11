@@ -736,8 +736,16 @@ def test_tool_outputs() -> None:
     assert not response.tool_calls
 
 
-@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
-@pytest.mark.parametrize("annotated", [ExtensionsAnnotated, TypingAnnotated])
+@pytest.mark.parametrize(
+    "typed_dict",
+    [ExtensionsTypedDict, TypingTypedDict],
+    ids=["typing_extensions.TypedDict", "typing.TypedDict"],
+)
+@pytest.mark.parametrize(
+    "annotated",
+    [ExtensionsAnnotated, TypingAnnotated],
+    ids=["typing_extensions.Annotated", "typing.Annotated"],
+)
 def test__convert_typed_dict_to_openai_function(
     typed_dict: TypeAlias, annotated: TypeAlias
 ) -> None:
