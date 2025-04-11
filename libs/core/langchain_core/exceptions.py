@@ -19,18 +19,6 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
     that also may arise inside the output parser. OutputParserExceptions will be
     available to catch and handle in ways to fix the parsing error, while other
     errors will be raised.
-
-    Parameters:
-        error: The error that's being re-raised or an error message.
-        observation: String explanation of error which can be passed to a
-            model to try and remediate the issue. Defaults to None.
-        llm_output: String model output which is error-ing.
-            Defaults to None.
-        send_to_llm: Whether to send the observation and llm_output back to an Agent
-            after an OutputParserException has been raised. This gives the underlying
-            model driving the agent the context that the previous output was improperly
-            structured, in the hopes that it will update the output to the correct
-            format. Defaults to False.
     """
 
     def __init__(
@@ -40,6 +28,21 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         llm_output: Optional[str] = None,
         send_to_llm: bool = False,
     ):
+        """Create an OutputParserException.
+
+        Args:
+            error: The error that's being re-raised or an error message.
+            observation: String explanation of error which can be passed to a
+                model to try and remediate the issue. Defaults to None.
+            llm_output: String model output which is error-ing.
+                Defaults to None.
+            send_to_llm: Whether to send the observation and llm_output back to an Agent
+                after an OutputParserException has been raised.
+                This gives the underlying model driving the agent the context that the
+                previous output was improperly structured, in the hopes that it will
+                update the output to the correct format.
+                Defaults to False.
+        """
         if isinstance(error, str):
             error = create_message(
                 message=error, error_code=ErrorCode.OUTPUT_PARSING_FAILURE
@@ -57,6 +60,8 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
 
 
 class ErrorCode(Enum):
+    """Error codes."""
+
     INVALID_PROMPT_INPUT = "INVALID_PROMPT_INPUT"
     INVALID_TOOL_RESULTS = "INVALID_TOOL_RESULTS"
     MESSAGE_COERCION_FAILURE = "MESSAGE_COERCION_FAILURE"
@@ -67,6 +72,12 @@ class ErrorCode(Enum):
 
 
 def create_message(*, message: str, error_code: ErrorCode) -> str:
+    """Create a message with a link to the LangChain troubleshooting guide.
+
+    Args:
+        message: The message to display.
+        error_code: The error code to display.
+    """
     return (
         f"{message}\n"
         "For troubleshooting, visit: https://python.langchain.com/docs/"

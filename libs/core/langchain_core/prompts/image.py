@@ -1,3 +1,5 @@
+"""Image prompt template for a multimodal model."""
+
 from typing import Any
 
 from pydantic import Field
@@ -21,6 +23,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create an image prompt template."""
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
@@ -107,14 +110,13 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         if not url:
             msg = "Must provide url."
             raise ValueError(msg)
-        elif not isinstance(url, str):
+        if not isinstance(url, str):
             msg = "url must be a string."
-            raise ValueError(msg)
-        else:
-            output: ImageURL = {"url": url}
-            if detail:
-                # Don't check literal values here: let the API check them
-                output["detail"] = detail  # type: ignore[typeddict-item]
+            raise ValueError(msg)  # noqa: TRY004
+        output: ImageURL = {"url": url}
+        if detail:
+            # Don't check literal values here: let the API check them
+            output["detail"] = detail  # type: ignore[typeddict-item]
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:

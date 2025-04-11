@@ -1,9 +1,13 @@
+"""Tracers that print to the console."""
+
 import json
 from typing import Any, Callable
 
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.input import get_bolded_text, get_colored_text
+
+MILLISECONDS_IN_SECOND = 1000
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
@@ -34,10 +38,10 @@ def elapsed(run: Any) -> str:
 
     """
     elapsed_time = run.end_time - run.start_time
-    milliseconds = elapsed_time.total_seconds() * 1000
-    if milliseconds < 1000:
-        return f"{milliseconds:.0f}ms"
-    return f"{(milliseconds / 1000):.2f}s"
+    seconds = elapsed_time.total_seconds()
+    if seconds < 1:
+        return f"{seconds * MILLISECONDS_IN_SECOND:.0f}ms"
+    return f"{seconds:.2f}s"
 
 
 class FunctionCallbackHandler(BaseTracer):
@@ -48,6 +52,11 @@ class FunctionCallbackHandler(BaseTracer):
     Default is "function_callback_handler"."""
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
+        """Create a FunctionCallbackHandler.
+
+        Args:
+            function: The callback function to call.
+        """
         super().__init__(**kwargs)
         self.function_callback = function
 
@@ -84,13 +93,12 @@ class FunctionCallbackHandler(BaseTracer):
             A string with the breadcrumbs of the run.
         """
         parents = self.get_parents(run)[::-1]
-        string = " > ".join(
+        return " > ".join(
             f"{parent.run_type}:{parent.name}"
             if i != len(parents) - 1
             else f"{parent.run_type}:{parent.name}"
             for i, parent in enumerate(parents + [run])
         )
-        return string
 
     # logging methods
     def _on_chain_start(self, run: Run) -> None:
@@ -192,4 +200,5 @@ class ConsoleCallbackHandler(FunctionCallbackHandler):
     name: str = "console_callback_handler"
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create a ConsoleCallbackHandler."""
         super().__init__(function=print, **kwargs)

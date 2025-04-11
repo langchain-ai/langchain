@@ -1,10 +1,12 @@
 import base64
 import json
+import re
 import typing
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
@@ -513,7 +515,14 @@ def test_trim_messages_bound_model_token_counter() -> None:
 
 def test_trim_messages_bad_token_counter() -> None:
     trimmer = trim_messages(max_tokens=10, token_counter={})
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "'token_counter' expected to be a model that implements "
+            "'get_num_tokens_from_messages()' or a function. "
+            "Received object of type <class 'dict'>."
+        ),
+    ):
         trimmer.invoke([HumanMessage("foobar")])
 
 
@@ -652,6 +661,7 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
 
 
 class FakeTokenCountingModel(FakeChatModel):
+    @override
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
@@ -852,7 +862,9 @@ def test_convert_to_messages_openai_refusal() -> None:
     assert actual == expected
 
     # Raises error if content is missing.
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Message dict must contain 'role' and 'content' keys"
+    ):
         convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
 
 

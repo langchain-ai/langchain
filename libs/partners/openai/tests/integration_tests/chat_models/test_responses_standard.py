@@ -1,7 +1,5 @@
 """Standard LangChain interface tests for Responses API"""
 
-from typing import Type
-
 import pytest
 from langchain_core.language_models import BaseChatModel
 
@@ -11,7 +9,7 @@ from tests.integration_tests.chat_models.test_base_standard import TestOpenAISta
 
 class TestOpenAIResponses(TestOpenAIStandard):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatOpenAI
 
     @property

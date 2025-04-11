@@ -1,10 +1,10 @@
 """Ollama specific chat model integration tests"""
 
-from typing import List, Optional
+from typing import Annotated, Optional
 
 import pytest
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_ollama import ChatOllama
 
@@ -78,7 +78,7 @@ def test_structured_output_deeply_nested(model: str) -> None:
     class Data(BaseModel):
         """Extracted data about people."""
 
-        people: List[Person]
+        people: list[Person]
 
     chat = llm.with_structured_output(Data)  # type: ignore[arg-type]
     text = (

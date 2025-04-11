@@ -2,9 +2,10 @@
 
 import base64
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, AsyncIterator, List, Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 import httpx
 import openai
@@ -531,14 +532,14 @@ class MakeASandwich(BaseModel):
 
     bread_type: str
     cheese_type: str
-    condiments: List[str]
-    vegetables: List[str]
+    condiments: list[str]
+    vegetables: list[str]
 
 
 def test_tool_use() -> None:
     llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
-    msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
+    msgs: list = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
 
     assert isinstance(ai_msg, AIMessage)
@@ -583,7 +584,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
         model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
     )
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
-    msgs: List = [
+    msgs: list = [
         HumanMessage("Sally has green hair, what would her username be?"),
         AIMessage(
             content="",
@@ -1045,7 +1046,7 @@ def test_audio_output_modality() -> None:
         },
     )
 
-    history: List[BaseMessage] = [
+    history: list[BaseMessage] = [
         HumanMessage("Make me a short audio clip of you yelling")
     ]
 
@@ -1265,3 +1266,38 @@ def test_structured_output_and_tools() -> None:
     assert len(full.tool_calls) == 1
     tool_call = full.tool_calls[0]
     assert tool_call["name"] == "GenerateUsername"
+
+
+def test_tools_and_structured_output() -> None:
+    class ResponseFormat(BaseModel):
+        response: str
+        explanation: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(
+        ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
+    )
+
+    expected_keys = {"raw", "parsing_error", "parsed"}
+    query = "Hello"
+    tool_query = "Generate a user name for Alice, black hair. Use the tool."
+    # Test invoke
+    ## Engage structured output
+    response = llm.invoke(query)
+    assert isinstance(response["parsed"], ResponseFormat)
+    ## Engage tool calling
+    response_tools = llm.invoke(tool_query)
+    ai_msg = response_tools["raw"]
+    assert isinstance(ai_msg, AIMessage)
+    assert ai_msg.tool_calls
+    assert response_tools["parsed"] is None
+
+    # Test stream
+    aggregated: dict = {}
+    for chunk in llm.stream(tool_query):
+        assert isinstance(chunk, dict)
+        assert all(key in expected_keys for key in chunk)
+        aggregated = {**aggregated, **chunk}
+    assert all(key in aggregated for key in expected_keys)
+    assert isinstance(aggregated["raw"], AIMessage)
+    assert aggregated["raw"].tool_calls
+    assert aggregated["parsed"] is None

@@ -151,17 +151,16 @@ def _get_source_id_assigner(
 ) -> Callable[[Document], Union[str, None]]:
     """Get the source id from the document."""
     if source_id_key is None:
-        return lambda doc: None
-    elif isinstance(source_id_key, str):
+        return lambda _doc: None
+    if isinstance(source_id_key, str):
         return lambda doc: doc.metadata[source_id_key]
-    elif callable(source_id_key):
+    if callable(source_id_key):
         return source_id_key
-    else:
-        msg = (
-            f"source_id_key should be either None, a string or a callable. "
-            f"Got {source_id_key} of type {type(source_id_key)}."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"source_id_key should be either None, a string or a callable. "
+        f"Got {source_id_key} of type {type(source_id_key)}."
+    )
+    raise ValueError(msg)
 
 
 def _deduplicate_in_order(
@@ -317,7 +316,7 @@ def index(
         )
         raise ValueError(msg)
 
-    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+    if (cleanup in {"incremental", "scoped_full"}) and source_id_key is None:
         msg = (
             "Source id key is required when cleanup mode is incremental or scoped_full."
         )
@@ -380,7 +379,7 @@ def index(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental" or cleanup == "scoped_full":
+        if cleanup in {"incremental", "scoped_full"}:
             # source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
@@ -395,7 +394,7 @@ def index(
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
-            source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
+            source_ids = cast("Sequence[str]", source_ids)  # type: ignore[assignment]
 
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 
@@ -461,7 +460,7 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            _source_ids = cast("Sequence[str]", source_ids)
 
             uids_to_delete = record_manager.list_keys(
                 group_ids=_source_ids, before=index_start_dt
@@ -473,7 +472,9 @@ def index(
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full" or cleanup == "scoped_full":
+    if cleanup == "full" or (
+        cleanup == "scoped_full" and scoped_full_cleanup_source_ids
+    ):
         delete_group_ids: Optional[Sequence[str]] = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
@@ -621,7 +622,7 @@ async def aindex(
         )
         raise ValueError(msg)
 
-    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+    if (cleanup in {"incremental", "scoped_full"}) and source_id_key is None:
         msg = (
             "Source id key is required when cleanup mode is incremental or scoped_full."
         )
@@ -666,11 +667,10 @@ async def aindex(
             # In such a case, we use the load method and convert it to an async
             # iterator.
             async_doc_iterator = _to_async_iterator(docs_source.load())
+    elif hasattr(docs_source, "__aiter__"):
+        async_doc_iterator = docs_source  # type: ignore[assignment]
     else:
-        if hasattr(docs_source, "__aiter__"):
-            async_doc_iterator = docs_source  # type: ignore[assignment]
-        else:
-            async_doc_iterator = _to_async_iterator(docs_source)
+        async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -693,7 +693,7 @@ async def aindex(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental" or cleanup == "scoped_full":
+        if cleanup in {"incremental", "scoped_full"}:
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
@@ -708,7 +708,7 @@ async def aindex(
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
-            source_ids = cast(Sequence[str], source_ids)
+            source_ids = cast("Sequence[str]", source_ids)
 
         exists_batch = await record_manager.aexists([doc.uid for doc in hashed_docs])
 
@@ -774,7 +774,7 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            _source_ids = cast("Sequence[str]", source_ids)
 
             uids_to_delete = await record_manager.alist_keys(
                 group_ids=_source_ids, before=index_start_dt
@@ -786,7 +786,9 @@ async def aindex(
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full" or cleanup == "scoped_full":
+    if cleanup == "full" or (
+        cleanup == "scoped_full" and scoped_full_cleanup_source_ids
+    ):
         delete_group_ids: Optional[Sequence[str]] = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)

@@ -1,6 +1,6 @@
 """Test chat model integration."""
+
 import json
-from typing import Dict, Type
 
 from langchain_tests.unit_tests import ChatModelUnitTests
 
@@ -9,11 +9,11 @@ from langchain_ollama.chat_models import ChatOllama, _parse_arguments_from_tool_
 
 class TestChatOllama(ChatModelUnitTests):
     @property
-    def chat_model_class(self) -> Type[ChatOllama]:
+    def chat_model_class(self) -> type[ChatOllama]:
         return ChatOllama
 
     @property
-    def chat_model_params(self) -> Dict:
+    def chat_model_params(self) -> dict:
         return {"model": "llama3-groq-tool-use"}
 
 

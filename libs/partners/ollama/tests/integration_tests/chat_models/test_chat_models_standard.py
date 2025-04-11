@@ -1,7 +1,5 @@
 """Test chat model integration using standard integration tests."""
 
-from typing import Type
-
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_ollama.chat_models import ChatOllama
@@ -9,7 +7,7 @@ from langchain_ollama.chat_models import ChatOllama
 
 class TestChatOllama(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[ChatOllama]:
+    def chat_model_class(self) -> type[ChatOllama]:
         return ChatOllama
 
     @property

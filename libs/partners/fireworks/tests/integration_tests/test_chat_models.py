@@ -4,12 +4,12 @@ You will need FIREWORKS_API_KEY set in your environment to run these tests.
 """
 
 import json
-from typing import Any, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_fireworks import ChatFireworks
 

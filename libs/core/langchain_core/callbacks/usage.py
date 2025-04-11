@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional
 
+from typing_extensions import override
+
 from langchain_core._api import beta
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
@@ -47,13 +49,16 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """
 
     def __init__(self) -> None:
+        """Initialize the UsageMetadataCallbackHandler."""
         super().__init__()
         self._lock = threading.Lock()
         self.usage_metadata: dict[str, UsageMetadata] = {}
 
+    @override
     def __repr__(self) -> str:
         return str(self.usage_metadata)
 
+    @override
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
         # Check for usage_metadata (langchain-core >= 0.2.2)
@@ -89,7 +94,9 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 def get_usage_metadata_callback(
     name: str = "usage_metadata_callback",
 ) -> Generator[UsageMetadataCallbackHandler, None, None]:
-    """Get context manager for tracking usage metadata across chat model calls using
+    """Get usage metadata callback.
+
+    Get context manager for tracking usage metadata across chat model calls using
     ``AIMessage.usage_metadata``.
 
     Args:
@@ -129,7 +136,7 @@ def get_usage_metadata_callback(
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
         ContextVar(name, default=None)
     )
-    register_configure_hook(usage_metadata_callback_var, True)
+    register_configure_hook(usage_metadata_callback_var, inheritable=True)
     cb = UsageMetadataCallbackHandler()
     usage_metadata_callback_var.set(cb)
     yield cb

@@ -2,7 +2,7 @@
 
 import json
 from base64 import b64encode
-from typing import List, Optional
+from typing import Optional
 
 import httpx
 import pytest
@@ -270,7 +270,7 @@ def test_anthropic_call() -> None:
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
     chat = ChatAnthropic(model=MODEL_NAME)
-    chat_messages: List[List[BaseMessage]] = [
+    chat_messages: list[list[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
     messages_copy = [messages.copy() for messages in chat_messages]
@@ -318,7 +318,7 @@ async def test_anthropic_async_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    chat_messages: List[BaseMessage] = [
+    chat_messages: list[BaseMessage] = [
         HumanMessage(content="How many toes do dogs have?")
     ]
     async for token in chat.astream(chat_messages):
@@ -809,7 +809,7 @@ def test_image_tool_calling() -> None:
 
         fav_color: str
 
-    human_content: List[dict] = [
+    human_content: list[dict] = [
         {
             "type": "text",
             "text": "what's your favorite color in this image",

@@ -1,3 +1,5 @@
+"""Parse tools for OpenAI tools output."""
+
 import copy
 import json
 from json import JSONDecodeError
@@ -64,7 +66,7 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
-        parsed = create_tool_call(**parsed)  # type: ignore
+        parsed = create_tool_call(**parsed)  # type: ignore[assignment,arg-type]
     return parsed
 
 
@@ -239,10 +241,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             )
             if self.return_id:
                 return single_result
-            elif single_result:
+            if single_result:
                 return single_result["args"]
-            else:
-                return None
+            return None
         parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
         if not self.return_id:
             parsed_result = [res["args"] for res in parsed_result]
@@ -298,5 +299,4 @@ class PydanticToolsParser(JsonOutputToolsParser):
                 raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
-        else:
-            return pydantic_objects
+        return pydantic_objects

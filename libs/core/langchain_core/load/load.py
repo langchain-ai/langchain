@@ -1,3 +1,5 @@
+"""Load LangChain objects from JSON strings or objects."""
+
 import importlib
 import json
 import os
@@ -26,6 +28,7 @@ DEFAULT_NAMESPACES = [
     "langchain_fireworks",
     "langchain_xai",
     "langchain_sambanova",
+    "langchain_perplexity",
 ]
 # Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
 # Load by path is not allowed.
@@ -87,6 +90,7 @@ class Reviver:
         )
 
     def __call__(self, value: dict[str, Any]) -> Any:
+        """Revive the value."""
         if (
             value.get("lc") == 1
             and value.get("type") == "secret"
@@ -95,10 +99,9 @@ class Reviver:
             [key] = value["id"]
             if key in self.secrets_map:
                 return self.secrets_map[key]
-            else:
-                if self.secrets_from_env and key in os.environ and os.environ[key]:
-                    return os.environ[key]
-                return None
+            if self.secrets_from_env and key in os.environ and os.environ[key]:
+                return os.environ[key]
+            return None
 
         if (
             value.get("lc") == 1
@@ -127,7 +130,7 @@ class Reviver:
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
             # Has explicit import path.
-            elif mapping_key in self.import_mappings:
+            if mapping_key in self.import_mappings:
                 import_path = self.import_mappings[mapping_key]
                 # Split into module and name
                 import_dir, name = import_path[:-1], import_path[-1]
@@ -169,6 +172,7 @@ def loads(
     additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
+
     Equivalent to `load(json.loads(text))`.
 
     Args:
@@ -204,8 +208,10 @@ def load(
     secrets_from_env: bool = True,
     additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
 ) -> Any:
-    """Revive a LangChain class from a JSON object. Use this if you already
-    have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
+    """Revive a LangChain class from a JSON object.
+
+    Use this if you already have a parsed JSON object,
+    eg. from `json.load` or `orjson.loads`.
 
     Args:
         obj: The object to load.

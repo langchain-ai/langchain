@@ -1,8 +1,10 @@
+import re
 import warnings
 from pathlib import Path
 from typing import Any, Union, cast
 
 import pytest
+from packaging import version
 from pydantic import ValidationError
 from syrupy import SnapshotAssertion
 
@@ -32,7 +34,9 @@ from langchain_core.prompts.chat import (
     _convert_to_message_template,
 )
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+)
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 CUR_DIR = Path(__file__).parent.absolute().resolve()
@@ -168,15 +172,14 @@ def test_create_system_message_prompt_list_template_partial_variables_not_null()
         {variables}
         """
 
-    try:
-        graph_analyst_template = SystemMessagePromptTemplate.from_template(
+    with pytest.raises(
+        ValueError, match="Partial variables are not supported for list of templates."
+    ):
+        _ = SystemMessagePromptTemplate.from_template(
             template=[graph_creator_content1, graph_creator_content2],
             input_variables=["variables"],
             partial_variables={"variables": "foo"},
         )
-        graph_analyst_template.format(variables="foo")
-    except ValueError as e:
-        assert str(e) == "Partial variables are not supported for list of templates."
 
 
 def test_message_prompt_template_from_template_file() -> None:
@@ -333,7 +336,7 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
 
 @pytest.mark.requires("jinja2")
 @pytest.mark.parametrize(
-    "template_format,image_type_placeholder,image_data_placeholder",
+    ("template_format", "image_type_placeholder", "image_data_placeholder"),
     [
         ("f-string", "{image_type}", "{image_data}"),
         ("mustache", "{{image_type}}", "{{image_data}}"),
@@ -396,7 +399,12 @@ def test_chat_prompt_template_with_messages(
 
 def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Got mismatched input_variables. Expected: set(). Got: ['foo']"
+        ),
+    ):
         ChatPromptTemplate(
             messages=messages,  # type: ignore[arg-type]
             input_variables=["foo"],
@@ -410,7 +418,10 @@ def test_chat_invalid_input_variables_extra() -> None:
 
 def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Got mismatched input_variables. Expected: {'foo'}. Got: []"),
+    ):
         ChatPromptTemplate(
             messages=messages,  # type: ignore[arg-type]
             input_variables=[],
@@ -484,7 +495,7 @@ async def test_chat_from_role_strings() -> None:
 
 
 @pytest.mark.parametrize(
-    "args,expected",
+    ("args", "expected"),
     [
         (
             ("human", "{question}"),
@@ -554,7 +565,7 @@ def test_chat_prompt_template_append_and_extend() -> None:
 
 def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unexpected message type: meow."):
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
@@ -583,6 +594,23 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_chat_message_partial_composition() -> None:
+    """Test composition of partially initialized messages."""
+    prompt = ChatPromptTemplate.from_messages([("system", "Prompt {x} {y}")]).partial(
+        x="1"
+    )
+
+    appendix = ChatPromptTemplate.from_messages([("system", "Appendix {z}")])
+
+    res = (prompt + appendix).format_messages(y="2", z="3")
+    expected = [
+        SystemMessage(content="Prompt 1 2"),
+        SystemMessage(content="Appendix 3"),
+    ]
+
+    assert res == expected
 
 
 async def test_chat_tmpl_from_messages_multipart_text() -> None:
@@ -748,14 +776,20 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
             ),
         ]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+    ):
         template.format_messages(
             name="R2D2",
             in_mem=in_mem,
             file_path="some/path",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+    ):
         await template.aformat_messages(
             name="R2D2",
             in_mem=in_mem,
@@ -836,16 +870,19 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    ChatPromptTemplate([{"role": "system", "content": False}])
-    ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+    with pytest.raises(ValueError, match="Invalid template: False"):
+        ChatPromptTemplate([{"role": "system", "content": False}])
+
+    with pytest.raises(ValueError, match="Unexpected message type: foo."):
+        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
 async def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
-    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
-    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
     # Assert still raises a nice error
@@ -856,10 +893,10 @@ async def test_messages_prompt_accepts_list() -> None:
         ]
     )
     with pytest.raises(TypeError):
-        prompt.invoke([("user", "Hi there")])  # type: ignore
+        prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+        await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
 
 
 def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
@@ -871,7 +908,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if version.parse("2.10") <= PYDANTIC_VERSION:
         assert _normalize_schema(
             prompt_all_required.get_input_jsonschema()
         ) == snapshot(name="required")
@@ -882,7 +919,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if version.parse("2.10") <= PYDANTIC_VERSION:
         assert _normalize_schema(prompt_optional.get_input_jsonschema()) == snapshot(
             name="partial"
         )
@@ -910,7 +947,7 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
             cast(
-                tuple,
+                "tuple",
                 (
                     "human",
                     [
@@ -1050,13 +1087,12 @@ def test_chat_prompt_template_variable_names() -> None:
         prompt.get_input_schema()
 
     if record:
-        error_msg = []
-        for warning in record:
-            error_msg.append(
-                f"Warning type: {warning.category.__name__}, "
-                f"Warning message: {warning.message}, "
-                f"Warning location: {warning.filename}:{warning.lineno}"
-            )
+        error_msg = [
+            f"Warning type: {warning.category.__name__}, "
+            f"Warning message: {warning.message}, "
+            f"Warning location: {warning.filename}:{warning.lineno}"
+            for warning in record
+        ]
         msg = "\n".join(error_msg)
     else:
         msg = ""

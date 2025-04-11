@@ -23,13 +23,17 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable.
+
         Returns: True.
         """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default namespace is ["langchain", "prompts", "chat"].
+        """
         return ["langchain", "prompts", "chat"]
 
     @abstractmethod
@@ -45,7 +49,6 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Async format messages from kwargs.
-        Should return a list of BaseMessages.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
