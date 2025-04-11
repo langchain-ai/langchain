@@ -65,7 +65,11 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     return (literal, template)
 
 
-def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
+def l_sa_check(
+    template: str,  # noqa: ARG001
+    literal: str,
+    is_standalone: bool,
+) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
     Args:
@@ -366,12 +370,12 @@ def _get_key(
                         resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        resolved_scope = resolved_scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):
@@ -455,12 +459,11 @@ def render(
         # Then we don't need to tokenize it
         # But it does need to be a generator
         tokens: Iterator[tuple[str, str]] = (token for token in template)
+    elif template in g_token_cache:
+        tokens = (token for token in g_token_cache[template])
     else:
-        if template in g_token_cache:
-            tokens = (token for token in g_token_cache[template])
-        else:
-            # Otherwise make a generator
-            tokens = tokenize(template, def_ldel, def_rdel)
+        # Otherwise make a generator
+        tokens = tokenize(template, def_ldel, def_rdel)
 
     output = ""
 

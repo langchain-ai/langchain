@@ -70,7 +70,7 @@ from langchain_core.runnables.utils import (
     Output,
     accepts_config,
     accepts_run_manager,
-    asyncio_accepts_context,
+    coro_with_context,
     gated_coro,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.retry import ExponentialJitterParams
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
     from langchain_core.tracers.log_stream import (
@@ -326,7 +327,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_input_schema()
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate input to the Runnable.
 
@@ -398,7 +400,8 @@ class Runnable(Generic[Input, Output], ABC):
         return self.get_output_schema()
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
@@ -1116,7 +1119,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Mypy isn't resolving the overloads here
         # Likely an issue b/c `self` is being passed through
         # and it's can't map it to Runnable[Input,Output]?
-        async for item in _astream_log_implementation(  # type: ignore
+        async for item in _astream_log_implementation(  # type: ignore[call-overload]
             self,
             input,
             config,
@@ -1740,6 +1743,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
+        exponential_jitter_params: Optional[ExponentialJitterParams] = None,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original Runnable on exceptions.
@@ -1751,6 +1755,9 @@ class Runnable(Generic[Input, Output], ABC):
                 time between retries. Defaults to True.
             stop_after_attempt: The maximum number of attempts to make before
                 giving up. Defaults to 3.
+            exponential_jitter_params: Parameters for
+                ``tenacity.wait_exponential_jitter``. Namely: ``initial``, ``max``,
+                ``exp_base``, and ``jitter`` (all float values).
 
         Returns:
             A new Runnable that retries the original Runnable on exceptions.
@@ -1784,15 +1791,6 @@ class Runnable(Generic[Input, Output], ABC):
 
             assert (count == 2)
 
-
-        Args:
-            retry_if_exception_type: A tuple of exception types to retry on
-            wait_exponential_jitter: Whether to add jitter to the wait time
-                                     between retries
-            stop_after_attempt: The maximum number of attempts to make before giving up
-
-        Returns:
-            A new Runnable that retries the original Runnable on exceptions.
         """
         from langchain_core.runnables.retry import RunnableRetry
 
@@ -1803,6 +1801,7 @@ class Runnable(Generic[Input, Output], ABC):
             retry_exception_types=retry_if_exception_type,
             wait_exponential_jitter=wait_exponential_jitter,
             max_attempt_number=stop_after_attempt,
+            exponential_jitter_params=exponential_jitter_params,
         )
 
     def map(self) -> Runnable[list[Input], list[Output]]:
@@ -1981,10 +1980,7 @@ class Runnable(Generic[Input, Output], ABC):
                 coro = acall_func_with_variable_args(
                     func, input, config, run_manager, **kwargs
                 )
-                if asyncio_accepts_context():
-                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
-                else:
-                    output = await coro
+                output: Output = await coro_with_context(coro, context)
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -2208,14 +2204,14 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                 try:
                     while True:
-                        chunk: Output = context.run(next, iterator)  # type: ignore
+                        chunk: Output = context.run(next, iterator)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -2229,7 +2225,7 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = ichunk
                         else:
                             try:
-                                final_input = final_input + ichunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore[operator]
                             except TypeError:
                                 final_input = ichunk
                                 final_input_supported = False
@@ -2315,20 +2311,14 @@ class Runnable(Generic[Input, Output], ABC):
                     iterator = iterator_
                 try:
                     while True:
-                        if asyncio_accepts_context():
-                            chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
-                                py_anext(iterator),  # type: ignore[arg-type]
-                                context=context,
-                            )
-                        else:
-                            chunk = cast("Output", await py_anext(iterator))
+                        chunk = await coro_with_context(py_anext(iterator), context)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -3085,10 +3075,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         part = functools.partial(step.ainvoke, input, config, **kwargs)
                     else:
                         part = functools.partial(step.ainvoke, input, config)
-                    if asyncio_accepts_context():
-                        input = await asyncio.create_task(part(), context=context)  # type: ignore
-                    else:
-                        input = await asyncio.create_task(part())
+                    input = await coro_with_context(part(), context, create_task=True)
             # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -3808,11 +3795,9 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
             with set_config_context(child_config) as context:
-                if asyncio_accepts_context():
-                    return await asyncio.create_task(  # type: ignore
-                        step.ainvoke(input, child_config), context=context
-                    )
-                return await asyncio.create_task(step.ainvoke(input, child_config))
+                return await coro_with_context(
+                    step.ainvoke(input, child_config), context, create_task=True
+                )
 
         # gather results from all steps
         try:
@@ -4751,11 +4736,6 @@ class RunnableLambda(Runnable[Input, Output]):
             )
         return cast("Output", output)
 
-    def _config(
-        self, config: Optional[RunnableConfig], callable: Callable[..., Any]
-    ) -> RunnableConfig:
-        return ensure_config(config)
-
     @override
     def invoke(
         self,
@@ -4780,7 +4760,7 @@ class RunnableLambda(Runnable[Input, Output]):
             return self._call_with_config(
                 self._invoke,
                 input,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         msg = "Cannot invoke a coroutine function synchronously.Use `ainvoke` instead."
@@ -4803,11 +4783,10 @@ class RunnableLambda(Runnable[Input, Output]):
         Returns:
             The output of this Runnable.
         """
-        the_func = self.afunc if hasattr(self, "afunc") else self.func
         return await self._acall_with_config(
             self._ainvoke,
             input,
-            self._config(config, the_func),
+            ensure_config(config),
             **kwargs,
         )
 
@@ -4884,7 +4863,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield from self._transform_stream_with_config(
                 input,
                 self._transform,
-                self._config(config, self.func),
+                ensure_config(config),
                 **kwargs,
             )
         else:
@@ -5012,7 +4991,7 @@ class RunnableLambda(Runnable[Input, Output]):
         async for output in self._atransform_stream_with_config(
             input,
             self._atransform,
-            self._config(config, self.afunc if hasattr(self, "afunc") else self.func),
+            ensure_config(config),
             **kwargs,
         ):
             yield output
@@ -5057,7 +5036,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         return create_model_v2(
             self.get_name("Input"),
             root=(
-                list[self.bound.get_input_schema(config)],  # type: ignore
+                list[self.bound.get_input_schema(config)],  # type: ignore[misc]
                 None,
             ),
             # create model needs access to appropriate type annotations to be
@@ -5292,7 +5271,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore
+    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore[arg-type]
     """The config to bind to the underlying Runnable."""
 
     config_factories: list[Callable[[RunnableConfig], RunnableConfig]] = Field(

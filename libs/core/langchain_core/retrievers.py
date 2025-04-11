@@ -190,7 +190,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             async def _aget_relevant_documents(
                 self: Self, query: str
             ) -> list[Document]:
-                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore
+                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore[call-arg]
 
             cls._aget_relevant_documents = _aget_relevant_documents  # type: ignore[assignment]
 
@@ -199,7 +199,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
         )
 
-    def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
+    def _get_ls_params(self, **_kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
         default_retriever_name = self.get_name()
         if default_retriever_name.startswith("Retriever"):
