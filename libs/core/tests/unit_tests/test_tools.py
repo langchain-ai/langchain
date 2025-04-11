@@ -907,7 +907,7 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         _tool.run({})
 
@@ -972,7 +972,7 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         await _tool.arun({})
 
@@ -1901,7 +1901,7 @@ def test_args_schema_explicitly_typed() -> None:
         # type ignoring here since we're allowing overriding a type
         # signature of pydantic.v1.BaseModel with pydantic.BaseModel
         # for pydantic 2!
-        args_schema: type[BaseModel] = Foo  # type: ignore[assignment]
+        args_schema: type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
@@ -2157,7 +2157,7 @@ def test_tool_annotations_preserved() -> None:
         """Tool docstring."""
         return "foo"
 
-    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+    schema = my_tool.get_input_schema()
 
     func = my_tool.func  # type: ignore[attr-defined]
 

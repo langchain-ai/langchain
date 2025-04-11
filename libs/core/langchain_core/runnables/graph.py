@@ -288,7 +288,7 @@ class Graph:
                 "target": stable_node_ids[edge.target],
             }
             if edge.data is not None:
-                edge_dict["data"] = edge.data
+                edge_dict["data"] = edge.data  # type: ignore[assignment]
             if edge.conditional:
                 edge_dict["conditional"] = True
             edges.append(edge_dict)

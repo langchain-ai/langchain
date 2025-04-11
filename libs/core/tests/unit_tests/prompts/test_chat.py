@@ -6,7 +6,7 @@ from typing import Any, Union, cast
 import pytest
 from packaging import version
 from pydantic import ValidationError
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -15,6 +15,7 @@ from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     get_buffer_string,
@@ -24,7 +25,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
-    ChatMessage,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -82,7 +82,7 @@ def chat_prompt_template(
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
     )
 
 
@@ -403,12 +403,12 @@ def test_chat_invalid_input_variables_extra() -> None:
         ),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=["foo"],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
         == []
     )
 
@@ -420,19 +420,19 @@ def test_chat_invalid_input_variables_missing() -> None:
         match=re.escape("Got mismatched input_variables. Expected: {'foo'}. Got: []"),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=[],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
-        input_variables=[],  # type: ignore[arg-type]
+        messages=messages,
+        input_variables=[],
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=messages)
     assert prompt.input_variables == ["foo"]
 
 
@@ -443,7 +443,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -457,9 +457,9 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
-        messages=messages,  # type: ignore[arg-type]
-        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
+    prompt = ChatPromptTemplate(
+        messages=messages,
+        partial_variables={"formatins": "some structure"},
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}

@@ -394,7 +394,7 @@ def index(
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
-            source_ids = cast("Sequence[str]", source_ids)  # type: ignore[assignment]
+            source_ids = cast("Sequence[str]", source_ids)
 
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 

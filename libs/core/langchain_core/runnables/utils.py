@@ -141,7 +141,7 @@ def coro_with_context(
         The coroutine with the context.
     """
     if asyncio_accepts_context():
-        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg]
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
     if create_task:
         return asyncio.create_task(coro)  # type: ignore[arg-type]
     return coro

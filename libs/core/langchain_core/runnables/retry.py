@@ -20,8 +20,9 @@ from tenacity import (
 )
 from typing_extensions import TypedDict, override
 
-from langchain_core.runnables.base import Input, Output, RunnableBindingBase
+from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.utils import Input, Output
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (

@@ -10,7 +10,6 @@ from typing import (
     Any,
     Optional,
     Union,
-    cast,
 )
 
 from pydantic import BaseModel, ConfigDict
@@ -183,7 +182,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     output = context.run(
@@ -237,7 +236,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     coro = context.run(runnable.ainvoke, input, config, **kwargs)
@@ -328,12 +327,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast("BaseException", output)
+                        handled_exceptions[i] = output
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore[index]
-                    handled_exceptions[i] = cast("BaseException", output)
+                    handled_exceptions[i] = output
                 else:
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
@@ -425,12 +424,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast("BaseException", output)
+                        handled_exceptions[i] = output
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore[index]
-                    handled_exceptions[i] = cast("BaseException", output)
+                    handled_exceptions[i] = output
                 else:
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
@@ -482,7 +481,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = context.run(
@@ -546,7 +545,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = runnable.astream(
@@ -574,7 +573,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             async for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk  # type: ignore[operator]
+                    output = output + chunk
                 except TypeError:
                     output = None
         except BaseException as e:

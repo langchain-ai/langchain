@@ -435,8 +435,8 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
-            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),
+            create_tool_call(name="tool2", args={}, id="2"),
         ],
         invalid_tool_calls=[
             create_invalid_tool_call(name="tool3", args=None, id="3", error=None),

@@ -2408,7 +2408,7 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = cast("Run", run_tree)
+                    handler.run_map[str(run_tree.id)] = run_tree
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None

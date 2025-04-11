@@ -383,7 +383,7 @@ if IS_PYDANTIC_V2:
     ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
-            return model.model_fields  # type: ignore[call-overload,arg-type]
+            return model.model_fields
 
         if hasattr(model, "__fields__"):
             return model.__fields__  # type: ignore[return-value]
@@ -597,7 +597,7 @@ def create_model_v2(
     Returns:
         Type[BaseModel]: The created model.
     """
-    field_definitions = cast("dict[str, Any]", field_definitions or {})  # type: ignore[no-redef]
+    field_definitions = field_definitions or {}
 
     if root:
         if field_definitions:
@@ -635,7 +635,7 @@ def create_model_v2(
         if name.startswith("model"):
             capture_warnings = True
 
-    with warnings.catch_warnings() if capture_warnings else nullcontext():  # type: ignore[attr-defined]
+    with warnings.catch_warnings() if capture_warnings else nullcontext():
         if capture_warnings:
             warnings.filterwarnings(action="ignore")
         try:

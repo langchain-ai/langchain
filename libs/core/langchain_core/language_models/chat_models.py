@@ -853,7 +853,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         run_manager.on_llm_end(
                             LLMResult(
                                 generations=[res.generations],  # type: ignore[list-item, union-attr]
-                                llm_output=res.llm_output,  # type: ignore[list-item, union-attr]
+                                llm_output=res.llm_output,  # type: ignore[union-attr]
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -1107,7 +1107,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 None,
                 next,
                 iterator,
-                done,  # type: ignore[call-arg, arg-type]
+                done,
             )
             if item is done:
                 break

@@ -163,13 +163,13 @@ async def test_config_traceable_async_handoff() -> None:
     def my_great_grandchild_function(a: int) -> int:
         return my_great_great_grandchild_function(a)
 
-    @RunnableLambda  # type: ignore[arg-type,attr-defined]
+    @RunnableLambda  # type: ignore[arg-type]
     async def my_grandchild_function(a: int) -> int:
         return my_great_grandchild_function.invoke(a)
 
     @traceable
     async def my_child_function(a: int) -> int:
-        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore[arg-type,attr-defined]
+        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore[arg-type]
 
     @traceable()
     async def my_function(a: int) -> int:
@@ -337,7 +337,7 @@ class TestRunnableSequenceParallelTraceNesting:
             assert posts[i]["name"] == name
             dotted_order = posts[i]["dotted_order"]
             if prev_dotted_order is not None and not str(
-                expected_parents[name]
+                expected_parents[name]  # type: ignore[index]
             ).startswith("RunnableParallel"):
                 assert dotted_order > prev_dotted_order, (
                     f"{name} not after {name_order[i - 1]}"

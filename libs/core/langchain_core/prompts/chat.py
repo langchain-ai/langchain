@@ -129,7 +129,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
 
@@ -1033,23 +1033,23 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         if isinstance(other, ChatPromptTemplate):
             return ChatPromptTemplate(messages=self.messages + other.messages).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
             return ChatPromptTemplate(messages=self.messages + [other]).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
             return ChatPromptTemplate(messages=self.messages + _other.messages).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt]).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)
 
@@ -1138,7 +1138,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template.
         """
-        return cls(  # type: ignore[call-arg]
+        return cls(
             messages=[
                 ChatMessagePromptTemplate.from_template(template, role=role)
                 for role, template in string_messages

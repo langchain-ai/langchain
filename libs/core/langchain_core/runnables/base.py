@@ -489,7 +489,7 @@ class Runnable(Generic[Input, Output], ABC):
         include = include or []
         config_specs = self.config_specs
         configurable = (
-            create_model_v2(  # type: ignore[call-overload]
+            create_model_v2(
                 "Configurable",
                 field_definitions={
                     spec.id: (
@@ -514,9 +514,7 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         }
-        return create_model_v2(  # type: ignore[call-overload]
-            self.get_name("Config"), field_definitions=all_fields
-        )
+        return create_model_v2(self.get_name("Config"), field_definitions=all_fields)
 
     def get_config_jsonschema(
         self, *, include: Optional[Sequence[str]] = None
@@ -1543,7 +1541,7 @@ class Runnable(Generic[Input, Output], ABC):
             config=cast(
                 "RunnableConfig",
                 {**(config or {}), **kwargs},
-            ),  # type: ignore[misc]
+            ),
             kwargs={},
         )
 
@@ -1931,8 +1929,8 @@ class Runnable(Generic[Input, Output], ABC):
                     "Output",
                     context.run(
                         call_func_with_variable_args,  # type: ignore[arg-type]
-                        func,  # type: ignore[arg-type]
-                        input,  # type: ignore[arg-type]
+                        func,
+                        input,
                         config,
                         run_manager,
                         **kwargs,
@@ -2194,7 +2192,7 @@ class Runnable(Generic[Input, Output], ABC):
                         cast("_StreamingCallbackHandler", h)
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
-                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     None,
                 ):
@@ -2299,7 +2297,7 @@ class Runnable(Generic[Input, Output], ABC):
                         cast("_StreamingCallbackHandler", h)
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
-                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     None,
                 ):
@@ -2318,7 +2316,7 @@ class Runnable(Generic[Input, Output], ABC):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore[operator]
+                                    final_output = final_output + chunk
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -2601,7 +2599,7 @@ def _seq_input_schema(
         next_input_schema = _seq_input_schema(steps[1:], config)
         if not issubclass(next_input_schema, RootModel):
             # it's a dict as expected
-            return create_model_v2(  # type: ignore[call-overload]
+            return create_model_v2(
                 "RunnableSequenceInput",
                 field_definitions={
                     k: (v.annotation, v.default)
@@ -2628,7 +2626,7 @@ def _seq_output_schema(
         prev_output_schema = _seq_output_schema(steps[:-1], config)
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
-            return create_model_v2(  # type: ignore[call-overload]
+            return create_model_v2(
                 "RunnableSequenceOutput",
                 field_definitions={
                     **{
@@ -2646,7 +2644,7 @@ def _seq_output_schema(
         if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             if isinstance(last.keys, list):
-                return create_model_v2(  # type: ignore[call-overload]
+                return create_model_v2(
                     "RunnableSequenceOutput",
                     field_definitions={
                         k: (v.annotation, v.default)
@@ -2655,7 +2653,7 @@ def _seq_output_schema(
                     },
                 )
             field = prev_output_schema.model_fields[last.keys]
-            return create_model_v2(  # type: ignore[call-overload]
+            return create_model_v2(
                 "RunnableSequenceOutput", root=(field.annotation, field.default)
             )
 
@@ -3625,7 +3623,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
-            return create_model_v2(  # type: ignore[call-overload]
+            return create_model_v2(
                 self.get_name("Input"),
                 field_definitions={
                     k: (v.annotation, v.default)
@@ -4084,7 +4082,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if is_async_generator(transform):
-            self._atransform = transform  # type: ignore[assignment]
+            self._atransform = transform
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -4211,7 +4209,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             input,
             self._transform,  # type: ignore[arg-type]
             config,
-            **kwargs,  # type: ignore[arg-type]
+            **kwargs,
         )
 
     @override
@@ -4815,7 +4813,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if inspect.isgeneratorfunction(self.func):
             output: Optional[Output] = None
             for chunk in call_func_with_variable_args(
-                self.func, cast("Input", final), config, run_manager, **kwargs
+                self.func, final, config, run_manager, **kwargs
             ):
                 yield chunk
                 if output is None:
@@ -4827,7 +4825,7 @@ class RunnableLambda(Runnable[Input, Output]):
                         output = chunk
         else:
             output = call_func_with_variable_args(
-                self.func, cast("Input", final), config, run_manager, **kwargs
+                self.func, final, config, run_manager, **kwargs
             )
 
         # If the output is a Runnable, use its stream output
@@ -4936,7 +4934,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 "AsyncIterator[Output]",
                 acall_func_with_variable_args(
                     cast("Callable", afunc),
-                    cast("Input", final),
+                    final,
                     config,
                     run_manager,
                     **kwargs,
@@ -4953,7 +4951,7 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             output = await acall_func_with_variable_args(
                 cast("Callable", afunc),
-                cast("Input", final),
+                final,
                 config,
                 run_manager,
                 **kwargs,

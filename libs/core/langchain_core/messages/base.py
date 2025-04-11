@@ -119,7 +119,7 @@ class BaseMessage(Serializable):
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
     def pretty_repr(
@@ -165,7 +165,7 @@ def merge_content(
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
             if isinstance(content, str):
-                merged = cast("str", merged) + content
+                merged += content
             # If the next chunk is a list, add the current to the start of the list
             else:
                 merged = [merged] + content  # type: ignore[assignment,operator]
@@ -215,7 +215,7 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
-            return self.__class__(  # type: ignore[call-arg]
+            return self.__class__(
                 id=self.id,
                 type=self.type,
                 content=merge_content(self.content, other.content),
