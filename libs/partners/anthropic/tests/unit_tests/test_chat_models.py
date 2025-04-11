@@ -13,6 +13,7 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _format_image,
     _format_messages,
     _merge_messages,
     convert_to_anthropic_tool,
@@ -294,6 +295,12 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
+
+
+def test__format_image() -> None:
+    url = "dummyimage.com/600x400/000/fff"
+    with pytest.raises(ValueError):
+        _format_image(url)
 
 
 @pytest.fixture()
