@@ -52,3 +52,10 @@ def test_import_time(benchmark: BenchmarkFixture, import_path: str) -> None:
     @benchmark
     def import_in_subprocess() -> None:
         subprocess.run([sys.executable, "-c", import_path], check=False)
+
+
+@pytest.mark.benchmark
+def test_import_no_process(benchmark) -> None:
+    @benchmark
+    def import_() -> None:
+        from langchain_core.messages import HumanMessage
