@@ -70,7 +70,7 @@ from langchain_core.runnables.utils import (
     Output,
     accepts_config,
     accepts_run_manager,
-    asyncio_accepts_context,
+    coro_with_context,
     gated_coro,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -1119,7 +1119,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Mypy isn't resolving the overloads here
         # Likely an issue b/c `self` is being passed through
         # and it's can't map it to Runnable[Input,Output]?
-        async for item in _astream_log_implementation(  # type: ignore
+        async for item in _astream_log_implementation(  # type: ignore[call-overload]
             self,
             input,
             config,
@@ -1980,10 +1980,7 @@ class Runnable(Generic[Input, Output], ABC):
                 coro = acall_func_with_variable_args(
                     func, input, config, run_manager, **kwargs
                 )
-                if asyncio_accepts_context():
-                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
-                else:
-                    output = await coro
+                output: Output = await coro_with_context(coro, context)
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -2207,14 +2204,14 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                 try:
                     while True:
-                        chunk: Output = context.run(next, iterator)  # type: ignore
+                        chunk: Output = context.run(next, iterator)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -2228,7 +2225,7 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = ichunk
                         else:
                             try:
-                                final_input = final_input + ichunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore[operator]
                             except TypeError:
                                 final_input = ichunk
                                 final_input_supported = False
@@ -2314,20 +2311,14 @@ class Runnable(Generic[Input, Output], ABC):
                     iterator = iterator_
                 try:
                     while True:
-                        if asyncio_accepts_context():
-                            chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
-                                py_anext(iterator),  # type: ignore[arg-type]
-                                context=context,
-                            )
-                        else:
-                            chunk = cast("Output", await py_anext(iterator))
+                        chunk = await coro_with_context(py_anext(iterator), context)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -3084,10 +3075,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         part = functools.partial(step.ainvoke, input, config, **kwargs)
                     else:
                         part = functools.partial(step.ainvoke, input, config)
-                    if asyncio_accepts_context():
-                        input = await asyncio.create_task(part(), context=context)  # type: ignore
-                    else:
-                        input = await asyncio.create_task(part())
+                    input = await coro_with_context(part(), context, create_task=True)
             # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -3807,11 +3795,9 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
             with set_config_context(child_config) as context:
-                if asyncio_accepts_context():
-                    return await asyncio.create_task(  # type: ignore
-                        step.ainvoke(input, child_config), context=context
-                    )
-                return await asyncio.create_task(step.ainvoke(input, child_config))
+                return await coro_with_context(
+                    step.ainvoke(input, child_config), context, create_task=True
+                )
 
         # gather results from all steps
         try:
@@ -5050,7 +5036,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         return create_model_v2(
             self.get_name("Input"),
             root=(
-                list[self.bound.get_input_schema(config)],  # type: ignore
+                list[self.bound.get_input_schema(config)],  # type: ignore[misc]
                 None,
             ),
             # create model needs access to appropriate type annotations to be
@@ -5285,7 +5271,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore
+    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore[arg-type]
     """The config to bind to the underlying Runnable."""
 
     config_factories: list[Callable[[RunnableConfig], RunnableConfig]] = Field(

@@ -1060,7 +1060,7 @@ async def test_event_streaming_with_tools() -> None:
 
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
-    events = await _collect_events(parameterless.astream_events({}, version="v2"))  # type: ignore
+    events = await _collect_events(parameterless.astream_events({}, version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1084,7 +1084,7 @@ async def test_event_streaming_with_tools() -> None:
             },
         ],
     )
-    events = await _collect_events(with_callbacks.astream_events({}, version="v2"))  # type: ignore
+    events = await _collect_events(with_callbacks.astream_events({}, version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1109,7 +1109,7 @@ async def test_event_streaming_with_tools() -> None:
         ],
     )
     events = await _collect_events(
-        with_parameters.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
+        with_parameters.astream_events({"x": 1, "y": "2"}, version="v2")
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1136,7 +1136,7 @@ async def test_event_streaming_with_tools() -> None:
     )
 
     events = await _collect_events(
-        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v2")
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1354,7 +1354,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
 
     # For whatever reason type annotations fail here because reverse
     # does not appear to be a runnable
-    chain = concat | reverse  # type: ignore
+    chain = concat | reverse
 
     events = await _collect_events(
         chain.astream_events({"a": "hello", "b": "world"}, version="v2")
@@ -1769,7 +1769,7 @@ async def test_runnable_each() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_map = RunnableLambda(add_one).map()  # type: ignore
+    add_one_map = RunnableLambda(add_one).map()  # type: ignore[arg-type,var-annotated]
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
@@ -2016,7 +2016,7 @@ async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
         results = list(streaming)
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
@@ -2028,7 +2028,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_ = RunnableLambda(add_one)  # type: ignore
+    add_one_ = RunnableLambda(add_one)  # type: ignore[arg-type,var-annotated]
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
@@ -2036,7 +2036,7 @@ async def test_async_in_async_stream_lambdas() -> None:
         results = [result async for result in streaming]
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
@@ -2190,19 +2190,19 @@ async def test_parent_run_id_assignment() -> None:
     # Type ignores in the code below need to be investigated.
     # Looks like a typing issue when using RunnableLambda as a decorator
     # with async functions.
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type]
     async def grandchild(x: str) -> str:
         return x
 
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type]
     async def child(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=9)
-        return await grandchild.ainvoke(x, config)  # type: ignore
+        return await grandchild.ainvoke(x, config)  # type: ignore[arg-type]
 
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type]
     async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=8)
-        return await child.ainvoke(x, config)  # type: ignore
+        return await child.ainvoke(x, config)  # type: ignore[arg-type]
 
     bond = uuid.UUID(int=7)
     events = await _collect_events(
@@ -2291,14 +2291,14 @@ async def test_bad_parent_ids() -> None:
     # Type ignores in the code below need to be investigated.
     # Looks like a typing issue when using RunnableLambda as a decorator
     # with async functions.
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type]
     async def child(x: str) -> str:
         return x
 
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type]
     async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=7)
-        return await child.ainvoke(x, config)  # type: ignore
+        return await child.ainvoke(x, config)  # type: ignore[arg-type]
 
     bond = uuid.UUID(int=7)
     events = await _collect_events(
@@ -2399,9 +2399,7 @@ async def test_with_explicit_config() -> None:
 
         return await chain.ainvoke(query)
 
-    events = await _collect_events(
-        say_hello.astream_events("meow", version="v2")  # type: ignore
-    )
+    events = await _collect_events(say_hello.astream_events("meow", version="v2"))
 
     assert [
         event["data"]["chunk"].content

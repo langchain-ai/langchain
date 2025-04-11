@@ -21,7 +21,7 @@ from langchain_core.tracers.langchain import LangChainTracer
 
 
 def _get_posts(client: Client) -> list:
-    mock_calls = client.session.request.mock_calls  # type: ignore
+    mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
     posts = []
     for call in mock_calls:
         if call.args:
@@ -163,13 +163,13 @@ async def test_config_traceable_async_handoff() -> None:
     def my_great_grandchild_function(a: int) -> int:
         return my_great_great_grandchild_function(a)
 
-    @RunnableLambda  # type: ignore
+    @RunnableLambda  # type: ignore[arg-type,attr-defined]
     async def my_grandchild_function(a: int) -> int:
         return my_great_grandchild_function.invoke(a)
 
     @traceable
     async def my_child_function(a: int) -> int:
-        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore
+        return await my_grandchild_function.ainvoke(a) * 3  # type: ignore[arg-type,attr-defined]
 
     @traceable()
     async def my_function(a: int) -> int:
@@ -178,7 +178,7 @@ async def test_config_traceable_async_handoff() -> None:
     async def my_parent_function(a: int) -> int:
         return await my_function(a)
 
-    my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore
+    my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore[arg-type,var-annotated]
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
     posts = _get_posts(tracer.client)
@@ -280,7 +280,7 @@ class TestRunnableSequenceParallelTraceNesting:
         sequence = before | parallel | after
         if isasyncgenfunction(other_thing):
 
-            @RunnableLambda  # type: ignore
+            @RunnableLambda  # type: ignore[arg-type]
             async def parent(a: int) -> int:
                 return await sequence.ainvoke(a)
 
@@ -375,7 +375,7 @@ class TestRunnableSequenceParallelTraceNesting:
     def test_sync(
         self, method: Callable[[RunnableLambda, list[BaseCallbackHandler]], int]
     ) -> None:
-        def other_thing(_: int) -> Generator[int, None, None]:  # type: ignore
+        def other_thing(_: int) -> Generator[int, None, None]:
             yield 1
 
         parent = self._create_parent(other_thing)
@@ -467,9 +467,9 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
-            tracer._persist_run = collect_run  # type: ignore
+            tracer._persist_run = collect_run  # type: ignore[method-assign]
 
-            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
+            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore[attr-defined]
     run = collected.get(str(rid))
 
     assert run is not None
@@ -482,9 +482,9 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     assert grandchild_run.name == "grandchild"
     assert grandchild_run.child_runs
     assert grandchild_run.metadata.get("some_foo") == "some_bar"
-    assert "afoo" in grandchild_run.tags  # type: ignore
+    assert "afoo" in grandchild_run.tags  # type: ignore[operator]
     kitten_run = grandchild_run.child_runs[0]
     assert kitten_run.name == "kitten"
     assert not kitten_run.child_runs
     assert kitten_run.metadata.get("some_foo") == "some_bar"
-    assert "afoo" in kitten_run.tags  # type: ignore
+    assert "afoo" in kitten_run.tags  # type: ignore[operator]

@@ -124,7 +124,7 @@ class LangChainTracer(BaseTracer):
 
         super()._start_trace(run)
         if run._client is None:
-            run._client = self.client  # type: ignore
+            run._client = self.client  # type: ignore[misc]
 
     def on_chat_model_start(
         self,

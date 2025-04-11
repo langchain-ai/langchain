@@ -647,7 +647,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
     if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
-            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
+            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore[arg-type]
         ) == snapshot(name="schema8")
 
 
@@ -5359,7 +5359,7 @@ async def test_astream_log_deep_copies() -> None:
 
     def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
         """Get run log."""
-        run_log = RunLog(state=None)  # type: ignore
+        run_log = RunLog(state=None)  # type: ignore[arg-type]
         for log_patch in run_log_patches:
             run_log = run_log + log_patch
         return run_log
@@ -5379,7 +5379,7 @@ async def test_astream_log_deep_copies() -> None:
     state = run_log.state.copy()
     # Ignoring type here since we know that the state is a dict
     # so we can delete `id` for testing purposes
-    state.pop("id")  # type: ignore
+    state.pop("id")  # type: ignore[misc]
     assert state == {
         "final_output": 2,
         "logs": {},
@@ -5438,7 +5438,7 @@ def test_default_transform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
-            return cast("Output", input)  # type: ignore
+            return cast("Output", input)
 
     runnable = CustomRunnable[dict[str, str], dict[str, str]]()
     chunks = iter(
@@ -5608,7 +5608,7 @@ def test_closing_iterator_doesnt_raise_error() -> None:
     st = chain_.stream("hello")
     next(st)
     # This is a generator so close is defined on it.
-    st.close()  # type: ignore
+    st.close()  # type: ignore[attr-defined]
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
