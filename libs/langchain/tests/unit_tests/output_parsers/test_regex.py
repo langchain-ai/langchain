@@ -33,4 +33,4 @@ def test_regex_parser_output_type() -> None:
         output_keys=["confidence", "explanation"],
         default_output_key="noConfidence",
     )
-    assert parser.OutputType is dict[str, str]
+    assert parser.OutputType == dict[str, str]

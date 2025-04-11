@@ -43,4 +43,4 @@ def test_regex_dict_output_type() -> None:
     regex_dict_parser = RegexDictParser(
         output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT, no_update_value="N/A"
     )
-    assert regex_dict_parser.OutputType is dict[str, str]
+    assert regex_dict_parser.OutputType == dict[str, str]

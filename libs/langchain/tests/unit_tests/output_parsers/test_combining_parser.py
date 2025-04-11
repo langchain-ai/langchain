@@ -69,4 +69,4 @@ def test_combining_output_parser_output_type() -> None:
         ),
     ]
     combining_parser = CombiningOutputParser(parsers=parsers)
-    assert combining_parser.OutputType is dict[str, Any]
+    assert combining_parser.OutputType == dict[str, Any]
