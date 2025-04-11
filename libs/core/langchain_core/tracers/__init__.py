@@ -8,9 +8,8 @@
                                        --> <name>  # Examples: LogStreamCallbackHandler
 """  # noqa: E501
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.tracers.base import BaseTracer
@@ -35,20 +34,27 @@ __all__ = [
     "LogStreamCallbackHandler",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="tracers",
-    dynamic_imports={
-        "BaseTracer": "base",
-        "EvaluatorCallbackHandler": "evaluation",
-        "LangChainTracer": "langchain",
-        "LogStreamCallbackHandler": "log_stream",
-        "RunLog": "log_stream",
-        "RunLogPatch": "log_stream",
-        "Run": "schemas",
-        "ConsoleCallbackHandler": "stdout",
-    },
-)
+_dynamic_imports = {
+    "BaseTracer": "base",
+    "EvaluatorCallbackHandler": "evaluation",
+    "LangChainTracer": "langchain",
+    "LogStreamCallbackHandler": "log_stream",
+    "RunLog": "log_stream",
+    "RunLogPatch": "log_stream",
+    "Run": "schemas",
+    "ConsoleCallbackHandler": "stdout",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

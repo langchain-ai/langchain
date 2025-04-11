@@ -9,9 +9,8 @@ This module is only relevant for LangChain developers, not for users.
 
 """
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from .beta_decorator import (
@@ -43,23 +42,30 @@ __all__ = [
     "warn_deprecated",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="_api",
-    dynamic_imports={
-        "LangChainBetaWarning": "beta_decorator",
-        "beta": "beta_decorator",
-        "suppress_langchain_beta_warning": "beta_decorator",
-        "surface_langchain_beta_warnings": "beta_decorator",
-        "as_import_path": "path",
-        "get_relative_path": "path",
-        "LangChainDeprecationWarning": "deprecation",
-        "deprecated": "deprecation",
-        "surface_langchain_deprecation_warnings": "deprecation",
-        "suppress_langchain_deprecation_warning": "deprecation",
-        "warn_deprecated": "deprecation",
-    },
-)
+_dynamic_imports = {
+    "LangChainBetaWarning": "beta_decorator",
+    "beta": "beta_decorator",
+    "suppress_langchain_beta_warning": "beta_decorator",
+    "surface_langchain_beta_warnings": "beta_decorator",
+    "as_import_path": "path",
+    "get_relative_path": "path",
+    "LangChainDeprecationWarning": "deprecation",
+    "deprecated": "deprecation",
+    "surface_langchain_deprecation_warnings": "deprecation",
+    "suppress_langchain_deprecation_warning": "deprecation",
+    "warn_deprecated": "deprecation",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

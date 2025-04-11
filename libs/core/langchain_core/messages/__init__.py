@@ -15,9 +15,8 @@
 
 """  # noqa: E501
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.messages.ai import (
@@ -92,44 +91,51 @@ __all__ = [
     "convert_to_openai_messages",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="messages",
-    dynamic_imports={
-        "AIMessage": "ai",
-        "AIMessageChunk": "ai",
-        "BaseMessage": "base",
-        "BaseMessageChunk": "base",
-        "merge_content": "base",
-        "message_to_dict": "base",
-        "messages_to_dict": "base",
-        "ChatMessage": "chat",
-        "ChatMessageChunk": "chat",
-        "FunctionMessage": "function",
-        "FunctionMessageChunk": "function",
-        "HumanMessage": "human",
-        "HumanMessageChunk": "human",
-        "RemoveMessage": "modifier",
-        "SystemMessage": "system",
-        "SystemMessageChunk": "system",
-        "InvalidToolCall": "tool",
-        "ToolCall": "tool",
-        "ToolCallChunk": "tool",
-        "ToolMessage": "tool",
-        "ToolMessageChunk": "tool",
-        "AnyMessage": "utils",
-        "MessageLikeRepresentation": "utils",
-        "_message_from_dict": "utils",
-        "convert_to_messages": "utils",
-        "convert_to_openai_messages": "utils",
-        "filter_messages": "utils",
-        "get_buffer_string": "utils",
-        "merge_message_runs": "utils",
-        "message_chunk_to_message": "utils",
-        "messages_from_dict": "utils",
-        "trim_messages": "utils",
-    },
-)
+_dynamic_imports = {
+    "AIMessage": "ai",
+    "AIMessageChunk": "ai",
+    "BaseMessage": "base",
+    "BaseMessageChunk": "base",
+    "merge_content": "base",
+    "message_to_dict": "base",
+    "messages_to_dict": "base",
+    "ChatMessage": "chat",
+    "ChatMessageChunk": "chat",
+    "FunctionMessage": "function",
+    "FunctionMessageChunk": "function",
+    "HumanMessage": "human",
+    "HumanMessageChunk": "human",
+    "RemoveMessage": "modifier",
+    "SystemMessage": "system",
+    "SystemMessageChunk": "system",
+    "InvalidToolCall": "tool",
+    "ToolCall": "tool",
+    "ToolCallChunk": "tool",
+    "ToolMessage": "tool",
+    "ToolMessageChunk": "tool",
+    "AnyMessage": "utils",
+    "MessageLikeRepresentation": "utils",
+    "_message_from_dict": "utils",
+    "convert_to_messages": "utils",
+    "convert_to_openai_messages": "utils",
+    "filter_messages": "utils",
+    "get_buffer_string": "utils",
+    "merge_message_runs": "utils",
+    "message_chunk_to_message": "utils",
+    "messages_from_dict": "utils",
+    "trim_messages": "utils",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

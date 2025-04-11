@@ -19,9 +19,8 @@ tool for the job.
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.tools.base import (
@@ -74,31 +73,38 @@ __all__ = [
     "StructuredTool",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="tools",
-    dynamic_imports={
-        "FILTERED_ARGS": "base",
-        "ArgsSchema": "base",
-        "BaseTool": "base",
-        "BaseToolkit": "base",
-        "InjectedToolArg": "base",
-        "InjectedToolCallId": "base",
-        "SchemaAnnotationError": "base",
-        "ToolException": "base",
-        "_get_runnable_config_param": "base",
-        "create_schema_from_function": "base",
-        "convert_runnable_to_tool": "convert",
-        "tool": "convert",
-        "ToolsRenderer": "render",
-        "render_text_description": "render",
-        "render_text_description_and_args": "render",
-        "RetrieverInput": "retriever",
-        "create_retriever_tool": "retriever",
-        "Tool": "simple",
-        "StructuredTool": "structured",
-    },
-)
+_dynamic_imports = {
+    "FILTERED_ARGS": "base",
+    "ArgsSchema": "base",
+    "BaseTool": "base",
+    "BaseToolkit": "base",
+    "InjectedToolArg": "base",
+    "InjectedToolCallId": "base",
+    "SchemaAnnotationError": "base",
+    "ToolException": "base",
+    "_get_runnable_config_param": "base",
+    "create_schema_from_function": "base",
+    "convert_runnable_to_tool": "convert",
+    "tool": "convert",
+    "ToolsRenderer": "render",
+    "render_text_description": "render",
+    "render_text_description_and_args": "render",
+    "RetrieverInput": "retriever",
+    "create_retriever_tool": "retriever",
+    "Tool": "simple",
+    "StructuredTool": "structured",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

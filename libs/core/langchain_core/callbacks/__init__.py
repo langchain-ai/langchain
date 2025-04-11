@@ -7,9 +7,8 @@
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import (
@@ -90,46 +89,53 @@ __all__ = [
     "get_usage_metadata_callback",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="callbacks",
-    dynamic_imports={
-        "AsyncCallbackHandler": "base",
-        "BaseCallbackHandler": "base",
-        "BaseCallbackManager": "base",
-        "CallbackManagerMixin": "base",
-        "Callbacks": "base",
-        "ChainManagerMixin": "base",
-        "LLMManagerMixin": "base",
-        "RetrieverManagerMixin": "base",
-        "RunManagerMixin": "base",
-        "ToolManagerMixin": "base",
-        "FileCallbackHandler": "file",
-        "AsyncCallbackManager": "manager",
-        "AsyncCallbackManagerForChainGroup": "manager",
-        "AsyncCallbackManagerForChainRun": "manager",
-        "AsyncCallbackManagerForLLMRun": "manager",
-        "AsyncCallbackManagerForRetrieverRun": "manager",
-        "AsyncCallbackManagerForToolRun": "manager",
-        "AsyncParentRunManager": "manager",
-        "AsyncRunManager": "manager",
-        "BaseRunManager": "manager",
-        "CallbackManager": "manager",
-        "CallbackManagerForChainGroup": "manager",
-        "CallbackManagerForChainRun": "manager",
-        "CallbackManagerForLLMRun": "manager",
-        "CallbackManagerForRetrieverRun": "manager",
-        "CallbackManagerForToolRun": "manager",
-        "ParentRunManager": "manager",
-        "RunManager": "manager",
-        "adispatch_custom_event": "manager",
-        "dispatch_custom_event": "manager",
-        "StdOutCallbackHandler": "stdout",
-        "StreamingStdOutCallbackHandler": "streaming_stdout",
-        "UsageMetadataCallbackHandler": "usage",
-        "get_usage_metadata_callback": "usage",
-    },
-)
+_dynamic_imports = {
+    "AsyncCallbackHandler": "base",
+    "BaseCallbackHandler": "base",
+    "BaseCallbackManager": "base",
+    "CallbackManagerMixin": "base",
+    "Callbacks": "base",
+    "ChainManagerMixin": "base",
+    "LLMManagerMixin": "base",
+    "RetrieverManagerMixin": "base",
+    "RunManagerMixin": "base",
+    "ToolManagerMixin": "base",
+    "FileCallbackHandler": "file",
+    "AsyncCallbackManager": "manager",
+    "AsyncCallbackManagerForChainGroup": "manager",
+    "AsyncCallbackManagerForChainRun": "manager",
+    "AsyncCallbackManagerForLLMRun": "manager",
+    "AsyncCallbackManagerForRetrieverRun": "manager",
+    "AsyncCallbackManagerForToolRun": "manager",
+    "AsyncParentRunManager": "manager",
+    "AsyncRunManager": "manager",
+    "BaseRunManager": "manager",
+    "CallbackManager": "manager",
+    "CallbackManagerForChainGroup": "manager",
+    "CallbackManagerForChainRun": "manager",
+    "CallbackManagerForLLMRun": "manager",
+    "CallbackManagerForRetrieverRun": "manager",
+    "CallbackManagerForToolRun": "manager",
+    "ParentRunManager": "manager",
+    "RunManager": "manager",
+    "adispatch_custom_event": "manager",
+    "dispatch_custom_event": "manager",
+    "StdOutCallbackHandler": "stdout",
+    "StreamingStdOutCallbackHandler": "streaming_stdout",
+    "UsageMetadataCallbackHandler": "usage",
+    "get_usage_metadata_callback": "usage",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

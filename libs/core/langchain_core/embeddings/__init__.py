@@ -1,8 +1,7 @@
 """Embeddings."""
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.embeddings.embeddings import Embeddings
@@ -13,15 +12,22 @@ if TYPE_CHECKING:
 
 __all__ = ["DeterministicFakeEmbedding", "Embeddings", "FakeEmbeddings"]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="embeddings",
-    dynamic_imports={
-        "Embeddings": "embeddings",
-        "DeterministicFakeEmbedding": "fake",
-        "FakeEmbeddings": "fake",
-    },
-)
+_dynamic_imports = {
+    "Embeddings": "embeddings",
+    "DeterministicFakeEmbedding": "fake",
+    "FakeEmbeddings": "fake",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

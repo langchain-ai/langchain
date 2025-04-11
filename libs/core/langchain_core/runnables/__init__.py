@@ -17,9 +17,8 @@ creating more responsive UX.
 This module contains schema and implementation of LangChain Runnables primitives.
 """
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import (
@@ -91,41 +90,48 @@ __all__ = [
     "add",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="runnables",
-    dynamic_imports={
-        "chain": "base",
-        "Runnable": "base",
-        "RunnableBinding": "base",
-        "RunnableGenerator": "base",
-        "RunnableLambda": "base",
-        "RunnableMap": "base",
-        "RunnableParallel": "base",
-        "RunnableSequence": "base",
-        "RunnableSerializable": "base",
-        "RunnableBranch": "branch",
-        "RunnableConfig": "config",
-        "ensure_config": "config",
-        "get_config_list": "config",
-        "patch_config": "config",
-        "run_in_executor": "config",
-        "RunnableWithFallbacks": "fallbacks",
-        "RunnableWithMessageHistory": "history",
-        "RunnableAssign": "passthrough",
-        "RunnablePassthrough": "passthrough",
-        "RunnablePick": "passthrough",
-        "RouterInput": "router",
-        "RouterRunnable": "router",
-        "AddableDict": "utils",
-        "ConfigurableField": "utils",
-        "ConfigurableFieldMultiOption": "utils",
-        "ConfigurableFieldSingleOption": "utils",
-        "ConfigurableFieldSpec": "utils",
-        "aadd": "utils",
-        "add": "utils",
-    },
-)
+_dynamic_imports = {
+    "chain": "base",
+    "Runnable": "base",
+    "RunnableBinding": "base",
+    "RunnableGenerator": "base",
+    "RunnableLambda": "base",
+    "RunnableMap": "base",
+    "RunnableParallel": "base",
+    "RunnableSequence": "base",
+    "RunnableSerializable": "base",
+    "RunnableBranch": "branch",
+    "RunnableConfig": "config",
+    "ensure_config": "config",
+    "get_config_list": "config",
+    "patch_config": "config",
+    "run_in_executor": "config",
+    "RunnableWithFallbacks": "fallbacks",
+    "RunnableWithMessageHistory": "history",
+    "RunnableAssign": "passthrough",
+    "RunnablePassthrough": "passthrough",
+    "RunnablePick": "passthrough",
+    "RouterInput": "router",
+    "RouterRunnable": "router",
+    "AddableDict": "utils",
+    "ConfigurableField": "utils",
+    "ConfigurableFieldMultiOption": "utils",
+    "ConfigurableFieldSingleOption": "utils",
+    "ConfigurableFieldSpec": "utils",
+    "aadd": "utils",
+    "add": "utils",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

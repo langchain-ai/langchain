@@ -25,9 +25,8 @@ from multiple components and prompt values. Prompt classes and functions make co
 
 """  # noqa: E501
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.prompts.base import (
@@ -86,33 +85,40 @@ __all__ = [
     "validate_jinja2",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="prompts",
-    dynamic_imports={
-        "BasePromptTemplate": "base",
-        "format_document": "base",
-        "aformat_document": "base",
-        "AIMessagePromptTemplate": "chat",
-        "BaseChatPromptTemplate": "chat",
-        "ChatMessagePromptTemplate": "chat",
-        "ChatPromptTemplate": "chat",
-        "HumanMessagePromptTemplate": "chat",
-        "MessagesPlaceholder": "chat",
-        "SystemMessagePromptTemplate": "chat",
-        "FewShotChatMessagePromptTemplate": "few_shot",
-        "FewShotPromptTemplate": "few_shot",
-        "FewShotPromptWithTemplates": "few_shot_with_templates",
-        "load_prompt": "loading",
-        "PipelinePromptTemplate": "pipeline",
-        "PromptTemplate": "prompt",
-        "StringPromptTemplate": "string",
-        "check_valid_template": "string",
-        "get_template_variables": "string",
-        "jinja2_formatter": "string",
-        "validate_jinja2": "string",
-    },
-)
+_dynamic_imports = {
+    "BasePromptTemplate": "base",
+    "format_document": "base",
+    "aformat_document": "base",
+    "AIMessagePromptTemplate": "chat",
+    "BaseChatPromptTemplate": "chat",
+    "ChatMessagePromptTemplate": "chat",
+    "ChatPromptTemplate": "chat",
+    "HumanMessagePromptTemplate": "chat",
+    "MessagesPlaceholder": "chat",
+    "SystemMessagePromptTemplate": "chat",
+    "FewShotChatMessagePromptTemplate": "few_shot",
+    "FewShotPromptTemplate": "few_shot",
+    "FewShotPromptWithTemplates": "few_shot_with_templates",
+    "load_prompt": "loading",
+    "PipelinePromptTemplate": "pipeline",
+    "PromptTemplate": "prompt",
+    "StringPromptTemplate": "string",
+    "check_valid_template": "string",
+    "get_template_variables": "string",
+    "jinja2_formatter": "string",
+    "validate_jinja2": "string",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:

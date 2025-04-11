@@ -41,9 +41,8 @@ https://python.langchain.com/docs/how_to/custom_llm/
 
 """  # noqa: E501
 
+from importlib import import_module
 from typing import TYPE_CHECKING
-
-from langchain_core._lazy_imports import create_dynamic_getattr
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import (
@@ -86,28 +85,35 @@ __all__ = [
     "ParrotFakeChatModel",
 ]
 
-__getattr__ = create_dynamic_getattr(
-    package_name="langchain_core",
-    module_path="language_models",
-    dynamic_imports={
-        "BaseLanguageModel": "base",
-        "LangSmithParams": "base",
-        "LanguageModelInput": "base",
-        "LanguageModelLike": "base",
-        "LanguageModelOutput": "base",
-        "get_tokenizer": "base",
-        "BaseChatModel": "chat_models",
-        "SimpleChatModel": "chat_models",
-        "FakeListLLM": "fake",
-        "FakeStreamingListLLM": "fake",
-        "FakeListChatModel": "fake_chat_models",
-        "FakeMessagesListChatModel": "fake_chat_models",
-        "GenericFakeChatModel": "fake_chat_models",
-        "ParrotFakeChatModel": "fake_chat_models",
-        "LLM": "llms",
-        "BaseLLM": "llms",
-    },
-)
+_dynamic_imports = {
+    "BaseLanguageModel": "base",
+    "LangSmithParams": "base",
+    "LanguageModelInput": "base",
+    "LanguageModelLike": "base",
+    "LanguageModelOutput": "base",
+    "get_tokenizer": "base",
+    "BaseChatModel": "chat_models",
+    "SimpleChatModel": "chat_models",
+    "FakeListLLM": "fake",
+    "FakeStreamingListLLM": "fake",
+    "FakeListChatModel": "fake_chat_models",
+    "FakeMessagesListChatModel": "fake_chat_models",
+    "GenericFakeChatModel": "fake_chat_models",
+    "ParrotFakeChatModel": "fake_chat_models",
+    "LLM": "llms",
+    "BaseLLM": "llms",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=__spec__.parent)
+    else:
+        module = import_module(f".{module_name}", package=__spec__.parent)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> list[str]:
