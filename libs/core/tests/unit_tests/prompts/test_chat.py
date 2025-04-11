@@ -895,10 +895,10 @@ def test_chat_prompt_message_dict() -> None:
 
 async def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
-    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
-    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
     # Assert still raises a nice error
@@ -909,10 +909,10 @@ async def test_messages_prompt_accepts_list() -> None:
         ]
     )
     with pytest.raises(TypeError):
-        prompt.invoke([("user", "Hi there")])  # type: ignore
+        prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+        await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
 
 
 def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:

@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from contextvars import Context
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -124,6 +125,26 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
 def asyncio_accepts_context() -> bool:
     """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
     return accepts_context(asyncio.create_task)
+
+
+def coro_with_context(
+    coro: Awaitable[Any], context: Context, *, create_task: bool = False
+) -> Awaitable[Any]:
+    """Await a coroutine with a context.
+
+    Args:
+        coro: The coroutine to await.
+        context: The context to use.
+        create_task: Whether to create a task. Defaults to False.
+
+    Returns:
+        The coroutine with the context.
+    """
+    if asyncio_accepts_context():
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg]
+    if create_task:
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
+    return coro
 
 
 class IsLocalDict(ast.NodeVisitor):
