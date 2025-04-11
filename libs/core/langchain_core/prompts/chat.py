@@ -393,10 +393,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate,
-        list[
-            Union[StringPromptTemplate, ImagePromptTemplate, _DictMessagePromptTemplate]
-        ],
+        StringPromptTemplate, list[Union[StringPromptTemplate, ImagePromptTemplate]]
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
@@ -407,10 +404,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     @classmethod
     def from_template(
         cls: type[Self],
-        template: Union[
-            str,
-            list[Union[str, _TextTemplateParam, _ImageTemplateParam, dict[str, Any]]],
-        ],
+        template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
         template_format: PromptTemplateFormat = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
@@ -493,13 +487,6 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         msg = f"Invalid image template: {tmpl}"
                         raise ValueError(msg)
                     prompt.append(img_template_obj)
-                elif isinstance(tmpl, dict):
-                    prompt.append(
-                        _DictMessagePromptTemplate(
-                            template=cast("dict[str, Any]", tmpl),
-                            template_format=template_format,
-                        )
-                    )
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)

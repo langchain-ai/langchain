@@ -976,7 +976,6 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
                             "image_url": {"url": "data:image/jpeg;base64,foobar"},
                         },
                         {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
-                        {"random_type": {"foo": "{bar}"}},
                     ],
                 ),
             ),

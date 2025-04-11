@@ -105,7 +105,7 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
     """
 
     template: dict[str, Any]
-    template_format: Literal["f-string", "mustache", "jinja2"]
+    template_format: Literal["f-string", "mustache"]
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
         msg_dict = _insert_input_variables(self.template, kwargs, self.template_format)
@@ -125,7 +125,7 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
 
 
 def _get_input_variables(
-    template: dict, template_format: Literal["f-string", "mustache", "jinja2"]
+    template: dict, template_format: Literal["f-string", "mustache"]
 ) -> list[str]:
     input_variables = []
     for v in template.values():
@@ -145,7 +145,7 @@ def _get_input_variables(
 def _insert_input_variables(
     template: dict[str, Any],
     inputs: dict[str, Any],
-    template_format: Literal["f-string", "mustache", "jinja2"],
+    template_format: Literal["f-string", "mustache"],
 ) -> dict[str, Any]:
     formatted = {}
     formatter = DEFAULT_FORMATTER_MAPPING[template_format]
