@@ -1,6 +1,6 @@
 """Types for content blocks."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -35,7 +35,7 @@ def is_data_content_block(
     return all(required_key in content_block for required_key in required_keys)
 
 
-def convert_to_openai_image_block(content_block: DataContentBlock) -> dict:
+def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
     if content_block["source_type"] == "url":
         return {
