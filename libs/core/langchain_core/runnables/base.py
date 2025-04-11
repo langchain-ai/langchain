@@ -3079,7 +3079,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     if i == 0:
                         part = functools.partial(step.ainvoke, input_, config, **kwargs)
                     else:
-                        part = functools.partial(step.ainvoke, input, config)
+                        part = functools.partial(step.ainvoke, input_, config)
                     input_ = await coro_with_context(part(), context, create_task=True)
             # finish the root run
         except BaseException as e:
