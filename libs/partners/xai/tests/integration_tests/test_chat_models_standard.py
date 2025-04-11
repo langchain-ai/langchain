@@ -1,6 +1,6 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional, Type
+from typing import Optional
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
@@ -20,7 +20,7 @@ rate_limiter = InMemoryRateLimiter(
 
 class TestXAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatXAI
 
     @property

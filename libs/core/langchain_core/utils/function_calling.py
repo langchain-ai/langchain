@@ -249,7 +249,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
         "type[BaseModel]",
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
-    return _convert_pydantic_to_openai_function(model)  # type: ignore
+    return _convert_pydantic_to_openai_function(model)
 
 
 _MAX_TYPED_DICT_RECURSION = 25
@@ -691,7 +691,7 @@ def tool_example_to_messages(
         openai_tool_calls
     )
     for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
-        messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))  # type: ignore
+        messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))
 
     if ai_response:
         messages.append(AIMessage(content=ai_response))

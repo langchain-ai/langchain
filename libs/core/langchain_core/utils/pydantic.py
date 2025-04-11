@@ -218,7 +218,7 @@ def pre_init(func: Callable) -> Any:
                     name not in values or values[name] is None
                 ) and not field_info.is_required():
                     if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()  # type: ignore
+                        values[name] = field_info.default_factory()  # type: ignore[call-arg]
                     else:
                         values[name] = field_info.default
 
@@ -253,7 +253,7 @@ def _create_subset_model_v1(
     if IS_PYDANTIC_V1:
         from pydantic import create_model
     elif IS_PYDANTIC_V2:
-        from pydantic.v1 import create_model  # type: ignore
+        from pydantic.v1 import create_model  # type: ignore[no-redef]
     else:
         msg = f"Unsupported pydantic version: {PYDANTIC_VERSION.major}"
         raise NotImplementedError(msg)
@@ -262,7 +262,7 @@ def _create_subset_model_v1(
 
     for field_name in field_names:
         # Using pydantic v1 so can access __fields__ as a dict.
-        field = model.__fields__[field_name]  # type: ignore
+        field = model.__fields__[field_name]  # type: ignore[index]
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
@@ -273,7 +273,7 @@ def _create_subset_model_v1(
             field.field_info.description = descriptions[field_name]
         fields[field_name] = (t, field.field_info)
 
-    rtn = create_model(name, **fields)  # type: ignore
+    rtn = create_model(name, **fields)  # type: ignore[call-overload]
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
@@ -293,14 +293,14 @@ def _create_subset_model_v2(
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
-        field = model.model_fields[field_name]  # type: ignore
+        field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
         field_info = FieldInfo(description=description, default=field.default)
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
 
-    rtn = create_model(  # type: ignore
+    rtn = create_model(  # type: ignore[call-overload]
         name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
     )
 
@@ -383,10 +383,10 @@ if IS_PYDANTIC_V2:
     ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
-            return model.model_fields  # type: ignore
+            return model.model_fields  # type: ignore[call-overload,arg-type]
 
         if hasattr(model, "__fields__"):
-            return model.__fields__  # type: ignore
+            return model.__fields__  # type: ignore[return-value]
         msg = f"Expected a Pydantic model. Got {type(model)}"
         raise TypeError(msg)
 
@@ -397,7 +397,7 @@ elif IS_PYDANTIC_V1:
         model: Union[type[BaseModelV1_], BaseModelV1_],
     ) -> dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
-        return model.__fields__  # type: ignore
+        return model.__fields__  # type: ignore[return-value]
 
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"

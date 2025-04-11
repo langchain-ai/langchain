@@ -1,7 +1,6 @@
 """Standard LangChain interface tests"""
 
 import os
-from typing import Type
 
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
@@ -14,7 +13,7 @@ OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")
 
 class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return AzureChatOpenAI
 
     @property
@@ -40,7 +39,7 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
     """Test a legacy model."""
 
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return AzureChatOpenAI
 
     @property

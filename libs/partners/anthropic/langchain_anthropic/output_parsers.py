@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type, Union, cast
+from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.messages.tool import tool_call
@@ -14,14 +14,14 @@ class ToolsOutputParser(BaseGenerationOutputParser):
     """Whether to return only the first tool call."""
     args_only: bool = False
     """Whether to return only the arguments of the tool calls."""
-    pydantic_schemas: Optional[List[Type[BaseModel]]] = None
+    pydantic_schemas: Optional[list[type[BaseModel]]] = None
     """Pydantic schemas to parse tool calls into."""
 
     model_config = ConfigDict(
         extra="forbid",
     )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -34,7 +34,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         if not result or not isinstance(result[0], ChatGeneration):
             return None if self.first_tool_only else []
         message = cast(AIMessage, result[0].message)
-        tool_calls: List = [
+        tool_calls: list = [
             dict(tc) for tc in _extract_tool_calls_from_message(message)
         ]
         if isinstance(message.content, list):
@@ -64,14 +64,14 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         return cls_(**tool_call["args"])
 
 
-def _extract_tool_calls_from_message(message: AIMessage) -> List[ToolCall]:
+def _extract_tool_calls_from_message(message: AIMessage) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if message.tool_calls:
         return message.tool_calls
     return extract_tool_calls(message.content)
 
 
-def extract_tool_calls(content: Union[str, List[Union[str, dict]]]) -> List[ToolCall]:
+def extract_tool_calls(content: Union[str, list[Union[str, dict]]]) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if isinstance(content, list):
         tool_calls = []

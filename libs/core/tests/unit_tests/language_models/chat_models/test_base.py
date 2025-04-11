@@ -225,11 +225,11 @@ async def test_astream_implementation_uses_astream() -> None:
             raise NotImplementedError
 
         @override
-        async def _astream(  # type: ignore
+        async def _astream(
             self,
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""

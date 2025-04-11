@@ -40,13 +40,18 @@ dev = ["langchain-core"]
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle
     "F",    # pyflakes
     "I",    # isort
     "T201", # print
+    "UP",   # pyupgrade
 ]
+ignore = [ "UP007", ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
