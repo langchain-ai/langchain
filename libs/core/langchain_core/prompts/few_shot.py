@@ -14,10 +14,8 @@ from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.prompts.chat import (
-    BaseChatPromptTemplate,
-    BaseMessagePromptTemplate,
-)
+from langchain_core.prompts.chat import BaseChatPromptTemplate
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
