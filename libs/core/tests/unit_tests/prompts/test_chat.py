@@ -1049,3 +1049,128 @@ def test_chat_prompt_template_variable_names() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_chat_template_preserves_additional_fields() -> None:
+    """Test that ChatPromptTemplate preserves additional fields in content blocks."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                [
+                    {
+                        "type": "text",
+                        "text": "What is {number} + {number}?",
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            )
+        ]
+    )
+
+    messages = template.format_messages(number=5)
+    assert len(messages) == 1
+    assert messages[0].content == [
+        {
+            "type": "text",
+            "text": "What is 5 + 5?",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
+def test_chat_template_preserves_fields_in_multipart_messages() -> None:
+    """Test preservation of fields in multipart messages with text and images."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                [
+                    {
+                        "type": "text",
+                        "text": "Analyze this image {name}",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/jpeg;base64,{image_data}",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                ],
+            )
+        ]
+    )
+
+    messages = template.format_messages(name="Bob", image_data="base64_encoded_data")
+    assert len(messages) == 1
+    assert messages[0].content == [
+        {
+            "type": "text",
+            "text": "Analyze this image Bob",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,base64_encoded_data"},
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]
+
+
+async def test_chat_template_preserves_fields_async() -> None:
+    """Test async formatting preserves additional fields."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                [
+                    {
+                        "type": "text",
+                        "text": "What is {number} + {number}?",
+                        "cache_control": {"type": "ephemeral"},
+                        "custom_field": "test",
+                    }
+                ],
+            )
+        ]
+    )
+
+    messages = await template.aformat_messages(number=5)
+    assert len(messages) == 1
+    assert messages[0].content == [
+        {
+            "type": "text",
+            "text": "What is 5 + 5?",
+            "cache_control": {"type": "ephemeral"},
+            "custom_field": "test",
+        }
+    ]
+
+
+def test_chat_template_preserves_fields_with_partial() -> None:
+    """Test that partial variables work with preserved fields."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                [
+                    {
+                        "type": "text",
+                        "text": "Hello {name}, calculate {number} + {number}",
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            )
+        ]
+    )
+
+    partial_template = template.partial(name="Bob")
+    messages = partial_template.format_messages(number=5)
+    assert len(messages) == 1
+    assert messages[0].content == [
+        {
+            "type": "text",
+            "text": "Hello Bob, calculate 5 + 5",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
