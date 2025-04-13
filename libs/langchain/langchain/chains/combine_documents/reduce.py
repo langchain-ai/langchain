@@ -78,7 +78,9 @@ def split_list_of_docs(
             _num_tokens = (
                 (length_func([], **kwargs) + _partial_tokens) if acum_length else 0
             )
-    new_result_doc_list.append(_sub_result_docs)
+
+    if _sub_result_docs:
+        new_result_doc_list.append(_sub_result_docs)
     return new_result_doc_list
 
 
