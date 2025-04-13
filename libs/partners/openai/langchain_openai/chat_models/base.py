@@ -10,7 +10,6 @@ import re
 import ssl
 import sys
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -227,7 +226,7 @@ def _format_message_content(content: Any) -> Any:
     return formatted_content
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: BaseMessage, content_null_value: Optional[str] = None) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -267,7 +266,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             pass
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
-            message_dict["content"] = message_dict["content"] or None
+            message_dict["content"] = message_dict["content"] or content_null_value
 
         if "audio" in message.additional_kwargs:
             # openai doesn't support passing the data back - only the id
@@ -542,6 +541,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     .. versionadded:: 0.3.9
     """
+    
+    content_null_value: Optional[str] = None
+    """The value to use for content when it is null. Should be set to some non-empty string for Gemini API for example."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -967,9 +969,9 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
         if self._use_responses_api(payload):
-            payload = _construct_responses_api_payload(messages, payload)
+            payload = _construct_responses_api_payload(messages, payload, content_null_value=self.content_null_value)
         else:
-            payload["messages"] = [_convert_message_to_dict(m) for m in messages]
+            payload["messages"] = [_convert_message_to_dict(m, content_null_value=self.content_null_value) for m in messages]
         return payload
 
     def _create_chat_result(
@@ -1261,7 +1263,7 @@ class BaseChatOpenAI(BaseChatModel):
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        messages_dict = [_convert_message_to_dict(m, content_null_value=self.content_null_value) for m in messages]
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
@@ -2924,7 +2926,7 @@ def _use_responses_api(payload: dict) -> bool:
 
 
 def _construct_responses_api_payload(
-    messages: Sequence[BaseMessage], payload: dict
+    messages: Sequence[BaseMessage], payload: dict, content_null_value: Optional[str] = None
 ) -> dict:
     # Rename legacy parameters
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
@@ -2933,7 +2935,7 @@ def _construct_responses_api_payload(
     if "reasoning_effort" in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
-    payload["input"] = _construct_responses_api_input(messages)
+    payload["input"] = _construct_responses_api_input(messages, content_null_value=content_null_value)
     if tools := payload.pop("tools", None):
         new_tools: list = []
         for tool in tools:
@@ -3014,10 +3016,10 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
-def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
+def _construct_responses_api_input(messages: Sequence[BaseMessage], content_null_value: Optional[str] = None) -> list:
     input_ = []
     for lc_msg in messages:
-        msg = _convert_message_to_dict(lc_msg)
+        msg = _convert_message_to_dict(lc_msg, content_null_value=content_null_value)
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")
