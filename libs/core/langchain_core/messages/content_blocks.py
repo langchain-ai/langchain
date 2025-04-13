@@ -13,7 +13,7 @@ class DataContentBlock(TypedDict):
     source_type: Literal["url", "base64", "id", "text"]
     """Source type."""
     source: str
-    """Data as a URL or data-URI, identifier, or plain-text."""
+    """Data as a URL, base64 string, identifier, or plain-text."""
     mime_type: NotRequired[str]
     """MIME type of the content block (if block represents base64 data.)"""
     metadata: NotRequired[dict]
