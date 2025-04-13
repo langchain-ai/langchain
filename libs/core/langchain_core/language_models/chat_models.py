@@ -584,7 +584,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -1245,7 +1245,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Return type of chat model."""
 
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
