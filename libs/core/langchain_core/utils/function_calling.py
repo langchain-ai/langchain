@@ -115,11 +115,6 @@ def _convert_json_schema_to_openai_function(
     Returns:
         The function description.
     """
-    schema = dereference_refs(schema)
-    if "definitions" in schema:  # pydantic 1
-        schema.pop("definitions", None)
-    if "$defs" in schema:  # pydantic 2
-        schema.pop("$defs", None)
     title = schema.pop("title", "")
     default_description = schema.pop("description", "")
     return {
