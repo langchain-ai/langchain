@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Iterable, List, Literal, Optional, cast
+from collections.abc import Iterable
+from typing import Any, Literal, Optional, cast
 
 import voyageai  # type: ignore
 from langchain_core.embeddings import Embeddings
@@ -85,7 +86,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         self._aclient = voyageai.client_async.AsyncClient(api_key=api_key_str)
         return self
 
-    def _get_batch_iterator(self, texts: List[str]) -> Iterable:
+    def _get_batch_iterator(self, texts: list[str]) -> Iterable:
         if self.show_progress_bar:
             try:
                 from tqdm.auto import tqdm  # type: ignore
@@ -101,9 +102,9 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
         return _iter
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
-        embeddings: List[List[float]] = []
+        embeddings: list[list[float]] = []
 
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
@@ -114,10 +115,10 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
                 truncation=self.truncation,
                 output_dimension=self.output_dimension,
             ).embeddings
-            embeddings.extend(cast(Iterable[List[float]], r))
+            embeddings.extend(cast(Iterable[list[float]], r))
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         r = self._client.embed(
             [text],
@@ -126,10 +127,10 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
             truncation=self.truncation,
             output_dimension=self.output_dimension,
         ).embeddings[0]
-        return cast(List[float], r)
+        return cast(list[float], r)
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings: List[List[float]] = []
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        embeddings: list[list[float]] = []
 
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
@@ -140,11 +141,11 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
                 truncation=self.truncation,
                 output_dimension=self.output_dimension,
             )
-            embeddings.extend(cast(Iterable[List[float]], r.embeddings))
+            embeddings.extend(cast(Iterable[list[float]], r.embeddings))
 
         return embeddings
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         r = await self._aclient.embed(
             [text],
             model=self.model,
@@ -152,4 +153,4 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
             truncation=self.truncation,
             output_dimension=self.output_dimension,
         )
-        return cast(List[float], r.embeddings[0])
+        return cast(list[float], r.embeddings[0])

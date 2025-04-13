@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -62,7 +61,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get relevant documents given a user question.
 
         Args:
@@ -85,5 +84,5 @@ class RePhraseQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         raise NotImplementedError

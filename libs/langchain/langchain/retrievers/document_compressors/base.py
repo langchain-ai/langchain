@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from inspect import signature
-from typing import List, Optional, Sequence, Union
+from typing import Optional, Union
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import (
@@ -13,7 +14,7 @@ from pydantic import ConfigDict
 class DocumentCompressorPipeline(BaseDocumentCompressor):
     """Document compressor that uses a pipeline of Transformers."""
 
-    transformers: List[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
+    transformers: list[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
     """List of document filters that are chained together and run in sequence."""
 
     model_config = ConfigDict(

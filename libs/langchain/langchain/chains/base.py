@@ -1,12 +1,13 @@
 """Base interface that all chains should implement."""
 
+import builtins
 import inspect
 import json
 import logging
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Optional, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
@@ -46,7 +47,7 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
-class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
+class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     """Abstract base class for creating structured sequences of calls to components.
 
     Chains should be used to encode a sequence of calls to components like
@@ -86,13 +87,13 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to the global `verbose` value,
     accessible via `langchain.globals.get_verbose()`."""
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the chain. Defaults to None.
     This metadata will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
@@ -107,7 +108,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainInput", **{k: (Any, None) for k in self.input_keys}
@@ -115,7 +116,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "ChainOutput", **{k: (Any, None) for k in self.output_keys}
@@ -123,10 +124,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     def invoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         config = ensure_config(config)
         callbacks = config.get("callbacks")
         tags = config.get("tags")
@@ -162,7 +163,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 else self._call(inputs)
             )
 
-            final_outputs: Dict[str, Any] = self.prep_outputs(
+            final_outputs: dict[str, Any] = self.prep_outputs(
                 inputs, outputs, return_only_outputs
             )
         except BaseException as e:
@@ -176,10 +177,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     async def ainvoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         config = ensure_config(config)
         callbacks = config.get("callbacks")
         tags = config.get("tags")
@@ -213,7 +214,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 if new_arg_supported
                 else await self._acall(inputs)
             )
-            final_outputs: Dict[str, Any] = await self.aprep_outputs(
+            final_outputs: dict[str, Any] = await self.aprep_outputs(
                 inputs, outputs, return_only_outputs
             )
         except BaseException as e:
@@ -231,7 +232,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_callback_manager_deprecation(cls, values: Dict) -> Any:
+    def raise_callback_manager_deprecation(cls, values: dict) -> Any:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             if values.get("callbacks") is not None:
@@ -261,15 +262,15 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     @property
     @abstractmethod
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Keys expected to be in the chain input."""
 
     @property
     @abstractmethod
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Keys expected to be in the chain output."""
 
-    def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
+    def _validate_inputs(self, inputs: dict[str, Any]) -> None:
         """Check that all inputs are present."""
         if not isinstance(inputs, dict):
             _input_keys = set(self.input_keys)
@@ -289,7 +290,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         if missing_keys:
             raise ValueError(f"Missing some input keys: {missing_keys}")
 
-    def _validate_outputs(self, outputs: Dict[str, Any]) -> None:
+    def _validate_outputs(self, outputs: dict[str, Any]) -> None:
         missing_keys = set(self.output_keys).difference(outputs)
         if missing_keys:
             raise ValueError(f"Missing some output keys: {missing_keys}")
@@ -297,9 +298,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     @abstractmethod
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the chain.
 
         This is a private method that is not user-facing. It is only called within
@@ -319,9 +320,9 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
         This is a private method that is not user-facing. It is only called within
@@ -345,15 +346,15 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     @deprecated("0.1.0", alternative="invoke", removal="1.0")
     def __call__(
         self,
-        inputs: Union[Dict[str, Any], Any],
+        inputs: Union[dict[str, Any], Any],
         return_only_outputs: bool = False,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         include_run_info: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the chain.
 
         Args:
@@ -396,15 +397,15 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
     async def acall(
         self,
-        inputs: Union[Dict[str, Any], Any],
+        inputs: Union[dict[str, Any], Any],
         return_only_outputs: bool = False,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         include_run_info: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
         Args:
@@ -445,10 +446,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     def prep_outputs(
         self,
-        inputs: Dict[str, str],
-        outputs: Dict[str, str],
+        inputs: dict[str, str],
+        outputs: dict[str, str],
         return_only_outputs: bool = False,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
         Args:
@@ -471,10 +472,10 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     async def aprep_outputs(
         self,
-        inputs: Dict[str, str],
-        outputs: Dict[str, str],
+        inputs: dict[str, str],
+        outputs: dict[str, str],
         return_only_outputs: bool = False,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
         Args:
@@ -495,7 +496,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         else:
             return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    def prep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
         """Prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -519,7 +520,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             inputs = dict(inputs, **external_context)
         return inputs
 
-    async def aprep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+    async def aprep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
         """Prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -557,8 +558,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         self,
         *args: Any,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Convenience method for executing chain.
@@ -628,8 +629,8 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         self,
         *args: Any,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Convenience method for executing chain.
@@ -695,7 +696,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
 
-    def dict(self, **kwargs: Any) -> Dict:
+    def dict(self, **kwargs: Any) -> dict:
         """Dictionary representation of chain.
 
         Expects `Chain._chain_type` property to be implemented and for memory to be
@@ -763,7 +764,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     @deprecated("0.1.0", alternative="batch", removal="1.0")
     def apply(
-        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> List[Dict[str, str]]:
+        self, input_list: list[builtins.dict[str, Any]], callbacks: Callbacks = None
+    ) -> list[builtins.dict[str, str]]:
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]

@@ -1,0 +1,165 @@
+# Langfuse 🪢
+
+> **What is Langfuse?** [Langfuse](https://langfuse.com) is an open source LLM engineering platform that helps teams trace API calls, monitor performance, and debug issues in their AI applications.
+
+## Tracing LangChain
+
+[Langfuse Tracing](https://langfuse.com/docs/tracing) integrates with Langchain using Langchain Callbacks ([Python](https://python.langchain.com/docs/how_to/#callbacks), [JS](https://js.langchain.com/docs/how_to/#callbacks)). Thereby, the Langfuse SDK automatically creates a nested trace for every run of your Langchain applications. This allows you to log, analyze and debug your LangChain application.
+
+You can configure the integration via (1) constructor arguments or (2) environment variables. Get your Langfuse credentials by signing up at [cloud.langfuse.com](https://cloud.langfuse.com) or [self-hosting Langfuse](https://langfuse.com/self-hosting).
+
+### Constructor arguments 
+
+```python
+pip install langfuse
+```
+
+```python
+# Initialize Langfuse handler
+from langfuse.callback import CallbackHandler
+langfuse_handler = CallbackHandler(
+    secret_key="sk-lf-...",
+    public_key="pk-lf-...",
+    host="https://cloud.langfuse.com", # 🇪🇺 EU region
+  # host="https://us.cloud.langfuse.com", # 🇺🇸 US region
+)
+ 
+# Your Langchain code
+ 
+# Add Langfuse handler as callback (classic and LCEL)
+chain.invoke({"input": "<user_input>"}, config={"callbacks": [langfuse_handler]})
+```
+
+### Environment variables
+
+```bash filename=".env"
+LANGFUSE_SECRET_KEY="sk-lf-..."
+LANGFUSE_PUBLIC_KEY="pk-lf-..."
+# 🇪🇺 EU region
+LANGFUSE_HOST="https://cloud.langfuse.com"
+# 🇺🇸 US region
+# LANGFUSE_HOST="https://us.cloud.langfuse.com"
+```
+
+```python
+# Initialize Langfuse handler
+from langfuse.callback import CallbackHandler
+langfuse_handler = CallbackHandler()
+ 
+# Your Langchain code
+ 
+# Add Langfuse handler as callback (classic and LCEL)
+chain.invoke({"input": "<user_input>"}, config={"callbacks": [langfuse_handler]})
+```
+
+To see how to use this integration together with other Langfuse features, check out [this end-to-end example](https://langfuse.com/docs/integrations/langchain/example-python).
+
+## Tracing LangGraph
+
+This part demonstrates how [Langfuse](https://langfuse.com/docs) helps to debug, analyze, and iterate on your LangGraph application using the [LangChain integration](https://langfuse.com/docs/integrations/langchain/tracing).
+
+### Initialize Langfuse
+
+**Note:** You need to run at least Python 3.11 ([GitHub Issue](https://github.com/langfuse/langfuse/issues/1926)).
+
+Initialize the Langfuse client with your [API keys](https://langfuse.com/faq/all/where-are-langfuse-api-keys) from the project settings in the Langfuse UI and add them to your environment.
+
+
+```python
+%pip install langfuse
+%pip install langchain langgraph langchain_openai langchain_community
+```
+
+
+```python
+import os
+
+# get keys for your project from https://cloud.langfuse.com
+os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-***"
+os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-***"
+os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com" # for EU data region
+# os.environ["LANGFUSE_HOST"] = "https://us.cloud.langfuse.com" # for US data region
+
+# your openai key
+os.environ["OPENAI_API_KEY"] = "***"
+```
+
+### Simple chat app with LangGraph
+
+**What we will do in this section:**
+
+*   Build a support chatbot in LangGraph that can answer common questions
+*   Tracing the chatbot's input and output using Langfuse
+
+We will start with a basic chatbot and build a more advanced multi agent setup in the next section, introducing key LangGraph concepts along the way.
+
+#### Create Agent
+
+Start by creating a `StateGraph`. A `StateGraph` object defines our chatbot's structure as a state machine. We will add nodes to represent the LLM and functions the chatbot can call, and edges to specify how the bot transitions between these functions.
+
+
+```python
+from typing import Annotated
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from typing_extensions import TypedDict
+
+from langgraph.graph import StateGraph
+from langgraph.graph.message import add_messages
+
+class State(TypedDict):
+    # Messages have the type "list". The `add_messages` function in the annotation defines how this state key should be updated
+    # (in this case, it appends messages to the list, rather than overwriting them)
+    messages: Annotated[list, add_messages]
+
+graph_builder = StateGraph(State)
+
+llm = ChatOpenAI(model = "gpt-4o", temperature = 0.2)
+
+# The chatbot node function takes the current State as input and returns an updated messages list. This is the basic pattern for all LangGraph node functions.
+def chatbot(state: State):
+    return {"messages": [llm.invoke(state["messages"])]}
+
+# Add a "chatbot" node. Nodes represent units of work. They are typically regular python functions.
+graph_builder.add_node("chatbot", chatbot)
+
+# Add an entry point. This tells our graph where to start its work each time we run it.
+graph_builder.set_entry_point("chatbot")
+
+# Set a finish point. This instructs the graph "any time this node is run, you can exit."
+graph_builder.set_finish_point("chatbot")
+
+# To be able to run our graph, call "compile()" on the graph builder. This creates a "CompiledGraph" we can use invoke on our state.
+graph = graph_builder.compile()
+```
+
+#### Add Langfuse as callback to the invocation
+
+Now, we will add then [Langfuse callback handler for LangChain](https://langfuse.com/docs/integrations/langchain/tracing) to trace the steps of our application: `config={"callbacks": [langfuse_handler]}`
+
+
+```python
+from langfuse.callback import CallbackHandler
+
+# Initialize Langfuse CallbackHandler for Langchain (tracing)
+langfuse_handler = CallbackHandler()
+
+for s in graph.stream({"messages": [HumanMessage(content = "What is Langfuse?")]},
+                      config={"callbacks": [langfuse_handler]}):
+    print(s)
+```
+
+```
+{'chatbot': {'messages': [AIMessage(content='Langfuse is a tool designed to help developers monitor and observe the performance of their Large Language Model (LLM) applications. It provides detailed insights into how these applications are functioning, allowing for better debugging, optimization, and overall management. Langfuse offers features such as tracking key metrics, visualizing data, and identifying potential issues in real-time, making it easier for developers to maintain and improve their LLM-based solutions.', response_metadata={'token_usage': {'completion_tokens': 86, 'prompt_tokens': 13, 'total_tokens': 99}, 'model_name': 'gpt-4o-2024-05-13', 'system_fingerprint': 'fp_400f27fa1f', 'finish_reason': 'stop', 'logprobs': None}, id='run-9a0c97cb-ccfe-463e-902c-5a5900b796b4-0', usage_metadata={'input_tokens': 13, 'output_tokens': 86, 'total_tokens': 99})]}}
+```
+
+
+#### View traces in Langfuse
+
+Example trace in Langfuse: https://cloud.langfuse.com/project/cloramnkj0002jz088vzn1ja4/traces/d109e148-d188-4d6e-823f-aac0864afbab
+
+![Trace view of chat app in Langfuse](https://langfuse.com/images/cookbook/integration-langgraph/integration_langgraph_chatapp_trace.png)
+
+- Check out the [full notebook](https://langfuse.com/docs/integrations/langchain/example-python-langgraph) to see more examples.
+- To learn how to evaluate the performance of your LangGraph application, check out the [LangGraph evaluation guide](https://langfuse.com/docs/integrations/langchain/example-langgraph-agents).

@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, FakeListChatModel
@@ -138,6 +139,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
     """Test astream uses appropriate implementation."""
 
     class ModelWithGenerate(BaseChatModel):
+        @override
         def _generate(
             self,
             messages: list[BaseMessage],
@@ -176,6 +178,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
+        @override
         def _stream(
             self,
             messages: list[BaseMessage],
@@ -221,11 +224,12 @@ async def test_astream_implementation_uses_astream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
-        async def _astream(  # type: ignore
+        @override
+        async def _astream(
             self,
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -286,6 +290,7 @@ async def test_async_pass_run_id() -> None:
 
 
 class NoStreamingModel(BaseChatModel):
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -301,6 +306,7 @@ class NoStreamingModel(BaseChatModel):
 
 
 class StreamingModel(NoStreamingModel):
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],

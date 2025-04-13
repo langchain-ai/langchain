@@ -102,7 +102,10 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Human-readable representation.
 
         Args:
@@ -126,7 +129,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
 
@@ -229,7 +232,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """
         # mypy can't detect the init which is defined in the parent class
         # b/c these are BaseModel classes.
-        super().__init__(  # type: ignore
+        super().__init__(  # type: ignore[call-arg]
             variable_name=variable_name, optional=optional, **kwargs
         )
 
@@ -270,6 +273,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """
         return [self.variable_name] if not self.optional else []
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -406,6 +410,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         """
         return self.prompt.input_variables
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -675,6 +680,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             content=content, additional_kwargs=self.additional_kwargs
         )
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -777,7 +783,10 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """Async format kwargs into a list of messages."""
         return self.format_messages(**kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Human-readable representation.
 
         Args:
@@ -1024,23 +1033,23 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         if isinstance(other, ChatPromptTemplate):
             return ChatPromptTemplate(messages=self.messages + other.messages).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
             return ChatPromptTemplate(messages=self.messages + [other]).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
             return ChatPromptTemplate(messages=self.messages + _other.messages).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         if isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
             return ChatPromptTemplate(messages=self.messages + [prompt]).partial(
                 **partials
-            )  # type: ignore[call-arg]
+            )
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)
 
@@ -1129,7 +1138,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template.
         """
-        return cls(  # type: ignore[call-arg]
+        return cls(
             messages=[
                 ChatMessagePromptTemplate.from_template(template, role=role)
                 for role, template in string_messages
@@ -1331,6 +1340,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         raise NotImplementedError
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 

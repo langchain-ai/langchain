@@ -17,7 +17,8 @@ allow it to work with a variety of SQL as a backend.
 import contextlib
 import decimal
 import uuid
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Sequence, Union
+from collections.abc import AsyncGenerator, Generator, Sequence
+from typing import Any, Optional, Union
 
 from langchain_core.indexing import RecordManager
 from sqlalchemy import (
@@ -90,7 +91,7 @@ class SQLRecordManager(RecordManager):
         *,
         engine: Optional[Union[Engine, AsyncEngine]] = None,
         db_url: Union[None, str, URL] = None,
-        engine_kwargs: Optional[Dict[str, Any]] = None,
+        engine_kwargs: Optional[dict[str, Any]] = None,
         async_mode: bool = False,
     ) -> None:
         """Initialize the SQLRecordManager.
@@ -403,7 +404,7 @@ class SQLRecordManager(RecordManager):
             await session.execute(stmt)
             await session.commit()
 
-    def exists(self, keys: Sequence[str]) -> List[bool]:
+    def exists(self, keys: Sequence[str]) -> list[bool]:
         """Check if the given keys exist in the SQLite database."""
         session: Session
         with self._make_session() as session:
@@ -417,7 +418,7 @@ class SQLRecordManager(RecordManager):
         found_keys = set(r.key for r in records)
         return [k in found_keys for k in keys]
 
-    async def aexists(self, keys: Sequence[str]) -> List[bool]:
+    async def aexists(self, keys: Sequence[str]) -> list[bool]:
         """Check if the given keys exist in the SQLite database."""
         async with self._amake_session() as session:
             records = (
@@ -444,7 +445,7 @@ class SQLRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """List records in the SQLite database based on the provided date range."""
         session: Session
         with self._make_session() as session:
@@ -471,7 +472,7 @@ class SQLRecordManager(RecordManager):
         after: Optional[float] = None,
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """List records in the SQLite database based on the provided date range."""
         session: AsyncSession
         async with self._amake_session() as session:

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.exceptions import OutputParserException
@@ -172,7 +173,7 @@ def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
     return json.dumps(info_dicts, indent=4).replace("{", "{{").replace("}", "}}")
 
 
-def construct_examples(input_output_pairs: Sequence[Tuple[str, dict]]) -> List[dict]:
+def construct_examples(input_output_pairs: Sequence[tuple[str, dict]]) -> list[dict]:
     """Construct examples from input-output pairs.
 
     Args:
@@ -267,7 +268,7 @@ def load_query_constructor_chain(
     llm: BaseLanguageModel,
     document_contents: str,
     attribute_info: Sequence[Union[AttributeInfo, dict]],
-    examples: Optional[List] = None,
+    examples: Optional[list] = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,

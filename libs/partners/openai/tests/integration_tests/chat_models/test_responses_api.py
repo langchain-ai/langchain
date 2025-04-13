@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Optional, cast
+from typing import Annotated, Any, Optional, cast
 
 import openai
 import pytest
@@ -13,7 +13,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
 )
 from pydantic import BaseModel
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 

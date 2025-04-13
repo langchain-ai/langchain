@@ -2,9 +2,10 @@
 
 import base64
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, AsyncIterator, List, Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 import httpx
 import openai
@@ -531,14 +532,14 @@ class MakeASandwich(BaseModel):
 
     bread_type: str
     cheese_type: str
-    condiments: List[str]
-    vegetables: List[str]
+    condiments: list[str]
+    vegetables: list[str]
 
 
 def test_tool_use() -> None:
     llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
-    msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
+    msgs: list = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
 
     assert isinstance(ai_msg, AIMessage)
@@ -583,7 +584,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
         model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
     )
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
-    msgs: List = [
+    msgs: list = [
         HumanMessage("Sally has green hair, what would her username be?"),
         AIMessage(
             content="",
@@ -1045,7 +1046,7 @@ def test_audio_output_modality() -> None:
         },
     )
 
-    history: List[BaseMessage] = [
+    history: list[BaseMessage] = [
         HumanMessage("Make me a short audio clip of you yelling")
     ]
 

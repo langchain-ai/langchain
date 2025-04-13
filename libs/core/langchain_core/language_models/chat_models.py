@@ -171,7 +171,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | Method                    | Input                                                          | Output                                                              | Description                                                                                      |
         +===========================+================================================================+=====================================================================+==================================================================================================+
-        | `invoke`                  | str | List[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
+        | `invoke`                  | str | list[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | `ainvoke`                 | '''                                                            | BaseMessage                                                         | Defaults to running invoke in an async executor.                                                 |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -181,13 +181,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
         | `astream_events`          | '''                                                            | AsyncIterator[StreamEvent]                                          | Event types: 'on_chat_model_start', 'on_chat_model_stream', 'on_chat_model_end'.                 |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch`                   | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
+        | `batch`                   | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch`                  | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
+        | `abatch`                  | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch_as_completed`      | List[''']                                                      | Iterator[Tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
+        | `batch_as_completed`      | list[''']                                                      | Iterator[tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch_as_completed`     | List[''']                                                      | AsyncIterator[Tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
+        | `abatch_as_completed`     | list[''']                                                      | AsyncIterator[tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
         +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
 
         This table provides a brief overview of the main imperative methods. Please see the base Runnable reference for full documentation.
@@ -576,7 +576,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
 
     def _get_invocation_params(
@@ -853,7 +853,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         run_manager.on_llm_end(
                             LLMResult(
                                 generations=[res.generations],  # type: ignore[list-item, union-attr]
-                                llm_output=res.llm_output,  # type: ignore[list-item, union-attr]
+                                llm_output=res.llm_output,  # type: ignore[union-attr]
                             )
                         )
                         for run_manager, res in zip(run_managers, results)
@@ -955,13 +955,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._generate).parameters.get("run_manager"):
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._generate).parameters.get("run_manager"):
-                result = self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = self._generate(messages, stop=stop, **kwargs)
+            result = self._generate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1028,13 +1027,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._agenerate).parameters.get("run_manager"):
-                result = await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = await self._agenerate(messages, stop=stop, **kwargs)
+            result = await self._agenerate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1109,7 +1107,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 None,
                 next,
                 iterator,
-                done,  # type: ignore[call-arg, arg-type]
+                done,
             )
             if item is done:
                 break
@@ -1246,6 +1244,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
+    @override
     def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)

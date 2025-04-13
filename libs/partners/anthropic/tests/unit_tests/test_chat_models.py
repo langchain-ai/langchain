@@ -1,7 +1,7 @@
 """Test chat model integration."""
 
 import os
-from typing import Any, Callable, Dict, Literal, Type, cast
+from typing import Any, Callable, Literal, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
@@ -297,7 +297,7 @@ def test__merge_messages_mutation() -> None:
 
 
 @pytest.fixture()
-def pydantic() -> Type[BaseModel]:
+def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):
         """dummy function"""
 
@@ -328,7 +328,7 @@ def dummy_tool() -> BaseTool:
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
     class DummyFunction(BaseTool):  # type: ignore[override]
-        args_schema: Type[BaseModel] = Schema
+        args_schema: type[BaseModel] = Schema
         name: str = "dummy_function"
         description: str = "dummy function"
 
@@ -339,7 +339,7 @@ def dummy_tool() -> BaseTool:
 
 
 @pytest.fixture()
-def json_schema() -> Dict:
+def json_schema() -> dict:
     return {
         "title": "dummy_function",
         "description": "dummy function",
@@ -357,7 +357,7 @@ def json_schema() -> Dict:
 
 
 @pytest.fixture()
-def openai_function() -> Dict:
+def openai_function() -> dict:
     return {
         "name": "dummy_function",
         "description": "dummy function",
@@ -377,11 +377,11 @@ def openai_function() -> Dict:
 
 
 def test_convert_to_anthropic_tool(
-    pydantic: Type[BaseModel],
+    pydantic: type[BaseModel],
     function: Callable,
     dummy_tool: BaseTool,
-    json_schema: Dict,
-    openai_function: Dict,
+    json_schema: dict,
+    openai_function: dict,
 ) -> None:
     expected = {
         "name": "dummy_function",

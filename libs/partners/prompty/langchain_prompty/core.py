@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Literal, Optional, Type, TypeVar, Union
+from typing import Any, Generic, Literal, Optional, TypeVar, Union
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -24,7 +24,7 @@ class PropertySettings(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: Literal["string", "number", "array", "object", "boolean"]
-    default: Union[str, int, float, List, Dict, bool, None] = Field(default=None)
+    default: Union[str, int, float, list, dict, bool, None] = Field(default=None)
     description: str = Field(default="")
 
 
@@ -58,8 +58,8 @@ class Prompty(BaseModel):
     # metadata
     name: str = Field(default="")
     description: str = Field(default="")
-    authors: List[str] = Field(default=[])
-    tags: List[str] = Field(default=[])
+    authors: list[str] = Field(default=[])
+    tags: list[str] = Field(default=[])
     version: str = Field(default="")
     base: str = Field(default="")
     basePrompty: Optional[Prompty] = Field(default=None)
@@ -70,8 +70,8 @@ class Prompty(BaseModel):
     sample: dict = Field(default={})
 
     # input / output
-    inputs: Dict[str, PropertySettings] = Field(default={})
-    outputs: Dict[str, PropertySettings] = Field(default={})
+    inputs: dict[str, PropertySettings] = Field(default={})
+    outputs: dict[str, PropertySettings] = Field(default={})
 
     # template
     template: TemplateSettings
@@ -79,7 +79,7 @@ class Prompty(BaseModel):
     file: FilePath = Field(default="")  # type: ignore[assignment]
     content: str = Field(default="")
 
-    def to_safe_dict(self) -> Dict[str, Any]:
+    def to_safe_dict(self) -> dict[str, Any]:
         d = {}
         for k, v in self:
             if v != "" and v != {} and v != [] and v is not None:
@@ -130,7 +130,7 @@ class Prompty(BaseModel):
                 attribute.startswith("file:")
                 and Path(parent / attribute.split(":")[1]).exists()
             ):
-                with open(parent / attribute.split(":")[1], "r") as f:
+                with open(parent / attribute.split(":")[1]) as f:
                     items = json.load(f)
                     if isinstance(items, list):
                         return [Prompty.normalize(value, parent) for value in items]
@@ -155,8 +155,8 @@ class Prompty(BaseModel):
 
 
 def param_hoisting(
-    top: Dict[str, Any], bottom: Dict[str, Any], top_key: Any = None
-) -> Dict[str, Any]:
+    top: dict[str, Any], bottom: dict[str, Any], top_key: Any = None
+) -> dict[str, Any]:
     """Merge two dictionaries with hoisting of parameters from bottom to top.
 
     Args:
@@ -198,18 +198,18 @@ class NoOpParser(Invoker):
         return data
 
 
-class InvokerFactory(object):
+class InvokerFactory:
     """Factory for creating invokers."""
 
     _instance = None
-    _renderers: Dict[str, Type[Invoker]] = {}
-    _parsers: Dict[str, Type[Invoker]] = {}
-    _executors: Dict[str, Type[Invoker]] = {}
-    _processors: Dict[str, Type[Invoker]] = {}
+    _renderers: dict[str, type[Invoker]] = {}
+    _parsers: dict[str, type[Invoker]] = {}
+    _executors: dict[str, type[Invoker]] = {}
+    _processors: dict[str, type[Invoker]] = {}
 
     def __new__(cls) -> InvokerFactory:
         if cls._instance is None:
-            cls._instance = super(InvokerFactory, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             # Add NOOP invokers
             cls._renderers["NOOP"] = NoOpParser
             cls._parsers["NOOP"] = NoOpParser
@@ -221,7 +221,7 @@ class InvokerFactory(object):
         self,
         type: Literal["renderer", "parser", "executor", "processor"],
         name: str,
-        invoker: Type[Invoker],
+        invoker: type[Invoker],
     ) -> None:
         if type == "renderer":
             self._renderers[name] = invoker
@@ -264,7 +264,7 @@ class InvokerFactory(object):
         else:
             raise ValueError(f"Invalid type {type}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "renderers": {
                 k: f"{v.__module__}.{v.__name__}" for k, v in self._renderers.items()

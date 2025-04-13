@@ -91,7 +91,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     .. code-block:: python
 
         from operator import itemgetter
-        from typing import List
 
         from langchain_openai.chat_models import ChatOpenAI
 
@@ -111,9 +110,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         class InMemoryHistory(BaseChatMessageHistory, BaseModel):
             \"\"\"In memory implementation of chat message history.\"\"\"
 
-            messages: List[BaseMessage] = Field(default_factory=list)
+            messages: list[BaseMessage] = Field(default_factory=list)
 
-            def add_messages(self, messages: List[BaseMessage]) -> None:
+            def add_messages(self, messages: list[BaseMessage]) -> None:
                 \"\"\"Add a list of messages to the store\"\"\"
                 self.messages.extend(messages)
 
@@ -389,7 +388,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 module_name=self.__class__.__module__,
                 root=(Sequence[BaseMessage], ...),
             )
-        return create_model_v2(  # type: ignore[call-overload]
+        return create_model_v2(
             "RunnableWithChatHistoryInput",
             field_definitions=fields,
             module_name=self.__class__.__module__,
@@ -400,6 +399,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def OutputType(self) -> type[Output]:
         return self._history_chain.OutputType
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -431,12 +431,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             root=root_type,
             module_name=self.__class__.__module__,
         )
-
-    def _is_not_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return False
-
-    async def _is_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return True
 
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
@@ -475,7 +469,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 return input_val[0]
             return list(input_val)
         msg = (
-            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {input_val}."
         )
         raise ValueError(msg)  # noqa: TRY004
@@ -510,7 +504,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if isinstance(output_val, (list, tuple)):
             return list(output_val)
         msg = (
-            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {output_val}."
         )
         raise ValueError(msg)  # noqa: TRY004

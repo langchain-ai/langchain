@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Type, TypeVar
+from typing import TypeVar
 
 import yaml
 from langchain_core.exceptions import OutputParserException
@@ -15,7 +15,7 @@ T = TypeVar("T", bound=BaseModel)
 class YamlOutputParser(BaseOutputParser[T]):
     """Parse YAML output using a pydantic model."""
 
-    pydantic_object: Type[T]
+    pydantic_object: type[T]
     """The pydantic model to parse."""
     pattern: re.Pattern = re.compile(
         r"^```(?:ya?ml)?(?P<yaml>[^`]*)", re.MULTILINE | re.DOTALL
@@ -65,5 +65,5 @@ class YamlOutputParser(BaseOutputParser[T]):
         return "yaml"
 
     @property
-    def OutputType(self) -> Type[T]:
+    def OutputType(self) -> type[T]:
         return self.pydantic_object

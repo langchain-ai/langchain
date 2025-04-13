@@ -1,21 +1,14 @@
 import copy
 import re
 import warnings
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -89,8 +82,8 @@ class AnthropicTool(TypedDict):
 
     name: str
     description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
+    input_schema: dict[str, Any]
+    cache_control: NotRequired[dict[str, str]]
 
 
 def _is_builtin_tool(tool: Any) -> bool:
@@ -109,7 +102,7 @@ def _is_builtin_tool(tool: Any) -> bool:
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
 
-def _format_image(image_url: str) -> Dict:
+def _format_image(image_url: str) -> dict:
     """
     Formats an image of format data:image/jpeg;base64,{b64_string}
     to a dict for anthropic api
@@ -138,7 +131,7 @@ def _format_image(image_url: str) -> Dict:
 
 def _merge_messages(
     messages: Sequence[BaseMessage],
-) -> List[Union[SystemMessage, AIMessage, HumanMessage]]:
+) -> list[Union[SystemMessage, AIMessage, HumanMessage]]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
@@ -169,7 +162,7 @@ def _merge_messages(
             for c in (SystemMessage, HumanMessage)
         ):
             if isinstance(cast(BaseMessage, last).content, str):
-                new_content: List = [
+                new_content: list = [
                     {"type": "text", "text": cast(BaseMessage, last).content}
                 ]
             else:
@@ -185,8 +178,8 @@ def _merge_messages(
 
 
 def _format_messages(
-    messages: List[BaseMessage],
-) -> Tuple[Union[str, List[Dict], None], List[Dict]]:
+    messages: list[BaseMessage],
+) -> tuple[Union[str, list[dict], None], list[dict]]:
     """Format messages for anthropic."""
 
     """
@@ -198,8 +191,8 @@ def _format_messages(
                 for m in messages
             ]
     """
-    system: Union[str, List[Dict], None] = None
-    formatted_messages: List[Dict] = []
+    system: Union[str, list[dict], None] = None
+    formatted_messages: list[dict] = []
 
     merged_messages = _merge_messages(messages)
     for i, message in enumerate(merged_messages):
@@ -220,7 +213,7 @@ def _format_messages(
             continue
 
         role = _message_type_lookups[message.type]
-        content: Union[str, List]
+        content: Union[str, list]
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -830,7 +823,7 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    stop_sequences: Optional[List[str]] = Field(None, alias="stop")
+    stop_sequences: Optional[list[str]] = Field(None, alias="stop")
     """Default stop sequences."""
 
     anthropic_api_url: Optional[str] = Field(
@@ -858,7 +851,7 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     streaming: bool = False
     """Whether to use streaming or not."""
@@ -868,7 +861,7 @@ class ChatAnthropic(BaseChatModel):
     message chunks will be generated during the stream including usage metadata.
     """
 
-    thinking: Optional[Dict[str, Any]] = Field(default=None)
+    thinking: Optional[dict[str, Any]] = Field(default=None)
     """Parameters for Claude reasoning,
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
 
@@ -878,7 +871,7 @@ class ChatAnthropic(BaseChatModel):
         return "anthropic-chat"
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
     @classmethod
@@ -886,12 +879,12 @@ class ChatAnthropic(BaseChatModel):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "anthropic"]
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
@@ -907,7 +900,7 @@ class ChatAnthropic(BaseChatModel):
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -925,14 +918,14 @@ class ChatAnthropic(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict) -> Any:
+    def build_extra(cls, values: dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @cached_property
-    def _client_params(self) -> Dict[str, Any]:
-        client_params: Dict[str, Any] = {
+    def _client_params(self) -> dict[str, Any]:
+        client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
@@ -958,9 +951,9 @@ class ChatAnthropic(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Dict,
-    ) -> Dict:
+        stop: Optional[list[str]] = None,
+        **kwargs: dict,
+    ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
         payload = {
@@ -981,8 +974,8 @@ class ChatAnthropic(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
@@ -1012,8 +1005,8 @@ class ChatAnthropic(BaseChatModel):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
@@ -1088,8 +1081,8 @@ class ChatAnthropic(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -1104,8 +1097,8 @@ class ChatAnthropic(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -1120,7 +1113,7 @@ class ChatAnthropic(BaseChatModel):
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
-        schema: Union[Dict, type],
+        schema: Union[dict, type],
         formatted_tool: AnthropicTool,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
@@ -1148,10 +1141,10 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
-            Union[Dict[str, str], Literal["any", "auto"], str]
+            Union[dict[str, str], Literal["any", "auto"], str]
         ] = None,
         parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
@@ -1326,11 +1319,11 @@ class ChatAnthropic(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[Dict, type],
+        schema: Union[dict, type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -1483,9 +1476,9 @@ class ChatAnthropic(BaseChatModel):
     @beta()
     def get_num_tokens_from_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         tools: Optional[
-            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
         """Count tokens in a sequence of input messages.
@@ -1546,7 +1539,7 @@ class ChatAnthropic(BaseChatModel):
                 https://docs.anthropic.com/en/docs/build-with-claude/token-counting
         """
         formatted_system, formatted_messages = _format_messages(messages)
-        kwargs: Dict[str, Any] = {}
+        kwargs: dict[str, Any] = {}
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
@@ -1562,7 +1555,7 @@ class ChatAnthropic(BaseChatModel):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type, Callable, BaseTool],
+    tool: Union[dict[str, Any], type, Callable, BaseTool],
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
@@ -1611,8 +1604,8 @@ class _AnthropicToolUse(TypedDict):
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(
-    tool_calls: List[ToolCall],
-) -> List[_AnthropicToolUse]:
+    tool_calls: list[ToolCall],
+) -> list[_AnthropicToolUse]:
     blocks = []
     for tool_call in tool_calls:
         blocks.append(
@@ -1735,7 +1728,7 @@ class ChatAnthropicMessages(ChatAnthropic):
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
-    input_token_details: Dict = {
+    input_token_details: dict = {
         "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }

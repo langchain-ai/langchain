@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import operator
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document

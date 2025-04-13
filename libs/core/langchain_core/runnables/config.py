@@ -243,12 +243,12 @@ def get_config_list(
      It is useful for subclasses overriding batch() or abatch().
 
     Args:
-        config (Optional[Union[RunnableConfig, List[RunnableConfig]]]):
+        config (Optional[Union[RunnableConfig, list[RunnableConfig]]]):
           The config or list of configs.
         length (int): The length of the list.
 
     Returns:
-        List[RunnableConfig]: The list of configs.
+        list[RunnableConfig]: The list of configs.
 
     Raises:
         ValueError: If the length of the list is not equal to the length of the inputs.
@@ -302,7 +302,7 @@ def patch_config(
         max_concurrency (Optional[int], optional): The max concurrency to set.
           Defaults to None.
         run_name (Optional[str], optional): The run name to set. Defaults to None.
-        configurable (Optional[Dict[str, Any]], optional): The configurable to set.
+        configurable (Optional[dict[str, Any]], optional): The configurable to set.
           Defaults to None.
 
     Returns:
@@ -343,18 +343,18 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base[key] = {  # type: ignore
-                    **base.get(key, {}),  # type: ignore
-                    **(config.get(key) or {}),  # type: ignore
+                base["metadata"] = {
+                    **base.get("metadata", {}),
+                    **(config.get("metadata") or {}),
                 }
             elif key == "tags":
-                base[key] = sorted(  # type: ignore
-                    set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
+                base["tags"] = sorted(
+                    set(base.get("tags", []) + (config.get("tags") or [])),
                 )
             elif key == "configurable":
-                base[key] = {  # type: ignore
-                    **base.get(key, {}),  # type: ignore
-                    **(config.get(key) or {}),  # type: ignore
+                base["configurable"] = {
+                    **base.get("configurable", {}),
+                    **(config.get("configurable") or {}),
                 }
             elif key == "callbacks":
                 base_callbacks = base.get("callbacks")
@@ -390,7 +390,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
                 base[key] = config[key].copy()  # type: ignore[literal-required]
             else:
-                base[key] = config[key] or base.get(key)  # type: ignore
+                base[key] = config[key] or base.get(key)  # type: ignore[literal-required]
     return base
 
 
