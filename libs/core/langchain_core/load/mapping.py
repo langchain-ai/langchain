@@ -140,6 +140,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
+    ("langchain", "prompts", "chat", "_PromptBlockWrapper"): (
+        "langchain_core",
+        "prompts",
+        "chat",
+        "_PromptBlockWrapper",
+    ),
     ("langchain", "prompts", "image", "ImagePromptTemplate"): (
         "langchain_core",
         "prompts",
