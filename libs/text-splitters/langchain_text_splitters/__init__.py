@@ -45,6 +45,11 @@ from langchain_text_splitters.markdown import (
     MarkdownTextSplitter,
 )
 from langchain_text_splitters.nltk_spl import NLTKTextSplitter
+from langchain_text_splitters.persian import (
+    PersianTokenizer,
+    PersianTextNormalizer,
+    PersianNumberConverter,
+)
 from langchain_text_splitters.python import PythonCodeTextSplitter
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
@@ -73,4 +78,8 @@ __all__ = [
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
+    # Persian text processing components
+    "PersianTokenizer",
+    "PersianTextNormalizer",
+    "PersianNumberConverter",
 ]
