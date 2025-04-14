@@ -317,19 +317,16 @@ def _format_messages(
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
-    if (
-        "messages: at least one message is required"
-    ) in e.message:
-        message = (
-            "Received only system message(s). "
-        )
+    if ("messages: at least one message is required") in e.message:
+        message = "Received only system message(s). "
         warnings.warn(message)
         raise ValueError(message)
     else:
         raise
-    
+
 
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
