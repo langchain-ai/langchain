@@ -284,6 +284,6 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload() -> None:
     )
 
     collection_info = vec_store.client.get_collection(collection_name)
-    assert collection_info.config.params.vectors.on_disk is True  # type: ignore
+    assert collection_info.config.params.vectors.on_disk is True
     assert collection_info.config.optimizer_config.memmap_threshold == 1000
     assert collection_info.config.params.on_disk_payload is True

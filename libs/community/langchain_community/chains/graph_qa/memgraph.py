@@ -225,11 +225,11 @@ class MemgraphQAChain(Chain):
                         MessagesPlaceholder(variable_name="function_response"),
                     ]
                 )
-                qa_chain = response_prompt | qa_llm | StrOutputParser()  # type: ignore
+                qa_chain = response_prompt | qa_llm | StrOutputParser()  # type: ignore[operator]
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
         else:
-            qa_chain = use_qa_llm_kwargs["prompt"] | qa_llm | StrOutputParser()  # type: ignore
+            qa_chain = use_qa_llm_kwargs["prompt"] | qa_llm | StrOutputParser()
 
         prompt = use_cypher_llm_kwargs["prompt"]
         llm_to_use = cypher_llm if cypher_llm is not None else llm
@@ -300,11 +300,11 @@ class MemgraphQAChain(Chain):
             intermediate_steps.append({"context": context})
             if self.use_function_response:
                 function_response = get_function_response(question, context)
-                result = self.qa_chain.invoke(  # type: ignore
+                result = self.qa_chain.invoke(
                     {"question": question, "function_response": function_response},
                 )
             else:
-                result = self.qa_chain.invoke(  # type: ignore
+                result = self.qa_chain.invoke(
                     {"question": question, "context": context},
                     callbacks=callbacks,
                 )

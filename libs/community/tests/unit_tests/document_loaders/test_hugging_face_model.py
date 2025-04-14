@@ -62,14 +62,14 @@ def test_load_models_with_readme() -> None:
     responses.add_callback(
         responses.GET,
         "https://huggingface.co/api/models",
-        callback=response_callback,  # type: ignore
+        callback=response_callback,  # type: ignore[arg-type]
         content_type="application/json",
     )
     responses.add_callback(
         responses.GET,
         # Use a regex or update this placeholder
         "https://huggingface.co/microsoft/phi-2/raw/main/README.md",
-        callback=response_callback,  # type: ignore
+        callback=response_callback,  # type: ignore[arg-type]
         content_type="text/plain",
     )
 

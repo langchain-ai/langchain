@@ -99,13 +99,13 @@ class TestElasticsearch:
     def es_client(self) -> Any:
         # Running this integration test with Elastic Cloud
         # Required for in-stack inference testing (ELSER + model_id)
-        from elastic_transport import Transport
+        from elastic_transport import Transport, TransportApiRespons
         from elasticsearch import Elasticsearch
 
         class CustomTransport(Transport):
             requests = []
 
-            def perform_request(self, *args, **kwargs):  # type: ignore
+            def perform_request(self, *args: Any, **kwargs: Any) -> TransportApiRespons:
                 self.requests.append(kwargs)
                 return super().perform_request(*args, **kwargs)
 
@@ -934,4 +934,4 @@ class TestElasticsearch:
         )
 
         # 1 for index exist, 1 for index create, 3 for index docs
-        assert len(es_client.transport.requests) == 5  # type: ignore
+        assert len(es_client.transport.requests) == 5

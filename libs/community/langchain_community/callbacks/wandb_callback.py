@@ -580,7 +580,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.temp_dir.cleanup()
             self.reset_callback_meta()
         if reset:
-            self.__init__(  # type: ignore
+            self.__init__(  # type: ignore[misc]
                 job_type=job_type if job_type else self.job_type,
                 project=project if project else self.project,
                 entity=entity if entity else self.entity,

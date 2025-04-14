@@ -238,7 +238,7 @@ class InMemoryCache(BaseCache):
 Base = declarative_base()
 
 
-class FullLLMCache(Base):  # type: ignore
+class FullLLMCache(Base):  # type: ignore[misc,valid-type]
     """SQLite table for full LLM Cache (all generations)."""
 
     __tablename__ = "full_llm_cache"
@@ -261,7 +261,7 @@ class SQLAlchemyCache(BaseCache):
         """Look up based on prompt and llm_string."""
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt == prompt)  # type: ignore
+            .where(self.cache_schema.prompt == prompt)
             .where(self.cache_schema.llm == llm_string)
             .order_by(self.cache_schema.idx)
         )
@@ -1531,7 +1531,7 @@ class CassandraSemanticCache(BaseCache):
         await self.table.aclear()
 
 
-class FullMd5LLMCache(Base):  # type: ignore
+class FullMd5LLMCache(Base):  # type: ignore[misc,valid-type]
     """SQLite table for full LLM Cache (all generations)."""
 
     __tablename__ = "full_md5_llm_cache"
@@ -1583,7 +1583,7 @@ class SQLAlchemyMd5Cache(BaseCache):
     def _delete_previous(self, session: Session, prompt: str, llm_string: str) -> None:
         stmt = (
             delete(self.cache_schema)
-            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))  # type: ignore
+            .where(self.cache_schema.prompt_md5 == self.get_md5(prompt))
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
         )
@@ -1593,7 +1593,7 @@ class SQLAlchemyMd5Cache(BaseCache):
         prompt_pd5 = self.get_md5(prompt)
         stmt = (
             select(self.cache_schema.response)
-            .where(self.cache_schema.prompt_md5 == prompt_pd5)  # type: ignore
+            .where(self.cache_schema.prompt_md5 == prompt_pd5)
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
             .order_by(self.cache_schema.idx)
@@ -1796,7 +1796,7 @@ class _CachedAwaitable:
     def __await__(self) -> Generator:
         if self.result is _unset:
             self.result = yield from self.awaitable.__await__()
-        return self.result  # type: ignore
+        return self.result  # type: ignore[return-value]
 
 
 def _reawaitable(func: Callable) -> Callable:

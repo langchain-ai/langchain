@@ -161,9 +161,7 @@ class ZapierNLARunAction(BaseTool):  # type: ignore[override]
         )
 
 
-ZapierNLARunAction.__doc__ = (
-    ZapierNLAWrapper.run.__doc__ + ZapierNLARunAction.__doc__  # type: ignore
-)
+ZapierNLARunAction.__doc__ = ZapierNLAWrapper.run.__doc__ + ZapierNLARunAction.__doc__  # type: ignore[operator]
 
 
 # other useful actions
@@ -210,5 +208,5 @@ class ZapierNLAListActions(BaseTool):  # type: ignore[override]
 
 
 ZapierNLAListActions.__doc__ = (
-    ZapierNLAWrapper.list.__doc__ + ZapierNLAListActions.__doc__  # type: ignore
+    ZapierNLAWrapper.list.__doc__ + ZapierNLAListActions.__doc__  # type: ignore[operator]
 )
