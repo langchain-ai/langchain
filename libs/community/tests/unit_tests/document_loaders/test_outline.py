@@ -35,7 +35,7 @@ def mock_response_single_page() -> Dict:
 
 
 @pytest.fixture
-def mock_response_multiple_pages() -> Dict:
+def mock_response_multiple_pages_page_1() -> Dict:
     return {
         "data": [
             {
@@ -48,14 +48,35 @@ def mock_response_multiple_pages() -> Dict:
             }
         ],
         "pagination": {
-            "nextPath": "/api/documents.list?limit=25&offset=25",
-            "total": 30,
+            "nextPath": "/api/documents.list?limit=1&offset=1",
+            "total": 2,
+        },
+    }
+
+
+@pytest.fixture
+def mock_response_multiple_pages_page_2() -> Dict:
+    return {
+        "data": [
+            {
+                "id": "2",
+                "text": "Test document 2",
+                "title": "Test 2",
+                "createdAt": "2024-03-26T20:00:01.781Z",
+                "updatedAt": "2024-03-26T20:00:01.781Z",
+                "url": "/doc/test-RTYIxmodua",
+            }
+        ],
+        "pagination": {
+            "nextPath": "http://outline.test/api/documents.list?limit=1&offset=2",
+            "total": 2,
         },
     }
 
 
 def test_fetch_single_page(
-    outline_loader: OutlineLoader, mock_response_single_page: Dict
+    outline_loader: OutlineLoader,
+    mock_response_single_page: Dict,
 ) -> None:
     with requests_mock.Mocker() as m:
         m.post("http://outline.test/api/documents.list", json=mock_response_single_page)
@@ -67,30 +88,17 @@ def test_fetch_single_page(
 
 
 def test_fetch_multiple_pages(
-    outline_loader: OutlineLoader, mock_response_multiple_pages: Dict
+    outline_loader: OutlineLoader,
+    mock_response_multiple_pages_page_1: Dict,
+    mock_response_multiple_pages_page_2: Dict,
 ) -> None:
     with requests_mock.Mocker() as m:
-        # Second page (last page)
-        second_page = {
-            "data": [
-                {
-                    "id": "2",
-                    "text": "Test document 2",
-                    "title": "Test 2",
-                    "createdAt": "2024-03-26T20:00:01.781Z",
-                    "updatedAt": "2024-03-26T20:00:01.781Z",
-                    "url": "/doc/test-RTYIxmodua",
-                }
-            ],
-            "pagination": {
-                "nextPath": "http://outline.test/api/documents.list?limit=25&offset=50",
-                "total": 30,
-            },
-        }
-        # First page
         m.post(
             "http://outline.test/api/documents.list",
-            [{"json": mock_response_multiple_pages}, {"json": second_page}],
+            [
+                {"json": mock_response_multiple_pages_page_1},
+                {"json": mock_response_multiple_pages_page_2},
+            ],
         )
 
         documents = outline_loader.load()
