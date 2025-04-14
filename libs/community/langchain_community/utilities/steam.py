@@ -123,10 +123,10 @@ class SteamWebAPIWrapper(BaseModel):
         except ImportError:
             raise ImportError("steamspypi library is not installed.")
         users_games = self.get_users_games(steam_id)
-        result = {}  # type: ignore
+        result: dict[str, int] = {}
         most_popular_genre = ""
         most_popular_genre_count = 0
-        for game in users_games["games"]:  # type: ignore
+        for game in users_games["games"]:  # type: ignore[call-overload]
             appid = game["appid"]
             data_request = {"request": "appdetails", "appid": appid}
             genreStore = steamspypi.download(data_request)
@@ -148,7 +148,7 @@ class SteamWebAPIWrapper(BaseModel):
         sorted_data = sorted(
             data.values(), key=lambda x: x.get("average_forever", 0), reverse=True
         )
-        owned_games = [game["appid"] for game in users_games["games"]]  # type: ignore
+        owned_games = [game["appid"] for game in users_games["games"]]  # type: ignore[call-overload]
         remaining_games = [
             game for game in sorted_data if game["appid"] not in owned_games
         ]

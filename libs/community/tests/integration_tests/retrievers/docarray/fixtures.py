@@ -40,8 +40,8 @@ def init_weaviate() -> Generator[
         # When initializing the Weaviate index, denote the field
         # you want to search on with `is_embedding=True`
         title: str
-        title_embedding: NdArray[32] = Field(is_embedding=True)  # type: ignore
-        other_emb: NdArray[32]  # type: ignore
+        title_embedding: NdArray[32] = Field(is_embedding=True)  # type: ignore[call-overload]
+        other_emb: NdArray[32]
         year: int
 
     embeddings = FakeEmbeddings(size=32)
@@ -87,8 +87,8 @@ def init_elastic() -> Generator[
 
     class MyDoc(BaseDoc):
         title: str
-        title_embedding: NdArray[32]  # type: ignore
-        other_emb: NdArray[32]  # type: ignore
+        title_embedding: NdArray[32]
+        other_emb: NdArray[32]
         year: int
 
     embeddings = FakeEmbeddings(size=32)
@@ -124,8 +124,8 @@ def init_qdrant() -> Tuple[QdrantDocumentIndex, rest.Filter, FakeEmbeddings]:
 
     class MyDoc(BaseDoc):
         title: str
-        title_embedding: NdArray[32]  # type: ignore
-        other_emb: NdArray[32]  # type: ignore
+        title_embedding: NdArray[32]
+        other_emb: NdArray[32]
         year: int
 
     embeddings = FakeEmbeddings(size=32)
@@ -168,8 +168,8 @@ def init_in_memory() -> Tuple[InMemoryExactNNIndex, Dict[str, Any], FakeEmbeddin
 
     class MyDoc(BaseDoc):
         title: str
-        title_embedding: NdArray[32]  # type: ignore
-        other_emb: NdArray[32]  # type: ignore
+        title_embedding: NdArray[32]
+        other_emb: NdArray[32]
         year: int
 
     embeddings = FakeEmbeddings(size=32)
@@ -205,8 +205,8 @@ def init_hnsw(
 
     class MyDoc(BaseDoc):
         title: str
-        title_embedding: NdArray[32]  # type: ignore
-        other_emb: NdArray[32]  # type: ignore
+        title_embedding: NdArray[32]
+        other_emb: NdArray[32]
         year: int
 
     embeddings = FakeEmbeddings(size=32)

@@ -41,23 +41,30 @@ https://python.langchain.com/docs/how_to/custom_llm/
 
 """  # noqa: E501
 
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LangSmithParams,
-    LanguageModelInput,
-    LanguageModelLike,
-    LanguageModelOutput,
-    get_tokenizer,
-)
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
-from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
-from langchain_core.language_models.fake_chat_models import (
-    FakeListChatModel,
-    FakeMessagesListChatModel,
-    GenericFakeChatModel,
-    ParrotFakeChatModel,
-)
-from langchain_core.language_models.llms import LLM, BaseLLM
+from importlib import import_module
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.base import (
+        BaseLanguageModel,
+        LangSmithParams,
+        LanguageModelInput,
+        LanguageModelLike,
+        LanguageModelOutput,
+        get_tokenizer,
+    )
+    from langchain_core.language_models.chat_models import (
+        BaseChatModel,
+        SimpleChatModel,
+    )
+    from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
+    from langchain_core.language_models.fake_chat_models import (
+        FakeListChatModel,
+        FakeMessagesListChatModel,
+        GenericFakeChatModel,
+        ParrotFakeChatModel,
+    )
+    from langchain_core.language_models.llms import LLM, BaseLLM
 
 __all__ = [
     "BaseLanguageModel",
@@ -77,3 +84,38 @@ __all__ = [
     "GenericFakeChatModel",
     "ParrotFakeChatModel",
 ]
+
+_dynamic_imports = {
+    "BaseLanguageModel": "base",
+    "LangSmithParams": "base",
+    "LanguageModelInput": "base",
+    "LanguageModelLike": "base",
+    "LanguageModelOutput": "base",
+    "get_tokenizer": "base",
+    "BaseChatModel": "chat_models",
+    "SimpleChatModel": "chat_models",
+    "FakeListLLM": "fake",
+    "FakeStreamingListLLM": "fake",
+    "FakeListChatModel": "fake_chat_models",
+    "FakeMessagesListChatModel": "fake_chat_models",
+    "GenericFakeChatModel": "fake_chat_models",
+    "ParrotFakeChatModel": "fake_chat_models",
+    "LLM": "llms",
+    "BaseLLM": "llms",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    package = __spec__.parent  # type: ignore[name-defined]
+    if module_name == "__module__" or module_name is None:
+        result = import_module(f".{attr_name}", package=package)
+    else:
+        module = import_module(f".{module_name}", package=package)
+        result = getattr(module, attr_name)
+    globals()[attr_name] = result
+    return result
+
+
+def __dir__() -> list[str]:
+    return list(__all__)

@@ -393,7 +393,7 @@ class WebBaseLoader(BaseLoader):
             "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"  # noqa: E501
         ),
     )
-    def aload(self) -> List[Document]:  # type: ignore
+    def aload(self) -> List[Document]:  # type: ignore[override]
         """Load text from the urls in web_path async into Documents."""
 
         results = self.scrape_all(self.web_paths)
