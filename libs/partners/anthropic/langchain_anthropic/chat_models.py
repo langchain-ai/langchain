@@ -193,11 +193,9 @@ def _format_messages(
     """
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
-
     merged_messages = _merge_messages(messages)
     if all(message.type == "system" for message in merged_messages):
         raise ValueError("Received only system message(s).")
-    
     for i, message in enumerate(merged_messages):
         if message.type == "system":
             if system is not None:
