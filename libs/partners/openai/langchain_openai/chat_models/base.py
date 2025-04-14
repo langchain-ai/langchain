@@ -193,12 +193,12 @@ def _format_data_content_block(block: dict) -> dict:
 
     elif block["type"] == "file":
         if block["source_type"] == "base64":
-            file = {"file_data": f"data:{block['mime_type']};base64,{block['source']}"}
+            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
             if metadata := block.get("metadata"):
                 file = {**file, **metadata}
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
-            formatted_block = {"type": "file", "file": {"file_id": block["source"]}}
+            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
     else:
         raise ValueError(f"Block of type {block['type']} is not supported.")
 

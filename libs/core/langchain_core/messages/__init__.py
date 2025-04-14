@@ -28,7 +28,6 @@ from langchain_core.messages.base import (
 )
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.content_blocks import (
-    DataContentBlock,
     convert_to_openai_image_block,
     is_data_content_block,
 )
@@ -65,7 +64,6 @@ __all__ = [
     "BaseMessageChunk",
     "ChatMessage",
     "ChatMessageChunk",
-    "DataContentBlock",
     "FunctionMessage",
     "FunctionMessageChunk",
     "HumanMessage",

@@ -95,7 +95,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                     "type": "file",
                     "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "source": pdf_data,
+                    "data": pdf_data,
                     "metadata": {"filename": "my-pdf"},  # OpenAI requires a filename
                 },
             ]

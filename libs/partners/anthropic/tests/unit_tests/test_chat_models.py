@@ -702,7 +702,7 @@ def test__format_messages_with_cache_control() -> None:
                     "type": "file",
                     "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "source": "<base64 data>",
+                    "data": "<base64 data>",
                     "metadata": {"cache_control": {"type": "ephemeral"}},
                 },
             ]
@@ -740,7 +740,7 @@ def test__format_messages_with_citations() -> None:
                 {
                     "type": "file",
                     "source_type": "text",
-                    "source": "The grass is green. The sky is blue.",
+                    "text": "The grass is green. The sky is blue.",
                     "mime_type": "text/plain",
                     "metadata": {"citations": {"enabled": True}},
                 },

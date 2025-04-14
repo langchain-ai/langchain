@@ -1096,14 +1096,14 @@ def test_is_data_content_block() -> None:
         {
             "type": "image",
             "source_type": "url",
-            "source": "https://...",
+            "url": "https://...",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
             "source_type": "base64",
-            "source": "<base64 data>",
+            "data": "<base64 data>",
             "mime_type": "image/jpeg",
         }
     )
@@ -1111,7 +1111,7 @@ def test_is_data_content_block() -> None:
         {
             "type": "image",
             "source_type": "base64",
-            "source": "<base64 data>",
+            "data": "<base64 data>",
             "mime_type": "image/jpeg",
             "metadata": {"cache_control": {"type": "ephemeral"}},
         }
@@ -1147,7 +1147,7 @@ def test_convert_to_openai_image_block() -> None:
     input_block = {
         "type": "image",
         "source_type": "url",
-        "source": "https://...",
+        "url": "https://...",
         "metadata": {"cache_control": {"type": "ephemeral"}},
     }
     expected = {
@@ -1160,7 +1160,7 @@ def test_convert_to_openai_image_block() -> None:
     input_block = {
         "type": "image",
         "source_type": "base64",
-        "source": "<base64 data>",
+        "data": "<base64 data>",
         "mime_type": "image/jpeg",
         "metadata": {"cache_control": {"type": "ephemeral"}},
     }

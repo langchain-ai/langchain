@@ -301,7 +301,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "base64",
-                "source": "<base64 image data>",
+                "data": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -337,7 +337,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "url",
-                "source": "https://...",
+                "url": "https://...",
             }
 
         See https://python.langchain.com/docs/concepts/multimodality/
@@ -363,7 +363,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "file",
                 "source_type": "base64",
-                "source": "<base64 file data>",
+                "data": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 
@@ -1963,7 +1963,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "base64",
-                "source": "<base64 image data>",
+                "data": "<base64 image data>",
                 "mime_type": "application/pdf",
             }
 
@@ -2003,7 +2003,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "type": "file",
                     "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "source": pdf_data,
+                    "data": pdf_data,
                 },
             ]
         )
@@ -2020,7 +2020,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "base64",
-                "source": "<base64 image data>",
+                "data": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -2047,7 +2047,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "url",
-                "source": "<url>",
+                "url": "<url>",
             }
 
         .. dropdown:: Configuration
@@ -2098,7 +2098,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "type": "image",
                     "source_type": "base64",
                     "mime_type": "image/jpeg",
-                    "source": image_data,
+                    "data": image_data,
                 },
             ],
         )
@@ -2112,7 +2112,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {
                         "type": "image",
                         "source_type": "url",
-                        "source": image_url,
+                        "url": image_url,
                     },
                 ],
             )

@@ -182,16 +182,16 @@ def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
         if block["source_type"] == "url":
-            if block["source"].startswith("data:"):
+            if block["url"].startswith("data:"):
                 # Data URI
                 formatted_block = {
                     "type": "image",
-                    "source": _format_image(block["source"]),
+                    "source": _format_image(block["url"]),
                 }
             else:
                 formatted_block = {
                     "type": "image",
-                    "source": {"type": "url", "url": block["source"]},
+                    "source": {"type": "url", "url": block["url"]},
                 }
         elif block["source_type"] == "base64":
             formatted_block = {
@@ -199,7 +199,7 @@ def _format_data_content_block(block: dict) -> dict:
                 "source": {
                     "type": "base64",
                     "media_type": block["mime_type"],
-                    "data": block["source"],
+                    "data": block["data"],
                 },
             }
         else:
@@ -214,7 +214,7 @@ def _format_data_content_block(block: dict) -> dict:
                 "type": "document",
                 "source": {
                     "type": "url",
-                    "url": block["source"],
+                    "url": block["url"],
                 },
             }
         elif block["source_type"] == "base64":
@@ -223,7 +223,7 @@ def _format_data_content_block(block: dict) -> dict:
                 "source": {
                     "type": "base64",
                     "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block["source"],
+                    "data": block["data"],
                 },
             }
         elif block["source_type"] == "text":
@@ -232,7 +232,7 @@ def _format_data_content_block(block: dict) -> dict:
                 "source": {
                     "type": "text",
                     "media_type": block.get("mime_type") or "text/plain",
-                    "data": block["source"],
+                    "data": block["text"],
                 },
             }
 

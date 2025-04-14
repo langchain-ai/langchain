@@ -387,7 +387,7 @@ class ChatModelUnitTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "base64",
-                "source": "<base64 image data>",
+                "data": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -423,7 +423,7 @@ class ChatModelUnitTests(ChatModelTests):
             {
                 "type": "image",
                 "source_type": "url",
-                "source": "https://...",
+                "url": "https://...",
             }
 
         See https://python.langchain.com/docs/concepts/multimodality/
@@ -449,7 +449,7 @@ class ChatModelUnitTests(ChatModelTests):
             {
                 "type": "file",
                 "source_type": "base64",
-                "source": "<base64 file data>",
+                "data": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 

@@ -650,7 +650,7 @@ def test_format_message_content() -> None:
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "source": "https://..."}]
+    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
     assert expected == _format_message_content(content)
 
@@ -658,7 +658,7 @@ def test_format_message_content() -> None:
         {
             "type": "image",
             "source_type": "base64",
-            "source": "<base64 data>",
+            "data": "<base64 data>",
             "mime_type": "image/png",
         }
     ]
@@ -674,7 +674,7 @@ def test_format_message_content() -> None:
         {
             "type": "file",
             "source_type": "base64",
-            "source": "<base64 data>",
+            "data": "<base64 data>",
             "mime_type": "application/pdf",
             "metadata": {"filename": "my_file"},
         }
@@ -690,7 +690,7 @@ def test_format_message_content() -> None:
     ]
     assert expected == _format_message_content(content)
 
-    content = [{"type": "file", "source_type": "id", "source": "file-abc123"}]
+    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
     assert expected == _format_message_content(content)
 
