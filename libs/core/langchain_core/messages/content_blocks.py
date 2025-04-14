@@ -2,6 +2,7 @@
 
 from typing import Any, Literal, Union
 
+from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict
 
 
@@ -65,6 +66,8 @@ DataContentBlock = Union[
     IDContentBlock,
 ]
 
+_DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
+
 
 def is_data_content_block(
     content_block: dict,
@@ -77,18 +80,12 @@ def is_data_content_block(
     Returns:
         True if the content block is a data content block, False otherwise.
     """
-    required_keys = {"type", "source_type"}
-    if all(required_key in content_block for required_key in required_keys):
-        if content_block["source_type"] == "url":
-            return "url" in content_block
-        if content_block["source_type"] == "base64":
-            return "data" in content_block
-        if content_block["source_type"] == "text":
-            return "text" in content_block
-        if content_block["source_type"] == "id":
-            return "id" in content_block
+    try:
+        _ = _DataContentBlockAdapter.validate_python(content_block)
+    except ValidationError:
         return False
-    return False
+    else:
+        return True
 
 
 def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
