@@ -1,0 +1,138 @@
+---
+title: Persian Language Processing
+sidebar_position: 1
+---
+
+# Persian Language Processing
+
+LangChain provides comprehensive support for Persian language processing through dedicated utilities for text tokenization, normalization, and number system conversion.
+
+## Features
+
+### Text Tokenization
+
+The `PersianTokenizer` class provides specialized tokenization for Persian text:
+
+```python
+from langchain.text_splitters.persian import PersianTokenizer
+
+tokenizer = PersianTokenizer()
+text = "سلام دنیا"
+tokens = tokenizer.tokenize(text)  # ["سلام", "دنیا"]
+```
+
+Key features:
+- Persian word boundary detection
+- ZWNJ (نیم‌فاصله) character handling
+- Mixed Persian-English text support
+- Proper token joining with spacing
+
+### Text Normalization
+
+The `PersianTextNormalizer` class handles Persian text normalization:
+
+```python
+from langchain.text_splitters.persian import PersianTextNormalizer
+
+normalizer = PersianTextNormalizer()
+text = "كتاب"  # With Arabic kaf
+normalized = normalizer.normalize(text)  # "کتاب" with Persian kaf
+```
+
+Features:
+- Character normalization (ی/ي، ک/ك)
+- Diacritics (اِعراب) removal
+- Space normalization
+- Hamza form normalization
+
+### Number Conversion
+
+The `PersianNumberConverter` class handles number system conversion:
+
+```python
+from langchain.text_splitters.persian import PersianNumberConverter
+
+converter = PersianNumberConverter()
+text = "۱۲۳۴۵"
+english = converter.to_english(text)  # "12345"
+persian = converter.to_persian("12345")  # "۱۲۳۴۵"
+```
+
+Supports:
+- Persian digits (۰-۹)
+- Arabic digits (٠-٩)
+- English digits (0-9)
+
+## Integration with Other Components
+
+The Persian language processing utilities can be used with other LangChain components:
+
+```python
+from langchain.text_splitters.persian import PersianTokenizer
+from langchain.text_splitters import RecursiveCharacterTextSplitter
+
+# Create a Persian-aware text splitter
+persian_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", " ", ""],
+    tokenizer=PersianTokenizer()
+)
+
+# Split Persian text
+text = "این یک متن فارسی است که باید تقسیم شود."
+chunks = persian_splitter.split_text(text)
+```
+
+## Best Practices
+
+1. **Text Preprocessing**:
+   - Always normalize text before tokenization
+   - Handle mixed language content carefully
+   - Consider preserving ZWNJ for compound words
+
+2. **Number Handling**:
+   - Convert numbers to a consistent format
+   - Handle mixed number systems in text
+   - Consider context when converting numbers
+
+3. **Performance**:
+   - Reuse tokenizer instances
+   - Cache normalized text when possible
+   - Use appropriate chunk sizes for text splitting
+
+## Examples
+
+### Document Processing
+```python
+from langchain.text_splitters.persian import (
+    PersianTokenizer,
+    PersianTextNormalizer
+)
+from langchain.document_loaders import TextLoader
+from langchain.text_splitters import RecursiveCharacterTextSplitter
+
+# Load Persian document
+loader = TextLoader("persian_document.txt")
+documents = loader.load()
+
+# Normalize text
+normalizer = PersianTextNormalizer()
+normalized_docs = [normalizer.normalize(doc.page_content) for doc in documents]
+
+# Split into chunks
+splitter = RecursiveCharacterTextSplitter(
+    tokenizer=PersianTokenizer(),
+    chunk_size=1000,
+    chunk_overlap=200
+)
+chunks = splitter.split_documents(documents)
+```
+
+### Mixed Language Processing
+```python
+from langchain.text_splitters.persian import PersianTokenizer
+
+tokenizer = PersianTokenizer()
+text = "This is a mixed text with Persian: سلام دنیا and English words"
+tokens = tokenizer.tokenize(text)
+# ["This", "is", "a", "mixed", "text", "with", "Persian:", "سلام", "دنیا", "and", "English", "words"]
+``` 
