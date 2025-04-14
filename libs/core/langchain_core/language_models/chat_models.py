@@ -124,14 +124,19 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
             for idx, block in enumerate(message.content):
                 if (
                     isinstance(block, dict)
-                    and is_data_content_block(block)
                     and block.get("type") == "image"
+                    and is_data_content_block(block)
                 ):
-                    message_to_trace = message.model_copy(deep=True)
+                    if message_to_trace is message:
+                        message_to_trace = message.model_copy()
+                        # Also shallow-copy content
+                        message_to_trace.content = list(message_to_trace.content)
+
                     message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
                         convert_to_openai_image_block(block)
                     )
         messages_to_trace.append(message_to_trace)
+
     return messages_to_trace
 
 
