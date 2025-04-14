@@ -71,7 +71,7 @@ class DocArrayHnswSearch(DocArrayIndex):
             num_threads=num_threads,
             **kwargs,
         )
-        doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)  # type: ignore
+        doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)
         return cls(doc_index, embedding)
 
     @classmethod

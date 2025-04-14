@@ -21,7 +21,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
 
     # Test as string
     load_evaluators(
-        [evaluator_type.value],  # type: ignore
+        [evaluator_type.value],  # type: ignore[list-item]
         llm=fake_llm,
         embeddings=embeddings,
     )

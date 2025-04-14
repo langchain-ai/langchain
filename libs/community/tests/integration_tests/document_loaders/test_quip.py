@@ -1,10 +1,15 @@
-from typing import Dict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.quip import QuipLoader
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 try:
     from quip_api.quip import QuipClient  # noqa: F401
@@ -15,7 +20,7 @@ except ImportError:
 
 
 @pytest.fixture
-def mock_quip():  # type: ignore
+def mock_quip() -> Iterator[MagicMock]:
     # mock quip_client
     with patch("quip_api.quip.QuipClient") as mock_quip:
         yield mock_quip

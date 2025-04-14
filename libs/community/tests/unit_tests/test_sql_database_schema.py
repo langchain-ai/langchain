@@ -93,7 +93,7 @@ def test_sql_database_run() -> None:
     for record in records:
         assert isinstance(record.message, Warning)
     assert any(
-        record.message.args[0]  # type: ignore
+        record.message.args[0]  # type: ignore[union-attr]
         == "duckdb-engine doesn't yet support reflection on indices"
         for record in records
     )

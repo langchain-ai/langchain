@@ -58,7 +58,6 @@ class TavilySearchAPIWrapper(BaseModel):
             "include_images": include_images,
         }
         response = requests.post(
-            # type: ignore
             f"{TAVILY_API_URL}/search",
             json=params,
         )
