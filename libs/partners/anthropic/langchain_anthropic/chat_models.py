@@ -194,8 +194,6 @@ def _format_messages(
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
-    if all(message.type == "system" for message in merged_messages):
-        raise ValueError("Received only system message(s).")
     for i, message in enumerate(merged_messages):
         if message.type == "system":
             if system is not None:
@@ -319,6 +317,19 @@ def _format_messages(
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
+def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
+    """Handle Anthropic BadRequestError."""
+    if (
+        "messages: at least one message is required"
+    ) in e.message:
+        message = (
+            "Received only system message(s). "
+        )
+        warnings.warn(message)
+        raise ValueError(message)
+    else:
+        raise
+    
 
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
@@ -986,23 +997,26 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = self._client.messages.create(**payload)
-        coerce_content_to_string = (
-            not _tools_in_params(payload)
-            and not _documents_in_params(payload)
-            and not _thinking_in_params(payload)
-        )
-        for event in stream:
-            msg = _make_message_chunk_from_anthropic_event(
-                event,
-                stream_usage=stream_usage,
-                coerce_content_to_string=coerce_content_to_string,
+        try:
+            stream = self._client.messages.create(**payload)
+            coerce_content_to_string = (
+                not _tools_in_params(payload)
+                and not _documents_in_params(payload)
+                and not _thinking_in_params(payload)
             )
-            if msg is not None:
-                chunk = ChatGenerationChunk(message=msg)
-                if run_manager and isinstance(msg.content, str):
-                    run_manager.on_llm_new_token(msg.content, chunk=chunk)
-                yield chunk
+            for event in stream:
+                msg = _make_message_chunk_from_anthropic_event(
+                    event,
+                    stream_usage=stream_usage,
+                    coerce_content_to_string=coerce_content_to_string,
+                )
+                if msg is not None:
+                    chunk = ChatGenerationChunk(message=msg)
+                    if run_manager and isinstance(msg.content, str):
+                        run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                    yield chunk
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
 
     async def _astream(
         self,
@@ -1017,23 +1031,26 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = await self._async_client.messages.create(**payload)
-        coerce_content_to_string = (
-            not _tools_in_params(payload)
-            and not _documents_in_params(payload)
-            and not _thinking_in_params(payload)
-        )
-        async for event in stream:
-            msg = _make_message_chunk_from_anthropic_event(
-                event,
-                stream_usage=stream_usage,
-                coerce_content_to_string=coerce_content_to_string,
+        try:
+            stream = await self._async_client.messages.create(**payload)
+            coerce_content_to_string = (
+                not _tools_in_params(payload)
+                and not _documents_in_params(payload)
+                and not _thinking_in_params(payload)
             )
-            if msg is not None:
-                chunk = ChatGenerationChunk(message=msg)
-                if run_manager and isinstance(msg.content, str):
-                    await run_manager.on_llm_new_token(msg.content, chunk=chunk)
-                yield chunk
+            async for event in stream:
+                msg = _make_message_chunk_from_anthropic_event(
+                    event,
+                    stream_usage=stream_usage,
+                    coerce_content_to_string=coerce_content_to_string,
+                )
+                if msg is not None:
+                    chunk = ChatGenerationChunk(message=msg)
+                    if run_manager and isinstance(msg.content, str):
+                        await run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                    yield chunk
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
         data_dict = data.model_dump()
@@ -1093,7 +1110,10 @@ class ChatAnthropic(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = self._client.messages.create(**payload)
+        try:
+            data = self._client.messages.create(**payload)
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -1109,7 +1129,10 @@ class ChatAnthropic(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = await self._async_client.messages.create(**payload)
+        try:
+            data = await self._async_client.messages.create(**payload)
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
         return self._format_output(data, **kwargs)
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
