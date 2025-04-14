@@ -67,7 +67,7 @@ class AnswerWithJustification(BaseModel):
 
 def test_chat_minimax_with_structured_output() -> None:
     """Test MiniMaxChat with structured output."""
-    llm = MiniMaxChat()  # type: ignore
+    llm = MiniMaxChat()  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(AnswerWithJustification)
     response = structured_llm.invoke(
         "What weighs more a pound of bricks or a pound of feathers"
@@ -77,7 +77,7 @@ def test_chat_minimax_with_structured_output() -> None:
 
 def test_chat_tongyi_with_structured_output_include_raw() -> None:
     """Test MiniMaxChat with structured output."""
-    llm = MiniMaxChat()  # type: ignore
+    llm = MiniMaxChat()  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(
         AnswerWithJustification, include_raw=True
     )

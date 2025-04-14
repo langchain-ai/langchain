@@ -1571,7 +1571,7 @@ class AzureSearch(VectorStore):
         azure_search.add_embeddings(text_embeddings, metadatas, **kwargs)
         return azure_search
 
-    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:  # type: ignore
+    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:  # type: ignore[override]
         """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
 
         Args:
@@ -1781,7 +1781,7 @@ async def _areorder_results_with_maximal_marginal_relevance(
         # Function can return -1 index
         if x == -1:
             break
-        ret.append((documents[x], scores[x]))  # type: ignore
+        ret.append((documents[x], scores[x]))
 
     return ret
 
@@ -1816,7 +1816,7 @@ def _reorder_results_with_maximal_marginal_relevance(
         # Function can return -1 index
         if x == -1:
             break
-        ret.append((documents[x], scores[x]))  # type: ignore
+        ret.append((documents[x], scores[x]))
 
     return ret
 

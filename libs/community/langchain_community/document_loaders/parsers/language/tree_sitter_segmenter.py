@@ -82,7 +82,7 @@ class TreeSitterSegmenter(CodeSegmenter):
             )
 
             for line_num in range(start_line + 1, end_line + 1):
-                simplified_lines[line_num] = None  # type: ignore
+                simplified_lines[line_num] = None  # type: ignore[call-overload]
 
             processed_lines.update(lines)
 

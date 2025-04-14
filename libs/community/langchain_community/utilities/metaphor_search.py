@@ -49,7 +49,6 @@ class MetaphorSearchAPIWrapper(BaseModel):
             "useAutoprompt": use_autoprompt,
         }
         response = requests.post(
-            # type: ignore
             f"{METAPHOR_API_URL}/search",
             headers=headers,
             json=params,

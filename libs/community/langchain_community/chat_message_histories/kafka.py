@@ -334,7 +334,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
         )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """
         Retrieve the messages for the session, from Kafka topic continuously
         from last consumed message. This method is stateful and maintains

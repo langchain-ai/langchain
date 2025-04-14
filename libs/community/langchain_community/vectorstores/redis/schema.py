@@ -14,7 +14,7 @@ from typing_extensions import TYPE_CHECKING, Literal
 from langchain_community.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
 
 if TYPE_CHECKING:
-    from redis.commands.search.field import (  # type: ignore
+    from redis.commands.search.field import (
         NumericField,
         TagField,
         TextField,
@@ -47,13 +47,13 @@ class TextFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> TextField:
-        from redis.commands.search.field import TextField  # type: ignore
+        from redis.commands.search.field import TextField
 
         return TextField(
             self.name,
             weight=self.weight,
             no_stem=self.no_stem,
-            phonetic_matcher=self.phonetic_matcher,  # type: ignore
+            phonetic_matcher=self.phonetic_matcher,
             sortable=self.sortable,
             no_index=self.no_index,
         )
@@ -68,7 +68,7 @@ class TagFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> TagField:
-        from redis.commands.search.field import TagField  # type: ignore
+        from redis.commands.search.field import TagField
 
         return TagField(
             self.name,
@@ -86,7 +86,7 @@ class NumericFieldSchema(RedisField):
     sortable: Optional[bool] = False
 
     def as_field(self) -> NumericField:
-        from redis.commands.search.field import NumericField  # type: ignore
+        from redis.commands.search.field import NumericField
 
         return NumericField(self.name, sortable=self.sortable, no_index=self.no_index)
 
@@ -131,7 +131,7 @@ class FlatVectorField(RedisVectorField):  # type: ignore[override]
     block_size: Optional[int] = None
 
     def as_field(self) -> VectorField:
-        from redis.commands.search.field import VectorField  # type: ignore
+        from redis.commands.search.field import VectorField
 
         field_data = super()._fields()
         if self.block_size is not None:
@@ -149,7 +149,7 @@ class HNSWVectorField(RedisVectorField):  # type: ignore[override]
     epsilon: float = Field(default=0.01)
 
     def as_field(self) -> VectorField:
-        from redis.commands.search.field import VectorField  # type: ignore
+        from redis.commands.search.field import VectorField
 
         field_data = super()._fields()
         field_data.update(
@@ -193,9 +193,9 @@ class RedisModel(BaseModel):
 
         # ignore types as pydantic is handling type validation and conversion
         if vector_field["algorithm"] == "FLAT":
-            self.vector.append(FlatVectorField(**vector_field))  # type: ignore
+            self.vector.append(FlatVectorField(**vector_field))
         elif vector_field["algorithm"] == "HNSW":
-            self.vector.append(HNSWVectorField(**vector_field))  # type: ignore
+            self.vector.append(HNSWVectorField(**vector_field))
         else:
             raise ValueError(
                 f"algorithm must be either FLAT or HNSW. Got "

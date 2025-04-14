@@ -134,7 +134,7 @@ class NutritionAIAPI(BaseModel):
         return requests.get(
             self.nutritionai_api_url,
             headers=self.auth_.headers,
-            params=params,  # type: ignore
+            params=params,
         )
 
     def _api_call_results(self, search_term: str) -> dict:
