@@ -668,7 +668,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
-        return self._get_len_safe_embeddings(texts, engine=engine)
+        return self._get_len_safe_embeddings(texts, engine=engine, chunk_size=chunk_size)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
