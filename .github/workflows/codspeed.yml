@@ -41,3 +41,4 @@ jobs:
           run: |
             cd libs/core
             uv run --no-sync pytest ./tests/benchmarks --codspeed
+          mode: walltime
