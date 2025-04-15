@@ -5,8 +5,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langchain_core.load.dump import dumpd, dumps
-    from langchain_core.load.load import load, loads
+    from langchain_core.load.load import loads
     from langchain_core.load.serializable import Serializable
+
+# Unfortunately, we have to eagerly import load from langchain_core/load/load.py
+# eagerly to avoid a namespace conflict. We want users to still be able to use
+# `from langchain_core.load import load` to get the load function, but
+# the `from langchain_core.load.load import load` absolute import should also work.
+from langchain_core.load.load import load
 
 __all__ = ["dumpd", "dumps", "load", "loads", "Serializable"]
 
