@@ -105,7 +105,7 @@ def _remove_additionalproperties_from_untyped_dicts(schema: dict) -> dict[str, A
     """
 
     def _remove_dict_additional_props(
-        obj: Union[dict[str, Any], list[Any]], inside_properties: bool = False
+        obj: Union[dict[str, Any], list[Any]], *, inside_properties: bool = False
     ) -> None:
         if isinstance(obj, dict):
             if (
@@ -120,11 +120,13 @@ def _remove_additionalproperties_from_untyped_dicts(schema: dict) -> dict[str, A
                 # We are "inside_properties" if the *current* key is "properties",
                 # or if we were already inside properties in the caller.
                 next_inside_properties = inside_properties or (key == "properties")
-                _remove_dict_additional_props(value, next_inside_properties)
+                _remove_dict_additional_props(
+                    value, inside_properties=next_inside_properties
+                )
 
         elif isinstance(obj, list):
             for item in obj:
-                _remove_dict_additional_props(item, inside_properties)
+                _remove_dict_additional_props(item, inside_properties=inside_properties)
 
     _remove_dict_additional_props(schema, inside_properties=False)
     return schema

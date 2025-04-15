@@ -1,7 +1,7 @@
 """Standard LangChain interface tests"""
 
 from pathlib import Path
-from typing import Dict, List, Literal, Type, cast
+from typing import Literal, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
@@ -14,7 +14,7 @@ REPO_ROOT_DIR = Path(__file__).parents[6]
 
 class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatOpenAI
 
     @property
@@ -36,9 +36,9 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
     def supported_usage_metadata_details(
         self,
-    ) -> Dict[
+    ) -> dict[
         Literal["invoke", "stream"],
-        List[
+        list[
             Literal[
                 "audio_input",
                 "audio_output",
@@ -51,7 +51,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+        with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:

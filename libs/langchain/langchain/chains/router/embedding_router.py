@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -18,7 +19,7 @@ class EmbeddingRouterChain(RouterChain):
     """Chain that uses embeddings to route between options."""
 
     vectorstore: VectorStore
-    routing_keys: List[str] = ["query"]
+    routing_keys: list[str] = ["query"]
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -26,7 +27,7 @@ class EmbeddingRouterChain(RouterChain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Will be whatever keys the LLM chain prompt expects.
 
         :meta private:
@@ -35,18 +36,18 @@ class EmbeddingRouterChain(RouterChain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = self.vectorstore.similarity_search(_input, k=1)
         return {"next_inputs": inputs, "destination": results[0].metadata["name"]}
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = await self.vectorstore.asimilarity_search(_input, k=1)
         return {"next_inputs": inputs, "destination": results[0].metadata["name"]}
@@ -54,8 +55,8 @@ class EmbeddingRouterChain(RouterChain):
     @classmethod
     def from_names_and_descriptions(
         cls,
-        names_and_descriptions: Sequence[Tuple[str, Sequence[str]]],
-        vectorstore_cls: Type[VectorStore],
+        names_and_descriptions: Sequence[tuple[str, Sequence[str]]],
+        vectorstore_cls: type[VectorStore],
         embeddings: Embeddings,
         **kwargs: Any,
     ) -> EmbeddingRouterChain:
@@ -72,8 +73,8 @@ class EmbeddingRouterChain(RouterChain):
     @classmethod
     async def afrom_names_and_descriptions(
         cls,
-        names_and_descriptions: Sequence[Tuple[str, Sequence[str]]],
-        vectorstore_cls: Type[VectorStore],
+        names_and_descriptions: Sequence[tuple[str, Sequence[str]]],
+        vectorstore_cls: type[VectorStore],
         embeddings: Embeddings,
         **kwargs: Any,
     ) -> EmbeddingRouterChain:

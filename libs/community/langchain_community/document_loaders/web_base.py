@@ -367,9 +367,6 @@ class WebBaseLoader(BaseLoader):
     def scrape(self, parser: Union[str, None] = None) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
 
-        if parser is None:
-            parser = self.default_parser
-
         return self._scrape(self.web_path, parser=parser, bs_kwargs=self.bs_kwargs)
 
     def lazy_load(self) -> Iterator[Document]:
@@ -396,7 +393,7 @@ class WebBaseLoader(BaseLoader):
             "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"  # noqa: E501
         ),
     )
-    def aload(self) -> List[Document]:  # type: ignore
+    def aload(self) -> List[Document]:  # type: ignore[override]
         """Load text from the urls in web_path async into Documents."""
 
         results = self.scrape_all(self.web_paths)

@@ -1,7 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any
 
 
-def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
+def get_prompt_input_key(inputs: dict[str, Any], memory_variables: list[str]) -> str:
     """
     Get the prompt input key.
 

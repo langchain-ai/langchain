@@ -17,8 +17,6 @@ from pydantic import ConfigDict
 from typing_extensions import TypedDict, override
 
 from langchain_core.runnables.base import (
-    Input,
-    Output,
     Runnable,
     RunnableSerializable,
     coerce_to_runnable,
@@ -30,6 +28,8 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
+    Input,
+    Output,
     gather_with_concurrency,
     get_unique_config_specs,
 )

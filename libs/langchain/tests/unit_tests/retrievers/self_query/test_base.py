@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -38,11 +38,11 @@ class FakeTranslator(Visitor):
         self._validate_func(func)
         return f"${func.value}"
 
-    def visit_operation(self, operation: Operation) -> Dict:
+    def visit_operation(self, operation: Operation) -> dict:
         args = [arg.accept(self) for arg in operation.arguments]
         return {self._format_func(operation.operator): args}
 
-    def visit_comparison(self, comparison: Comparison) -> Dict:
+    def visit_comparison(self, comparison: Comparison) -> dict:
         return {
             comparison.attribute: {
                 self._format_func(comparison.comparator): comparison.value
@@ -51,7 +51,7 @@ class FakeTranslator(Visitor):
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         if structured_query.filter is None:
             kwargs = {}
         else:
@@ -62,7 +62,7 @@ class FakeTranslator(Visitor):
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
             return []

@@ -15,7 +15,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
@@ -293,6 +293,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.run_map[run_id] = info
         self.parent_map[run_id] = parent_run_id
 
+    @override
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
@@ -334,6 +335,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -377,6 +379,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    @override
     async def on_custom_event(
         self,
         name: str,
@@ -399,6 +402,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         )
         self._send(event, name)
 
+    @override
     async def on_llm_new_token(
         self,
         token: str,
@@ -450,6 +454,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_info["run_type"],
         )
 
+    @override
     async def on_llm_end(
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
     ) -> None:
@@ -552,6 +557,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type_,
         )
 
+    @override
     async def on_chain_end(
         self,
         outputs: dict[str, Any],
@@ -586,6 +592,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    @override
     async def on_tool_start(
         self,
         serialized: dict[str, Any],
@@ -627,6 +634,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "tool",
         )
 
+    @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
@@ -654,6 +662,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "tool",
         )
 
+    @override
     async def on_retriever_start(
         self,
         serialized: dict[str, Any],
@@ -697,6 +706,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    @override
     async def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> None:
@@ -777,9 +787,7 @@ async def _astream_events_implementation_v1(
     root_metadata = config.get("metadata", {})
     root_name = config.get("run_name", runnable.get_name())
 
-    # Ignoring mypy complaint about too many different union combinations
-    # This arises because many of the argument types are unions
-    async for log in _astream_log_implementation(  # type: ignore[misc]
+    async for log in _astream_log_implementation(
         runnable,
         input,
         config=config,

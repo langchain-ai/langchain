@@ -61,12 +61,8 @@ def zep_retriever(
     mock_zep_client.memory = mocker.patch(
         "zep_python.memory.client.MemoryClient", autospec=True
     )
-    mock_zep_client.memory.search_memory.return_value = copy.deepcopy(  # type: ignore
-        search_results
-    )
-    mock_zep_client.memory.asearch_memory.return_value = copy.deepcopy(  # type: ignore
-        search_results
-    )
+    mock_zep_client.memory.search_memory.return_value = copy.deepcopy(search_results)
+    mock_zep_client.memory.asearch_memory.return_value = copy.deepcopy(search_results)
     zep = ZepRetriever(session_id="123", url="http://localhost:8000")  # type: ignore[call-arg]
     zep.zep_client = mock_zep_client
     return zep
@@ -93,13 +89,7 @@ def _test_documents(
 ) -> None:
     assert len(documents) == 2
     for i, document in enumerate(documents):
-        assert document.page_content == search_results[i].message.get(  # type: ignore
-            "content"
-        )
-        assert document.metadata.get("uuid") == search_results[i].message.get(  # type: ignore
-            "uuid"
-        )
-        assert document.metadata.get("role") == search_results[i].message.get(  # type: ignore
-            "role"
-        )
+        assert document.page_content == search_results[i].message.get("content")
+        assert document.metadata.get("uuid") == search_results[i].message.get("uuid")
+        assert document.metadata.get("role") == search_results[i].message.get("role")
         assert document.metadata.get("score") == search_results[i].dist

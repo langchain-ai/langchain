@@ -212,7 +212,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             conn.close()
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from SingleStoreDB"""
         self._create_table_if_not_exists()
         conn = self.connection_pool.connect()

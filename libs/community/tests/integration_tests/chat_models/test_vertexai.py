@@ -75,7 +75,7 @@ async def test_vertexai_agenerate(model_name: str) -> None:
     message = HumanMessage(content="Hello")
     response = await model.agenerate([[message]])
     assert isinstance(response, LLMResult)
-    assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore
+    assert isinstance(response.generations[0][0].message, AIMessage)  # type: ignore[union-attr]
 
     sync_response = model.generate([[message]])
     assert response.generations[0][0] == sync_response.generations[0][0]

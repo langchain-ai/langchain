@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 from langchain_core._api import deprecated
@@ -20,7 +21,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 
 
-def _extract_scheme_and_domain(url: str) -> Tuple[str, str]:
+def _extract_scheme_and_domain(url: str) -> tuple[str, str]:
     """Extract the scheme + domain from a given URL.
 
     Args:
@@ -215,7 +216,7 @@ try:
         """
 
         @property
-        def input_keys(self) -> List[str]:
+        def input_keys(self) -> list[str]:
             """Expect input key.
 
             :meta private:
@@ -223,7 +224,7 @@ try:
             return [self.question_key]
 
         @property
-        def output_keys(self) -> List[str]:
+        def output_keys(self) -> list[str]:
             """Expect output key.
 
             :meta private:
@@ -243,7 +244,7 @@ try:
 
         @model_validator(mode="before")
         @classmethod
-        def validate_limit_to_domains(cls, values: Dict) -> Any:
+        def validate_limit_to_domains(cls, values: dict) -> Any:
             """Check that allowed domains are valid."""
             # This check must be a pre=True check, so that a default of None
             # won't be set to limit_to_domains if it's not provided.
@@ -275,9 +276,9 @@ try:
 
         def _call(
             self,
-            inputs: Dict[str, Any],
+            inputs: dict[str, Any],
             run_manager: Optional[CallbackManagerForChainRun] = None,
-        ) -> Dict[str, str]:
+        ) -> dict[str, str]:
             _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
             question = inputs[self.question_key]
             api_url = self.api_request_chain.predict(
@@ -308,9 +309,9 @@ try:
 
         async def _acall(
             self,
-            inputs: Dict[str, Any],
+            inputs: dict[str, Any],
             run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-        ) -> Dict[str, str]:
+        ) -> dict[str, str]:
             _run_manager = (
                 run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
             )

@@ -26,7 +26,7 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         error: Any,
         observation: Optional[str] = None,
         llm_output: Optional[str] = None,
-        send_to_llm: bool = False,
+        send_to_llm: bool = False,  # noqa: FBT001,FBT002
     ):
         """Create an OutputParserException.
 

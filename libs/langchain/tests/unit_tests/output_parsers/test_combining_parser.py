@@ -1,6 +1,6 @@
 """Test in memory docstore."""
 
-from typing import Any, Dict
+from typing import Any
 
 from langchain.output_parsers.combining import CombiningOutputParser
 from langchain.output_parsers.regex import RegexParser
@@ -69,4 +69,4 @@ def test_combining_output_parser_output_type() -> None:
         ),
     ]
     combining_parser = CombiningOutputParser(parsers=parsers)
-    assert combining_parser.OutputType is Dict[str, Any]
+    assert combining_parser.OutputType == dict[str, Any]

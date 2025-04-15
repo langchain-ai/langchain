@@ -78,17 +78,17 @@ def test_parse_issue() -> None:
         "body": "This is an example issue 1",
     }
     expected_document = Document(
-        page_content=issue["body"],  # type: ignore
+        page_content=issue["body"],  # type: ignore[arg-type]
         metadata={
             "url": issue["html_url"],
             "title": issue["title"],
-            "creator": issue["user"]["login"],  # type: ignore
+            "creator": issue["user"]["login"],  # type: ignore[index]
             "created_at": issue["created_at"],
             "comments": issue["comments"],
             "state": issue["state"],
-            "labels": [label["name"] for label in issue["labels"]],  # type: ignore
-            "assignee": issue["assignee"]["login"],  # type: ignore
-            "milestone": issue["milestone"]["title"],  # type: ignore
+            "labels": [label["name"] for label in issue["labels"]],  # type: ignore[attr-defined]
+            "assignee": issue["assignee"]["login"],  # type: ignore[index]
+            "milestone": issue["milestone"]["title"],  # type: ignore[index]
             "locked": issue["locked"],
             "number": issue["number"],
             "is_pull_request": False,

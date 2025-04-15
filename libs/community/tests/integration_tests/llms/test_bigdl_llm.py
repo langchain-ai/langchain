@@ -12,7 +12,7 @@ skip_if_no_model_ids = pytest.mark.skipif(
     not model_ids_to_test,
     reason="TEST_BIGDLLLM_MODEL_IDS environment variable not set.",
 )
-model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]  # type: ignore
+model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]  # type: ignore[assignment]
 
 
 @skip_if_no_model_ids

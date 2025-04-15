@@ -120,11 +120,11 @@ def beta(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -190,7 +190,7 @@ def beta(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:  # noqa: ARG001
                 """Finalize the property."""
                 return _BetaProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
@@ -225,10 +225,8 @@ def beta(
         new_doc = f".. beta::\n   {details}\n\n{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast("T", finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return beta
 

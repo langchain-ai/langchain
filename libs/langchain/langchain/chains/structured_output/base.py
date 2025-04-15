@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Literal, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.output_parsers import (
@@ -63,7 +64,7 @@ from pydantic import BaseModel
     ),
 )
 def create_openai_fn_runnable(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -135,7 +136,7 @@ def create_openai_fn_runnable(
     if not functions:
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
-    llm_kwargs_: Dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
+    llm_kwargs_: dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs_["function_call"] = {"name": openai_functions[0]["name"]}
     output_parser = output_parser or get_openai_output_parser(functions)
@@ -181,7 +182,7 @@ def create_openai_fn_runnable(
     ),
 )
 def create_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -437,7 +438,7 @@ def create_structured_output_runnable(
 
 
 def _create_openai_tools_runnable(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable],
+    tool: Union[dict[str, Any], type[BaseModel], Callable],
     llm: Runnable,
     *,
     prompt: Optional[BasePromptTemplate],
@@ -446,7 +447,7 @@ def _create_openai_tools_runnable(
     first_tool_only: bool,
 ) -> Runnable:
     oai_tool = convert_to_openai_tool(tool)
-    llm_kwargs: Dict[str, Any] = {"tools": [oai_tool]}
+    llm_kwargs: dict[str, Any] = {"tools": [oai_tool]}
     if enforce_tool_usage:
         llm_kwargs["tool_choice"] = {
             "type": "function",
@@ -462,7 +463,7 @@ def _create_openai_tools_runnable(
 
 
 def _get_openai_tool_output_parser(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable],
+    tool: Union[dict[str, Any], type[BaseModel], Callable],
     *,
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
@@ -479,7 +480,7 @@ def _get_openai_tool_output_parser(
 
 
 def get_openai_output_parser(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     """Get the appropriate function output parser given the user functions.
 
@@ -496,7 +497,7 @@ def get_openai_output_parser(
     """
     if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
-            pydantic_schema: Union[Dict, Type[BaseModel]] = {
+            pydantic_schema: Union[dict, type[BaseModel]] = {
                 convert_to_openai_function(fn)["name"]: fn for fn in functions
             }
         else:
@@ -510,7 +511,7 @@ def get_openai_output_parser(
 
 
 def _create_openai_json_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -537,7 +538,7 @@ def _create_openai_json_runnable(
 
 
 def _create_openai_functions_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,

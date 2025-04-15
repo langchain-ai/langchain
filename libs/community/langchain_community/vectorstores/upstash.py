@@ -153,7 +153,7 @@ class UpstashVectorStore(VectorStore):
         self._namespace = namespace
 
     @property
-    def embeddings(self) -> Optional[Union[Embeddings, bool]]:  # type: ignore
+    def embeddings(self) -> Optional[Union[Embeddings, bool]]:  # type: ignore[override]
         """Access the query embedding object if available."""
         return self._embeddings
 
@@ -730,7 +730,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
             for metadata in selected
         ]
 
@@ -798,7 +798,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
             for metadata in selected
         ]
 

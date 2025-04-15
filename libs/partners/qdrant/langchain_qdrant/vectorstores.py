@@ -4,21 +4,14 @@ import functools
 import os
 import uuid
 import warnings
+from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 from itertools import islice
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -35,7 +28,7 @@ from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    DictFilter = dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, models.Filter]
 
 
@@ -153,11 +146,11 @@ class Qdrant(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -188,11 +181,11 @@ class Qdrant(VectorStore):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -236,7 +229,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -290,7 +283,7 @@ class Qdrant(VectorStore):
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to query.
         Args:
             query: Text to look up documents similar to.
@@ -312,7 +305,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
@@ -369,7 +362,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
@@ -419,7 +412,7 @@ class Qdrant(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[models.SearchParams] = None,
@@ -427,7 +420,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -477,7 +470,7 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def asimilarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[models.SearchParams] = None,
@@ -485,7 +478,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -535,7 +528,7 @@ class Qdrant(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[models.SearchParams] = None,
@@ -543,7 +536,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -622,7 +615,7 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def asimilarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[MetadataFilter] = None,
         search_params: Optional[models.SearchParams] = None,
@@ -630,7 +623,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -725,7 +718,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -789,7 +782,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -844,7 +837,7 @@ class Qdrant(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -853,7 +846,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -907,7 +900,7 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def amax_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -916,7 +909,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -970,7 +963,7 @@ class Qdrant(VectorStore):
 
     def max_marginal_relevance_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -979,7 +972,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -1058,7 +1051,7 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def amax_marginal_relevance_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -1067,7 +1060,7 @@ class Qdrant(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -1128,7 +1121,7 @@ class Qdrant(VectorStore):
             for i in mmr_selected
         ]
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -1147,7 +1140,7 @@ class Qdrant(VectorStore):
 
     @sync_call_fallback
     async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
+        self, ids: Optional[list[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
@@ -1174,10 +1167,10 @@ class Qdrant(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -1351,7 +1344,7 @@ class Qdrant(VectorStore):
 
     @classmethod
     def from_existing_collection(
-        cls: Type[Qdrant],
+        cls: type[Qdrant],
         embedding: Embeddings,
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
@@ -1408,10 +1401,10 @@ class Qdrant(VectorStore):
     @classmethod
     @sync_call_fallback
     async def afrom_texts(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -1585,8 +1578,8 @@ class Qdrant(VectorStore):
 
     @classmethod
     def construct_instance(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -1744,8 +1737,8 @@ class Qdrant(VectorStore):
 
     @classmethod
     async def aconstruct_instance(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -1936,7 +1929,7 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -1959,7 +1952,7 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -1980,10 +1973,10 @@ class Qdrant(VectorStore):
     def _build_payloads(
         cls,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]],
+        metadatas: Optional[list[dict]],
         content_payload_key: str,
         metadata_payload_key: str,
-    ) -> List[dict]:
+    ) -> list[dict]:
         payloads = []
         for i, text in enumerate(texts):
             if text is None:
@@ -2017,7 +2010,7 @@ class Qdrant(VectorStore):
             metadata=metadata,
         )
 
-    def _build_condition(self, key: str, value: Any) -> List[models.FieldCondition]:
+    def _build_condition(self, key: str, value: Any) -> list[models.FieldCondition]:
         out = []
 
         if isinstance(value, dict):
@@ -2053,7 +2046,7 @@ class Qdrant(VectorStore):
             ]
         )
 
-    def _embed_query(self, query: str) -> List[float]:
+    def _embed_query(self, query: str) -> list[float]:
         """Embed query text.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2073,7 +2066,7 @@ class Qdrant(VectorStore):
                 raise ValueError("Neither of embeddings or embedding_function is set")
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
-    async def _aembed_query(self, query: str) -> List[float]:
+    async def _aembed_query(self, query: str) -> list[float]:
         """Embed query text asynchronously.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2093,7 +2086,7 @@ class Qdrant(VectorStore):
                 raise ValueError("Neither of embeddings or embedding_function is set")
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
-    def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+    def _embed_texts(self, texts: Iterable[str]) -> list[list[float]]:
         """Embed search texts.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2120,7 +2113,7 @@ class Qdrant(VectorStore):
 
         return embeddings
 
-    async def _aembed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+    async def _aembed_texts(self, texts: Iterable[str]) -> list[list[float]]:
         """Embed search texts.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2150,10 +2143,10 @@ class Qdrant(VectorStore):
     def _generate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
-    ) -> Generator[Tuple[List[str], List[models.PointStruct]], None, None]:
+    ) -> Generator[tuple[list[str], list[models.PointStruct]], None, None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
         ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
@@ -2190,10 +2183,10 @@ class Qdrant(VectorStore):
     async def _agenerate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
-    ) -> AsyncGenerator[Tuple[List[str], List[models.PointStruct]], None]:
+    ) -> AsyncGenerator[tuple[list[str], list[models.PointStruct]], None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
         ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
@@ -2241,7 +2234,7 @@ class Qdrant(VectorStore):
         host: Optional[str] = None,
         path: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[QdrantClient, Optional[AsyncQdrantClient]]:
+    ) -> tuple[QdrantClient, Optional[AsyncQdrantClient]]:
         if api_key is None:
             api_key = os.getenv("QDRANT_API_KEY")
 

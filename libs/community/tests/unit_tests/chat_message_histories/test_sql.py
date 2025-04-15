@@ -15,7 +15,7 @@ except ImportError:
     # for sqlalchemy < 2
     from sqlalchemy.ext.declarative import declarative_base
 
-    Base = declarative_base()  # type:ignore
+    Base = declarative_base()  # type:ignore[misc]
 
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_community.chat_message_histories.sql import DefaultMessageConverter

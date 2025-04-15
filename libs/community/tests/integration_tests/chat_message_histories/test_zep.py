@@ -37,7 +37,7 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
             Message(content="message2", role="human", metadata={"key2": "value2"}),
         ],
     )
-    zep_chat.zep_client.memory.get_memory.return_value = mock_memory  # type: ignore
+    zep_chat.zep_client.memory.get_memory.return_value = mock_memory
 
     result = zep_chat.messages
 
@@ -52,25 +52,25 @@ def test_add_user_message(
     mocker: MockerFixture, zep_chat: ZepChatMessageHistory
 ) -> None:
     zep_chat.add_user_message("test message")
-    zep_chat.zep_client.memory.add_memory.assert_called_once()  # type: ignore
+    zep_chat.zep_client.memory.add_memory.assert_called_once()
 
 
 @pytest.mark.requires("zep_python")
 def test_add_ai_message(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.add_ai_message("test message")
-    zep_chat.zep_client.memory.add_memory.assert_called_once()  # type: ignore
+    zep_chat.zep_client.memory.add_memory.assert_called_once()
 
 
 @pytest.mark.requires("zep_python")
 def test_append(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.add_message(AIMessage(content="test message"))
-    zep_chat.zep_client.memory.add_memory.assert_called_once()  # type: ignore
+    zep_chat.zep_client.memory.add_memory.assert_called_once()
 
 
 @pytest.mark.requires("zep_python")
 def test_search(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.search("test query")
-    zep_chat.zep_client.memory.search_memory.assert_called_once_with(  # type: ignore
+    zep_chat.zep_client.memory.search_memory.assert_called_once_with(
         "test_session", mocker.ANY, limit=None
     )
 
@@ -78,6 +78,4 @@ def test_search(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
 @pytest.mark.requires("zep_python")
 def test_clear(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> None:
     zep_chat.clear()
-    zep_chat.zep_client.memory.delete_memory.assert_called_once_with(  # type: ignore
-        "test_session"
-    )
+    zep_chat.zep_client.memory.delete_memory.assert_called_once_with("test_session")

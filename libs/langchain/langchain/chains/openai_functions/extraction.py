@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -83,7 +83,7 @@ def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
-    tags: Optional[List[str]] = None,
+    tags: Optional[list[str]] = None,
     verbose: bool = False,
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
@@ -170,7 +170,7 @@ def create_extraction_chain_pydantic(
     """
 
     class PydanticSchema(BaseModel):
-        info: List[pydantic_schema]  # type: ignore
+        info: list[pydantic_schema]  # type: ignore
 
     if hasattr(pydantic_schema, "model_json_schema"):
         openai_schema = pydantic_schema.model_json_schema()

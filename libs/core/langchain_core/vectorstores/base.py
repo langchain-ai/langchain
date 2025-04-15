@@ -36,6 +36,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
@@ -818,11 +819,11 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -848,11 +849,11 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -903,14 +904,14 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_texts(
-        cls: type[VST],
+        cls,
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
         *,
         ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from texts and embeddings.
 
         Args:
@@ -1069,6 +1070,7 @@ class VectorStoreRetriever(BaseRetriever):
 
         return ls_params
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
@@ -1089,6 +1091,7 @@ class VectorStoreRetriever(BaseRetriever):
             raise ValueError(msg)
         return docs
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,

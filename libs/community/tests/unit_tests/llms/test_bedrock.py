@@ -299,7 +299,7 @@ async def test_bedrock_async_streaming_call() -> None:
             )
             # Call the _astream method
             chunks = [
-                json.loads(chunk["chunk"]["bytes"])["text"]  # type: ignore
+                json.loads(chunk["chunk"]["bytes"])["text"]  # type: ignore[index]
                 async for chunk in llm._astream("Hey, how are you?")
             ]
 

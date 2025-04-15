@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Any, Union, cast
 
 import pytest
+from packaging import version
 from pydantic import ValidationError
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -14,6 +15,7 @@ from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     get_buffer_string,
@@ -23,7 +25,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
-    ChatMessage,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -32,7 +33,9 @@ from langchain_core.prompts.chat import (
     _convert_to_message,
 )
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+)
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -79,7 +82,7 @@ def chat_prompt_template(
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
     )
 
 
@@ -400,12 +403,12 @@ def test_chat_invalid_input_variables_extra() -> None:
         ),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=["foo"],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
         == []
     )
 
@@ -417,19 +420,19 @@ def test_chat_invalid_input_variables_missing() -> None:
         match=re.escape("Got mismatched input_variables. Expected: {'foo'}. Got: []"),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=[],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
-        input_variables=[],  # type: ignore[arg-type]
+        messages=messages,
+        input_variables=[],
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=messages)
     assert prompt.input_variables == ["foo"]
 
 
@@ -440,7 +443,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -454,9 +457,9 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
-        messages=messages,  # type: ignore[arg-type]
-        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
+    prompt = ChatPromptTemplate(
+        messages=messages,
+        partial_variables={"formatins": "some structure"},
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}
@@ -892,10 +895,10 @@ def test_chat_prompt_message_dict() -> None:
 
 async def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
-    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
-    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
     # Assert still raises a nice error
@@ -906,10 +909,10 @@ async def test_messages_prompt_accepts_list() -> None:
         ]
     )
     with pytest.raises(TypeError):
-        prompt.invoke([("user", "Hi there")])  # type: ignore
+        prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+        await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
 
 
 def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
@@ -921,7 +924,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if version.parse("2.10") <= PYDANTIC_VERSION:
         assert _normalize_schema(
             prompt_all_required.get_input_jsonschema()
         ) == snapshot(name="required")
@@ -932,7 +935,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if version.parse("2.10") <= PYDANTIC_VERSION:
         assert _normalize_schema(prompt_optional.get_input_jsonschema()) == snapshot(
             name="partial"
         )

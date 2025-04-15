@@ -61,7 +61,7 @@ def get_tokenizer() -> Any:
     every time it is called.
     """
     try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import]
+        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
     except ImportError as e:
         msg = (
             "Could not import transformers python package. "

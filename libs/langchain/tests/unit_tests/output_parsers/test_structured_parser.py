@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 
@@ -36,4 +36,4 @@ def test_output_type() -> None:
         ResponseSchema(name="age", description="desc"),
     ]
     parser = StructuredOutputParser.from_response_schemas(response_schemas)
-    assert parser.OutputType == Dict[str, Any]
+    assert parser.OutputType == dict[str, Any]

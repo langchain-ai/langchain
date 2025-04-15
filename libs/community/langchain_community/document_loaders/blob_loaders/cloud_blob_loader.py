@@ -35,7 +35,7 @@ class _CloudBlob(Blob):
         from cloudpathlib import AnyPath
 
         if self.data is None and self.path:
-            return AnyPath(self.path).read_text(encoding=self.encoding)  # type: ignore
+            return AnyPath(self.path).read_text(encoding=self.encoding)
         elif isinstance(self.data, bytes):
             return self.data.decode(self.encoding)
         elif isinstance(self.data, str):
@@ -52,7 +52,7 @@ class _CloudBlob(Blob):
         elif isinstance(self.data, str):
             return self.data.encode(self.encoding)
         elif self.data is None and self.path:
-            return AnyPath(self.path).read_bytes()  # type: ignore
+            return AnyPath(self.path).read_bytes()
         else:
             raise ValueError(f"Unable to get bytes for blob {self}")
 
@@ -64,7 +64,7 @@ class _CloudBlob(Blob):
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
-            return AnyPath(self.path).read_bytes()  # type: ignore
+            return AnyPath(self.path).read_bytes()
         else:
             raise NotImplementedError(f"Unable to convert blob {self}")
 
@@ -79,7 +79,7 @@ def _url_to_filename(url: str) -> str:
     url_parsed = urlparse(url)
     suffix = Path(url_parsed.path).suffix
     if url_parsed.scheme in ["s3", "az", "gs"]:
-        with AnyPath(url).open("rb") as f:  # type: ignore
+        with AnyPath(url).open("rb") as f:
             temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
             while True:
                 buf = f.read()
@@ -116,7 +116,7 @@ def _make_iterator(
 
         iterator = _with_tqdm
     else:
-        iterator = iter  # type: ignore
+        iterator = iter  # type: ignore[assignment]
 
     return iterator
 
@@ -220,7 +220,7 @@ class CloudBlobLoader(BlobLoader):
 
     def _yield_paths(self) -> Iterable["AnyPath"]:
         """Yield paths that match the requested pattern."""
-        if self.path.is_file():  # type: ignore
+        if self.path.is_file():
             yield self.path
             return
 
@@ -269,7 +269,7 @@ class CloudBlobLoader(BlobLoader):
             Blob instance
         """
         if mime_type is None and guess_type:
-            _mimetype = mimetypes.guess_type(path)[0] if guess_type else None  # type: ignore
+            _mimetype = mimetypes.guess_type(path)[0] if guess_type else None
         else:
             _mimetype = mime_type
 

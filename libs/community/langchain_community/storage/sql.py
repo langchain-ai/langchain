@@ -41,7 +41,7 @@ try:
     from sqlalchemy.ext.asyncio import async_sessionmaker
 except ImportError:
     # dummy for sqlalchemy < 2
-    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore[assignment,misc]
 
 Base = declarative_base()
 
@@ -255,7 +255,7 @@ class SQLStore(BaseStore[str, bytes]):
 
     def yield_keys(self, *, prefix: Optional[str] = None) -> Iterator[str]:
         with self._make_sync_session() as session:
-            for v in session.query(LangchainKeyValueStores).filter(  # type: ignore
+            for v in session.query(LangchainKeyValueStores).filter(
                 LangchainKeyValueStores.namespace == self.namespace
             ):
                 if str(v.key).startswith(prefix or ""):

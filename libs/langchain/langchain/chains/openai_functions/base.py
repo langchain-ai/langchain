@@ -1,12 +1,10 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
-    Sequence,
-    Type,
     Union,
 )
 
@@ -45,7 +43,7 @@ __all__ = [
 
 @deprecated(since="0.1.1", removal="1.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
@@ -128,7 +126,7 @@ def create_openai_fn_chain(
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
-    llm_kwargs: Dict[str, Any] = {
+    llm_kwargs: dict[str, Any] = {
         "functions": openai_functions,
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
@@ -148,7 +146,7 @@ def create_openai_fn_chain(
     since="0.1.1", removal="1.0", alternative="ChatOpenAI.with_structured_output"
 )
 def create_structured_output_chain(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,

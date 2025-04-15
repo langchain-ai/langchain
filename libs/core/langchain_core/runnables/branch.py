@@ -114,7 +114,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         _branches = []
 
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
+            if not isinstance(branch, (tuple, list)):
                 msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
@@ -359,7 +359,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -379,7 +379,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False
@@ -445,7 +445,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -465,7 +465,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False
