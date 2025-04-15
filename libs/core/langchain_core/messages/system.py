@@ -46,9 +46,6 @@ class SystemMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-SystemMessage.model_rebuild()
-
-
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """System Message chunk."""
 
