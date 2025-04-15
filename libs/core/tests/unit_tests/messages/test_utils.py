@@ -1,7 +1,6 @@
 import base64
 import json
 import re
-import typing
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
@@ -666,9 +665,7 @@ class FakeTokenCountingModel(FakeChatModel):
         self,
         messages: list[BaseMessage],
         tools: Optional[
-            Sequence[
-                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
-            ]
+            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
         return dummy_token_counter(messages)
