@@ -1607,7 +1607,7 @@ class PDFPlumberParser(BaseBlobParser):
                                     mime_type="application/x-npy",
                                 )
                                 text_from_image = next(
-                                    self.images_parser.lazy_parse(blob)  # type: ignore
+                                    self.images_parser.lazy_parse(blob)
                                 ).page_content
                                 extras.append(
                                     _format_inner_image(
@@ -1764,9 +1764,7 @@ class PDFPlumberParser(BaseBlobParser):
                     )
                 elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
                     buf = np.frombuffer(img["stream"].get_data(), dtype=np.uint8)
-                    images.append(
-                        np.array(Image.open(io.BytesIO(buf.tobytes())))  # type: ignore
-                    )
+                    images.append(np.array(Image.open(io.BytesIO(buf.tobytes()))))
                 else:
                     logger.warning("Unknown PDF Filter!")
 
