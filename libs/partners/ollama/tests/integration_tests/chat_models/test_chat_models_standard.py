@@ -24,7 +24,6 @@ class TestChatOllama(ChatModelIntegrationTests):
 
 
 def test_image_model() -> None:
-
     class ImageModelTests(ChatModelIntegrationTests):
         @property
         def chat_model_class(self) -> type[ChatOllama]:
