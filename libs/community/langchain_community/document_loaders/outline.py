@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 import requests
 from langchain_core.documents import Document
@@ -14,7 +14,7 @@ class OutlineLoader(BaseLoader):
     instance.  You will need the API key from Outline to configure the loader.
     The API used is documented here: https://www.getoutline.com/developers
 
-    If not passed in as parameters the API key and will be taken from env 
+    If not passed in as parameters the API key and will be taken from env
     vars OUTLINE_INSTANCE_URL and OUTLINE_API_KEY.
 
     Examples
@@ -28,7 +28,10 @@ class OutlineLoader(BaseLoader):
     """
 
     def __init__(
-        self, outline_base_url: str = None, outline_api_key: str = None, page_size: int = 25
+        self,
+        outline_base_url: Union[str | None] = None,
+        outline_api_key: Union[str | None] = None,
+        page_size: int = 25,
     ):
         """Initialize with url, api_key and requested page size for API results
         pagination.
