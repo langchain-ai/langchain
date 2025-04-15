@@ -1,0 +1,10 @@
+[project]
+name = "langchain-opensearch"
+version = "0.1.0"
+dependencies = [
+    "opensearch-py>=2.0.0",
+    "langchain-core>=0.3.0",
+]
+description = "OpenSearch integration for LangChain"
+readme = "README.md"
+license = { text = "MIT" }
