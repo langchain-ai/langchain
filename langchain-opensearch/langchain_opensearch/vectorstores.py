@@ -122,22 +122,46 @@ def _bulk_ingest_embeddings(
     except NotFoundError:
         client.indices.create(index=index_name, body=mapping)
 
+    # for i, text in enumerate(texts):
+    #     metadata = metadatas[i] if metadatas else {}
+    #     _id = ids[i] if ids else str(uuid.uuid4())
+    #     request = {
+    #         "_op_type": "index",
+    #         "_index": index_name,
+    #         vector_field: embeddings[i],
+    #         text_field: text,
+    #         "metadata": metadata,
+    #     }
+    #     if is_aoss:
+    #         request["id"] = _id
+    #     else:
+    #         request["_id"] = _id
+    #     requests.append(request)
+    #     return_ids.append(_id)
+
+
     for i, text in enumerate(texts):
         metadata = metadatas[i] if metadatas else {}
         _id = ids[i] if ids else str(uuid.uuid4())
-        request = {
-            "_op_type": "index",
-            "_index": index_name,
-            vector_field: embeddings[i],
+        
+        # Prepare the document source
+        source_doc = {
             text_field: text,
-            "metadata": metadata,
+            vector_field: embeddings[i],
+            "metadata": metadata
         }
-        if is_aoss:
-            request["id"] = _id
-        else:
-            request["_id"] = _id
-        requests.append(request)
+
+        # Create the action dictionary for the bulk helper
+        action = {
+            "_index": index_name,
+            "_id": _id,
+            "_op_type": "index", 
+            "_source": source_doc 
+        }
+        
+        requests.append(action) 
         return_ids.append(_id)
+
     bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
     if not is_aoss:
         client.indices.refresh(index=index_name)
@@ -175,21 +199,44 @@ async def _abulk_ingest_embeddings(
     except NotFoundError:
         await client.indices.create(index=index_name, body=mapping)
 
+    # for i, text in enumerate(texts):
+    #     metadata = metadatas[i] if metadatas else {}
+    #     _id = ids[i] if ids else str(uuid.uuid4())
+    #     request = {
+    #         "_op_type": "index",
+    #         "_index": index_name,
+    #         vector_field: embeddings[i],
+    #         text_field: text,
+    #         "metadata": metadata,
+    #     }
+    #     if is_aoss:
+    #         request["id"] = _id
+    #     else:
+    #         request["_id"] = _id
+    #     requests.append(request)
+    #     return_ids.append(_id)
+
+
     for i, text in enumerate(texts):
         metadata = metadatas[i] if metadatas else {}
         _id = ids[i] if ids else str(uuid.uuid4())
-        request = {
-            "_op_type": "index",
-            "_index": index_name,
-            vector_field: embeddings[i],
+        
+        # Prepare the document source
+        source_doc = {
             text_field: text,
-            "metadata": metadata,
+            vector_field: embeddings[i],
+            "metadata": metadata
         }
-        if is_aoss:
-            request["id"] = _id
-        else:
-            request["_id"] = _id
-        requests.append(request)
+
+        # Create the action dictionary for the bulk helper
+        action = {
+            "_index": index_name,
+            "_id": _id,
+            "_op_type": "index", 
+            "_source": source_doc 
+        }
+        
+        requests.append(action) 
         return_ids.append(_id)
 
     await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
@@ -451,18 +498,36 @@ class OpenSearchVectorStore(VectorStore):
 
     def __init__(
         self,
-        opensearch_url: str,
         index_name: str,
         embedding_function: Embeddings,
+        client: Optional[Any] = None, # Client Argument
+        opensearch_url: Optional[str] = None, # opensearch_url for testing
+        # opensearch_url: str,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
+        super().__init__() #superclass init
+        if client is not None:
+            self.client = client
+            self.async_client = None 
+        elif opensearch_url is not None:
+            self.client = _get_opensearch_client(opensearch_url, **kwargs)
+            try:
+                self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
+            except ImportError:
+                warnings.warn("Async client could not be initialized.")
+                self.async_client = None
+        else:
+            raise ValueError(
+                "Either 'client' or 'opensearch_url' must be provided."
+            )
+
         self.embedding_function = embedding_function
         self.index_name = index_name
         http_auth = kwargs.get("http_auth")
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
-        self.client = _get_opensearch_client(opensearch_url, **kwargs)
-        self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
+        # self.client = _get_opensearch_client(opensearch_url, **kwargs)
+        # self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
         self.engine = kwargs.get("engine", "nmslib")
         self.bulk_size = kwargs.get("bulk_size", 500)
 
