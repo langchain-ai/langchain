@@ -240,7 +240,10 @@ def _format_data_content_block(block: dict) -> dict:
         raise ValueError(f"Block of type {block['type']} is not supported.")
 
     if formatted_block and (metadata := block.get("metadata")):
-        formatted_block = {**formatted_block, **metadata}
+        if "cache_control" in metadata:
+            formatted_block["cache_control"] = metadata["cache_control"]
+        if "citations" in metadata:
+            formatted_block["citations"] = metadata["citations"]
 
     return formatted_block
 
