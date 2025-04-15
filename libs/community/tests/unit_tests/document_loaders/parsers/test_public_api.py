@@ -14,6 +14,7 @@ def test_parsers_public_api_correct() -> None:
         "OpenAIWhisperParser",
         "PyPDFParser",
         "PDFMinerParser",
+        "PDFRouterParser",
         "PyMuPDFParser",
         "PyPDFium2Parser",
         "PDFPlumberParser",

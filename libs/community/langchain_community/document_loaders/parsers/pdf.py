@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import re
 import html
 import io
 import logging
+import re
 import threading
 import warnings
 from datetime import datetime
@@ -1670,6 +1670,7 @@ class DocumentIntelligenceParser(BaseBlobParser):
 
             yield from docs
 
+
 class PDFRouterParser(BaseBlobParser):
     """
     Load PDFs using different parsers based on the metadata of the PDF
@@ -1700,15 +1701,17 @@ class PDFRouterParser(BaseBlobParser):
     ```
     """
 
+    Routes = Sequence[
+        tuple[
+            str,
+            Mapping[str, Union[re.Pattern, str]],
+            BaseBlobParser,
+        ]
+    ]
+
     def __init__(
         self,
-        routes: list[
-            tuple[
-                str,
-                dict[str, Union[re.Pattern, str]],
-                BaseBlobParser,
-            ]
-        ],
+        routes: Routes,
         *,
         password: Optional[str] = None,
     ):
@@ -1736,7 +1739,8 @@ class PDFRouterParser(BaseBlobParser):
             import pypdf  # noqa:F401
         except ImportError:
             raise ImportError(
-                "pypdf package not found, please install it with `pip install pypdf.six`"
+                "pypdf package not found, please install it with "
+                "`pip install pypdf.six`"
             )
         from pypdf import PdfReader
 
