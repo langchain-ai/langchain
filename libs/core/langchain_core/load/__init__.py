@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langchain_core.load.dump import dumpd, dumps
-    from langchain_core.load.load import load, loads
+    from langchain_core.load.load import loads
     from langchain_core.load.serializable import Serializable
+
+from langchain_core.load.load import load
 
 __all__ = ["dumpd", "dumps", "load", "loads", "Serializable"]
 
