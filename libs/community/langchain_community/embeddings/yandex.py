@@ -205,7 +205,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # typ
     for text in texts:
         request = TextEmbeddingRequest(model_uri=model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
-        res = stub.TextEmbedding(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
+        res = stub.TextEmbedding(request, metadata=self.grpc_metadata)
         result.append(list(res.embedding))
         time.sleep(self.sleep_interval)
 

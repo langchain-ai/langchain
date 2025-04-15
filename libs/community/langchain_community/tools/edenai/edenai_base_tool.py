@@ -13,7 +13,7 @@ from pydantic import Field, SecretStr
 logger = logging.getLogger(__name__)
 
 
-class EdenaiTool(BaseTool):  # type: ignore[override]
+class EdenaiTool(BaseTool):
     """
     the base tool for all the EdenAI Tools .
     you should have

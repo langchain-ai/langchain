@@ -22,7 +22,7 @@ def test_generate() -> None:
 
 def test_spark_llm_with_param_alias() -> None:
     """Test SparkLLM with parameters alias."""
-    llm = SparkLLM(  # type: ignore[call-arg]
+    llm = SparkLLM(
         app_id="your-app-id",
         api_key="your-api-key",
         api_secret="your-api-secret",
@@ -40,6 +40,6 @@ def test_spark_llm_with_param_alias() -> None:
 
 def test_spark_llm_with_stream() -> None:
     """Test SparkLLM with stream."""
-    llm = SparkLLM()  # type: ignore[call-arg]
+    llm = SparkLLM()
     for chunk in llm.stream("你好呀"):
         assert isinstance(chunk, str)

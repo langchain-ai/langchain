@@ -579,7 +579,7 @@ class AsyncRedisCache(_RedisCacheBase):
         try:
             async with self.redis.pipeline() as pipe:
                 self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-                await pipe.execute()  # type: ignore[attr-defined]
+                await pipe.execute()
         except Exception as e:
             logger.error(f"Redis async update failed: {e}")
 

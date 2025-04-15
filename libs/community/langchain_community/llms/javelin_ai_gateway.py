@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 # Ignoring type because below is valid pydantic code
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Params(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class Params(BaseModel, extra="allow"):
     """Parameters for the Javelin AI Gateway LLM."""
 
     temperature: float = 0.0

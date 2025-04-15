@@ -46,11 +46,11 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -68,11 +68,11 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -93,7 +93,7 @@ def _check_response(response: dict) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]):
         import openai
 
-        raise openai.error.APIError("LocalAI API returned an empty embedding")  # type: ignore[attr-defined]
+        raise openai.error.APIError("LocalAI API returned an empty embedding")
     return response
 
 
@@ -230,7 +230,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         try:
             import openai
 
-            values["client"] = openai.Embedding  # type: ignore[attr-defined]
+            values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -253,10 +253,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {  # type: ignore[attr-defined]
+            openai.proxy = {
                 "http": self.openai_proxy,
                 "https": self.openai_proxy,
-            }  # type: ignore[assignment]
+            }
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:

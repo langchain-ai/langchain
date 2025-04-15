@@ -100,11 +100,11 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        openai.error.Timeout,  # type: ignore[attr-defined]
-        openai.error.APIError,  # type: ignore[attr-defined]
-        openai.error.APIConnectionError,  # type: ignore[attr-defined]
-        openai.error.RateLimitError,  # type: ignore[attr-defined]
-        openai.error.ServiceUnavailableError,  # type: ignore[attr-defined]
+        openai.error.Timeout,
+        openai.error.APIError,
+        openai.error.APIConnectionError,
+        openai.error.RateLimitError,
+        openai.error.ServiceUnavailableError,
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -323,7 +323,7 @@ class BaseOpenAI(BaseLLM):
             if not values.get("async_client"):
                 values["async_client"] = openai.AsyncOpenAI(**client_params).completions
         elif not values.get("client"):
-            values["client"] = openai.Completion  # type: ignore[attr-defined]
+            values["client"] = openai.Completion
         else:
             pass
 
@@ -607,7 +607,7 @@ class BaseOpenAI(BaseLLM):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}
         return {**openai_creds, **self._default_params}
 
     @property
@@ -943,7 +943,7 @@ class AzureOpenAI(BaseOpenAI):
             ).completions
 
         else:
-            values["client"] = openai.Completion  # type: ignore[attr-defined]
+            values["client"] = openai.Completion
 
         return values
 
@@ -1068,18 +1068,18 @@ class OpenAIChat(BaseLLM):
 
             openai.api_key = openai_api_key
             if openai_api_base:
-                openai.api_base = openai_api_base  # type: ignore[attr-defined]
+                openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
             if openai_proxy:
-                openai.proxy = {"http": openai_proxy, "https": openai_proxy}  # type: ignore[assignment]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+                openai.proxy = {"http": openai_proxy, "https": openai_proxy}
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
+            values["client"] = openai.ChatCompletion
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "

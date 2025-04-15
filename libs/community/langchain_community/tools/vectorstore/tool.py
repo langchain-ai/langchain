@@ -31,7 +31,7 @@ def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
     return values
 
 
-class VectorStoreQATool(BaseVectorStoreTool, BaseTool):  # type: ignore[override]
+class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQA chain. To be initialized with name and chain."""
 
     @staticmethod
@@ -79,7 +79,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):  # type: ignore[override
         )[chain.output_key]
 
 
-class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):  # type: ignore[override]
+class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQAWithSources chain."""
 
     @staticmethod

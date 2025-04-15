@@ -15,7 +15,7 @@ class DataheraldTextToSQLInput(BaseModel):
     )
 
 
-class DataheraldTextToSQL(BaseTool):  # type: ignore[override, override]
+class DataheraldTextToSQL(BaseTool):
     """Tool that queries using the Dataherald SDK."""
 
     name: str = "dataherald"

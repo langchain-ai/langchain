@@ -68,7 +68,7 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
         else:
             values["openai_api_base"] = values["anyscale_api_base"]
             values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-            values["client"] = openai.Embedding  # type: ignore[attr-defined]
+            values["client"] = openai.Embedding
         return values
 
     @property

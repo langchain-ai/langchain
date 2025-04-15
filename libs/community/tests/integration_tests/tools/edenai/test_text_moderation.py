@@ -15,7 +15,7 @@ from langchain_community.tools.edenai.text_moderation import EdenAiTextModeratio
 def test_edenai_call() -> None:
     """Test simple call to edenai's text moderation endpoint."""
 
-    text_moderation = EdenAiTextModerationTool(providers=["openai"], language="en")  # type: ignore[call-arg]
+    text_moderation = EdenAiTextModerationTool(providers=["openai"], language="en")
 
     output = text_moderation.invoke("i hate you")
 

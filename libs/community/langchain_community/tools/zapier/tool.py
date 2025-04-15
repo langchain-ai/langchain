@@ -83,7 +83,7 @@ from langchain_community.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain_community.utilities.zapier import ZapierNLAWrapper
 
 
-class ZapierNLARunAction(BaseTool):  # type: ignore[override]
+class ZapierNLARunAction(BaseTool):
     """Tool to run a specific action from the user's exposed actions.
 
     Params:
@@ -167,7 +167,7 @@ ZapierNLARunAction.__doc__ = ZapierNLAWrapper.run.__doc__ + ZapierNLARunAction._
 # other useful actions
 
 
-class ZapierNLAListActions(BaseTool):  # type: ignore[override]
+class ZapierNLAListActions(BaseTool):
     """Tool to list all exposed actions for the user."""
 
     name: str = "ZapierNLA_list_actions"
