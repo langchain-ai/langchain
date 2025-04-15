@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Iterator, List, Tuple
 
 import requests
@@ -13,6 +14,9 @@ class OutlineLoader(BaseLoader):
     instance.  You will need the API key from Outline to configure the loader.
     The API used is documented here: https://www.getoutline.com/developers
 
+    If not passed in as parameters the API key and will be taken from env 
+    vars OUTLINE_INSTANCE_URL and OUTLINE_API_KEY.
+
     Examples
     --------
     from langchain_community.document_loaders import OutlineLoader
@@ -24,7 +28,7 @@ class OutlineLoader(BaseLoader):
     """
 
     def __init__(
-        self, outline_base_url: str, outline_api_key: str, page_size: int = 25
+        self, outline_base_url: str = None, outline_api_key: str = None, page_size: int = 25
     ):
         """Initialize with url, api_key and requested page size for API results
         pagination.
@@ -36,8 +40,8 @@ class OutlineLoader(BaseLoader):
         :param page_size: How many outline documents should be retrieved per request
         """
 
-        self.outline_base_url = outline_base_url
-        self.outline_api_key = outline_api_key
+        self.outline_base_url = outline_base_url or os.environ["OUTLINE_INSTANCE_URL"]
+        self.outline_api_key = outline_api_key or os.environ["OUTLINE_API_KEY"]
         self.document_list_endpoint = f"{self.outline_base_url}/api/documents.list"
         self.page_size = page_size
         self.headers = {
