@@ -14,8 +14,8 @@ on:
 jobs:
   codspeed:
     name: Run benchmarks
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks'))
-    runs-on: codspeed-macro
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks'))
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -41,3 +41,4 @@ jobs:
           run: |
             cd libs/core
             uv run --no-sync pytest ./tests/benchmarks --codspeed
+          mode: walltime
