@@ -34,8 +34,8 @@ ORDERING_DIRECTIVE: dict = {
         "This class is pending deprecation and may be removed in a future version. "
         "You can swap to using the `SingleStoreVectorStore` "
         "implementation in `langchain_singlestore`. "
-        "See <https://github.com/singlestore-labs/langchain-singlestore> for details about "
-        "the new implementation."
+        "See <https://github.com/singlestore-labs/langchain-singlestore> for details "
+        "about the new implementation."
     ),
     alternative="from langchain_singlestore import SingleStoreVectorStore",
     pending=True,
