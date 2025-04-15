@@ -607,5 +607,6 @@ packages:
   path: .
   repo: ydb-platform/langchain-ydb
 - name: langchain-singlestore
+  name_title: SingleStore
   path: .
   repo: singlestore-labs/langchain-singlestore
