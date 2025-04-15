@@ -719,6 +719,11 @@ class ChatOllama(BaseChatModel):
         is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("done") is True:
+                    generation_info = dict(stream_resp)
+                    _ = generation_info.pop("message", None)
+                else:
+                    generation_info = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -732,11 +737,7 @@ class ChatOllama(BaseChatModel):
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
-                    generation_info=(
-                        dict(stream_resp).pop("message", None)
-                        if stream_resp.get("done") is True
-                        else None
-                    ),
+                    generation_info=generation_info,
                 )
                 if chunk.generation_info and (
                     model := chunk.generation_info.get("model")
@@ -773,6 +774,11 @@ class ChatOllama(BaseChatModel):
         is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("done") is True:
+                    generation_info = dict(stream_resp)
+                    _ = generation_info.pop("message", None)
+                else:
+                    generation_info = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -786,11 +792,7 @@ class ChatOllama(BaseChatModel):
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
-                    generation_info=(
-                        dict(stream_resp).pop("message", None)
-                        if stream_resp.get("done") is True
-                        else None
-                    ),
+                    generation_info=generation_info,
                 )
                 if chunk.generation_info and (
                     model := chunk.generation_info.get("model")
