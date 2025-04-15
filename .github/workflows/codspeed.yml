@@ -14,7 +14,7 @@ on:
 jobs:
   codspeed:
     name: Run benchmarks
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks'))
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks')) || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
