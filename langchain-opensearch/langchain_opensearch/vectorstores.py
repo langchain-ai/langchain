@@ -432,7 +432,8 @@ def _hybrid_search_query_with_post_filter(
     return search_query
 
 
-class OpenSearchVectorSearch(VectorStore):
+# class OpenSearchVectorSearch(VectorStore):
+class OpenSearchVectorStore(VectorStore):
     """`Amazon OpenSearch Vector Engine` vector store.
 
     Example:
@@ -1604,7 +1605,7 @@ class OpenSearchVectorSearch(VectorStore):
                 # embedder = OpenAIEmbeddings()
 
                 from langchain_core.embeddings import Embeddings
-                
+
                 embeddings = await embedder.aembed_documents(["foo", "bar"])
                 opensearch_vector_search =
                     await OpenSearchVectorSearch.afrom_embeddings(
