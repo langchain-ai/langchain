@@ -30,6 +30,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
@@ -171,6 +172,20 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
             "arguments": tool_call["args"],
         },
     }
+
+
+def _get_image_from_data_content_block(block: dict) -> str:
+    """Format standard data content block to format expected by Ollama."""
+    if block["type"] == "image":
+        if block["source_type"] == "base64":
+            return block["data"]
+        else:
+            error_message = "Image data only supported through in-line base64 format."
+            raise ValueError(error_message)
+
+    else:
+        error_message = f"Blocks of type {block['type']} not supported."
+        raise ValueError(error_message)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -553,7 +568,9 @@ class ChatOllama(BaseChatModel):
                             images.append(image_url_components[1])
                         else:
                             images.append(image_url_components[0])
-
+                    elif is_data_content_block(content_part):
+                        image = _get_image_from_data_content_block(content_part)
+                        images.append(image)
                     else:
                         raise ValueError(
                             "Unsupported message content type. "
