@@ -1145,7 +1145,7 @@ def test_data_prompt_template_deserializable() -> None:
                 [
                     (
                         "system",
-                        [{"type": "image", "source_type": "url", "source": "{url}"}],
+                        [{"type": "image", "source_type": "url", "url": "{url}"}],
                     )
                 ]
             )
@@ -1169,7 +1169,7 @@ def test_chat_prompt_template_data_prompt_from_message(
     prompt: dict = {
         "type": "image",
         "source_type": "base64",
-        "source": f"{source_data_placeholder}",
+        "data": f"{source_data_placeholder}",
     }
 
     template = ChatPromptTemplate.from_messages(
@@ -1181,7 +1181,7 @@ def test_chat_prompt_template_data_prompt_from_message(
                 {
                     "type": "image",
                     "source_type": "base64",
-                    "source": "base64data",
+                    "data": "base64data",
                 }
             ]
         )
@@ -1200,7 +1200,7 @@ def test_chat_prompt_template_data_prompt_from_message(
                 {
                     "type": "image",
                     "source_type": "base64",
-                    "source": "base64data",
+                    "data": "base64data",
                     "metadata": {"cache_control": {"type": "ephemeral"}},
                 }
             ]
@@ -1212,7 +1212,7 @@ def test_dict_message_prompt_template_errors_on_jinja2() -> None:
     prompt = {
         "type": "image",
         "source_type": "base64",
-        "source": "{source_data}",
+        "data": "{source_data}",
     }
 
     with pytest.raises(ValueError, match="jinja2"):
