@@ -875,10 +875,10 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-               The config supports standard keys like 'tags', 'metadata' for tracing
-               purposes, 'max_concurrency' for controlling how much work to do
-               in parallel, and other keys. Please refer to the RunnableConfig
-               for more details. Defaults to None.
+                The config supports standard keys like 'tags', 'metadata' for tracing
+                purposes, 'max_concurrency' for controlling how much work to do
+                in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
             kwargs: Additional keyword arguments to pass to the Runnable.
@@ -940,10 +940,10 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-               The config supports standard keys like 'tags', 'metadata' for tracing
-               purposes, 'max_concurrency' for controlling how much work to do
-               in parallel, and other keys. Please refer to the RunnableConfig
-               for more details. Defaults to None. Defaults to None.
+                The config supports standard keys like 'tags', 'metadata' for tracing
+                purposes, 'max_concurrency' for controlling how much work to do
+                in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to None. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
             kwargs: Additional keyword arguments to pass to the Runnable.
