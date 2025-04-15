@@ -27,7 +27,7 @@ def init_gptcache_map(cache_obj: Any) -> None:
         pre_embedding_func=get_prompt,
         data_manager=get_data_manager(data_path=cache_path),
     )
-    init_gptcache_map._i = i + 1  # type: ignore
+    init_gptcache_map._i = i + 1  # type: ignore[attr-defined]
 
 
 def init_gptcache_map_with_llm(cache_obj: Any, llm: str) -> None:

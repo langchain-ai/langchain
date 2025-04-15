@@ -103,7 +103,7 @@ class DocArrayIndex(VectorStore, ABC):
             Lower score represents more similarity.
         """
         query_embedding = self.embedding.embed_query(query)
-        query_doc = self.doc_cls(embedding=query_embedding)  # type: ignore
+        query_doc = self.doc_cls(embedding=query_embedding)
         docs, scores = self.doc_index.find(query_doc, search_field="embedding", limit=k)
 
         result = [
@@ -152,7 +152,7 @@ class DocArrayIndex(VectorStore, ABC):
             List of Documents most similar to the query vector.
         """
 
-        query_doc = self.doc_cls(embedding=embedding)  # type: ignore
+        query_doc = self.doc_cls(embedding=embedding)
         docs = self.doc_index.find(
             query_doc, search_field="embedding", limit=k
         ).documents
@@ -187,7 +187,7 @@ class DocArrayIndex(VectorStore, ABC):
             List of Documents selected by maximal marginal relevance.
         """
         query_embedding = self.embedding.embed_query(query)
-        query_doc = self.doc_cls(embedding=query_embedding)  # type: ignore
+        query_doc = self.doc_cls(embedding=query_embedding)
 
         docs = self.doc_index.find(
             query_doc, search_field="embedding", limit=fetch_k

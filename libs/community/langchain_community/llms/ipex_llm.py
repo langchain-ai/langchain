@@ -172,7 +172,7 @@ class IpexLLM(LLM):
         if not low_bit_model:
             if load_in_low_bit is not None:
                 load_function_name = "from_pretrained"
-                load_kwargs["load_in_low_bit"] = load_in_low_bit  # type: ignore
+                load_kwargs["load_in_low_bit"] = load_in_low_bit  # type: ignore[assignment]
             else:
                 load_function_name = "from_pretrained"
                 load_kwargs["load_in_4bit"] = load_in_4bit

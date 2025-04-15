@@ -215,7 +215,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
             self._create_empty_doc()
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Messages in this chat history."""
         return messages_from_dict(
             self._query(

@@ -183,7 +183,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in MongoDB Atlas
-        insert_result = self._collection.insert_many(to_insert)  # type: ignore
+        insert_result = self._collection.insert_many(to_insert)
         return insert_result.inserted_ids
 
     def _similarity_search_with_score(

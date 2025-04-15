@@ -58,9 +58,9 @@ def get_embedding_store(
     embedding_type = None
 
     if distance_strategy == DistanceStrategy.HAMMING:
-        embedding_type = sqlalchemy.INTEGER  # type: ignore
+        embedding_type = sqlalchemy.INTEGER
     else:
-        embedding_type = sqlalchemy.REAL  # type: ignore
+        embedding_type = sqlalchemy.REAL  # type: ignore[assignment]
 
     DynamicBase = declarative_base(class_registry=dict())  # type: Any
 
@@ -74,7 +74,7 @@ def get_embedding_store(
         cmetadata = sqlalchemy.Column(JSON, nullable=True)
         # custom_id : any user defined id
         custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        embedding = sqlalchemy.Column(sqlalchemy.ARRAY(embedding_type))  # type: ignore
+        embedding = sqlalchemy.Column(sqlalchemy.ARRAY(embedding_type))  # type: ignore[arg-type,var-annotated]
 
     return EmbeddingStore
 

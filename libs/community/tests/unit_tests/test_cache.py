@@ -267,7 +267,7 @@ def test_sql_alchemy_cache() -> None:
     """Test custom_caching behavior."""
     Base = declarative_base()
 
-    class FulltextLLMCache(Base):  # type: ignore
+    class FulltextLLMCache(Base):  # type: ignore[misc,valid-type]
         """Postgres table for fulltext-indexed LLM Cache."""
 
         __tablename__ = "llm_cache_fulltext"

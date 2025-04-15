@@ -142,7 +142,7 @@ class HuggingFaceHub(LLM):
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
 
-        response_key = VALID_TASKS_DICT[self.task]  # type: ignore
+        response_key = VALID_TASKS_DICT[self.task]  # type: ignore[index]
         if isinstance(response, list):
             text = response[0][response_key]
         else:

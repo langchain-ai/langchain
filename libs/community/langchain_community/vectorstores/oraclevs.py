@@ -857,7 +857,7 @@ class OracleVS(VectorStore):
                     )
 
                     documents.append((document, distance, current_embedding))
-        return documents  # type: ignore
+        return documents
 
     @_handle_exceptions
     def max_marginal_relevance_search_with_score_by_vector(

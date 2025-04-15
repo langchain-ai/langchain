@@ -690,6 +690,85 @@ def test__format_messages_with_cache_control() -> None:
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
+    # Test standard multi-modal format
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "application/pdf",
+                    "data": "<base64 data>",
+                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                },
+            ]
+        )
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        }
+    ]
+    assert actual_messages == expected_messages
+
+
+def test__format_messages_with_citations() -> None:
+    input_messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "source_type": "text",
+                    "text": "The grass is green. The sky is blue.",
+                    "mime_type": "text/plain",
+                    "metadata": {"citations": {"enabled": True}},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ]
+        )
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/plain",
+                        "data": "The grass is green. The sky is blue.",
+                    },
+                    "citations": {"enabled": True},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        }
+    ]
+    actual_system, actual_messages = _format_messages(input_messages)
+    assert actual_system is None
+    assert actual_messages == expected_messages
+
 
 def test__format_messages_with_multiple_system() -> None:
     messages = [

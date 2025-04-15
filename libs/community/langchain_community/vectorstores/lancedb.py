@@ -201,7 +201,7 @@ class LanceDB(VectorStore):
         """
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embeddings = self._embedding.embed_documents(list(texts))  # type: ignore
+        embeddings = self._embedding.embed_documents(list(texts))  # type: ignore[union-attr]
         for idx, text in enumerate(texts):
             embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {"id": ids[idx]}
@@ -490,7 +490,7 @@ class LanceDB(VectorStore):
                     embedding = self._embedding.embed_query(query)
                     _query = (embedding, query)
                 else:
-                    _query = query  # type: ignore
+                    _query = query  # type: ignore[assignment]
 
                 res = self._query(_query, k, filter=filter, name=name, **kwargs)
                 return self.results_to_docs(res, score=score)
