@@ -1009,7 +1009,14 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     assert load(dumpd(template)) == template
 
 
-@pytest.mark.xfail(reason="TODO")
+@pytest.mark.xfail(
+    reason=(
+        "In a breaking release, we can update `_convert_to_message_template` to use "
+        "_DictMessagePromptTemplate for all `dict` inputs, allowing for templatization "
+        "of message attributes outside content blocks. That would enable the below "
+        "test to pass."
+    )
+)
 def test_chat_tmpl_dict_msg() -> None:
     template = ChatPromptTemplate(
         [
