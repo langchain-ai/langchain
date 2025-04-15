@@ -28,6 +28,7 @@ ORDERING_DIRECTIVE: dict = {
     DistanceStrategy.DOT_PRODUCT: "DESC",
 }
 
+
 @deprecated(
     since="0.3.22",
     message=(

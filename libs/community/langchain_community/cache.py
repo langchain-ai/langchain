@@ -2488,6 +2488,7 @@ class OpenSearchSemanticCache(BaseCache):
             self._cache_dict[index_name].delete_index(index_name=index_name)
             del self._cache_dict[index_name]
 
+
 @deprecated(
     since="0.3.22",
     message=(

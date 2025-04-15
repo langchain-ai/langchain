@@ -16,6 +16,7 @@ from langchain_core.messages import (
 
 logger = logging.getLogger(__name__)
 
+
 @deprecated(
     since="0.3.22",
     message=(
