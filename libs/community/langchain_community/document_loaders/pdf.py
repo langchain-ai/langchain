@@ -22,6 +22,8 @@ from typing import (
 from urllib.parse import urlparse
 
 import requests
+
+from langchain_core.document_loaders import BaseBlobParser
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
 
@@ -37,7 +39,7 @@ from langchain_community.document_loaders.parsers.pdf import (
     PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
-    PyPDFParser,
+    PyPDFParser, PDFRouterParser,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -1423,3 +1425,61 @@ class ZeroxPDFLoader(BasePDFLoader):
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
+
+class PDFRouterLoader(BasePDFLoader):
+    """
+    Load PDFs using different parsers based on the metadata of the PDF
+    or the body of the first page.
+    The routes are defined as a list of tuples, where each tuple contains
+    the name, a dictionary of metadata and regex pattern and the parser to use.
+    The special key "page1" is to search in the first page with a regexp.
+    Use the route in the correct order, as the first matching route is used.
+    Add a default route ("default", {}, parser) at the end to catch all PDFs.
+
+    Sample:
+    ```python
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_community.document_loaders.parsers.pdf import PyMuPDFParser
+    from langchain_community.document_loaders.parsers.pdf import PyPDFium2Parser
+    from langchain_community.document_loaders.parsers import PDFPlumberParser
+    routes = [
+        # Name, keys with regex, parser
+        ("Microsoft", {"producer": "Microsoft", "creator": "Microsoft"},
+        PyMuPDFParser()),
+        ("LibreOffice", {"producer": "LibreOffice", }, PDFPlumberParser()),
+        ("Xdvipdfmx", {"producer": "xdvipdfmx.*", "page1":"Hello"}, PDFPlumberParser()),
+        ("defautl", {}, PyPDFium2Parser())
+    ]
+    loader = PDFRouterLoader(filename, routes)
+    loader.load()
+    ```
+    """
+
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        *,
+        routes: list[
+            tuple[
+                str,
+                dict[str, Union[re.Pattern | str]],
+                BaseBlobParser,
+            ]
+        ],
+        password: Optional[str] = None,
+    ):
+        """Initialize with a file path."""
+        super().__init__(file_path)
+        self.parser = PDFRouterParser(routes, password=password)
+
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        if self.web_path:
+            blob = Blob.from_data(
+                open(self.file_path, "rb").read(), path=self.web_path
+            )  # type: ignore[attr-defined]
+        else:
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+        yield from self.parser.lazy_parse(blob)

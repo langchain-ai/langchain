@@ -11,8 +11,10 @@ from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
     BaseImageBlobParser,
-    PDFPlumberParser,
+    PDFPlumberParser, PyMuPDFParser, PyPDFium2Parser,
 )
+from langchain_community.document_loaders.parsers.pdf import PDFRouterParser, \
+    PDFMinerParser
 
 if TYPE_CHECKING:
     from PIL.Image import Image
@@ -312,3 +314,27 @@ def test_parser_with_table(
         **params,
     )
     _std_assert_with_parser(parser)
+
+def test_parser_router_parse() -> None:
+    mode = "single"
+    routes = [
+        (
+            "Microsoft",
+            {"producer": "Microsoft", "creator": "Microsoft"},
+            PyMuPDFParser(mode=mode),
+        ),
+        (
+            "LibreOffice",
+            {
+                "producer": "LibreOffice",
+            },
+            PDFMinerParser(mode=mode),
+        ),
+        (
+            "Xdvipdfmx",
+            {"producer": "xdvipdfmx.*", "page1": "Hello"},
+            PDFMinerParser(mode=mode),
+        ),
+        ("default", {}, PyPDFium2Parser(mode=mode)),
+    ]
+    _assert_with_parser(PDFRouterParser(routes=routes), splits_by_page=False)

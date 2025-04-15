@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import html
 import io
 import logging
@@ -1668,3 +1669,91 @@ class DocumentIntelligenceParser(BaseBlobParser):
             docs = self._generate_docs(blob, result)
 
             yield from docs
+
+class PDFRouterParser(BaseBlobParser):
+    """
+    Load PDFs using different parsers based on the metadata of the PDF
+    or the body of the first page.
+    The routes are defined as a list of tuples, where each tuple contains
+    the name, a dictionary of metadata and regex pattern and the parser to use.
+    The special key "page1" is to search in the first page with a regexp.
+    Use the route in the correct order, as the first matching route is used.
+    Add a default route ("default", {}, parser) at the end to catch all PDFs.
+    This code is similar to `MimeTypeBasedParser`, but on the content of the PDF file.
+
+    Sample:
+    ```python
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_community.document_loaders.parsers.pdf import PyMuPDFParser
+    from langchain_community.document_loaders.parsers.pdf import PyPDFium2Parser
+    from langchain_community.document_loaders.parsers import PDFPlumberParser
+    routes = [
+        # Name, keys with regex, parser
+        ("Microsoft", {"producer": "Microsoft", "creator": "Microsoft"},
+        PyMuPDFParser()),
+        ("LibreOffice", {"producer": "LibreOffice", }, PDFPlumberParser()),
+        ("Xdvipdfmx", {"producer": "xdvipdfmx.*", "page1":"Hello"}, PDFPlumberParser()),
+        ("defautl", {}, PyPDFium2Parser())
+    ]
+    loader = PDFRouterLoader(filename, routes)
+    loader.load()
+    ```
+    """
+
+    def __init__(
+        self,
+        routes: list[
+            tuple[
+                str,
+                dict[str, Union[re.Pattern, str]],
+                BaseBlobParser,
+            ]
+        ],
+        *,
+        password: Optional[str] = None,
+    ):
+        try:
+            import pypdf  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pypdf package not found, please install it with `pip install pypdf`"
+            )
+        super().__init__()
+        self.password = password
+        new_routes = []
+        for name, matchs, parser in routes:
+            new_matchs = {}
+            for k, v in matchs.items():
+                if isinstance(v, str):
+                    v = re.compile(v)
+                new_matchs[k] = v
+            new_routes.append((name, new_matchs, parser))
+        self.routes = new_routes
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """Lazily parse the blob."""
+        try:
+            import pypdf  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pypdf package not found, please install it with `pip install pypdf.six`"
+            )
+        from pypdf import PdfReader
+
+        with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
+            with PdfReader(pdf_file_obj, password=self.password) as reader:
+                metadata = _purge_metadata(cast(dict[str, Any], reader.metadata))
+                page1 = reader.pages[0].extract_text()
+                metadata["page1"] = page1
+                find = False
+                for name, match, parser in self.routes:
+                    for k, p in match.items():
+                        if k not in metadata or not p.search(metadata[k]):
+                            break
+                    else:
+                        find = True
+                        break
+                if find:
+                    for doc in parser.lazy_parse(blob):
+                        doc.metadata["router"] = name
+                        yield doc
