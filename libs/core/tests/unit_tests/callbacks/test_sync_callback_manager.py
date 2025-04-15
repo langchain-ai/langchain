@@ -1,5 +1,4 @@
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.callbacks.manager import BaseCallbackManager
+from langchain_core.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 
 
 def test_remove_handler() -> None:

@@ -45,9 +45,12 @@ langchain-core = { path = "../../core", editable = true }
 langchain-text-splitters = { path = "../../text-splitters", editable = true }
 langchain = { path = "../../langchain", editable = true }
 
-
 [tool.ruff]
-select = ["E", "F", "I"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201", "UP"]
+ignore = [ "UP007", ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"

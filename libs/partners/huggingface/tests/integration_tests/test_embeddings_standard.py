@@ -1,7 +1,5 @@
 """Test HuggingFace embeddings."""
 
-from typing import Type
-
 from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
 from langchain_huggingface.embeddings import (
@@ -12,7 +10,7 @@ from langchain_huggingface.embeddings import (
 
 class TestHuggingFaceEmbeddings(EmbeddingsIntegrationTests):
     @property
-    def embeddings_class(self) -> Type[HuggingFaceEmbeddings]:
+    def embeddings_class(self) -> type[HuggingFaceEmbeddings]:
         return HuggingFaceEmbeddings
 
     @property
@@ -22,7 +20,7 @@ class TestHuggingFaceEmbeddings(EmbeddingsIntegrationTests):
 
 class TestHuggingFaceEndpointEmbeddings(EmbeddingsIntegrationTests):
     @property
-    def embeddings_class(self) -> Type[HuggingFaceEndpointEmbeddings]:
+    def embeddings_class(self) -> type[HuggingFaceEndpointEmbeddings]:
         return HuggingFaceEndpointEmbeddings
 
     @property

@@ -48,7 +48,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        Tuple[str, str]: The literal and the template.
+        tuple[str, str]: The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -68,7 +68,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
 def l_sa_check(
     template: str,  # noqa: ARG001
     literal: str,
-    is_standalone: bool,
+    is_standalone: bool,  # noqa: FBT001
 ) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
@@ -91,7 +91,11 @@ def l_sa_check(
     return False
 
 
-def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
+def r_sa_check(
+    template: str,
+    tag_type: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a final check to see if a tag could be a standalone.
 
     Args:
@@ -122,7 +126,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        Tuple[Tuple[str, str], str]: The tag and the template.
+        tuple[tuple[str, str], str]: The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.
@@ -370,12 +374,12 @@ def _get_key(
                         resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        resolved_scope = resolved_scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):
@@ -422,8 +426,8 @@ def render(
     def_ldel: str = "{{",
     def_rdel: str = "}}",
     scopes: Optional[Scopes] = None,
-    warn: bool = False,
-    keep: bool = False,
+    warn: bool = False,  # noqa: FBT001,FBT002
+    keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:
     """Render a mustache template.
 

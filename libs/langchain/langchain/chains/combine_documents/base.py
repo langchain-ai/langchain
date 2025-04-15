@@ -1,7 +1,7 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -47,22 +47,22 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsInput",
-            **{self.input_key: (List[Document], None)},  # type: ignore[call-overload]
+            **{self.input_key: (list[Document], None)},  # type: ignore[call-overload]
         )
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsOutput",
             **{self.output_key: (str, None)},  # type: ignore[call-overload]
         )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -70,14 +70,14 @@ class BaseCombineDocumentsChain(Chain, ABC):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
         """
         return [self.output_key]
 
-    def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list
@@ -96,7 +96,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
         return None
 
     @abstractmethod
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    def combine_docs(self, docs: list[Document], **kwargs: Any) -> tuple[str, dict]:
         """Combine documents into a single string.
 
         Args:
@@ -111,8 +111,8 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     @abstractmethod
     async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
-    ) -> Tuple[str, dict]:
+        self, docs: list[Document], **kwargs: Any
+    ) -> tuple[str, dict]:
         """Combine documents into a single string.
 
         Args:
@@ -127,9 +127,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     def _call(
         self,
-        inputs: Dict[str, List[Document]],
+        inputs: dict[str, list[Document]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Prepare inputs, call combine docs, prepare outputs."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         docs = inputs[self.input_key]
@@ -143,9 +143,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     async def _acall(
         self,
-        inputs: Dict[str, List[Document]],
+        inputs: dict[str, list[Document]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Prepare inputs, call combine docs, prepare outputs."""
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         docs = inputs[self.input_key]
@@ -229,7 +229,7 @@ class AnalyzeDocumentChain(Chain):
     combine_docs_chain: BaseCombineDocumentsChain
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -237,7 +237,7 @@ class AnalyzeDocumentChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -246,7 +246,7 @@ class AnalyzeDocumentChain(Chain):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return create_model(
             "AnalyzeDocumentChain",
             **{self.input_key: (str, None)},  # type: ignore[call-overload]
@@ -254,20 +254,20 @@ class AnalyzeDocumentChain(Chain):
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.combine_docs_chain.get_output_schema(config)
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Split document into chunks and pass to CombineDocumentsChain."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         document = inputs[self.input_key]
         docs = self.text_splitter.create_documents([document])
         # Other keys are assumed to be needed for LLM prediction
-        other_keys: Dict = {k: v for k, v in inputs.items() if k != self.input_key}
+        other_keys: dict = {k: v for k, v in inputs.items() if k != self.input_key}
         other_keys[self.combine_docs_chain.input_key] = docs
         return self.combine_docs_chain(
             other_keys, return_only_outputs=True, callbacks=_run_manager.get_child()

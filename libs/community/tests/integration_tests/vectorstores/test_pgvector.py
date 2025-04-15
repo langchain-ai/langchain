@@ -285,14 +285,14 @@ def test_pgvector_delete_docs() -> None:
         records = list(session.query(docsearch.EmbeddingStore).all())
         # ignoring type error since mypy cannot determine whether
         # the list is sortable
-        assert sorted(record.custom_id for record in records) == ["3"]  # type: ignore
+        assert sorted(record.custom_id for record in records) == ["3"]
 
     docsearch.delete(["2", "3"])  # Should not raise on missing ids
     with docsearch._make_session() as session:
         records = list(session.query(docsearch.EmbeddingStore).all())
         # ignoring type error since mypy cannot determine whether
         # the list is sortable
-        assert sorted(record.custom_id for record in records) == []  # type: ignore
+        assert sorted(record.custom_id for record in records) == []
 
 
 def test_pgvector_relevance_score() -> None:

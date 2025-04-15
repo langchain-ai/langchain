@@ -80,7 +80,7 @@ class BaseLoader(ABC):  # noqa: B024
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
         while True:
-            doc = await run_in_executor(None, next, iterator, done)  # type: ignore[call-arg, arg-type]
+            doc = await run_in_executor(None, next, iterator, done)
             if doc is done:
                 break
             yield doc  # type: ignore[misc]

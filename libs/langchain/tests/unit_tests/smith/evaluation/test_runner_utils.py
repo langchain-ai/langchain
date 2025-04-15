@@ -1,8 +1,9 @@
 """Test the LangSmith evaluation helpers."""
 
 import uuid
+from collections.abc import Iterator
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Optional, Union
 from unittest import mock
 
 import pytest
@@ -63,7 +64,7 @@ _INVALID_PROMPTS = (
     "inputs",
     _VALID_MESSAGES,
 )
-def test__get_messages_valid(inputs: Dict[str, Any]) -> None:
+def test__get_messages_valid(inputs: dict[str, Any]) -> None:
     {"messages": []}
     _get_messages(inputs)
 
@@ -72,7 +73,7 @@ def test__get_messages_valid(inputs: Dict[str, Any]) -> None:
     "inputs",
     _VALID_PROMPTS,
 )
-def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
+def test__get_prompts_valid(inputs: dict[str, Any]) -> None:
     _get_prompt(inputs)
 
 
@@ -80,7 +81,7 @@ def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
     "inputs",
     _VALID_PROMPTS,
 )
-def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> None:
+def test__validate_example_inputs_for_language_model(inputs: dict[str, Any]) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
     _validate_example_inputs_for_language_model(mock_, None)
@@ -91,7 +92,7 @@ def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> 
     _INVALID_PROMPTS,
 )
 def test__validate_example_inputs_for_language_model_invalid(
-    inputs: Dict[str, Any],
+    inputs: dict[str, Any],
 ) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
@@ -155,7 +156,7 @@ def test__validate_example_inputs_for_chain_single_input_multi_expect() -> None:
 
 
 @pytest.mark.parametrize("inputs", _INVALID_PROMPTS)
-def test__get_prompts_invalid(inputs: Dict[str, Any]) -> None:
+def test__get_prompts_invalid(inputs: dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_prompt(inputs)
 
@@ -223,19 +224,19 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         {},
     ],
 )
-def test__get_messages_invalid(inputs: Dict[str, Any]) -> None:
+def test__get_messages_invalid(inputs: dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_messages(inputs)
 
 
 @pytest.mark.parametrize("inputs", _VALID_PROMPTS + _VALID_MESSAGES)
-def test_run_llm_all_formats(inputs: Dict[str, Any]) -> None:
+def test_run_llm_all_formats(inputs: dict[str, Any]) -> None:
     llm = FakeLLM()
     _run_llm(llm, inputs, mock.MagicMock())
 
 
 @pytest.mark.parametrize("inputs", _VALID_MESSAGES + _VALID_PROMPTS)
-def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
+def test_run_chat_model_all_formats(inputs: dict[str, Any]) -> None:
     llm = FakeChatModel()
     _run_llm(llm, inputs, mock.MagicMock())
 
@@ -305,10 +306,10 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     async def mock_arun_chain(
         example: Example,
         llm_or_chain: Union[BaseLanguageModel, Chain],
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         callbacks: Optional[Any] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {"result": f"Result for example {example.id}"}
 
     def mock_create_project(*args: Any, **kwargs: Any) -> Any:

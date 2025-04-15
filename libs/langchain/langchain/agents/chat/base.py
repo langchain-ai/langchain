@@ -1,4 +1,5 @@
-from typing import Any, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -48,7 +49,7 @@ class ChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: List[Tuple[AgentAction, str]]
+        self, intermediate_steps: list[tuple[AgentAction, str]]
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
@@ -72,7 +73,7 @@ class ChatAgent(Agent):
         validate_tools_single_input(class_name=cls.__name__, tools=tools)
 
     @property
-    def _stop(self) -> List[str]:
+    def _stop(self) -> list[str]:
         return ["Observation:"]
 
     @classmethod
@@ -83,7 +84,7 @@ class ChatAgent(Agent):
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
     ) -> BasePromptTemplate:
         """Create a prompt from a list of tools.
 
@@ -132,7 +133,7 @@ class ChatAgent(Agent):
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.

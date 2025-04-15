@@ -51,7 +51,7 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
         return self.key_prefix + self.session_id
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from Upstash Redis"""
         _items = self.redis_client.lrange(self.key, 0, -1)
         items = [json.loads(m) for m in _items[::-1]]

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 from warnings import warn
 
 from langchain_core.agents import AgentAction
@@ -372,7 +373,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         self,
         *,
         prediction: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         input: str,
         reference: Optional[str] = None,
         **kwargs: Any,
@@ -394,7 +395,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         self,
         *,
         prediction: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         input: str,
         reference: Optional[str] = None,
         **kwargs: Any,
@@ -425,7 +426,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         self,
         *,
         prediction: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         input: str,
         reference: Optional[str] = None,
         **kwargs: Any,
@@ -455,7 +456,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         self,
         *,
         prediction: str,
-        agent_trajectory: Sequence[Tuple[AgentAction, str]],
+        agent_trajectory: Sequence[tuple[AgentAction, str]],
         input: str,
         reference: Optional[str] = None,
         **kwargs: Any,

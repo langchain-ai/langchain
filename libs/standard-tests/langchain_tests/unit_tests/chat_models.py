@@ -161,6 +161,17 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
+    def supports_image_urls(self) -> bool:
+        """(bool) whether the chat model supports image inputs from URLs, defaults to
+        ``False``."""
+        return False
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        """(bool) whether the chat model supports PDF inputs, defaults to ``False``."""
+        return False
+
+    @property
     def supports_video_inputs(self) -> bool:
         """(bool) whether the chat model supports video inputs, efaults to ``False``.
         No current tests are written for this feature."""
@@ -373,13 +384,21 @@ class ChatModelUnitTests(ChatModelTests):
 
         .. code-block:: python
 
-            [
-                {"type": "text", "text": "describe the weather in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ]
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "<base64 image data>",
+                "mime_type": "image/jpeg",  # or appropriate mime-type
+            }
+
+        In addition to OpenAI-style content blocks:
+
+        .. code-block:: python
+
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            }
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
@@ -389,6 +408,59 @@ class ChatModelUnitTests(ChatModelTests):
 
             @property
             def supports_image_inputs(self) -> bool:
+                return True
+
+    .. dropdown:: supports_image_urls
+
+        Boolean property indicating whether the chat model supports image inputs from
+        URLs. Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://...",
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_urls(self) -> bool:
+                return True
+
+    .. dropdown:: supports_pdf_inputs
+
+        Boolean property indicating whether the chat model supports PDF inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "file",
+                "source_type": "base64",
+                "data": "<base64 file data>",
+                "mime_type": "application/pdf",
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_pdf_inputs(self) -> bool:
                 return True
 
     .. dropdown:: supports_video_inputs

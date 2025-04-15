@@ -181,7 +181,7 @@ class _BaseGigaChat(Serializable):
     def get_num_tokens(self, text: str) -> int:
         """Count approximate number of tokens"""
         if self.use_api_for_tokens:
-            return self.tokens_count([text])[0].tokens  # type: ignore
+            return self.tokens_count([text])[0].tokens
         else:
             return round(len(text) / 4.6)
 

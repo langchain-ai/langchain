@@ -1,6 +1,7 @@
 import datetime
 import warnings
-from typing import Any, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union
 
 from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict

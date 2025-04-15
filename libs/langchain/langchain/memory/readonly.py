@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.memory import BaseMemory
 
@@ -9,15 +9,15 @@ class ReadOnlySharedMemory(BaseMemory):
     memory: BaseMemory
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Return memory variables."""
         return self.memory.memory_variables
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         """Load memory variables from memory."""
         return self.memory.load_memory_variables(inputs)
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Nothing should be saved or changed"""
         pass
 

@@ -309,7 +309,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         Raises:
             Exception: If the response status is not 200.
         """
-        async with session.post(**kwargs) as response:  # type: ignore
+        async with session.post(**kwargs) as response:  # type: ignore[arg-type]
             if response.status != 200:
                 raise Exception(
                     f"TextEmbed responded with an unexpected status message "

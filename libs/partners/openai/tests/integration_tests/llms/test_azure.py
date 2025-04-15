@@ -1,7 +1,8 @@
 """Test AzureOpenAI wrapper."""
 
 import os
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManager

@@ -4,7 +4,7 @@ import functools
 import logging
 from enum import Enum
 from importlib import util
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -102,7 +102,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
     @pre_init
-    def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_tiktoken_installed(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the TikTok library is installed.
 
         Args:
@@ -152,7 +152,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     )
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return the output keys of the chain.
 
         Returns:
@@ -319,7 +319,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         return f"embedding_{self.distance_metric.value}_distance"
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return the input keys of the chain.
 
         Returns:
@@ -329,9 +329,9 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compute the score for a prediction and reference.
 
         Args:
@@ -353,9 +353,9 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Asynchronously compute the score for a prediction and reference.
 
         Args:
@@ -384,8 +384,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         prediction: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -418,8 +418,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         prediction: str,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -460,7 +460,7 @@ class PairwiseEmbeddingDistanceEvalChain(
     """
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return the input keys of the chain.
 
         Returns:
@@ -474,9 +474,9 @@ class PairwiseEmbeddingDistanceEvalChain(
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compute the score for two predictions.
 
         Args:
@@ -501,9 +501,9 @@ class PairwiseEmbeddingDistanceEvalChain(
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Asynchronously compute the score for two predictions.
 
         Args:
@@ -532,8 +532,8 @@ class PairwiseEmbeddingDistanceEvalChain(
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -567,8 +567,8 @@ class PairwiseEmbeddingDistanceEvalChain(
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
