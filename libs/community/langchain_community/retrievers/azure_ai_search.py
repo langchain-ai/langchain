@@ -146,22 +146,30 @@ class AzureAISearchRetriever(BaseRetriever):
 
     def _build_search_url(self, query: str) -> str:
         url_suffix = get_from_env("", "AZURE_AI_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX)
-        if url_suffix in self.service_name and "https://" in self.service_name:
-            base_url = f"{self.service_name}/"
-        elif url_suffix in self.service_name and "https://" not in self.service_name:
-            base_url = f"https://{self.service_name}/"
-        elif url_suffix not in self.service_name and "https://" in self.service_name:
-            base_url = f"{self.service_name}.{url_suffix}/"
-        elif (
-            url_suffix not in self.service_name and "https://" not in self.service_name
-        ):
-            base_url = f"https://{self.service_name}.{url_suffix}/"
+
+        # Extract protocol and remaining part if protocol exists
+        if "://" in self.service_name:
+            protocol, remaining = self.service_name.split("://", 1)
+            has_protocol = True
         else:
-            # pass to Azure to throw a specific error
-            base_url = self.service_name
+            protocol = "https"  # Default to HTTPS
+            remaining = self.service_name
+            has_protocol = False
+
+        # Handle different based on whether service_name already contains url_suffix
+        if url_suffix in remaining:
+            base_url = (
+                f"{protocol}://{remaining}/"
+                if not has_protocol
+                else f"{self.service_name}/"
+            )
+        else:
+            base_url = f"{protocol}://{remaining}.{url_suffix}/"
+
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
         filter_param = f"&$filter={self.filter}" if self.filter else ""
+
         return base_url + endpoint_path + f"&search={query}" + top_param + filter_param
 
     @property
