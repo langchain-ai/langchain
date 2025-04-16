@@ -2143,13 +2143,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             reasoning = {
                 "effort": "medium",  # 'low', 'medium', or 'high'
-                "summary": "auto",   # 'detailed', 'auto', or None
+                "summary": "auto",  # 'detailed', 'auto', or None
             }
 
             llm = ChatOpenAI(
-                model="o4-mini",
-                use_responses_api=True,
-                model_kwargs={"reasoning": reasoning},
+                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
             )
             response = llm.invoke("What is 3^3?")
 
