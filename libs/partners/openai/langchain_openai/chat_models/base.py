@@ -194,7 +194,9 @@ def _format_data_content_block(block: dict) -> dict:
     elif block["type"] == "file":
         if block["source_type"] == "base64":
             file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
-            if (metadata := block.get("metadata")) and ("filename" in metadata):
+            if filename := block.get("filename"):
+                file["filename"] = filename
+            elif (metadata := block.get("metadata")) and ("filename" in metadata):
                 file["filename"] = metadata["filename"]
             else:
                 warnings.warn(
