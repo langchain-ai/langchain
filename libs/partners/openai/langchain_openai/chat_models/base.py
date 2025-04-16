@@ -61,6 +61,8 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    convert_to_openai_image_block,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
@@ -184,6 +186,32 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _format_data_content_block(block: dict) -> dict:
+    """Format standard data content block to format expected by OpenAI."""
+    if block["type"] == "image":
+        formatted_block = convert_to_openai_image_block(block)
+
+    elif block["type"] == "file":
+        if block["source_type"] == "base64":
+            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
+            if (metadata := block.get("metadata")) and ("filename" in metadata):
+                file["filename"] = metadata["filename"]
+            else:
+                warnings.warn(
+                    "OpenAI may require a filename for file inputs. Specify a filename "
+                    "in the metadata: {'type': 'file', 'source_type': 'base64', "
+                    "'mime_type': 'application/pdf', 'data': '...', "
+                    "'metadata': {'filename': 'my-pdf'}}"
+                )
+            formatted_block = {"type": "file", "file": file}
+        elif block["source_type"] == "id":
+            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
+    else:
+        raise ValueError(f"Block of type {block['type']} is not supported.")
+
+    return formatted_block
+
+
 def _format_message_content(content: Any) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
@@ -196,6 +224,8 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking")
             ):
                 continue
+            elif isinstance(block, dict) and is_data_content_block(block):
+                formatted_content.append(_format_data_content_block(block))
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -3121,6 +3151,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         }
                         if block["image_url"].get("detail"):
                             new_block["detail"] = block["image_url"]["detail"]
+                        new_blocks.append(new_block)
+                    elif block["type"] == "file":
+                        new_block = {"type": "input_file", **block["file"]}
                         new_blocks.append(new_block)
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)

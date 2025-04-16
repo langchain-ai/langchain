@@ -99,4 +99,4 @@ def __getattr__(attr_name: str) -> object:
 
 
 def __dir__() -> list[str]:
-    return list(__all__)
+    return __all__
