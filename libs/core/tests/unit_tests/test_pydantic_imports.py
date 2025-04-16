@@ -12,5 +12,9 @@ def test_all_models_built() -> None:
             all_ = getattr(module, "__all__", [])
             for attr_name in all_:
                 attr = getattr(module, attr_name)
-                if issubclass(attr, BaseModel):
-                    assert attr.__pydantic_complete__ is True
+                try:
+                    if issubclass(attr, BaseModel):
+                        assert attr.__pydantic_complete__ is True
+                except TypeError:
+                    # This is expected for non-class attributes
+                    pass
