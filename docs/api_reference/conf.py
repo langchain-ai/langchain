@@ -275,3 +275,7 @@ if os.environ.get("READTHEDOCS", "") == "True":
     html_context["READTHEDOCS"] = True
 
 master_doc = "index"
+
+# If a signature’s length in characters exceeds 60,
+# each parameter within the signature will be displayed on an individual logical line
+maximum_signature_line_length = 60
