@@ -146,9 +146,6 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.model_rebuild()
-
-
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     """Tool Message chunk."""
 

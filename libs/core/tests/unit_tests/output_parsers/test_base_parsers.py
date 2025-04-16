@@ -45,8 +45,6 @@ def test_base_generation_parser() -> None:
             assert isinstance(content, str)
             return content.swapcase()
 
-    StrInvertCase.model_rebuild()
-
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()
     assert chain.invoke("") == "HeLLO"

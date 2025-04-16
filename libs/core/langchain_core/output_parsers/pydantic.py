@@ -114,9 +114,6 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return self.pydantic_object
 
 
-PydanticOutputParser.model_rebuild()
-
-
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.
 
 As an example, for the schema {{"properties": {{"foo": {{"title": "Foo", "description": "a list of strings", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
