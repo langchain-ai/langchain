@@ -2,12 +2,16 @@ import importlib
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from thirdai import neural_db as ndb
 
 
 class NeuralDBVectorStore(VectorStore):
@@ -25,10 +29,10 @@ class NeuralDBVectorStore(VectorStore):
             vectorstore = NeuralDBVectorStore(db=db)
     """
 
-    def __init__(self, db: Any) -> None:
+    def __init__(self, db: "ndb.NeuralDB") -> None:
         self.db = db
 
-    db: Any = None  #: :meta private:
+    db: "ndb.NeuralDB" = None  #: :meta private:
     """NeuralDB instance"""
 
     model_config = ConfigDict(
@@ -36,7 +40,7 @@ class NeuralDBVectorStore(VectorStore):
     )
 
     @staticmethod
-    def _verify_thirdai_library(thirdai_key: Optional[str] = None):  # type: ignore[no-untyped-def]
+    def _verify_thirdai_library(thirdai_key: Optional[str] = None) -> None:
         try:
             from thirdai import licensing
 
@@ -50,11 +54,11 @@ class NeuralDBVectorStore(VectorStore):
             )
 
     @classmethod
-    def from_scratch(  # type: ignore[no-untyped-def, no-untyped-def]
+    def from_scratch(
         cls,
         thirdai_key: Optional[str] = None,
-        **model_kwargs,
-    ):
+        **model_kwargs: Any,
+    ) -> Self:
         """
         Create a NeuralDBVectorStore from scratch.
 
@@ -84,11 +88,11 @@ class NeuralDBVectorStore(VectorStore):
         return cls(db=ndb.NeuralDB(**model_kwargs))  # type: ignore[call-arg]
 
     @classmethod
-    def from_checkpoint(  # type: ignore[no-untyped-def]
+    def from_checkpoint(
         cls,
         checkpoint: Union[str, Path],
         thirdai_key: Optional[str] = None,
-    ):
+    ) -> Self:
         """
         Create a NeuralDBVectorStore with a base model from a saved checkpoint
 
@@ -163,13 +167,13 @@ class NeuralDBVectorStore(VectorStore):
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]
         return [str(offset + i) for i in range(len(texts))]  # type: ignore[arg-type]
 
-    def insert(  # type: ignore[no-untyped-def, no-untyped-def]
+    def insert(
         self,
-        sources: List[Any],
+        sources: list[Union[str, "ndb.Document"]],
         train: bool = True,
         fast_mode: bool = True,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> list[str]:
         """Inserts files / document sources into the vectorstore.
 
         Args:
@@ -180,14 +184,16 @@ class NeuralDBVectorStore(VectorStore):
             Defaults to True.
         """
         sources = self._preprocess_sources(sources)
-        self.db.insert(
+        return self.db.insert(
             sources=sources,
             train=train,
             fast_approximation=fast_mode,
             **kwargs,
         )
 
-    def _preprocess_sources(self, sources):  # type: ignore[no-untyped-def]
+    def _preprocess_sources(
+        self, sources: list[Union[str, "ndb.Document"]]
+    ) -> list["ndb.Document"]:
         """Checks if the provided sources are string paths. If they are, convert
         to NeuralDB document objects.
 
@@ -219,7 +225,7 @@ class NeuralDBVectorStore(VectorStore):
                     )
         return preprocessed_sources
 
-    def upvote(self, query: str, document_id: Union[int, str]):  # type: ignore[no-untyped-def]
+    def upvote(self, query: str, document_id: Union[int, str]) -> None:
         """The vectorstore upweights the score of a document for a specific query.
         This is useful for fine-tuning the vectorstore to user behavior.
 
@@ -229,7 +235,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         self.db.text_to_result(query, int(document_id))
 
-    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]):  # type: ignore[no-untyped-def]
+    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]) -> None:
         """Given a batch of (query, document id) pairs, the vectorstore upweights
         the scores of the document for the corresponding queries.
         This is useful for fine-tuning the vectorstore to user behavior.
@@ -242,7 +248,7 @@ class NeuralDBVectorStore(VectorStore):
             [(query, int(doc_id)) for query, doc_id in query_id_pairs]
         )
 
-    def associate(self, source: str, target: str):  # type: ignore[no-untyped-def]
+    def associate(self, source: str, target: str) -> None:
         """The vectorstore associates a source phrase with a target phrase.
         When the vectorstore sees the source phrase, it will also consider results
         that are relevant to the target phrase.
@@ -253,7 +259,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         self.db.associate(source, target)
 
-    def associate_batch(self, text_pairs: List[Tuple[str, str]]):  # type: ignore[no-untyped-def]
+    def associate_batch(self, text_pairs: List[Tuple[str, str]]) -> None:
         """Given a batch of (source, target) pairs, the vectorstore associates
         each source phrase with the corresponding target phrase.
 
@@ -291,7 +297,7 @@ class NeuralDBVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
 
-    def save(self, path: str):  # type: ignore[no-untyped-def]
+    def save(self, path: str) -> None:
         """Saves a NeuralDB instance to disk. Can be loaded into memory by
         calling NeuralDB.from_checkpoint(path)
 
@@ -325,10 +331,10 @@ class NeuralDBClientVectorStore(VectorStore):
 
     """
 
-    def __init__(self, db: Any) -> None:
+    def __init__(self, db: "ndb.NeuralDBClient") -> None:
         self.db = db
 
-    db: Any = None  #: :meta private:
+    db: "ndb.NeuralDBClient" = None  #: :meta private:
     """NeuralDB Client instance"""
 
     model_config = ConfigDict(
@@ -362,7 +368,7 @@ class NeuralDBClientVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
 
-    def insert(self, documents: List[Dict[str, Any]]):  # type: ignore[no-untyped-def, no-untyped-def]
+    def insert(self, documents: List[Dict[str, Any]]) -> Any:
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
 
@@ -446,7 +452,7 @@ class NeuralDBClientVectorStore(VectorStore):
         """
         return self.db.insert(documents)
 
-    def remove_documents(self, source_ids: List[str]):  # type: ignore[no-untyped-def]
+    def remove_documents(self, source_ids: list[str]) -> None:
         """
         Deletes documents from the VectorStore using source ids.
 

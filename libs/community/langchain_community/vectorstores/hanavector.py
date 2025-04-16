@@ -15,7 +15,6 @@ from typing import (
     Optional,
     Pattern,
     Tuple,
-    Type,
 )
 
 import numpy as np
@@ -23,6 +22,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import Self
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -149,7 +149,7 @@ class HanaDB(VectorStore):
         for column_name in self.specific_metadata_columns:
             self._check_column(self.table_name, column_name)
 
-    def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
+    def _table_exists(self, table_name: str) -> bool:
         sql_str = (
             "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA"
             " AND TABLE_NAME = ?"
@@ -165,9 +165,13 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(  # type: ignore[no-untyped-def]
-        self, table_name, column_name, column_type=None, column_length=None
-    ):
+    def _check_column(
+        self,
+        table_name: str,
+        column_name: str,
+        column_type: Optional[list[str]] = None,
+        column_length: Optional[int] = None,
+    ) -> None:
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -406,8 +410,8 @@ class HanaDB(VectorStore):
         return []
 
     @classmethod
-    def from_texts(  # type: ignore[no-untyped-def, override]
-        cls: Type[HanaDB],
+    def from_texts(  # type: ignore[override]
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -420,7 +424,7 @@ class HanaDB(VectorStore):
         vector_column_length: int = default_vector_column_length,
         *,
         specific_metadata_columns: Optional[List[str]] = None,
-    ):
+    ) -> Self:
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
             1. Embeds documents.
@@ -512,12 +516,12 @@ class HanaDB(VectorStore):
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
-        query_tuple = (embedding_as_str,) + tuple(query_tuple)
+        query_params = (embedding_as_str,) + tuple(query_tuple)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
             cur = self.connection.cursor()
-            cur.execute(sql_str, query_tuple)
+            cur.execute(sql_str, query_params)
             if cur.has_result_set():
                 rows = cur.fetchall()
                 for row in rows:
@@ -567,15 +571,15 @@ class HanaDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def _create_where_by_filter(self, filter):  # type: ignore[no-untyped-def]
-        query_tuple = []
+    def _create_where_by_filter(self, filter: Optional[dict]) -> Tuple[str, list[Any]]:
+        query_tuple: list[Any] = []
         where_str = ""
         if filter:
             where_str, query_tuple = self._process_filter_object(filter)
             where_str = " WHERE " + where_str
         return where_str, query_tuple
 
-    def _process_filter_object(self, filter):  # type: ignore[no-untyped-def]
+    def _process_filter_object(self, filter: Optional[dict]) -> Tuple[str, list[Any]]:
         query_tuple = []
         where_str = ""
         if filter:

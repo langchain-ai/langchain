@@ -1,6 +1,6 @@
 import json
 from collections import deque
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 import requests
@@ -39,7 +39,7 @@ def mock_response() -> requests.Response:
     return response
 
 
-def mock_response_stream():  # type: ignore[no-untyped-def]
+def mock_response_stream() -> requests.Response:
     mock_response = deque(
         [
             b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',
@@ -48,7 +48,7 @@ def mock_response_stream():  # type: ignore[no-untyped-def]
     )
 
     class MockRaw:
-        def read(self, chunk_size):  # type: ignore[no-untyped-def]
+        def read(self, chunk_size: int) -> Optional[bytes]:
             try:
                 return mock_response.popleft()
             except IndexError:
@@ -68,7 +68,13 @@ def test_call(monkeypatch: MonkeyPatch) -> None:
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+    ) -> requests.Response:
         assert url == "http://llamafile-host:8080/completion"
         assert headers == {
             "Content-Type": "application/json",
@@ -94,7 +100,13 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch) -> None:
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+    ) -> requests.Response:
         assert url == "http://llamafile-host:8080/completion"
         assert headers == {
             "Content-Type": "application/json",
@@ -138,7 +150,13 @@ def test_streaming(monkeypatch: MonkeyPatch) -> None:
         streaming=True,
     )
 
-    def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+    ) -> requests.Response:
         assert url == "http://llamafile-hostname:8080/completion"
         assert headers == {
             "Content-Type": "application/json",

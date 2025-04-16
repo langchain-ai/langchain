@@ -77,8 +77,11 @@ class ZapierNLAWrapper(BaseModel):
                 response.raise_for_status()
                 return await response.json()
 
-    def _create_action_payload(  # type: ignore[no-untyped-def]
-        self, instructions: str, params: Optional[Dict] = None, preview_only=False
+    def _create_action_payload(
+        self,
+        instructions: str,
+        params: Optional[Dict] = None,
+        preview_only: bool = False,
     ) -> Dict:
         """Create a payload for an action."""
         data = params if params else {}
@@ -95,12 +98,12 @@ class ZapierNLAWrapper(BaseModel):
         """Create a url for an action."""
         return self.zapier_nla_api_base + f"exposed/{action_id}/execute/"
 
-    def _create_action_request(  # type: ignore[no-untyped-def]
+    def _create_action_request(
         self,
         action_id: str,
         instructions: str,
         params: Optional[Dict] = None,
-        preview_only=False,
+        preview_only: bool = False,
     ) -> Request:
         data = self._create_action_payload(instructions, params, preview_only)
         return Request(
@@ -259,39 +262,37 @@ class ZapierNLAWrapper(BaseModel):
         )
         return response["result"]
 
-    def run_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    def run_as_str(self, *args: Any, **kwargs: Any) -> str:
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
         return json.dumps(data)
 
-    async def arun_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    async def arun_as_str(self, *args: Any, **kwargs: Any) -> str:
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = await self.arun(*args, **kwargs)
         return json.dumps(data)
 
-    def preview_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    def preview_as_str(self, *args: Any, **kwargs: Any) -> str:
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.preview(*args, **kwargs)
         return json.dumps(data)
 
-    async def apreview_as_str(  # type: ignore[no-untyped-def]
-        self, *args, **kwargs
-    ) -> str:
+    async def apreview_as_str(self, *args: Any, **kwargs: Any) -> str:
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = await self.apreview(*args, **kwargs)
         return json.dumps(data)
 
-    def list_as_str(self) -> str:  # type: ignore[no-untyped-def]
+    def list_as_str(self) -> str:
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = self.list()
         return json.dumps(actions)
 
-    async def alist_as_str(self) -> str:  # type: ignore[no-untyped-def]
+    async def alist_as_str(self) -> str:
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = await self.alist()

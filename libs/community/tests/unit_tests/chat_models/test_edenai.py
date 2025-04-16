@@ -43,7 +43,7 @@ def test_edenai_messages_formatting(messages: List[BaseMessage], expected: str) 
     ("role", "role_response"),
     [("ai", "assistant"), ("human", "user"), ("chat", "user")],
 )
-def test_edenai_message_role(role: str, role_response) -> None:  # type: ignore[no-untyped-def]
+def test_edenai_message_role(role: str, role_response: str) -> None:
     role = _message_role(role)
     assert role == role_response
 

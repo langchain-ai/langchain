@@ -159,18 +159,20 @@ def _create_retry_decorator(llm: YandexGPTEmbeddings) -> Callable[[Any], Any]:
     )
 
 
-def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> Any:
+def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> list[list[float]]:
     """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
-    def _completion_with_retry(**_kwargs: Any) -> Any:
+    def _completion_with_retry(**_kwargs: Any) -> list[list[float]]:
         return _make_request(llm, **_kwargs)
 
     return _completion_with_retry(**kwargs)
 
 
-def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # type: ignore[no-untyped-def]
+def _make_request(
+    self: YandexGPTEmbeddings, texts: List[str], **kwargs: Any
+) -> list[list[float]]:
     try:
         import grpc
 

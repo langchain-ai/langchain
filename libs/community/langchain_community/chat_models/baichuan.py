@@ -575,8 +575,8 @@ class ChatBaichuan(BaseChatModel):
         )
         return res
 
-    def _create_payload_parameters(  # type: ignore[no-untyped-def]
-        self, messages: List[BaseMessage], **kwargs
+    def _create_payload_parameters(
+        self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         parameters = {**self._default_params, **kwargs}
         temperature = parameters.pop("temperature", 0.3)
@@ -600,7 +600,7 @@ class ChatBaichuan(BaseChatModel):
 
         return payload
 
-    def _create_headers_parameters(self, **kwargs) -> Dict[str, Any]:  # type: ignore[no-untyped-def]
+    def _create_headers_parameters(self, **kwargs: Any) -> Dict[str, Any]:
         parameters = {**self._default_params, **kwargs}
         default_headers = parameters.pop("headers", {})
         api_key = ""

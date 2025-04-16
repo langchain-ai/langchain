@@ -1,5 +1,6 @@
 """Test OCI Generative AI LLM service"""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,7 +10,7 @@ from langchain_community.llms.oci_generative_ai import OCIGenAI
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):  # type: ignore[no-untyped-def]
+    def __getattr__(self, val: Any) -> Any:
         return self[val]
 
 
@@ -29,7 +30,7 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
     provider = model_id.split(".")[0].lower()
 
-    def mocked_response(*args):  # type: ignore[no-untyped-def]
+    def mocked_response(*args: Any) -> MockResponseDict:
         response_text = "This is the completion."
 
         if provider == "cohere":
@@ -75,6 +76,7 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
+        raise ValueError("Unsupported provider")
 
     monkeypatch.setattr(llm.client, "generate_text", mocked_response)
     output = llm.invoke("This is a prompt.", temperature=0.2)

@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, AsyncGenerator, Generator, cast
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, cast
 from unittest.mock import patch
 
 import pytest
@@ -19,6 +19,9 @@ from langchain_community.chat_models.naver import (
     _convert_message_to_naver_chat_message,
     _convert_naver_chat_message_to_message,
 )
+
+if TYPE_CHECKING:
+    from httpx_sse import ServerSentEvent
 
 os.environ["NCP_CLOVASTUDIO_API_KEY"] = "test_api_key"
 os.environ["NCP_APIGW_API_KEY"] = "test_gw_key"
@@ -131,7 +134,7 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
     assert completed
 
 
-def _make_completion_response_from_token(token: str):  # type: ignore[no-untyped-def]
+def _make_completion_response_from_token(token: str) -> "ServerSentEvent":
     from httpx_sse import ServerSentEvent
 
     return ServerSentEvent(

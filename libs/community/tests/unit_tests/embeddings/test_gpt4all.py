@@ -20,7 +20,7 @@ class MockEmbed4All(MagicMock):
         n_threads: Optional[int] = None,
         device: Optional[str] = None,
         **kwargs: Any,
-    ):  # type: ignore[no-untyped-def]
+    ):
         assert model_name == _GPT4ALL_MODEL_NAME
 
 

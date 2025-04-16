@@ -943,7 +943,7 @@ class DeepLake(VectorStore):
         return self.vectorstore.dataset
 
     @classmethod
-    def _validate_kwargs(cls, kwargs, method_name):  # type: ignore[no-untyped-def]
+    def _validate_kwargs(cls, kwargs: Any, method_name: str) -> None:
         if kwargs:
             valid_items = cls._get_valid_args(method_name)
             unsupported_items = cls._get_unsupported_items(kwargs, valid_items)
@@ -955,14 +955,14 @@ class DeepLake(VectorStore):
                 )
 
     @classmethod
-    def _get_valid_args(cls, method_name):  # type: ignore[no-untyped-def]
+    def _get_valid_args(cls, method_name: str) -> list[str]:
         if method_name == "search":
             return cls._valid_search_kwargs
         else:
             return []
 
     @staticmethod
-    def _get_unsupported_items(kwargs, valid_items):  # type: ignore[no-untyped-def]
+    def _get_unsupported_items(kwargs: Any, valid_items: list[str]) -> Optional[str]:
         kwargs = {k: v for k, v in kwargs.items() if k not in valid_items}
         unsupported_items = None
         if kwargs:

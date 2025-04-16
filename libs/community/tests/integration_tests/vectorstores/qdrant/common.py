@@ -15,7 +15,7 @@ def qdrant_is_not_running() -> bool:
         return True
 
 
-def assert_documents_equals(actual: List[Document], expected: List[Document]):  # type: ignore[no-untyped-def]
+def assert_documents_equals(actual: List[Document], expected: List[Document]) -> None:
     assert len(actual) == len(expected)
 
     for actual_doc, expected_doc in zip(actual, expected):

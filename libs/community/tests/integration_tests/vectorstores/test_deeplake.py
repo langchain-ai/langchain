@@ -1,5 +1,7 @@
 """Test Deep Lake functionality."""
 
+from collections.abc import Iterator
+
 import pytest
 from langchain_core.documents import Document
 from pytest import FixtureRequest
@@ -9,7 +11,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 @pytest.fixture
-def deeplake_datastore() -> DeepLake:  # type: ignore[misc]
+def deeplake_datastore() -> Iterator[DeepLake]:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = DeepLake.from_texts(
@@ -53,7 +55,7 @@ def test_deeplake_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
-def test_deeplake_with_persistence(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
+def test_deeplake_with_persistence(deeplake_datastore: DeepLake) -> None:
     """Test end to end construction and search, with persistence."""
     output = deeplake_datastore.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -73,7 +75,7 @@ def test_deeplake_with_persistence(deeplake_datastore) -> None:  # type: ignore[
     # Or on program exit
 
 
-def test_deeplake_overwrite_flag(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
+def test_deeplake_overwrite_flag(deeplake_datastore: DeepLake) -> None:
     """Test overwrite behavior"""
     dataset_path = deeplake_datastore.vectorstore.dataset_handler.path
 
@@ -109,7 +111,7 @@ def test_deeplake_overwrite_flag(deeplake_datastore) -> None:  # type: ignore[no
         output = docsearch.similarity_search("foo", k=1)
 
 
-def test_similarity_search(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
+def test_similarity_search(deeplake_datastore: DeepLake) -> None:
     """Test similarity search."""
     distance_metric = "cos"
     output = deeplake_datastore.similarity_search(
