@@ -606,3 +606,7 @@ packages:
 - name: langchain-ydb
   path: .
   repo: ydb-platform/langchain-ydb
+- name: langchain-galaxia-retriever
+  provider_page: galaxia
+  path: .
+  repo: rrozanski-smabbler/galaxia-langchain
