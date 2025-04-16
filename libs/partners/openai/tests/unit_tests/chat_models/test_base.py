@@ -52,6 +52,7 @@ from langchain_openai.chat_models.base import (
     _create_usage_metadata,
     _format_message_content,
     _oai_structured_outputs_parser,
+    _resize,
 )
 
 
@@ -1020,6 +1021,44 @@ def test_structured_outputs_parser() -> None:
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(deserialized.message)
     assert result == parsed_response
+
+
+def test_image_resize() -> None:
+    ret1 = _resize(2049, 2049)
+    assert ret1[0] == 2048
+    assert ret1[1] == 2048
+
+    ret1_2 = _resize(2049, 204)
+    assert ret1_2[0] == 2048
+    assert ret1_2[1] == 203
+
+    ret1_3 = _resize(204, 2049)
+    assert ret1_3[0] == 203
+    assert ret1_3[1] == 2048
+
+    ret2 = _resize(769, 769)
+    assert ret2[0] == 768
+    assert ret2[1] == 768
+
+    ret2_2 = _resize(1769, 769)
+    assert ret2_2[0] == 1766
+    assert ret2_2[1] == 768
+
+    ret2_3 = _resize(769, 1769)
+    assert ret2_3[0] == 768
+    assert ret2_3[1] == 333
+
+    ret3 = _resize(767, 767)
+    assert ret3[0] == 767
+    assert ret3[1] == 767
+
+    ret3_2 = _resize(767, 123)
+    assert ret3_2[0] == 767
+    assert ret3_2[1] == 123
+
+    ret3_3 = _resize(123, 767)
+    assert ret3_3[0] == 123
+    assert ret3_3[1] == 767
 
 
 def test__construct_lc_result_from_responses_api_error_handling() -> None:
