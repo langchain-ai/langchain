@@ -42,6 +42,38 @@ MODEL_COST_PER_1K_TOKENS = {
     # OpenAI o1-mini output
     "o1-mini-completion": 0.012,
     "o1-mini-2024-09-12-completion": 0.012,
+    # gpt-4.1 input
+    "gpt-4.1": 0.002,
+    "gpt-4.1-cached": 0.0005,
+    "gpt-4.1-2025-04-14": 0.002,
+    "gpt-4.1-2025-04-14-cached": 0.0005,
+    # gpt-4.1 output
+    "gpt-4.1-completion": 0.008,
+    "gpt-4.1-2025-04-14-completion": 0.008,
+    # gpt-4.1-mini input
+    "gpt-4.1-mini": 0.0004,
+    "gpt-4.1-mini-cached": 0.0001,
+    "gpt-4.1-mini-2025-04-14": 0.0004,
+    "gpt-4.1-mini-2025-04-14-cached": 0.0001,
+    # gpt-4.1-mini output
+    "gpt-4.1-mini-completion": 0.0016,
+    "gpt-4.1-mini-2025-04-14-completion": 0.0016,
+    # gpt-4.1-nano input
+    "gpt-4.1-nano": 0.0001,
+    "gpt-4.1-nano-cached": 0.000025,
+    "gpt-4.1-nano-2025-04-14": 0.0001,
+    "gpt-4.1-nano-2025-04-14-cached": 0.000025,
+    # gpt-4.1-nano output
+    "gpt-4.1-nano-completion": 0.0004,
+    "gpt-4.1-nano-2025-04-14-completion": 0.0004,
+    # gpt-4.5-preview input
+    "gpt-4.5-preview": 0.075,
+    "gpt-4.5-preview-cached": 0.0375,
+    "gpt-4.5-preview-2025-02-27": 0.075,
+    "gpt-4.5-preview-2025-02-27-cached": 0.0375,
+    # gpt-4.5-preview output
+    "gpt-4.5-preview-completion": 0.15,
+    "gpt-4.5-preview-2025-02-27-completion": 0.15,
     # GPT-4o-mini input
     "gpt-4o-mini": 0.00015,
     "gpt-4o-mini-cached": 0.000075,
@@ -226,6 +258,8 @@ def standardize_model_name(
         token_type == TokenType.PROMPT_CACHED
         and (
             model_name.startswith("gpt-4o")
+            or model_name.startswith("gpt-4.1") # 4.0 doesnt have cached but 4.1,4.5-preview have cached pricing.
+            or model_name.startswith("gpt-4.5")
             or model_name.startswith("o1")
             or model_name.startswith("o3")
         )
