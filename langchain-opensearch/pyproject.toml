@@ -4,7 +4,8 @@ version = "0.1.0"
 dependencies = [
     "opensearch-py>=2.0.0",
     "langchain-core>=0.3.0",
-     "numpy>=1.24.0",
+    "numpy>=1.24.0",
+    "opensearch-py[async]>=2.0.0",
 ]
 description = "OpenSearch integration for LangChain"
 readme = "README.md"

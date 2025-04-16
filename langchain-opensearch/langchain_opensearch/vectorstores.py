@@ -139,27 +139,26 @@ def _bulk_ingest_embeddings(
     #     requests.append(request)
     #     return_ids.append(_id)
 
-
     for i, text in enumerate(texts):
         metadata = metadatas[i] if metadatas else {}
         _id = ids[i] if ids else str(uuid.uuid4())
-        
+
         # Prepare the document source
         source_doc = {
             text_field: text,
             vector_field: embeddings[i],
-            "metadata": metadata
+            "metadata": metadata,
         }
 
         # Create the action dictionary for the bulk helper
         action = {
             "_index": index_name,
             "_id": _id,
-            "_op_type": "index", 
-            "_source": source_doc 
+            "_op_type": "index",
+            "_source": source_doc,
         }
-        
-        requests.append(action) 
+
+        requests.append(action)
         return_ids.append(_id)
 
     bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
@@ -216,27 +215,26 @@ async def _abulk_ingest_embeddings(
     #     requests.append(request)
     #     return_ids.append(_id)
 
-
     for i, text in enumerate(texts):
         metadata = metadatas[i] if metadatas else {}
         _id = ids[i] if ids else str(uuid.uuid4())
-        
+
         # Prepare the document source
         source_doc = {
             text_field: text,
             vector_field: embeddings[i],
-            "metadata": metadata
+            "metadata": metadata,
         }
 
         # Create the action dictionary for the bulk helper
         action = {
             "_index": index_name,
             "_id": _id,
-            "_op_type": "index", 
-            "_source": source_doc 
+            "_op_type": "index",
+            "_source": source_doc,
         }
-        
-        requests.append(action) 
+
+        requests.append(action)
         return_ids.append(_id)
 
     await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
@@ -500,27 +498,27 @@ class OpenSearchVectorStore(VectorStore):
         self,
         index_name: str,
         embedding_function: Embeddings,
-        client: Optional[Any] = None, # Client Argument
-        opensearch_url: Optional[str] = None, # opensearch_url for testing
+        client: Optional[Any] = None,  # Client Argument
+        opensearch_url: Optional[str] = None,  # opensearch_url for testing
         # opensearch_url: str,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
-        super().__init__() #superclass init
+        super().__init__()  # superclass init
         if client is not None:
             self.client = client
-            self.async_client = None 
+            self.async_client = None
         elif opensearch_url is not None:
             self.client = _get_opensearch_client(opensearch_url, **kwargs)
             try:
-                self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
+                self.async_client = _get_async_opensearch_client(
+                    opensearch_url, **kwargs
+                )
             except ImportError:
                 warnings.warn("Async client could not be initialized.")
                 self.async_client = None
         else:
-            raise ValueError(
-                "Either 'client' or 'opensearch_url' must be provided."
-            )
+            raise ValueError("Either 'client' or 'opensearch_url' must be provided.")
 
         self.embedding_function = embedding_function
         self.index_name = index_name
@@ -1665,7 +1663,7 @@ class OpenSearchVectorStore(VectorStore):
 
                 # from langchain_community.vectorstores import OpenSearchVectorSearch
                 from langchain_opensearch.vectorstores import OpenSearchVectorStore
-                
+
                 # from langchain_community.embeddings import OpenAIEmbeddings
                 # embedder = OpenAIEmbeddings()
 

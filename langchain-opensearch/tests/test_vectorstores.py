@@ -25,7 +25,7 @@ class TestOpenSearchVectorStore(unittest.TestCase):
         vector_store = OpenSearchVectorStore(
             client=mock_client,
             index_name="test_index",
-            embedding_function=mock_embeddings
+            embedding_function=mock_embeddings,
         )
 
         texts = ["Hello", "World"]
@@ -37,10 +37,10 @@ class TestOpenSearchVectorStore(unittest.TestCase):
         args, kwargs = mock_bulk_helper.call_args
         self.assertIs(args[0], mock_client)
         self.assertEqual(len(args[1]), len(texts))
-        self.assertEqual(args[1][0]['_op_type'], 'index')
-        self.assertIn('_source', args[1][0])
-        self.assertEqual(args[1][0]['_source']['text'], texts[0])
+        self.assertEqual(args[1][0]["_op_type"], "index")
+        self.assertIn("_source", args[1][0])
+        self.assertEqual(args[1][0]["_source"]["text"], texts[0])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
