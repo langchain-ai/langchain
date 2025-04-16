@@ -22,6 +22,10 @@
 	// 	"ghcr.io/devcontainers-contrib/features/poetry:2": {}
 	// }
 
+	"features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+	}
+
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
