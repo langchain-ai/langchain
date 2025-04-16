@@ -19,7 +19,6 @@ __all__ = ["dumpd", "dumps", "load", "loads", "Serializable"]
 _dynamic_imports = {
     "dumpd": "dump",
     "dumps": "dump",
-    "load": "load",
     "loads": "load",
     "Serializable": "serializable",
 }
