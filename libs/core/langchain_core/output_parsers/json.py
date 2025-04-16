@@ -6,7 +6,7 @@ import json
 from json import JSONDecodeError
 from typing import Annotated, Any, Optional, TypeVar, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 import pydantic
 from pydantic import SkipValidation
 

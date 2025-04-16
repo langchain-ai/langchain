@@ -65,7 +65,7 @@ lint = [
 ]
 dev = ["jupyter<2.0.0,>=1.0.0", "setuptools<68.0.0,>=67.6.1", "langchain-core"]
 typing = [
-    "mypy<2.0,>=1.12",
+    "mypy<2.0,>=1.15",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
     "types-toml<1.0.0.0,>=0.10.8.1",
@@ -103,7 +103,7 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "PGH003", "T201"]
 
 [tool.coverage.run]
 omit = ["tests/*"]

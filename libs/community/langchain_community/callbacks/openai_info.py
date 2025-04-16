@@ -218,12 +218,17 @@ def standardize_model_name(
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
         or model_name.startswith("o1-")
+        or model_name.startswith("o3-")
         or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"
     if (
         token_type == TokenType.PROMPT_CACHED
-        and (model_name.startswith("gpt-4o") or model_name.startswith("o1"))
+        and (
+            model_name.startswith("gpt-4o")
+            or model_name.startswith("o1")
+            or model_name.startswith("o3")
+        )
         and not (model_name.startswith("gpt-4o-2024-05-13"))
     ):
         return model_name + "-cached"

@@ -18,7 +18,7 @@ from langchain_core._api.deprecation import warn_deprecated
 try:
     from pydantic.v1 import *  # noqa: F403
 except ImportError:
-    from pydantic import *  # noqa: F403
+    from pydantic import *  # type: ignore[assignment,no-redef] # noqa: F403
 
 
 try:

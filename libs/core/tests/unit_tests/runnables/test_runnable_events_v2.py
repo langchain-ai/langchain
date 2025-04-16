@@ -2759,9 +2759,7 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
         return x + 1
 
     # Ignoring type due to @tool not returning correct type annotations
-    events = await _collect_events(
-        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
-    )
+    events = await _collect_events(foo.astream_events({"x": 2}, version="v2"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [

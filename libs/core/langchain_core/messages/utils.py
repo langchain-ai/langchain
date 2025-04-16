@@ -237,7 +237,7 @@ def _create_message_from_message_type(
     if additional_kwargs:
         if response_metadata := additional_kwargs.pop("response_metadata", None):
             kwargs["response_metadata"] = response_metadata
-        kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+        kwargs["additional_kwargs"] = additional_kwargs
         additional_kwargs.update(additional_kwargs.pop("additional_kwargs", {}))
     if id is not None:
         kwargs["id"] = id
@@ -889,7 +889,7 @@ def trim_messages(
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
         else:
-            list_token_counter = token_counter  # type: ignore[assignment]
+            list_token_counter = token_counter
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "

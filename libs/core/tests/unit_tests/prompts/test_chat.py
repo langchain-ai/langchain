@@ -6,7 +6,7 @@ from typing import Any, Union, cast
 import pytest
 from packaging import version
 from pydantic import ValidationError
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -15,28 +15,31 @@ from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
     get_buffer_string,
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
-    BaseMessagePromptTemplate,
-    ChatMessage,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    _convert_to_message,
+    _convert_to_message_template,
 )
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import (
     PYDANTIC_VERSION,
 )
 from tests.unit_tests.pydantic_utils import _normalize_schema
+
+CUR_DIR = Path(__file__).parent.absolute().resolve()
 
 
 @pytest.fixture
@@ -82,7 +85,7 @@ def chat_prompt_template(
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
     )
 
 
@@ -403,12 +406,12 @@ def test_chat_invalid_input_variables_extra() -> None:
         ),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=["foo"],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
         == []
     )
 
@@ -420,19 +423,19 @@ def test_chat_invalid_input_variables_missing() -> None:
         match=re.escape("Got mismatched input_variables. Expected: {'foo'}. Got: []"),
     ):
         ChatPromptTemplate(
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             input_variables=[],
-            validate_template=True,  # type: ignore[arg-type]
+            validate_template=True,
         )
     assert ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
-        input_variables=[],  # type: ignore[arg-type]
+        messages=messages,
+        input_variables=[],
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=messages)
     assert prompt.input_variables == ["foo"]
 
 
@@ -443,7 +446,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -457,9 +460,9 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
-        messages=messages,  # type: ignore[arg-type]
-        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
+    prompt = ChatPromptTemplate(
+        messages=messages,
+        partial_variables={"formatins": "some structure"},
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}
@@ -521,7 +524,7 @@ def test_convert_to_message(
     args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
 ) -> None:
     """Test convert to message."""
-    assert _convert_to_message(args) == expected
+    assert _convert_to_message_template(args) == expected
 
 
 def test_chat_prompt_template_indexing() -> None:
@@ -566,7 +569,7 @@ def test_convert_to_message_is_strict() -> None:
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
-        _convert_to_message(("meow", "question"))
+        _convert_to_message_template(("meow", "question"))
 
 
 def test_chat_message_partial() -> None:
@@ -955,7 +958,7 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     assert load(dumpd(prompt)) == prompt
 
 
-async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
+def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     """Test chat prompt template ser/des."""
     template = ChatPromptTemplate(
         [
@@ -1006,6 +1009,89 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     assert load(dumpd(template)) == template
 
 
+@pytest.mark.xfail(
+    reason=(
+        "In a breaking release, we can update `_convert_to_message_template` to use "
+        "_DictMessagePromptTemplate for all `dict` inputs, allowing for templatization "
+        "of message attributes outside content blocks. That would enable the below "
+        "test to pass."
+    )
+)
+def test_chat_tmpl_dict_msg() -> None:
+    template = ChatPromptTemplate(
+        [
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "{text1}",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                ],
+                "name": "{name1}",
+                "tool_calls": [
+                    {
+                        "name": "{tool_name1}",
+                        "args": {"arg1": "{tool_arg1}"},
+                        "id": "1",
+                        "type": "tool_call",
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "content": "{tool_content2}",
+                "tool_call_id": "1",
+                "name": "{tool_name1}",
+            },
+        ]
+    )
+    expected = [
+        AIMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "important message",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            name="foo",
+            tool_calls=[
+                {
+                    "name": "do_stuff",
+                    "args": {"arg1": "important arg1"},
+                    "id": "1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("foo", name="do_stuff", tool_call_id="1"),
+    ]
+
+    actual = template.invoke(
+        {
+            "text1": "important message",
+            "name1": "foo",
+            "tool_arg1": "important arg1",
+            "tool_name1": "do_stuff",
+            "tool_content2": "foo",
+        }
+    ).to_messages()
+    assert actual == expected
+
+    partial_ = template.partial(text1="important message")
+    actual = partial_.invoke(
+        {
+            "name1": "foo",
+            "tool_arg1": "important arg1",
+            "tool_name1": "do_stuff",
+            "tool_content2": "foo",
+        }
+    ).to_messages()
+    assert actual == expected
+
+
 def test_chat_prompt_template_variable_names() -> None:
     """This test was written for an edge case that triggers a warning from Pydantic.
 
@@ -1049,3 +1135,87 @@ def test_chat_prompt_template_variable_names() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_data_prompt_template_deserializable() -> None:
+    """Test that the image prompt template is serializable."""
+    load(
+        dumpd(
+            ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        [{"type": "image", "source_type": "url", "url": "{url}"}],
+                    )
+                ]
+            )
+        )
+    )
+
+
+@pytest.mark.requires("jinja2")
+@pytest.mark.parametrize(
+    ("template_format", "cache_control_placeholder", "source_data_placeholder"),
+    [
+        ("f-string", "{cache_type}", "{source_data}"),
+        ("mustache", "{{cache_type}}", "{{source_data}}"),
+    ],
+)
+def test_chat_prompt_template_data_prompt_from_message(
+    template_format: PromptTemplateFormat,
+    cache_control_placeholder: str,
+    source_data_placeholder: str,
+) -> None:
+    prompt: dict = {
+        "type": "image",
+        "source_type": "base64",
+        "data": f"{source_data_placeholder}",
+    }
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(source_data="base64data") == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": "base64data",
+                }
+            ]
+        )
+    ]
+
+    # metadata
+    prompt["metadata"] = {"cache_control": {"type": f"{cache_control_placeholder}"}}
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(
+        cache_type="ephemeral", source_data="base64data"
+    ) == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": "base64data",
+                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                }
+            ]
+        )
+    ]
+
+
+def test_dict_message_prompt_template_errors_on_jinja2() -> None:
+    prompt = {
+        "type": "image",
+        "source_type": "base64",
+        "data": "{source_data}",
+    }
+
+    with pytest.raises(ValueError, match="jinja2"):
+        _ = ChatPromptTemplate.from_messages(
+            [("human", [prompt])], template_format="jinja2"
+        )

@@ -52,7 +52,7 @@ class Reviver:
         self,
         secrets_map: Optional[dict[str, str]] = None,
         valid_namespaces: Optional[list[str]] = None,
-        secrets_from_env: bool = True,
+        secrets_from_env: bool = True,  # noqa: FBT001,FBT002
         additional_import_mappings: Optional[
             dict[tuple[str, ...], tuple[str, ...]]
         ] = None,

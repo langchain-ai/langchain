@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
 import functools
 import logging
 import uuid
@@ -314,12 +315,13 @@ def handle_event(
                 # If we try to submit this coroutine to the running loop
                 # we end up in a deadlock, as we'd have gotten here from a
                 # running coroutine, which we cannot interrupt to run this one.
-                # The solution is to create a new loop in a new thread.
-                with ThreadPoolExecutor(1) as executor:
-                    executor.submit(
-                        cast("Callable", copy_context().run), _run_coros, coros
-                    ).result()
+                # The solution is to run the synchronous function on the globally shared
+                # thread pool executor to avoid blocking the main event loop.
+                _executor().submit(
+                    cast("Callable", copy_context().run), _run_coros, coros
+                ).result()
             else:
+                # If there's no running loop, we can run the coroutines directly.
                 _run_coros(coros)
 
 
@@ -1545,7 +1547,7 @@ class CallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
@@ -2071,7 +2073,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         cls,
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         inheritable_tags: Optional[list[str]] = None,
         local_tags: Optional[list[str]] = None,
         inheritable_metadata: Optional[dict[str, Any]] = None,
@@ -2406,7 +2408,7 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = cast("Run", run_tree)
+                    handler.run_map[str(run_tree.id)] = run_tree
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
@@ -2618,3 +2620,19 @@ def dispatch_custom_event(
         data,
         run_id=callback_manager.parent_run_id,
     )
+
+
+@functools.lru_cache(maxsize=1)
+def _executor() -> ThreadPoolExecutor:
+    # If the user is specifying ASYNC callback handlers to be run from a
+    # SYNC context, and an event loop is already running,
+    # we cannot submit the coroutine to the running loop, because it
+    # would result in a deadlock. Instead we have to schedule them
+    # on a background thread. To avoid creating & shutting down
+    # a new executor every time, we use a lazily-created, shared
+    # executor. If you're using regular langgchain parallelism (batch, etc.)
+    # you'd only ever need 1 worker, but we permit more for now to reduce the chance
+    # of slowdown if you are mixing with your own executor.
+    cutie = ThreadPoolExecutor(max_workers=10)
+    atexit.register(cutie.shutdown, wait=True)
+    return cutie
