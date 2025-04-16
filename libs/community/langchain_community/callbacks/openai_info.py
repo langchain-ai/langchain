@@ -258,7 +258,7 @@ def standardize_model_name(
         token_type == TokenType.PROMPT_CACHED
         and (
             model_name.startswith("gpt-4o")
-            or model_name.startswith("gpt-4.1") # 4.0 doesnt have cached but 4.1,4.5-preview have cached pricing.
+            or model_name.startswith("gpt-4.1")
             or model_name.startswith("gpt-4.5")
             or model_name.startswith("o1")
             or model_name.startswith("o3")
