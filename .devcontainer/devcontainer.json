@@ -13,4 +13,4 @@
     "postCreateCommand": "cat /etc/os-release",
     "customizations": {},
     "remoteUser": "root"
-}
+}c
