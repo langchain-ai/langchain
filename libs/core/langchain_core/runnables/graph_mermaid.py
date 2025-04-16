@@ -291,7 +291,11 @@ def draw_mermaid_png(
         )
     elif draw_method == MermaidDrawMethod.API:
         img_bytes = _render_mermaid_using_api(
-            mermaid_syntax, output_file_path, background_color, max_retries, retry_delay
+            mermaid_syntax,
+            output_file_path=output_file_path,
+            background_color=background_color,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -379,6 +383,7 @@ async def _render_mermaid_using_pyppeteer(
 
 def _render_mermaid_using_api(
     mermaid_syntax: str,
+    *,
     output_file_path: Optional[str] = None,
     background_color: Optional[str] = "white",
     file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
@@ -411,6 +416,15 @@ def _render_mermaid_using_api(
         f"?type={file_type}&bgColor={background_color}"
     )
 
+    error_msg_suffix = (
+        "To resolve this issue:\n"
+        "1. Check your internet connection and try again\n"
+        "2. Try with higher retry settings: "
+        "`draw_mermaid_png(..., max_retries=5, retry_delay=2.0)`\n"
+        "3. Use the Pyppeteer rendering method which will render your graph locally "
+        "in a browser: `draw_mermaid_png(..., draw_method=MermaidDrawMethod.PYPPETEER)`"
+    )
+
     for attempt in range(max_retries + 1):
         try:
             response = requests.get(image_url, timeout=10)
@@ -430,11 +444,9 @@ def _render_mermaid_using_api(
 
             # For other status codes, fail immediately
             msg = (
-                f"Failed to render the graph using the Mermaid.INK API. "
-                f"Status code: {response.status_code}. "
-                "Adjust `max_retries` and `retry_delay` or use "
-                "`draw_mermaid_png(..., draw_method=MermaidDrawMethod.PYPPETEER)`."
-            )
+                "Failed to reach https://mermaid.ink/ API while trying to render "
+                f"your graph. Status code: {response.status_code}.\n\n"
+            ) + error_msg_suffix
             raise ValueError(msg)
 
         except (requests.RequestException, requests.Timeout) as e:
@@ -444,16 +456,14 @@ def _render_mermaid_using_api(
                 time.sleep(sleep_time)
             else:
                 msg = (
-                    f"Failed to render the graph after {max_retries} retries: {str(e)}."
-                    " Adjust `max_retries` and `retry_delay` or use"
-                    " `draw_mermaid_png(..., draw_method=MermaidDrawMethod.PYPPETEER)`."
-                )
+                    "Failed to reach https://mermaid.ink/ API while trying to render "
+                    f"your graph after {max_retries} retries. "
+                ) + error_msg_suffix
                 raise ValueError(msg) from e
 
     # This should not be reached, but just in case
     msg = (
-        f"Failed to render the graph after {max_retries} retries. "
-        "Adjust `max_retries` and `retry_delay` or use "
-        "`draw_mermaid_png(..., draw_method=MermaidDrawMethod.PYPPETEER)`."
-    )
+        "Failed to reach https://mermaid.ink/ API while trying to render "
+        f"your graph after {max_retries} retries. "
+    ) + error_msg_suffix
     raise ValueError(msg)
