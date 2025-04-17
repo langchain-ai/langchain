@@ -19,8 +19,9 @@ tool for the job.
 
 from __future__ import annotations
 
-from importlib import import_module
 from typing import TYPE_CHECKING
+
+from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.tools.base import (
@@ -51,7 +52,7 @@ if TYPE_CHECKING:
     from langchain_core.tools.simple import Tool
     from langchain_core.tools.structured import StructuredTool
 
-__all__ = [
+__all__ = (
     "ArgsSchema",
     "BaseTool",
     "BaseToolkit",
@@ -71,7 +72,7 @@ __all__ = [
     "create_retriever_tool",
     "Tool",
     "StructuredTool",
-]
+)
 
 _dynamic_imports = {
     "FILTERED_ARGS": "base",
@@ -98,12 +99,7 @@ _dynamic_imports = {
 
 def __getattr__(attr_name: str) -> object:
     module_name = _dynamic_imports.get(attr_name)
-    package = __spec__.parent
-    if module_name == "__module__" or module_name is None:
-        result = import_module(f".{attr_name}", package=package)
-    else:
-        module = import_module(f".{module_name}", package=package)
-        result = getattr(module, attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
     return result
 
