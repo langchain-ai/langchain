@@ -62,12 +62,14 @@ def __getattr__(attr_name: str) -> object:
         try:
             result = import_module(f".{attr_name}", package=package)
         except ModuleNotFoundError:
-            raise AttributeError(f"module '.' has no attribute {attr_name!r}")
+            message = f"module '.' has no attribute {attr_name!r}"
+            raise AttributeError(message) from None
     else:
         try:
             module = import_module(f".{module_name}", package=package)
         except ModuleNotFoundError:
-            raise AttributeError(f"module '{module_name}' has no attribute {attr_name!r}")
+            message = f"module {module_name!r} has no attribute {attr_name!r}"
+            raise AttributeError(message) from None
         result = getattr(module, attr_name)
     globals()[attr_name] = result
     return result
