@@ -170,7 +170,7 @@ class ElasticsearchDatabaseChain(Chain):
         except Exception as exc:
             # Append intermediate steps to exception, to aid in logging and later
             # improvement of few shot prompt seeds
-            exc.intermediate_steps = intermediate_steps  # type: ignore
+            exc.intermediate_steps = intermediate_steps  # type: ignore[attr-defined]
             raise exc
 
     @property

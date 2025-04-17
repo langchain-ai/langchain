@@ -39,16 +39,14 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
+    def load_llm(*args: Any, **kwargs: Any) -> None:
         raise ImportError(
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
             "You can install it with `pip install langchain_community`"
         )
 
-    def load_llm_from_config(  # type: ignore
-        *args: Any, **kwargs: Any
-    ) -> None:
+    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
         raise ImportError(
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "
@@ -95,9 +93,9 @@ def _load_hyde_chain(config: dict, **kwargs: Any) -> HypotheticalDocumentEmbedde
     else:
         raise ValueError("`embeddings` must be present.")
     return HypotheticalDocumentEmbedder(
-        llm_chain=llm_chain,  # type: ignore[arg-type]
+        llm_chain=llm_chain,
         base_embeddings=embeddings,
-        **config,  # type: ignore[arg-type]
+        **config,
     )
 
 
@@ -160,7 +158,7 @@ def _load_map_reduce_documents_chain(
     )
 
 
-def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:  # type: ignore[valid-type]
+def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:
     combine_documents_chain = None
     collapse_documents_chain = None
 
@@ -213,7 +211,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             config.pop("collapse_document_chain_path"), **kwargs
         )
 
-    return ReduceDocumentsChain(  # type: ignore[misc]
+    return ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_documents_chain,
         **config,
@@ -245,7 +243,7 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
     elif "prompt_path" in config:
         prompt = load_prompt(config.pop("prompt_path"))
     if llm_chain:
-        return LLMBashChain(llm_chain=llm_chain, prompt=prompt, **config)  # type: ignore[arg-type]
+        return LLMBashChain(llm_chain=llm_chain, prompt=prompt, **config)
     else:
         return LLMBashChain(llm=llm, prompt=prompt, **config)
 
@@ -347,7 +345,7 @@ def _load_pal_chain(config: dict, **kwargs: Any) -> Any:
         llm_chain = load_chain(config.pop("llm_chain_path"), **kwargs)
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
-    return PALChain(llm_chain=llm_chain, **config)  # type: ignore[arg-type]
+    return PALChain(llm_chain=llm_chain, **config)
 
 
 def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocumentsChain:
@@ -410,7 +408,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         chain = load_chain_from_config(llm_chain_config, **kwargs)
-        return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
+        return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config, **kwargs)
@@ -563,8 +561,8 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
         )
     return GraphCypherQAChain(
         graph=graph,
-        cypher_generation_chain=cypher_generation_chain,  # type: ignore[arg-type]
-        qa_chain=qa_chain,  # type: ignore[arg-type]
+        cypher_generation_chain=cypher_generation_chain,
+        qa_chain=qa_chain,
         **config,
     )
 

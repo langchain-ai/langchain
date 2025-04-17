@@ -41,7 +41,7 @@ __all__ = [
 
 
 @overload
-def init_chat_model(  # type: ignore[overload-overlap]
+def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
@@ -347,7 +347,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
@@ -402,7 +402,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
-        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
