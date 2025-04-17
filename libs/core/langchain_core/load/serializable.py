@@ -1,4 +1,7 @@
+"""Serializable base class."""
+
 import contextlib
+import logging
 from abc import ABC
 from typing import (
     Any,
@@ -11,7 +14,9 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
@@ -78,7 +83,7 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Raises:
         Exception: If the key is not in the model.
     """
-    field = model.model_fields[key]
+    field = type(model).model_fields[key]
     return _try_neq_default(value, field)
 
 
@@ -121,7 +126,7 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""
+        """"""  # noqa: D419
         super().__init__(*args, **kwargs)
 
     @classmethod
@@ -187,11 +192,12 @@ class Serializable(BaseModel, ABC):
         extra="ignore",
     )
 
+    @override
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.model_fields or try_neq_default(v, k, self))
+            if (k not in type(self).model_fields or try_neq_default(v, k, self))
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
@@ -203,6 +209,7 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
+        model_fields = type(self).model_fields
         secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
@@ -210,7 +217,7 @@ class Serializable(BaseModel, ABC):
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
-            if k in self.model_fields and self.model_fields[k].exclude:
+            if k in model_fields and model_fields[k].exclude:
                 continue
 
             lc_kwargs[k] = getattr(self, k, v)
@@ -237,7 +244,7 @@ class Serializable(BaseModel, ABC):
                         raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable, self if cls is None else super(cls, self))
+            this = cast("Serializable", self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets
@@ -246,10 +253,10 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.model_fields:
-                    alias = this.model_fields[key].alias
-                    if alias is not None:
-                        secrets[alias] = value
+                if (key in model_fields) and (
+                    alias := model_fields[key].alias
+                ) is not None:
+                    secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
@@ -269,6 +276,7 @@ class Serializable(BaseModel, ABC):
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
+        """Serialize a "not implemented" object."""
         return to_json_not_implemented(self)
 
 
@@ -286,7 +294,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         If the field is not required and the value is None, it is useful if the
         default value is different from the value.
     """
-    field = inst.model_fields.get(key)
+    field = type(inst).model_fields.get(key)
     if not field:
         return False
 
@@ -354,7 +362,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         elif hasattr(obj, "__class__"):
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
-        pass
+        logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,

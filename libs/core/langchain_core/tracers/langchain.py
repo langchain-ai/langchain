@@ -19,6 +19,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
@@ -41,7 +42,6 @@ def log_error_once(method: str, exception: Exception) -> None:
         method: The method that raised the exception.
         exception: The exception that was raised.
     """
-    global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
     _LOGGED.add((method, type(exception)))
@@ -61,13 +61,13 @@ def get_client() -> Client:
 
 def _get_executor() -> ThreadPoolExecutor:
     """Get the executor."""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
 
 
-def _run_to_dict(run: Run, exclude_inputs: bool = False) -> dict:
+def _run_to_dict(run: Run, *, exclude_inputs: bool = False) -> dict:
     # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
     # run.model_dump
     with warnings.catch_warnings():
@@ -124,7 +124,7 @@ class LangChainTracer(BaseTracer):
 
         super()._start_trace(run)
         if run._client is None:
-            run._client = self.client  # type: ignore
+            run._client = self.client  # type: ignore[misc]
 
     def on_chat_model_start(
         self,
@@ -223,7 +223,11 @@ class LangChainTracer(BaseTracer):
             extra = run_dict.get("extra", {})
             extra["runtime"] = get_runtime_environment()
             run_dict["extra"] = extra
-            inputs_is_truthy = bool(run_dict.get("inputs"))
+            inputs_ = run_dict.get("inputs")
+            if inputs_ and (len(inputs_) > 1 or bool(next(iter(inputs_.values())))):
+                inputs_is_truthy = True
+            else:
+                inputs_is_truthy = False
             run.extra["inputs_is_truthy"] = inputs_is_truthy
             self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
@@ -249,13 +253,13 @@ class LangChainTracer(BaseTracer):
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
 
+    @override
     def _llm_run_with_token_event(
         self,
         token: str,
         run_id: UUID,
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
     ) -> Run:
         """Append token event to LLM run and return the run."""
         return super()._llm_run_with_token_event(
@@ -264,7 +268,6 @@ class LangChainTracer(BaseTracer):
             run_id,
             chunk=None,
             parent_run_id=parent_run_id,
-            **kwargs,
         )
 
     def _on_chat_model_start(self, run: Run) -> None:

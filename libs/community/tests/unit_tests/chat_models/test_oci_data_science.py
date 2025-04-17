@@ -157,7 +157,7 @@ def test_stream_vllm(*args: Any) -> None:
         if output is None:
             output = chunk
         else:
-            output += chunk
+            output += chunk  # type: ignore[assignment]
         count += 1
     assert count == 5
     assert output is not None

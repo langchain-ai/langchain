@@ -1,7 +1,10 @@
+"""Utilities for working with iterators."""
+
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import AbstractContextManager
 from itertools import islice
+from types import TracebackType
 from typing import (
     Any,
     Generic,
@@ -20,9 +23,15 @@ class NoLock:
     """Dummy lock that provides the proper interface but no protection."""
 
     def __enter__(self) -> None:
-        pass
+        """Do nothing."""
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Literal[False]:
+        """Exception not handled."""
         return False
 
 
@@ -126,7 +135,7 @@ class Tee(Generic[T]):
         *,
         lock: Optional[AbstractContextManager[Any]] = None,
     ):
-        """Create a new ``tee``.
+        """Create a ``tee``.
 
         Args:
             iterable: The iterable to split.
@@ -147,6 +156,7 @@ class Tee(Generic[T]):
         )
 
     def __len__(self) -> int:
+        """Return the number of child iterators."""
         return len(self._children)
 
     @overload
@@ -158,19 +168,29 @@ class Tee(Generic[T]):
     def __getitem__(
         self, item: Union[int, slice]
     ) -> Union[Iterator[T], tuple[Iterator[T], ...]]:
+        """Return the child iterator(s) at the given index or slice."""
         return self._children[item]
 
     def __iter__(self) -> Iterator[Iterator[T]]:
+        """Return an iterator over the child iterators."""
         yield from self._children
 
     def __enter__(self) -> "Tee[T]":
+        """Return Tee instance."""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Literal[False]:
+        """Close all child iterators."""
         self.close()
         return False
 
     def close(self) -> None:
+        """Close all child iterators."""
         for child in self._children:
             child.close()
 

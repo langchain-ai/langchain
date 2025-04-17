@@ -1,3 +1,5 @@
+"""Runnable that can fallback to other Runnables if it fails."""
+
 import asyncio
 import inspect
 import typing
@@ -8,7 +10,6 @@ from typing import (
     Any,
     Optional,
     Union,
-    cast,
 )
 
 from pydantic import BaseModel, ConfigDict
@@ -28,7 +29,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
-    asyncio_accepts_context,
+    coro_with_context,
     get_unique_config_specs,
 )
 from langchain_core.utils.aiter import py_anext
@@ -115,17 +116,20 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
@@ -134,19 +138,26 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Defaults to ["langchain", "schema", "runnable"].
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
+        """Iterator over the Runnable and its fallbacks."""
         yield self.runnable
         yield from self.fallbacks
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -171,7 +182,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     output = context.run(
@@ -196,6 +207,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_manager.on_chain_error(first_error)
         raise first_error
 
+    @override
     async def ainvoke(
         self,
         input: Input,
@@ -224,14 +236,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     coro = context.run(runnable.ainvoke, input, config, **kwargs)
-                    if asyncio_accepts_context():
-                        output = await asyncio.create_task(coro, context=context)  # type: ignore
-                    else:
-                        output = await coro
+                    output = await coro_with_context(coro, context)
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
@@ -248,6 +257,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_error(first_error)
         raise first_error
 
+    @override
     def batch(
         self,
         inputs: list[Input],
@@ -317,12 +327,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast(BaseException, output)
+                        handled_exceptions[i] = output
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
-                    handled_exceptions[i] = cast(BaseException, output)
+                        input[self.exception_key] = output  # type: ignore[index]
+                    handled_exceptions[i] = output
                 else:
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
@@ -341,6 +351,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]
 
+    @override
     async def abatch(
         self,
         inputs: list[Input],
@@ -413,12 +424,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast(BaseException, output)
+                        handled_exceptions[i] = output
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
-                    handled_exceptions[i] = cast(BaseException, output)
+                        input[self.exception_key] = output  # type: ignore[index]
+                    handled_exceptions[i] = output
                 else:
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
@@ -440,15 +451,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if not return_exceptions and sorted_handled_exceptions:
             raise sorted_handled_exceptions[0][1]
         to_return.update(handled_exceptions)
-        return [output for _, output in sorted(to_return.items())]  # type: ignore
+        return [output for _, output in sorted(to_return.items())]  # type: ignore[misc]
 
+    @override
     def stream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """"""
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
@@ -470,7 +481,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = context.run(
@@ -478,7 +489,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)  # type: ignore
+                    chunk: Output = context.run(next, stream)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -498,7 +509,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk  # type: ignore
+                    output = output + chunk  # type: ignore[operator]
                 except TypeError:
                     output = None
         except BaseException as e:
@@ -506,6 +517,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(output)
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -533,7 +545,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                    input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = runnable.astream(
@@ -541,13 +553,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    if asyncio_accepts_context():
-                        chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
-                            py_anext(stream),  # type: ignore[arg-type]
-                            context=context,
-                        )
-                    else:
-                        chunk = cast(Output, await py_anext(stream))
+                    chunk = await coro_with_context(py_anext(stream), context)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -567,7 +573,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             async for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk  # type: ignore
+                    output = output + chunk
                 except TypeError:
                     output = None
         except BaseException as e:
@@ -645,7 +651,6 @@ def _is_runnable_type(type_: Any) -> bool:
     origin = getattr(type_, "__origin__", None)
     if inspect.isclass(origin):
         return issubclass(origin, Runnable)
-    elif origin is typing.Union:
+    if origin is typing.Union:
         return all(_is_runnable_type(t) for t in type_.__args__)
-    else:
-        return False
+    return False

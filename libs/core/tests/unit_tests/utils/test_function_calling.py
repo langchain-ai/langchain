@@ -1,4 +1,3 @@
-# mypy: disable-error-code="annotation-unchecked"
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -15,12 +14,11 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import (
-    TypedDict as ExtensionsTypedDict,
-)
+from typing_extensions import TypeAlias
+from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
-    from typing import Annotated as TypingAnnotated  # type: ignore[attr-defined]
+    from typing import Annotated as TypingAnnotated
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
@@ -37,7 +35,7 @@ from langchain_core.utils.function_calling import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -48,7 +46,7 @@ def pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
@@ -59,7 +57,7 @@ def annotated_function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -72,7 +70,7 @@ def function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function_docstring_annotations() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -85,7 +83,7 @@ def function_docstring_annotations() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def runnable() -> Runnable:
     class Args(ExtensionsTypedDict):
         arg1: ExtensionsAnnotated[int, "foo"]
@@ -97,7 +95,7 @@ def runnable() -> Runnable:
     return RunnableLambda(dummy_function)
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -114,21 +112,21 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool() -> StructuredTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
     return StructuredTool.from_function(
-        lambda x: None,
+        lambda _: None,
         name="dummy_function",
         description="Dummy function.",
         args_schema=Schema,
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool_args_schema_dict() -> StructuredTool:
     args_schema = {
         "type": "object",
@@ -143,14 +141,14 @@ def dummy_structured_tool_args_schema_dict() -> StructuredTool:
         "required": ["arg1", "arg2"],
     }
     return StructuredTool.from_function(
-        lambda x: None,
+        lambda _: None,
         name="dummy_function",
         description="Dummy function.",
         args_schema=args_schema,
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -161,7 +159,7 @@ def dummy_pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     class dummy_function(BaseModelV2Maybe):  # noqa: N801
         """Dummy function."""
@@ -174,7 +172,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
@@ -185,7 +183,7 @@ def dummy_typing_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict_docstring() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function.
@@ -201,7 +199,7 @@ def dummy_typing_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function."""
@@ -212,7 +210,7 @@ def dummy_extensions_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict_docstring() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function.
@@ -228,7 +226,7 @@ def dummy_extensions_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
@@ -246,7 +244,7 @@ def json_schema() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def anthropic_tool() -> dict:
     return {
         "name": "dummy_function",
@@ -266,7 +264,7 @@ def anthropic_tool() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def bedrock_converse_tool() -> dict:
     return {
         "toolSpec": {
@@ -366,7 +364,7 @@ def test_convert_to_openai_function(
         dummy_extensions_typed_dict,
         dummy_extensions_typed_dict_docstring,
     ):
-        actual = convert_to_openai_function(fn)  # type: ignore
+        actual = convert_to_openai_function(fn)
         assert actual == expected
 
     # Test runnables
@@ -387,8 +385,8 @@ def test_convert_to_openai_function(
     assert actual == runnable_expected
 
     # Test simple Tool
-    def my_function(input_string: str) -> str:
-        pass
+    def my_function(_: str) -> str:
+        return ""
 
     tool = Tool(
         name="dummy_function",
@@ -738,20 +736,25 @@ def test_tool_outputs() -> None:
     assert not response.tool_calls
 
 
-@pytest.mark.parametrize("use_extension_typed_dict", [True, False])
-@pytest.mark.parametrize("use_extension_annotated", [True, False])
+@pytest.mark.parametrize(
+    "typed_dict",
+    [ExtensionsTypedDict, TypingTypedDict],
+    ids=["typing_extensions.TypedDict", "typing.TypedDict"],
+)
+@pytest.mark.parametrize(
+    "annotated",
+    [ExtensionsAnnotated, TypingAnnotated],
+    ids=["typing_extensions.Annotated", "typing.Annotated"],
+)
 def test__convert_typed_dict_to_openai_function(
-    use_extension_typed_dict: bool, use_extension_annotated: bool
+    typed_dict: TypeAlias, annotated: TypeAlias
 ) -> None:
-    typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
-    annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
-
-    class SubTool(typed_dict):
+    class SubTool(typed_dict):  # type: ignore[misc]
         """Subtool docstring."""
 
-        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
+        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722
 
-    class Tool(typed_dict):
+    class Tool(typed_dict):  # type: ignore[misc]
         """Docstring.
 
         Args:
@@ -774,7 +777,7 @@ def test__convert_typed_dict_to_openai_function(
         arg12: annotated[dict[str, SubTool], ...]
         arg13: annotated[Mapping[str, SubTool], ...]
         arg14: annotated[MutableMapping[str, SubTool], ...]
-        arg15: annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
+        arg15: annotated[bool, False, "flag"]  # noqa: F821
 
     expected = {
         "name": "Tool",
@@ -981,7 +984,7 @@ def test__convert_typed_dict_to_openai_function(
 
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
-    class Tool(typed_dict):
+    class Tool(typed_dict):  # type: ignore[misc]
         arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
     # Error should be raised since we're using v1 code path here
@@ -994,12 +997,13 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(input: int | float) -> str:
+    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
         """Compute a magic function."""
+        return ""
 
     result = convert_to_openai_function(magic_function)
-    assert result["parameters"]["properties"]["input"] == {
-        "anyOf": [{"type": "integer"}, {"type": "number"}]
+    assert result["parameters"]["properties"]["value"] == {
+        "anyOf": [{"type": "integer"}, {"type": "string"}]
     }
 
 
@@ -1061,5 +1065,5 @@ def test_convert_to_json_schema(
         dummy_extensions_typed_dict,
         dummy_extensions_typed_dict_docstring,
     ):
-        actual = convert_to_json_schema(fn)  # type: ignore
+        actual = convert_to_json_schema(fn)
         assert actual == expected

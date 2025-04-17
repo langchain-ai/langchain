@@ -1,9 +1,13 @@
+"""Mermaid graph drawing utilities."""
+
 import asyncio
 import base64
 import re
 from dataclasses import asdict
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
+
+import yaml
 
 from langchain_core.runnables.graph import (
     CurveStyle,
@@ -26,12 +30,13 @@ def draw_mermaid(
     curve_style: CurveStyle = CurveStyle.LINEAR,
     node_styles: Optional[NodeStyles] = None,
     wrap_label_n_words: int = 9,
+    frontmatter_config: Optional[dict[str, Any]] = None,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
 
     Args:
         nodes (dict[str, str]): List of node ids.
-        edges (List[Edge]): List of edges, object with a source,
+        edges (list[Edge]): List of edges, object with a source,
             target and data.
         first_node (str, optional): Id of the first node. Defaults to None.
         last_node (str, optional): Id of the last node. Defaults to None.
@@ -43,15 +48,45 @@ def draw_mermaid(
             Defaults to NodeStyles().
         wrap_label_n_words (int, optional): Words to wrap the edge labels.
             Defaults to 9.
+        frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            Can be used to customize theme and styles. Will be converted to YAML and
+            added to the beginning of the mermaid graph. Defaults to None.
+
+            See more here: https://mermaid.js.org/config/configuration.html.
+
+            Example config:
+
+            .. code-block:: python
+
+            {
+                "config": {
+                    "theme": "neutral",
+                    "look": "handDrawn",
+                    "themeVariables": { "primaryColor": "#e2e2e2"},
+                }
+            }
 
     Returns:
         str: Mermaid graph syntax.
     """
     # Initialize Mermaid graph configuration
+    original_frontmatter_config = frontmatter_config or {}
+    original_flowchart_config = original_frontmatter_config.get("config", {}).get(
+        "flowchart", {}
+    )
+    frontmatter_config = {
+        **original_frontmatter_config,
+        "config": {
+            **original_frontmatter_config.get("config", {}),
+            "flowchart": {**original_flowchart_config, "curve": curve_style.value},
+        },
+    }
+
     mermaid_graph = (
         (
-            f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
-            f"}}}}}}%%\ngraph TD;\n"
+            "---\n"
+            + yaml.dump(frontmatter_config, default_flow_style=False)
+            + "---\ngraph TD;\n"
         )
         if with_styles
         else "graph TD;\n"
@@ -160,13 +195,13 @@ def draw_mermaid(
             )
 
         # Recursively add nested subgraphs
-        for nested_prefix in edge_groups:
+        for nested_prefix, edges_ in edge_groups.items():
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
             # only go to first level subgraphs
             if ":" in nested_prefix[len(prefix) + 1 :]:
                 continue
-            add_subgraph(edge_groups[nested_prefix], nested_prefix)
+            add_subgraph(edges_, nested_prefix)
 
         if prefix and not self_loop:
             mermaid_graph += "\tend\n"
@@ -175,20 +210,20 @@ def draw_mermaid(
     add_subgraph(edge_groups.get("", []), "")
 
     # Add remaining subgraphs with edges
-    for prefix in edge_groups:
+    for prefix, edges_ in edge_groups.items():
         if ":" in prefix or prefix == "":
             continue
-        add_subgraph(edge_groups[prefix], prefix)
+        add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
 
     # Add empty subgraphs (subgraphs with no internal edges)
     if with_styles:
-        for prefix in subgraph_nodes:
+        for prefix, subgraph_node in subgraph_nodes.items():
             if ":" not in prefix and prefix not in seen_subgraphs:
                 mermaid_graph += f"\tsubgraph {prefix}\n"
 
                 # Add nodes that belong to this subgraph
-                for key, node in subgraph_nodes[prefix].items():
+                for key, node in subgraph_node.items():
                     mermaid_graph += render_node(key, node)
 
                 mermaid_graph += "\tend\n"
@@ -270,7 +305,7 @@ async def _render_mermaid_using_pyppeteer(
 ) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
     try:
-        from pyppeteer import launch  # type: ignore[import]
+        from pyppeteer import launch  # type: ignore[import-not-found]
     except ImportError as e:
         msg = "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
         raise ImportError(msg) from e
@@ -342,7 +377,7 @@ def _render_mermaid_using_api(
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
-        import requests  # type: ignore[import]
+        import requests
     except ImportError as e:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
@@ -366,15 +401,14 @@ def _render_mermaid_using_api(
         f"?type={file_type}&bgColor={background_color}"
     )
     response = requests.get(image_url, timeout=10)
-    if response.status_code == 200:
+    if response.status_code == requests.codes.ok:
         img_bytes = response.content
         if output_file_path is not None:
             Path(output_file_path).write_bytes(response.content)
 
         return img_bytes
-    else:
-        msg = (
-            f"Failed to render the graph using the Mermaid.INK API. "
-            f"Status code: {response.status_code}."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Failed to render the graph using the Mermaid.INK API. "
+        f"Status code: {response.status_code}."
+    )
+    raise ValueError(msg)

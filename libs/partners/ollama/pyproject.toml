@@ -6,12 +6,9 @@ build-backend = "pdm.backend"
 authors = []
 license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
-dependencies = [
-    "ollama>=0.4.4,<1",
- "langchain-core<1.0.0,>=0.3.45",
-]
+dependencies = ["ollama<1,>=0.4.4", "langchain-core<1.0.0,>=0.3.52"]
 name = "langchain-ollama"
-version = "0.2.3"
+version = "0.3.2"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
@@ -44,6 +41,9 @@ ollama = { git = "https://github.com/ollama/ollama-python.git" }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle
@@ -51,8 +51,9 @@ select = [
     "I",    # isort
     "T201", # print
     "D",    # pydocstyle
-
+    "UP",   # pyupgrade
 ]
+ignore = [ "UP007", ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -18,6 +18,9 @@ DEFAULT_ID_KEY = "id"
 DEFAULT_TEXT_KEY = "text"
 DEFAULT_TABLE_NAME = "embeddings"
 SIMILARITY_ALIAS = "similarity_score"
+DUCKDB_FETCHALL_PAGE_CONTENT_INDEX = 1
+DUCKDB_FETCHALL_METADATA_INDEX = 3
+DUCKDB_FETCHALL_SIMILARITY_SCORE_INDEX = 4
 
 
 class DuckDB(VectorStore):
@@ -99,6 +102,7 @@ class DuckDB(VectorStore):
                 "Could not import duckdb package. "
                 "Please install it with `pip install duckdb`."
             )
+
         self.duckdb = duckdb
         self._embedding = embedding
         self._vector_key = vector_key
@@ -197,10 +201,12 @@ class DuckDB(VectorStore):
             )
         return ids
 
-    def similarity_search(
+    def similarity_search_pd(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Performs a similarity search for a given query string.
+        Requires pandas to be installed.
+        This was the previously executed method for similarity search.
 
         Args:
             query: The query string to search for.
@@ -209,7 +215,12 @@ class DuckDB(VectorStore):
         Returns:
             A list of Documents most similar to the query.
         """
-        embedding = self._embedding.embed_query(query)  # type: ignore
+        try:
+            import pandas as pandas
+        except ImportError:
+            warnings.warn("You may need to `pip install pandas` to use this method.")
+
+        embedding = self._embedding.embed_query(query)
         list_cosine_similarity = self.duckdb.FunctionExpression(
             "list_cosine_similarity",
             self.duckdb.ColumnExpression(self._vector_key),
@@ -235,6 +246,53 @@ class DuckDB(VectorStore):
                     f"_{SIMILARITY_ALIAS}": docs[SIMILARITY_ALIAS][idx],
                 }
                 if docs["metadata"][idx]
+                else {},
+            )
+            for idx in range(len(docs))
+        ]
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Performs a similarity search for a given query string.
+        Does not require pandas to be installed.
+
+        Args:
+            query: The query string to search for.
+            k: The number of similar texts to return.
+
+        Returns:
+            A list of Documents most similar to the query.
+        """
+
+        embedding = self._embedding.embed_query(query)
+        list_cosine_similarity = self.duckdb.FunctionExpression(
+            "list_cosine_similarity",
+            self.duckdb.ColumnExpression(self._vector_key),
+            self.duckdb.ConstantExpression(embedding),
+        )
+        docs = (
+            self._table.select(
+                *[
+                    self.duckdb.StarExpression(exclude=[]),
+                    list_cosine_similarity.alias(SIMILARITY_ALIAS),
+                ]
+            )
+            .order(f"{SIMILARITY_ALIAS} desc")
+            .limit(k)
+            .fetchall()
+        )
+        return [
+            Document(
+                page_content=docs[idx][DUCKDB_FETCHALL_PAGE_CONTENT_INDEX],
+                metadata={
+                    **json.loads(docs[idx][DUCKDB_FETCHALL_METADATA_INDEX]),
+                    # using underscore prefix to avoid conflicts with user metadata keys
+                    f"_{SIMILARITY_ALIAS}": docs[idx][
+                        DUCKDB_FETCHALL_SIMILARITY_SCORE_INDEX
+                    ],
+                }
+                if docs[idx][DUCKDB_FETCHALL_METADATA_INDEX]
                 else {},
             )
             for idx in range(len(docs))

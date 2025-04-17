@@ -27,9 +27,10 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict
+from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables import (
     Runnable,
@@ -43,7 +44,6 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
-        Callbacks,
     )
 
 RetrieverInput = str
@@ -90,17 +90,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             from langchain_core.documents import Document
             from langchain_core.retrievers import BaseRetriever
-            from typing import List
 
             class SimpleRetriever(BaseRetriever):
-                docs: List[Document]
+                docs: list[Document]
                 k: int = 5
 
-                def _get_relevant_documents(self, query: str) -> List[Document]:
+                def _get_relevant_documents(self, query: str) -> list[Document]:
                     \"\"\"Return the first k documents from the list of documents\"\"\"
                     return self.docs[:self.k]
 
-                async def _aget_relevant_documents(self, query: str) -> List[Document]:
+                async def _aget_relevant_documents(self, query: str) -> list[Document]:
                     \"\"\"(Optional) async native implementation.\"\"\"
                     return self.docs[:self.k]
 
@@ -112,14 +111,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             class TFIDFRetriever(BaseRetriever, BaseModel):
                 vectorizer: Any
-                docs: List[Document]
+                docs: list[Document]
                 tfidf_array: Any
                 k: int = 4
 
                 class Config:
                     arbitrary_types_allowed = True
 
-                def _get_relevant_documents(self, query: str) -> List[Document]:
+                def _get_relevant_documents(self, query: str) -> list[Document]:
                     # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
                     query_vec = self.vectorizer.transform([query])
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
@@ -148,6 +147,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     use case.
     """
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         # Version upgrade for old retrievers that implemented the public
@@ -160,10 +160,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             swap = cls.get_relevant_documents
-            cls.get_relevant_documents = (  # type: ignore[assignment]
+            cls.get_relevant_documents = (  # type: ignore[method-assign]
                 BaseRetriever.get_relevant_documents
             )
-            cls._get_relevant_documents = swap  # type: ignore[assignment]
+            cls._get_relevant_documents = swap  # type: ignore[method-assign]
         if (
             hasattr(cls, "aget_relevant_documents")
             and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
@@ -175,10 +175,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = (  # type: ignore[assignment]
+            cls.aget_relevant_documents = (  # type: ignore[method-assign]
                 BaseRetriever.aget_relevant_documents
             )
-            cls._aget_relevant_documents = aswap  # type: ignore[assignment]
+            cls._aget_relevant_documents = aswap  # type: ignore[method-assign]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
@@ -189,7 +189,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             async def _aget_relevant_documents(
                 self: Self, query: str
             ) -> list[Document]:
-                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore
+                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore[call-arg]
 
             cls._aget_relevant_documents = _aget_relevant_documents  # type: ignore[assignment]
 
@@ -198,7 +198,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
         )
 
-    def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
+    def _get_ls_params(self, **_kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
         default_retriever_name = self.get_name()
         if default_retriever_name.startswith("Retriever"):
@@ -207,8 +207,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             default_retriever_name = default_retriever_name[:-9]
         default_retriever_name = default_retriever_name.lower()
 
-        ls_params = LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
-        return ls_params
+        return LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any

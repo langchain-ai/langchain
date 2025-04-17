@@ -87,7 +87,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve messages from Zep memory"""
         zep_memory: Optional[Memory] = self._get_memory()
         if not zep_memory:

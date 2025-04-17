@@ -690,7 +690,7 @@ class FalkorDBVector(VectorStore):
                     "}) has already been created"
                 )
             else:
-                raise ValueError(f"Error occured: {e}")
+                raise ValueError(f"Error occurred: {e}")
 
     def create_new_index_on_relationship(
         self,
@@ -739,7 +739,7 @@ class FalkorDBVector(VectorStore):
                     "}] has already been created"
                 )
             else:
-                raise ValueError(f"Error occured: {e}")
+                raise ValueError(f"Error occurred: {e}")
 
     def create_new_keyword_index(self, text_node_properties: List[str] = []) -> None:
         """
@@ -1152,7 +1152,7 @@ class FalkorDBVector(VectorStore):
         Args:
             embedding: The `Embeddings` model you would like to use
             database: The name of the existing graph/database you
-              would like to intialize
+              would like to initialize
             node_label: The label of the node you want to initialize.
             embedding_node_property: The name of the property you
               want your embeddings to be stored in.
@@ -1633,7 +1633,7 @@ class FalkorDBVector(VectorStore):
                     for result in sorted_results
                 ]
             except Exception as e:
-                raise ValueError(f"An error occured: {e}")
+                raise ValueError(f"An error occurred: {e}")
 
         return docs
 

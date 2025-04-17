@@ -1,5 +1,4 @@
 import time
-from typing import Optional as Optional
 
 import pytest
 from blockbuster import BlockBuster
@@ -226,9 +225,6 @@ class SerializableModel(GenericFakeChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
-
-
-SerializableModel.model_rebuild()
 
 
 def test_serialization_with_rate_limiter() -> None:

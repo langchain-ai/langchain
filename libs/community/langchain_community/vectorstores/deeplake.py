@@ -275,7 +275,7 @@ class DeepLake(VectorStore):
                 metadata=metadatas,
                 embedding_data=texts,
                 embedding_tensor="embedding",
-                embedding_function=self._embedding_function.embed_documents,  # type: ignore
+                embedding_function=self._embedding_function.embed_documents,  # type: ignore[union-attr]
                 return_ids=True,
                 **kwargs,
             )
@@ -464,8 +464,8 @@ class DeepLake(VectorStore):
 
         if use_maximal_marginal_relevance:
             lambda_mult = kwargs.get("lambda_mult", 0.5)
-            indices = maximal_marginal_relevance(  # type: ignore
-                embedding,  # type: ignore
+            indices = maximal_marginal_relevance(
+                embedding,  # type: ignore[arg-type]
                 embeddings,
                 k=min(k, len(texts)),
                 lambda_mult=lambda_mult,
@@ -829,7 +829,7 @@ class DeepLake(VectorStore):
             use_maximal_marginal_relevance=True,
             lambda_mult=lambda_mult,
             exec_option=exec_option,
-            embedding_function=embedding_function,  # type: ignore
+            embedding_function=embedding_function,  # type: ignore[arg-type]
             **kwargs,
         )
 

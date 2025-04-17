@@ -1,10 +1,13 @@
+"""Parsers for OpenAI functions output."""
+
 import copy
 import json
 from types import GenericAlias
 from typing import Any, Optional, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from pydantic import BaseModel, model_validator
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -21,6 +24,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -97,9 +101,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         except KeyError as exc:
             if partial:
                 return None
-            else:
-                msg = f"Could not parse function call: {exc}"
-                raise OutputParserException(msg) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
         try:
             if partial:
                 try:
@@ -107,35 +110,31 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         return parse_partial_json(
                             function_call["arguments"], strict=self.strict
                         )
-                    else:
-                        return {
-                            **function_call,
-                            "arguments": parse_partial_json(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
+                    return {
+                        **function_call,
+                        "arguments": parse_partial_json(
+                            function_call["arguments"], strict=self.strict
+                        ),
+                    }
                 except json.JSONDecodeError:
                     return None
+            elif self.args_only:
+                try:
+                    return json.loads(function_call["arguments"], strict=self.strict)
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
             else:
-                if self.args_only:
-                    try:
-                        return json.loads(
+                try:
+                    return {
+                        **function_call,
+                        "arguments": json.loads(
                             function_call["arguments"], strict=self.strict
-                        )
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
-                else:
-                    try:
-                        return {
-                            **function_call,
-                            "arguments": json.loads(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
+                        ),
+                    }
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
         except KeyError:
             return None
 
@@ -251,6 +250,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             raise ValueError(msg)
         return values
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -266,7 +266,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             if hasattr(self.pydantic_schema, "model_validate_json"):
                 pydantic_args = self.pydantic_schema.model_validate_json(_result)
             else:
-                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
+                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore[attr-defined]
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
@@ -275,9 +275,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             else:
                 pydantic_schema = self.pydantic_schema
             if hasattr(pydantic_schema, "model_validate_json"):
-                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+                pydantic_args = pydantic_schema.model_validate_json(_args)
             else:
-                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
+                pydantic_args = pydantic_schema.parse_raw(_args)
         return pydantic_args
 
 
@@ -287,6 +287,7 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 

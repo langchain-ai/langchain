@@ -584,7 +584,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         _custom_metrics = custom_metrics if custom_metrics else self.custom_metrics
 
-        self.__init__(  # type: ignore
+        self.__init__(  # type: ignore[misc]
             task_type=_task_type,
             workspace=_workspace,
             project_name=_project_name,

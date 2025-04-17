@@ -267,7 +267,7 @@ class DocAIParser(BaseBlobParser):
         """Initializes Long-Running Operations from their names."""
         try:
             from google.longrunning.operations_pb2 import (
-                GetOperationRequest,  # type: ignore
+                GetOperationRequest,
             )
         except ImportError as exc:
             raise ImportError(

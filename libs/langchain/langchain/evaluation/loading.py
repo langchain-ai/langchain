@@ -1,6 +1,7 @@
 """Loading datasets and evaluators."""
 
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 from langchain_core.language_models import BaseLanguageModel
 
@@ -36,7 +37,7 @@ from langchain.evaluation.string_distance.base import (
 )
 
 
-def load_dataset(uri: str) -> List[Dict]:
+def load_dataset(uri: str) -> list[dict]:
     """Load a dataset from the `LangChainDatasets on HuggingFace <https://huggingface.co/LangChainDatasets>`_.
 
     Args:
@@ -70,8 +71,8 @@ def load_dataset(uri: str) -> List[Dict]:
     return [d for d in dataset["train"]]
 
 
-_EVALUATOR_MAP: Dict[
-    EvaluatorType, Union[Type[LLMEvalChain], Type[Chain], Type[StringEvaluator]]
+_EVALUATOR_MAP: dict[
+    EvaluatorType, Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]]
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
@@ -169,7 +170,7 @@ def load_evaluators(
     llm: Optional[BaseLanguageModel] = None,
     config: Optional[dict] = None,
     **kwargs: Any,
-) -> List[Union[Chain, StringEvaluator]]:
+) -> list[Union[Chain, StringEvaluator]]:
     """Load evaluators specified by a list of evaluator types.
 
     Parameters

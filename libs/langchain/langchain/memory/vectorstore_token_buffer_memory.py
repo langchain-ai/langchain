@@ -9,7 +9,7 @@ sessions.
 
 import warnings
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
@@ -110,7 +110,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     split_chunk_size: int = 1000
 
     _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore
-    _timestamps: List[datetime] = PrivateAttr(default_factory=list)
+    _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property
     def memory_retriever(self) -> VectorStoreRetrieverMemory:
@@ -120,7 +120,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         self._memory_retriever = VectorStoreRetrieverMemory(retriever=self.retriever)
         return self._memory_retriever
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history and memory buffer."""
         try:
             with warnings.catch_warnings():
@@ -142,7 +142,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         messages.extend(current_history[self.memory_key])
         return {self.memory_key: messages}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer. Pruned."""
         BaseChatMemory.save_context(self, inputs, outputs)
         self._timestamps.append(datetime.now().astimezone())
@@ -166,7 +166,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         while len(buffer) > 0:
             self._pop_and_store_interaction(buffer)
 
-    def _pop_and_store_interaction(self, buffer: List[BaseMessage]) -> None:
+    def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:
         input = buffer.pop(0)
         output = buffer.pop(0)
         timestamp = self._timestamps.pop(0).strftime(TIMESTAMP_FORMAT)
@@ -179,6 +179,6 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 
-    def _split_long_ai_text(self, text: str) -> List[str]:
+    def _split_long_ai_text(self, text: str) -> list[str]:
         splitter = RecursiveCharacterTextSplitter(chunk_size=self.split_chunk_size)
         return [chunk.page_content for chunk in splitter.create_documents([text])]

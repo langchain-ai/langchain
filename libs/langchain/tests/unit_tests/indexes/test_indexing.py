@@ -1,14 +1,8 @@
+from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Type,
 )
 from unittest.mock import patch
 
@@ -48,7 +42,7 @@ class InMemoryVectorStore(VectorStore):
 
     def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
-        self.store: Dict[str, Document] = {}
+        self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
@@ -69,7 +63,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -94,7 +88,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if ids and len(ids) != len(documents):
             raise ValueError(
                 f"Expected {len(ids)} ids, got {len(documents)} documents."
@@ -114,18 +108,18 @@ class InMemoryVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[list[dict[Any, Any]]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add the given texts to the store (insert behavior)."""
         raise NotImplementedError()
 
     @classmethod
     def from_texts(
-        cls: Type[VST],
-        texts: List[str],
+        cls: type[VST],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[list[dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> VST:
         """Create a vector store from a list of texts."""
@@ -133,7 +127,7 @@ class InMemoryVectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Find the most similar documents to the given query."""
         raise NotImplementedError()
 

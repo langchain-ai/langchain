@@ -1,4 +1,5 @@
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException

@@ -196,7 +196,7 @@ def create_sql_agent(
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableAgent(
-            runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore
+            runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore[arg-type]
             input_keys_arg=["input"],
             return_keys_arg=["output"],
             **kwargs,
@@ -211,9 +211,9 @@ def create_sql_agent(
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
         if agent_type == "openai-tools":
-            runnable = create_openai_tools_agent(llm, tools, prompt)  # type: ignore
+            runnable = create_openai_tools_agent(llm, tools, prompt)  # type: ignore[arg-type]
         else:
-            runnable = create_tool_calling_agent(llm, tools, prompt)  # type: ignore
+            runnable = create_tool_calling_agent(llm, tools, prompt)  # type: ignore[arg-type]
         agent = RunnableMultiActionAgent(  # type: ignore[assignment]
             runnable=runnable,
             input_keys_arg=["input"],

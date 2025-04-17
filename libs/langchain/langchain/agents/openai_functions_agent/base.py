@@ -1,6 +1,7 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 
-from typing import Any, List, Optional, Sequence, Tuple, Type, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -51,11 +52,11 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
-    output_parser: Type[OpenAIFunctionsAgentOutputParser] = (
+    output_parser: type[OpenAIFunctionsAgentOutputParser] = (
         OpenAIFunctionsAgentOutputParser
     )
 
-    def get_allowed_tools(self) -> List[str]:
+    def get_allowed_tools(self) -> list[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
 
@@ -81,19 +82,19 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         return self
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Get input keys. Input refers to user input here."""
         return ["input"]
 
     @property
-    def functions(self) -> List[dict]:
+    def functions(self) -> list[dict]:
         """Get functions."""
 
         return [dict(convert_to_openai_function(t)) for t in self.tools]
 
     def plan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         with_functions: bool = True,
         **kwargs: Any,
@@ -135,7 +136,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
     async def aplan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -168,7 +169,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     def return_stopped_response(
         self,
         early_stopping_method: str,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations.
@@ -213,7 +214,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         system_message: Optional[SystemMessage] = SystemMessage(
             content="You are a helpful AI assistant."
         ),
-        extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
+        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> ChatPromptTemplate:
         """Create prompt for this agent.
 
@@ -227,7 +228,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             A prompt template to pass into this agent.
         """
         _prompts = extra_prompt_messages or []
-        messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
+        messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
         if system_message:
             messages = [system_message]
         else:
@@ -248,7 +249,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
+        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
         system_message: Optional[SystemMessage] = SystemMessage(
             content="You are a helpful AI assistant."
         ),

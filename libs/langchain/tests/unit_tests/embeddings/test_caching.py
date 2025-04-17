@@ -1,7 +1,5 @@
 """Embeddings tests."""
 
-from typing import List
-
 import pytest
 from langchain_core.embeddings import Embeddings
 
@@ -10,16 +8,16 @@ from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         # Simulate embedding documents
-        embeddings: List[List[float]] = []
+        embeddings: list[list[float]] = []
         for text in texts:
             if text == "RAISE_EXCEPTION":
                 raise ValueError("Simulated embedding failure")
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
 
@@ -61,7 +59,7 @@ def cache_embeddings_with_query() -> CacheBackedEmbeddings:
 def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
     texts = ["1", "22", "a", "333"]
     vectors = cache_embeddings.embed_documents(texts)
-    expected_vectors: List[List[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
+    expected_vectors: list[list[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
     assert vectors == expected_vectors
     keys = list(cache_embeddings.document_embedding_store.yield_keys())
     assert len(keys) == 4
@@ -104,7 +102,7 @@ def test_embed_cached_query(cache_embeddings_with_query: CacheBackedEmbeddings) 
 async def test_aembed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
     texts = ["1", "22", "a", "333"]
     vectors = await cache_embeddings.aembed_documents(texts)
-    expected_vectors: List[List[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
+    expected_vectors: list[list[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
     assert vectors == expected_vectors
     keys = [
         key async for key in cache_embeddings.document_embedding_store.ayield_keys()

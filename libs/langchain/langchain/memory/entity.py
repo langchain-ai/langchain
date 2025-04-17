@@ -2,8 +2,9 @@
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -70,7 +71,7 @@ class BaseEntityStore(BaseModel, ABC):
 class InMemoryEntityStore(BaseEntityStore):
     """In-memory Entity store."""
 
-    store: Dict[str, Optional[str]] = {}
+    store: dict[str, Optional[str]] = {}
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self.store.get(key, default)
@@ -403,7 +404,7 @@ class ConversationEntityMemory(BaseChatMemory):
 
     # Cache of recently detected entity names, if any
     # It is updated when load_memory_variables is called:
-    entity_cache: List[str] = []
+    entity_cache: list[str] = []
 
     # Number of recent message pairs to consider when updating entities:
     k: int = 3
@@ -414,19 +415,19 @@ class ConversationEntityMemory(BaseChatMemory):
     entity_store: BaseEntityStore = Field(default_factory=InMemoryEntityStore)
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> list[BaseMessage]:
         """Access chat memory messages."""
         return self.chat_memory.messages
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return ["entities", self.chat_history_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """
         Returns chat history and all generated entities with summaries if available,
         and updates or clears the recent entity cache.
@@ -491,7 +492,7 @@ class ConversationEntityMemory(BaseChatMemory):
             "entities": entity_summaries,
         }
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """
         Save context from this conversation history to the entity store.
 

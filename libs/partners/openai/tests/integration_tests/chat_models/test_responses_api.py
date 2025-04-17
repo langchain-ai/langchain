@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Optional, cast
+from typing import Annotated, Any, Optional, cast
 
 import openai
 import pytest
@@ -13,7 +13,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
 )
 from pydantic import BaseModel
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 
@@ -53,6 +53,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         assert tool_output["type"]
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -108,6 +109,7 @@ def test_web_search() -> None:
     _check_response(response)
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     response = await llm.ainvoke(
@@ -129,6 +131,7 @@ async def test_web_search_async() -> None:
     _check_response(full)
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_function_calling() -> None:
     def multiply(x: int, y: int) -> int:
         """return x * y"""
@@ -149,7 +152,7 @@ def test_function_calling() -> None:
     assert full.tool_calls[0]["name"] == "multiply"
     assert set(full.tool_calls[0]["args"]) == {"x", "y"}
 
-    response = bound_llm.invoke("whats some good news from today")
+    response = bound_llm.invoke("What was a positive news story from today?")
     _check_response(response)
 
 
@@ -197,6 +200,7 @@ async def test_parsed_pydantic_schema_async() -> None:
     assert parsed.response
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 def test_parsed_dict_schema(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
@@ -241,6 +245,7 @@ def test_parsed_strict() -> None:
         )
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 async def test_parsed_dict_schema_async(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
@@ -286,10 +291,14 @@ def test_reasoning() -> None:
     assert isinstance(response, AIMessage)
     assert response.additional_kwargs["reasoning"]
 
+    # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
-    response = llm.invoke("Hello")
-    assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    assert full.additional_kwargs["reasoning"]
 
 
 def test_stateful_api() -> None:
@@ -302,6 +311,25 @@ def test_stateful_api() -> None:
     )
     assert isinstance(second_response.content, list)
     assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore
+
+
+def test_route_from_model_kwargs() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    _ = next(llm.stream("Hello"))
+
+
+@pytest.mark.flaky(retries=3, delay=1)
+def test_computer_calls() -> None:
+    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    tool = {
+        "type": "computer_use_preview",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    llm_with_tools = llm.bind_tools([tool], tool_choice="any")
+    response = llm_with_tools.invoke("Please open the browser.")
+    assert response.additional_kwargs["tool_outputs"]
 
 
 def test_file_search() -> None:

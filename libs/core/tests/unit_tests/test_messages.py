@@ -21,7 +21,9 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
     convert_to_messages,
+    convert_to_openai_image_block,
     get_buffer_string,
+    is_data_content_block,
     merge_content,
     message_chunk_to_message,
     message_to_dict,
@@ -184,7 +186,9 @@ def test_chat_message_chunks() -> None:
         "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Cannot concatenate ChatMessageChunks with different roles."
+    ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
         )
@@ -290,7 +294,10 @@ def test_function_message_chunks() -> None:
         id="ai5", name="hello", content="I am indeed."
     ), "FunctionMessageChunk + FunctionMessageChunk should be a FunctionMessageChunk"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Cannot concatenate FunctionMessageChunks with different names.",
+    ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
         )
@@ -303,7 +310,10 @@ def test_ai_message_chunks() -> None:
         "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Cannot concatenate AIMessageChunks with different example values.",
+    ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
         )
@@ -320,30 +330,21 @@ class TestGetBufferString(unittest.TestCase):
         self.tool_calls_msg = AIMessage(content="tool")
 
     def test_empty_input(self) -> None:
-        self.assertEqual(get_buffer_string([]), "")
+        assert get_buffer_string([]) == ""
 
     def test_valid_single_message(self) -> None:
         expected_output = f"Human: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg]),
-            expected_output,
-        )
+        assert get_buffer_string([self.human_msg]) == expected_output
 
     def test_custom_human_prefix(self) -> None:
         prefix = "H"
         expected_output = f"{prefix}: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg], human_prefix="H"),
-            expected_output,
-        )
+        assert get_buffer_string([self.human_msg], human_prefix="H") == expected_output
 
     def test_custom_ai_prefix(self) -> None:
         prefix = "A"
         expected_output = f"{prefix}: {self.ai_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.ai_msg], ai_prefix="A"),
-            expected_output,
-        )
+        assert get_buffer_string([self.ai_msg], ai_prefix="A") == expected_output
 
     def test_multiple_msg(self) -> None:
         msgs = [
@@ -366,10 +367,7 @@ class TestGetBufferString(unittest.TestCase):
                 "AI: tool",
             ]
         )
-        self.assertEqual(
-            get_buffer_string(msgs),
-            expected_output,
-        )
+        assert get_buffer_string(msgs) == expected_output
 
 
 def test_multiple_msg() -> None:
@@ -439,8 +437,8 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
-            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),
+            create_tool_call(name="tool2", args={}, id="2"),
         ],
         invalid_tool_calls=[
             create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
@@ -991,7 +989,7 @@ def test_tool_message_str() -> None:
 
 
 @pytest.mark.parametrize(
-    ["first", "others", "expected"],
+    ("first", "others", "expected"),
     [
         ("", [""], ""),
         ("", [[]], [""]),
@@ -1091,3 +1089,95 @@ def test_message_text() -> None:
         ).text()
         == ""
     )
+
+
+def test_is_data_content_block() -> None:
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "metadata": {"cache_control": {"type": "ephemeral"}},
+        }
+    )
+
+    assert not is_data_content_block(
+        {
+            "type": "text",
+            "text": "foo",
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image",
+            "source": "<base64 data>",
+        }
+    )
+
+
+def test_convert_to_openai_image_block() -> None:
+    input_block = {
+        "type": "image",
+        "source_type": "url",
+        "url": "https://...",
+        "cache_control": {"type": "ephemeral"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://..."},
+    }
+    result = convert_to_openai_image_block(input_block)
+    assert result == expected
+
+    input_block = {
+        "type": "image",
+        "source_type": "base64",
+        "data": "<base64 data>",
+        "mime_type": "image/jpeg",
+        "cache_control": {"type": "ephemeral"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/jpeg;base64,<base64 data>",
+        },
+    }
+    result = convert_to_openai_image_block(input_block)
+    assert result == expected

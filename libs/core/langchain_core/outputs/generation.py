@@ -1,3 +1,5 @@
+"""Generation output schema."""
+
 from __future__ import annotations
 
 from typing import Any, Literal, Optional
@@ -41,19 +43,18 @@ class Generation(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default namespace is ["langchain", "schema", "output"].
+        """
         return ["langchain", "schema", "output"]
 
 
 class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "output"]
-
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
+        """Concatenate two GenerationChunks."""
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(
                 self.generation_info or {},
@@ -63,8 +64,5 @@ class GenerationChunk(Generation):
                 text=self.text + other.text,
                 generation_info=generation_info or None,
             )
-        else:
-            msg = (
-                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-            )
-            raise TypeError(msg)
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        raise TypeError(msg)

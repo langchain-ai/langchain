@@ -1,3 +1,5 @@
+"""Configuration utilities for Runnables."""
+
 from __future__ import annotations
 
 import asyncio
@@ -200,7 +202,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if var_config := var_child_runnable_config.get():
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in var_config.items()
@@ -211,7 +213,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if config is not None:
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in config.items()
@@ -241,12 +243,12 @@ def get_config_list(
      It is useful for subclasses overriding batch() or abatch().
 
     Args:
-        config (Optional[Union[RunnableConfig, List[RunnableConfig]]]):
+        config (Optional[Union[RunnableConfig, list[RunnableConfig]]]):
           The config or list of configs.
         length (int): The length of the list.
 
     Returns:
-        List[RunnableConfig]: The list of configs.
+        list[RunnableConfig]: The list of configs.
 
     Raises:
         ValueError: If the length of the list is not equal to the length of the inputs.
@@ -271,7 +273,7 @@ def get_config_list(
             stacklevel=3,
         )
         subsequent = cast(
-            RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
+            "RunnableConfig", {k: v for k, v in config.items() if k != "run_id"}
         )
         return [
             ensure_config(subsequent) if i else ensure_config(config)
@@ -300,7 +302,7 @@ def patch_config(
         max_concurrency (Optional[int], optional): The max concurrency to set.
           Defaults to None.
         run_name (Optional[str], optional): The run name to set. Defaults to None.
-        configurable (Optional[Dict[str, Any]], optional): The configurable to set.
+        configurable (Optional[dict[str, Any]], optional): The configurable to set.
           Defaults to None.
 
     Returns:
@@ -341,18 +343,18 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base[key] = {  # type: ignore
-                    **base.get(key, {}),  # type: ignore
-                    **(config.get(key) or {}),  # type: ignore
+                base["metadata"] = {
+                    **base.get("metadata", {}),
+                    **(config.get("metadata") or {}),
                 }
             elif key == "tags":
-                base[key] = sorted(  # type: ignore
-                    set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
+                base["tags"] = sorted(
+                    set(base.get("tags", []) + (config.get("tags") or [])),
                 )
             elif key == "configurable":
-                base[key] = {  # type: ignore
-                    **base.get(key, {}),  # type: ignore
-                    **(config.get(key) or {}),  # type: ignore
+                base["configurable"] = {
+                    **base.get("configurable", {}),
+                    **(config.get("configurable") or {}),
                 }
             elif key == "callbacks":
                 base_callbacks = base.get("callbacks")
@@ -388,7 +390,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
                 base[key] = config[key].copy()  # type: ignore[literal-required]
             else:
-                base[key] = config[key] or base.get(key)  # type: ignore
+                base[key] = config[key] or base.get(key)  # type: ignore[literal-required]
     return base
 
 
@@ -407,18 +409,14 @@ def call_func_with_variable_args(
     """Call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Output],
-          Callable[[Input, CallbackManagerForChainRun], Output],
-          Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output]]):
-           The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (CallbackManagerForChainRun): The run manager to
-          pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:
@@ -448,18 +446,14 @@ def acall_func_with_variable_args(
     """Async call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]]]):
-            The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (AsyncCallbackManagerForChainRun): The run manager
-          to pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:
@@ -533,7 +527,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             Future[T]: The future for the function.
         """
         return super().submit(
-            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs))
+            cast("Callable[..., T]", partial(copy_context().run, func, *args, **kwargs))
         )
 
     def map(
@@ -621,7 +615,7 @@ async def run_in_executor(
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            cast(Callable[..., T], partial(copy_context().run, wrapper)),
+            cast("Callable[..., T]", partial(copy_context().run, wrapper)),
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

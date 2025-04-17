@@ -1,7 +1,8 @@
 """DeepSeek chat models."""
 
+from collections.abc import Iterator
 from json import JSONDecodeError
-from typing import Any, Dict, Iterator, List, Literal, Optional, Type, TypeVar, Union
+from typing import Any, Literal, Optional, TypeVar, Union
 
 import openai
 from langchain_core.callbacks import (
@@ -19,8 +20,8 @@ from typing_extensions import Self
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -178,7 +179,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         return "chat-deepseek"
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids."""
         return {"api_key": "DEEPSEEK_API_KEY"}
 
@@ -217,7 +218,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
+        generation_info: Optional[dict] = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
@@ -228,14 +229,23 @@ class ChatDeepSeek(BaseChatOpenAI):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
                 response.choices[0].message.reasoning_content  # type: ignore
             )
+        # Handle use via OpenRouter
+        elif hasattr(response.choices[0].message, "model_extra"):  # type: ignore
+            model_extra = response.choices[0].message.model_extra  # type: ignore
+            if isinstance(model_extra, dict) and (
+                reasoning := model_extra.get("reasoning")
+            ):
+                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                    reasoning
+                )
 
         return rtn
 
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,
-        default_chunk_class: Type,
-        base_generation_info: Optional[Dict],
+        default_chunk_class: type,
+        base_generation_info: Optional[dict],
     ) -> Optional[ChatGenerationChunk]:
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
@@ -244,17 +254,23 @@ class ChatDeepSeek(BaseChatOpenAI):
         )
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
-            if reasoning_content := top.get("delta", {}).get("reasoning_content"):
-                if isinstance(generation_chunk.message, AIMessageChunk):
+            if isinstance(generation_chunk.message, AIMessageChunk):
+                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning_content
                     )
+                # Handle use via OpenRouter
+                elif reasoning := top.get("delta", {}).get("reasoning"):
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning
+                    )
+
         return generation_chunk
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -272,8 +288,8 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:

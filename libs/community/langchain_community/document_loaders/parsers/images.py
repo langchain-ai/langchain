@@ -53,7 +53,11 @@ class BaseImageBlobParser(BaseBlobParser):
 
         with blob.as_bytes_io() as buf:
             if blob.mimetype == "application/x-npy":
-                img = Img.fromarray(numpy.load(buf))
+                array = numpy.load(buf)
+                if array.ndim == 3 and array.shape[2] == 1:  # Grayscale image
+                    img = Img.fromarray(numpy.squeeze(array, axis=2), mode="L")
+                else:
+                    img = Img.fromarray(array)
             else:
                 img = Img.open(buf)
             content = self._analyze_image(img)
@@ -103,7 +107,7 @@ class RapidOCRBlobParser(BaseImageBlobParser):
                     "`rapidocr-onnxruntime` package not found, please install it with "
                     "`pip install rapidocr-onnxruntime`"
                 )
-        ocr_result, _ = self.ocr(np.array(img))  # type: ignore
+        ocr_result, _ = self.ocr(np.array(img))  # type: ignore[misc]
         content = ""
         if ocr_result:
             content = ("\n".join([text[1] for text in ocr_result])).strip()

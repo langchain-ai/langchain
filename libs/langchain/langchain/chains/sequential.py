@@ -1,6 +1,6 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -16,9 +16,9 @@ from langchain.chains.base import Chain
 class SequentialChain(Chain):
     """Chain where the outputs of one chain feed directly into next."""
 
-    chains: List[Chain]
-    input_variables: List[str]
-    output_variables: List[str]  #: :meta private:
+    chains: list[Chain]
+    input_variables: list[str]
+    output_variables: list[str]  #: :meta private:
     return_all: bool = False
 
     model_config = ConfigDict(
@@ -27,7 +27,7 @@ class SequentialChain(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return expected input keys to the chain.
 
         :meta private:
@@ -35,7 +35,7 @@ class SequentialChain(Chain):
         return self.input_variables
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -44,7 +44,7 @@ class SequentialChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_chains(cls, values: Dict) -> Any:
+    def validate_chains(cls, values: dict) -> Any:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
         input_variables = values["input_variables"]
@@ -97,9 +97,9 @@ class SequentialChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         known_values = inputs.copy()
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         for i, chain in enumerate(self.chains):
@@ -110,9 +110,9 @@ class SequentialChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         known_values = inputs.copy()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
@@ -127,7 +127,7 @@ class SequentialChain(Chain):
 class SimpleSequentialChain(Chain):
     """Simple chain where the outputs of one step feed directly into next."""
 
-    chains: List[Chain]
+    chains: list[Chain]
     strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -138,7 +138,7 @@ class SimpleSequentialChain(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -146,7 +146,7 @@ class SimpleSequentialChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -171,9 +171,9 @@ class SimpleSequentialChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
@@ -190,9 +190,9 @@ class SimpleSequentialChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
