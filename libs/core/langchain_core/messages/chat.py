@@ -22,21 +22,18 @@ class ChatMessage(BaseMessage):
     """The type of the message (used during serialization). Defaults to "chat"."""
 
 
-ChatMessage.model_rebuild()
-
-
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """Chat Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
+    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore[assignment]
     """The type of the message (used during serialization).
     Defaults to "ChatMessageChunk"."""
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ChatMessageChunk):
             if self.role != other.role:
                 msg = "Cannot concatenate ChatMessageChunks with different roles."
@@ -53,7 +50,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 ),
                 id=self.id,
             )
-        elif isinstance(other, BaseMessageChunk):
+        if isinstance(other, BaseMessageChunk):
             return self.__class__(
                 role=self.role,
                 content=merge_content(self.content, other.content),
@@ -65,5 +62,4 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 ),
                 id=self.id,
             )
-        else:
-            return super().__add__(other)
+        return super().__add__(other)

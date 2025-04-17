@@ -5,15 +5,11 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion
 
 import asyncio
 from collections import defaultdict
-from collections.abc import Hashable
+from collections.abc import Hashable, Iterable, Iterator
 from itertools import chain
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
     TypeVar,
     cast,
@@ -70,13 +66,13 @@ class EnsembleRetriever(BaseRetriever):
             If not specified, page_content is used.
     """
 
-    retrievers: List[RetrieverLike]
-    weights: List[float]
+    retrievers: list[RetrieverLike]
+    weights: list[float]
     c: int = 60
     id_key: Optional[str] = None
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         """List configurable fields for this runnable."""
         return get_unique_config_specs(
             spec for retriever in self.retrievers for spec in retriever.config_specs
@@ -84,7 +80,7 @@ class EnsembleRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def set_weights(cls, values: Dict[str, Any]) -> Any:
+    def set_weights(cls, values: dict[str, Any]) -> Any:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
@@ -92,7 +88,7 @@ class EnsembleRetriever(BaseRetriever):
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         from langchain_core.callbacks import CallbackManager
 
         config = ensure_config(config)
@@ -125,7 +121,7 @@ class EnsembleRetriever(BaseRetriever):
 
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         from langchain_core.callbacks import AsyncCallbackManager
 
         config = ensure_config(config)
@@ -163,7 +159,7 @@ class EnsembleRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Get the relevant documents for a given query.
 
@@ -184,7 +180,7 @@ class EnsembleRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Asynchronously get the relevant documents for a given query.
 
@@ -206,7 +202,7 @@ class EnsembleRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         *,
         config: Optional[RunnableConfig] = None,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Retrieve the results of the retrievers and use rank_fusion_func to get
         the final result.
@@ -247,7 +243,7 @@ class EnsembleRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         *,
         config: Optional[RunnableConfig] = None,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Asynchronously retrieve the results of the retrievers
         and use rank_fusion_func to get the final result.
@@ -286,8 +282,8 @@ class EnsembleRetriever(BaseRetriever):
         return fused_documents
 
     def weighted_reciprocal_rank(
-        self, doc_lists: List[List[Document]]
-    ) -> List[Document]:
+        self, doc_lists: list[list[Document]]
+    ) -> list[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.
         You can find more details about RRF here:
@@ -307,7 +303,7 @@ class EnsembleRetriever(BaseRetriever):
 
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively
-        rrf_score: Dict[str, float] = defaultdict(float)
+        rrf_score: dict[str, float] = defaultdict(float)
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[

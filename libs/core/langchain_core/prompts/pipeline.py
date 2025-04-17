@@ -1,7 +1,6 @@
 """[DEPRECATED] Pipeline prompt template."""
 
 from typing import Any
-from typing import Optional as Optional
 
 from pydantic import model_validator
 
@@ -133,6 +132,3 @@ class PipelinePromptTemplate(BasePromptTemplate):
     @property
     def _prompt_type(self) -> str:
         raise ValueError
-
-
-PipelinePromptTemplate.model_rebuild()

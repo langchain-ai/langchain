@@ -1,6 +1,6 @@
 """Test ChatDeepSeek chat model."""
 
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -13,7 +13,7 @@ from langchain_deepseek.chat_models import ChatDeepSeek
 
 class TestChatDeepSeek(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[ChatDeepSeek]:
+    def chat_model_class(self) -> type[ChatDeepSeek]:
         return ChatDeepSeek
 
     @property

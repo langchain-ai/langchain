@@ -1,4 +1,5 @@
-from typing import Any, List, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -38,13 +39,13 @@ class XMLAgent(BaseSingleActionAgent):
 
     """
 
-    tools: List[BaseTool]
+    tools: list[BaseTool]
     """List of tools this agent has access to."""
     llm_chain: LLMChain
     """Chain to use to predict action."""
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         return ["input"]
 
     @staticmethod
@@ -60,7 +61,7 @@ class XMLAgent(BaseSingleActionAgent):
 
     def plan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -84,7 +85,7 @@ class XMLAgent(BaseSingleActionAgent):
 
     async def aplan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
@@ -113,7 +114,7 @@ def create_xml_agent(
     prompt: BasePromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description,
     *,
-    stop_sequence: Union[bool, List[str]] = True,
+    stop_sequence: Union[bool, list[str]] = True,
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 

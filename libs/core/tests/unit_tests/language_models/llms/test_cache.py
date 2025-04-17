@@ -1,5 +1,7 @@
 from typing import Any, Optional
 
+from typing_extensions import override
+
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
 from langchain_core.language_models import FakeListLLM
@@ -20,6 +22,7 @@ class InMemoryCache(BaseCache):
         """Update cache based on prompt and llm_string."""
         self._cache[(prompt, llm_string)] = return_val
 
+    @override
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
@@ -74,6 +77,7 @@ class InMemoryCacheBad(BaseCache):
         msg = "This code should not be triggered"
         raise NotImplementedError(msg)
 
+    @override
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}

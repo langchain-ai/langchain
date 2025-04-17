@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import requests
 from langchain_core._api import deprecated
@@ -70,7 +70,7 @@ def _format_url(url: str, path_params: dict) -> str:
     return url.format(**new_params)
 
 
-def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -> dict:
+def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -> dict:
     properties = {}
     required = []
     for p in params:
@@ -89,7 +89,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
 
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
-) -> Tuple[List[Dict[str, Any]], Callable]:
+) -> tuple[list[dict[str, Any]], Callable]:
     """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
         functions.
 
@@ -208,18 +208,18 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return [self.output_key]
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the logic of this chain and return the output."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         name = inputs[self.input_key].pop("name")
@@ -257,10 +257,10 @@ def get_openapi_chain(
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
-    llm_chain_kwargs: Optional[Dict] = None,
+    llm_chain_kwargs: Optional[dict] = None,
     verbose: bool = False,
-    headers: Optional[Dict] = None,
-    params: Optional[Dict] = None,
+    headers: Optional[dict] = None,
+    params: Optional[dict] = None,
     **kwargs: Any,
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.

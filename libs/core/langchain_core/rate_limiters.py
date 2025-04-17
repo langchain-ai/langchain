@@ -6,9 +6,7 @@ import abc
 import asyncio
 import threading
 import time
-from typing import (
-    Optional,
-)
+from typing import Optional
 
 
 class BaseRateLimiter(abc.ABC):

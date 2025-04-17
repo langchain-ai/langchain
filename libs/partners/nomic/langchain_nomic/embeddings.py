@@ -1,5 +1,5 @@
 import os
-from typing import List, Literal, Optional, overload
+from typing import Literal, Optional, overload
 
 import nomic  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
@@ -86,7 +86,7 @@ class NomicEmbeddings(Embeddings):
         self.device = device
         self.vision_model = vision_model
 
-    def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
+    def embed(self, texts: list[str], *, task_type: str) -> list[list[float]]:
         """Embed texts.
 
         Args:
@@ -105,7 +105,7 @@ class NomicEmbeddings(Embeddings):
         )
         return output["embeddings"]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs.
 
         Args:
@@ -116,7 +116,7 @@ class NomicEmbeddings(Embeddings):
             task_type="search_document",
         )
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text.
 
         Args:
@@ -127,7 +127,7 @@ class NomicEmbeddings(Embeddings):
             task_type="search_query",
         )[0]
 
-    def embed_image(self, uris: List[str]) -> List[List[float]]:
+    def embed_image(self, uris: list[str]) -> list[list[float]]:
         return embed.image(
             images=uris,
             model=self.vision_model,

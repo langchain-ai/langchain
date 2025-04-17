@@ -46,7 +46,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             The sequence of run evaluators to be executed.
         executor : ThreadPoolExecutor
             The thread pool executor used for running the evaluators.
-        futures : Set[Future]
+        futures : set[Future]
             The set of futures representing the running evaluators.
         skip_unfinished : bool
             Whether to skip runs that are not finished or raised
@@ -62,7 +62,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         evaluators: Sequence[langsmith.RunEvaluator],
         client: Optional[langsmith.Client] = None,
         example_id: Optional[Union[UUID, str]] = None,
-        skip_unfinished: bool = True,
+        skip_unfinished: bool = True,  # noqa: FBT001,FBT002
         project_name: Optional[str] = "evaluators",
         max_concurrency: Optional[int] = None,
         **kwargs: Any,
@@ -132,7 +132,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 )
                 evaluation_result = evaluator.evaluate_run(
                     # This is subclass, but getting errors for some reason
-                    run,  # type: ignore
+                    run,  # type: ignore[arg-type]
                     example=reference_example,
                 )
                 eval_results = self._log_evaluation_feedback(
@@ -162,7 +162,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast("list[EvaluationResult]", results["results"])
+            results_ = results["results"]
         else:
             msg = (
                 f"Invalid evaluation result type {type(results)}."

@@ -36,6 +36,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
@@ -340,20 +341,19 @@ class VectorStore(ABC):
         """
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
-        elif search_type == "similarity_score_threshold":
+        if search_type == "similarity_score_threshold":
             docs_and_similarities = self.similarity_search_with_relevance_scores(
                 query, **kwargs
             )
             return [doc for doc, _ in docs_and_similarities]
-        elif search_type == "mmr":
+        if search_type == "mmr":
             return self.max_marginal_relevance_search(query, **kwargs)
-        else:
-            msg = (
-                f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity', 'similarity_score_threshold'"
-                " or 'mmr'."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"search_type of {search_type} not allowed. Expected "
+            "search_type to be 'similarity', 'similarity_score_threshold'"
+            " or 'mmr'."
+        )
+        raise ValueError(msg)
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
@@ -375,19 +375,18 @@ class VectorStore(ABC):
         """
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
-        elif search_type == "similarity_score_threshold":
+        if search_type == "similarity_score_threshold":
             docs_and_similarities = await self.asimilarity_search_with_relevance_scores(
                 query, **kwargs
             )
             return [doc for doc, _ in docs_and_similarities]
-        elif search_type == "mmr":
+        if search_type == "mmr":
             return await self.amax_marginal_relevance_search(query, **kwargs)
-        else:
-            msg = (
-                f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"search_type of {search_type} not allowed. Expected "
+            "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
+        )
+        raise ValueError(msg)
 
     @abstractmethod
     def similarity_search(
@@ -820,11 +819,11 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -850,11 +849,11 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -905,14 +904,14 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_texts(
-        cls: type[VST],
+        cls,
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
         *,
         ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from texts and embeddings.
 
         Args:
@@ -1071,6 +1070,7 @@ class VectorStoreRetriever(BaseRetriever):
 
         return ls_params
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
@@ -1091,6 +1091,7 @@ class VectorStoreRetriever(BaseRetriever):
             raise ValueError(msg)
         return docs
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,

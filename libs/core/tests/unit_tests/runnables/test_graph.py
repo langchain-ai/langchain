@@ -1,7 +1,8 @@
 from typing import Any, Optional
 
+from packaging import version
 from pydantic import BaseModel
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain_core.language_models import FakeListLLM
@@ -9,10 +10,13 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables.base import Runnable, RunnableConfig
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.graph import Edge, Graph, Node
 from langchain_core.runnables.graph_mermaid import _escape_node_label
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+)
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -219,8 +223,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     def conditional_str_parser(input: str) -> Runnable:
         if input == "a":
             return str_parser
-        else:
-            return xml_parser
+        return xml_parser
 
     sequence: Runnable = (
         prompt
@@ -232,12 +235,10 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     )
     graph = sequence.get_graph()
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if version.parse("2.10") <= PYDANTIC_VERSION:
         assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
             name="graph_with_schema"
         )
-
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
         assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
 
     assert graph.draw_ascii() == snapshot(name="ascii")

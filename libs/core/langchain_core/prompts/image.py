@@ -110,14 +110,13 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         if not url:
             msg = "Must provide url."
             raise ValueError(msg)
-        elif not isinstance(url, str):
+        if not isinstance(url, str):
             msg = "url must be a string."
-            raise ValueError(msg)
-        else:
-            output: ImageURL = {"url": url}
-            if detail:
-                # Don't check literal values here: let the API check them
-                output["detail"] = detail  # type: ignore[typeddict-item]
+            raise ValueError(msg)  # noqa: TRY004
+        output: ImageURL = {"url": url}
+        if detail:
+            # Don't check literal values here: let the API check them
+            output["detail"] = detail
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
@@ -134,7 +133,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """
         return await run_in_executor(None, self.format, **kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Return a pretty representation of the prompt.
 
         Args:

@@ -42,10 +42,9 @@ def test_single_input_agent_raises_error_on_structured_tool(
 
     with pytest.raises(
         ValueError,
-        match=f"{agent_cls.__name__} does not support"  # type: ignore
-        f" multi-input tool the_tool.",
+        match=f"{agent_cls.__name__} does not support multi-input tool the_tool.",
     ):
-        agent_cls.from_llm_and_tools(MagicMock(), [the_tool])  # type: ignore
+        agent_cls.from_llm_and_tools(MagicMock(), [the_tool])
 
 
 def test_tool_no_args_specified_assumes_str() -> None:
@@ -85,8 +84,8 @@ def test_load_tools_with_callbacks_is_called() -> None:
     """Test callbacks are called when provided to load_tools fn."""
     callbacks = [FakeCallbackHandler()]
     tools = load_tools(
-        ["requests_get"],  # type: ignore
-        callbacks=callbacks,  # type: ignore
+        ["requests_get"],
+        callbacks=callbacks,  # type: ignore[arg-type]
         allow_dangerous_tools=True,
     )
     assert len(tools) == 1

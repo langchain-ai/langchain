@@ -1,6 +1,7 @@
 """Configuration for run evaluators."""
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -45,7 +46,7 @@ class EvalConfig(BaseModel):
 
     evaluator_type: EvaluatorType
 
-    def get_kwargs(self) -> Dict[str, Any]:
+    def get_kwargs(self) -> dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
 
         Returns
@@ -78,7 +79,7 @@ class SingleKeyEvalConfig(EvalConfig):
     """The key from the traced run's inputs dictionary to use to represent the
     input. If not provided, it will be inferred automatically."""
 
-    def get_kwargs(self) -> Dict[str, Any]:
+    def get_kwargs(self) -> dict[str, Any]:
         kwargs = super().get_kwargs()
         # Filer out the keys that are not needed for the evaluator.
         for key in ["reference_key", "prediction_key", "input_key"]:
@@ -121,7 +122,7 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[
+    evaluators: list[
         Union[
             SINGLE_EVAL_CONFIG_TYPE,
             CUSTOM_EVALUATOR_TYPE,
@@ -134,9 +135,9 @@ class RunEvalConfig(BaseModel):
     given evaluator
     (e.g., 
     :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
-    custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
+    custom_evaluators: Optional[list[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
-    batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
+    batch_evaluators: Optional[list[BATCH_EVALUATOR_LIKE]] = None
     """Evaluators that run on an aggregate/batch level.
 
     These generate 1 or more metrics that are assigned to the full test run.

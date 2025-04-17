@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 @deprecated(
     since="0.2.4",
     removal="1.0",
-    alternative_import="langchain_couchbase.CouchbaseVectorStore",
+    alternative_import="langchain_couchbase.CouchbaseSearchVectorStore",
 )
 class CouchbaseVectorStore(VectorStore):
     """`Couchbase Vector Store` vector store.

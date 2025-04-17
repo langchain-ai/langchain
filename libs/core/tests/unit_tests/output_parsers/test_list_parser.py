@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterable
-from typing import TypeVar, cast
+from typing import TypeVar
 
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
@@ -101,7 +101,7 @@ def test_numbered_list() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast("list[str]", expected)]
+        expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
         assert add(parser.transform(t for t in text)) == (expected or None)
         assert list(parser.transform(t for t in text)) == expectedlist
@@ -137,7 +137,7 @@ def test_markdown_list() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast("list[str]", expected)]
+        expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
         assert add(parser.transform(t for t in text)) == (expected or None)
         assert list(parser.transform(t for t in text)) == expectedlist
@@ -240,7 +240,7 @@ async def test_numbered_list_async() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast("list[str]", expected)]
+        expectedlist = [[a] for a in expected]
         assert await parser.aparse(text) == expected
         assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == (
             expected or None
@@ -283,7 +283,7 @@ async def test_markdown_list_async() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast("list[str]", expected)]
+        expectedlist = [[a] for a in expected]
         assert await parser.aparse(text) == expected
         assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == (
             expected or None

@@ -65,8 +65,7 @@ class BaseMessage(Serializable):
         """Coerce the id field to a string."""
         if id_value is not None:
             return str(id_value)
-        else:
-            return id_value
+        return id_value
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -120,10 +119,13 @@ class BaseMessage(Serializable):
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get a pretty representation of the message.
 
         Args:
@@ -163,32 +165,31 @@ def merge_content(
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
             if isinstance(content, str):
-                merged = cast("str", merged) + content
+                merged += content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged] + content  # type: ignore
+                merged = [merged] + content  # type: ignore[assignment,operator]
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast("list", merged), content)  # type: ignore
+            merged = merge_lists(cast("list", merged), content)  # type: ignore[assignment]
         # If the first content is a list, and the second content is a string
+        # If the last element of the first content is a string
+        # Add the second content to the last element
+        elif merged and isinstance(merged[-1], str):
+            merged[-1] += content
+        # If second content is an empty string, treat as a no-op
+        elif content == "":
+            pass
         else:
-            # If the last element of the first content is a string
-            # Add the second content to the last element
-            if merged and isinstance(merged[-1], str):
-                merged[-1] += content
-            # If second content is an empty string, treat as a no-op
-            elif content == "":
-                pass
-            else:
-                # Otherwise, add the second content as a new element of the list
-                merged.append(content)
+            # Otherwise, add the second content as a new element of the list
+            merged.append(content)
     return merged
 
 
 class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         """Message chunks support concatenation with other message chunks.
 
         This functionality is useful to combine message chunks yielded from
@@ -214,7 +215,7 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
-            return self.__class__(  # type: ignore[call-arg]
+            return self.__class__(
                 id=self.id,
                 type=self.type,
                 content=merge_content(self.content, other.content),
@@ -225,7 +226,7 @@ class BaseMessageChunk(BaseMessage):
                     self.response_metadata, other.response_metadata
                 ),
             )
-        elif isinstance(other, list) and all(
+        if isinstance(other, list) and all(
             isinstance(o, BaseMessageChunk) for o in other
         ):
             content = merge_content(self.content, *(o.content for o in other))
@@ -241,13 +242,12 @@ class BaseMessageChunk(BaseMessage):
                 additional_kwargs=additional_kwargs,
                 response_metadata=response_metadata,
             )
-        else:
-            msg = (
-                'unsupported operand type(s) for +: "'
-                f"{self.__class__.__name__}"
-                f'" and "{other.__class__.__name__}"'
-            )
-            raise TypeError(msg)
+        msg = (
+            'unsupported operand type(s) for +: "'
+            f"{self.__class__.__name__}"
+            f'" and "{other.__class__.__name__}"'
+        )
+        raise TypeError(msg)
 
 
 def message_to_dict(message: BaseMessage) -> dict:

@@ -48,7 +48,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        Tuple[str, str]: The literal and the template.
+        tuple[str, str]: The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -65,7 +65,11 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     return (literal, template)
 
 
-def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
+def l_sa_check(
+    template: str,  # noqa: ARG001
+    literal: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
     Args:
@@ -84,11 +88,14 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
-def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
+def r_sa_check(
+    template: str,
+    tag_type: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a final check to see if a tag could be a standalone.
 
     Args:
@@ -107,8 +114,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
@@ -120,7 +126,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        Tuple[Tuple[str, str], str]: The tag and the template.
+        tuple[tuple[str, str], str]: The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.
@@ -324,8 +330,8 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
@@ -368,12 +374,12 @@ def _get_key(
                         resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        resolved_scope = resolved_scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):
@@ -420,8 +426,8 @@ def render(
     def_ldel: str = "{{",
     def_rdel: str = "}}",
     scopes: Optional[Scopes] = None,
-    warn: bool = False,
-    keep: bool = False,
+    warn: bool = False,  # noqa: FBT001,FBT002
+    keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:
     """Render a mustache template.
 
@@ -457,12 +463,11 @@ def render(
         # Then we don't need to tokenize it
         # But it does need to be a generator
         tokens: Iterator[tuple[str, str]] = (token for token in template)
+    elif template in g_token_cache:
+        tokens = (token for token in g_token_cache[template])
     else:
-        if template in g_token_cache:
-            tokens = (token for token in g_token_cache[template])
-        else:
-            # Otherwise make a generator
-            tokens = tokenize(template, def_ldel, def_rdel)
+        # Otherwise make a generator
+        tokens = tokenize(template, def_ldel, def_rdel)
 
     output = ""
 

@@ -731,7 +731,7 @@ class ChatTongyi(BaseChatModel):
             if (
                 choice["finish_reason"] == "null"
                 and message["content"] == ""
-                and message["reasoning_content"] == ""
+                and message.get("reasoning_content", "") == ""
                 and "tool_calls" not in message
             ):
                 continue

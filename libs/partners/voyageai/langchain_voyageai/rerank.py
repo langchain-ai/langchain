@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
@@ -34,7 +35,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key exists in environment."""
         voyage_api_key = values.get("voyage_api_key") or os.getenv(
             "VOYAGE_API_KEY", None

@@ -1,8 +1,9 @@
 import os
 import re
 import time
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Optional, Union
 
 from langchain_core.stores import ByteStore
 
@@ -103,7 +104,7 @@ class LocalFileStore(ByteStore):
             if self.chmod_dir is not None:
                 os.chmod(dir, self.chmod_dir)
 
-    def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
+    def mget(self, keys: Sequence[str]) -> list[Optional[bytes]]:
         """Get the values associated with the given keys.
 
         Args:
@@ -113,7 +114,7 @@ class LocalFileStore(ByteStore):
             A sequence of optional values associated with the keys.
             If a key is not found, the corresponding value will be None.
         """
-        values: List[Optional[bytes]] = []
+        values: list[Optional[bytes]] = []
         for key in keys:
             full_path = self._get_full_path(key)
             if full_path.exists():
@@ -126,7 +127,7 @@ class LocalFileStore(ByteStore):
                 values.append(None)
         return values
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
+    def mset(self, key_value_pairs: Sequence[tuple[str, bytes]]) -> None:
         """Set the values for the given keys.
 
         Args:

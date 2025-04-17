@@ -5,10 +5,10 @@ import sys
 from collections.abc import AsyncIterator, Sequence
 from itertools import cycle
 from typing import Any, cast
-from typing import Optional as Optional
 
 import pytest
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -83,12 +83,12 @@ def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict:
+    def foo(_: int) -> dict:
         """Foo."""
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> list[Document]:
+    def get_docs(x: int) -> list[Document]:  # noqa: ARG001
         """Hello Doc."""
         return [Document(page_content="hello")]
 
@@ -435,7 +435,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
 
 async def test_event_stream_with_lambdas_from_lambda() -> None:
-    as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"}).with_config(
+    as_lambdas = RunnableLambda(lambda _: {"answer": "goodbye"}).with_config(
         {"run_name": "my_lambda"}
     )
     events = await _collect_events(
@@ -546,8 +546,7 @@ async def test_astream_events_from_model() -> None:
     def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return model.invoke(input)
-        else:
-            return model.invoke(input, config)
+        return model.invoke(input, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -671,8 +670,7 @@ async def test_astream_events_from_model() -> None:
     async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return await model.ainvoke(input)
-        else:
-            return await model.ainvoke(input, config)
+        return await model.ainvoke(input, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -1024,7 +1022,7 @@ async def test_event_streaming_with_tools() -> None:
         return "hello"
 
     @tool
-    def with_callbacks(callbacks: Callbacks) -> str:
+    def with_callbacks(callbacks: Callbacks) -> str:  # noqa: ARG001
         """A tool that does nothing."""
         return "world"
 
@@ -1034,13 +1032,13 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
-    events = await _collect_events(parameterless.astream_events({}, version="v1"))  # type: ignore
+    events = await _collect_events(parameterless.astream_events({}, version="v1"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1074,7 +1072,7 @@ async def test_event_streaming_with_tools() -> None:
         ],
     )
 
-    events = await _collect_events(with_callbacks.astream_events({}, version="v1"))  # type: ignore
+    events = await _collect_events(with_callbacks.astream_events({}, version="v1"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1108,7 +1106,7 @@ async def test_event_streaming_with_tools() -> None:
         ],
     )
     events = await _collect_events(
-        with_parameters.astream_events({"x": 1, "y": "2"}, version="v1")  # type: ignore
+        with_parameters.astream_events({"x": 1, "y": "2"}, version="v1")
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1144,7 +1142,7 @@ async def test_event_streaming_with_tools() -> None:
     )
 
     events = await _collect_events(
-        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v1")  # type: ignore
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v1")
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1183,13 +1181,11 @@ async def test_event_streaming_with_tools() -> None:
 class HardCodedRetriever(BaseRetriever):
     documents: list[Document]
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
         return self.documents
-
-
-HardCodedRetriever.model_rebuild()
 
 
 async def test_event_stream_with_retriever() -> None:
@@ -1394,7 +1390,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
 
     # For whatever reason type annotations fail here because reverse
     # does not appear to be a runnable
-    chain = concat | reverse  # type: ignore
+    chain = concat | reverse
 
     events = await _collect_events(
         chain.astream_events({"a": "hello", "b": "world"}, version="v1")
@@ -1595,10 +1591,10 @@ async def test_chain_ordering() -> None:
 async def test_event_stream_with_retry() -> None:
     """Test the event stream with a tool."""
 
-    def success(inputs: str) -> str:
+    def success(_: str) -> str:
         return "success"
 
-    def fail(inputs: str) -> None:
+    def fail(_: str) -> None:
         """Simple func."""
         msg = "fail"
         raise ValueError(msg)
@@ -1820,7 +1816,7 @@ async def test_runnable_each() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_map = RunnableLambda(add_one).map()  # type: ignore
+    add_one_map = RunnableLambda(add_one).map()  # type: ignore[arg-type,var-annotated]
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
@@ -1903,7 +1899,7 @@ async def test_runnable_with_message_history() -> None:
         # where it re-instantiates a list, so mutating the list doesn't end up mutating
         # the content in the store!
 
-        # Using Any type here rather than List[BaseMessage] due to pydantic issue!
+        # Using Any type here rather than list[BaseMessage] due to pydantic issue!
         messages: Any
 
         def add_message(self, message: BaseMessage) -> None:
@@ -2049,7 +2045,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
         results = list(streaming)
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
+    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore[arg-type,var-annotated]
 
     events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
@@ -2061,7 +2057,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     async def add_one(x: int) -> int:
         return x + 1
 
-    add_one_ = RunnableLambda(add_one)  # type: ignore
+    add_one_ = RunnableLambda(add_one)  # type: ignore[arg-type,var-annotated]
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
@@ -2069,7 +2065,7 @@ async def test_async_in_async_stream_lambdas() -> None:
         results = [result async for result in streaming]
         return results[0]
 
-    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore[arg-type,var-annotated]
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v1"))
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)

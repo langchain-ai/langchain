@@ -30,14 +30,12 @@ def _custom_parser(multiline_string: str) -> str:
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
-    multiline_string = re.sub(
+    return re.sub(
         r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
     )
-
-    return multiline_string
 
 
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
@@ -80,20 +78,19 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                 escaped = not escaped
             else:
                 escaped = False
-        else:
-            if char == '"':
-                is_inside_string = True
-                escaped = False
-            elif char == "{":
-                stack.append("}")
-            elif char == "[":
-                stack.append("]")
-            elif char == "}" or char == "]":
-                if stack and stack[-1] == char:
-                    stack.pop()
-                else:
-                    # Mismatched closing character; the input is malformed.
-                    return None
+        elif char == '"':
+            is_inside_string = True
+            escaped = False
+        elif char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in {"}", "]"}:
+            if stack and stack[-1] == char:
+                stack.pop()
+            else:
+                # Mismatched closing character; the input is malformed.
+                return None
 
         # Append the processed character to the new string.
         new_chars.append(new_char)

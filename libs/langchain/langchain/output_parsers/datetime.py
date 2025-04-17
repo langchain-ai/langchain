@@ -1,6 +1,5 @@
 import random
 from datetime import datetime, timedelta
-from typing import List
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
@@ -12,7 +11,7 @@ def _generate_random_datetime_strings(
     n: int = 3,
     start_date: datetime = datetime(1, 1, 1),
     end_date: datetime = datetime.now() + timedelta(days=3650),
-) -> List[str]:
+) -> list[str]:
     """Generates n random datetime strings conforming to the
     given pattern within the specified date range.
 

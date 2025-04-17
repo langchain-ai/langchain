@@ -113,7 +113,7 @@ class AgentActionMessageLog(AgentAction):
     # Ignoring type because we're overriding the type from AgentAction.
     # And this is the correct thing to do in this case.
     # The type literal is used for serialization purposes.
-    type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore
+    type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore[assignment]
 
 
 class AgentStep(Serializable):
@@ -185,8 +185,7 @@ def _convert_agent_action_to_messages(
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return agent_action.message_log
-    else:
-        return [AIMessage(content=agent_action.log)]
+    return [AIMessage(content=agent_action.log)]
 
 
 def _convert_agent_observation_to_messages(
@@ -205,14 +204,13 @@ def _convert_agent_observation_to_messages(
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return [_create_function_message(agent_action, observation)]
-    else:
-        content = observation
-        if not isinstance(observation, str):
-            try:
-                content = json.dumps(observation, ensure_ascii=False)
-            except Exception:
-                content = str(observation)
-        return [HumanMessage(content=content)]
+    content = observation
+    if not isinstance(observation, str):
+        try:
+            content = json.dumps(observation, ensure_ascii=False)
+        except Exception:
+            content = str(observation)
+    return [HumanMessage(content=content)]
 
 
 def _create_function_message(

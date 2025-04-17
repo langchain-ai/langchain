@@ -33,7 +33,7 @@ try:
     from sqlalchemy import SQLColumnExpression
 except ImportError:
     # for sqlalchemy < 2
-    SQLColumnExpression = Any  # type: ignore
+    SQLColumnExpression = Any  # type: ignore[assignment,misc]
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -126,7 +126,7 @@ def _get_embedding_collection_store(
         def get_by_name(
             cls, session: Session, name: str
         ) -> Optional["CollectionStore"]:
-            return session.query(cls).filter(cls.name == name).first()  # type: ignore
+            return session.query(cls).filter(cls.name == name).first()
 
         @classmethod
         def get_or_create(
@@ -956,7 +956,7 @@ class PGVector(VectorStore):
             results: List[Any] = (
                 session.query(
                     self.EmbeddingStore,
-                    self.distance_strategy(embedding).label("distance"),  # type: ignore
+                    self.distance_strategy(embedding).label("distance"),
                 )
                 .filter(*filter_by)
                 .order_by(sqlalchemy.asc("distance"))

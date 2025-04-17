@@ -342,7 +342,7 @@ def test_chroma_large_batch() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
     docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
     Chroma.from_texts(
@@ -370,7 +370,7 @@ def test_chroma_large_batch_update() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
     docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
@@ -406,7 +406,7 @@ def test_chroma_legacy_batching() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
     docs = ["This is a test document"] * 100
     Chroma.from_texts(

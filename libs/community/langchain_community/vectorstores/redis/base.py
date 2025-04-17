@@ -419,7 +419,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -427,7 +427,7 @@ class Redis(VectorStore):
             generated_schema = _generate_field_schema(metadatas[0])
             if index_schema:
                 # read in the schema solely to compare to the generated schema
-                user_schema = read_schema(index_schema)  # type: ignore
+                user_schema = read_schema(index_schema)
 
                 # the very rare case where a super user decides to pass the index
                 # schema and a document loader is used that has metadata which
@@ -722,7 +722,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore[arg-type]
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -850,7 +850,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
@@ -966,7 +966,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
@@ -1206,7 +1206,7 @@ class Redis(VectorStore):
         # read in schema (yaml file or dict) and
         # pass to the Pydantic validators
         if index_schema:
-            schema_values = read_schema(index_schema)  # type: ignore
+            schema_values = read_schema(index_schema)
             schema = RedisModel(**schema_values)
 
             # ensure user did not exclude the content field
@@ -1242,7 +1242,7 @@ class Redis(VectorStore):
 
     def _create_index_if_not_exist(self, dim: int = 1536) -> None:
         try:
-            from redis.commands.search.indexDefinition import (  # type: ignore
+            from redis.commands.search.indexDefinition import (
                 IndexDefinition,
                 IndexType,
             )

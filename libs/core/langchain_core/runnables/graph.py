@@ -195,10 +195,7 @@ def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
 
     if not is_uuid(id):
         return id
-    elif isinstance(data, Runnable):
-        data_str = data.get_name()
-    else:
-        data_str = data.__name__
+    data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
 
 
@@ -291,7 +288,7 @@ class Graph:
                 "target": stable_node_ids[edge.target],
             }
             if edge.data is not None:
-                edge_dict["data"] = edge.data
+                edge_dict["data"] = edge.data  # type: ignore[assignment]
             if edge.conditional:
                 edge_dict["conditional"] = True
             edges.append(edge_dict)
@@ -354,9 +351,7 @@ class Graph:
         """
         self.nodes.pop(node.id)
         self.edges = [
-            edge
-            for edge in self.edges
-            if edge.source != node.id and edge.target != node.id
+            edge for edge in self.edges if node.id not in (edge.source, edge.target)
         ]
 
     def add_edge(
@@ -364,7 +359,7 @@ class Graph:
         source: Node,
         target: Node,
         data: Optional[Stringifiable] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
 
@@ -449,8 +444,7 @@ class Graph:
             label = unique_labels[node_id]
             if is_uuid(node_id):
                 return label
-            else:
-                return node_id
+            return node_id
 
         return Graph(
             nodes={
@@ -636,6 +630,8 @@ class Graph:
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        max_retries: int = 1,
+        retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
@@ -651,6 +647,10 @@ class Graph:
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
             padding: The padding around the graph. Defaults to 10.
+            max_retries: The maximum number of retries (MermaidDrawMethod.API).
+                Defaults to 1.
+            retry_delay: The delay between retries (MermaidDrawMethod.API).
+                Defaults to 1.0.
             frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph. Defaults to None.
@@ -686,6 +686,8 @@ class Graph:
             draw_method=draw_method,
             background_color=background_color,
             padding=padding,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
 
 

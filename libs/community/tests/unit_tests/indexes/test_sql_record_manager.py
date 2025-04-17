@@ -20,7 +20,7 @@ def manager() -> SQLRecordManager:
     return record_manager
 
 
-@pytest_asyncio.fixture  # type: ignore
+@pytest_asyncio.fixture
 @pytest.mark.requires("aiosqlite")
 async def amanager() -> SQLRecordManager:
     """Initialize the test database and yield the TimestampedSet instance."""
