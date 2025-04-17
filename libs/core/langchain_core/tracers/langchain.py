@@ -51,7 +51,7 @@ def log_error_once(method: str, exception: Exception) -> None:
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
     if rt._CLIENT is not None:
-        rt._CLIENT.flush()
+        get_client().flush()
 
 
 def get_client() -> Client:
