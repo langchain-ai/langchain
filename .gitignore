@@ -184,3 +184,4 @@ docs/docs/templates
 
 prof
 virtualenv/
+langchain-opensearch/test_real_opensearch.py
