@@ -50,7 +50,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsInput",
-            **{self.input_key: (list[Document], None)},  # type: ignore[call-overload]
+            **{self.input_key: (list[Document], None)},
         )
 
     def get_output_schema(
@@ -58,7 +58,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsOutput",
-            **{self.output_key: (str, None)},  # type: ignore[call-overload]
+            **{self.output_key: (str, None)},
         )
 
     @property
@@ -249,7 +249,7 @@ class AnalyzeDocumentChain(Chain):
     ) -> type[BaseModel]:
         return create_model(
             "AnalyzeDocumentChain",
-            **{self.input_key: (str, None)},  # type: ignore[call-overload]
+            **{self.input_key: (str, None)},
         )
 
     def get_output_schema(

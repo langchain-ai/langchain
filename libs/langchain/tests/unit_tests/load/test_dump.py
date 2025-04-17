@@ -139,7 +139,7 @@ def test_aliases_hidden() -> None:
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")  # type: ignore[call-arg]
+    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
