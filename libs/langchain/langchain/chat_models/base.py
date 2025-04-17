@@ -133,6 +133,7 @@ def init_chat_model(
             - 'mistral...'                      -> 'mistralai'
             - 'deepseek...'                     -> 'deepseek'
             - 'grok...'                         -> 'xai'
+            - 'sonar...'                        -> 'perplexity'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -504,6 +505,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "deepseek"
     elif model_name.startswith("grok"):
         return "xai"
+    elif model_name.startswith("sonar"):
+        return "perplexity"
     else:
         return None
 

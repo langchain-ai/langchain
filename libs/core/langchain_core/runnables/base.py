@@ -5650,9 +5650,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             yield item
 
 
-RunnableBindingBase.model_rebuild()
-
-
 class RunnableBinding(RunnableBindingBase[Input, Output]):
     """Wrap a Runnable with additional functionality.
 
