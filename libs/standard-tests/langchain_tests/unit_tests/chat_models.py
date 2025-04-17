@@ -172,8 +172,14 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
+    def supports_audio_inputs(self) -> bool:
+        """(bool) whether the chat model supports audio inputs, defaults to
+        ``False``."""
+        return False
+
+    @property
     def supports_video_inputs(self) -> bool:
-        """(bool) whether the chat model supports video inputs, efaults to ``False``.
+        """(bool) whether the chat model supports video inputs, defaults to ``False``.
         No current tests are written for this feature."""
         return False
 
@@ -461,6 +467,33 @@ class ChatModelUnitTests(ChatModelTests):
 
             @property
             def supports_pdf_inputs(self) -> bool:
+                return True
+
+    .. dropdown:: supports_audio_inputs
+
+        Boolean property indicating whether the chat model supports audio inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_audio_inputs(self) -> bool:
                 return True
 
     .. dropdown:: supports_video_inputs
