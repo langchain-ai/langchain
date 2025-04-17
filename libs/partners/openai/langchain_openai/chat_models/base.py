@@ -3432,6 +3432,10 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.reasoning_summary_text.delta":
+        additional_kwargs["reasoning_summary_chunk"] = chunk.delta
+    elif chunk.type == "response.reasoning_summary_text.done":
+        additional_kwargs["reasoning_summary"] = chunk.text
     else:
         return None
 
