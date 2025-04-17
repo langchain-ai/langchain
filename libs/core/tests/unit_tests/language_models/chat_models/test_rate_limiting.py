@@ -227,9 +227,6 @@ class SerializableModel(GenericFakeChatModel):
         return True
 
 
-SerializableModel.model_rebuild()
-
-
 def test_serialization_with_rate_limiter() -> None:
     """Test model serialization with rate limiter."""
     from langchain_core.load import dumps

@@ -36,7 +36,7 @@ def draw_mermaid(
 
     Args:
         nodes (dict[str, str]): List of node ids.
-        edges (List[Edge]): List of edges, object with a source,
+        edges (list[Edge]): List of edges, object with a source,
             target and data.
         first_node (str, optional): Id of the first node. Defaults to None.
         last_node (str, optional): Id of the last node. Defaults to None.
@@ -305,7 +305,7 @@ async def _render_mermaid_using_pyppeteer(
 ) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
     try:
-        from pyppeteer import launch  # type: ignore[import]
+        from pyppeteer import launch  # type: ignore[import-not-found]
     except ImportError as e:
         msg = "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
         raise ImportError(msg) from e
@@ -377,7 +377,7 @@ def _render_mermaid_using_api(
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
-        import requests  # type: ignore[import]
+        import requests
     except ImportError as e:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
@@ -401,7 +401,7 @@ def _render_mermaid_using_api(
         f"?type={file_type}&bgColor={background_color}"
     )
     response = requests.get(image_url, timeout=10)
-    if response.status_code == 200:
+    if response.status_code == requests.codes.ok:
         img_bytes = response.content
         if output_file_path is not None:
             Path(output_file_path).write_bytes(response.content)

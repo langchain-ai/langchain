@@ -1,12 +1,19 @@
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langchain_community.utilities.jira import JiraAPIWrapper
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @pytest.fixture
-def mock_jira():  # type: ignore
+def mock_jira() -> Iterator[MagicMock]:
     with patch("atlassian.Jira") as mock_jira:
         yield mock_jira
 
@@ -58,5 +65,26 @@ class TestJiraAPIWrapper:
             url="https://test.atlassian.net",
             username="test_user",
             password="test_token",
+            cloud=False,
+        )
+
+    def test_jira_api_wrapper_with_oauth_dict(self, mock_jira: MagicMock) -> None:
+        oauth_dict = {
+            "client_id": "test_client_id",
+            "token": {
+                "access_token": "test_access_token",
+                "token_type": "test_token_type",
+            },
+        }
+        oauth_string = json.dumps(oauth_dict)
+
+        JiraAPIWrapper(
+            jira_oauth2=oauth_string,
+            jira_instance_url="https://test.atlassian.net",
+            jira_cloud=False,
+        )
+        mock_jira.assert_called_once_with(
+            url="https://test.atlassian.net",
+            oauth2={"client": None, **oauth_dict},
             cloud=False,
         )

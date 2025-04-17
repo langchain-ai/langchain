@@ -41,7 +41,7 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
     """Throw an error because this has been replaced by tracing_v2_enabled."""
     msg = (
@@ -65,7 +65,7 @@ def tracing_v2_enabled(
             Defaults to "default".
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        tags (List[str], optional): The tags to add to the run.
+        tags (list[str], optional): The tags to add to the run.
             Defaults to None.
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
@@ -186,7 +186,7 @@ _configure_hooks: list[
 
 def register_configure_hook(
     context_var: ContextVar[Optional[Any]],
-    inheritable: bool,
+    inheritable: bool,  # noqa: FBT001
     handle_class: Optional[type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:

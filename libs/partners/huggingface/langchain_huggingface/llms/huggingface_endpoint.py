@@ -2,7 +2,8 @@ import inspect
 import json  # type: ignore[import-not-found]
 import logging
 import os
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+from collections.abc import AsyncIterator, Iterator, Mapping
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -96,7 +97,7 @@ class HuggingFaceEndpoint(LLM):
     """Whether to prepend the prompt to the generated text"""
     truncate: Optional[int] = None
     """Truncate inputs tokens to the given size"""
-    stop_sequences: List[str] = Field(default_factory=list)
+    stop_sequences: list[str] = Field(default_factory=list)
     """Stop generating tokens if a member of `stop_sequences` is generated"""
     seed: Optional[int] = None
     """Random sampling seed"""
@@ -111,9 +112,9 @@ class HuggingFaceEndpoint(LLM):
     watermark: bool = False
     """Watermarking with [A Watermark for Large Language Models]
     (https://arxiv.org/abs/2301.10226)"""
-    server_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    server_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any text-generation-inference server parameters not explicitly specified"""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
     model: str
     client: Any = None  #: :meta private:
@@ -128,7 +129,7 @@ class HuggingFaceEndpoint(LLM):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -252,7 +253,7 @@ class HuggingFaceEndpoint(LLM):
         return self
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling text generation inference API."""
         return {
             "max_new_tokens": self.max_new_tokens,
@@ -285,8 +286,8 @@ class HuggingFaceEndpoint(LLM):
         return "huggingface_endpoint"
 
     def _invocation_params(
-        self, runtime_stop: Optional[List[str]], **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, runtime_stop: Optional[list[str]], **kwargs: Any
+    ) -> dict[str, Any]:
         params = {**self._default_params, **kwargs}
         params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
         return params
@@ -294,7 +295,7 @@ class HuggingFaceEndpoint(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -326,7 +327,7 @@ class HuggingFaceEndpoint(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -357,7 +358,7 @@ class HuggingFaceEndpoint(LLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -394,7 +395,7 @@ class HuggingFaceEndpoint(LLM):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:

@@ -116,7 +116,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = detail  # type: ignore[typeddict-item]
+            output["detail"] = detail
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
@@ -133,7 +133,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """
         return await run_in_executor(None, self.format, **kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Return a pretty representation of the prompt.
 
         Args:

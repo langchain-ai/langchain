@@ -1,7 +1,5 @@
 """Standard LangChain interface tests"""
 
-from typing import Tuple, Type
-
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import (  # type: ignore[import-not-found]
     ChatModelUnitTests,  # type: ignore[import-not-found]
@@ -12,7 +10,7 @@ from langchain_fireworks import ChatFireworks
 
 class TestFireworksStandard(ChatModelUnitTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatFireworks
 
     @property
@@ -20,7 +18,7 @@ class TestFireworksStandard(ChatModelUnitTests):
         return {"api_key": "test_api_key"}
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {
                 "FIREWORKS_API_KEY": "api_key",

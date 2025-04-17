@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Optional, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -114,42 +114,42 @@ class LLMRouterChain(RouterChain):
         return self
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Will be whatever keys the LLM chain prompt expects.
 
         :meta private:
         """
         return self.llm_chain.input_keys
 
-    def _validate_outputs(self, outputs: Dict[str, Any]) -> None:
+    def _validate_outputs(self, outputs: dict[str, Any]) -> None:
         super()._validate_outputs(outputs)
         if not isinstance(outputs["next_inputs"], dict):
             raise ValueError
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
 
         prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
         output = cast(
-            Dict[str, Any],
+            dict[str, Any],
             self.llm_chain.prompt.output_parser.parse(prediction),
         )
         return output
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         output = cast(
-            Dict[str, Any],
+            dict[str, Any],
             await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
         )
         return output
@@ -163,14 +163,14 @@ class LLMRouterChain(RouterChain):
         return cls(llm_chain=llm_chain, **kwargs)
 
 
-class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
+class RouterOutputParser(BaseOutputParser[dict[str, str]]):
     """Parser for output of router chain in the multi-prompt chain."""
 
     default_destination: str = "DEFAULT"
-    next_inputs_type: Type = str
+    next_inputs_type: type = str
     next_inputs_inner_key: str = "input"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         try:
             expected_keys = ["destination", "next_inputs"]
             parsed = parse_and_check_json_markdown(text, expected_keys)

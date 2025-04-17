@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache as BaseCache
@@ -68,7 +68,7 @@ class NatBotChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
@@ -97,7 +97,7 @@ class NatBotChain(Chain):
         return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect url and browser content.
 
         :meta private:
@@ -105,7 +105,7 @@ class NatBotChain(Chain):
         return [self.input_url_key, self.input_browser_content_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return command.
 
         :meta private:
@@ -114,9 +114,9 @@ class NatBotChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]

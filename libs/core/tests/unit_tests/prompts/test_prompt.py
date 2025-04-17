@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 from packaging import version
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
@@ -570,8 +570,8 @@ def test_prompt_invoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 async def test_prompt_ainvoke_with_metadata() -> None:
@@ -589,8 +589,8 @@ async def test_prompt_ainvoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 @pytest.mark.parametrize(

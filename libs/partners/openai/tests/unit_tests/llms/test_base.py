@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import pytest
 
@@ -65,7 +64,7 @@ def test_get_token_ids(model: str) -> None:
 
 
 def test_custom_token_counting() -> None:
-    def token_encoder(text: str) -> List[int]:
+    def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
     llm = OpenAI(custom_get_token_ids=token_encoder)

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -8,14 +8,14 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 
 
 class MockRetriever(BaseRetriever):
-    docs: List[Document]
+    docs: list[Document]
 
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return the documents"""
         return self.docs
 

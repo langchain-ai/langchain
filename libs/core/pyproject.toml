@@ -17,7 +17,7 @@ dependencies = [
     "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
 ]
 name = "langchain-core"
-version = "0.3.51"
+version = "0.3.53"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -31,10 +31,9 @@ lint = [
     "ruff<0.12.0,>=0.11.2",
 ]
 typing = [
-    "mypy<1.11,>=1.10",
+    "mypy<1.16,>=1.15",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-jinja2<3.0.0,>=2.11.9",
     "langchain-text-splitters",
 ]
 dev = [
@@ -54,9 +53,11 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster~=1.5.18",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
+    "pytest-benchmark",
+    "pytest-codspeed",
 ]
 test_integration = []
 
@@ -66,11 +67,16 @@ langchain-text-splitters = { path = "../text-splitters" }
 
 
 [tool.mypy]
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
-disallow_untyped_defs = "True"
-[[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
-ignore_missing_imports = true
+strict = "True"
+strict_bytes = "True"
+enable_error_code = "deprecated"
+report_deprecated_as_note = "True"
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = "False"
+warn_return_any = "False"
+strict_equality = "False"
+
 
 [tool.ruff]
 target-version = "py39"
@@ -96,13 +102,9 @@ ignore = [
     # TODO rules
     "A",
     "ANN401",
-    "ARG",
     "BLE",
     "ERA",
-    "FBT001",
-    "FBT002",
-    "PGH003",
-    "PLR",
+    "PLR2004",
     "RUF",
     "SLF",
 ]
@@ -117,7 +119,7 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
@@ -130,5 +132,6 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D", "S",]
 "scripts/**" = [ "INP", "S",]

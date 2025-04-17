@@ -5,9 +5,14 @@ from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel, FakeListChatModel
+from langchain_core.language_models import (
+    BaseChatModel,
+    FakeListChatModel,
+    ParrotFakeChatModel,
+)
 from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
@@ -138,6 +143,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
     """Test astream uses appropriate implementation."""
 
     class ModelWithGenerate(BaseChatModel):
+        @override
         def _generate(
             self,
             messages: list[BaseMessage],
@@ -176,6 +182,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
+        @override
         def _stream(
             self,
             messages: list[BaseMessage],
@@ -221,11 +228,12 @@ async def test_astream_implementation_uses_astream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
-        async def _astream(  # type: ignore
+        @override
+        async def _astream(
             self,
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -286,6 +294,7 @@ async def test_async_pass_run_id() -> None:
 
 
 class NoStreamingModel(BaseChatModel):
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -301,6 +310,7 @@ class NoStreamingModel(BaseChatModel):
 
 
 class StreamingModel(NoStreamingModel):
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],
@@ -390,3 +400,58 @@ async def test_disable_streaming_no_streaming_model_async(
     async for c in model.astream([], tools=[{}]):
         assert c.content == "invoke"
         break
+
+
+class FakeChatModelStartTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.messages: list = []
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        _, messages = args
+        self.messages.append(messages)
+        return super().on_chat_model_start(
+            *args,
+            **kwargs,
+        )
+
+
+def test_trace_images_in_openai_format() -> None:
+    """Test that images are traced in OpenAI format."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/image.png",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Test no mutation
+    assert response.content == [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/image.png",
+        }
+    ]

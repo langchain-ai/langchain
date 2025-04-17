@@ -81,7 +81,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve all session messages from DB"""
         # The latest are returned, in chronological order
         rows = self.table.get_partition(

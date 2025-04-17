@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -113,20 +113,20 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
                 "MapReduceDocumentsOutput",
                 **{
                     self.output_key: (str, None),
-                    "intermediate_steps": (List[str], None),
+                    "intermediate_steps": (list[str], None),
                 },  # type: ignore[call-overload]
             )
 
         return super().get_output_schema(config)
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -143,7 +143,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_reduce_chain(cls, values: Dict) -> Any:
+    def get_reduce_chain(cls, values: dict) -> Any:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
@@ -167,7 +167,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_return_intermediate_steps(cls, values: Dict) -> Any:
+    def get_return_intermediate_steps(cls, values: dict) -> Any:
         """For backwards compatibility."""
         if "return_map_steps" in values:
             values["return_intermediate_steps"] = values["return_map_steps"]
@@ -176,7 +176,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_default_document_variable_name(cls, values: Dict) -> Any:
+    def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
             raise ValueError("llm_chain must be provided")
@@ -227,11 +227,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     def combine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
@@ -258,11 +258,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     async def acombine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.

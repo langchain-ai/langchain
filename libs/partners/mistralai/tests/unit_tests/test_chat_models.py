@@ -1,7 +1,8 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator, List, cast
+from collections.abc import AsyncGenerator, Generator
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -104,13 +105,13 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
     ],
 )
 def test_convert_message_to_mistral_chat_message(
-    message: BaseMessage, expected: Dict
+    message: BaseMessage, expected: dict
 ) -> None:
     result = _convert_message_to_mistral_chat_message(message)
     assert result == expected
 
 
-def _make_completion_response_from_token(token: str) -> Dict:
+def _make_completion_response_from_token(token: str) -> dict:
     return dict(
         id="abc123",
         model="fake_model",
@@ -236,7 +237,7 @@ def test__convert_dict_to_message_tool_call() -> None:
 
 
 def test_custom_token_counting() -> None:
-    def token_encoder(text: str) -> List[int]:
+    def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
     llm = ChatMistralAI(custom_get_token_ids=token_encoder)

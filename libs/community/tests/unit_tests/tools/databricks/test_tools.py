@@ -1,3 +1,4 @@
+from typing import Any, Optional
 from unittest import mock
 
 import pytest
@@ -27,20 +28,20 @@ from langchain_community.tools.databricks._execution import (
 def test_execute_function(parameters: dict, execute_params: dict) -> None:
     workspace_client = mock.Mock()
 
-    def mock_execute_statement(  # type: ignore
-        statement,
-        warehouse_id,
+    def mock_execute_statement(
+        statement: str,
+        warehouse_id: str,
         *,
-        byte_limit=None,
-        catalog=None,
-        disposition=None,
-        format=None,
-        on_wait_timeout=None,
-        parameters=None,
-        row_limit=None,
-        schema=None,
-        wait_timeout=None,
-    ):
+        byte_limit: Optional[int] = None,
+        catalog: Optional[str] = None,
+        disposition: Optional[Any] = None,
+        format: Optional[Any] = None,
+        on_wait_timeout: Optional[Any] = None,
+        parameters: Optional[list[Any]] = None,
+        row_limit: Optional[int] = None,
+        schema: Optional[str] = None,
+        wait_timeout: Optional[str] = None,
+    ) -> mock.Mock:
         for key, value in execute_params.items():
             assert locals()[key] == value
         return mock.Mock()
@@ -58,20 +59,20 @@ def test_execute_function(parameters: dict, execute_params: dict) -> None:
 def test_execute_function_error() -> None:
     workspace_client = mock.Mock()
 
-    def mock_execute_statement(  # type: ignore
-        statement,
-        warehouse_id,
+    def mock_execute_statement(
+        statement: str,
+        warehouse_id: str,
         *,
-        byte_limit=None,
-        catalog=None,
-        disposition=None,
-        format=None,
-        on_wait_timeout=None,
-        parameters=None,
-        row_limit=None,
-        schema=None,
-        wait_timeout=None,
-    ):
+        byte_limit: Optional[int] = None,
+        catalog: Optional[str] = None,
+        disposition: Optional[Any] = None,
+        format: Optional[Any] = None,
+        on_wait_timeout: Optional[Any] = None,
+        parameters: Optional[list[Any]] = None,
+        row_limit: Optional[int] = None,
+        schema: Optional[str] = None,
+        wait_timeout: Optional[str] = None,
+    ) -> mock.Mock:
         return mock.Mock()
 
     workspace_client.statement_execution.execute_statement = mock_execute_statement

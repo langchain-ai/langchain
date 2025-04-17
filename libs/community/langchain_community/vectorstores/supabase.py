@@ -257,7 +257,7 @@ class SupabaseVectorStore(VectorStore):
         match_result = [
             (
                 Document(
-                    metadata=search.get("metadata", {}),  # type: ignore
+                    metadata=search.get("metadata", {}),
                     page_content=search.get("content", ""),
                 ),
                 search.get("similarity", 0.0),
@@ -302,7 +302,7 @@ class SupabaseVectorStore(VectorStore):
         match_result = [
             (
                 Document(
-                    metadata=search.get("metadata", {}),  # type: ignore
+                    metadata=search.get("metadata", {}),
                     page_content=search.get("content", ""),
                 ),
                 search.get("similarity", 0.0),
@@ -351,7 +351,7 @@ class SupabaseVectorStore(VectorStore):
                 "id": ids[idx],
                 "content": documents[idx].page_content,
                 "embedding": embedding,
-                "metadata": documents[idx].metadata,  # type: ignore
+                "metadata": documents[idx].metadata,
                 **kwargs,
             }
             for idx, embedding in enumerate(vectors)
@@ -360,7 +360,7 @@ class SupabaseVectorStore(VectorStore):
         for i in range(0, len(rows), chunk_size):
             chunk = rows[i : i + chunk_size]
 
-            result = client.from_(table_name).upsert(chunk).execute()  # type: ignore
+            result = client.from_(table_name).upsert(chunk).execute()
 
             if len(result.data) == 0:
                 raise Exception("Error inserting: No rows added")

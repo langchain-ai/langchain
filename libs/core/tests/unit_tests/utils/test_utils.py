@@ -386,7 +386,7 @@ def test_using_secret_from_env_as_default_factory(
         )
 
     # We know it will be SecretStr rather than Optional[SecretStr]
-    assert Buzz().secret.get_secret_value() == "hello"  # type: ignore
+    assert Buzz().secret.get_secret_value() == "hello"  # type: ignore[union-attr]
 
     class OhMy(BaseModel):
         secret: Optional[SecretStr] = Field(

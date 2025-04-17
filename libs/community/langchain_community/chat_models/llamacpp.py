@@ -815,4 +815,4 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
     else:
-        return default_class(content=content, id=id_)  # type: ignore
+        return default_class(content=content, id=id_)  # type: ignore[call-arg]

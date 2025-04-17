@@ -1,0 +1,44 @@
+name: CodSpeed
+
+on:
+  push:
+    branches:
+        - master
+  pull_request:
+    paths:
+      - 'libs/core/**'
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  codspeed:
+    name: Run benchmarks
+    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks')) || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # We have to use 3.12, 3.13 is not yet supported
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      # Using this action is still necessary for CodSpeed to work
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        run: uv sync --group test
+        working-directory: ./libs/core
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd libs/core
+            uv run --no-sync pytest ./tests/benchmarks --codspeed
+          mode: walltime

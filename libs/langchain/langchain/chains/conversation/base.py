@@ -1,7 +1,5 @@
 """Chain that carries on a conversation and calls an LLM."""
 
-from typing import List
-
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
@@ -121,7 +119,7 @@ class ConversationChain(LLMChain):  # type: ignore[override, override]
         return False
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
