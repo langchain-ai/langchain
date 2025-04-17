@@ -703,7 +703,7 @@ def test__format_messages_with_cache_control() -> None:
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": "<base64 data>",
-                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                    "cache_control": {"type": "ephemeral"},
                 },
             ]
         )
@@ -742,7 +742,7 @@ def test__format_messages_with_citations() -> None:
                     "source_type": "text",
                     "text": "The grass is green. The sky is blue.",
                     "mime_type": "text/plain",
-                    "metadata": {"citations": {"enabled": True}},
+                    "citations": {"enabled": True},
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
             ]
