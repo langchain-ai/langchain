@@ -201,9 +201,9 @@ def _format_data_content_block(block: dict) -> dict:
             else:
                 warnings.warn(
                     "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the metadata: {'type': 'file', 'source_type': 'base64', "
+                    "in the content block: {'type': 'file', 'source_type': 'base64', "
                     "'mime_type': 'application/pdf', 'data': '...', "
-                    "'metadata': {'filename': 'my-pdf'}}"
+                    "'filename': 'my-pdf'}"
                 )
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
