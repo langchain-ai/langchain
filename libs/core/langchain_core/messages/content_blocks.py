@@ -6,13 +6,11 @@ from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict
 
 
-class BaseDataContentBlock(TypedDict):
+class BaseDataContentBlock(TypedDict, total=False):
     """Base class for data content blocks."""
 
     mime_type: NotRequired[str]
     """MIME type of the content block (if needed)."""
-    metadata: NotRequired[dict]
-    """Provider-specific metadata such as citations or filenames."""
 
 
 class URLContentBlock(BaseDataContentBlock):
