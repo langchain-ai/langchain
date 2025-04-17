@@ -22,9 +22,6 @@ class ChatMessage(BaseMessage):
     """The type of the message (used during serialization). Defaults to "chat"."""
 
 
-ChatMessage.model_rebuild()
-
-
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """Chat Message chunk."""
 

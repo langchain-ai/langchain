@@ -1091,9 +1091,6 @@ class FooBase(BaseTool):
         return assert_bar(bar, bar_config)
 
 
-FooBase.model_rebuild()
-
-
 class AFooBase(FooBase):
     async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)

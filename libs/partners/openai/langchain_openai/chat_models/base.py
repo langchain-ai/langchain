@@ -194,18 +194,31 @@ def _format_data_content_block(block: dict) -> dict:
     elif block["type"] == "file":
         if block["source_type"] == "base64":
             file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
-            if (metadata := block.get("metadata")) and ("filename" in metadata):
+            if filename := block.get("filename"):
+                file["filename"] = filename
+            elif (metadata := block.get("metadata")) and ("filename" in metadata):
                 file["filename"] = metadata["filename"]
             else:
                 warnings.warn(
                     "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the metadata: {'type': 'file', 'source_type': 'base64', "
+                    "in the content block: {'type': 'file', 'source_type': 'base64', "
                     "'mime_type': 'application/pdf', 'data': '...', "
-                    "'metadata': {'filename': 'my-pdf'}}"
+                    "'filename': 'my-pdf'}"
                 )
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
             formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
+        else:
+            raise ValueError("source_type base64 or id is required for file blocks.")
+    elif block["type"] == "audio":
+        if block["source_type"] == "base64":
+            format = block["mime_type"].split("/")[-1]
+            formatted_block = {
+                "type": "input_audio",
+                "input_audio": {"data": block["data"], "format": format},
+            }
+        else:
+            raise ValueError("source_type base64 is required for audio blocks.")
     else:
         raise ValueError(f"Block of type {block['type']} is not supported.")
 
@@ -2131,6 +2144,40 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             "Your name is Bob. How can I help you today, Bob?"
+
+    .. dropdown:: Reasoning output
+
+        OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
+        that expose a summary of internal reasoning processes.
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            reasoning = {
+                "effort": "medium",  # 'low', 'medium', or 'high'
+                "summary": "auto",  # 'detailed', 'auto', or None
+            }
+
+            llm = ChatOpenAI(
+                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+            )
+            response = llm.invoke("What is 3^3?")
+
+            print(f"Output: {response.text()}")
+            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+        .. code-block:: none
+
+            Output: 3^3 = 27.
+
+            Reasoning: {
+                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
+                'summary': [
+                    {'text': 'The user wants to know...', 'type': 'summary_text'}
+                ],
+                'type': 'reasoning'
+            }
 
     .. dropdown:: Structured output
 
