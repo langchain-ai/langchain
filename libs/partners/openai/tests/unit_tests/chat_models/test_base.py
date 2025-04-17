@@ -676,7 +676,7 @@ def test_format_message_content() -> None:
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
-            "metadata": {"filename": "my_file"},
+            "filename": "my_file",
         }
     ]
     expected = [
