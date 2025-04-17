@@ -208,6 +208,17 @@ def _format_data_content_block(block: dict) -> dict:
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
             formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
+        else:
+            raise ValueError("source_type base64 or id is required for file blocks.")
+    elif block["type"] == "audio":
+        if block["source_type"] == "base64":
+            format = block["mime_type"].split("/")[-1]
+            formatted_block = {
+                "type": "input_audio",
+                "input_audio": {"data": block["data"], "format": format},
+            }
+        else:
+            raise ValueError("source_type base64 is required for audio blocks.")
     else:
         raise ValueError(f"Block of type {block['type']} is not supported.")
 
