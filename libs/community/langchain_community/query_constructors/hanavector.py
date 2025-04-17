@@ -16,11 +16,11 @@ from langchain_core.structured_query import (
     since="0.1.0",
     removal="1.0",
     message=(
-            "This class is deprecated and will be removed in a future version. "
-            "Please use query_constructors.HanaTranslator from the "
-            "langchain_hana package instead. "
-            "See https://github.com/SAP/langchain-integration-for-sap-hana-cloud "
-            "for details."
+        "This class is deprecated and will be removed in a future version. "
+        "Please use query_constructors.HanaTranslator from the "
+        "langchain_hana package instead. "
+        "See https://github.com/SAP/langchain-integration-for-sap-hana-cloud "
+        "for details."
     ),
     alternative="from langchain_hana.query_constructors import HanaTranslator;",
     pending=False,
