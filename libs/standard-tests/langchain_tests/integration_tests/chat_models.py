@@ -377,6 +377,33 @@ class ChatModelIntegrationTests(ChatModelTests):
             def supports_pdf_inputs(self) -> bool:
                 return True
 
+    .. dropdown:: supports_audio_inputs
+
+        Boolean property indicating whether the chat model supports audio inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_audio_inputs(self) -> bool:
+                return True
+
     .. dropdown:: supports_video_inputs
 
         Boolean property indicating whether the chat model supports image inputs.
@@ -2004,6 +2031,63 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": pdf_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+    def test_audio_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process audio inputs.
+
+        This test should be skipped (see Configuration below) if the model does not
+        support audio inputs. These will take the form:
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_audio_inputs`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+
+                    @property
+                    def supports_audio_inputs(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model can correctly handle messages
+            with audio content blocks, specifically base64-encoded files. Otherwise,
+            set the ``supports_audio_inputs`` property to False.
+        """
+        if not self.supports_audio_inputs:
+            pytest.skip("Model does not support audio inputs.")
+        url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
+        audio_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "mime_type": "audio/wav",
+                    "data": audio_data,
                 },
             ]
         )
