@@ -132,6 +132,3 @@ class PipelinePromptTemplate(BasePromptTemplate):
     @property
     def _prompt_type(self) -> str:
         raise ValueError
-
-
-PipelinePromptTemplate.model_rebuild()

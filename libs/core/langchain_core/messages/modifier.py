@@ -26,6 +26,3 @@ class RemoveMessage(BaseMessage):
             raise ValueError(msg)
 
         super().__init__("", id=id, **kwargs)
-
-
-RemoveMessage.model_rebuild()

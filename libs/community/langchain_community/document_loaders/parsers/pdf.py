@@ -1696,7 +1696,7 @@ class PDFRouterParser(BaseBlobParser):
         ("Xdvipdfmx", {"producer": "xdvipdfmx.*", "page1":"Hello"}, PDFPlumberParser()),
         ("defautl", {}, PyPDFium2Parser())
     ]
-    loader = PDFRouterLoader(filename, routes)
+    loader = PDFRouterLoader(filename, routes=routes)
     loader.load()
     ```
     """
