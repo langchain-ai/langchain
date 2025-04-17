@@ -1,8 +1,9 @@
 """Test chat model integration."""
 
 import json
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Type
+from typing import Any
 
 import pytest
 from httpx import Client, Request, Response
