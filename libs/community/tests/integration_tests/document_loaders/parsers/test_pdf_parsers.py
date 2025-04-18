@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, Literal, Union, cast
 
 import pytest
 
@@ -11,7 +11,11 @@ from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
     BaseImageBlobParser,
+    PDFMinerParser,
     PDFPlumberParser,
+    PDFRouterParser,
+    PyMuPDFParser,
+    PyPDFium2Parser,
 )
 
 if TYPE_CHECKING:
@@ -312,3 +316,37 @@ def test_parser_with_table(
         **params,
     )
     _std_assert_with_parser(parser)
+
+
+def test_parser_router_parse() -> None:
+    mode: Literal["single"] = "single"
+    routes: PDFRouterParser.Routes = [
+        (
+            "Xdvipdfmx",
+            {"producer": re.compile(r"xdvipdfmx.*"), "page1": "Hello"},
+            PDFMinerParser(mode=mode),
+        ),
+        (
+            "Microsoft",
+            {"producer": "Microsoft", "creator": "Microsoft"},
+            PyMuPDFParser(mode=mode),
+        ),
+        (
+            "LibreOffice",
+            {
+                "producer": "LibreOffice",
+            },
+            PDFMinerParser(mode=mode),
+        ),
+        (
+            "default",
+            cast(dict[str, Union[re.Pattern, str]], dict()),
+            PyPDFium2Parser(mode=mode),
+        ),
+    ]
+    _assert_with_parser(
+        PDFRouterParser(
+            routes=routes,
+        ),
+        splits_by_page=False,
+    )

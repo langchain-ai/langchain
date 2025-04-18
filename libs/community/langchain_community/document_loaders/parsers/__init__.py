@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.parsers.pdf import (
         PDFMinerParser,
         PDFPlumberParser,
+        PDFRouterParser,
         PyMuPDFParser,
         PyPDFium2Parser,
         PyPDFParser,
@@ -51,6 +52,7 @@ _module_lookup = {
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
+    "PDFRouterParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFium2Parser": "langchain_community.document_loaders.parsers.pdf",
     "RapidOCRBlobParser": "langchain_community.document_loaders.parsers.images",
     "TesseractBlobParser": "langchain_community.document_loaders.parsers.images",
@@ -76,6 +78,7 @@ __all__ = [
     "OpenAIWhisperParser",
     "PDFMinerParser",
     "PDFPlumberParser",
+    "PDFRouterParser",
     "PyMuPDFParser",
     "PyPDFParser",
     "PyPDFium2Parser",
