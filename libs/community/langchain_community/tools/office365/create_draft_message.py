@@ -31,7 +31,7 @@ class CreateDraftMessageSchema(BaseModel):
     )
 
 
-class O365CreateDraftMessage(O365BaseTool):  # type: ignore[override, override]
+class O365CreateDraftMessage(O365BaseTool):
     """Tool for creating a draft email in Office 365."""
 
     name: str = "create_email_draft"

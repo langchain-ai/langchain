@@ -17,10 +17,10 @@ from pydantic import BaseModel, Field
 from langchain_community.utilities.github import GitHubAPIWrapper
 
 
-class GitHubAction(BaseTool):  # type: ignore[override]
+class GitHubAction(BaseTool):
     """Tool for interacting with the GitHub API."""
 
-    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)  # type: ignore[arg-type]
+    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
     mode: str
     name: str = ""
     description: str = ""

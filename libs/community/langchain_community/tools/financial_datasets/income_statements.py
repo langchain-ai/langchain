@@ -24,7 +24,7 @@ class IncomeStatementsSchema(BaseModel):
     )
 
 
-class IncomeStatements(BaseTool):  # type: ignore[override, override]
+class IncomeStatements(BaseTool):
     """
     Tool that gets income statements for a given ticker over a given period.
     """

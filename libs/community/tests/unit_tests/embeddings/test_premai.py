@@ -12,7 +12,7 @@ def test_api_key_is_string() -> None:
     llm = PremAIEmbeddings(  # type: ignore[call-arg]
         premai_api_key="secret-api-key",  # type: ignore[arg-type]
         project_id=8,
-        model="fake-model",  # type: ignore[arg-type]
+        model="fake-model",
     )
     assert isinstance(llm.premai_api_key, SecretStr)
 
@@ -24,7 +24,7 @@ def test_api_key_masked_when_passed_via_constructor(
     llm = PremAIEmbeddings(  # type: ignore[call-arg]
         premai_api_key="secret-api-key",  # type: ignore[arg-type]
         project_id=8,
-        model="fake-model",  # type: ignore[arg-type]
+        model="fake-model",
     )
     print(llm.premai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()

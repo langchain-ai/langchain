@@ -692,20 +692,20 @@ class Neo4jVector(VectorStore):
                         or e.code
                         == "Neo.DatabaseError.Transaction.TransactionStartFailed"
                     )
-                    and "in an implicit transaction" in e.message  # type: ignore[operator]
+                    and "in an implicit transaction" in e.message
                 )
                 or (  # isPeriodicCommitError
                     e.code == "Neo.ClientError.Statement.SemanticError"
                     and (
-                        "in an open transaction is not possible" in e.message  # type: ignore[operator]
-                        or "tried to execute in an explicit transaction" in e.message  # type: ignore[operator]
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
                     )
                 )
             ):
                 raise
         # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            data = session.run(Query(text=query), params)  # type: ignore[assignment]
+            data = session.run(Query(text=query), params)
             return [r.data() for r in data]
 
     def verify_version(self) -> None:

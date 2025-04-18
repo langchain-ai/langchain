@@ -12,7 +12,7 @@ from pydantic import Field
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
 
 
-class SearchAPIRun(BaseTool):  # type: ignore[override]
+class SearchAPIRun(BaseTool):
     """Tool that queries the SearchApi.io search API."""
 
     name: str = "searchapi"
@@ -40,7 +40,7 @@ class SearchAPIRun(BaseTool):  # type: ignore[override]
         return await self.api_wrapper.arun(query)
 
 
-class SearchAPIResults(BaseTool):  # type: ignore[override]
+class SearchAPIResults(BaseTool):
     """Tool that queries the SearchApi.io search API and returns JSON."""
 
     name: str = "searchapi_results_json"

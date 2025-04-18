@@ -63,7 +63,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.text(
                 query,
-                region=self.region,  # type: ignore[arg-type]
+                region=self.region,
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -82,7 +82,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.news(
                 query,
-                region=self.region,  # type: ignore[arg-type]
+                region=self.region,
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -100,7 +100,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.images(
                 query,
-                region=self.region,  # type: ignore[arg-type]
+                region=self.region,
                 safesearch=self.safesearch,
                 max_results=max_results or self.max_results,
             )

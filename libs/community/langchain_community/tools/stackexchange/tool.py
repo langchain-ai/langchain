@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
 
 
-class StackExchangeTool(BaseTool):  # type: ignore[override]
+class StackExchangeTool(BaseTool):
     """Tool that uses StackExchange"""
 
     name: str = "stack_exchange"

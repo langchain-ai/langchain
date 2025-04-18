@@ -21,7 +21,7 @@ def test_vlite_with_metadatas() -> None:
     docsearch = VLite.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),  # type: ignore[call-arg]
-        metadatas=metadatas,  # type: ignore[call-arg]
+        metadatas=metadatas,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -34,7 +34,7 @@ def test_vlite_with_metadatas_with_scores() -> None:
     docsearch = VLite.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),  # type: ignore[call-arg]
-        metadatas=metadatas,  # type: ignore[call-arg]
+        metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -46,7 +46,7 @@ def test_vlite_update_document() -> None:
     docsearch = VLite.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),  # type: ignore[call-arg]
-        ids=["1", "2", "3"],  # type: ignore[call-arg]
+        ids=["1", "2", "3"],
     )
     docsearch.update_document("1", Document(page_content="updated_foo"))
     output = docsearch.similarity_search("updated_foo", k=1)
@@ -59,7 +59,7 @@ def test_vlite_delete_document() -> None:
     docsearch = VLite.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),  # type: ignore[call-arg]
-        ids=["1", "2", "3"],  # type: ignore[call-arg]
+        ids=["1", "2", "3"],
     )
     docsearch.delete(["1"])
     output = docsearch.similarity_search("foo", k=3)
@@ -89,7 +89,7 @@ def test_vlite_from_existing_index() -> None:
     VLite.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),  # type: ignore[call-arg]
-        collection="test_collection",  # type: ignore[call-arg]
+        collection="test_collection",
     )
     new_docsearch = VLite.from_existing_index(
         collection="test_collection",

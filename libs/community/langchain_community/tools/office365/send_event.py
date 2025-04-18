@@ -48,7 +48,7 @@ class SendEventSchema(BaseModel):
     )
 
 
-class O365SendEvent(O365BaseTool):  # type: ignore[override, override]
+class O365SendEvent(O365BaseTool):
     """Tool for sending calendar events in Office 365."""
 
     name: str = "send_event"

@@ -83,7 +83,7 @@ def get_gmail_credentials(
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())  # type: ignore[call-arg]
+            creds.refresh(Request())
         else:
             # https://developers.google.com/gmail/api/quickstart/python#authorize_credentials_for_a_desktop_application # noqa
             flow = InstalledAppFlow.from_client_secrets_file(

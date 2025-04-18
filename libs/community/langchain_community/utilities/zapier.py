@@ -285,13 +285,13 @@ class ZapierNLAWrapper(BaseModel):
         data = await self.apreview(*args, **kwargs)
         return json.dumps(data)
 
-    def list_as_str(self) -> str:  # type: ignore[no-untyped-def]
+    def list_as_str(self) -> str:
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = self.list()
         return json.dumps(actions)
 
-    async def alist_as_str(self) -> str:  # type: ignore[no-untyped-def]
+    async def alist_as_str(self) -> str:
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         actions = await self.alist()

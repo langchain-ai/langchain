@@ -18,7 +18,7 @@ class ValueSchema(BaseModel):
     )
 
 
-class AINValueOps(AINBaseTool):  # type: ignore[override, override]
+class AINValueOps(AINBaseTool):
     """Tool for value operations."""
 
     name: str = "AINvalueOps"

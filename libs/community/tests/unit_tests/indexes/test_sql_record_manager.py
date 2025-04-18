@@ -73,7 +73,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()  # type: ignore[attr-defined]
+            .all()
         )
 
         assert [
@@ -102,7 +102,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()  # type: ignore[attr-defined]
+            .all()
         )
 
         assert [
@@ -131,7 +131,7 @@ def test_update_timestamp(manager: SQLRecordManager) -> None:
         records = (
             session.query(UpsertionRecord)
             .filter(UpsertionRecord.namespace == manager.namespace)
-            .all()  # type: ignore[attr-defined]
+            .all()
         )
 
         assert [

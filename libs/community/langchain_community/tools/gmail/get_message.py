@@ -18,7 +18,7 @@ class SearchArgsSchema(BaseModel):
     )
 
 
-class GmailGetMessage(GmailBaseTool):  # type: ignore[override, override]
+class GmailGetMessage(GmailBaseTool):
     """Tool that gets a message by ID from Gmail."""
 
     name: str = "get_gmail_message"

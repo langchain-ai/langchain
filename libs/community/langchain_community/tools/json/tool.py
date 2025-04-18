@@ -82,7 +82,7 @@ class JsonSpec(BaseModel):
             return repr(e)
 
 
-class JsonListKeysTool(BaseTool):  # type: ignore[override]
+class JsonListKeysTool(BaseTool):
     """Tool for listing keys in a JSON spec."""
 
     name: str = "json_spec_list_keys"
@@ -108,7 +108,7 @@ class JsonListKeysTool(BaseTool):  # type: ignore[override]
         return self._run(tool_input)
 
 
-class JsonGetValueTool(BaseTool):  # type: ignore[override]
+class JsonGetValueTool(BaseTool):
     """Tool for getting a value in a JSON spec."""
 
     name: str = "json_spec_get_value"

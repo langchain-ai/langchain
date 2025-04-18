@@ -15,7 +15,7 @@ class WikipediaQueryInput(BaseModel):
     query: str = Field(description="query to look up on wikipedia")
 
 
-class WikipediaQueryRun(BaseTool):  # type: ignore[override, override]
+class WikipediaQueryRun(BaseTool):
     """Tool that searches the Wikipedia API."""
 
     name: str = "wikipedia"

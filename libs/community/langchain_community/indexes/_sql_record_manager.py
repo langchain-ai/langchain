@@ -304,7 +304,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 insert_stmt = sqlite_insert(UpsertionRecord).values(records_to_upsert)
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                stmt = insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
                     set_=dict(
                         # attr-defined type ignore
@@ -318,7 +318,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                stmt = insert_stmt.on_conflict_do_update(
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
@@ -379,7 +379,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 insert_stmt = sqlite_insert(UpsertionRecord).values(records_to_upsert)
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                stmt = insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
                     set_=dict(
                         # attr-defined type ignore
@@ -393,7 +393,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
-                stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
+                stmt = insert_stmt.on_conflict_do_update(
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
@@ -412,7 +412,7 @@ class SQLRecordManager(RecordManager):
         with self._make_session() as session:
             records = (
                 # mypy does not recognize .all()
-                session.query(UpsertionRecord.key)  # type: ignore[attr-defined]
+                session.query(UpsertionRecord.key)
                 .filter(
                     and_(
                         UpsertionRecord.key.in_(keys),
@@ -460,21 +460,15 @@ class SQLRecordManager(RecordManager):
 
             # mypy does not recognize .all() or .filter()
             if after:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.updated_at > after
-                )
+                query = query.filter(UpsertionRecord.updated_at > after)
             if before:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.updated_at < before
-                )
+                query = query.filter(UpsertionRecord.updated_at < before)
             if group_ids:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.group_id.in_(group_ids)
-                )
+                query = query.filter(UpsertionRecord.group_id.in_(group_ids))
 
             if limit:
-                query = query.limit(limit)  # type: ignore[attr-defined]
-            records = query.all()  # type: ignore[attr-defined]
+                query = query.limit(limit)
+            records = query.all()
         return [r.key for r in records]  # type: ignore[misc]
 
     async def alist_keys(
@@ -493,20 +487,14 @@ class SQLRecordManager(RecordManager):
 
             # mypy does not recognize .all() or .filter()
             if after:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.updated_at > after
-                )
+                query = query.filter(UpsertionRecord.updated_at > after)
             if before:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.updated_at < before
-                )
+                query = query.filter(UpsertionRecord.updated_at < before)
             if group_ids:
-                query = query.filter(  # type: ignore[attr-defined]
-                    UpsertionRecord.group_id.in_(group_ids)
-                )
+                query = query.filter(UpsertionRecord.group_id.in_(group_ids))
 
             if limit:
-                query = query.limit(limit)  # type: ignore[attr-defined]
+                query = query.limit(limit)
             records = (await session.execute(query)).scalars().all()
         return list(records)
 
@@ -519,7 +507,7 @@ class SQLRecordManager(RecordManager):
                     UpsertionRecord.key.in_(keys),
                     UpsertionRecord.namespace == self.namespace,
                 )
-            ).delete()  # type: ignore[attr-defined]
+            ).delete()
             session.commit()
 
     async def adelete_keys(self, keys: Sequence[str]) -> None:

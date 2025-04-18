@@ -104,7 +104,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
-            tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
+            tool_call_id=_dict.get("tool_call_id"),
             additional_kwargs=additional_kwargs,
         )
     else:

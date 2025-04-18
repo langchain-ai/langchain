@@ -124,7 +124,7 @@ class RedisVectorField(RedisField):
         return field_data
 
 
-class FlatVectorField(RedisVectorField):  # type: ignore[override]
+class FlatVectorField(RedisVectorField):
     """Schema for flat vector fields in Redis."""
 
     algorithm: Literal["FLAT"] = "FLAT"
@@ -139,7 +139,7 @@ class FlatVectorField(RedisVectorField):  # type: ignore[override]
         return VectorField(self.name, self.algorithm, field_data)
 
 
-class HNSWVectorField(RedisVectorField):  # type: ignore[override]
+class HNSWVectorField(RedisVectorField):
     """Schema for HNSW vector fields in Redis."""
 
     algorithm: Literal["HNSW"] = "HNSW"

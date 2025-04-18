@@ -224,7 +224,7 @@ class CloudBlobLoader(BlobLoader):
             yield self.path
             return
 
-        paths = self.path.glob(self.glob)  # type: ignore[attr-defined]
+        paths = self.path.glob(self.glob)
         for path in paths:
             if self.exclude:
                 if any(path.match(glob) for glob in self.exclude):

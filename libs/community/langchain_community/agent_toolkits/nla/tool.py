@@ -13,7 +13,7 @@ from langchain_community.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain_community.utilities.requests import Requests
 
 
-class NLATool(Tool):  # type: ignore[override]
+class NLATool(Tool):
     """Natural Language API Tool."""
 
     @classmethod

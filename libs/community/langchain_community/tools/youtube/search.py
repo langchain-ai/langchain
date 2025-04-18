@@ -16,7 +16,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 
-class YouTubeSearchTool(BaseTool):  # type: ignore[override]
+class YouTubeSearchTool(BaseTool):
     """Tool that queries YouTube."""
 
     name: str = "youtube_search"

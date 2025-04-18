@@ -15,7 +15,7 @@ class IDParsingInput(BaseModel):
     query: HttpUrl = Field(description="url of the document to parse")
 
 
-class EdenAiParsingIDTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiParsingIDTool(EdenaiTool):
     """Tool that queries the Eden AI  Identity parsing API.
 
     for api reference check edenai documentation:

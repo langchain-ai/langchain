@@ -481,20 +481,20 @@ class Neo4jGraph(GraphStore):
                         or e.code
                         == "Neo.DatabaseError.Transaction.TransactionStartFailed"
                     )
-                    and "in an implicit transaction" in e.message  # type: ignore[operator]
+                    and "in an implicit transaction" in e.message
                 )
                 or (  # isPeriodicCommitError
                     e.code == "Neo.ClientError.Statement.SemanticError"
                     and (
-                        "in an open transaction is not possible" in e.message  # type: ignore[operator]
-                        or "tried to execute in an explicit transaction" in e.message  # type: ignore[operator]
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
                     )
                 )
             ):
                 raise
         # fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            data = session.run(Query(text=query, timeout=self.timeout), params)  # type: ignore[assignment]
+            data = session.run(Query(text=query, timeout=self.timeout), params)
             json_data = [r.data() for r in data]
             if self.sanitize:
                 json_data = [value_sanitize(el) for el in json_data]

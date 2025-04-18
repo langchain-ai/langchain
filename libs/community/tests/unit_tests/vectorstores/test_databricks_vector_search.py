@@ -426,7 +426,7 @@ def test_add_texts_with_metadata() -> None:
                 DEFAULT_PRIMARY_KEY: id_,
                 DEFAULT_TEXT_COLUMN: text,
                 DEFAULT_VECTOR_COLUMN: vector,
-                **metadata,  # type: ignore[arg-type]
+                **metadata,
             }
             for text, vector, id_, metadata in zip(
                 fake_texts, vectors, added_ids, metadatas

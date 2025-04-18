@@ -9,7 +9,7 @@ from pydantic import Field, SecretStr
 from langchain_community.utilities.brave_search import BraveSearchWrapper
 
 
-class BraveSearch(BaseTool):  # type: ignore[override]
+class BraveSearch(BaseTool):
     """Tool that queries the BraveSearch.
 
     Api key can be provided as an environment variable BRAVE_SEARCH_API_KEY

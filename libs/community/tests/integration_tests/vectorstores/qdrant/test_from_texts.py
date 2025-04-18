@@ -85,7 +85,7 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) 
         client = QdrantClient(path=str(tmpdir))
         assert 5 == client.count(collection_name).count
         assert all(
-            vector_name in point.vector  # type: ignore[operator]
+            vector_name in point.vector
             for point in client.scroll(collection_name, with_vectors=True)[0]
         )
 

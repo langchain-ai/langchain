@@ -238,7 +238,7 @@ def test_chat_mlflow_bind_tools(
         )
     ]
     agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore[arg-type]
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     result = agent_executor.invoke({"input": "36939 * 8922.4"})
     assert result["output"] == "36939x8922.4 = 329,511,111.6"
 

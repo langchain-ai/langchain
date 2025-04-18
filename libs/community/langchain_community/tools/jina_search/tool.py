@@ -15,7 +15,7 @@ class JinaInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class JinaSearch(BaseTool):  # type: ignore[override]
+class JinaSearch(BaseTool):
     """Tool that queries the JinaSearch.
 
     ..versionadded:: 0.2.16

@@ -16,7 +16,7 @@ class GetThreadSchema(BaseModel):
     )
 
 
-class GmailGetThread(GmailBaseTool):  # type: ignore[override, override]
+class GmailGetThread(GmailBaseTool):
     """Tool that gets a thread by ID from Gmail."""
 
     name: str = "get_gmail_thread"

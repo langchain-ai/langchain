@@ -101,7 +101,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         self.url_path = url_path
         self.bytes_source = bytes_source
 
-        self.parser = AzureAIDocumentIntelligenceParser(  # type: ignore[misc]
+        self.parser = AzureAIDocumentIntelligenceParser(
             api_endpoint=api_endpoint,
             api_key=api_key,
             api_version=api_version,
@@ -116,10 +116,10 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
     ) -> Iterator[Document]:
         """Lazy load the document as pages."""
         if self.file_path is not None:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
             yield from self.parser.parse(blob)
         elif self.url_path is not None:
-            yield from self.parser.parse_url(self.url_path)  # type: ignore[arg-type]
+            yield from self.parser.parse_url(self.url_path)
         elif self.bytes_source is not None:
             yield from self.parser.parse_bytes(self.bytes_source)
         else:

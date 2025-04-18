@@ -52,4 +52,4 @@ class UnstructuredODTLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.odt import partition_odt
 
-        return partition_odt(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_odt(filename=self.file_path, **self.unstructured_kwargs)

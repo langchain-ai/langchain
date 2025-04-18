@@ -13,7 +13,7 @@ class _FewShotToolInput(BaseModel):
     )
 
 
-class FewShotSQLTool(BaseTool):  # type: ignore[override]
+class FewShotSQLTool(BaseTool):
     """Tool to get example SQL queries related to an input question."""
 
     name: str = "few_shot_sql"

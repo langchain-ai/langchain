@@ -21,7 +21,7 @@ class GooglePlacesSchema(BaseModel):
     removal="1.0",
     alternative_import="langchain_google_community.GooglePlacesTool",
 )
-class GooglePlacesTool(BaseTool):  # type: ignore[override, override]
+class GooglePlacesTool(BaseTool):
     """Tool that queries the Google places API."""
 
     name: str = "google_places"
@@ -31,7 +31,7 @@ class GooglePlacesTool(BaseTool):  # type: ignore[override, override]
         "discover addressed from ambiguous text. "
         "Input should be a search query."
     )
-    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)  # type: ignore[arg-type]
+    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
     args_schema: Type[BaseModel] = GooglePlacesSchema
 
     def _run(

@@ -17,10 +17,10 @@ from pydantic import Field
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
 
 
-class GitLabAction(BaseTool):  # type: ignore[override]
+class GitLabAction(BaseTool):
     """Tool for interacting with the GitLab API."""
 
-    api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)  # type: ignore[arg-type]
+    api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)
     mode: str
     name: str = ""
     description: str = ""

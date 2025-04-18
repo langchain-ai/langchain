@@ -108,7 +108,7 @@ class ApacheDoris(VectorStore):
             config (ApacheDorisSettings): Apache Doris client configuration information.
         """
         try:
-            import pymysql  # type: ignore[import]
+            import pymysql  # type: ignore[import-untyped]
         except ImportError:
             raise ImportError(
                 "Could not import pymysql python package. "

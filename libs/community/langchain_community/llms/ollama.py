@@ -319,9 +319,9 @@ class _OllamaCommon(BaseLanguageModel):
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
-                auth=self.auth,  # type: ignore[arg-type]
+                auth=self.auth,  # type: ignore[arg-type,unused-ignore]
                 json=request_payload,
-                timeout=self.timeout,  # type: ignore[arg-type]
+                timeout=self.timeout,  # type: ignore[arg-type,unused-ignore]
             ) as response:
                 if response.status != 200:
                     if response.status == 404:

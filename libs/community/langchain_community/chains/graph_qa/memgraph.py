@@ -235,7 +235,7 @@ class MemgraphQAChain(Chain):
         llm_to_use = cypher_llm if cypher_llm is not None else llm
 
         if prompt is not None and llm_to_use is not None:
-            cypher_generation_chain = prompt | llm_to_use | StrOutputParser()  # type: ignore[arg-type]
+            cypher_generation_chain = prompt | llm_to_use | StrOutputParser()
         else:
             raise ValueError(
                 "Missing required components for the cypher generation chain: "

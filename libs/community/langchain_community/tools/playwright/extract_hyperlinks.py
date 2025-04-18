@@ -28,7 +28,7 @@ class ExtractHyperlinksToolInput(BaseModel):
     )
 
 
-class ExtractHyperlinksTool(BaseBrowserTool):  # type: ignore[override, override]
+class ExtractHyperlinksTool(BaseBrowserTool):
     """Extract all hyperlinks on the page."""
 
     name: str = "extract_hyperlinks"

@@ -12,7 +12,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.moonshot import MOONSHOT_SERVICE_URL_BASE, MoonshotCommon
 
 
-class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc, override, override]
+class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
     """Moonshot chat model integration.
 
     Setup:

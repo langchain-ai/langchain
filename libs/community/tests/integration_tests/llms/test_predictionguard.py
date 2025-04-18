@@ -7,7 +7,7 @@ from langchain_community.llms.predictionguard import PredictionGuard
 
 def test_predictionguard_invoke() -> None:
     """Test valid call to prediction guard."""
-    llm = PredictionGuard(model="Hermes-3-Llama-3.1-8B")  # type: ignore[call-arg]
+    llm = PredictionGuard(model="Hermes-3-Llama-3.1-8B")
     output = llm.invoke("Tell a joke.")
     assert isinstance(output, str)
 

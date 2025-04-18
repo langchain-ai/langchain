@@ -103,7 +103,7 @@ def test_functions_call_thoughts() -> None:
     prompt_msgs = [
         HumanMessagePromptTemplate.from_template(prompt_tmpl),
     ]
-    prompt = ChatPromptTemplate(messages=prompt_msgs)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=prompt_msgs)
 
     chain = prompt | chat.bind(functions=_FUNCTIONS)
 

@@ -181,7 +181,7 @@ class NeptuneSparqlQAChain(Chain):
             )
         sparql_generation_chain = LLMChain(llm=llm, prompt=sparql_prompt)
 
-        return cls(  # type: ignore[call-arg]
+        return cls(
             qa_chain=qa_chain,
             sparql_generation_chain=sparql_generation_chain,
             examples=examples,

@@ -209,7 +209,7 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
     removal="1.0",
     alternative_import="langchain_google_vertexai.ChatVertexAI",
 )
-class ChatVertexAI(_VertexAICommon, BaseChatModel):  # type: ignore[override]
+class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
     model_name: str = "chat-bison"

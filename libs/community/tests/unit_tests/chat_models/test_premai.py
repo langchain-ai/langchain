@@ -64,7 +64,7 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 def test_premai_initialization() -> None:
     for model in [
         ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),  # type: ignore[call-arg]
-        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),  # type: ignore[arg-type, call-arg]
+        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),  # type: ignore[arg-type]
     ]:
         assert model.model == "prem-ai-model"
         assert model.temperature is None

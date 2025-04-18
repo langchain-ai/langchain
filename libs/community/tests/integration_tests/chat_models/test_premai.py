@@ -14,12 +14,12 @@ from langchain_community.chat_models import ChatPremAI
 
 @pytest.fixture
 def chat() -> ChatPremAI:
-    return ChatPremAI(project_id=8)  # type: ignore[call-arg]
+    return ChatPremAI(project_id=8)
 
 
 def test_chat_premai() -> None:
     """Test ChatPremAI wrapper."""
-    chat = ChatPremAI(project_id=8)  # type: ignore[call-arg]
+    chat = ChatPremAI(project_id=8)
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
@@ -28,7 +28,7 @@ def test_chat_premai() -> None:
 
 def test_chat_prem_system_message() -> None:
     """Test ChatPremAI wrapper for system message"""
-    chat = ChatPremAI(project_id=8)  # type: ignore[call-arg]
+    chat = ChatPremAI(project_id=8)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -44,7 +44,7 @@ def test_chat_prem_model() -> None:
 
 def test_chat_prem_generate() -> None:
     """Test ChatPremAI wrapper with generate."""
-    chat = ChatPremAI(project_id=8)  # type: ignore[call-arg]
+    chat = ChatPremAI(project_id=8)
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -64,7 +64,7 @@ async def test_prem_invoke(chat: ChatPremAI) -> None:
 
 def test_prem_streaming() -> None:
     """Test streaming tokens from Prem."""
-    chat = ChatPremAI(project_id=8, streaming=True)  # type: ignore[call-arg]
+    chat = ChatPremAI(project_id=8, streaming=True)
 
     for token in chat.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)

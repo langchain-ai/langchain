@@ -15,7 +15,7 @@ class InvoiceParsingInput(BaseModel):
     query: HttpUrl = Field(description="url of the document to parse")
 
 
-class EdenAiParsingInvoiceTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiParsingInvoiceTool(EdenaiTool):
     """Tool that queries the Eden AI Invoice parsing API.
 
     for api reference check edenai documentation:

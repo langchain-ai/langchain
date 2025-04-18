@@ -557,7 +557,7 @@ def test_singestoredb_add_image2() -> None:
     table_name = "test_singlestoredb_add_images"
     drop(table_name)
     docsearch = SingleStoreDB(
-        OpenCLIPEmbeddings(),  # type: ignore[call-arg, call-arg, call-arg]
+        OpenCLIPEmbeddings(),
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )

@@ -16,7 +16,7 @@ from langchain_community.chat_models.yuan2 import (
 
 @pytest.mark.requires("openai")
 def test_yuan2_model_param() -> None:
-    chat = ChatYuan2(model="foo")  # type: ignore[call-arg]
+    chat = ChatYuan2(model="foo")
     assert chat.model_name == "foo"
     chat = ChatYuan2(model_name="foo")  # type: ignore[call-arg]
     assert chat.model_name == "foo"
@@ -26,7 +26,7 @@ def test_yuan2_model_param() -> None:
 def test_yuan2_timeout_param() -> None:
     chat = ChatYuan2(request_timeout=5)  # type: ignore[call-arg]
     assert chat.request_timeout == 5
-    chat = ChatYuan2(timeout=10)  # type: ignore[call-arg]
+    chat = ChatYuan2(timeout=10)
     assert chat.request_timeout == 10
 
 
@@ -34,7 +34,7 @@ def test_yuan2_timeout_param() -> None:
 def test_yuan2_stop_sequences_param() -> None:
     chat = ChatYuan2(stop=["<eod>"])  # type: ignore[call-arg]
     assert chat.stop == ["<eod>"]
-    chat = ChatYuan2(stop_sequences=["<eod>"])  # type: ignore[call-arg]
+    chat = ChatYuan2(stop_sequences=["<eod>"])
     assert chat.stop == ["<eod>"]
 
 

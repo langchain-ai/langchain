@@ -15,7 +15,7 @@ from langchain_community.tools.azure_cognitive_services.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsFormRecognizerTool(BaseTool):  # type: ignore[override]
+class AzureCogsFormRecognizerTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Form Recognizer API.
 
     In order to set this up, follow instructions at:

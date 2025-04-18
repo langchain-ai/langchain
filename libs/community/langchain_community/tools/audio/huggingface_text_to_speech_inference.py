@@ -12,7 +12,7 @@ from pydantic import SecretStr
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceTextToSpeechModelInference(BaseTool):  # type: ignore[override]
+class HuggingFaceTextToSpeechModelInference(BaseTool):
     """HuggingFace Text-to-Speech Model Inference.
 
     Requirements:
@@ -74,7 +74,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):  # type: ignore[override]
                 f"Invalid value for 'file_naming_func': {file_naming_func}"
             )
 
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             model=model,
             file_extension=file_extension,
             api_url=f"{_HUGGINGFACE_API_URL_ROOT}/{model}",

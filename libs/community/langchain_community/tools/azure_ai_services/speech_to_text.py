@@ -17,7 +17,7 @@ from langchain_community.tools.azure_ai_services.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureAiServicesSpeechToTextTool(BaseTool):  # type: ignore[override]
+class AzureAiServicesSpeechToTextTool(BaseTool):
     """Tool that queries the Azure AI Services Speech to Text API.
 
     In order to set this up, follow instructions at:

@@ -18,7 +18,7 @@ class SpeechToTextInput(BaseModel):
     query: HttpUrl = Field(description="url of the audio to analyze")
 
 
-class EdenAiSpeechToTextTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiSpeechToTextTool(EdenaiTool):
     """Tool that queries the Eden AI Speech To Text API.
 
     for api reference check edenai documentation:

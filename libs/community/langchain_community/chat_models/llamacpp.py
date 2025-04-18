@@ -664,7 +664,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,
-            tool_calls=tool_calls,  # type: ignore[arg-type]
+            tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
     elif role == "system":

@@ -25,7 +25,7 @@ _MIN_BATCH_SIZE = 5
     removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAIEmbeddings",
 )
-class VertexAIEmbeddings(_VertexAICommon, Embeddings):  # type: ignore[override]
+class VertexAIEmbeddings(_VertexAICommon, Embeddings):
     """Google Cloud VertexAI embedding models."""
 
     # Instance context
@@ -163,8 +163,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):  # type: ignore[override]
             DeadlineExceeded,
         ]
         retry_decorator = create_base_retry_decorator(
-            error_types=errors,  # type: ignore[arg-type]
-            max_retries=self.max_retries,  # type: ignore[arg-type]
+            error_types=errors,
+            max_retries=self.max_retries,
         )
 
         @retry_decorator

@@ -26,7 +26,7 @@ from pydantic import Field
 from langchain_community.utilities.clickup import ClickupAPIWrapper
 
 
-class ClickupAction(BaseTool):  # type: ignore[override]
+class ClickupAction(BaseTool):
     """Tool that queries the  Clickup API."""
 
     api_wrapper: ClickupAPIWrapper = Field(default_factory=ClickupAPIWrapper)

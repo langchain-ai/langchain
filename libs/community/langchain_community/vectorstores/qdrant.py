@@ -1049,7 +1049,7 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+            result.vector.get(self.vector_name)
             if self.vector_name is not None
             else result.vector
             for result in results
@@ -1124,7 +1124,7 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+            result.vector.get(self.vector_name)
             if self.vector_name is not None
             else result.vector
             for result in results
@@ -1673,7 +1673,7 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
+                current_vector_config = current_vector_config.get(vector_name)
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -1694,18 +1694,16 @@ class Qdrant(VectorStore):
                 )
 
             # Check if the vector configuration has the same dimensionality.
-            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+            if current_vector_config.size != vector_size:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for vectors with "
-                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
 
-            current_distance_func = (
-                current_vector_config.distance.name.upper()  # type: ignore[union-attr]
-            )
+            current_distance_func = current_vector_config.distance.name.upper()
             if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
@@ -1725,7 +1723,7 @@ class Qdrant(VectorStore):
             # If vector name was provided, we're going to use the named vectors feature
             # with just a single vector.
             if vector_name is not None:
-                vectors_config = {  # type: ignore[assignment]
+                vectors_config = {
                     vector_name: vectors_config,
                 }
 
@@ -1741,7 +1739,7 @@ class Qdrant(VectorStore):
                 wal_config=wal_config,
                 quantization_config=quantization_config,
                 init_from=init_from,
-                timeout=timeout,  # type: ignore[arg-type]
+                timeout=timeout,
             )
         qdrant = cls(
             client=client,
@@ -1838,7 +1836,7 @@ class Qdrant(VectorStore):
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
-                current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
+                current_vector_config = current_vector_config.get(vector_name)
             elif isinstance(current_vector_config, dict) and vector_name is None:
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
@@ -1859,22 +1857,20 @@ class Qdrant(VectorStore):
                 )
 
             # Check if the vector configuration has the same dimensionality.
-            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+            if current_vector_config.size != vector_size:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for vectors with "
-                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
 
-            current_distance_func = (
-                current_vector_config.distance.name.upper()  # type: ignore[union-attr]
-            )
+            current_distance_func = current_vector_config.distance.name.upper()
             if current_distance_func != distance_func:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for "
-                    f"{current_vector_config.distance} "  # type: ignore[union-attr]
+                    f"{current_vector_config.distance} "
                     f"similarity. Please set `distance_func` parameter to "
                     f"`{distance_func}` if you want to reuse it. If you want to "
                     f"recreate the collection, set `force_recreate` parameter to "
@@ -1890,7 +1886,7 @@ class Qdrant(VectorStore):
             # If vector name was provided, we're going to use the named vectors feature
             # with just a single vector.
             if vector_name is not None:
-                vectors_config = {  # type: ignore[assignment]
+                vectors_config = {
                     vector_name: vectors_config,
                 }
 
@@ -1906,7 +1902,7 @@ class Qdrant(VectorStore):
                 wal_config=wal_config,
                 quantization_config=quantization_config,
                 init_from=init_from,
-                timeout=timeout,  # type: ignore[arg-type]
+                timeout=timeout,
             )
         qdrant = cls(
             client=client,

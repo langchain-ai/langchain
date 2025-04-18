@@ -62,7 +62,7 @@ def create_llm_result(
     return LLMResult(generations=generations, llm_output=llm_output)
 
 
-class Anyscale(BaseOpenAI):  # type: ignore[override]
+class Anyscale(BaseOpenAI):
     """Anyscale large language models.
 
     To use, you should have the environment variable ``ANYSCALE_API_KEY``set with your
@@ -136,7 +136,7 @@ class Anyscale(BaseOpenAI):  # type: ignore[override]
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-                values["client"] = openai.Completion  # type: ignore[attr-defined]
+                values["client"] = openai.Completion
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

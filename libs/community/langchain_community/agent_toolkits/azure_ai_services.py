@@ -22,7 +22,7 @@ class AzureAiServicesToolkit(BaseToolkit):
 
         tools: List[BaseTool] = [
             AzureAiServicesDocumentIntelligenceTool(),  # type: ignore[call-arg]
-            AzureAiServicesImageAnalysisTool(),  # type: ignore[call-arg]
+            AzureAiServicesImageAnalysisTool(),
             AzureAiServicesSpeechToTextTool(),  # type: ignore[call-arg]
             AzureAiServicesTextToSpeechTool(),  # type: ignore[call-arg]
             AzureAiServicesTextAnalyticsForHealthTool(),  # type: ignore[call-arg]

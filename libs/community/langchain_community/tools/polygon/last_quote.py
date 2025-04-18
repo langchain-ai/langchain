@@ -13,7 +13,7 @@ class Inputs(BaseModel):
     query: str
 
 
-class PolygonLastQuote(BaseTool):  # type: ignore[override, override]
+class PolygonLastQuote(BaseTool):
     """Tool that gets the last quote of a ticker from Polygon"""
 
     mode: str = "get_last_quote"

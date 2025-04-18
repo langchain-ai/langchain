@@ -73,7 +73,7 @@ def _get_elements(
     return results
 
 
-class GetElementsTool(BaseBrowserTool):  # type: ignore[override, override]
+class GetElementsTool(BaseBrowserTool):
     """Tool for getting elements in the current web page matching a CSS selector."""
 
     name: str = "get_elements"

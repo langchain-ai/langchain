@@ -222,7 +222,7 @@ class VikingDB(VectorStore):
             end = min(i + batch_size, total_count)
             insert_data = data[i:end]
             # print(insert_data)
-            self.collection.upsert_data(insert_data)  # type: ignore[union-attr]
+            self.collection.upsert_data(insert_data)
         return pks
 
     def similarity_search(  # type: ignore[override]
@@ -394,7 +394,7 @@ class VikingDB(VectorStore):
     ) -> None:
         if self.collection is None:
             logger.debug("No existing collection to search.")
-        self.collection.delete_data(ids)  # type: ignore[union-attr]
+        self.collection.delete_data(ids)
 
     @classmethod
     def from_texts(  # type: ignore[no-untyped-def, override]

@@ -68,7 +68,7 @@ Dates are also represented as str.
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Highlight(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class Highlight(BaseModel, extra="allow"):
     """Information that highlights the keywords in the excerpt."""
 
     BeginOffset: int
@@ -82,7 +82,7 @@ class Highlight(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class TextWithHighLights(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class TextWithHighLights(BaseModel, extra="allow"):
     """Text with highlights."""
 
     Text: str
@@ -92,9 +92,7 @@ class TextWithHighLights(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class AdditionalResultAttributeValue(  # type: ignore[call-arg]
-    BaseModel, extra="allow"
-):
+class AdditionalResultAttributeValue(BaseModel, extra="allow"):
     """Value of an additional result attribute."""
 
     TextWithHighlightsValue: TextWithHighLights
@@ -102,7 +100,7 @@ class AdditionalResultAttributeValue(  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class AdditionalResultAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class AdditionalResultAttribute(BaseModel, extra="allow"):
     """Additional result attribute."""
 
     Key: str
@@ -117,7 +115,7 @@ class AdditionalResultAttribute(BaseModel, extra="allow"):  # type: ignore[call-
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttributeValue(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class DocumentAttributeValue(BaseModel, extra="allow"):
     """Value of a document attribute."""
 
     DateValue: Optional[str] = None
@@ -148,7 +146,7 @@ class DocumentAttributeValue(BaseModel, extra="allow"):  # type: ignore[call-arg
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class DocumentAttribute(BaseModel, extra="allow"):
     """Document attribute."""
 
     Key: str
@@ -158,7 +156,7 @@ class DocumentAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class ResultItem(BaseModel, ABC, extra="allow"):  # type: ignore[call-arg]
+class ResultItem(BaseModel, ABC, extra="allow"):
     """Base class of a result item."""
 
     Id: Optional[str]
@@ -288,7 +286,7 @@ class RetrieveResultItem(ResultItem):
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class QueryResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class QueryResult(BaseModel, extra="allow"):
     """`Amazon Kendra Query API` search result.
 
     It is composed of:
@@ -302,7 +300,7 @@ class QueryResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class RetrieveResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class RetrieveResult(BaseModel, extra="allow"):
     """`Amazon Kendra Retrieve API` search result.
 
     It is composed of:

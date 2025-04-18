@@ -19,7 +19,7 @@ class FileCopyInput(BaseModel):
     destination_path: str = Field(..., description="Path to save the copied file")
 
 
-class CopyFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
+class CopyFileTool(BaseFileToolMixin, BaseTool):
     """Tool that copies a file."""
 
     name: str = "copy_file"

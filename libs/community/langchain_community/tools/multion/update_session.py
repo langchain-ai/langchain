@@ -36,7 +36,7 @@ class UpdateSessionSchema(BaseModel):
     )
 
 
-class MultionUpdateSession(BaseTool):  # type: ignore[override, override]
+class MultionUpdateSession(BaseTool):
     """Tool that updates an existing Multion Browser Window with provided fields.
 
     Attributes:

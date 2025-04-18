@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
 
 
-class GoogleLensQueryRun(BaseTool):  # type: ignore[override]
+class GoogleLensQueryRun(BaseTool):
     """Tool that queries the Google Lens API."""
 
     name: str = "google_lens"

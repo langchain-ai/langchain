@@ -84,19 +84,19 @@ class TestAzureCosmosDBVectorSearch:
 
         # ensure the test collection is empty
         collection = prepare_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]
+        assert collection.count_documents({}) == 0
 
     @classmethod
     def teardown_class(cls) -> None:
         collection = prepare_collection()
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         collection = prepare_collection()
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})
 
     @pytest.fixture(scope="class", autouse=True)
     def cosmos_db_url(self) -> Union[str, Generator[str, None, None]]:

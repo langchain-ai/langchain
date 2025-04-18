@@ -12,7 +12,7 @@ from pydantic import Field
 from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
 
 
-class GoogleSerperRun(BaseTool):  # type: ignore[override]
+class GoogleSerperRun(BaseTool):
     """Tool that queries the Serper.dev Google search API."""
 
     name: str = "google_serper"
@@ -40,7 +40,7 @@ class GoogleSerperRun(BaseTool):  # type: ignore[override]
         return (await self.api_wrapper.arun(query)).__str__()
 
 
-class GoogleSerperResults(BaseTool):  # type: ignore[override]
+class GoogleSerperResults(BaseTool):
     """Tool that queries the Serper.dev Google Search API
     and get back json."""
 

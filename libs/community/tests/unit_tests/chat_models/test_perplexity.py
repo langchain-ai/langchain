@@ -48,7 +48,7 @@ def test_perplexity_initialization() -> None:
     # Verify that chat perplexity can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     for model in [
-        ChatPerplexity(  # type: ignore[call-arg]
+        ChatPerplexity(
             model="test", timeout=1, api_key="test", temperature=0.7, verbose=True
         ),
         ChatPerplexity(  # type: ignore[call-arg]

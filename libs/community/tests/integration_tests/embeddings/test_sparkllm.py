@@ -18,7 +18,7 @@ def test_baichuan_embedding_documents() -> None:
         "understand and think, "
         "creating a better world with artificial intelligence."
     ]
-    embedding = SparkLLMTextEmbeddings()  # type: ignore[call-arg]
+    embedding = SparkLLMTextEmbeddings()
     output = embedding.embed_documents(documents)
     assert len(output) == 1  # type: ignore[arg-type]
     assert len(output[0]) == 2560  # type: ignore[index]
@@ -31,6 +31,6 @@ def test_baichuan_embedding_query() -> None:
         "first Artificial Intelligence open platform for Mobile Internet "
         "and intelligent hardware developers"
     )
-    embedding = SparkLLMTextEmbeddings()  # type: ignore[call-arg]
+    embedding = SparkLLMTextEmbeddings()
     output = embedding.embed_query(document)
     assert len(output) == 2560  # type: ignore[arg-type]

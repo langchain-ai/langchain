@@ -19,7 +19,7 @@ class CurrentWebPageToolInput(BaseModel):
     """Explicit no-args input for CurrentWebPageTool."""
 
 
-class CurrentWebPageTool(BaseBrowserTool):  # type: ignore[override, override]
+class CurrentWebPageTool(BaseBrowserTool):
     """Tool for getting the URL of the current webpage."""
 
     name: str = "current_webpage"

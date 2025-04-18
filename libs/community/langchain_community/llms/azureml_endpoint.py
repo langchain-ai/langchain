@@ -194,7 +194,7 @@ class GPT2ContentFormatter(ContentFormatterBase):
         try:
             choice = json.loads(output)[0]["0"]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
         return Generation(text=choice)
 
 
@@ -239,7 +239,7 @@ class HFContentFormatter(ContentFormatterBase):
         try:
             choice = json.loads(output)[0]["0"]["generated_text"]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
         return Generation(text=choice)
 
 
@@ -268,7 +268,7 @@ class DollyContentFormatter(ContentFormatterBase):
         try:
             choice = json.loads(output)[0]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
         return Generation(text=choice)
 
 
@@ -315,7 +315,7 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
             try:
                 choice = json.loads(output)[0]["0"]
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return Generation(text=choice)
         if api_type == AzureMLEndpointApiType.serverless:
             try:
@@ -327,7 +327,7 @@ class CustomOpenAIContentFormatter(ContentFormatterBase):
                         "received."
                     )
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return Generation(
                 text=choice["text"].strip(),
                 generation_info=dict(

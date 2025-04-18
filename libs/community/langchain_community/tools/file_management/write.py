@@ -21,7 +21,7 @@ class WriteFileInput(BaseModel):
     )
 
 
-class WriteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
+class WriteFileTool(BaseFileToolMixin, BaseTool):
     """Tool that writes a file to disk."""
 
     name: str = "write_file"

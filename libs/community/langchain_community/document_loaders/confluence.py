@@ -428,7 +428,7 @@ class ConfluenceLoader(BaseLoader):
                         self.number_of_retries  # type: ignore[arg-type]
                     ),
                     wait=wait_exponential(
-                        multiplier=1,  # type: ignore[arg-type]
+                        multiplier=1,
                         min=self.min_retry_seconds,  # type: ignore[arg-type]
                         max=self.max_retry_seconds,  # type: ignore[arg-type]
                     ),

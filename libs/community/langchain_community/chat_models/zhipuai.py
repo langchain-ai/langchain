@@ -162,7 +162,7 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
             additional_kwargs["name"] = dct["name"]
         return ToolMessage(
             content=content,
-            tool_call_id=dct.get("tool_call_id"),  # type: ignore[arg-type]
+            tool_call_id=dct.get("tool_call_id"),
             additional_kwargs=additional_kwargs,
         )
     return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
@@ -861,7 +861,7 @@ class ChatZhipuAI(BaseChatModel):
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
+                    first_tool_only=True,
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(

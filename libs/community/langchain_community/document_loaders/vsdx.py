@@ -37,7 +37,7 @@ class VsdxLoader(BaseLoader, ABC):
         elif not os.path.isfile(self.file_path):
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
-        self.parser = VsdxParser()  # type: ignore[misc]
+        self.parser = VsdxParser()
 
     def __del__(self) -> None:
         if hasattr(self, "temp_file"):
@@ -50,5 +50,5 @@ class VsdxLoader(BaseLoader, ABC):
         return bool(parsed.netloc) and bool(parsed.scheme)
 
     def load(self) -> List[Document]:
-        blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+        blob = Blob.from_path(self.file_path)
         return list(self.parser.parse(blob))

@@ -52,7 +52,7 @@ class SearchEmailsInput(BaseModel):
     )
 
 
-class O365SearchEmails(O365BaseTool):  # type: ignore[override, override]
+class O365SearchEmails(O365BaseTool):
     """Search email messages in Office 365.
 
     Free, but setup is required.

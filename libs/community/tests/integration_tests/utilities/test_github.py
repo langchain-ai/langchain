@@ -13,7 +13,7 @@ from langchain_community.utilities.github import GitHubAPIWrapper
 
 @pytest.fixture
 def api_client() -> GitHubAPIWrapper:
-    return GitHubAPIWrapper()  # type: ignore[call-arg]
+    return GitHubAPIWrapper()
 
 
 def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:

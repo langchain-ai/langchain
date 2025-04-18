@@ -8,7 +8,7 @@ from langchain_community.embeddings.dashscope import DashScopeEmbeddings
 def test_dashscope_embedding_documents() -> None:
     """Test dashscope embeddings."""
     documents = ["foo bar"]
-    embedding = DashScopeEmbeddings(model="text-embedding-v1")  # type: ignore[call-arg]
+    embedding = DashScopeEmbeddings(model="text-embedding-v1")
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 1536
@@ -46,7 +46,7 @@ def test_dashscope_embedding_documents_multiple() -> None:
         "foo23",
         "foo24",
     ]
-    embedding = DashScopeEmbeddings(model="text-embedding-v1")  # type: ignore[call-arg]
+    embedding = DashScopeEmbeddings(model="text-embedding-v1")
     output = embedding.embed_documents(documents)
     assert len(output) == 28
     assert len(output[0]) == 1536
@@ -57,7 +57,7 @@ def test_dashscope_embedding_documents_multiple() -> None:
 def test_dashscope_embedding_query() -> None:
     """Test dashscope embeddings."""
     document = "foo bar"
-    embedding = DashScopeEmbeddings(model="text-embedding-v1")  # type: ignore[call-arg]
+    embedding = DashScopeEmbeddings(model="text-embedding-v1")
     output = embedding.embed_query(document)
     assert len(output) == 1536
 
@@ -67,7 +67,7 @@ def test_dashscope_embedding_with_empty_string() -> None:
     import dashscope
 
     document = ["", "abc"]
-    embedding = DashScopeEmbeddings(model="text-embedding-v1")  # type: ignore[call-arg]
+    embedding = DashScopeEmbeddings(model="text-embedding-v1")
     output = embedding.embed_documents(document)
     assert len(output) == 2
     assert len(output[0]) == 1536

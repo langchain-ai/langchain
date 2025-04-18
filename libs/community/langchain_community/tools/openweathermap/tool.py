@@ -9,11 +9,11 @@ from pydantic import Field
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 
-class OpenWeatherMapQueryRun(BaseTool):  # type: ignore[override]
+class OpenWeatherMapQueryRun(BaseTool):
     """Tool that queries the OpenWeatherMap API."""
 
     api_wrapper: OpenWeatherMapAPIWrapper = Field(
-        default_factory=OpenWeatherMapAPIWrapper  # type: ignore[arg-type]
+        default_factory=OpenWeatherMapAPIWrapper
     )
 
     name: str = "open_weather_map"

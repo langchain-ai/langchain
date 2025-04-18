@@ -1053,7 +1053,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(  # type: ignore[override]
+    def upsert(
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,

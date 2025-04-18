@@ -47,7 +47,7 @@ class BaseRequestsTool(BaseModel):
         super().__init__(**kwargs)
 
 
-class RequestsGetTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsGetTool(BaseRequestsTool, BaseTool):
     """Tool for making a GET request to an API endpoint."""
 
     name: str = "requests_get"
@@ -71,7 +71,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
         return await self.requests_wrapper.aget(_clean_url(url))
 
 
-class RequestsPostTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPostTool(BaseRequestsTool, BaseTool):
     """Tool for making a POST request to an API endpoint."""
 
     name: str = "requests_post"
@@ -108,7 +108,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
             return repr(e)
 
 
-class RequestsPatchTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPatchTool(BaseRequestsTool, BaseTool):
     """Tool for making a PATCH request to an API endpoint."""
 
     name: str = "requests_patch"
@@ -145,7 +145,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
             return repr(e)
 
 
-class RequestsPutTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPutTool(BaseRequestsTool, BaseTool):
     """Tool for making a PUT request to an API endpoint."""
 
     name: str = "requests_put"
@@ -182,7 +182,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
             return repr(e)
 
 
-class RequestsDeleteTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsDeleteTool(BaseRequestsTool, BaseTool):
     """Tool for making a DELETE request to an API endpoint."""
 
     name: str = "requests_delete"

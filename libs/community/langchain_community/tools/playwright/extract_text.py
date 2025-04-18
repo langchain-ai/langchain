@@ -19,7 +19,7 @@ class ExtractTextToolInput(BaseModel):
     """Explicit no-args input for ExtractTextTool."""
 
 
-class ExtractTextTool(BaseBrowserTool):  # type: ignore[override, override]
+class ExtractTextTool(BaseBrowserTool):
     """Tool for extracting all the text on the current webpage."""
 
     name: str = "extract_text"

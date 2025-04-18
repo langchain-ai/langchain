@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.wikidata import WikidataAPIWrapper
 
 
-class WikidataQueryRun(BaseTool):  # type: ignore[override]
+class WikidataQueryRun(BaseTool):
     """Tool that searches the Wikidata API."""
 
     name: str = "Wikidata"

@@ -33,7 +33,7 @@ class WeatherDataLoader(BaseLoader):
     def from_params(
         cls, places: Sequence[str], *, openweathermap_api_key: Optional[str] = None
     ) -> WeatherDataLoader:
-        client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)  # type: ignore[call-arg]
+        client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)
         return cls(client, places)
 
     def lazy_load(

@@ -22,7 +22,7 @@ class TestYouSearchTool:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))  # type: ignore[call-arg]
+        you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))
         results = you_tool.invoke(query)
         expected_result = MOCK_PARSED_OUTPUT
         assert results == expected_result
@@ -33,7 +33,7 @@ class TestYouSearchTool:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_tool = YouSearchTool(  # type: ignore[call-arg]
+        you_tool = YouSearchTool(
             api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", k=2)
         )
         results = you_tool.invoke(query)
@@ -46,7 +46,7 @@ class TestYouSearchTool:
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
         )
         query = "Test query text"
-        you_tool = YouSearchTool(  # type: ignore[call-arg]
+        you_tool = YouSearchTool(
             api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", n_snippets_per_hit=1)
         )
         results = you_tool.invoke(query)
@@ -60,7 +60,7 @@ class TestYouSearchTool:
         )
 
         query = "Test news text"
-        you_tool = YouSearchTool(  # type: ignore[call-arg]
+        you_tool = YouSearchTool(
             api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", endpoint_type="news")
         )
         results = you_tool.invoke(query)
@@ -68,7 +68,7 @@ class TestYouSearchTool:
         assert results == expected_result
 
     async def test_ainvoke(self) -> None:
-        you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))  # type: ignore[call-arg]
+        you_tool = YouSearchTool(api_wrapper=YouSearchAPIWrapper(ydc_api_key="test"))
 
         # Mock response object to simulate aiohttp response
         mock_response = AsyncMock()

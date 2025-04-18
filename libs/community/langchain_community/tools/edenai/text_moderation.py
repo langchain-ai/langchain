@@ -15,7 +15,7 @@ class TextModerationInput(BaseModel):
     query: str = Field(description="Text to moderate")
 
 
-class EdenAiTextModerationTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiTextModerationTool(EdenaiTool):
     """Tool that queries the Eden AI Explicit text detection.
 
     for api reference check edenai documentation:

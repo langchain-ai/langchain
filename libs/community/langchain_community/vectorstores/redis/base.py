@@ -1429,7 +1429,7 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     return clean_meta
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever):  # type: ignore[override]
+class RedisVectorStoreRetriever(VectorStoreRetriever):
     """Retriever for Redis VectorStore."""
 
     vectorstore: Redis

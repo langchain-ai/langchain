@@ -26,7 +26,7 @@ class ElevenLabsModel(str, Enum):
     MONO_LINGUAL = "eleven_flash_v2"
 
 
-class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
+class ElevenLabsText2SpeechTool(BaseTool):
     """Tool that queries the Eleven Labs Text2Speech API.
 
     In order to set this up, follow instructions at:

@@ -486,7 +486,7 @@ class ChatPerplexity(BaseChatModel):
             if is_pydantic_schema and hasattr(
                 schema, "model_json_schema"
             ):  # accounting for pydantic v1 and v2
-                response_format = schema.model_json_schema()  # type: ignore[union-attr]
+                response_format = schema.model_json_schema()
             elif is_pydantic_schema:
                 response_format = schema.schema()  # type: ignore[union-attr]
             elif isinstance(schema, dict):

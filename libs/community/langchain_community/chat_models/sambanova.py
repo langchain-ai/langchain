@@ -636,7 +636,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             if is_pydantic_schema:
                 output_parser: OutputParserLike[Any] = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
+                    first_tool_only=True,
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -648,7 +648,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             # llm = self.bind(response_format={"type": "json_object"})
             if is_pydantic_schema:
                 schema = cast(Type[BaseModel], schema)
-                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 output_parser = JsonOutputParser()
 
@@ -666,7 +666,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             # )
             if is_pydantic_schema:
                 schema = cast(Type[BaseModel], schema)
-                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 output_parser = JsonOutputParser()
         else:

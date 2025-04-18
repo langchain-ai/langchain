@@ -235,7 +235,7 @@ def _make_request(
         messages=[Message(role="user", text=prompt)],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
+    res = stub.Completion(request, metadata=self.grpc_metadata)
     return list(res)[0].alternatives[0].message.text
 
 
@@ -291,7 +291,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
             messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
+        operation = await stub.Completion(request, metadata=self.grpc_metadata)
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -301,7 +301,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
                     operation_request,
-                    metadata=self.grpc_metadata,  # type: ignore[attr-defined]
+                    metadata=self.grpc_metadata,
                 )
 
         completion_response = CompletionResponse()

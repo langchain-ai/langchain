@@ -17,7 +17,7 @@ from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapp
     removal="1.0",
     alternative="langchain_exa.ExaSearchResults",
 )
-class MetaphorSearchResults(BaseTool):  # type: ignore[override]
+class MetaphorSearchResults(BaseTool):
     """Tool that queries the Metaphor Search API and gets back json."""
 
     name: str = "metaphor_search_results_json"

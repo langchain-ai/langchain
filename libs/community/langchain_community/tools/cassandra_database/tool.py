@@ -29,7 +29,7 @@ class _QueryCassandraDatabaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct CQL query.")
 
 
-class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
+class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
     """Tool for querying an Apache Cassandra database with provided CQL."""
 
     name: str = "cassandra_db_query"
@@ -60,7 +60,7 @@ class _GetSchemaCassandraDatabaseToolInput(BaseModel):
     )
 
 
-class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
+class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
     """Tool for getting the schema of a keyspace in an Apache Cassandra database."""
 
     name: str = "cassandra_db_schema"
@@ -107,7 +107,7 @@ class _GetTableDataCassandraDatabaseToolInput(BaseModel):
     )
 
 
-class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):  # type: ignore[override, override]
+class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
     """
     Tool for getting data from a table in an Apache Cassandra database.
     Use the WHERE clause to specify the predicate for the query that uses the

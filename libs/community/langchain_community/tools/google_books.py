@@ -15,7 +15,7 @@ class GoogleBooksQueryInput(BaseModel):
     query: str = Field(description="query to look up on google books")
 
 
-class GoogleBooksQueryRun(BaseTool):  # type: ignore[override]
+class GoogleBooksQueryRun(BaseTool):
     """Tool that searches the Google Books API."""
 
     name: str = "GoogleBooks"

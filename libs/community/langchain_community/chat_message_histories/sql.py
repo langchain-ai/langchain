@@ -85,7 +85,7 @@ def create_message_model(table_name: str, DynamicBase: Any) -> Any:
     """
 
     # Model declared inside a function to have a dynamic table name.
-    class Message(DynamicBase):  # type: ignore[valid-type, misc]
+    class Message(DynamicBase):
         __tablename__ = table_name
         id = Column(Integer, primary_key=True)
         session_id = Column(Text)

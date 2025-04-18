@@ -19,7 +19,7 @@ class FileMoveInput(BaseModel):
     destination_path: str = Field(..., description="New path for the moved file")
 
 
-class MoveFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
+class MoveFileTool(BaseFileToolMixin, BaseTool):
     """Tool that moves a file."""
 
     name: str = "move_file"

@@ -162,7 +162,7 @@ class StarRocks(VectorStore):
         config (StarRocksSettings): Configuration to StarRocks Client
         """
         try:
-            import pymysql  # type: ignore[import]
+            import pymysql  # type: ignore[import-untyped]
         except ImportError:
             raise ImportError(
                 "Could not import pymysql python package. "

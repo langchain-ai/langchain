@@ -24,7 +24,7 @@ class CashFlowStatementsSchema(BaseModel):
     )
 
 
-class CashFlowStatements(BaseTool):  # type: ignore[override, override]
+class CashFlowStatements(BaseTool):
     """
     Tool that gets cash flow statements for a given ticker over a given period.
     """

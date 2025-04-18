@@ -176,7 +176,7 @@ class ChatNebula(BaseChatModel):
         json_payload = json.dumps(payload)
 
         async with ClientSession() as session:
-            async with session.post(  # type: ignore[call-arg]
+            async with session.post(  # type: ignore[call-arg,unused-ignore]
                 url, data=json_payload, headers=headers, stream=True
             ) as response:
                 response.raise_for_status()

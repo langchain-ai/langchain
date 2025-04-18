@@ -36,7 +36,7 @@ class SendMessageSchema(BaseModel):
     )
 
 
-class GmailSendMessage(GmailBaseTool):  # type: ignore[override, override]
+class GmailSendMessage(GmailBaseTool):
     """Tool that sends a message to Gmail."""
 
     name: str = "send_gmail_message"

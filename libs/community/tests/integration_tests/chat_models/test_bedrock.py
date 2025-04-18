@@ -109,7 +109,7 @@ def test_bedrock_streaming(chat: BedrockChat) -> None:
 
     full = None
     for token in chat.stream("I'm Pickle Rick"):
-        full = token if full is None else full + token  # type: ignore[operator]
+        full = token if full is None else full + token
         assert isinstance(token.content, str)
     assert isinstance(cast(AIMessageChunk, full).content, str)
 

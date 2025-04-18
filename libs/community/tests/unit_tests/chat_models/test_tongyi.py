@@ -59,7 +59,7 @@ def test__convert_dict_to_message_function_call() -> None:
     expected_output = AIMessage(
         content="foo",
         additional_kwargs={"tool_calls": raw_function_calls},
-        tool_calls=tool_calls,  # type: ignore[arg-type]
+        tool_calls=tool_calls,
         invalid_tool_calls=[],
     )
     assert result == expected_output

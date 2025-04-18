@@ -15,7 +15,7 @@ from langchain_community.tools.azure_cognitive_services.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsImageAnalysisTool(BaseTool):  # type: ignore[override]
+class AzureCogsImageAnalysisTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Image Analysis API.
 
     In order to set this up, follow instructions at:

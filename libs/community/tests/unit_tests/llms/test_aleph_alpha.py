@@ -29,7 +29,7 @@ def test_api_key_masked_when_passed_from_env(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
     monkeypatch.setenv("ALEPH_ALPHA_API_KEY", "secret-api-key")
-    llm = AlephAlpha()  # type: ignore[call-arg]
+    llm = AlephAlpha()
     print(llm.aleph_alpha_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
