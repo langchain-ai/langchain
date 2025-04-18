@@ -178,7 +178,7 @@ def execute_function(
         statement=parametrized_statement.statement,
         warehouse_id=warehouse_id,
         parameters=parametrized_statement.parameters,
-        **execute_statement_args,  # type: ignore
+        **execute_statement_args,
     )
     if response.status and job_pending(response.status.state) and response.statement_id:
         statement_id = response.statement_id
@@ -197,7 +197,7 @@ def execute_function(
                 f"status after {wait} seconds."
             )
             time.sleep(wait)
-            response = ws.statement_execution.get_statement(statement_id)  # type: ignore
+            response = ws.statement_execution.get_statement(statement_id)
             if response.status is None or not job_pending(response.status.state):
                 break
             wait_time += wait
@@ -228,7 +228,7 @@ def execute_function(
     if is_scalar(function):
         value = None
         if data_array and len(data_array) > 0 and len(data_array[0]) > 0:
-            value = str(data_array[0][0])  # type: ignore
+            value = str(data_array[0][0])
         return FunctionExecutionResult(
             format="SCALAR", value=value, truncated=truncated
         )

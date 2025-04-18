@@ -77,7 +77,7 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
+            media_type_schema = list(p.content.values())[0].media_type_schema
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -363,7 +363,7 @@ def get_openapi_chain(
             OpenAPISpec.from_text,
         ):
             try:
-                spec = conversion(spec)  # type: ignore[arg-type]
+                spec = conversion(spec)
                 break
             except ImportError as e:
                 raise e

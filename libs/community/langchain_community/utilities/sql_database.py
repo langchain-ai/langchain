@@ -395,7 +395,7 @@ class SQLDatabase:
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows_result = connection.execute(command)  # type: ignore
+                sample_rows_result = connection.execute(command)
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)

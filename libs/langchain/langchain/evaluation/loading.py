@@ -148,9 +148,7 @@ def load_evaluator(
                         "specify a language model explicitly."
                     )
 
-            llm = llm or ChatOpenAI(  # type: ignore[call-arg]
-                model="gpt-4", seed=42, temperature=0
-            )
+            llm = llm or ChatOpenAI(model="gpt-4", seed=42, temperature=0)
         except Exception as e:
             raise ValueError(
                 f"Evaluation with the {evaluator_cls} requires a "

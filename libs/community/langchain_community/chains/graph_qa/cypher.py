@@ -316,7 +316,7 @@ class GraphCypherQAChain(Chain):
                         MessagesPlaceholder(variable_name="function_response"),
                     ]
                 )
-                qa_chain = response_prompt | qa_llm | StrOutputParser()  # type: ignore
+                qa_chain = response_prompt | qa_llm | StrOutputParser()  # type: ignore[operator]
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
         else:
@@ -404,15 +404,15 @@ class GraphCypherQAChain(Chain):
             intermediate_steps.append({"context": context})
             if self.use_function_response:
                 function_response = get_function_response(question, context)
-                final_result = self.qa_chain.invoke(  # type: ignore
+                final_result = self.qa_chain.invoke(  # type: ignore[assignment]
                     {"question": question, "function_response": function_response},
                 )
             else:
-                result = self.qa_chain.invoke(  # type: ignore
+                result = self.qa_chain.invoke(
                     {"question": question, "context": context},
                     callbacks=callbacks,
                 )
-                final_result = result[self.qa_chain.output_key]  # type: ignore
+                final_result = result[self.qa_chain.output_key]  # type: ignore[union-attr]
 
         chain_result: Dict[str, Any] = {self.output_key: final_result}
         if self.return_intermediate_steps:

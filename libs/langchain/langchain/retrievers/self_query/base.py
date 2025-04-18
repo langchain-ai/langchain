@@ -180,7 +180,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return ChromaTranslator()
 
         try:
-            from langchain_postgres import PGVector  # type: ignore[no-redef]
+            from langchain_postgres import PGVector
             from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
         except ImportError:
             pass

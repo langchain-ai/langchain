@@ -67,11 +67,11 @@ def extract_cypher(text: str) -> str:
 
 def use_simple_prompt(llm: BaseLanguageModel) -> bool:
     """Decides whether to use the simple prompt"""
-    if llm._llm_type and "anthropic" in llm._llm_type:  # type: ignore
+    if llm._llm_type and "anthropic" in llm._llm_type:  # type: ignore[attr-defined]
         return True
 
     # Bedrock anthropic
-    if hasattr(llm, "model_id") and "anthropic" in llm.model_id:  # type: ignore
+    if hasattr(llm, "model_id") and "anthropic" in llm.model_id:
         return True
 
     return False

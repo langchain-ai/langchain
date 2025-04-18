@@ -16,7 +16,7 @@ def test_loader_detect_encoding_text() -> None:
         str(path),
         glob="**/*.txt",
         loader_kwargs={"autodetect_encoding": True},
-        loader_cls=TextLoader,  # type: ignore
+        loader_cls=TextLoader,
     )
 
     with pytest.raises((UnicodeDecodeError, RuntimeError)):
@@ -49,13 +49,13 @@ def test_loader_detect_encoding_csv() -> None:
     loader = DirectoryLoader(
         str(path),
         glob="**/*.csv",
-        loader_cls=CSVLoader,  # type: ignore
+        loader_cls=CSVLoader,
     )
     loader_detect_encoding = DirectoryLoader(
         str(path),
         glob="**/*.csv",
         loader_kwargs={"autodetect_encoding": True},
-        loader_cls=CSVLoader,  # type: ignore
+        loader_cls=CSVLoader,
     )
 
     with pytest.raises((UnicodeDecodeError, RuntimeError)):

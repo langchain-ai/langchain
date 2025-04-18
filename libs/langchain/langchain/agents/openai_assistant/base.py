@@ -127,7 +127,7 @@ def _get_assistants_tool(
     such as "code_interpreter" and "file_search".
     """
     if _is_assistants_builtin_tool(tool):
-        return tool  # type: ignore
+        return tool  # type: ignore[return-value]
     else:
         return convert_to_openai_tool(tool)
 
@@ -267,7 +267,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
+            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore[misc]
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -394,7 +394,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,  # type: ignore
+            tools=openai_tools,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)

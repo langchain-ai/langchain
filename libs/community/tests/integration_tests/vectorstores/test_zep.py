@@ -171,7 +171,7 @@ def test_from_texts(
         api_url="http://localhost:8000",
     )
 
-    vs._collection.add_documents.assert_called_once_with(  # type: ignore
+    vs._collection.add_documents.assert_called_once_with(
         texts_metadatas_as_zep_documents
     )
 
@@ -185,7 +185,7 @@ def test_add_documents(
 ) -> None:
     zep_vectorstore.add_documents(mock_documents)
 
-    mock_collection.add_documents.assert_called_once_with(  # type: ignore
+    mock_collection.add_documents.assert_called_once_with(
         texts_metadatas_as_zep_documents
     )
 

@@ -8,7 +8,7 @@ from langchain_community.agents.openai_assistant import OpenAIAssistantV2Runnabl
 
 def _create_mock_client(*args: Any, use_async: bool = False, **kwargs: Any) -> Any:
     client = AsyncMock() if use_async else MagicMock()
-    client.beta.threads.runs.create = MagicMock(return_value=None)  # type: ignore
+    client.beta.threads.runs.create = MagicMock(return_value=None)
     return client
 
 

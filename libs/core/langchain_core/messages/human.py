@@ -52,9 +52,6 @@ class HumanMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-HumanMessage.model_rebuild()
-
-
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     """Human Message chunk."""
 
