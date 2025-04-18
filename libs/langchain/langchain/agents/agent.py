@@ -1013,7 +1013,7 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class ExceptionTool(BaseTool):  # type: ignore[override]
+class ExceptionTool(BaseTool):
     """Tool that just returns the query."""
 
     name: str = "_Exception"
@@ -1129,7 +1129,7 @@ class AgentExecutor(Chain):
         """
         agent = self.agent
         tools = self.tools
-        allowed_tools = agent.get_allowed_tools()  # type: ignore
+        allowed_tools = agent.get_allowed_tools()  # type: ignore[union-attr]
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
                 raise ValueError(

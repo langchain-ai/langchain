@@ -156,7 +156,7 @@ def _load_map_reduce_chain(
             verbose=verbose,  # type: ignore[arg-type]
             callback_manager=callback_manager,
         )
-    reduce_documents_chain = ReduceDocumentsChain(  # type: ignore[misc]
+    reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,

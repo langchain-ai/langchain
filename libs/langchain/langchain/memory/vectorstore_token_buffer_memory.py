@@ -109,7 +109,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore
+    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore[assignment]
     _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property

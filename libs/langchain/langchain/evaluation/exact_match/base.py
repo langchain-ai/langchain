@@ -68,7 +68,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """
         return "exact_match"
 
-    def _evaluate_strings(  # type: ignore[arg-type,override]
+    def _evaluate_strings(  # type: ignore[override]
         self,
         *,
         prediction: str,
