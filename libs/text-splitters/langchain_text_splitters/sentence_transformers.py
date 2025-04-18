@@ -35,7 +35,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
     def _initialize_chunk_configuration(
         self, *, tokens_per_chunk: Optional[int]
     ) -> None:
-        self.maximum_tokens_per_chunk = cast(int, self._model.max_seq_length)
+        self.maximum_tokens_per_chunk = self._model.max_seq_length
 
         if tokens_per_chunk is None:
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
@@ -93,10 +93,10 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
     _max_length_equal_32_bit_integer: int = 2**32
 
-    def _encode(self, text: str) -> List[int]:
+    def _encode(self, text: str) -> list[int]:
         token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
             text,
             max_length=self._max_length_equal_32_bit_integer,
             truncation="do_not_truncate",
         )
-        return token_ids_with_start_and_end_token_ids
+        return cast("list[int]", token_ids_with_start_and_end_token_ids)

@@ -353,8 +353,8 @@ class HTMLSectionSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> List[Document]:
+        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+    ) -> list[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -389,10 +389,8 @@ class HTMLSectionSplitter:
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
         try:
-            from bs4 import (
-                BeautifulSoup,  # type: ignore[import-untyped]
-                PageElement,
-            )
+            from bs4 import BeautifulSoup
+            from bs4.element import PageElement
         except ImportError as e:
             raise ImportError(
                 "Unable to import BeautifulSoup/PageElement, \
@@ -411,13 +409,13 @@ class HTMLSectionSplitter:
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
-                section_content: List = []
+                section_content: list[str] = []
             else:
                 current_header = header_element.text.strip()
                 current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
-                if i + 1 < len(headers) and element == headers[i + 1]:
+                if i + 1 < len(headers) and element == headers[i + 1]:  # type: ignore[comparison-overlap]
                     break
                 if isinstance(element, str):
                     section_content.append(element)
@@ -637,8 +635,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._stopword_removal:
             try:
-                import nltk  # type: ignore
-                from nltk.corpus import stopwords  # type: ignore
+                import nltk
+                from nltk.corpus import stopwords  # type: ignore[import-untyped]
 
                 nltk.download("stopwords")
                 self._stopwords = set(stopwords.words(self._stopword_lang))
@@ -902,7 +900,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return documents
 
     def _create_documents(
-        self, headers: dict, content: str, preserved_elements: dict
+        self, headers: dict[str, str], content: str, preserved_elements: dict[str, str]
     ) -> List[Document]:
         """Creates Document objects from the provided headers, content, and elements.
 
@@ -928,7 +926,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
-        self, content: str, metadata: dict, preserved_elements: dict
+        self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]
     ) -> List[Document]:
         """Further splits the content into smaller chunks.
 
@@ -959,7 +957,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return result
 
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict
+        self, content: str, preserved_elements: dict[str, str]
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 
