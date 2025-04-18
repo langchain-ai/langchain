@@ -20,14 +20,14 @@ if TYPE_CHECKING:
     )
 
 __all__ = (
-    "aindex",
     "DeleteResponse",
     "DocumentIndex",
-    "index",
-    "IndexingResult",
     "InMemoryRecordManager",
+    "IndexingResult",
     "RecordManager",
     "UpsertResponse",
+    "aindex",
+    "index",
 )
 
 _dynamic_imports = {

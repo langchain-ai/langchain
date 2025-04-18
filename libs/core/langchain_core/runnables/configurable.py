@@ -562,7 +562,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     self.which.name or self.which.id,
                     (
                         (v, v)
-                        for v in list(self.alternatives.keys()) + [self.default_key]
+                        for v in [*list(self.alternatives.keys()), self.default_key]
                     ),
                 )
                 _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)
