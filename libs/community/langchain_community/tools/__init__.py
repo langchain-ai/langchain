@@ -317,6 +317,11 @@ if TYPE_CHECKING:
         TavilyAnswer,
         TavilySearchResults,
     )
+    from langchain_community.tools.vectara.tool import (
+        VectaraGeneration,
+        VectaraIngest,
+        VectaraSearch,
+    )
     from langchain_community.tools.vectorstore.tool import (
         VectorStoreQATool,
         VectorStoreQAWithSourcesTool,
@@ -497,6 +502,9 @@ __all__ = [
     "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
+    "VectaraSearch",
+    "VectaraGeneration",
+    "VectaraIngest",
 ]
 
 # Used for internal purposes
@@ -654,6 +662,9 @@ _module_lookup = {
     "authenticate": "langchain_community.tools.office365.utils",
     "format_tool_to_openai_function": "langchain_community.tools.convert_to_openai",
     "tool": "langchain_core.tools",
+    "VectaraSearch": "langchain_community.tools.vectara.tool",
+    "VectaraGeneration": "langchain_community.tools.vectara.tool",
+    "VectaraIngest": "langchain_community.tools.vectara.tool",
 }
 
 
