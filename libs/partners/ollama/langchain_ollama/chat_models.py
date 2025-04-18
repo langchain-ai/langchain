@@ -26,6 +26,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -511,7 +512,7 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: list = []
         for message in messages:
-            role: Literal["user", "assistant", "system", "tool"]
+            role: str
             tool_call_id: Optional[str] = None
             tool_calls: Optional[list[dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
@@ -528,6 +529,8 @@ class ChatOllama(BaseChatModel):
                 )
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ChatMessage):
+                role = message.role
             elif isinstance(message, ToolMessage):
                 role = "tool"
                 tool_call_id = message.tool_call_id

@@ -392,8 +392,8 @@ def test_agent_with_new_prefix_suffix() -> None:
     )
 
     # avoids "BasePromptTemplate" has no attribute "template" error
-    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore
-    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore
+    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore[union-attr]
+    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore[union-attr]
     assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
     assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
 
@@ -463,7 +463,7 @@ async def test_runnable_agent() -> None:
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[])  # type: ignore[arg-type]
+    executor = AgentExecutor(agent=agent, tools=[])
 
     # Invoke
     result: Any = await asyncio.to_thread(executor.invoke, {"question": "hello"})
@@ -527,7 +527,7 @@ async def test_runnable_agent() -> None:
             run_log = result
         else:
             # `+` is defined for RunLogPatch
-            run_log = run_log + result  # type: ignore[union-attr]
+            run_log = run_log + result
 
     assert isinstance(run_log, RunLog)
 
@@ -583,7 +583,7 @@ async def test_runnable_agent_with_function_calls() -> None:
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
     result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
@@ -701,7 +701,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         return "purrrr"
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
     result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
@@ -852,10 +852,10 @@ async def test_openai_agent_with_streaming() -> None:
     # decorator.
     agent = create_openai_functions_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
     result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
@@ -1006,7 +1006,7 @@ def _make_tools_invocation(name_to_arguments: dict[str, dict[str, Any]]) -> AIMe
         additional_kwargs={
             "tool_calls": raw_tool_calls,
         },
-        tool_calls=tool_calls,  # type: ignore[arg-type]
+        tool_calls=tool_calls,
     )
 
 
@@ -1024,7 +1024,7 @@ async def test_openai_agent_tools_agent() -> None:
         ]
     )
 
-    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore
+    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore[assignment,misc]
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @tool
@@ -1053,16 +1053,16 @@ async def test_openai_agent_tools_agent() -> None:
     # decorator.
     openai_agent = create_openai_tools_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
     tool_calling_agent = create_tool_calling_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
     for agent in [openai_agent, tool_calling_agent]:
-        executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+        executor = AgentExecutor(agent=agent, tools=[find_pet])
 
         # Invoke
         result = await asyncio.to_thread(executor.invoke, {"question": "hello"})

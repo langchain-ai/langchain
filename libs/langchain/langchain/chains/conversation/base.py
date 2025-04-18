@@ -19,7 +19,7 @@ from langchain.memory.buffer import ConversationBufferMemory
     ),
     removal="1.0",
 )
-class ConversationChain(LLMChain):  # type: ignore[override, override]
+class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
 
     This class is deprecated in favor of ``RunnableWithMessageHistory``. Please refer
