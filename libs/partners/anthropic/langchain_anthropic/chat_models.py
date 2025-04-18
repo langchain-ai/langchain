@@ -103,31 +103,47 @@ def _is_builtin_tool(tool: Any) -> bool:
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
 
-def _format_image(image_url: str) -> dict:
+def _format_image(url: str) -> dict:
     """
-    Formats an image of format data:image/jpeg;base64,{b64_string}
-    to a dict for anthropic api
-
+    Converts part["image_url"]["url"] strings (OpenAI format)
+    to the correct Anthropic format:
     {
       "type": "base64",
       "media_type": "image/jpeg",
       "data": "/9j/4AAQSkZJRg...",
     }
-
-    And throws an error if it's not a b64 image
-    """
-    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
-    match = re.match(regex, image_url)
-    if match is None:
-        raise ValueError(
-            "Anthropic only supports base64-encoded images currently."
-            " Example: data:image/png;base64,'/9j/4AAQSk'..."
-        )
-    return {
-        "type": "base64",
-        "media_type": match.group("media_type"),
-        "data": match.group("data"),
+    Or
+    {
+      "type": "url",
+      "url": "https://example.com/image.jpg",
     }
+    """
+    # Base64 encoded image
+    base64_regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
+    base64_match = re.match(base64_regex, url)
+
+    if base64_match:
+        return {
+            "type": "base64",
+            "media_type": base64_match.group("media_type"),
+            "data": base64_match.group("data"),
+        }
+
+    # Url
+    url_regex = r"^https?://.*$"
+    url_match = re.match(url_regex, url)
+
+    if url_match:
+        return {
+            "type": "url",
+            "url": url,
+        }
+
+    raise ValueError(
+        "Malformed url parameter."
+        " Must be either an image URL (https://example.com/image.jpg)"
+        " or base64 encoded string (data:image/png;base64,'/9j/4AAQSk'...)"
+    )
 
 
 def _merge_messages(
@@ -578,20 +594,37 @@ class ChatAnthropic(BaseChatModel):
         See ``ChatAnthropic.with_structured_output()`` for more.
 
     Image input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             import base64
+
             import httpx
+            from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage
 
             image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
             image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
             message = HumanMessage(
                 content=[
-                    {"type": "text", "text": "describe the weather in this image"},
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                        "type": "text",
+                        "text": "Can you highlight the differences between these two images?",
+                    },
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                    {
+                        "type": "image",
+                        "source_type": "url",
+                        "url": image_url,
                     },
                 ],
             )
@@ -600,9 +633,12 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
+            "After examining both images carefully, I can see that they are actually identical."
 
     PDF input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             from base64 import b64encode
@@ -620,12 +656,10 @@ class ChatAnthropic(BaseChatModel):
                         [
                             "Summarize this document.",
                             {
-                                "type": "document",
-                                "source": {
-                                    "type": "base64",
-                                    "data": data,
-                                    "media_type": "application/pdf",
-                                },
+                                "type": "file",
+                                "source_type": "base64",
+                                "mime_type": "application/pdf",
+                                "data": data,
                             },
                         ]
                     )
