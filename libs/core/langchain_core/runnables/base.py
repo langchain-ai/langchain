@@ -778,14 +778,14 @@ class Runnable(Generic[Input, Output], ABC):
 
         configs = get_config_list(config, len(inputs))
 
-        def invoke(value: Input, config: RunnableConfig) -> Union[Output, Exception]:
+        def invoke(input_: Input, config: RunnableConfig) -> Union[Output, Exception]:
             if return_exceptions:
                 try:
-                    return self.invoke(value, config, **kwargs)
+                    return self.invoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return self.invoke(value, config, **kwargs)
+                return self.invoke(input_, config, **kwargs)
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
@@ -832,15 +832,17 @@ class Runnable(Generic[Input, Output], ABC):
         configs = get_config_list(config, len(inputs))
 
         def invoke(
-            i: int, value: Input, config: RunnableConfig
+            i: int, input_: Input, config: RunnableConfig
         ) -> tuple[int, Union[Output, Exception]]:
             if return_exceptions:
                 try:
-                    out: Union[Output, Exception] = self.invoke(value, config, **kwargs)
+                    out: Union[Output, Exception] = self.invoke(
+                        input_, config, **kwargs
+                    )
                 except Exception as e:
                     out = e
             else:
-                out = self.invoke(value, config, **kwargs)
+                out = self.invoke(input_, config, **kwargs)
 
             return (i, out)
 
@@ -966,24 +968,24 @@ class Runnable(Generic[Input, Output], ABC):
         semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency else None
 
         async def ainvoke_task(
-            i: int, value: Input, config: RunnableConfig
+            i: int, input_: Input, config: RunnableConfig
         ) -> tuple[int, Union[Output, Exception]]:
             if return_exceptions:
                 try:
                     out: Union[Output, Exception] = await self.ainvoke(
-                        value, config, **kwargs
+                        input_, config, **kwargs
                     )
                 except Exception as e:
                     out = e
             else:
-                out = await self.ainvoke(value, config, **kwargs)
+                out = await self.ainvoke(input_, config, **kwargs)
             return (i, out)
 
         coros = [
-            gated_coro(semaphore, ainvoke_task(i, value, config))
+            gated_coro(semaphore, ainvoke_task(i, input_, config))
             if semaphore
-            else ainvoke_task(i, value, config)
-            for i, (value, config) in enumerate(zip(inputs, configs))
+            else ainvoke_task(i, input_, config)
+            for i, (input_, config) in enumerate(zip(inputs, configs))
         ]
 
         for coro in asyncio.as_completed(coros):
@@ -1909,7 +1911,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Input, CallbackManagerForChainRun], Output],
             Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
         ],
-        value: Input,
+        input_: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
         serialized: Optional[dict[str, Any]] = None,
@@ -1923,7 +1925,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             serialized,
-            value,
+            input_,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -1936,7 +1938,7 @@ class Runnable(Generic[Input, Output], ABC):
                     context.run(
                         call_func_with_variable_args,  # type: ignore[arg-type]
                         func,
-                        value,
+                        input_,
                         config,
                         run_manager,
                         **kwargs,
@@ -1959,7 +1961,7 @@ class Runnable(Generic[Input, Output], ABC):
                 Awaitable[Output],
             ],
         ],
-        value: Input,
+        input_: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
         serialized: Optional[dict[str, Any]] = None,
@@ -1973,7 +1975,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             serialized,
-            value,
+            input_,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -1982,7 +1984,7 @@ class Runnable(Generic[Input, Output], ABC):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 coro = acall_func_with_variable_args(
-                    func, value, config, run_manager, **kwargs
+                    func, input_, config, run_manager, **kwargs
                 )
                 output: Output = await coro_with_context(coro, context)
         except BaseException as e:
@@ -3741,7 +3743,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         )
 
         def _invoke_step(
-            step: Runnable[Input, Any], value: Input, config: RunnableConfig, key: str
+            step: Runnable[Input, Any], input_: Input, config: RunnableConfig, key: str
         ) -> Any:
             child_config = patch_config(
                 config,
@@ -3751,7 +3753,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             with set_config_context(child_config) as context:
                 return context.run(
                     step.invoke,
-                    value,
+                    input_,
                     child_config,
                 )
 
@@ -3793,7 +3795,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         )
 
         async def _ainvoke_step(
-            step: Runnable[Input, Any], value: Input, config: RunnableConfig, key: str
+            step: Runnable[Input, Any], input_: Input, config: RunnableConfig, key: str
         ) -> Any:
             child_config = patch_config(
                 config,
@@ -3801,7 +3803,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             )
             with set_config_context(child_config) as context:
                 return await coro_with_context(
-                    step.ainvoke(value, child_config), context, create_task=True
+                    step.ainvoke(input_, child_config), context, create_task=True
                 )
 
         # gather results from all steps
@@ -4598,7 +4600,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def _invoke(
         self,
-        value: Input,
+        input_: Input,
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -4607,7 +4609,7 @@ class RunnableLambda(Runnable[Input, Output]):
             output: Optional[Output] = None
             for chunk in call_func_with_variable_args(
                 cast("Callable[[Input], Iterator[Output]]", self.func),
-                value,
+                input_,
                 config,
                 run_manager,
                 **kwargs,
@@ -4621,18 +4623,18 @@ class RunnableLambda(Runnable[Input, Output]):
                         output = chunk
         else:
             output = call_func_with_variable_args(
-                self.func, value, config, run_manager, **kwargs
+                self.func, input_, config, run_manager, **kwargs
             )
         # If the output is a Runnable, invoke it
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
                 msg = (
-                    f"Recursion limit reached when invoking {self} with input {value}."
+                    f"Recursion limit reached when invoking {self} with input {input_}."
                 )
                 raise RecursionError(msg)
             output = output.invoke(
-                value,
+                input_,
                 patch_config(
                     config,
                     callbacks=run_manager.get_child(),
@@ -4921,13 +4923,13 @@ class RunnableLambda(Runnable[Input, Output]):
                 raise TypeError(msg)
 
             def func(
-                value: Input,
+                input_: Input,
                 run_manager: AsyncCallbackManagerForChainRun,
                 config: RunnableConfig,
                 **kwargs: Any,
             ) -> Output:
                 return call_func_with_variable_args(
-                    self.func, value, config, run_manager.get_sync(), **kwargs
+                    self.func, input_, config, run_manager.get_sync(), **kwargs
                 )
 
             @wraps(func)
