@@ -148,7 +148,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             )
         ),
     ]
-    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type]
 
     chain = LLMChain(
         llm=llm,
