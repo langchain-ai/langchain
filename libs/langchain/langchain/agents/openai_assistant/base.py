@@ -584,6 +584,9 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             answer: Any = [
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
+            attachments = [
+                attachment for msg in new_messages for attachment in msg.attachments
+            ]
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
@@ -601,6 +604,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     "output": answer,
                     "thread_id": run.thread_id,
                     "run_id": run.id,
+                    "attachments": attachments,
                 },
                 log="",
                 run_id=run.id,
