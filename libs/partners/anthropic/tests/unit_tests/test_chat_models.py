@@ -777,6 +777,56 @@ def test__format_messages_with_citations() -> None:
     assert actual_messages == expected_messages
 
 
+def test__format_messages_openai_image_format() -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Can you highlight the differences between these two images?",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://<image url>"},
+            },
+        ],
+    )
+    actual_system, actual_messages = _format_messages([message])
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "Can you highlight the differences between these two images?"
+                    ),
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "<base64 data>",
+                    },
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": "https://<image url>",
+                    },
+                },
+            ],
+        }
+    ]
+    assert actual_messages == expected_messages
+
+
 def test__format_messages_with_multiple_system() -> None:
     messages = [
         HumanMessage("baz"),

@@ -327,8 +327,8 @@ async def test_anthropic_async_streaming_callback() -> None:
     assert callback_handler.llm_streams > 1
 
 
-def test_anthropic_multimodal_base64() -> None:
-    """Test that base64 encoded inputs in OpenAI format are handled correctly."""
+def test_anthropic_multimodal() -> None:
+    """Test that multimodal inputs are handled correctly."""
     chat = ChatAnthropic(model=IMAGE_MODEL_NAME)
     messages: list[BaseMessage] = [
         HumanMessage(
@@ -349,26 +349,6 @@ def test_anthropic_multimodal_base64() -> None:
     assert isinstance(response.content, str)
     num_tokens = chat.get_num_tokens_from_messages(messages)
     assert num_tokens > 0
-
-
-def test_anthropic_multimodal_url() -> None:
-    """Test that URL inputs in OpenAI format are handled correctly."""
-    chat = ChatAnthropic(model=IMAGE_MODEL_NAME)
-    messages: list[BaseMessage] = [
-        HumanMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {"url": "https://dummyimage.com/600x400/000/fff"},
-                },
-                {"type": "text", "text": "What numbers can you see in this image?"},
-            ]
-        )
-    ]
-    response = chat.invoke(messages)
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.content, str)
-    assert len(response.content) > 0
 
 
 def test_streaming() -> None:
