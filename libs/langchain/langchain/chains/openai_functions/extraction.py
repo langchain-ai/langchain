@@ -170,7 +170,7 @@ def create_extraction_chain_pydantic(
     """
 
     class PydanticSchema(BaseModel):
-        info: list[pydantic_schema]  # type: ignore
+        info: list[pydantic_schema]
 
     if hasattr(pydantic_schema, "model_json_schema"):
         openai_schema = pydantic_schema.model_json_schema()

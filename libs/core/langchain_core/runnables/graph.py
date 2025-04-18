@@ -630,6 +630,8 @@ class Graph:
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        max_retries: int = 1,
+        retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
@@ -645,6 +647,10 @@ class Graph:
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
             padding: The padding around the graph. Defaults to 10.
+            max_retries: The maximum number of retries (MermaidDrawMethod.API).
+                Defaults to 1.
+            retry_delay: The delay between retries (MermaidDrawMethod.API).
+                Defaults to 1.0.
             frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph. Defaults to None.
@@ -680,6 +686,8 @@ class Graph:
             draw_method=draw_method,
             background_color=background_color,
             padding=padding,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
 
 

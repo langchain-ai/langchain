@@ -15,8 +15,9 @@
 
 """  # noqa: E501
 
-from importlib import import_module
 from typing import TYPE_CHECKING
+
+from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.messages.ai import (
@@ -31,6 +32,10 @@ if TYPE_CHECKING:
         messages_to_dict,
     )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+    from langchain_core.messages.content_blocks import (
+        convert_to_openai_image_block,
+        is_data_content_block,
+    )
     from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
     from langchain_core.messages.modifier import RemoveMessage
@@ -56,7 +61,7 @@ if TYPE_CHECKING:
         trim_messages,
     )
 
-__all__ = [
+__all__ = (
     "AIMessage",
     "AIMessageChunk",
     "AnyMessage",
@@ -78,8 +83,10 @@ __all__ = [
     "ToolMessageChunk",
     "RemoveMessage",
     "_message_from_dict",
+    "convert_to_openai_image_block",
     "convert_to_messages",
     "get_buffer_string",
+    "is_data_content_block",
     "merge_content",
     "message_chunk_to_message",
     "message_to_dict",
@@ -89,7 +96,7 @@ __all__ = [
     "merge_message_runs",
     "trim_messages",
     "convert_to_openai_messages",
-]
+)
 
 _dynamic_imports = {
     "AIMessage": "ai",
@@ -117,9 +124,11 @@ _dynamic_imports = {
     "MessageLikeRepresentation": "utils",
     "_message_from_dict": "utils",
     "convert_to_messages": "utils",
+    "convert_to_openai_image_block": "content_blocks",
     "convert_to_openai_messages": "utils",
     "filter_messages": "utils",
     "get_buffer_string": "utils",
+    "is_data_content_block": "content_blocks",
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",
@@ -129,12 +138,7 @@ _dynamic_imports = {
 
 def __getattr__(attr_name: str) -> object:
     module_name = _dynamic_imports.get(attr_name)
-    package = __spec__.parent
-    if module_name == "__module__" or module_name is None:
-        result = import_module(f".{attr_name}", package=package)
-    else:
-        module = import_module(f".{module_name}", package=package)
-        result = getattr(module, attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
     return result
 

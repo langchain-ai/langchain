@@ -176,6 +176,3 @@ class Tool(BaseTool):
             args_schema=args_schema,
             **kwargs,
         )
-
-
-Tool.model_rebuild()

@@ -61,7 +61,7 @@ def test_load_criteria_evaluator() -> None:
     # Patch the env with an openai-api-key
     with patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}):
         # Check it can load using a string arg (even if that's not how it's typed)
-        load_evaluator("criteria")  # type: ignore
+        load_evaluator("criteria")  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
@@ -78,7 +78,7 @@ def test_returns_expected_results(
     fake_llm = FakeLLM(
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
-    chain = chain_cls.from_llm(fake_llm)  # type: ignore
+    chain = chain_cls.from_llm(fake_llm)  # type: ignore[attr-defined]
     results = chain.evaluate_strings(
         prediction="my prediction", reference="my reference", input="my input"
     )
