@@ -606,6 +606,10 @@ packages:
 - name: langchain-ydb
   path: .
   repo: ydb-platform/langchain-ydb
+- name: langchain-singlestore
+  name_title: SingleStore
+  path: .
+  repo: singlestore-labs/langchain-singlestore
 - name: langchain-galaxia-retriever
   provider_page: galaxia
   path: .
