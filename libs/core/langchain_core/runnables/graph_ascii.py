@@ -163,16 +163,21 @@ class AsciiCanvas:
         self.point(x0 + width, y0 + height, "+")
 
 
+class _EdgeViewer:
+    def __init__(self) -> None:
+        self.pts: list[tuple[float]] = []
+
+    def setpath(self, pts: list[tuple[float]]) -> None:
+        self.pts = pts
+
+
 def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
     try:
         from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import-untyped]
         from grandalf.layouts import SugiyamaLayout  # type: ignore[import-untyped]
-        from grandalf.routing import (  # type: ignore[import-untyped]
-            EdgeViewer,
-            route_with_lines,
-        )
+        from grandalf.routing import route_with_lines  # type: ignore[import-untyped]
     except ImportError as exc:
         msg = "Install grandalf to draw graphs: `pip install grandalf`."
         raise ImportError(msg) from exc
@@ -199,7 +204,7 @@ def _build_sugiyama_layout(
     minw = min(v.view.w for v in vertices_list)
 
     for edge in edges_:
-        edge.view = EdgeViewer()
+        edge.view = _EdgeViewer()
 
     sug = SugiyamaLayout(graph.C[0])
     graph = graph.C[0]
@@ -277,7 +282,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         ylist.extend((vertex.view.xy[1], vertex.view.xy[1] + vertex.view.h))
 
     for edge in sug.g.sE:
-        for x, y in edge.view._pts:
+        for x, y in edge.view.pts:
             xlist.append(x)
             ylist.append(y)
 
@@ -293,12 +298,12 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     # NOTE: first draw edges so that node boxes could overwrite them
     for edge in sug.g.sE:
-        if len(edge.view._pts) <= 1:
+        if len(edge.view.pts) <= 1:
             msg = "Not enough points to draw an edge"
             raise ValueError(msg)
-        for index in range(1, len(edge.view._pts)):
-            start = edge.view._pts[index - 1]
-            end = edge.view._pts[index]
+        for index in range(1, len(edge.view.pts)):
+            start = edge.view.pts[index - 1]
+            end = edge.view.pts[index]
 
             start_x = int(round(start[0] - minx))
             start_y = int(round(start[1] - miny))
