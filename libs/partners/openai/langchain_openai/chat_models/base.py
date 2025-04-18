@@ -2850,6 +2850,7 @@ def _resize(width: int, height: int) -> tuple[int, int]:
         else:
             width = (width * 2048) // height
             height = 2048
+        return width, height
     # smaller side must be <= 768
     if width > 768 and height > 768:
         if width > height:
@@ -2858,6 +2859,7 @@ def _resize(width: int, height: int) -> tuple[int, int]:
         else:
             height = (width * 768) // height
             width = 768
+        return width, height
     return width, height
 
 
