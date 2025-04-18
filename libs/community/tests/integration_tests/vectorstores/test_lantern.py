@@ -32,7 +32,7 @@ def fix_distance_precision(
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
-    def __init__(self):  # type: ignore[no-untyped-def]
+    def __init__(self) -> None:
         super(FakeEmbeddingsWithAdaDimension, self).__init__(size=ADA_TOKEN_COUNT)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

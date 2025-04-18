@@ -136,12 +136,14 @@ class OCIGenAIBase(BaseModel, ABC):
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
 
-                def make_security_token_signer(oci_config):  # type: ignore[no-untyped-def]
+                def make_security_token_signer(
+                    oci_config: dict[str, Any],
+                ) -> "oci.auth.signers.SecurityTokenSigner":
                     pk = oci.signer.load_private_key_from_file(
                         oci_config.get("key_file"), None
                     )
                     with open(
-                        oci_config.get("security_token_file"), encoding="utf-8"
+                        str(oci_config.get("security_token_file")), encoding="utf-8"
                     ) as f:
                         st_string = f.read()
                     return oci.auth.signers.SecurityTokenSigner(st_string, pk)

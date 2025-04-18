@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -34,20 +34,24 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         kwargs = {}
 
-        if api_key is None and azure_credential is None:
+        credential: Union[AzureKeyCredential, TokenCredential]
+        if azure_credential:
+            if api_key is not None:
+                raise ValueError(
+                    "Only one of api_key or azure_credential should be provided."
+                )
+            credential = azure_credential
+        elif api_key is not None:
+            credential = AzureKeyCredential(api_key)
+        else:
             raise ValueError("Either api_key or azure_credential must be provided.")
-
-        if api_key and azure_credential:
-            raise ValueError(
-                "Only one of api_key or azure_credential should be provided."
-            )
 
         if api_version is not None:
             kwargs["api_version"] = api_version
 
         self.client = DocumentIntelligenceClient(
             endpoint=api_endpoint,
-            credential=azure_credential or AzureKeyCredential(api_key),
+            credential=credential,
             headers={"x-ms-useragent": "langchain-parser/1.0.0"},
             **kwargs,
         )

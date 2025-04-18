@@ -439,8 +439,8 @@ class MiniMaxChat(BaseChatModel):
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
-    def _create_payload_parameters(  # type: ignore[no-untyped-def]
-        self, messages: List[BaseMessage], is_stream: bool = False, **kwargs
+    def _create_payload_parameters(
+        self, messages: List[BaseMessage], is_stream: bool = False, **kwargs: Any
     ) -> Dict[str, Any]:
         """Create API request body parameters."""
         message_dicts = [_convert_message_to_dict(m) for m in messages]

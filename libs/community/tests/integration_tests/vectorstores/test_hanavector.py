@@ -2,6 +2,7 @@
 
 import os
 import random
+from types import ModuleType
 from typing import Any, Dict, List
 
 import numpy as np
@@ -29,7 +30,6 @@ TYPE_4B_FILTERING_TEST_CASES = [
     ),
 ]
 
-
 try:
     from hdbcli import dbapi
 
@@ -56,15 +56,15 @@ embedding = NormalizedFakeEmbeddings()
 
 
 class ConfigData:
-    def __init__(self):  # type: ignore[no-untyped-def]
-        self.conn = None
-        self.schema_name = ""
+    def __init__(self) -> None:
+        self.conn: dbapi.Connection = None
+        self.schema_name: str = ""
 
 
 test_setup = ConfigData()
 
 
-def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
+def generateSchemaName(cursor: "dbapi.Cursor") -> str:
     # return "Langchain"
     cursor.execute(
         "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
@@ -78,7 +78,7 @@ def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
     return f"VEC_{uid}"
 
 
-def setup_module(module):  # type: ignore[no-untyped-def]
+def setup_module(module: ModuleType) -> None:
     test_setup.conn = dbapi.connect(
         address=os.environ.get("HANA_DB_ADDRESS"),
         port=os.environ.get("HANA_DB_PORT"),
@@ -101,7 +101,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
         cur.close()
 
 
-def teardown_module(module):  # type: ignore[no-untyped-def]
+def teardown_module(module: ModuleType) -> None:
     # return
     try:
         cur = test_setup.conn.cursor()
@@ -119,17 +119,17 @@ def texts() -> List[str]:
 
 
 @pytest.fixture
-def metadatas() -> List[str]:
+def metadatas() -> List[dict[str, Any]]:
     return [
-        {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
-        {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
-        {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
-        {"start": 200, "quality": "ugly", "ready": True, "Owner": "Steve"},  # type: ignore[list-item]
-        {"start": 300, "quality": "ugly", "Owner": "Steve"},  # type: ignore[list-item]
+        {"start": 0, "end": 100, "quality": "good", "ready": True},
+        {"start": 100, "end": 200, "quality": "bad", "ready": False},
+        {"start": 200, "end": 300, "quality": "ugly", "ready": True},
+        {"start": 200, "quality": "ugly", "ready": True, "Owner": "Steve"},
+        {"start": 300, "quality": "ugly", "Owner": "Steve"},
     ]
 
 
-def drop_table(connection, table_name):  # type: ignore[no-untyped-def]
+def drop_table(connection: "dbapi.Connection", table_name: str) -> None:
     try:
         cur = connection.cursor()
         sql_str = f"DROP TABLE {table_name}"
@@ -279,7 +279,7 @@ def test_hanavector_non_existing_table_fixed_vector_length() -> None:
 
     assert vectordb._table_exists(table_name)
     vectordb._check_column(
-        table_name, vector_column, "REAL_VECTOR", vector_column_length
+        table_name, vector_column, ["REAL_VECTOR"], vector_column_length
     )
 
 

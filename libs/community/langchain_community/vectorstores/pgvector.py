@@ -12,9 +12,11 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 import numpy as np
@@ -750,7 +752,9 @@ class PGVector(VectorStore):
         else:
             raise NotImplementedError()
 
-    def _create_filter_clause_deprecated(self, key, value):  # type: ignore[no-untyped-def]
+    def _create_filter_clause_deprecated(
+        self, key: str, value: dict[str, Any]
+    ) -> SQLColumnExpression:
         """Deprecated functionality.
 
         This is for backwards compatibility with the JSON based schema for metadata.
@@ -819,7 +823,7 @@ class PGVector(VectorStore):
         return filter_by_metadata
 
     def _create_filter_clause_json_deprecated(
-        self, filter: Any
+        self, filter: Mapping[str, Union[str, dict[str, Any]]]
     ) -> List[SQLColumnExpression]:
         """Convert filters from IR to SQL clauses.
 

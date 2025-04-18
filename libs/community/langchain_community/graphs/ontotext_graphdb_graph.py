@@ -93,6 +93,7 @@ class OntotextGraphDBGraph:
         self.graph = rdflib.Graph(store, identifier=None, bind_namespaces="none")
         self._check_connectivity()
 
+        ontology_schema_graph: "rdflib.Graph"
         if local_file:
             ontology_schema_graph = self._load_ontology_schema_from_file(
                 local_file,
@@ -140,7 +141,9 @@ class OntotextGraphDBGraph:
             )
 
     @staticmethod
-    def _load_ontology_schema_from_file(local_file: str, local_file_format: str = None):  # type: ignore[no-untyped-def, assignment]
+    def _load_ontology_schema_from_file(
+        local_file: str, local_file_format: Optional[str] = None
+    ) -> "rdflib.ConjunctiveGraph":  # type: ignore[assignment]
         """
         Parse the ontology schema statements from the provided file
         """
@@ -177,7 +180,7 @@ class OntotextGraphDBGraph:
                 "Invalid query type. Only CONSTRUCT queries are supported."
             )
 
-    def _load_ontology_schema_with_query(self, query: str):  # type: ignore[no-untyped-def]
+    def _load_ontology_schema_with_query(self, query: str) -> "rdflib.Graph":
         """
         Execute the query for collecting the ontology schema statements
         """
@@ -187,6 +190,9 @@ class OntotextGraphDBGraph:
             results = self.graph.query(query)
         except ParserError as e:
             raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
+
+        if not results.graph:
+            raise ValueError("Missing graph in results.")
 
         return results.graph
 

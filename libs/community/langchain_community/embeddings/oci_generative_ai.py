@@ -1,9 +1,12 @@
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import BaseModel, ConfigDict
+
+if TYPE_CHECKING:
+    import oci
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -122,12 +125,14 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
 
-                def make_security_token_signer(oci_config):  # type: ignore[no-untyped-def]
+                def make_security_token_signer(
+                    oci_config: dict[str, Any],
+                ) -> "oci.auth.signers.SecurityTokenSigner":
                     pk = oci.signer.load_private_key_from_file(
                         oci_config.get("key_file"), None
                     )
                     with open(
-                        oci_config.get("security_token_file"), encoding="utf-8"
+                        str(oci_config.get("security_token_file")), encoding="utf-8"
                     ) as f:
                         st_string = f.read()
                     return oci.auth.signers.SecurityTokenSigner(st_string, pk)

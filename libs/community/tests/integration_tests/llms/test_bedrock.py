@@ -5,12 +5,15 @@ You can get a list of models from the bedrock client by running 'bedrock_models(
 """
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.callbacks import AsyncCallbackHandler
 
 from langchain_community.llms.bedrock import Bedrock
+
+if TYPE_CHECKING:
+    from botocore.client import BaseClient
 
 # this is the guardrails id for the model you want to test
 GUARDRAILS_ID = os.environ.get("GUARDRAILS_ID", "7jarelix77")
@@ -37,12 +40,12 @@ class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
         if reason == "GUARDRAIL_INTERVENED":
             self.guardrails_intervened = True
 
-    def get_response(self):  # type: ignore[no-untyped-def]
+    def get_response(self) -> bool:
         return self.guardrails_intervened
 
 
 @pytest.fixture(autouse=True)
-def bedrock_runtime_client():  # type: ignore[no-untyped-def]
+def bedrock_runtime_client() -> "BaseClient":
     import boto3
 
     try:
@@ -56,7 +59,7 @@ def bedrock_runtime_client():  # type: ignore[no-untyped-def]
 
 
 @pytest.fixture(autouse=True)
-def bedrock_client():  # type: ignore[no-untyped-def]
+def bedrock_client() -> "BaseClient":
     import boto3
 
     try:
@@ -70,7 +73,7 @@ def bedrock_client():  # type: ignore[no-untyped-def]
 
 
 @pytest.fixture
-def bedrock_models(bedrock_client):  # type: ignore[no-untyped-def]
+def bedrock_models(bedrock_client: "BaseClient") -> dict:
     """List bedrock models."""
     response = bedrock_client.list_foundation_models().get("modelSummaries")
     models = {}
@@ -79,7 +82,9 @@ def bedrock_models(bedrock_client):  # type: ignore[no-untyped-def]
     return models
 
 
-def test_claude_instant_v1(bedrock_runtime_client, bedrock_models):  # type: ignore[no-untyped-def]
+def test_claude_instant_v1(
+    bedrock_runtime_client: "BaseClient", bedrock_models: dict
+) -> None:
     try:
         llm = Bedrock(
             model_id="anthropic.claude-instant-v1",
@@ -92,9 +97,9 @@ def test_claude_instant_v1(bedrock_runtime_client, bedrock_models):  # type: ign
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
 
 
-def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(  # type: ignore[no-untyped-def]
-    bedrock_runtime_client, bedrock_models
-):
+def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(
+    bedrock_runtime_client: "BaseClient", bedrock_models: dict
+) -> None:
     try:
         llm = Bedrock(
             model_id="anthropic.claude-instant-v1",
@@ -112,9 +117,9 @@ def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(  # type: ign
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
 
 
-def test_amazon_bedrock_guardrails_intervention_for_invalid_query(  # type: ignore[no-untyped-def]
-    bedrock_runtime_client, bedrock_models
-):
+def test_amazon_bedrock_guardrails_intervention_for_invalid_query(
+    bedrock_runtime_client: "BaseClient", bedrock_models: dict
+) -> None:
     try:
         handler = BedrockAsyncCallbackHandler()
         llm = Bedrock(

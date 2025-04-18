@@ -45,14 +45,14 @@ class GradientEmbeddingsModel(MagicMock):
         output.embeddings = embeddings
         return output
 
-    async def aembed(self, *args) -> Any:  # type: ignore[no-untyped-def]
+    async def aembed(self, *args: Any) -> Any:
         return self.embed(*args)
 
 
 class MockGradient(MagicMock):
     """Mock Gradient package."""
 
-    def __init__(self, access_token: str, workspace_id, host):  # type: ignore[no-untyped-def]
+    def __init__(self, access_token: str, workspace_id: str, host: str) -> None:
         assert access_token == _GRADIENT_SECRET
         assert workspace_id == _GRADIENT_WORKSPACE_ID
         assert host == _GRADIENT_BASE_URL

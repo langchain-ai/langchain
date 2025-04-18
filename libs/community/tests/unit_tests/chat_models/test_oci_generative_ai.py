@@ -1,5 +1,6 @@
 """Test OCI Generative AI LLM service"""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,7 +11,7 @@ from langchain_community.chat_models.oci_generative_ai import ChatOCIGenAI
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):  # type: ignore[no-untyped-def]
+    def __getattr__(self, val: str) -> Any:
         return self[val]
 
 
@@ -29,7 +30,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
     provider = model_id.split(".")[0].lower()
 
-    def mocked_response(*args):  # type: ignore[no-untyped-def]
+    def mocked_response(*args: Any) -> MockResponseDict:
         response_text = "Assistant chat reply."
         response = None
         if provider == "cohere":
@@ -102,6 +103,8 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
+        else:
+            raise ValueError(f"Unsupported provider {provider}")
         return response
 
     monkeypatch.setattr(llm.client, "chat", mocked_response)

@@ -77,7 +77,7 @@ class TigerGraph(GraphStore):
         """
         return self._conn.getSchema(force=True)
 
-    def refresh_schema(self):  # type: ignore[no-untyped-def]
+    def refresh_schema(self) -> None:
         self.generate_schema()
 
     def query(self, query: str) -> Dict[str, Any]:  # type: ignore[override]

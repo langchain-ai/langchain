@@ -8,6 +8,7 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import Self
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -31,7 +32,14 @@ class VikingDBConfig(object):
         scheme(str):http or https, defaulting to http.
     """
 
-    def __init__(self, host="host", region="region", ak="ak", sk="sk", scheme="http"):  # type: ignore[no-untyped-def]
+    def __init__(
+        self,
+        host: str = "host",
+        region: str = "region",
+        ak: str = "ak",
+        sk: str = "sk",
+        scheme: str = "http",
+    ) -> None:
         self.host = host
         self.region = region
         self.ak = ak
@@ -397,7 +405,7 @@ class VikingDB(VectorStore):
         self.collection.delete_data(ids)  # type: ignore[union-attr]
 
     @classmethod
-    def from_texts(  # type: ignore[no-untyped-def, override]
+    def from_texts(  # type: ignore[override]
         cls,
         texts: List[str],
         embedding: Embeddings,
@@ -407,7 +415,7 @@ class VikingDB(VectorStore):
         index_params: Optional[dict] = None,
         drop_old: bool = False,
         **kwargs: Any,
-    ):
+    ) -> Self:
         """Create a collection, indexes it and insert data."""
         if connection_args is None:
             raise Exception("VikingDBConfig does not exists")

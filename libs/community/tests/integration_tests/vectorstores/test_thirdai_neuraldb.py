@@ -1,13 +1,15 @@
 import os
 import shutil
+from collections.abc import Iterator
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain_community.vectorstores import NeuralDBVectorStore
 
 
 @pytest.fixture(scope="session")
-def test_csv():  # type: ignore[no-untyped-def]
+def test_csv() -> Iterator[str]:
     csv = "thirdai-test.csv"
     with open(csv, "w") as o:
         o.write("column_1,column_2\n")
@@ -16,13 +18,13 @@ def test_csv():  # type: ignore[no-untyped-def]
     os.remove(csv)
 
 
-def assert_result_correctness(documents):  # type: ignore[no-untyped-def]
+def assert_result_correctness(documents: list[Document]) -> None:
     assert len(documents) == 1
     assert documents[0].page_content == "column_1: column one\n\ncolumn_2: column two"
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_scratch(test_csv):  # type: ignore[no-untyped-def]
+def test_neuraldb_retriever_from_scratch(test_csv: str) -> None:
     retriever = NeuralDBVectorStore.from_scratch()
     retriever.insert([test_csv])
     documents = retriever.similarity_search("column")
@@ -30,7 +32,7 @@ def test_neuraldb_retriever_from_scratch(test_csv):  # type: ignore[no-untyped-d
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_checkpoint(test_csv):  # type: ignore[no-untyped-def]
+def test_neuraldb_retriever_from_checkpoint(test_csv: str) -> None:
     checkpoint = "thirdai-test-save.ndb"
     if os.path.exists(checkpoint):
         shutil.rmtree(checkpoint)
@@ -47,7 +49,7 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):  # type: ignore[no-untype
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_other_methods(test_csv):  # type: ignore[no-untyped-def]
+def test_neuraldb_retriever_other_methods(test_csv: str) -> None:
     retriever = NeuralDBVectorStore.from_scratch()
     retriever.insert([test_csv])
     # Make sure they don't throw an error.

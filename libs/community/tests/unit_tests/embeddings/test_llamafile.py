@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import numpy as np
 import requests
@@ -23,7 +24,9 @@ def test_embed_documents(monkeypatch: MonkeyPatch) -> None:
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, timeout):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str, headers: dict[str, str], json: dict[str, Any], timeout: float
+    ) -> requests.Response:
         assert url == "http://llamafile-host:8080/embedding"
         assert headers == {
             "Content-Type": "application/json",
@@ -50,7 +53,9 @@ def test_embed_query(monkeypatch: MonkeyPatch) -> None:
         base_url="http://llamafile-host:8080",
     )
 
-    def mock_post(url, headers, json, timeout):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str, headers: dict[str, str], json: dict[str, Any], timeout: float
+    ) -> None:
         assert url == "http://llamafile-host:8080/embedding"
         assert headers == {
             "Content-Type": "application/json",

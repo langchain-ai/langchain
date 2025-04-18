@@ -1,13 +1,13 @@
 """Unit test for Google Trends API Wrapper."""
 
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 
 
 @patch("serpapi.SerpApiClient.get_json")
-def test_unexpected_response(mocked_serpapiclient):  # type: ignore[no-untyped-def]
+def test_unexpected_response(mocked_serpapiclient: MagicMock) -> None:
     os.environ["SERPAPI_API_KEY"] = "123abcd"
     resp = {
         "search_metadata": {

@@ -1,5 +1,6 @@
 """Test building the Zapier tool, not running it."""
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,9 @@ import requests
 from langchain_community.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain_community.tools.zapier.tool import ZapierNLARunAction
 from langchain_community.utilities.zapier import ZapierNLAWrapper
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 def test_default_base_prompt() -> None:
@@ -136,7 +140,7 @@ def test_create_action_payload_with_params() -> None:
     assert payload["test"] == "test"
 
 
-async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_apreview(mocker: "MockerFixture") -> None:
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
         action_id="test",
@@ -164,7 +168,7 @@ async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_arun(mocker: "MockerFixture") -> None:
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
         action_id="test",
@@ -188,7 +192,7 @@ async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
     )
 
 
-async def test_alist(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_alist(mocker: "MockerFixture") -> None:
     """Test that the action payload with params is being created correctly."""
     tool = ZapierNLARunAction(
         action_id="test",

@@ -1,12 +1,15 @@
 import logging
 from pathlib import Path
-from typing import Iterator, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import mwxml
 
 
 class MWDumpLoader(BaseLoader):
@@ -60,7 +63,7 @@ class MWDumpLoader(BaseLoader):
         self.skip_redirects = skip_redirects
         self.stop_on_error = stop_on_error
 
-    def _load_dump_file(self):  # type: ignore[no-untyped-def]
+    def _load_dump_file(self) -> "mwxml.Dump":
         try:
             import mwxml
         except ImportError as e:
@@ -70,7 +73,7 @@ class MWDumpLoader(BaseLoader):
 
         return mwxml.Dump.from_file(open(self.file_path, encoding=self.encoding))
 
-    def _load_single_page_from_dump(self, page) -> Document:  # type: ignore[no-untyped-def, return]
+    def _load_single_page_from_dump(self, page: "mwxml.Page") -> Document:  # type: ignore[return]
         """Parse a single page."""
         try:
             import mwparserfromhell

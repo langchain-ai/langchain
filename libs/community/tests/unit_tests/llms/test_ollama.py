@@ -1,14 +1,16 @@
+from typing import Any, Optional
+
 import requests
 from pytest import MonkeyPatch
 
 from langchain_community.llms.ollama import Ollama
 
 
-def mock_response_stream():  # type: ignore[no-untyped-def]
+def mock_response_stream() -> requests.Response:
     mock_response = [b'{ "response": "Response chunk 1" }']
 
     class MockRaw:
-        def read(self, chunk_size):  # type: ignore[no-untyped-def]
+        def read(self, chunk_size: int) -> Optional[bytes]:
             try:
                 return mock_response.pop()
             except IndexError:
@@ -31,7 +33,14 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         timeout=300,
     )
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
@@ -57,7 +66,14 @@ def test_pass_auth_if_provided(monkeypatch: MonkeyPatch) -> None:
         timeout=300,
     )
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
@@ -77,7 +93,14 @@ def test_pass_auth_if_provided(monkeypatch: MonkeyPatch) -> None:
 def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
@@ -97,7 +120,14 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
     """Test that top level params are sent to the endpoint as top level params"""
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
@@ -145,7 +175,14 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
     """
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
@@ -194,7 +231,14 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
     """
     llm = Ollama(base_url="https://ollama-hostname:8000", model="foo", timeout=300)
 
-    def mock_post(url, headers, json, stream, timeout, auth):  # type: ignore[no-untyped-def]
+    def mock_post(
+        url: str,
+        headers: dict[str, str],
+        json: dict[str, Any],
+        stream: bool,
+        timeout: Optional[float],
+        auth: tuple[str, str],
+    ) -> requests.Response:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
