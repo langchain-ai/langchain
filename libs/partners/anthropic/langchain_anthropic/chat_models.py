@@ -594,14 +594,21 @@ class ChatAnthropic(BaseChatModel):
         See ``ChatAnthropic.with_structured_output()`` for more.
 
     Image input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             import base64
+
             import httpx
+            from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage
 
             image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
             image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
             message = HumanMessage(
                 content=[
                     {
@@ -609,12 +616,15 @@ class ChatAnthropic(BaseChatModel):
                         "text": "Can you highlight the differences between these two images?",
                     },
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
                     },
                     {
-                        "type": "image_url",
-                        "image_url": {"url": image_url},
+                        "type": "image",
+                        "source_type": "url",
+                        "url": image_url,
                     },
                 ],
             )
@@ -623,9 +633,12 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            "After examining both images carefully, I can see that they are actually identical. Both images show the same beautiful wetland or marsh landscape with... I don't detect any differences between these two images - they appear to be the exact same photograph of a boardwalk path through a wetland area under a beautiful blue sky."
+            "After examining both images carefully, I can see that they are actually identical."
 
     PDF input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             from base64 import b64encode
@@ -643,12 +656,10 @@ class ChatAnthropic(BaseChatModel):
                         [
                             "Summarize this document.",
                             {
-                                "type": "document",
-                                "source": {
-                                    "type": "base64",
-                                    "data": data,
-                                    "media_type": "application/pdf",
-                                },
+                                "type": "file",
+                                "source_type": "base64",
+                                "mime_type": "application/pdf",
+                                "data": data,
                             },
                         ]
                     )
