@@ -147,9 +147,9 @@ class ChatPerplexity(BaseChatModel):
     """  # noqa: E501
 
     client: Any = None  #: :meta private:
-    model: str = "llama-3.1-sonar-small-128k-online"
+    model: str = "sonar-pro"
     """Model name."""
-    temperature: float = 0.7
+    temperature: float = 0.2
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -168,6 +168,8 @@ class ChatPerplexity(BaseChatModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    enable_search_classifier: bool = True
+    """Whether to enable the search classifier. Default is True."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -227,6 +229,7 @@ class ChatPerplexity(BaseChatModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "temperature": self.temperature,
+            "enable_search_classifier": self.enable_search_classifier,
             **self.model_kwargs,
         }
 
