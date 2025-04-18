@@ -12,7 +12,6 @@ from __future__ import annotations
 import base64
 import inspect
 import json
-import logging
 import math
 from collections.abc import Iterable, Sequence
 from functools import partial
@@ -60,8 +59,6 @@ def _get_type(v: Any) -> str:
     )
     raise TypeError(msg)
 
-
-log = logging.getLogger(__name__)
 
 AnyMessage = Annotated[
     Union[
@@ -283,13 +280,12 @@ def _create_message_from_message_type(
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
-        warning_msg = (
-            f"Received message with unexpected type {message_type} Continuing..."
+        msg = (
+            f"Unexpected message type: '{message_type}'. Use one of 'human',"
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
         )
-        log.warning(warning_msg)
-        role = message_type
-        message = ChatMessage(role=role, content=content, **kwargs)
-
+        msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
+        raise ValueError(msg)
     return message
 
 
