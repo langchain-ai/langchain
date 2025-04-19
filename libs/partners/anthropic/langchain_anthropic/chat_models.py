@@ -1675,7 +1675,7 @@ def convert_to_anthropic_tool(
         oai_formatted = convert_to_openai_tool(tool)["function"]
         anthropic_formatted = AnthropicTool(
             name=oai_formatted["name"],
-            description=oai_formatted["description"],
+            description=oai_formatted.get("description", ""),
             input_schema=oai_formatted["parameters"],
         )
     return anthropic_formatted
