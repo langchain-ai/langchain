@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
-import requests  # type: ignore
+import requests
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from pydantic import Field

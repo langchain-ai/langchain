@@ -78,7 +78,7 @@ class TrelloLoader(BaseLoader):
         """
 
         try:
-            from trello import TrelloClient  # type: ignore
+            from trello import TrelloClient
         except ImportError as ex:
             raise ImportError(
                 "Could not import trello python package. "
@@ -124,7 +124,7 @@ class TrelloLoader(BaseLoader):
         return board
 
     def _card_to_doc(self, card: Card, list_dict: dict) -> Document:
-        from bs4 import BeautifulSoup  # type: ignore
+        from bs4 import BeautifulSoup
 
         text_content = ""
         if self.include_card_name:

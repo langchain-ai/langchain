@@ -276,9 +276,6 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.model_rebuild()
-
-
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """Message chunk from an AI."""
 

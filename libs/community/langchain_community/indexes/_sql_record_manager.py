@@ -54,7 +54,7 @@ try:
     from sqlalchemy.ext.asyncio import async_sessionmaker
 except ImportError:
     # dummy for sqlalchemy < 2
-    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore[assignment,misc]
 
 from langchain_community.indexes.base import RecordManager
 
@@ -308,8 +308,8 @@ class SQLRecordManager(RecordManager):
                     [UpsertionRecord.key, UpsertionRecord.namespace],
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=insert_stmt.excluded.updated_at,
+                        group_id=insert_stmt.excluded.group_id,
                     ),
                 )
             elif self.dialect == "postgresql":
@@ -322,8 +322,8 @@ class SQLRecordManager(RecordManager):
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=insert_stmt.excluded.updated_at,
+                        group_id=insert_stmt.excluded.group_id,
                     ),
                 )
             else:
@@ -383,8 +383,8 @@ class SQLRecordManager(RecordManager):
                     [UpsertionRecord.key, UpsertionRecord.namespace],
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=insert_stmt.excluded.updated_at,
+                        group_id=insert_stmt.excluded.group_id,
                     ),
                 )
             elif self.dialect == "postgresql":
@@ -397,8 +397,8 @@ class SQLRecordManager(RecordManager):
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         # attr-defined type ignore
-                        updated_at=insert_stmt.excluded.updated_at,  # type: ignore
-                        group_id=insert_stmt.excluded.group_id,  # type: ignore
+                        updated_at=insert_stmt.excluded.updated_at,
+                        group_id=insert_stmt.excluded.group_id,
                     ),
                 )
             else:

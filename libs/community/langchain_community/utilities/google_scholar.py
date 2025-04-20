@@ -82,7 +82,7 @@ class GoogleScholarAPIWrapper(BaseModel):
             # 0 is the first page of results, 20 is the 2nd page of results,
             # 40 is the 3rd page of results, etc.
             results = (
-                self.google_scholar_engine(  # type: ignore
+                self.google_scholar_engine(
                     {
                         "q": query,
                         "start": page,
@@ -106,7 +106,7 @@ class GoogleScholarAPIWrapper(BaseModel):
         ):  # From the last page we would only need top_k_results%20 results
             # if k is not divisible by 20.
             results = (
-                self.google_scholar_engine(  # type: ignore
+                self.google_scholar_engine(
                     {
                         "q": query,
                         "start": page,

@@ -8,7 +8,11 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel, FakeListChatModel
+from langchain_core.language_models import (
+    BaseChatModel,
+    FakeListChatModel,
+    ParrotFakeChatModel,
+)
 from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
@@ -396,3 +400,58 @@ async def test_disable_streaming_no_streaming_model_async(
     async for c in model.astream([], tools=[{}]):
         assert c.content == "invoke"
         break
+
+
+class FakeChatModelStartTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.messages: list = []
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        _, messages = args
+        self.messages.append(messages)
+        return super().on_chat_model_start(
+            *args,
+            **kwargs,
+        )
+
+
+def test_trace_images_in_openai_format() -> None:
+    """Test that images are traced in OpenAI format."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/image.png",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Test no mutation
+    assert response.content == [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/image.png",
+        }
+    ]
