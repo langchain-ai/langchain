@@ -14,7 +14,7 @@ from typing import (
 )
 
 from typing_extensions import override
-
+from pydantic import ValidationError
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -193,14 +193,20 @@ class BaseOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
-                lambda inner_input: self.parse_result(
-                    [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+            try:
+                return self._call_with_config(
+                    lambda inner_input: self.parse_result(
+                        [ChatGeneration(message=inner_input)]
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                if input.response_metadata.get("stop_reason") == "max_tokens":
+                    raise ValueError("Output parser received a max_tokens stop reason. The output is likely incomplete—please increase `max_tokens` or shorten your prompt.") from e
+                raise
+
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
