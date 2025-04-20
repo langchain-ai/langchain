@@ -13,6 +13,7 @@ from typing import (
     Union,
 )
 
+from pydantic import ValidationError
 from typing_extensions import override
 
 from langchain_core.language_models import LanguageModelOutput
@@ -26,6 +27,20 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
+
+# Centralized error message
+MAX_TOKENS_ERROR = (
+    "Output parser received a max_tokens stop reason. "
+    "The output is likely incomplete—please increase `max_tokens` "
+    "or shorten your prompt."
+)
+
+
+def _raise_max_tokens_error(e: ValidationError, input_message: BaseMessage) -> None:
+    """Check if error is due to max_tokens and raise appropriate error."""
+    if input_message.response_metadata.get("stop_reason") == "max_tokens":
+        raise ValueError(MAX_TOKENS_ERROR) from e
+    raise e
 
 
 class BaseLLMOutputParser(Generic[T], ABC):
@@ -89,14 +104,17 @@ class BaseGenerationOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
-                lambda inner_input: self.parse_result(
-                    [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+            try:
+                return self._call_with_config(
+                    lambda inner_input: self.parse_result(
+                        [ChatGeneration(message=inner_input)]
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                _raise_max_tokens_error(e, input)
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -112,14 +130,17 @@ class BaseGenerationOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result(
-                    [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+            try:
+                return await self._acall_with_config(
+                    lambda inner_input: self.aparse_result(
+                        [ChatGeneration(message=inner_input)]
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                _raise_max_tokens_error(e, input)
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -179,11 +200,11 @@ class BaseOutputParser(
                 if "args" in metadata and len(metadata["args"]) > 0:
                     return metadata["args"][0]
 
-        msg = (
+        error_msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
-        raise TypeError(msg)
+        raise TypeError(error_msg)
 
     @override
     def invoke(
@@ -193,14 +214,17 @@ class BaseOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
-                lambda inner_input: self.parse_result(
-                    [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+            try:
+                return self._call_with_config(
+                    lambda inner_input: self.parse_result(
+                        [ChatGeneration(message=inner_input)]
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                _raise_max_tokens_error(e, input)
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -216,14 +240,17 @@ class BaseOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result(
-                    [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+            try:
+                return await self._acall_with_config(
+                    lambda inner_input: self.aparse_result(
+                        [ChatGeneration(message=inner_input)]
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                _raise_max_tokens_error(e, input)
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -318,11 +345,11 @@ class BaseOutputParser(
     @property
     def _type(self) -> str:
         """Return the output parser type for serialization."""
-        msg = (
+        type_error_msg = (
             f"_type property is not implemented in class {self.__class__.__name__}."
             " This is required for serialization."
         )
-        raise NotImplementedError(msg)
+        raise NotImplementedError(type_error_msg)
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
