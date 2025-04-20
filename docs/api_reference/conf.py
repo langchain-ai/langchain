@@ -12,6 +12,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 
 import toml
 from docutils import nodes
@@ -104,7 +105,7 @@ def skip_private_members(app, what, name, obj, skip, options):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain Inc"
+copyright = f"{datetime.now().year}, LangChain Inc"
 author = "LangChain, Inc"
 
 html_favicon = "_static/img/brand/favicon.png"
