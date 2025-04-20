@@ -28,6 +28,20 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
 
+# Centralized error message
+MAX_TOKENS_ERROR = (
+    "Output parser received a max_tokens stop reason. "
+    "The output is likely incomplete—please increase `max_tokens` "
+    "or shorten your prompt."
+)
+
+
+def _raise_max_tokens_error(e: ValidationError, input_message: BaseMessage) -> None:
+    """Check if error is due to max_tokens and raise appropriate error."""
+    if input_message.response_metadata.get("stop_reason") == "max_tokens":
+        raise ValueError(MAX_TOKENS_ERROR) from e
+    raise e
+
 
 class BaseLLMOutputParser(Generic[T], ABC):
     """Abstract base class for parsing the outputs of a model."""
@@ -100,14 +114,7 @@ class BaseGenerationOutputParser(
                     run_type="parser",
                 )
             except ValidationError as e:
-                if input.response_metadata.get("stop_reason") == "max_tokens":
-                    max_tokens_error = (
-                        "Output parser received a max_tokens stop reason. "
-                        "The output is likely incomplete—please increase `max_tokens` "
-                        "or shorten your prompt."
-                    )
-                    raise ValueError(max_tokens_error) from e
-                raise
+                _raise_max_tokens_error(e, input)
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -133,14 +140,7 @@ class BaseGenerationOutputParser(
                     run_type="parser",
                 )
             except ValidationError as e:
-                if input.response_metadata.get("stop_reason") == "max_tokens":
-                    max_tokens_error = (
-                        "Output parser received a max_tokens stop reason. "
-                        "The output is likely incomplete—please increase `max_tokens` "
-                        "or shorten your prompt."
-                    )
-                    raise ValueError(max_tokens_error) from e
-                raise
+                _raise_max_tokens_error(e, input)
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -224,14 +224,7 @@ class BaseOutputParser(
                     run_type="parser",
                 )
             except ValidationError as e:
-                if input.response_metadata.get("stop_reason") == "max_tokens":
-                    max_tokens_error = (
-                        "Output parser received a max_tokens stop reason. "
-                        "The output is likely incomplete—please increase `max_tokens` "
-                        "or shorten your prompt."
-                    )
-                    raise ValueError(max_tokens_error) from e
-                raise
+                _raise_max_tokens_error(e, input)
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -257,14 +250,7 @@ class BaseOutputParser(
                     run_type="parser",
                 )
             except ValidationError as e:
-                if input.response_metadata.get("stop_reason") == "max_tokens":
-                    max_tokens_error = (
-                        "Output parser received a max_tokens stop reason. "
-                        "The output is likely incomplete—please increase `max_tokens` "
-                        "or shorten your prompt."
-                    )
-                    raise ValueError(max_tokens_error) from e
-                raise
+                _raise_max_tokens_error(e, input)
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
