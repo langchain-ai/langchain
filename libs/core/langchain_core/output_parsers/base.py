@@ -13,13 +13,14 @@ from typing import (
     Union,
 )
 
+from pydantic import ValidationError
+from typing_extensions import override
+
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import run_in_executor
-from pydantic import ValidationError
-from typing_extensions import override
 
 if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
