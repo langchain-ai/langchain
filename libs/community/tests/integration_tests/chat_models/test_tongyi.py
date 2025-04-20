@@ -170,7 +170,7 @@ class GenerateUsername(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatTongyi(model="qwen-turbo", temperature=0)  # type: ignore
+    llm = ChatTongyi(model="qwen-turbo", temperature=0)  # type: ignore[call-arg]
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: List = [
         HumanMessage(content="Sally has green hair, what would her username be?")
@@ -187,7 +187,7 @@ def test_tool_use() -> None:
 
     tool_msg = ToolMessage(
         content="sally_green_hair",
-        tool_call_id=ai_msg.tool_calls[0]["id"],  # type: ignore
+        tool_call_id=ai_msg.tool_calls[0]["id"],
         name=ai_msg.tool_calls[0]["name"],
     )
     msgs.extend([ai_msg, tool_msg])
@@ -201,7 +201,7 @@ def test_tool_use() -> None:
             gathered = message
             first = False
         else:
-            gathered = gathered + message  # type: ignore
+            gathered = gathered + message  # type: ignore[assignment]
     assert isinstance(gathered, AIMessageChunk)
 
     streaming_tool_msg = ToolMessage(
@@ -215,7 +215,7 @@ def test_tool_use() -> None:
 
 def test_manual_tool_call_msg() -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatTongyi(model="qwen-turbo", temperature=0)  # type: ignore
+    llm = ChatTongyi(model="qwen-turbo", temperature=0)  # type: ignore[call-arg]
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: List = [
         HumanMessage(content="Sally has green hair, what would her username be?"),
@@ -246,7 +246,7 @@ class AnswerWithJustification(BaseModel):
 
 def test_chat_tongyi_with_structured_output() -> None:
     """Test ChatTongyi with structured output."""
-    llm = ChatTongyi()  # type: ignore
+    llm = ChatTongyi()  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(AnswerWithJustification)
     response = structured_llm.invoke(
         "What weighs more a pound of bricks or a pound of feathers"
@@ -256,7 +256,7 @@ def test_chat_tongyi_with_structured_output() -> None:
 
 def test_chat_tongyi_with_structured_output_include_raw() -> None:
     """Test ChatTongyi with structured output."""
-    llm = ChatTongyi()  # type: ignore
+    llm = ChatTongyi()  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(
         AnswerWithJustification, include_raw=True
     )

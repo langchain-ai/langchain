@@ -397,7 +397,7 @@ class MomentoVectorIndex(VectorStore):
         )
         selected = [response.hits[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(self.text_field, ""), metadata=metadata)  # type: ignore
+            Document(page_content=metadata.pop(self.text_field, ""), metadata=metadata)
             for metadata in selected
         ]
 
@@ -484,6 +484,6 @@ class MomentoVectorIndex(VectorStore):
                 configuration=VectorIndexConfigurations.Default.latest(),
                 credential_provider=CredentialProvider.from_string(api_key),
             )
-        vector_db = cls(embedding=embedding, client=client, **kwargs)  # type: ignore
+        vector_db = cls(embedding=embedding, client=client, **kwargs)  # type: ignore[call-arg]
         vector_db.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vector_db

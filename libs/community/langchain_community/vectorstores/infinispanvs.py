@@ -254,7 +254,7 @@ repeated float %s = 1;
         texts_l = list(texts)
         if last_vector:
             texts_l.pop()
-        embeds = self._embedding.embed_documents(texts_l)  # type: ignore
+        embeds = self._embedding.embed_documents(texts_l)  # type: ignore[union-attr]
         if last_vector:
             embeds.append(last_vector)
         if not metadatas:
@@ -288,7 +288,7 @@ repeated float %s = 1;
         Returns:
             List[Tuple[Document, float]]
         """
-        embed = self._embedding.embed_query(query)  # type: ignore
+        embed = self._embedding.embed_query(query)  # type: ignore[union-attr]
         documents = self.similarity_search_with_score_by_vector(embedding=embed, k=k)
         return documents
 

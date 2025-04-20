@@ -173,7 +173,7 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"  # type: ignore[attr-defined]
+    assert model.model_name == "gpt-4o"
 
     model_with_tools = model.bind_tools(
         [{"name": "foo", "description": "foo", "parameters": {}}]

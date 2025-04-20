@@ -35,9 +35,6 @@ class FakeStructuredChatModel(FakeListChatModel):
         return "fake-messages-list-chat-model"
 
 
-FakeStructuredChatModel.model_rebuild()
-
-
 def test_structured_prompt_pydantic() -> None:
     class OutputSchema(BaseModel):
         name: str

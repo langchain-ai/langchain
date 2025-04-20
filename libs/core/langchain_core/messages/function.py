@@ -30,9 +30,6 @@ class FunctionMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "function"."""
 
 
-FunctionMessage.model_rebuild()
-
-
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """Function Message chunk."""
 

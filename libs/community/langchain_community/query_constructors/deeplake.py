@@ -53,9 +53,9 @@ class DeepLakeTranslator(Visitor):
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
         if isinstance(func, Operator):
-            value = OPERATOR_TO_TQL[func.value]  # type: ignore
+            value = OPERATOR_TO_TQL[func.value]  # type: ignore[index]
         elif isinstance(func, Comparator):
-            value = COMPARATOR_TO_TQL[func.value]  # type: ignore
+            value = COMPARATOR_TO_TQL[func.value]  # type: ignore[index]
         return f"{value}"
 
     def visit_operation(self, operation: Operation) -> str:

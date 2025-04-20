@@ -14,7 +14,6 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def test_resolve_criteria_str() -> None:
-    # type: ignore
     assert CriteriaEvalChain.resolve_criteria("helpfulness") == {
         "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]
     }

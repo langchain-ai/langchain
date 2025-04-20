@@ -128,7 +128,7 @@ def test_init(asr: RivaASR) -> None:
     """Test that ASR accepts valid arguments."""
     for key, expected_val in CONFIG.items():
         if key == "url":
-            assert asr.url == AnyHttpUrl(expected_val)  # type: ignore
+            assert asr.url == AnyHttpUrl(expected_val)  # type: ignore[arg-type]
         else:
             assert getattr(asr, key, None) == expected_val
 

@@ -69,7 +69,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_prompt=document_prompt,
             document_variable_name="summaries",
         )
-        reduce_documents_chain = ReduceDocumentsChain(  # type: ignore[misc]
+        reduce_documents_chain = ReduceDocumentsChain(
             combine_documents_chain=combine_results_chain
         )
         combine_documents_chain = MapReduceDocumentsChain(

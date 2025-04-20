@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langchain_community.utilities.jira import JiraAPIWrapper
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @pytest.fixture
-def mock_jira():  # type: ignore
+def mock_jira() -> Iterator[MagicMock]:
     with patch("atlassian.Jira") as mock_jira:
         yield mock_jira
 

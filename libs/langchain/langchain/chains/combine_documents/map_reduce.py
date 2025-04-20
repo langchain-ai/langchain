@@ -120,7 +120,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 **{
                     self.output_key: (str, None),
                     "intermediate_steps": (list[str], None),
-                },  # type: ignore[call-overload]
+                },
             )
 
         return super().get_output_schema(config)

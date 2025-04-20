@@ -105,7 +105,7 @@ def test_vectara_add_documents(vectara1: Vectara) -> None:
 def vectara2() -> Generator[Vectara, None, None]:
     # download documents to local storage and then upload as files
     # attention paper and deep learning book
-    vectara2: Vectara = Vectara()  # type: ignore
+    vectara2: Vectara = Vectara()
 
     urls = [
         (
