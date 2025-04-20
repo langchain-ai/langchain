@@ -89,14 +89,23 @@ class BaseGenerationOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
-                lambda inner_input: self.parse_result(
-                    [ChatGeneration(message=inner_input)]
+            try:
+                return self._call_with_config(
+                    lambda inner_input: self.parse_result(
+                        [ChatGeneration(message=inner_input)]
                 ),
                 input,
                 config,
-                run_type="parser",
-            )
+                    run_type="parser",
+                )
+            except ValidationError as e:
+                if input.response_metadata.get("stop_reason") == "max_tokens":
+                    raise ValueError(
+                        "Output parser received a max_tokens stop reason. "
+                        "The output is likely incomplete—please increase `max_tokens` "
+                        "or shorten your prompt."
+                    ) from e
+                raise e
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -112,14 +121,23 @@ class BaseGenerationOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result(
-                    [ChatGeneration(message=inner_input)]
+            try:
+                return await self._acall_with_config(
+                    lambda inner_input: self.aparse_result(
+                        [ChatGeneration(message=inner_input)]
                 ),
                 input,
                 config,
                 run_type="parser",
             )
+            except ValidationError as e:
+                if input.response_metadata.get("stop_reason") == "max_tokens":
+                    raise ValueError(
+                        "Output parser received a max_tokens stop reason. "
+                        "The output is likely incomplete—please increase `max_tokens` "
+                        "or shorten your prompt."
+                    ) from e
+                raise e
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -204,8 +222,12 @@ class BaseOutputParser(
                 )
             except ValidationError as e:
                 if input.response_metadata.get("stop_reason") == "max_tokens":
-                    raise ValueError("Output parser received a max_tokens stop reason. The output is likely incomplete—please increase `max_tokens` or shorten your prompt.") from e
-                raise
+                    raise ValueError(
+                        "Output parser received a max_tokens stop reason. "
+                        "The output is likely incomplete—please increase `max_tokens` "
+                        "or shorten your prompt."
+                    ) from e
+                raise e
 
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
@@ -222,14 +244,23 @@ class BaseOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result(
-                    [ChatGeneration(message=inner_input)]
+            try:
+                return await self._acall_with_config(
+                    lambda inner_input: self.aparse_result(
+                        [ChatGeneration(message=inner_input)]
                 ),
                 input,
                 config,
                 run_type="parser",
             )
+            except ValidationError as e:
+                if input.response_metadata.get("stop_reason") == "max_tokens":
+                    raise ValueError(
+                        "Output parser received a max_tokens stop reason. "
+                        "The output is likely incomplete—please increase `max_tokens` "
+                        "or shorten your prompt."
+                    ) from e
+                raise e
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
