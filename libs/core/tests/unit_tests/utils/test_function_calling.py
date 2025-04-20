@@ -434,19 +434,27 @@ def test_convert_to_openai_function_nested() -> None:
         "name": "my_function",
         "description": "Dummy function.",
         "parameters": {
-            "type": "object",
-            "properties": {
-                "arg1": {
+            "$defs": {
+                "Nested": {
                     "type": "object",
                     "properties": {
-                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg1": {
+                            "description": "foo",
+                            "type": "integer",
+                        },
                         "nested_arg2": {
-                            "type": "string",
-                            "enum": ["bar", "baz"],
                             "description": "one of 'bar', 'baz'",
+                            "enum": ["bar", "baz"],
+                            "type": "string",
                         },
                     },
                     "required": ["nested_arg1", "nested_arg2"],
+                },
+            },
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "$ref": "#/$defs/Nested",
                 },
             },
             "required": ["arg1"],
@@ -471,20 +479,28 @@ def test_convert_to_openai_function_nested_strict() -> None:
         "name": "my_function",
         "description": "Dummy function.",
         "parameters": {
-            "type": "object",
-            "properties": {
-                "arg1": {
+            "$defs": {
+                "Nested": {
                     "type": "object",
                     "properties": {
-                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg1": {
+                            "description": "foo",
+                            "type": "integer",
+                        },
                         "nested_arg2": {
-                            "type": "string",
-                            "enum": ["bar", "baz"],
                             "description": "one of 'bar', 'baz'",
+                            "enum": ["bar", "baz"],
+                            "type": "string",
                         },
                     },
                     "required": ["nested_arg1", "nested_arg2"],
                     "additionalProperties": False,
+                },
+            },
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "$ref": "#/$defs/Nested",
                 },
             },
             "required": ["arg1"],
@@ -784,6 +800,19 @@ def test__convert_typed_dict_to_openai_function(
         "description": "Docstring.",
         "parameters": {
             "type": "object",
+            "definitions": {
+                "SubTool": {
+                    "description": "Subtool docstring.",
+                    "type": "object",
+                    "properties": {
+                        "args": {
+                            "description": "this does bar",
+                            "default": {},
+                            "type": "object",
+                        },
+                    },
+                },
+            },
             "properties": {
                 "arg1": {"description": "foo", "type": "string"},
                 "arg2": {
@@ -795,17 +824,7 @@ def test__convert_typed_dict_to_openai_function(
                 },
                 "arg3": {
                     "type": "array",
-                    "items": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "items": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg4": {
                     "description": "this does foo",
@@ -824,143 +843,51 @@ def test__convert_typed_dict_to_openai_function(
                             "maxItems": 2,
                             "items": [
                                 {"type": "array", "items": {}},
-                                {
-                                    "title": "SubTool",
-                                    "description": "Subtool docstring.",
-                                    "type": "object",
-                                    "properties": {
-                                        "args": {
-                                            "title": "Args",
-                                            "description": "this does bar",
-                                            "default": {},
-                                            "type": "object",
-                                        }
-                                    },
-                                },
+                                {"$ref": "#/definitions/SubTool"},
                             ],
                         },
                     },
                 },
                 "arg7": {
                     "type": "array",
-                    "items": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "items": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg8": {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 1,
-                    "items": [
-                        {
-                            "title": "SubTool",
-                            "description": "Subtool docstring.",
-                            "type": "object",
-                            "properties": {
-                                "args": {
-                                    "title": "Args",
-                                    "description": "this does bar",
-                                    "default": {},
-                                    "type": "object",
-                                }
-                            },
-                        }
-                    ],
+                    "items": [{"$ref": "#/definitions/SubTool"}],
                 },
                 "arg9": {
                     "type": "array",
-                    "items": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "items": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg10": {
                     "type": "array",
-                    "items": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "items": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg11": {
                     "type": "array",
-                    "items": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "items": {"$ref": "#/definitions/SubTool"},
                     "uniqueItems": True,
                 },
                 "arg12": {
                     "type": "object",
-                    "additionalProperties": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "additionalProperties": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg13": {
                     "type": "object",
-                    "additionalProperties": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "additionalProperties": {"$ref": "#/definitions/SubTool"},
                 },
                 "arg14": {
                     "type": "object",
-                    "additionalProperties": {
-                        "description": "Subtool docstring.",
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "description": "this does bar",
-                                "default": {},
-                                "type": "object",
-                            }
-                        },
-                    },
+                    "additionalProperties": {"$ref": "#/definitions/SubTool"},
                 },
-                "arg15": {"description": "flag", "default": False, "type": "boolean"},
+                "arg15": {
+                    "description": "flag",
+                    "default": False,
+                    "type": "boolean",
+                },
             },
             "required": [
                 "arg1",
