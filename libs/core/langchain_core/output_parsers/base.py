@@ -13,13 +13,13 @@ from typing import (
     Union,
 )
 
-from typing_extensions import override
-from pydantic import ValidationError
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import run_in_executor
+from pydantic import ValidationError
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
@@ -93,19 +93,20 @@ class BaseGenerationOutputParser(
                 return self._call_with_config(
                     lambda inner_input: self.parse_result(
                         [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
+                    ),
+                    input,
+                    config,
                     run_type="parser",
                 )
             except ValidationError as e:
                 if input.response_metadata.get("stop_reason") == "max_tokens":
-                    raise ValueError(
+                    max_tokens_error = (
                         "Output parser received a max_tokens stop reason. "
                         "The output is likely incomplete—please increase `max_tokens` "
                         "or shorten your prompt."
-                    ) from e
-                raise e
+                    )
+                    raise ValueError(max_tokens_error) from e
+                raise
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -125,19 +126,20 @@ class BaseGenerationOutputParser(
                 return await self._acall_with_config(
                     lambda inner_input: self.aparse_result(
                         [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
             except ValidationError as e:
                 if input.response_metadata.get("stop_reason") == "max_tokens":
-                    raise ValueError(
+                    max_tokens_error = (
                         "Output parser received a max_tokens stop reason. "
                         "The output is likely incomplete—please increase `max_tokens` "
                         "or shorten your prompt."
-                    ) from e
-                raise e
+                    )
+                    raise ValueError(max_tokens_error) from e
+                raise
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -197,11 +199,11 @@ class BaseOutputParser(
                 if "args" in metadata and len(metadata["args"]) > 0:
                     return metadata["args"][0]
 
-        msg = (
+        error_msg = (
             f"Runnable {self.__class__.__name__} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
-        raise TypeError(msg)
+        raise TypeError(error_msg)
 
     @override
     def invoke(
@@ -222,13 +224,13 @@ class BaseOutputParser(
                 )
             except ValidationError as e:
                 if input.response_metadata.get("stop_reason") == "max_tokens":
-                    raise ValueError(
+                    max_tokens_error = (
                         "Output parser received a max_tokens stop reason. "
                         "The output is likely incomplete—please increase `max_tokens` "
                         "or shorten your prompt."
-                    ) from e
-                raise e
-
+                    )
+                    raise ValueError(max_tokens_error) from e
+                raise
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
             input,
@@ -248,19 +250,20 @@ class BaseOutputParser(
                 return await self._acall_with_config(
                     lambda inner_input: self.aparse_result(
                         [ChatGeneration(message=inner_input)]
-                ),
-                input,
-                config,
-                run_type="parser",
-            )
+                    ),
+                    input,
+                    config,
+                    run_type="parser",
+                )
             except ValidationError as e:
                 if input.response_metadata.get("stop_reason") == "max_tokens":
-                    raise ValueError(
+                    max_tokens_error = (
                         "Output parser received a max_tokens stop reason. "
                         "The output is likely incomplete—please increase `max_tokens` "
                         "or shorten your prompt."
-                    ) from e
-                raise e
+                    )
+                    raise ValueError(max_tokens_error) from e
+                raise
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -355,11 +358,11 @@ class BaseOutputParser(
     @property
     def _type(self) -> str:
         """Return the output parser type for serialization."""
-        msg = (
+        type_error_msg = (
             f"_type property is not implemented in class {self.__class__.__name__}."
             " This is required for serialization."
         )
-        raise NotImplementedError(msg)
+        raise NotImplementedError(type_error_msg)
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
