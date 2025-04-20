@@ -158,9 +158,9 @@ def _convert_delta_response_to_message_chunk(
     Optional[str],
 ]:
     """Converts delta response to message chunk"""
-    _delta = response.choices[0].delta  # type: ignore
-    role = _delta.get("role", "")  # type: ignore
-    content = _delta.get("content", "")  # type: ignore
+    _delta = response.choices[0].delta
+    role = _delta.get("role", "")
+    content = _delta.get("content", "")
     additional_kwargs: Dict = {}
     finish_reasons: Optional[str] = response.choices[0].finish_reason
 
@@ -398,7 +398,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 messages, template_id=kwargs["template_id"]
             )
         else:
-            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)
 
         if system_prompt is not None and system_prompt != "":
             kwargs["system_prompt"] = system_prompt
@@ -425,9 +425,9 @@ class ChatPremAI(BaseChatModel, BaseModel):
         if "template_id" in kwargs:
             system_prompt, messages_to_pass = _messages_to_prompt_dict(
                 messages, template_id=kwargs["template_id"]
-            )  # type: ignore
+            )
         else:
-            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)
 
         if stop is not None:
             logger.warning("stop is not supported in langchain streaming")

@@ -54,7 +54,7 @@ def test_search() -> None:
 
     with docsearch.tidb_vector_client._make_session() as session:
         records = list(session.query(docsearch.tidb_vector_client._table_model).all())
-        assert len([record.id for record in records]) == 3  # type: ignore
+        assert len([record.id for record in records]) == 3
         session.close()
 
     output = docsearch.similarity_search("foo", k=1)

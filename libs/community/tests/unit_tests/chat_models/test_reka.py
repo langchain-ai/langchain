@@ -38,7 +38,7 @@ def test_reka_model_kwargs() -> None:
 def test_reka_incorrect_field() -> None:
     """Test that providing an incorrect field raises ValidationError."""
     with pytest.raises(ValidationError):
-        ChatReka(unknown_field="bar")  # type: ignore
+        ChatReka(unknown_field="bar")  # type: ignore[call-arg]
 
 
 @pytest.mark.skip(

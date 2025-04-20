@@ -183,7 +183,7 @@ class Clarifai(VectorStore):
         try:
             from clarifai.client.search import Search
             from clarifai_grpc.grpc.api import resources_pb2
-            from google.protobuf import json_format  # type: ignore
+            from google.protobuf import json_format
         except ImportError as e:
             raise ImportError(
                 "Could not import clarifai python package. "

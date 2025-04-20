@@ -736,7 +736,7 @@ wheels = [
 
 [[package]]
 name = "langchain-chroma"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
@@ -814,7 +814,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.51"
+version = "0.3.52"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -854,6 +854,8 @@ test = [
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=8,<9" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
@@ -864,15 +866,14 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../../text-splitters" },
-    { name = "mypy", specifier = ">=1.10,<1.11" },
-    { name = "types-jinja2", specifier = ">=2.11.9,<3.0.0" },
+    { name = "mypy", specifier = ">=1.15,<1.16" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.17"
+version = "0.3.18"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },

@@ -133,9 +133,6 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             yield [part]
 
 
-ListOutputParser.model_rebuild()
-
-
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse the output of an LLM call to a comma-separated list."""
 

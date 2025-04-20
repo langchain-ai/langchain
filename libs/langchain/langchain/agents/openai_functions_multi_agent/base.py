@@ -286,7 +286,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
-        return ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+        return ChatPromptTemplate(messages=messages)
 
     @classmethod
     def from_llm_and_tools(

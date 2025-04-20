@@ -520,7 +520,7 @@ def _create_openai_json_runnable(
     """"""
     if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,  # type: ignore
+            pydantic_object=output_schema,
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:
@@ -559,7 +559,7 @@ def _create_openai_functions_structured_output_runnable(
         class _OutputFormatter(BaseModel):
             """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
 
-            output: output_schema  # type: ignore
+            output: output_schema  # type: ignore[valid-type]
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(

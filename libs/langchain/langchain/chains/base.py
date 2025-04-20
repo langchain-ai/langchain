@@ -110,17 +110,13 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainInput", **{k: (Any, None) for k in self.input_keys}
-        )
+        return create_model("ChainInput", **{k: (Any, None) for k in self.input_keys})
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "ChainOutput", **{k: (Any, None) for k in self.output_keys}
-        )
+        return create_model("ChainOutput", **{k: (Any, None) for k in self.output_keys})
 
     def invoke(
         self,
