@@ -10,8 +10,8 @@ from langchain_couchbase import CouchbaseSearchVectorStore
 from langchain_milvus import Milvus
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_pinecone import PineconeVectorStore
-from langchain_qdrant import QdrantVectorStore
 from langchain_postgres import PGVectorStore
+from langchain_qdrant import QdrantVectorStore
 
 vectorstore_list = [
     "FAISS",
