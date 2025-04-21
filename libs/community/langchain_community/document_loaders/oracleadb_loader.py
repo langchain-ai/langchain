@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -31,6 +31,7 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
         wallet_password: Optional[str] = None,
         connection_string: Optional[str] = None,
         metadata: Optional[List[str]] = None,
+        parameters: Optional[Union[list, tuple, dict]] = None,
     ):
         """
         init method
@@ -44,6 +45,7 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
         :param wallet_password: password of wallet
         :param connection_string: connection string to connect to adb instance
         :param metadata: metadata used in document
+        :param parameters: bind variable to use in query
         """
         # Mandatory required arguments.
         self.query = query
@@ -66,6 +68,9 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
 
         # metadata column
         self.metadata = metadata
+
+        # parameters, e.g bind variable
+        self.parameters = parameters
 
         # dsn
         self.dsn: Optional[str]
@@ -96,7 +101,10 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
             cursor = connection.cursor()
             if self.schema:
                 cursor.execute(f"alter session set current_schema={self.schema}")
-            cursor.execute(self.query)
+            if self.parameters:
+                cursor.execute(self.query, self.parameters)
+            else:
+                cursor.execute(self.query)
             columns = [col[0] for col in cursor.description]
             data = cursor.fetchall()
             data = [
