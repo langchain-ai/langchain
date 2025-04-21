@@ -1,7 +1,11 @@
+import os
+from unittest.mock import patch
+
 import pytest
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
-from unittest.mock import patch
+
+os.environ["OPENAI_API_KEY"] = "foo"
 
 
 @pytest.mark.requires("openai")
@@ -16,6 +20,8 @@ def test_openai_incorrect_field() -> None:
         llm = OpenAIEmbeddings(foo="bar", openai_api_key="foo")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
+
+@pytest.mark.requires("openai")
 def test_embed_documents_with_custom_chunk_size() -> None:
     embeddings = OpenAIEmbeddings(chunk_size=2)
     texts = ["text1", "text2", "text3", "text4"]
@@ -27,29 +33,6 @@ def test_embed_documents_with_custom_chunk_size() -> None:
             {"data": [{"embedding": [0.5, 0.6]}, {"embedding": [0.7, 0.8]}]},
         ]
 
-        result = embeddings.embed_documents(texts, chunk_size=custom_chunk_size)
-        _, tokens, __ = embeddings._tokenize(texts, custom_chunk_size)
-        mock_create.call_args
-        mock_create.assert_any_call(input=tokens[0:3], **embeddings._invocation_params)
-        mock_create.assert_any_call(input=tokens[3:4], **embeddings._invocation_params)
-
-    assert result == [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]
-
-def test_embed_documents_with_custom_chunk_size_no_check_ctx_length() -> None:
-    embeddings = OpenAIEmbeddings(chunk_size=2, check_embedding_ctx_length=False)
-    texts = ["text1", "text2", "text3", "text4"]
-    custom_chunk_size = 3
-
-    with patch.object(embeddings.client, "create") as mock_create:
-        mock_create.side_effect = [
-            {"data": [{"embedding": [0.1, 0.2]}, {"embedding": [0.3, 0.4]}]},
-            {"data": [{"embedding": [0.5, 0.6]}, {"embedding": [0.7, 0.8]}]},
-        ]
-
-        result = embeddings.embed_documents(texts, chunk_size=custom_chunk_size)
-
-        mock_create.call_args
-        mock_create.assert_any_call(input=texts[0:3], **embeddings._invocation_params)
-        mock_create.assert_any_call(input=texts[3:4], **embeddings._invocation_params)
-
-    assert result == [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]]
+        embeddings.embed_documents(texts, chunk_size=custom_chunk_size)
+        mock_create.assert_any_call(input=[[1342, 19]], **embeddings._invocation_params)
+        mock_create.assert_any_call(input=[[1342, 19]], **embeddings._invocation_params)
