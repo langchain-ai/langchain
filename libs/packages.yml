@@ -614,3 +614,6 @@ packages:
   provider_page: galaxia
   path: .
   repo: rrozanski-smabbler/galaxia-langchain
+- name: langchain-valyu
+  path: .
+  repo: valyu-network/langchain-valyu
