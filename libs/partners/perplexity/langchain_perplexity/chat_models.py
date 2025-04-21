@@ -3,9 +3,20 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterator, Mapping
 from operator import itemgetter
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -39,8 +50,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
+_DictOrPydantic = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +109,7 @@ class ChatPerplexity(BaseChatModel):
                 from langchain_community.chat_models import ChatPerplexity
 
                 llm = ChatPerplexity(
-                    model="llama-3.1-sonar-small-128k-online", temperature=0.7
+                    model="sonar", temperature=0.2
                 )
 
         Invoke:
@@ -124,7 +135,7 @@ class ChatPerplexity(BaseChatModel):
         Invoke with perplexity-specific params:
             .. code-block:: python
 
-                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+                llm.invoke(messages, extra_body={"enable_search_classifier": true})
 
         Stream:
             .. code-block:: python
@@ -151,14 +162,14 @@ class ChatPerplexity(BaseChatModel):
     """Model name."""
     temperature: float = 0.2
     """What sampling temperature to use."""
-    model_kwargs: dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     pplx_api_key: Optional[SecretStr] = Field(
         default_factory=secret_from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
-    request_timeout: Optional[Union[float, tuple[float, float]]] = Field(
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
     """Timeout for requests to PerplexityChat completion API. Default is None."""
@@ -168,18 +179,16 @@ class ChatPerplexity(BaseChatModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    enable_search_classifier: bool = True
-    """Whether to enable the search classifier. Default is True."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     @property
-    def lc_secrets(self) -> dict[str, str]:
+    def lc_secrets(self) -> Dict[str, str]:
         return {"pplx_api_key": "PPLX_API_KEY"}
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: dict[str, Any]) -> Any:
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -223,7 +232,7 @@ class ChatPerplexity(BaseChatModel):
         return self
 
     @property
-    def _default_params(self) -> dict[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling PerplexityChat API."""
         return {
             "max_tokens": self.max_tokens,
@@ -233,7 +242,7 @@ class ChatPerplexity(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
+    def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
@@ -247,8 +256,8 @@ class ChatPerplexity(BaseChatModel):
         return message_dict
 
     def _create_message_dicts(
-        self, messages: list[BaseMessage], stop: Optional[list[str]]
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = dict(self._invocation_params)
         if stop is not None:
             if "stop" in params:
@@ -258,11 +267,11 @@ class ChatPerplexity(BaseChatModel):
         return message_dicts, params
 
     def _convert_delta_to_message_chunk(
-        self, _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
+        self, _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
     ) -> BaseMessageChunk:
         role = _dict.get("role")
         content = _dict.get("content") or ""
-        additional_kwargs: dict = {}
+        additional_kwargs: Dict = {}
         if _dict.get("function_call"):
             function_call = dict(_dict["function_call"])
             if "name" in function_call and function_call["name"] is None:
@@ -288,8 +297,8 @@ class ChatPerplexity(BaseChatModel):
 
     def _stream(
         self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -359,8 +368,8 @@ class ChatPerplexity(BaseChatModel):
 
     def _generate(
         self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -378,8 +387,8 @@ class ChatPerplexity(BaseChatModel):
         else:
             usage_metadata = None
 
-        additional_kwargs = {}
-        for attr in ["citations", "images", "related_questions"]:
+        additional_kwargs = {"citations": response.citations}
+        for attr in ["images", "related_questions"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
@@ -394,7 +403,7 @@ class ChatPerplexity(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        pplx_creds: dict[str, Any] = {"model": self.model}
+        pplx_creds: Dict[str, Any] = {"model": self.model}
         return {**pplx_creds, **self._default_params}
 
     @property
