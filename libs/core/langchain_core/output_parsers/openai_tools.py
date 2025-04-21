@@ -2,6 +2,7 @@
 
 import copy
 import json
+import logging
 from json import JSONDecodeError
 from typing import Annotated, Any, Optional
 
@@ -15,6 +16,8 @@ from langchain_core.output_parsers.transform import BaseCumulativeTransformOutpu
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
+
+logger = logging.getLogger(__name__)
 
 
 def parse_tool_call(
@@ -250,6 +253,14 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         return parsed_result
 
 
+# Common cause of ValidationError is truncated output due to max_tokens.
+_MAX_TOKENS_ERROR = (
+    "Output parser received a `max_tokens` stop reason. "
+    "The output is likely incomplete—please increase `max_tokens` "
+    "or shorten your prompt."
+)
+
+
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
@@ -296,6 +307,14 @@ class PydanticToolsParser(JsonOutputToolsParser):
             except (ValidationError, ValueError):
                 if partial:
                     continue
+                has_max_tokens_stop_reason = any(
+                    generation.message.response_metadata.get("stop_reason")
+                    == "max_tokens"
+                    for generation in result
+                    if isinstance(generation, ChatGeneration)
+                )
+                if has_max_tokens_stop_reason:
+                    logger.exception(_MAX_TOKENS_ERROR)
                 raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
