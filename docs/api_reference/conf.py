@@ -11,8 +11,8 @@
 import json
 import os
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import toml
 from docutils import nodes
