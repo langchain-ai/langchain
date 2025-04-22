@@ -279,7 +279,7 @@ class ChatFireworks(BaseChatModel):
 
             from langchain_fireworks.chat_models import ChatFireworks
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/mixtral-8x7b-instruct")
+                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct")
     """
 
     @property
