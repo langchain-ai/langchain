@@ -72,124 +72,63 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
 
 
 class ChatPerplexity(BaseChatModel):
-    """`Perplexity AI` Chat models API.
+    """Perplexity AI Chat models API (v0.2)
 
     Setup:
         To use, you should have the environment variable ``PPLX_API_KEY`` set to your API key.
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
-        .. code-block:: bash
+    Key init args - completion params:
+        model: str
+            Name of the model to use (required).
+        temperature: float
+            Sampling temperature to use. Only included if explicitly set.
+        max_tokens: Optional[int]
+            Maximum number of tokens to generate. Only included if set.
+        streaming: bool
+            Whether to stream the results or not. Only included if True.
 
-            export PPLX_API_KEY=your_api_key
+    Key init args - client params:
+        pplx_api_key: Optional[str]
+            API key for PerplexityChat API. Default taken from env var.
+        request_timeout: Optional[Union[float, Tuple[float, float]]]
+            Timeout for requests. Only included if set.
+        max_retries: int
+            Maximum number of retries to make when generating.
 
-        Key init args - completion params:
-            model: str
-                Name of the model to use. e.g. "llama-3.1-sonar-small-128k-online"
-            temperature: float
-                Sampling temperature to use. Default is 0.7
-            max_tokens: Optional[int]
-                Maximum number of tokens to generate.
-            streaming: bool
-                Whether to stream the results or not.
-
-        Key init args - client params:
-            pplx_api_key: Optional[str]
-                API key for PerplexityChat API. Default is None.
-            request_timeout: Optional[Union[float, Tuple[float, float]]]
-                Timeout for requests to PerplexityChat completion API. Default is None.
-            max_retries: int
-                Maximum number of retries to make when generating.
-
-        See full list of supported init args and their descriptions in the params section.
-
-        Instantiate:
-            .. code-block:: python
-
-                from langchain_community.chat_models import ChatPerplexity
-
-                llm = ChatPerplexity(
-                    model="sonar", temperature=0.2
-                )
-
-        Invoke:
-            .. code-block:: python
-
-                messages = [("system", "You are a chatbot."), ("user", "Hello!")]
-                llm.invoke(messages)
-
-        Invoke with structured output:
-            .. code-block:: python
-
-                from pydantic import BaseModel
-
-
-                class StructuredOutput(BaseModel):
-                    role: str
-                    content: str
-
-
-                llm.with_structured_output(StructuredOutput)
-                llm.invoke(messages)
-
-        Invoke with perplexity-specific params:
-            .. code-block:: python
-
-                llm.invoke(messages, extra_body={"enable_search_classifier": true})
-
-        Stream:
-            .. code-block:: python
-
-                for chunk in llm.stream(messages):
-                    print(chunk.content)
-
-        Token usage:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.usage_metadata
-
-        Response metadata:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.response_metadata
-
-    """  # noqa: E501
-
+    """
     client: Any = None  #: :meta private:
-    model: str = "sonar-pro"
-    """Model name."""
-    temperature: float = 0.2
-    """What sampling temperature to use."""
+    model: str
+    """Model name (required)."""
+    temperature: Optional[float] = None
+    """Sampling temperature; only included if not None."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Holds any model parameters valid for `create` call not explicitly specified."""
+    """Extra parameters for the create call."""
     pplx_api_key: Optional[SecretStr] = Field(
         default_factory=secret_from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
-    """Base URL path for API requests,
-    leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
-    """Maximum number of retries to make when generating."""
     streaming: bool = False
-    """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
-    """Maximum number of tokens to generate."""
 
     model_config = ConfigDict(populate_by_name=True)
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"pplx_api_key": "PPLX_API_KEY"}
+    @model_validator(mode="before")
+    @classmethod
+    def check_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if not values.get("model"):
+            raise ValueError(
+                "`model` is required; please pick one from https://docs.perplexity.ai/models/model-cards"
+            )
+        return values
 
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Any:
-        """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -197,17 +136,14 @@ class ChatPerplexity(BaseChatModel):
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
                 logger.warning(
-                    f"""WARNING! {field_name} is not a default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
+                    f"WARNING! {field_name} is not a default parameter."
                 )
                 extra[field_name] = values.pop(field_name)
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
             raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
+                f"Parameters {invalid_model_kwargs} should be specified explicitly."
             )
 
         values["model_kwargs"] = extra
@@ -215,7 +151,6 @@ class ChatPerplexity(BaseChatModel):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
-        """Validate that api key and python package exists in environment."""
         try:
             self.client = openai.OpenAI(
                 api_key=self.pplx_api_key.get_secret_value()
@@ -225,34 +160,34 @@ class ChatPerplexity(BaseChatModel):
             )
         except AttributeError:
             raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
+                "`openai` has no `ChatCompletion` attribute; upgrade the OpenAI package."
             )
         return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling PerplexityChat API."""
-        return {
-            "max_tokens": self.max_tokens,
-            "stream": self.streaming,
-            "temperature": self.temperature,
-            **self.model_kwargs,
-        }
+        params: Dict[str, Any] = {}
+        if self.max_tokens is not None:
+            params["max_tokens"] = self.max_tokens
+        if self.streaming:
+            params["stream"] = True
+        if self.temperature is not None:
+            params["temperature"] = self.temperature
+        if self.request_timeout is not None:
+            params["timeout"] = self.request_timeout
+        params.update(self.model_kwargs)
+        return params
 
     def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
         if isinstance(message, ChatMessage):
-            message_dict = {"role": message.role, "content": message.content}
-        elif isinstance(message, SystemMessage):
-            message_dict = {"role": "system", "content": message.content}
-        elif isinstance(message, HumanMessage):
-            message_dict = {"role": "user", "content": message.content}
-        elif isinstance(message, AIMessage):
-            message_dict = {"role": "assistant", "content": message.content}
-        else:
-            raise TypeError(f"Got unknown type {message}")
-        return message_dict
+            return {"role": message.role, "content": message.content}
+        if isinstance(message, SystemMessage):
+            return {"role": "system", "content": message.content}
+        if isinstance(message, HumanMessage):
+            return {"role": "user", "content": message.content}
+        if isinstance(message, AIMessage):
+            return {"role": "assistant", "content": message.content}
+        raise TypeError(f"Got unknown type {message}")
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -260,7 +195,7 @@ class ChatPerplexity(BaseChatModel):
         params = dict(self._invocation_params)
         if stop is not None:
             if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
+                raise ValueError("`stop` found in both input and default params.")
             params["stop"] = stop
         message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
