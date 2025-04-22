@@ -3091,6 +3091,23 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
+def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+    text blocks. OpenAI API does not support this key, so we need to remove it.
+
+    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
+    back in.
+    """
+    new_reasoning = reasoning.copy()
+    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+        new_summary = []
+        for block in reasoning["summary"]:
+            new_block = {k: v for k, v in block.items() if k != "index"}
+            new_summary.append(new_block)
+        new_reasoning["summary"] = new_summary
+    return new_reasoning
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
@@ -3118,7 +3135,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             # Reasoning items
             reasoning_items = []
             if reasoning := lc_msg.additional_kwargs.get("reasoning"):
-                reasoning_items.append(reasoning)
+                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
             # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
@@ -3178,9 +3195,12 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 msg["content"] = new_blocks
             if msg["content"]:
                 input_.append(msg)
-            input_.extend(reasoning_items)
             input_.extend(function_calls)
-            input_.extend(computer_calls)
+            if computer_calls:
+                # Hack: we only add reasoning items if computer calls are present. See:
+                # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
+                input_.extend(reasoning_items)
+                input_.extend(computer_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 new_blocks = []
@@ -3390,8 +3410,6 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         if parsed := msg.additional_kwargs.get("parsed"):
             additional_kwargs["parsed"] = parsed
-        if reasoning := msg.additional_kwargs.get("reasoning"):
-            additional_kwargs["reasoning"] = reasoning
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
@@ -3432,6 +3450,25 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.reasoning_summary_part.added":
+        additional_kwargs["reasoning"] = {
+            "type": "reasoning",
+            "id": chunk.item_id,
+            # langchain-core uses the `index` key to aggregate text blocks.
+            "summary": [
+                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+            ],
+        }
+    elif chunk.type == "response.reasoning_summary_text.delta":
+        additional_kwargs["reasoning"] = {
+            "summary": [
+                {
+                    "index": chunk.summary_index,
+                    "type": "summary_text",
+                    "text": chunk.delta,
+                }
+            ]
+        }
     else:
         return None
 
