@@ -82,8 +82,8 @@ class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
 
     name: str
-    description: str
     input_schema: dict[str, Any]
+    description: NotRequired[str]
     cache_control: NotRequired[dict[str, str]]
 
 
@@ -1675,9 +1675,10 @@ def convert_to_anthropic_tool(
         oai_formatted = convert_to_openai_tool(tool)["function"]
         anthropic_formatted = AnthropicTool(
             name=oai_formatted["name"],
-            description=oai_formatted["description"],
             input_schema=oai_formatted["parameters"],
         )
+        if "description" in oai_formatted:
+            anthropic_formatted["description"] = oai_formatted["description"]
     return anthropic_formatted
 
 
