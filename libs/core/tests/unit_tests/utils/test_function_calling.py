@@ -497,7 +497,7 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
-def test_convert_to_openai_function_strict_union_type() -> None:
+def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
     class NestedA(BaseModel):
         foo: str
 
