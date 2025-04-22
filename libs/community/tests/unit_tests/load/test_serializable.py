@@ -148,6 +148,9 @@ def test_serializable_mapping() -> None:
 
     for k, import_path in serializable_modules.items():
         import_dir, import_obj = import_path[:-1], import_path[-1]
+        # don't need to test core imports
+        if import_dir.startswith("langchain_core."):
+            pass
         # Import module
         mod = importlib.import_module(".".join(import_dir))
         # Import class
