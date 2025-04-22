@@ -1,8 +1,6 @@
 # Astra DB
 
-> [DataStax Astra DB](https://docs.datastax.com/en/astra-db-serverless/index.html) is a serverless 
-> AI-ready database built on `Apache Cassandra®` and made conveniently available
-> through an easy-to-use JSON API.
+> [DataStax Astra DB](https://docs.datastax.com/en/astra-db-serverless/index.html) is a serverless AI-ready database built on `Apache Cassandra®` and made conveniently available through an easy-to-use JSON API.
 
 See a [tutorial provided by DataStax](https://docs.datastax.com/en/astra/astra-db-vector/tutorials/chatbot.html).
 
@@ -22,6 +20,8 @@ ASTRA_DB_APPLICATION_TOKEN="TOKEN"
 ```
 
 ## Vector Store
+
+A few typical initialization patterns are shown here:
 
 ```python
 from langchain_astradb import AstraDBVectorStore
@@ -74,6 +74,7 @@ vector_store_hybrid = AstraDBVectorStore(
 
 Notable features of class `AstraDBVectorStore`:
 
+- native async API;
 - metadata filtering in search;
 - MMR (maximum marginal relevance) search;
 - server-side embedding computation (["vectorize"](https://docs.datastax.com/en/astra-db-serverless/databases/embedding-generation.html) in Astra DB parlance);
