@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from langchain_core.messages import (
     AIMessage,
@@ -635,3 +635,24 @@ def test_parse_with_different_pydantic_1_proper() -> None:
             forecast="Sunny",
         )
     ]
+
+
+def test_max_tokens_error(caplog: Any) -> None:
+    parser = PydanticToolsParser(tools=[NameCollector], first_tool_only=True)
+    input = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_OwL7f5PE",
+                "name": "NameCollector",
+                "args": {"names": ["suz", "jerm"]},
+            }
+        ],
+        response_metadata={"stop_reason": "max_tokens"},
+    )
+    with pytest.raises(ValidationError):
+        _ = parser.invoke(input)
+    assert any(
+        "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
+        for record, msg in zip(caplog.records, caplog.messages)
+    )
