@@ -357,8 +357,9 @@ def test_stream_reasoning_summary() -> None:
         model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
     )
     message_1 = {"role": "user", "content": "What is 3^3?"}
-    response_1 = None
+    response_1: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([message_1]):
+        assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
     reasoning = response_1.additional_kwargs["reasoning"]
