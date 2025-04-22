@@ -549,7 +549,7 @@ def test_convert_to_openai_function_strict_union_type() -> None:
     }
 
     actual = convert_to_openai_function(my_function, strict=True)
-    assert actual == expected, str(actual)
+    assert actual == expected
 
 
 json_schema_no_description_no_params = {
