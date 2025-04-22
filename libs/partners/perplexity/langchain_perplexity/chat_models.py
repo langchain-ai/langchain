@@ -51,7 +51,7 @@ from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydantic      = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
 
@@ -323,8 +323,7 @@ class ChatPerplexity(BaseChatModel):
 
         additional_kwargs = {"citations": response.citations}
         for attr in ["images", "related_questions"]:
-            if hasattr(response, attr):
-                additional_kwargs[attr] = getattr(response, attr)
+            additional_kwargs[attr] = getattr(response, attr)
 
         message = AIMessage(
             content=response.choices[0].message.content,
@@ -337,8 +336,7 @@ class ChatPerplexity(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        pplx_creds: Dict[str, Any] = {"model": self.model}
-        return {**pplx_creds, **self._default_params}
+        return {"model": self.model, **self._default_params}
 
     @property
     def _llm_type(self) -> str:
@@ -365,65 +363,25 @@ class ChatPerplexity(BaseChatModel):
                 - a JSON Schema,
                 - a TypedDict class,
                 - or a Pydantic class
-
-            method: The method for steering model generation, currently only support:
-
-                - "json_schema": Use the JSON Schema to parse the model output
-
-
-            include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
-
-            kwargs: Additional keyword args aren't supported.
-
-        Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
-
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
-
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
-
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
-
-        """  # noqa: E501
+        """
         if method in ("function_calling", "json_mode"):
             method = "json_schema"
-        if method == "json_schema":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is not 'json_schema'. "
-                    "Received None."
-                )
-            is_pydantic_schema = _is_pydantic_class(schema)
-            response_format = convert_to_json_schema(schema)
-            llm = self.bind(
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {"schema": response_format},
-                },
-                ls_structured_output_format={
-                    "kwargs": {"method": method},
-                    "schema": response_format,
-                },
-            )
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-        else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected 'json_schema' Received:\
-                    '{method}'"
-            )
+        if method != "json_schema":
+            raise ValueError(f"Unrecognized method argument: {method}")
+        if schema is None:
+            raise ValueError("`schema` must be provided for structured output")
 
+        is_pydantic_schema = _is_pydantic_class(schema)
+        response_format = convert_to_json_schema(schema)
+        llm = self.bind(
+            response_format={"type": "json_schema", "json_schema": {"schema": response_format}},
+            ls_structured_output_format={"kwargs": {"method": method}, "schema": response_format},
+        )
+        output_parser = (
+            PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+            if is_pydantic_schema
+            else JsonOutputParser()
+        )
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
