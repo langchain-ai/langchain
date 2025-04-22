@@ -11,12 +11,12 @@ try:
     from lark import Lark, Transformer, v_args
 except ImportError:
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
         """Dummy decorator for when lark is not installed."""
         return lambda _: None
 
-    Transformer = object  # type: ignore
-    Lark = object  # type: ignore
+    Transformer = object  # type: ignore[assignment,misc]
+    Lark = object  # type: ignore[assignment,misc]
 
 from langchain_core.structured_query import (
     Comparator,

@@ -30,6 +30,7 @@ test = [
     "langchain-chroma",
     "langchain-fireworks",
     "langchain-google-vertexai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/vertexai",
+    "langchain-google-genai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/genai",
     "langchain-groq",
     "langchain-mistralai",
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",

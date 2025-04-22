@@ -20,7 +20,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 )
 
 
-class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
+class MultiRetrievalQAChain(MultiRouteChain):
     """A multi-route chain that uses an LLM router chain to choose amongst retrieval
     qa chains."""
 
