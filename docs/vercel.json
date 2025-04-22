@@ -135,6 +135,18 @@
       "destination": "/docs/integrations/vectorstores/weaviate/#search-mechanism"
     },
     {
+      "source": "/docs/integrations/vectorstores/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/singlestoredb/"
+    },
+    {
+      "source": "/docs/integrations/providers/singlestoredb(/?)",
+      "destination": "/docs/integrations/providers/singlestore/"
+    },
+    {
+      "source": "/docs/integrations/retrievers/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/singlestoredb/"
+    },
+    {
       "source": "/api_reference/mongodb/:path(.*/?)*",
       "destination": "https://langchain-mongodb.readthedocs.io/en/latest/langchain_mongodb/api_docs.html"
     },

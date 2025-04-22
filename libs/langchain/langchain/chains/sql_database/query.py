@@ -134,7 +134,7 @@ def create_sql_query_chain(
         ),
     }
     return (
-        RunnablePassthrough.assign(**inputs)  # type: ignore
+        RunnablePassthrough.assign(**inputs)  # type: ignore[return-value]
         | (
             lambda x: {
                 k: v
