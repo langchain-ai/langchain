@@ -238,7 +238,6 @@ class ChatPerplexity(BaseChatModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "temperature": self.temperature,
-            "enable_search_classifier": self.enable_search_classifier,
             **self.model_kwargs,
         }
 
