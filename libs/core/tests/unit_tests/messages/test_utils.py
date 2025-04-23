@@ -1101,7 +1101,7 @@ def test_convert_to_openai_messages_langchain_standard_file_block() -> None:
                 {
                     "type": "file",
                     "source_type": "base64",
-                    "data": base64.b64decode(image_data),
+                    "data": image_data,
                     "mime_type": "image/jpeg",
                 },
             ]
