@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Sequence
+from typing import Any, Dict, Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
 from playwright.sync_api import sync_playwright
@@ -50,9 +50,9 @@ class BrowserbaseLoader(BaseLoader):
                 else:
                     if not self.project_id:
                         raise ValueError("project_id is required to create a session")
-                    session_params = {"project_id": self.project_id}
-                    if self.proxy:
-                        session_params["proxy"] = self.proxy
+                    session_params: Dict[str, Any] = {"project_id": self.project_id}
+                    if self.proxy is not None:
+                        session_params["proxy"] = bool(self.proxy)
                     session = self.browserbase.sessions.create(**session_params)
 
                 # Connect to the remote session
@@ -62,10 +62,13 @@ class BrowserbaseLoader(BaseLoader):
 
                 # Navigate to URL and get content
                 page.goto(url)
+                # Get content based on the text_content flag
                 if self.text_content:
-                    content = page.content()
+                    page_text = page.inner_text("body")
+                    content = str(page_text)
                 else:
-                    content = page.inner_text('body')
+                    page_html = page.content()
+                    content = str(page_html)
 
                 # Close browser
                 page.close()
