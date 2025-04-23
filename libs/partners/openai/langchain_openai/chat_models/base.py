@@ -32,6 +32,7 @@ from urllib.parse import urlparse
 import certifi
 import openai
 import tiktoken
+from langchain_core._api.beta_decorator import warn_beta
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -416,6 +417,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 
 
 _MessageContent = Union[str, list[Union[str, dict]]]
+WARNED_IMAGE_GEN_BETA = False
 
 
 def _get_image_bytes_from_content(
@@ -1279,10 +1281,20 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        global WARNED_IMAGE_GEN_BETA
+        if not WARNED_IMAGE_GEN_BETA:
+            warn_beta(message="Image generation via ChatOpenAI is in beta.")
+            WARNED_IMAGE_GEN_BETA = True
+
         prompt = messages[-1].text()
-        images = []
-        for message in messages:
-            images.extend(_get_image_bytes_from_content(message.content))
+
+        # Get last set of images
+        for message in reversed(messages):
+            images = _get_image_bytes_from_content(message.content)
+            if images:
+                break
+        else:
+            images = []
         if images:
             result: ImagesResponse = self.root_client.images.edit(
                 model=self.model_name, image=images, prompt=prompt, **kwargs
@@ -1291,7 +1303,27 @@ class BaseChatOpenAI(BaseChatModel):
             result = self.root_client.images.generate(
                 model=self.model_name, prompt=prompt, **kwargs
             )
-        output_message = AIMessage(content="", response_metadata=result.model_dump())
+        image_blocks = []
+        if result.data:
+            for image in result.data:
+                if image.b64_json:
+                    image_blocks.append(
+                        {
+                            "type": "image",
+                            "source_type": "base64",
+                            "data": image.b64_json,
+                            "mime_type": "image/png",
+                        }
+                    )
+        if result.usage:
+            usage_metadata = _create_usage_metadata_responses(result.usage.model_dump())
+        else:
+            usage_metadata = None
+        output_message = AIMessage(
+            content=image_blocks or "",  # type: ignore[arg-type]
+            response_metadata={"created": result.created},
+            usage_metadata=usage_metadata,
+        )
         return ChatResult(generations=[ChatGeneration(message=output_message)])
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
