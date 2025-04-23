@@ -1097,17 +1097,14 @@ def test_convert_to_openai_messages_langchain_standard_file_block() -> None:
     messages = [
         HumanMessage(
             content=[
-            {
-              "type": "text",
-              "text": "Describe the document:"
-            },
-            {
-              "type": "file",
-              "source_type": "base64",
-              "data": base64.b64decode(image_data),
-              "mime_type": "image/jpeg"
-            }
-          ]
+                {"type": "text", "text": "Describe the document:"},
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": base64.b64decode(image_data),
+                    "mime_type": "image/jpeg",
+                },
+            ]
         )
     ]
     result = convert_to_openai_messages(messages)

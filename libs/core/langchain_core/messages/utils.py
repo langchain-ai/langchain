@@ -1242,27 +1242,44 @@ def convert_to_openai_messages(
                         err = (
                             f"Unrecognized content block at "
                             f"messages[{i}].content[{j}] has 'type': "
-                            f"'file', but has a 'source_type' of {block.get('source_type')}."
+                            f"'file', but has a 'source_type' of "
+                            f"{block.get('source_type')}. "
                             f"Only 'base64' is supported for 'source_type'."
                             f"Full content block:\n\n{block}"
                         )
                         raise ValueError(err)
-                    filename = block.get("filename", _generate_default_filename(block.get("mime_type")))
+                    mime_type = block.get("mime_type")
+                    if mime_type is None or not isinstance(mime_type, str):
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'file', but has non-string 'mime_type' of "
+                            f"{mime_type}. "
+                        )
+                    filename = block.get(
+                        "filename",
+                        _generate_default_filename(mime_type),  # type: ignore[arg-type]
+                    )
                     if filename is None:
                         err = (
                             f"Unrecognized content block at "
                             f"messages[{i}].content[{j}] has 'type': "
-                            f"'file', but has an unrecognized 'mime_type' of {block.get('mime_type')}."
-                            f"Please explicitly specify a 'filename' in your content block or use a common MIME type."
+                            f"'file', but has an unrecognized 'mime_type' "
+                            f"of {mime_type}. "
+                            f"Please explicitly specify a 'filename' in "
+                            f"your content block or use a common MIME type."
                         )
                         raise ValueError(err)
-                    content.append({
-                        "type": "file",
-                        "file": {
-                            "file_data": f"data:{block.get('mime_type')};base64,{_bytes_to_b64_str(block.get('data'))}",
-                            "filename": filename,
+                    b64_data = _bytes_to_b64_str(block["data"])
+                    content.append(
+                        {
+                            "type": "file",
+                            "file": {
+                                "file_data": f"data:{mime_type};base64,{b64_data}",
+                                "filename": filename,
+                            },
                         }
-                    })
+                    )
                 else:
                     err = (
                         f"Unrecognized content block at "
