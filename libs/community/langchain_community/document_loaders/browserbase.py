@@ -1,7 +1,6 @@
 from typing import Any, Dict, Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
-from playwright.sync_api import sync_playwright
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -42,6 +41,14 @@ class BrowserbaseLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Load pages from URLs"""
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            raise ImportError(
+                "playwright is required for BrowserbaseLoader. "
+                "Please run `pip install --upgrade playwright`."
+            )
+
         for url in self.urls:
             with sync_playwright() as playwright:
                 # Create or use existing session
