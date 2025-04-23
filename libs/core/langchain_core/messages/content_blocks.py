@@ -147,7 +147,7 @@ def convert_to_openai_data_block(block: dict) -> dict:
                     raise ValueError(err)
                 file["filename"] = block.get(
                     "filename",
-                    _generate_fallback_filename(mime_type),  # type: ignore[arg-type]
+                    _generate_fallback_filename(mime_type),
                 )
             formatted_block = {"type": "file", "file": file}
         elif block["source_type"] == "id":
