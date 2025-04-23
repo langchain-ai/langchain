@@ -1,5 +1,6 @@
 """Types for content blocks."""
 
+import warnings
 from typing import Any, Literal, Union
 
 from pydantic import TypeAdapter, ValidationError
@@ -108,3 +109,47 @@ def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
         }
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)
+
+
+def convert_to_openai_data_block(block: dict) -> dict:
+    """Format standard data content block to format expected by OpenAI."""
+    if block["type"] == "image":
+        formatted_block = convert_to_openai_image_block(block)
+
+    elif block["type"] == "file":
+        if block["source_type"] == "base64":
+            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
+            if filename := block.get("filename"):
+                file["filename"] = filename
+            elif (metadata := block.get("metadata")) and ("filename" in metadata):
+                file["filename"] = metadata["filename"]
+            else:
+                warnings.warn(
+                    "OpenAI may require a filename for file inputs. Specify a filename "
+                    "in the content block: {'type': 'file', 'source_type': 'base64', "
+                    "'mime_type': 'application/pdf', 'data': '...', "
+                    "'filename': 'my-pdf'}",
+                    stacklevel=1,
+                )
+            formatted_block = {"type": "file", "file": file}
+        elif block["source_type"] == "id":
+            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
+        else:
+            error_msg = "source_type base64 or id is required for file blocks."
+            raise ValueError(error_msg)
+
+    elif block["type"] == "audio":
+        if block["source_type"] == "base64":
+            format = block["mime_type"].split("/")[-1]
+            formatted_block = {
+                "type": "input_audio",
+                "input_audio": {"data": block["data"], "format": format},
+            }
+        else:
+            error_msg = "source_type base64 is required for audio blocks."
+            raise ValueError(error_msg)
+    else:
+        error_msg = f"Block of type {block['type']} is not supported."
+        raise ValueError(error_msg)
+
+    return formatted_block
