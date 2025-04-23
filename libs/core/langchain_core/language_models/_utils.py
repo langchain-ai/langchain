@@ -8,7 +8,11 @@ def _is_openai_data_block(block: dict) -> bool:
     """Check if the block contains multimodal data in OpenAI Chat Completions format."""
     if block.get("type") == "image_url":
         url = block.get("image_url", {}).get("url")
-        if isinstance(url, str):
+        if isinstance(url, str) and set(block.keys()) <= {
+            "type",
+            "image_url",
+            "detail",
+        }:
             return True
 
     elif block.get("type") == "file":
