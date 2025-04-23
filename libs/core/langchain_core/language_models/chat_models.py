@@ -173,7 +173,7 @@ def _parse_data_uri(uri: str) -> Optional[dict]:
             parsed = _parse_data_uri(data_uri)
 
             assert parsed == {
-                "type": "base64",
+                "source_type": "base64",
                 "mime_type": "image/jpeg",
                 "data": "/9j/4AAQSkZJRg...",
             }
