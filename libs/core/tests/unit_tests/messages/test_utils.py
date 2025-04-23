@@ -1092,6 +1092,29 @@ def test_convert_to_openai_messages_vertexai_image() -> None:
     assert result[0]["content"][1]["image_url"]["url"] == create_base64_image()
 
 
+def test_convert_to_openai_messages_langchain_standard_file_block() -> None:
+    image_data = create_image_data()
+    messages = [
+        HumanMessage(
+            content=[
+            {
+              "type": "text",
+              "text": "Describe the document:"
+            },
+            {
+              "type": "file",
+              "source_type": "base64",
+              "data": base64.b64decode(image_data),
+              "mime_type": "image/jpeg"
+            }
+          ]
+        )
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result[0]["content"][1]["type"] == "file"
+    assert result[0]["content"][1]["file"]["file_data"] == create_base64_image("jpeg")
+
+
 def test_convert_to_openai_messages_tool_message() -> None:
     tool_message = ToolMessage(content="Tool result", tool_call_id="123")
     result = convert_to_openai_messages([tool_message], text_format="block")
