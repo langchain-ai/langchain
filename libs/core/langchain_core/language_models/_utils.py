@@ -113,6 +113,9 @@ def _normalize_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
             for idx, block in enumerate(message.content):
                 if (
                     isinstance(block, dict)
+                    # Subset to (PDF) files and audio, as most relevant chat models
+                    # support images in OAI format (and some may not yet support the
+                    # standard data block format)
                     and block.get("type") in ("file", "input_audio")
                     and _is_openai_data_block(block)
                 ):
