@@ -20,7 +20,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<1.0.0,>=0.9.2", "langchain-core"]
 typing = [
-    "mypy<2.0,>=1.10",
+    "mypy<2.0,>=1.15",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.8.0",
@@ -48,7 +48,11 @@ test_integration = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+strict = "True"
+strict_bytes = "True"
+enable_error_code = "deprecated"
+report_deprecated_as_note = "True"
+
 [[tool.mypy.overrides]]
 module = [
     "transformers",
@@ -70,7 +74,7 @@ ignore_missing_imports = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "D"]
+select = ["E", "F", "I", "PGH003", "T201", "D"]
 ignore = ["D100"]
 
 [tool.coverage.run]
