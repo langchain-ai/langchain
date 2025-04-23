@@ -1186,6 +1186,55 @@ def test_convert_to_openai_messages_developer() -> None:
     assert result == [{"role": "developer", "content": "a"}] * 2
 
 
+def test_convert_to_openai_messages_multimodal() -> None:
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Text message"},
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "application/pdf",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",
+                },
+                {
+                    "type": "file",
+                    "source_type": "id",
+                    "id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result) == 1
+    message = result[0]
+    assert len(message["content"]) == 7
+
+
 def test_count_tokens_approximately_empty_messages() -> None:
     # Test with empty message list
     assert count_tokens_approximately([]) == 0
