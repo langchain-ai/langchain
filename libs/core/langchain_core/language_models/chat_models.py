@@ -11,10 +11,11 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Literal,
     Optional,
     Union,
@@ -70,11 +71,13 @@ from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.utils import _build_model_kwargs
 
 if TYPE_CHECKING:
     import uuid
@@ -302,6 +305,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)  # noqa: UP006
+    """Holds any model parameters valid for `create` call not explicitly specified."""
+
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:
@@ -328,6 +334,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: dict[str, Any]) -> Any:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        return _build_model_kwargs(values, all_required_field_names)
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:

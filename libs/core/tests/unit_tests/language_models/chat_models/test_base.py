@@ -403,6 +403,40 @@ async def test_disable_streaming_no_streaming_model_async(
         break
 
 
+def test_model_kwargs() -> None:
+    llm = FakeListChatModel(
+        responses=["a", "b", "c"],
+        sleep=0.1,
+        disable_streaming=False,
+        model_kwargs={"foo": "bar"},
+    )
+    assert llm.responses == ["a", "b", "c"]
+    assert llm.sleep == 0.1
+    assert llm.disable_streaming is False
+    assert llm.model_kwargs == {"foo": "bar"}
+
+    with pytest.warns(match="transferred to model_kwargs"):
+        llm = FakeListChatModel(
+            responses=["a", "b", "c"],
+            sleep=0.1,
+            disable_streaming=False,
+            foo="bar",  # type: ignore[call-arg]
+        )
+    assert llm.responses == ["a", "b", "c"]
+    assert llm.sleep == 0.1
+    assert llm.disable_streaming is False
+    assert llm.model_kwargs == {"foo": "bar"}
+
+    # Backward compatibility
+    with pytest.warns(match="should be specified explicitly"):
+        llm = FakeListChatModel(  # type: ignore[call-arg]
+            model_kwargs={"foo": "bar", "responses": ["a", "b", "c"], "sleep": 0.1},
+        )
+    assert llm.responses == ["a", "b", "c"]
+    assert llm.sleep == 0.1
+    assert llm.model_kwargs == {"foo": "bar"}
+
+
 class FakeChatModelStartTracer(FakeTracer):
     def __init__(self) -> None:
         super().__init__()
