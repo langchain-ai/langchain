@@ -1,3 +1,5 @@
+Hola Soy Paula
+
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/static/img/logo-dark.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-light.svg">
