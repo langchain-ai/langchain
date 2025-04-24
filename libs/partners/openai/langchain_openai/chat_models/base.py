@@ -3411,14 +3411,16 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
+        additional_kwargs["reasoning"] = chunk.item.model_dump(
+            exclude_none=True, mode="json"
+        )
     elif chunk.type == "response.reasoning_summary_part.added":
         additional_kwargs["reasoning"] = {
-            "type": "reasoning",
-            "id": chunk.item_id,
             # langchain-core uses the `index` key to aggregate text blocks.
             "summary": [
                 {"index": chunk.summary_index, "type": "summary_text", "text": ""}
-            ],
+            ]
         }
     elif chunk.type == "response.reasoning_summary_text.delta":
         additional_kwargs["reasoning"] = {
