@@ -538,6 +538,10 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+    service_tier: Optional[str] = None
+    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
+    for users of OpenAI's scale tier service.
+    """
 
     use_responses_api: Optional[bool] = None
     """Whether to use the Responses API instead of the Chat API.
@@ -655,6 +659,7 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
         }
 
         params = {

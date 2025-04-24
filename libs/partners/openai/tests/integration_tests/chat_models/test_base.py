@@ -215,12 +215,15 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
         assert isinstance(token.text(), str)
 
 
-@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    llm = ChatOpenAI(
+        model="o4-mini",
+        service_tier="flex",  # Also test service_tier
+    )
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("Hello", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
     # assert no response headers if include_response_headers is not set
