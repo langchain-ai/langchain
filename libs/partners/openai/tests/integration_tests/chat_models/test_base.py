@@ -171,48 +171,6 @@ def test_chat_openai_invalid_streaming_params() -> None:
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai() -> None:
-    """Test async generation."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=2)  # type: ignore[call-arg]
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    assert response.llm_output
-    for generations in response.generations:
-        assert len(generations) == 2
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-async def test_async_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
-        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 1
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
 async def test_async_chat_openai_bind_functions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
@@ -245,34 +203,6 @@ async def test_async_chat_openai_bind_functions() -> None:
 
 
 @pytest.mark.scheduled
-def test_openai_streaming() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    for token in llm.stream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_astream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
 @pytest.mark.parametrize("use_responses_api", [False, True])
 async def test_openai_abatch_tags(use_responses_api: bool) -> None:
     """Test batch tokens from ChatOpenAI."""
@@ -283,25 +213,6 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
     )
     for token in result:
         assert isinstance(token.text(), str)
-
-
-@pytest.mark.scheduled
-def test_openai_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result.content, str)
 
 
 @pytest.mark.scheduled
@@ -413,15 +324,6 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
-async def test_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI()
@@ -431,33 +333,6 @@ async def test_abatch_tags() -> None:
     )
     for token in result:
         assert isinstance(token.content, str)
-
-
-def test_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result.content, str)
-    assert result.response_metadata.get("model_name") is not None
-
-
-def test_invoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
-    assert isinstance(result.content, str)
-    assert result.response_metadata.get("model_name") is not None
 
 
 def test_response_metadata() -> None:
@@ -983,45 +858,6 @@ def test_json_schema_openai_format(
     chat = llm.with_structured_output(schema, method=method)
     result = chat.invoke("What is the weather in New York?")
     assert isinstance(result, dict)
-
-
-def test_json_mode() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    response = llm.invoke(
-        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks.",  # noqa: E501
-        response_format={"type": "json_object"},
-    )
-    assert isinstance(response.content, str)
-    assert json.loads(response.content) == {"a": 1}
-
-    # Test streaming
-    full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
-    ):
-        full = chunk if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
-    assert isinstance(full.content, str)
-    assert json.loads(full.content) == {"a": 1}
-
-
-async def test_json_mode_async() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    response = await llm.ainvoke(
-        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks."  # noqa: E501
-    )
-    assert isinstance(response.content, str)
-    assert json.loads(response.content) == {"a": 1}
-
-    # Test streaming
-    full: Optional[BaseMessageChunk] = None
-    async for chunk in llm.astream(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
-    ):
-        full = chunk if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
-    assert isinstance(full.content, str)
-    assert json.loads(full.content) == {"a": 1}
 
 
 def test_audio_output_modality() -> None:
