@@ -123,6 +123,13 @@ export default function ChatModelTabs(props) {
       packageName: "langchain[anthropic]",
     },
     {
+      value: "google_genai",
+      label: "Google Gemini",
+      model: "gemini-2.0-flash",
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain[google-genai]",
+    },
+    {
       value: "azure",
       label: "Azure",
       text: `from langchain_openai import AzureChatOpenAI
