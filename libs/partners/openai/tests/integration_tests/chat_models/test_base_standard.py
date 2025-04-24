@@ -103,6 +103,21 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         )
         _ = model.invoke([message])
 
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
 
 def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
     if stream:

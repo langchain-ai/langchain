@@ -30,6 +30,7 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
+from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
@@ -1067,6 +1068,9 @@ def convert_to_openai_messages(
                             "image_url": block["image_url"],
                         }
                     )
+                # Standard multi-modal content block
+                elif is_data_content_block(block):
+                    content.append(convert_to_openai_data_block(block))
                 # Anthropic and Bedrock converse format
                 elif (block.get("type") == "image") or "image" in block:
                     # Anthropic
