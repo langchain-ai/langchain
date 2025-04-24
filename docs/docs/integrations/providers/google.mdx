@@ -29,7 +29,8 @@ export GOOGLE_API_KEY="YOUR_API_KEY"
 
 ### Chat Models
 
-Use the `ChatGoogleGenerativeAI` class to interact with Gemini 2.0 and 2.5 models.
+Use the `ChatGoogleGenerativeAI` class to interact with Gemini 2.0 and 2.5 models. See
+details in [this guide](/docs/integrations/chat/google_generative_ai).
 
 ```python
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -57,19 +58,6 @@ print(result.content)
 
 The `image_url` can be a public URL, a GCS URI (`gs://...`), a local file path, a base64 encoded image string (`data:image/png;base64,...`), or a PIL Image object.
 
-### LLMs
-
-Access the same Gemini models using the LLM interface with the `GoogleGenerativeAI` class.
-
-See a [usage example](/docs/integrations/llms/google_ai).
-
-```python
-from langchain_google_genai import GoogleGenerativeAI
-
-llm = GoogleGenerativeAI(model="gemini-2.0-flash")
-result = llm.invoke("Sing a ballad of LangChain.")
-print(result)
-```
 
 ### Embedding Models
 
@@ -83,6 +71,21 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-exp-03-07")
 vector = embeddings.embed_query("What are embeddings?")
 print(vector[:5])
+```
+
+### LLMs
+
+Access the same Gemini models using the ([legacy](/docs/concepts/text_llms)) LLM
+interface with the `GoogleGenerativeAI` class.
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain_google_genai import GoogleGenerativeAI
+
+llm = GoogleGenerativeAI(model="gemini-2.0-flash")
+result = llm.invoke("Sing a ballad of LangChain.")
+print(result)
 ```
 
 ## Google Cloud
@@ -187,6 +190,9 @@ from langchain_google_vertexai.vision_models import VertexAIVisualQnAChat
 ```
 
 ### LLMs
+
+You can also use the ([legacy](/docs/concepts/text_llms)) string-in, string-out LLM
+interface.
 
 #### Vertex AI Model Garden
 
