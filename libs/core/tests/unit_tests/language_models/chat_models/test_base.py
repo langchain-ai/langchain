@@ -13,6 +13,7 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
+from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
@@ -567,3 +568,31 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
             "input_audio": {"data": "<base64 data>", "format": "wav"},
         },
     ]
+
+
+def test_normalize_messages_edge_cases() -> None:
+    # Test some blocks that should pass through
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "file": "uri",
+                },
+                {
+                    "type": "input_file",
+                    "file_data": "uri",
+                    "filename": "file-name",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": "uri",
+                },
+                {
+                    "type": "input_image",
+                    "image_url": "uri",
+                },
+            ]
+        )
+    ]
+    assert messages == _normalize_messages(messages)
