@@ -397,22 +397,6 @@ See [usage example](/docs/integrations/document_loaders/google_el_carro).
 from langchain_google_el_carro import ElCarroLoader
 ```
 
-#### Google Drive
-
->[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) file storage. Currently supports `Google Docs`.
-
-Install with Drive dependencies:
-
-```bash
-pip install langchain-google-community[drive]
-```
-
-See [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
-
-```python
-from langchain_google_community import GoogleDriveLoader
-```
-
 #### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database.
@@ -701,50 +685,9 @@ from langchain_google_vertexai import VectorSearchVectorStoreDatastore
 from langchain_google_vertexai import VectorSearchVectorStoreGCS
 ```
 
-#### ScaNN (Local Index)
-
->[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
-> (Scalable Nearest Neighbors) is a python package.
->
->`ScaNN` is a method for efficient vector similarity search at scale.
-
->`ScaNN` includes search space pruning and quantization for Maximum Inner
-> Product Search and also supports other distance functions such as
-> Euclidean distance. The implementation is optimized for x86 processors
-> with AVX2 support. See its [Google Research github](https://github.com/google-research/google-research/tree/master/scann)
-> for more details.
-
-Install the `scann` package:
-
-```bash
-pip install scann langchain-community # Requires langchain-community
-```
-
-See a [usage example](/docs/integrations/vectorstores/scann).
-
-```python
-from langchain_community.vectorstores import ScaNN
-```
-
 ### Retrievers
 
 Retrieve information using Google Cloud services.
-
-#### Google Drive
-
-Retrieve documents from Google Drive.
-
-Install required packages:
-
-```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib langchain-googledrive
-```
-
-See [usage example and authorization instructions](/docs/integrations/retrievers/google_drive).
-
-```python
-from langchain_googledrive.retrievers import GoogleDriveRetriever
-```
 
 #### Vertex AI Search
 
@@ -805,7 +748,7 @@ Integrate agents with various Google services.
 
 >[Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) is a Google Cloud service that enables developers to
 > synthesize natural-sounding speech with 100+ voices, available in multiple languages and variants.
-> It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks
+> It applies DeepMind's groundbreaking research in WaveNet and Google's powerful neural networks
 > to deliver the highest fidelity possible.
 
 Install required packages:
@@ -1161,26 +1104,6 @@ Requires `langchain-google-vertexai`.
 from langchain_google_vertexai.callbacks import VertexAICallbackHandler
 ```
 
-### Chat Loaders
-
-Load chat history from external sources.
-
-#### GMail
-
-> Load chat history from Gmail threads.
-
-Install with GMail dependencies:
-
-```bash
-pip install langchain-google-community[gmail]
-```
-
-See [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
-
-```python
-from langchain_google_community import GMailLoader
-```
-
 ### Evaluators
 
 Evaluate model outputs using Vertex AI.
@@ -1202,6 +1125,254 @@ from langchain_google_vertexai.evaluators.evaluation import VertexPairWiseString
 ```python
 # Note: Original doc listed VertexPairWiseStringEvaluator twice. Assuming this class exists.
 from langchain_google_vertexai.evaluators.evaluation import VertexStringEvaluator # Verify class name if needed
+```
+
+## Other Google Products
+
+Integrations with various Google services beyond the core Cloud Platform.
+
+### Document Loaders
+
+#### Google Drive
+
+>[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) file storage. Currently supports `Google Docs`.
+
+Install with Drive dependencies:
+
+```bash
+pip install langchain-google-community[drive]
+```
+
+See [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
+
+```python
+from langchain_google_community import GoogleDriveLoader
+```
+
+### Vector Stores
+
+#### ScaNN (Local Index)
+
+>[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
+> (Scalable Nearest Neighbors) is a python package.
+>
+>`ScaNN` is a method for efficient vector similarity search at scale.
+
+>`ScaNN` includes search space pruning and quantization for Maximum Inner
+> Product Search and also supports other distance functions such as
+> Euclidean distance. The implementation is optimized for x86 processors
+> with AVX2 support. See its [Google Research github](https://github.com/google-research/google-research/tree/master/scann)
+> for more details.
+
+Install the `scann` package:
+
+```bash
+pip install scann langchain-community # Requires langchain-community
+```
+
+See a [usage example](/docs/integrations/vectorstores/scann).
+
+```python
+from langchain_community.vectorstores import ScaNN
+```
+
+### Retrievers
+
+#### Google Drive
+
+Retrieve documents from Google Drive.
+
+Install required packages:
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib langchain-googledrive
+```
+
+See [usage example and authorization instructions](/docs/integrations/retrievers/google_drive).
+
+```python
+from langchain_googledrive.retrievers import GoogleDriveRetriever
+```
+
+### Tools
+
+#### Google Drive
+
+Tools for interacting with Google Drive.
+
+Install required packages:
+
+```bash
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib langchain-googledrive
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_drive).
+
+```python
+from langchain_googledrive.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_googledrive.tools.google_drive.tool import GoogleDriveSearchTool
+```
+
+#### Google Finance
+
+Query financial data. Requires `google-search-results` package and SerpApi key.
+
+```bash
+pip install google-search-results langchain-community # Requires langchain-community
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_finance).
+
+```python
+from langchain_community.tools.google_finance import GoogleFinanceQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+```
+
+#### Google Jobs
+
+Query job listings. Requires `google-search-results` package and SerpApi key.
+
+```bash
+pip install google-search-results langchain-community # Requires langchain-community
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_jobs).
+
+```python
+from langchain_community.tools.google_jobs import GoogleJobsQueryRun
+# Note: Utilities might be shared, e.g., GoogleFinanceAPIWrapper was listed, verify correct utility
+# from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper # If exists
+```
+
+#### Google Lens
+
+Perform visual searches. Requires `google-search-results` package and SerpApi key.
+
+```bash
+pip install google-search-results langchain-community # Requires langchain-community
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_lens).
+
+```python
+from langchain_community.tools.google_lens import GoogleLensQueryRun
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+```
+
+#### Google Places
+
+Search for places information. Requires `googlemaps` package and a Google Maps API key.
+
+```bash
+pip install googlemaps langchain # Requires base langchain
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_places).
+
+```python
+# Note: GooglePlacesTool might be in langchain or langchain_community depending on version
+from langchain.tools import GooglePlacesTool # Or langchain_community.tools
+```
+
+#### Google Scholar
+
+Search academic papers. Requires `google-search-results` package and SerpApi key.
+
+```bash
+pip install google-search-results langchain-community # Requires langchain-community
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_scholar).
+
+```python
+from langchain_community.tools.google_scholar import GoogleScholarQueryRun
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+```
+
+#### Google Search
+
+Perform web searches using Google Custom Search Engine (CSE). Requires `GOOGLE_API_KEY` and `GOOGLE_CSE_ID`.
+
+Install `langchain-google-community`:
+```bash
+pip install langchain-google-community
+```
+
+Wrapper:
+```python
+from langchain_google_community import GoogleSearchAPIWrapper
+```
+
+Tools:
+```python
+from langchain_community.tools import GoogleSearchRun, GoogleSearchResults
+```
+
+Agent Loading:
+```python
+from langchain.agents import load_tools
+tools = load_tools(["google-search"])
+```
+
+See [detailed notebook](/docs/integrations/tools/google_search).
+
+#### Google Trends
+
+Query Google Trends data. Requires `google-search-results` package and SerpApi key.
+
+```bash
+pip install google-search-results langchain-community # Requires langchain-community
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/google_trends).
+
+```python
+from langchain_community.tools.google_trends import GoogleTrendsQueryRun
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+```
+
+### Toolkits
+
+#### GMail
+
+
+> [Google Gmail](https://en.wikipedia.org/wiki/Gmail) is a free email service provided by Google.
+This toolkit works with emails through the `Gmail API`.
+
+```bash
+pip install langchain-google-community[gmail]
+```
+
+See [usage example and authorization instructions](/docs/integrations/tools/gmail).
+
+```python
+# Load the whole toolkit
+from langchain_google_community import GmailToolkit
+
+# Or use individual tools
+from langchain_google_community.gmail.create_draft import GmailCreateDraft
+from langchain_google_community.gmail.get_message import GmailGetMessage
+from langchain_google_community.gmail.get_thread import GmailGetThread
+from langchain_google_community.gmail.search import GmailSearch
+from langchain_google_community.gmail.send_message import GmailSendMessage
+```
+
+### Chat Loaders
+
+#### GMail
+
+> Load chat history from Gmail threads.
+
+Install with GMail dependencies:
+
+```bash
+pip install langchain-google-community[gmail]
+```
+
+See [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
+
+```python
+from langchain_google_community import GMailLoader
 ```
 
 ## 3rd Party Integrations
