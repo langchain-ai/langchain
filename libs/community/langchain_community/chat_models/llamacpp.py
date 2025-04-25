@@ -346,7 +346,7 @@ class ChatLlamaCpp(BaseChatModel):
         tool_choice: Optional[Union[dict, bool, str, Literal["auto", "any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model """
+        """Bind tool-like objects to this chat model"""
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         tool_names = [ft["function"]["name"] for ft in formatted_tools]
         if tool_choice:
@@ -359,19 +359,21 @@ class ChatLlamaCpp(BaseChatModel):
                         f"provided tools were {tool_names}."
                     )
             elif isinstance(tool_choice, str):
-                if tool_choice == 'any':
+                if tool_choice == "any":
                     if len(formatted_tools) == 1:
                         tool_choice = formatted_tools[0]
                     else:
                         raise ValueError(
-                                "tool_choice `'any'` only supported if one tool is provided."
-                                )
-                elif tool_choice == 'auto':
+                            "tool_choice `'any'` only supported if one tool is provided."
+                        )
+                elif tool_choice == "auto":
                     tool_choice = None
                 else:
                     chosen = [
-                            f for f in formatted_tools if f["function"]["name"] == tool_choice
-                            ]
+                        f
+                        for f in formatted_tools
+                        if f["function"]["name"] == tool_choice
+                    ]
                     if not chosen:
                         raise ValueError(
                             f"Tool choice {tool_choice=} was specified, but the only "
