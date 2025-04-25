@@ -59,9 +59,6 @@ def move_libraries(packages: list) -> None:
             print(f"Error moving {source_dir} to {target_dir}: {e}")
 
 
-OUTSIDE_REPOS = ["tavily-ai/langchain-tavily"]
-
-
 def main():
     """Main function to orchestrate the library sync process."""
     try:
@@ -72,7 +69,7 @@ def main():
         clean_target_directories([
             p
             for p in package_yaml["packages"]
-            if (p["repo"].startswith("langchain-ai/") or p["repo"] in OUTSIDE_REPOS)
+            if (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
         ])
 
@@ -81,7 +78,7 @@ def main():
             p
             for p in package_yaml["packages"]
             if not p.get("disabled", False)
-            and (p["repo"].startswith("langchain-ai/") or p["repo"] in OUTSIDE_REPOS)
+            and (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
         ])
 

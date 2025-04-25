@@ -549,6 +549,7 @@ packages:
 - name: langchain-tavily
   path: .
   repo: tavily-ai/langchain-tavily
+  include_in_api_ref: true
   downloads: 13796
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
 - name: langchain-zotero-retriever
