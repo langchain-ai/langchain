@@ -364,7 +364,8 @@ class ChatLlamaCpp(BaseChatModel):
                         tool_choice = formatted_tools[0]
                     else:
                         raise ValueError(
-                            "tool_choice `'any'` only supported if one tool is provided."
+                            "tool_choice `'any'` only supported if one tool is "
+                            "provided."
                         )
                 elif tool_choice == "auto":
                     tool_choice = None
