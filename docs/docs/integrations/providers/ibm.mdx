@@ -77,3 +77,20 @@ See a [usage example](/docs/integrations/tools/ibm_watsonx).
 ```python
 from langchain_ibm import WatsonxToolkit
 ```
+
+## Vector stores
+
+### IBM DB2 Vector Store and Vector Search
+
+The IBM DB2 relational database v12.1.2+ offer the 
+See detailed usage example in Jupyter Notebook [/docs/integrations/vectorstores/db2.ipynb](/docs/integrations/vectorstores/db2.ipynb).
+
+Installation: This is a seperate package for vector store feature only and can be run without the `langchain-ibm` package.
+```python
+pip install langchain-db2
+```
+Usage:
+```
+from langchain_db2 import db2vs
+from langchain_db2.db2vs import DB2VS
+```
