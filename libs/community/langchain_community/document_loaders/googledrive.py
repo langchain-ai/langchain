@@ -252,7 +252,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         files = self._fetch_files_recursive(service, folder_id)
         # If file types filter is provided, we'll filter by the file type.
         if file_types:
-            _files = [f for f in files if f["mimeType"] in file_types]  # type: ignore
+            _files = [f for f in files if f["mimeType"] in file_types]
         else:
             _files = files
 
@@ -261,14 +261,14 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             if file["trashed"] and not self.load_trashed_files:
                 continue
             elif file["mimeType"] == "application/vnd.google-apps.document":
-                returns.append(self._load_document_from_id(file["id"]))  # type: ignore
+                returns.append(self._load_document_from_id(file["id"]))  # type: ignore[arg-type]
             elif file["mimeType"] == "application/vnd.google-apps.spreadsheet":
-                returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore
+                returns.extend(self._load_sheet_from_id(file["id"]))  # type: ignore[arg-type]
             elif (
                 file["mimeType"] == "application/pdf"
                 or self.file_loader_cls is not None
             ):
-                returns.extend(self._load_file_from_id(file["id"]))  # type: ignore
+                returns.extend(self._load_file_from_id(file["id"]))  # type: ignore[arg-type]
             else:
                 pass
         return returns

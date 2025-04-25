@@ -76,7 +76,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
     def _embed(self, input: Any) -> List[List[float]]:
         # Call Jina AI Embedding API
-        resp = self.session.post(  # type: ignore
+        resp = self.session.post(
             JINA_API_URL, json={"input": input, "model": self.model_name}
         ).json()
         if "data" not in resp:
@@ -85,7 +85,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
         embeddings = resp["data"]
 
         # Sort resulting embeddings by index
-        sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
+        sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])
 
         # Return just the embeddings
         return [result["embedding"] for result in sorted_embeddings]

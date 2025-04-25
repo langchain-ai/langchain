@@ -112,8 +112,8 @@ def test_lancedb_all_searches() -> None:
     result_3 = store.similarity_search_by_vector_with_relevance_scores(
         embeddings.embed_query("text 1")
     )
-    assert len(result_3[0]) == 2  # type: ignore
-    assert "text 1" in result_3[0][0].page_content  # type: ignore
+    assert len(result_3[0]) == 2
+    assert "text 1" in result_3[0][0].page_content
 
 
 @pytest.mark.requires("lancedb")

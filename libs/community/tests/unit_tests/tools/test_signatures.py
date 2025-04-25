@@ -35,7 +35,7 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
     return subclasses
 
 
-@pytest.mark.parametrize("cls", get_non_abstract_subclasses(BaseTool))  # type: ignore
+@pytest.mark.parametrize("cls", get_non_abstract_subclasses(BaseTool))  # type: ignore[type-abstract]
 def test_all_subclasses_accept_run_manager(cls: Type[BaseTool]) -> None:
     """Test that tools defined in this repo accept a run manager argument."""
     # This wouldn't be necessary if the BaseTool had a strict API.

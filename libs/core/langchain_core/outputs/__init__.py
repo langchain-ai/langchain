@@ -21,13 +21,21 @@ in the AIMessage object, it is recommended to access it from there rather than
 from the `LLMResult` object.
 """
 
-from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
-from langchain_core.outputs.chat_result import ChatResult
-from langchain_core.outputs.generation import Generation, GenerationChunk
-from langchain_core.outputs.llm_result import LLMResult
-from langchain_core.outputs.run_info import RunInfo
+from typing import TYPE_CHECKING
 
-__all__ = [
+from langchain_core._import_utils import import_attr
+
+if TYPE_CHECKING:
+    from langchain_core.outputs.chat_generation import (
+        ChatGeneration,
+        ChatGenerationChunk,
+    )
+    from langchain_core.outputs.chat_result import ChatResult
+    from langchain_core.outputs.generation import Generation, GenerationChunk
+    from langchain_core.outputs.llm_result import LLMResult
+    from langchain_core.outputs.run_info import RunInfo
+
+__all__ = (
     "ChatGeneration",
     "ChatGenerationChunk",
     "ChatResult",
@@ -35,4 +43,25 @@ __all__ = [
     "GenerationChunk",
     "LLMResult",
     "RunInfo",
-]
+)
+
+_dynamic_imports = {
+    "ChatGeneration": "chat_generation",
+    "ChatGenerationChunk": "chat_generation",
+    "ChatResult": "chat_result",
+    "Generation": "generation",
+    "GenerationChunk": "generation",
+    "LLMResult": "llm_result",
+    "RunInfo": "run_info",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
+    globals()[attr_name] = result
+    return result
+
+
+def __dir__() -> list[str]:
+    return list(__all__)

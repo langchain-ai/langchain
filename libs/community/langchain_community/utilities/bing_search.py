@@ -50,7 +50,7 @@ class BingSearchAPIWrapper(BaseModel):
         response = requests.get(
             self.bing_search_url,
             headers=headers,
-            params=params,  # type: ignore
+            params=params,
         )
         response.raise_for_status()
         search_results = response.json()

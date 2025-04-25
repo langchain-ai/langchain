@@ -47,7 +47,7 @@ class YiLLM(LLM):
     def _post(self, request: Any) -> Any:
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.yi_api_key.get_secret_value()}",  # type: ignore
+            "Authorization": f"Bearer {self.yi_api_key.get_secret_value()}",  # type: ignore[union-attr]
         }
 
         urls = []

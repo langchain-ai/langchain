@@ -83,7 +83,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
             raise Exception(f"Error adding message to Xata: {r.status_code} {r}")
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         r = self._client.data().query(
             self._table_name,
             payload={

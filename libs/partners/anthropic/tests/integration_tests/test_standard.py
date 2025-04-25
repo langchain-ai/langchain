@@ -26,6 +26,14 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
     def supports_image_tool_message(self) -> bool:
         return True
 

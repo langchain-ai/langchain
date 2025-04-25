@@ -26,10 +26,12 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
@@ -171,6 +173,20 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
             "arguments": tool_call["args"],
         },
     }
+
+
+def _get_image_from_data_content_block(block: dict) -> str:
+    """Format standard data content block to format expected by Ollama."""
+    if block["type"] == "image":
+        if block["source_type"] == "base64":
+            return block["data"]
+        else:
+            error_message = "Image data only supported through in-line base64 format."
+            raise ValueError(error_message)
+
+    else:
+        error_message = f"Blocks of type {block['type']} not supported."
+        raise ValueError(error_message)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -496,7 +512,7 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: list = []
         for message in messages:
-            role: Literal["user", "assistant", "system", "tool"]
+            role: str
             tool_call_id: Optional[str] = None
             tool_calls: Optional[list[dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
@@ -513,6 +529,8 @@ class ChatOllama(BaseChatModel):
                 )
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ChatMessage):
+                role = message.role
             elif isinstance(message, ToolMessage):
                 role = "tool"
                 tool_call_id = message.tool_call_id
@@ -553,7 +571,9 @@ class ChatOllama(BaseChatModel):
                             images.append(image_url_components[1])
                         else:
                             images.append(image_url_components[0])
-
+                    elif is_data_content_block(content_part):
+                        image = _get_image_from_data_content_block(content_part)
+                        images.append(image)
                     else:
                         raise ValueError(
                             "Unsupported message content type. "
@@ -719,6 +739,11 @@ class ChatOllama(BaseChatModel):
         is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("done") is True:
+                    generation_info = dict(stream_resp)
+                    _ = generation_info.pop("message", None)
+                else:
+                    generation_info = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -732,11 +757,7 @@ class ChatOllama(BaseChatModel):
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
-                    generation_info=(
-                        dict(stream_resp).pop("message", None)
-                        if stream_resp.get("done") is True
-                        else None
-                    ),
+                    generation_info=generation_info,
                 )
                 if chunk.generation_info and (
                     model := chunk.generation_info.get("model")
@@ -773,6 +794,11 @@ class ChatOllama(BaseChatModel):
         is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("done") is True:
+                    generation_info = dict(stream_resp)
+                    _ = generation_info.pop("message", None)
+                else:
+                    generation_info = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -786,11 +812,7 @@ class ChatOllama(BaseChatModel):
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
-                    generation_info=(
-                        dict(stream_resp).pop("message", None)
-                        if stream_resp.get("done") is True
-                        else None
-                    ),
+                    generation_info=generation_info,
                 )
                 if chunk.generation_info and (
                     model := chunk.generation_info.get("model")
