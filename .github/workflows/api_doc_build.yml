@@ -24,14 +24,14 @@ jobs:
 
       - name: Get repos with yq
         id: get-unsorted-repos
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@master
         with:
           cmd: |
             yq '
               .packages[]
               | select(
                   (
-                    (.repo | startswith("langchain-ai/"))
+                    (.repo | test("^langchain-ai/"))
                     and
                     (.repo != "langchain-ai/langchain")
                   )
