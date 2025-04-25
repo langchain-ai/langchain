@@ -24,7 +24,7 @@ jobs:
 
       - name: Get repos with yq
         id: get-unsorted-repos
-        uses: mikefarah/yq@master
+        uses: mikefarah/yq@v4
         with:
           cmd: |
             yq '
