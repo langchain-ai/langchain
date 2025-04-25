@@ -85,7 +85,6 @@ packages:
 - name: langchain-milvus
   path: libs/milvus
   repo: langchain-ai/langchain-milvus
-  disabled: true
   downloads: 207750
   downloads_updated_at: '2025-04-22T15:24:39.289813+00:00'
 - name: langchain-mistralai
