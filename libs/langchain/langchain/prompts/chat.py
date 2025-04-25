@@ -2,7 +2,6 @@ from langchain_core.prompt_values import ChatPromptValue, ChatPromptValueConcret
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseChatPromptTemplate,
-    BaseMessagePromptTemplate,
     BaseStringMessagePromptTemplate,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
@@ -34,3 +33,5 @@ __all__ = [
     "MessageLike",
     "MessageLikeRepresentation",
 ]
+
+from langchain_core.prompts.message import BaseMessagePromptTemplate
