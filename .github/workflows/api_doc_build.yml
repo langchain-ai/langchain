@@ -30,9 +30,13 @@ jobs:
             yq '
               .packages[]
               | select(
-                  (.repo | test("^langchain-ai/"))  # in org
+                  (
+                    (.repo | startswith("langchain-ai/"))
+                    and
+                    (.repo != "langchain-ai/langchain")
+                  )
                   or
-                  (.include_in_api_ref // false)    # explicit flag
+                  (.include_in_api_ref // false)
                 )
               | .repo
             ' langchain/libs/packages.yml
