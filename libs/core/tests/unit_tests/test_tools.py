@@ -2702,3 +2702,12 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
     }
+
+
+@pytest.mark.filterwarnings("error")
+def test_get_all_basemodel_annotations_warning() -> None:
+    class ModelWithAlias(BaseModel):
+        field_with_alias: str = Field(alias="alias_field")
+
+    with pytest.warns(UserWarning, match="Field 'field_with_alias' has alias 'alias_field'. The alias will be used instead of the field name."):
+        get_all_basemodel_annotations(ModelWithAlias)
