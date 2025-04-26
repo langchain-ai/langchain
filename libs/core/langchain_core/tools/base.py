@@ -1078,7 +1078,7 @@ def get_all_basemodel_annotations(
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         annotations: dict[str, type] = {}
-        for name, param in inspect.signature(cls).parameters.items():
+        for name, param in cls.model_fields.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
             if (
@@ -1094,7 +1094,6 @@ def get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
         )
         orig_bases = (cls,)
-
     # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
     if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
         # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
