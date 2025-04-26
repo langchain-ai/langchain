@@ -32,4 +32,4 @@ jobs:
         with:
           skip: guide_imports.json,*.ambr,./cookbook/data/imdb_top_1000.csv,*.lock
           ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
-          exclude_file: ./.github/workflows/codespell-exclude
+          exclude_file: ./.github/workflows/.codespell-exclude
