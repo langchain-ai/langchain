@@ -1078,7 +1078,14 @@ def get_all_basemodel_annotations(
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         annotations: dict[str, type] = {}
-        for name, param in cls.model_fields.items():
+        if hasattr(cls, "model_fields"):
+            for name, param in cls.model_fields.items():
+                if param.alias and param.alias != name:
+                    warnings.warn(
+                        f"Field '{name}' has alias '{param.alias}'. The alias will be used instead of the field name.",
+                        stacklevel=2
+                    )
+        for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
             if (
