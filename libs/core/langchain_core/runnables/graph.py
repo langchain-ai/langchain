@@ -108,7 +108,7 @@ class Node(NamedTuple):
 
     id: str
     name: str
-    data: Union[type[BaseModel], RunnableType]
+    data: Union[type[BaseModel], RunnableType, None]
     metadata: Optional[dict[str, Any]]
 
     def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
@@ -181,7 +181,7 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
+def node_data_str(id: str, data: Union[type[BaseModel], RunnableType, None]) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -193,7 +193,7 @@ def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
     """
     from langchain_core.runnables.base import Runnable
 
-    if not is_uuid(id):
+    if not is_uuid(id) or data is None:
         return id
     data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
@@ -215,8 +215,10 @@ def node_data_json(
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
-    if isinstance(node.data, RunnableSerializable):
-        json: dict[str, Any] = {
+    if node.data is None:
+        json: dict[str, Any] = {}
+    elif isinstance(node.data, RunnableSerializable):
+        json = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -317,7 +319,7 @@ class Graph:
 
     def add_node(
         self,
-        data: Union[type[BaseModel], RunnableType],
+        data: Union[type[BaseModel], RunnableType, None],
         id: Optional[str] = None,
         *,
         metadata: Optional[dict[str, Any]] = None,

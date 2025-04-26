@@ -279,7 +279,7 @@ class ChatFireworks(BaseChatModel):
 
             from langchain_fireworks.chat_models import ChatFireworks
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/mixtral-8x7b-instruct")
+                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct")
     """
 
     @property
@@ -306,11 +306,9 @@ class ChatFireworks(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(
-        default="accounts/fireworks/models/mixtral-8x7b-instruct", alias="model"
-    )
+    model_name: str = Field(alias="model")
     """Model name to use."""
-    temperature: float = 0.0
+    temperature: Optional[float] = None
     """What sampling temperature to use."""
     stop: Optional[Union[str, list[str]]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -397,10 +395,11 @@ class ChatFireworks(BaseChatModel):
             "model": self.model_name,
             "stream": self.streaming,
             "n": self.n,
-            "temperature": self.temperature,
             "stop": self.stop,
             **self.model_kwargs,
         }
+        if self.temperature is not None:
+            params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params

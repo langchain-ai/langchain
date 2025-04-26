@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -1498,7 +1497,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.23"
+version = "0.3.24"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -1539,7 +1538,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -1596,7 +1594,7 @@ test-integration = [
 typing = [
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
-    { name = "mypy", specifier = ">=1.10,<2.0" },
+    { name = "mypy", specifier = ">=1.15,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -1610,7 +1608,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.21"
+version = "0.3.22"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1757,7 +1755,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.51"
+version = "0.3.55"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1816,7 +1814,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.17"
+version = "0.3.19"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },

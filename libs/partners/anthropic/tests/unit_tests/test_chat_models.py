@@ -931,3 +931,12 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "any"
     }
+
+
+def test_optional_description() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    class SampleModel(BaseModel):
+        sample_field: str
+
+    _ = llm.with_structured_output(SampleModel.model_json_schema())
