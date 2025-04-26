@@ -1082,8 +1082,9 @@ def get_all_basemodel_annotations(
             for name, param in cls.model_fields.items():
                 if param.alias and param.alias != name:
                     warnings.warn(
-                        f"Field '{name}' has alias '{param.alias}'. The alias will be used in tool schema instead of the field name.",
-                        stacklevel=2
+                        f"Field '{name}' has alias '{param.alias}'. The alias will be\
+                        used in tool schema instead of the field name.",
+                        stacklevel=2,
                     )
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
