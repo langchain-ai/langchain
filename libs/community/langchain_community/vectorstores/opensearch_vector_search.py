@@ -480,6 +480,8 @@ class OpenSearchVectorSearch(VectorStore):
         bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
+        if self.index_name is None:
+            raise ValueError("index_name must be provided.")
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
         engine = kwargs.get("engine", self.engine)
@@ -522,6 +524,8 @@ class OpenSearchVectorSearch(VectorStore):
         bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
+        if self.index_name is None:
+            raise ValueError("index_name must be provided.")
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
         engine = kwargs.get("engine", self.engine)
@@ -735,12 +739,14 @@ class OpenSearchVectorSearch(VectorStore):
             raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
 
         body = []
-
+        index_name = kwargs.get("index_name", self.index_name)
+        if self.index_name is None:
+            raise ValueError("index_name must be provided.")
         if ids is None:
             raise ValueError("ids must be provided.")
 
         for _id in ids:
-            body.append({"_op_type": "delete", "_index": self.index_name, "_id": _id})
+            body.append({"_op_type": "delete", "_index": index_name, "_id": _id})
 
         if len(body) > 0:
             try:
@@ -766,8 +772,10 @@ class OpenSearchVectorSearch(VectorStore):
         """
         if ids is None:
             raise ValueError("No ids provided to delete.")
-
-        actions = [{"delete": {"_index": self.index_name, "_id": id_}} for id_ in ids]
+        index_name = kwargs.get("index_name", self.index_name)
+        if self.index_name is None:
+            raise ValueError("index_name must be provided.")
+        actions = [{"delete": {"_index": index_name, "_id": id_}} for id_ in ids]
         response = await self.async_client.bulk(body=actions, **kwargs)
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
@@ -1096,6 +1104,8 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = kwargs.get("search_type", "approximate_search")
         vector_field = kwargs.get("vector_field", "vector_field")
         index_name = kwargs.get("index_name", self.index_name)
+        if self.index_name is None:
+            raise ValueError("index_name must be provided.")
         filter = kwargs.get("filter", {})
 
         if (

@@ -1732,3 +1732,9 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
 
     # assert no mutation has occurred
     assert messages_copy == messages
+
+
+def test_service_tier() -> None:
+    llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["service_tier"] == "flex"
