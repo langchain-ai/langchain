@@ -2489,6 +2489,18 @@ class OpenSearchSemanticCache(BaseCache):
             del self._cache_dict[index_name]
 
 
+@deprecated(
+    since="0.3.22",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `SingleStoreSemanticCache` "
+        "implementation in `langchain_singlestore`. "
+        "See <https://github.com/singlestore-labs/langchain-singlestore> for details "
+        " about the new implementation."
+    ),
+    alternative="from langchain_singlestore import SingleStoreSemanticCache",
+    pending=True,
+)
 class SingleStoreDBSemanticCache(BaseCache):
     """Cache that uses SingleStore DB as a backend"""
 

@@ -10,18 +10,22 @@ Please refer to [NCP User Guide](https://guide.ncloud-docs.com/docs/clovastudio-
 
 ## Installation and Setup
 
-- Get a CLOVA Studio API Key by [issuing it](https://api.ncloud-docs.com/docs/ai-naver-clovastudio-summary#API%ED%82%A4) and set it as an environment variable (`NCP_CLOVASTUDIO_API_KEY`).
-    - If you are using a legacy API Key (that doesn't start with `nv-*` prefix), you might need to get an additional API Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set it as `NCP_APIGW_API_KEY`.
+- Get a CLOVA Studio API Key by [issuing it](https://api.ncloud-docs.com/docs/ai-naver-clovastudio-summary#API%ED%82%A4) and set it as an environment variable (`CLOVASTUDIO_API_KEY`).
+
 
 Naver integrations live in two packages:
 
-- `langchain-naver-community`: a dedicated integration package for Naver. It is a community-maintained package and is not officially maintained by Naver or LangChain.
-- `langchain-community`: a collection of [third-party integrations](https://python.langchain.com/docs/concepts/architecture/#langchain-community),
-including Naver. **New features should be implemented in the dedicated `langchain-naver-community` package**.
+- `langchain-naver`: a dedicated integration package for Naver.
+- `langchain-naver-community`: a community-maintained package and is not officially maintained by Naver or LangChain.
 
 ```bash
-pip install -U langchain-community langchain-naver-community
+pip install -U langchain-naver
+# pip install -U langchain-naver-community // Install to use Naver Search tool.
 ```
+
+> **(Note)** Naver integration via `langchain-community`, a collection of [third-party integrations](https://python.langchain.com/docs/concepts/architecture/#langchain-community), is outdated.
+> - **Use `langchain-naver` instead as new features should only be implemented via this package**.
+> - If you are using `langchain-community` (outdated) and got a legacy API Key (that doesn't start with `nv-*` prefix), you should set it as `NCP_CLOVASTUDIO_API_KEY`, and might need to get an additional API Gateway API Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set it as `NCP_APIGW_API_KEY`.
 
 ## Chat models
 
@@ -30,7 +34,7 @@ pip install -U langchain-community langchain-naver-community
 See a [usage example](/docs/integrations/chat/naver).
 
 ```python
-from langchain_community.chat_models import ChatClovaX
+from langchain_naver import ChatClovaX
 ```
 
 ## Embedding models
@@ -40,7 +44,7 @@ from langchain_community.chat_models import ChatClovaX
 See a [usage example](/docs/integrations/text_embedding/naver).
 
 ```python
-from langchain_community.embeddings import ClovaXEmbeddings
+from langchain_naver import ClovaXEmbeddings
 ```
 
 ## Tools

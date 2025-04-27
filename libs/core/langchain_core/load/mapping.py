@@ -540,6 +540,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatSambaStudio",
     ),
+    ("langchain_core", "prompts", "message", "_DictMessagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "dict",
+        "DictPromptTemplate",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things
