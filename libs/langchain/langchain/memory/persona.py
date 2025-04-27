@@ -2,12 +2,37 @@ import re
 from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field
+
 from langchain_core.memory import BaseMemory
 
 
 class EnrichedMessage(BaseModel):
-    """
-    A message enriched with persona traits and metadata.
+    """A message enriched with persona traits and metadata.
+
+    This class extends a basic message with additional information about the
+    sender's personality traits and any relevant metadata. The traits are
+    automatically detected from the message content.
+
+    Examples:
+        Basic usage:
+            >>> message = EnrichedMessage(
+            ...     id="msg-001",
+            ...     content="I'm really excited about this project!",
+            ...     traits=["enthusiastic"],  # Automatically detected
+            ...     metadata={"traits_count": {"enthusiastic": 1}}
+            ... )
+            >>> message.traits
+            ['enthusiastic']
+
+        With multiple traits:
+            >>> message = EnrichedMessage(
+            ...     id="msg-002",
+            ...     content="I'm not sure about this... maybe we should reconsider?",
+            ...     traits=["hesitant", "cautious"],  # Multiple detected traits
+            ...     metadata={"traits_count": {"hesitant": 1, "cautious": 1}}
+            ... )
+            >>> message.traits
+            ['hesitant', 'cautious']
     """
 
     id: str
@@ -17,13 +42,42 @@ class EnrichedMessage(BaseModel):
 
 
 class PersonaMemory(BaseMemory):
-    """
-    Memory module that dynamically tracks emotional and behavioral traits
+    """Memory module that dynamically tracks emotional and behavioral traits
     exhibited by an agent over the course of a conversation.
 
-    Traits are automatically detected from output messages and
-    accumulated across interactions. Recent messages and detected traits
-    can be retrieved to enrich future prompts or modify agent behavior.
+    Traits are automatically detected from output messages and accumulated across
+    interactions. Recent messages and detected traits can be retrieved to enrich
+    future prompts or modify agent behavior.
+
+    The memory maintains a sliding window of the k most recent messages
+    (default k=10) and tracks all unique traits detected across these messages.
+
+    Examples:
+        Basic usage:
+            >>> memory = PersonaMemory()
+            >>> memory.save_context(
+            ...     {"input": "How are you?"},
+            ...     {"output": "I'm doing great! This is fantastic!"}
+            ... )
+            >>> memory.load_memory_variables({})
+            {'persona': {'traits': ['enthusiastic']}}
+
+        Including recent messages:
+            >>> memory = PersonaMemory()
+            >>> memory.save_context(
+            ...     {"input": "What do you think?"},
+            ...     {"output": "I'm not sure... perhaps we should reconsider?"}
+            ... )
+            >>> memory.load_memory_variables({}, include_messages=True)
+            {'persona': {
+                'traits': ['hesitant', 'cautious'],
+                'recent_messages': [{
+                    'id': '1',
+                    'content': "I'm not sure... perhaps we should reconsider?",
+                    'traits': ['hesitant', 'cautious'],
+                    'metadata': {'traits_count': {'hesitant': 1, 'cautious': 1}}
+                }]
+            }}
     """
 
     memory_key: str = "persona"
