@@ -999,7 +999,7 @@ class PyMuPDFParser(BaseBlobParser):
                     raise ValueError("Password is required to open encrypted PDFs.")
                 if doc.is_encrypted:
                     doc.authenticate(self.password)
-                
+
                 doc_metadata = {
                     "producer": "PyMuPDF",
                     "creator": "PyMuPDF",
