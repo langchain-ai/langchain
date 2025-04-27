@@ -481,7 +481,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = Field(default=None)
+    max_completion_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
     reasoning_effort: Optional[str] = None
     """Constrains effort on reasoning for reasoning models. 
@@ -654,7 +654,7 @@ class BaseChatOpenAI(BaseChatModel):
             "top_logprobs": self.top_logprobs,
             "logit_bias": self.logit_bias,
             "stop": self.stop or None,  # also exclude empty list for this
-            "max_tokens": self.max_tokens,
+            "max_completion_tokens": self.max_completion_tokens,
             "extra_body": self.extra_body,
             "n": self.n,
             "temperature": self.temperature,
@@ -1188,9 +1188,7 @@ class BaseChatOpenAI(BaseChatModel):
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
-        if ls_max_tokens := params.get("max_tokens", self.max_tokens) or params.get(
-            "max_completion_tokens", self.max_tokens
-        ):
+        if ls_max_tokens := params.get("max_completion_tokens", self.max_completion_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
@@ -1786,8 +1784,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Name of OpenAI model to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
-            Max number of tokens to generate.
+        max_completion_tokens: Optional[int]
+            Maximum number of tokens to generate.
         logprobs: Optional[bool]
             Whether to return logprobs.
         stream_options: Dict
@@ -1824,7 +1822,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             llm = ChatOpenAI(
                 model="gpt-4o",
                 temperature=0,
-                max_tokens=None,
+                max_completion_tokens=None,
                 timeout=None,
                 max_retries=2,
                 # api_key="...",
@@ -2354,7 +2352,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     """  # noqa: E501
 
-    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    max_completion_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
 
     @property
@@ -2390,8 +2388,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         params = super()._default_params
-        if "max_tokens" in params:
-            params["max_completion_tokens"] = params.pop("max_tokens")
 
         return params
 
@@ -2403,10 +2399,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        # max_tokens was deprecated in favor of max_completion_tokens
-        # in September 2024 release
-        if "max_tokens" in payload:
-            payload["max_completion_tokens"] = payload.pop("max_tokens")
 
         # Mutate system message role to "developer" for o-series models
         if self.model_name and re.match(r"^o\d", self.model_name):
@@ -2989,11 +2981,7 @@ def _use_responses_api(payload: dict) -> bool:
 
 def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
-) -> dict:
-    # Rename legacy parameters
-    for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
-        if legacy_token_param in payload:
-            payload["max_output_tokens"] = payload.pop(legacy_token_param)
+) -> dict
     if "reasoning_effort" in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
