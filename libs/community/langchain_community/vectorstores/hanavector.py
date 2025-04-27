@@ -68,7 +68,7 @@ default_vector_column_length: int = -1  # -1 means dynamic length
 
 
 @deprecated(
-    since="0.1.0",
+    since="0.3.23",
     removal="1.0",
     message=(
         "This class is deprecated and will be removed in a future version. "
