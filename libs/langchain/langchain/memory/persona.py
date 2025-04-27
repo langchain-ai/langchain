@@ -1,12 +1,14 @@
-from typing import Any, Callable, Optional
-from pydantic import BaseModel, Field
 import re
+from typing import Any, Callable, Optional
 
+from pydantic import BaseModel, Field
 from langchain_core.memory import BaseMemory
 
 
 class EnrichedMessage(BaseModel):
-    """A message enriched with persona traits and metadata."""
+    """
+    A message enriched with persona traits and metadata.
+    """
 
     id: str
     content: str
@@ -43,7 +45,8 @@ class PersonaMemory(BaseMemory):
 
     def _detect_traits(self, text: str) -> dict[str, int]:
         """
-        Detect persona traits using both a default method and optionally an external engine.
+        Detect persona traits using both a default method and optionally
+        an external engine.
 
         Always guarantees a usable result, even if external services fail.
         """
@@ -94,7 +97,10 @@ class PersonaMemory(BaseMemory):
     def load_memory_variables(
         self, inputs: dict[str, Any], include_messages: bool = False
     ) -> dict[str, Any]:
-        """Return the stored persona traits and optionally recent conversation messages."""
+        """
+        Return the stored persona traits and optionally recent
+        conversation messages.
+        """
         memory_data = {"traits": self.persona_traits.copy()}
 
         if include_messages:
@@ -105,7 +111,9 @@ class PersonaMemory(BaseMemory):
         return {self.memory_key: memory_data}
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
-        """Analyze outputs and update the persona traits and recent messages."""
+        """
+        Analyze outputs and update the persona traits and recent messages.
+        """
         output_text = outputs.get(self.output_key, "")
         traits_detected = self._detect_traits(output_text)
 
