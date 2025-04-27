@@ -1,9 +1,8 @@
 import re
 from typing import Any, Callable, Optional
 
-from pydantic import BaseModel, Field
-
 from langchain_core.memory import BaseMemory
+from pydantic import BaseModel, Field
 
 
 class EnrichedMessage(BaseModel):

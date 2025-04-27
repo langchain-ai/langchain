@@ -1,11 +1,12 @@
-import unittest
-import sys
-from io import StringIO
-from contextlib import contextmanager
-from langchain.memory.persona import PersonaMemory, EnrichedMessage
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
 import json
+import sys
+import unittest
+from contextlib import contextmanager
+from io import StringIO
 from typing import List, Optional
+
+from langchain.memory.persona import EnrichedMessage, PersonaMemory
+from langchain.schema import AIMessage, BaseMessage, HumanMessage
 
 
 class MockChatModel:
