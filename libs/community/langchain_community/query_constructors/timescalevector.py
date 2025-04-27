@@ -42,9 +42,9 @@ class TimescaleVectorTranslator(Visitor):
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
         if isinstance(func, Operator):
-            value = self.OPERATOR_MAP[func.value]  # type: ignore
+            value = self.OPERATOR_MAP[func.value]  # type: ignore[index]
         elif isinstance(func, Comparator):
-            value = self.COMPARATOR_MAP[func.value]  # type: ignore
+            value = self.COMPARATOR_MAP[func.value]  # type: ignore[index]
         return f"{value}"
 
     def visit_operation(self, operation: Operation) -> client.Predicates:

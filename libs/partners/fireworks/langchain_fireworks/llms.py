@@ -1,7 +1,7 @@
 """Wrapper around Fireworks AI's Completion API."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import requests
 from aiohttp import ClientSession
@@ -63,7 +63,7 @@ class Fireworks(LLM):
         for question answering or summarization. A value greater than 1 introduces more 
         randomness in the output.
     """
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     top_k: Optional[int] = None
     """Used to limit the number of choices for the next predicted word or token. It 
@@ -90,7 +90,7 @@ class Fireworks(LLM):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
@@ -109,7 +109,7 @@ class Fireworks(LLM):
         return f"langchain-fireworks/{__version__}"
 
     @property
-    def default_params(self) -> Dict[str, Any]:
+    def default_params(self) -> dict[str, Any]:
         return {
             "model": self.model,
             "temperature": self.temperature,
@@ -122,7 +122,7 @@ class Fireworks(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -139,7 +139,7 @@ class Fireworks(LLM):
             "Content-Type": "application/json",
         }
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             **self.default_params,
             "prompt": prompt,
             "stop": stop_to_use,
@@ -168,7 +168,7 @@ class Fireworks(LLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -185,7 +185,7 @@ class Fireworks(LLM):
             "Content-Type": "application/json",
         }
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             **self.default_params,
             "prompt": prompt,
             "stop": stop_to_use,

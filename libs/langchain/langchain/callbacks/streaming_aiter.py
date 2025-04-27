@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncIterator, Dict, List, Literal, Union, cast
+from collections.abc import AsyncIterator
+from typing import Any, Literal, Union, cast
 
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
@@ -25,7 +26,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.done = asyncio.Event()
 
     async def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         # If two calls are made in a row, this resets the state
         self.done.clear()

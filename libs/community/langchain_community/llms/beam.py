@@ -201,7 +201,7 @@ class Beam(LLM):  # type: ignore[override, override, override, override]
     def _deploy(self) -> str:
         """Call to Beam."""
         try:
-            import beam  # type: ignore
+            import beam
 
             if beam.__path__ == "":
                 raise ImportError

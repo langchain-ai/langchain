@@ -1,6 +1,6 @@
 """Chain that combines documents by stuffing into context."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -29,7 +29,7 @@ def create_stuff_documents_chain(
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     document_variable_name: str = DOCUMENTS_KEY,
-) -> Runnable[Dict[str, Any], Any]:
+) -> Runnable[dict[str, Any], Any]:
     """Create a chain for passing a list of Documents to a model.
 
     Args:
@@ -163,7 +163,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_default_document_variable_name(cls, values: Dict) -> Any:
+    def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided.
 
         If only one variable is present in the llm_chain.prompt,
@@ -188,13 +188,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         extra_keys = [
             k for k in self.llm_chain.input_keys if k != self.document_variable_name
         ]
         return super().input_keys + extra_keys
 
-    def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
+    def _get_inputs(self, docs: list[Document], **kwargs: Any) -> dict:
         """Construct inputs from kwargs and docs.
 
         Format and then join all the documents together into one input with name
@@ -220,7 +220,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
 
-    def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list
@@ -241,8 +241,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
-    ) -> Tuple[str, dict]:
+        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM.
 
         Args:
@@ -259,8 +259,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return self.llm_chain.predict(callbacks=callbacks, **inputs), {}
 
     async def acombine_docs(
-        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
-    ) -> Tuple[str, dict]:
+        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> tuple[str, dict]:
         """Async stuff all documents into one prompt and pass to LLM.
 
         Args:

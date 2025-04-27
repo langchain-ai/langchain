@@ -1,6 +1,6 @@
 """Question-answering with sources over an index."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -25,7 +25,7 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
     """Restrict the docs to return from store based on tokens,
     enforced only for StuffDocumentChain and if reduce_k_below_max_tokens is to true"""
 
-    def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
+    def _reduce_tokens_below_limit(self, docs: list[Document]) -> list[Document]:
         num_docs = len(docs)
 
         if self.reduce_k_below_max_tokens and isinstance(
@@ -43,8 +43,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
         return docs[:num_docs]
 
     def _get_docs(
-        self, inputs: Dict[str, Any], *, run_manager: CallbackManagerForChainRun
-    ) -> List[Document]:
+        self, inputs: dict[str, Any], *, run_manager: CallbackManagerForChainRun
+    ) -> list[Document]:
         question = inputs[self.question_key]
         docs = self.retriever.invoke(
             question, config={"callbacks": run_manager.get_child()}
@@ -52,8 +52,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
         return self._reduce_tokens_below_limit(docs)
 
     async def _aget_docs(
-        self, inputs: Dict[str, Any], *, run_manager: AsyncCallbackManagerForChainRun
-    ) -> List[Document]:
+        self, inputs: dict[str, Any], *, run_manager: AsyncCallbackManagerForChainRun
+    ) -> list[Document]:
         question = inputs[self.question_key]
         docs = await self.retriever.ainvoke(
             question, config={"callbacks": run_manager.get_child()}

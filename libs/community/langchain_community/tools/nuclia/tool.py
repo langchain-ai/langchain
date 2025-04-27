@@ -217,10 +217,10 @@ class NucliaUnderstandingAPI(BaseTool):  # type: ignore[override, override]
                 logger.info(f"No matching id for {uuid}")
             else:
                 self._results[matching_id]["status"] = "done"
-                data = MessageToJson(
+                data = MessageToJson(  # type: ignore[call-arg]
                     pb,
                     preserving_proto_field_name=True,
-                    including_default_value_fields=True,  # type: ignore
+                    including_default_value_fields=True,
                 )
                 self._results[matching_id]["data"] = data
 

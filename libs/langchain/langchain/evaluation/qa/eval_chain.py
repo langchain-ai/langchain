@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 import string
-from typing import Any, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -17,7 +18,7 @@ from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
 
 
-def _get_score(text: str) -> Optional[Tuple[str, int]]:
+def _get_score(text: str) -> Optional[tuple[str, int]]:
     match = re.search(r"grade:\s*(correct|incorrect)", text.strip(), re.IGNORECASE)
     if match:
         if match.group(1).upper() == "CORRECT":
@@ -133,7 +134,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         prediction_key: str = "result",
         *,
         callbacks: Callbacks = None,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
             {
@@ -267,14 +268,14 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
     def evaluate(
         self,
-        examples: List[dict],
-        predictions: List[dict],
+        examples: list[dict],
+        predictions: list[dict],
         question_key: str = "query",
         context_key: str = "context",
         prediction_key: str = "result",
         *,
         callbacks: Callbacks = None,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = [
             {

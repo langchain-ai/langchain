@@ -1,12 +1,10 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
-    Sequence,
-    Type,
     Union,
 )
 
@@ -45,7 +43,7 @@ __all__ = [
 
 @deprecated(since="0.1.1", removal="1.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
@@ -53,7 +51,7 @@ def create_openai_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:  # type: ignore[valid-type]
+) -> LLMChain:
     """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
@@ -128,12 +126,12 @@ def create_openai_fn_chain(
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
-    llm_kwargs: Dict[str, Any] = {
+    llm_kwargs: dict[str, Any] = {
         "functions": openai_functions,
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(  # type: ignore[misc]
+    llm_chain = LLMChain(
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -148,14 +146,14 @@ def create_openai_fn_chain(
     since="0.1.1", removal="1.0", alternative="ChatOpenAI.with_structured_output"
 )
 def create_structured_output_chain(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:  # type: ignore[valid-type]
+) -> LLMChain:
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:
@@ -218,7 +216,7 @@ def create_structured_output_chain(
         class _OutputFormatter(BaseModel):
             """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
 
-            output: output_schema  # type: ignore
+            output: output_schema  # type: ignore[valid-type]
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(

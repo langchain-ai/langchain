@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Iterable, List
+from collections.abc import Iterable
 
 import httpx
 from httpx import Response
@@ -33,7 +33,7 @@ class DummyTokenizer:
     """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
 
     @staticmethod
-    def encode_batch(texts: List[str]) -> List[List[str]]:
+    def encode_batch(texts: list[str]) -> list[list[str]]:
         return [list(text) for text in texts]
 
 
@@ -177,7 +177,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 self.tokenizer = Tokenizer.from_pretrained(
                     "mistralai/Mixtral-8x7B-v0.1"
                 )
-            except IOError:  # huggingface_hub GatedRepoError
+            except OSError:  # huggingface_hub GatedRepoError
                 warnings.warn(
                     "Could not download mistral tokenizer from Huggingface for "
                     "calculating batch sizes. Set a Huggingface token via the "
@@ -187,10 +187,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 self.tokenizer = DummyTokenizer()
         return self
 
-    def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
+    def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
         """Split a list of texts into batches of less than 16k tokens
         for Mistral API."""
-        batch: List[str] = []
+        batch: list[str] = []
         batch_tokens = 0
 
         text_token_lengths = [
@@ -211,7 +211,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         if batch:
             yield batch
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a list of document texts.
 
         Args:
@@ -230,7 +230,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 wait=wait_fixed(self.wait_time),
                 stop=stop_after_attempt(self.max_retries),
             )
-            def _embed_batch(batch: List[str]) -> Response:
+            def _embed_batch(batch: list[str]) -> Response:
                 response = self.client.post(
                     url="/embeddings",
                     json=dict(
@@ -252,7 +252,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             logger.error(f"An error occurred with MistralAI: {e}")
             raise
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a list of document texts.
 
         Args:
@@ -283,7 +283,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             logger.error(f"An error occurred with MistralAI: {e}")
             raise
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed a single query text.
 
         Args:
@@ -294,7 +294,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Embed a single query text.
 
         Args:

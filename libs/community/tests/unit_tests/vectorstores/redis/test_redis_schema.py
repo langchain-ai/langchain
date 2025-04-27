@@ -125,7 +125,7 @@ def test_read_schema_dict_input() -> None:
         "tag": [{"name": "tag"}],
         "vector": [{"name": "content_vector", "dims": 100, "algorithm": "FLAT"}],
     }
-    output = read_schema(index_schema=index_schema)  # type: ignore
+    output = read_schema(index_schema=index_schema)  # type: ignore[arg-type]
     assert output == index_schema
 
 
@@ -139,9 +139,9 @@ def test_redis_model_creation() -> None:
     )
 
     assert redis_model.text[0].name == "content"
-    assert redis_model.tag[0].name == "tag"  # type: ignore
-    assert redis_model.numeric[0].name == "numeric"  # type: ignore
-    assert redis_model.vector[0].name == "flat_vector"  # type: ignore
+    assert redis_model.tag[0].name == "tag"  # type: ignore[index]
+    assert redis_model.numeric[0].name == "numeric"  # type: ignore[index]
+    assert redis_model.vector[0].name == "flat_vector"  # type: ignore[index]
 
     # Test the content_vector property
     with pytest.raises(ValueError):

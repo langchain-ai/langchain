@@ -1,7 +1,8 @@
 """Tests for the time-weighted retriever class."""
 
+from collections.abc import Iterable
 from datetime import datetime, timedelta
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 import pytest
 from langchain_core.documents import Document
@@ -14,7 +15,7 @@ from langchain.retrievers.time_weighted_retriever import (
 )
 
 
-def _get_example_memories(k: int = 4) -> List[Document]:
+def _get_example_memories(k: int = 4) -> list[Document]:
     return [
         Document(
             page_content="foo",
@@ -33,22 +34,22 @@ class MockVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         return list(texts)
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return []
 
     @classmethod
     def from_texts(
-        cls: Type["MockVectorStore"],
-        texts: List[str],
+        cls: type["MockVectorStore"],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> "MockVectorStore":
         return cls()
@@ -58,7 +59,7 @@ class MockVectorStore(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         return [(doc, 0.5) for doc in _get_example_memories()]
 
     async def _asimilarity_search_with_relevance_scores(
@@ -66,7 +67,7 @@ class MockVectorStore(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         return self._similarity_search_with_relevance_scores(query, k, **kwargs)
 
 

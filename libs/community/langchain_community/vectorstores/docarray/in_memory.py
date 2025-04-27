@@ -41,7 +41,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
         from docarray.index import InMemoryExactNNIndex
 
         doc_cls = cls._get_doc_cls(space=metric, **kwargs)
-        doc_index = InMemoryExactNNIndex[doc_cls]()  # type: ignore
+        doc_index = InMemoryExactNNIndex[doc_cls]()
         return cls(doc_index, embedding)
 
     @classmethod

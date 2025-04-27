@@ -246,7 +246,7 @@ class BaseOpenAI(BaseLLM):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore[misc]
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
         if (

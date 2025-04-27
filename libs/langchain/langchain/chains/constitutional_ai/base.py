@@ -1,6 +1,6 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -190,15 +190,15 @@ class ConstitutionalChain(Chain):
     """  # noqa: E501
 
     chain: LLMChain
-    constitutional_principles: List[ConstitutionalPrinciple]
+    constitutional_principles: list[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
     return_intermediate_steps: bool = False
 
     @classmethod
     def get_principles(
-        cls, names: Optional[List[str]] = None
-    ) -> List[ConstitutionalPrinciple]:
+        cls, names: Optional[list[str]] = None
+    ) -> list[ConstitutionalPrinciple]:
         if names is None:
             return list(PRINCIPLES.values())
         else:
@@ -224,12 +224,12 @@ class ConstitutionalChain(Chain):
         )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys."""
         return self.chain.input_keys
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys."""
         if self.return_intermediate_steps:
             return ["output", "critiques_and_revisions", "initial_output"]
@@ -237,9 +237,9 @@ class ConstitutionalChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(
             **inputs,
@@ -305,7 +305,7 @@ class ConstitutionalChain(Chain):
                 color="yellow",
             )
 
-        final_output: Dict[str, Any] = {"output": response}
+        final_output: dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
             final_output["critiques_and_revisions"] = critiques_and_revisions
