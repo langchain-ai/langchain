@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -107,7 +107,7 @@ class LLMCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
@@ -135,7 +135,7 @@ class LLMCheckerChain(Chain):
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return the singular input key.
 
         :meta private:
@@ -143,7 +143,7 @@ class LLMCheckerChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return the singular output key.
 
         :meta private:
@@ -152,9 +152,9 @@ class LLMCheckerChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 

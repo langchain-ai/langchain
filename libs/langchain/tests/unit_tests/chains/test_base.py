@@ -1,7 +1,7 @@
 """Test logic on base chain class."""
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
@@ -17,17 +17,17 @@ class FakeMemory(BaseMemory):
     """Fake memory class for testing purposes."""
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Return baz variable."""
         return ["baz"]
 
     def load_memory_variables(
-        self, inputs: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, str]:
+        self, inputs: Optional[dict[str, Any]] = None
+    ) -> dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Pass."""
 
     def clear(self) -> None:
@@ -38,24 +38,24 @@ class FakeChain(Chain):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True
-    the_input_keys: List[str] = ["foo"]
-    the_output_keys: List[str] = ["bar"]
+    the_input_keys: list[str] = ["foo"]
+    the_output_keys: list[str] = ["bar"]
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys."""
         return self.the_input_keys
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output key of bar."""
         return self.the_output_keys
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:

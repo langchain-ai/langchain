@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.memory import BaseMemory
@@ -26,7 +26,7 @@ def _get_default_system_message() -> SystemMessage:
 
 def create_conversational_retrieval_agent(
     llm: BaseLanguageModel,
-    tools: List[BaseTool],
+    tools: list[BaseTool],
     remember_intermediate_steps: bool = True,
     memory_key: str = "chat_history",
     system_message: Optional[SystemMessage] = None,

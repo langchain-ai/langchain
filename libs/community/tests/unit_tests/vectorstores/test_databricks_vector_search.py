@@ -114,7 +114,7 @@ EXAMPLE_SEARCH_RESPONSE = {
         "row_count": len(fake_texts),
         "data_array": sorted(
             [[str(uuid.uuid4()), s, random.uniform(0, 1)] for s in fake_texts],
-            key=lambda x: x[2],  # type: ignore
+            key=lambda x: x[2],  # type: ignore[arg-type,return-value]
             reverse=True,
         ),
     },
@@ -134,7 +134,7 @@ EXAMPLE_SEARCH_RESPONSE_FIXED_SCORE: Dict = {
         "row_count": len(fake_texts),
         "data_array": sorted(
             [[str(uuid.uuid4()), s, 0.5] for s in fake_texts],
-            key=lambda x: x[2],  # type: ignore
+            key=lambda x: x[2],
             reverse=True,
         ),
     },
@@ -160,7 +160,7 @@ EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
                     fake_texts, DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
                 )
             ],
-            key=lambda x: x[2],  # type: ignore
+            key=lambda x: x[2],  # type: ignore[arg-type,return-value]
             reverse=True,
         ),
     },

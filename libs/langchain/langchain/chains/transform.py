@@ -2,7 +2,8 @@
 
 import functools
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from collections.abc import Awaitable
+from typing import Any, Callable, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -26,13 +27,13 @@ class TransformChain(Chain):
              output_variables["entities"], transform=func())
     """
 
-    input_variables: List[str]
+    input_variables: list[str]
     """The keys expected by the transform's input dictionary."""
-    output_variables: List[str]
+    output_variables: list[str]
     """The keys returned by the transform's output dictionary."""
-    transform_cb: Callable[[Dict[str, str]], Dict[str, str]] = Field(alias="transform")
+    transform_cb: Callable[[dict[str, str]], dict[str, str]] = Field(alias="transform")
     """The transform function."""
-    atransform_cb: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = (
+    atransform_cb: Optional[Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = (
         Field(None, alias="atransform")
     )
     """The async coroutine transform function."""
@@ -47,7 +48,7 @@ class TransformChain(Chain):
         logger.warning(msg)
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input keys.
 
         :meta private:
@@ -55,7 +56,7 @@ class TransformChain(Chain):
         return self.input_variables
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output keys.
 
         :meta private:
@@ -64,16 +65,16 @@ class TransformChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         return self.transform_cb(inputs)
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if self.atransform_cb is not None:
             return await self.atransform_cb(inputs)
         else:

@@ -12,7 +12,8 @@ def test_azure_ai_search_invoke() -> None:
     """Test valid call to Azure AI Search.
 
     In order to run this test, you should provide
-    a `service_name`, azure search `api_key` and an `index_name`
+    a `service_name`, an 'index_name' and
+    an azure search `api_key` or 'azure_ad_token'
     as arguments for the AzureAISearchRetriever in both tests.
     api_version, aiosession and topk_k are optional parameters.
     """
@@ -32,7 +33,8 @@ async def test_azure_ai_search_ainvoke() -> None:
     """Test valid async call to Azure AI Search.
 
     In order to run this test, you should provide
-    a `service_name`, azure search `api_key` and an `index_name`
+    a `service_name`, an 'index_name' and
+    an azure search `api_key` or 'azure_ad_token'
     as arguments for the AzureAISearchRetriever.
     """
     retriever = AzureAISearchRetriever()

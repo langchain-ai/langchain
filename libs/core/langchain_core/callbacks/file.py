@@ -47,8 +47,8 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            serialized (dict[str, Any]): The serialized chain.
+            inputs (dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
         if "name" in kwargs:
@@ -68,7 +68,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (dict[str, Any]): The outputs of the chain.
             **kwargs (Any): Additional keyword arguments.
         """
         print_text("\n\033[1m> Finished chain.\033[0m", end="\n", file=self.file)

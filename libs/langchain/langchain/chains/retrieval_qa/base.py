@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -54,7 +54,7 @@ class BaseRetrievalQA(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys.
 
         :meta private:
@@ -62,7 +62,7 @@ class BaseRetrievalQA(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys.
 
         :meta private:
@@ -123,14 +123,14 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents to do question answering over."""
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -166,14 +166,14 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents to do question answering over."""
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -266,7 +266,7 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         return self.retriever.invoke(
             question, config={"callbacks": run_manager.get_child()}
@@ -277,7 +277,7 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         return await self.retriever.ainvoke(
             question, config={"callbacks": run_manager.get_child()}
@@ -307,12 +307,12 @@ class VectorDBQA(BaseRetrievalQA):
     """Number of documents to query for."""
     search_type: str = "similarity"
     """Search type to use over vectorstore. `similarity` or `mmr`."""
-    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    search_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
             "please use `from langchain.chains import RetrievalQA`"
@@ -321,7 +321,7 @@ class VectorDBQA(BaseRetrievalQA):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_search_type(cls, values: Dict) -> Any:
+    def validate_search_type(cls, values: dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
@@ -334,7 +334,7 @@ class VectorDBQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
@@ -353,7 +353,7 @@ class VectorDBQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         raise NotImplementedError("VectorDBQA does not support async")
 

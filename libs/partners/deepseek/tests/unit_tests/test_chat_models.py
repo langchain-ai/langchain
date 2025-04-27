@@ -1,6 +1,6 @@
 """Test chat model integration."""
 
-from typing import Any, Dict, Literal, Type, Union
+from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk
@@ -28,9 +28,9 @@ class MockOpenAIResponse(BaseModel):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: Union[Literal["none", "warn", "error"], bool] = True,
-        context: Union[Dict[str, Any], None] = None,
+        context: Union[dict[str, Any], None] = None,
         serialize_as_any: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         choices_list = []
         for choice in self.choices:
             if isinstance(choice.message, ChatCompletionMessage):
@@ -57,7 +57,7 @@ class MockOpenAIResponse(BaseModel):
 
 class TestChatDeepSeekUnit(ChatModelUnitTests):
     @property
-    def chat_model_class(self) -> Type[ChatDeepSeek]:
+    def chat_model_class(self) -> type[ChatDeepSeek]:
         return ChatDeepSeek
 
     @property
@@ -134,7 +134,7 @@ class TestChatDeepSeekCustomUnit:
     def test_convert_chunk_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from streaming chunk."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        chunk: Dict[str, Any] = {
+        chunk: dict[str, Any] = {
             "choices": [
                 {
                     "delta": {
@@ -158,7 +158,7 @@ class TestChatDeepSeekCustomUnit:
     def test_convert_chunk_with_reasoning(self) -> None:
         """Test that reasoning is properly extracted from streaming chunk."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        chunk: Dict[str, Any] = {
+        chunk: dict[str, Any] = {
             "choices": [
                 {
                     "delta": {
@@ -182,7 +182,7 @@ class TestChatDeepSeekCustomUnit:
     def test_convert_chunk_without_reasoning(self) -> None:
         """Test that chunk without reasoning fields works correctly."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        chunk: Dict[str, Any] = {"choices": [{"delta": {"content": "Main content"}}]}
+        chunk: dict[str, Any] = {"choices": [{"delta": {"content": "Main content"}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None
@@ -194,7 +194,7 @@ class TestChatDeepSeekCustomUnit:
     def test_convert_chunk_with_empty_delta(self) -> None:
         """Test that chunk with empty delta works correctly."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        chunk: Dict[str, Any] = {"choices": [{"delta": {}}]}
+        chunk: dict[str, Any] = {"choices": [{"delta": {}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None

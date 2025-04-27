@@ -30,9 +30,6 @@ class FunctionMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "function"."""
 
 
-FunctionMessage.model_rebuild()
-
-
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """Function Message chunk."""
 
@@ -44,7 +41,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     Defaults to "FunctionMessageChunk"."""
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
                 msg = "Cannot concatenate FunctionMessageChunks with different names."

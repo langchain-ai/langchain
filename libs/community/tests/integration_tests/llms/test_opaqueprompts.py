@@ -59,8 +59,8 @@ def test_opaqueprompts_functions() -> None:
     pg_chain = (
         op.sanitize
         | RunnableParallel(
-            secure_context=lambda x: x["secure_context"],  # type: ignore
-            response=(lambda x: x["sanitized_input"])  # type: ignore
+            secure_context=lambda x: x["secure_context"],
+            response=(lambda x: x["sanitized_input"])  # type: ignore[operator]
             | prompt
             | llm
             | StrOutputParser(),

@@ -140,6 +140,17 @@ def get_vectorstore_table():
             "Local/Cloud": "Local",
             "IDs in add Documents": True,
         },
+        "openGauss": {
+            "Delete by ID": True,
+            "Filtering": True,
+            "similarity_search_by_vector": True,
+            "similarity_search_with_score": True,
+            "asearch": False,
+            "Passes Standard Tests": True,
+            "Multi Tenancy": False,
+            "Local/Cloud": "Local",
+            "IDs in add Documents": True,
+        },
         "QdrantVectorStore": {
             "Delete by ID": True,
             "Filtering": True,

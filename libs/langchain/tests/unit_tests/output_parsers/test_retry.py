@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import pytest
 from langchain_core.prompt_values import PromptValue, StringPromptValue
@@ -218,7 +218,7 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
     input: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     parser = RetryOutputParser(
@@ -246,7 +246,7 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
     input: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     # test
@@ -275,7 +275,7 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
     input: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     # test
@@ -304,7 +304,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_with_retry_chai
     input: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     parser = RetryWithErrorOutputParser(

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import unittest
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,9 +13,12 @@ from langchain_community.document_loaders.confluence import (
     ContentFormat,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @pytest.fixture
-def mock_confluence():  # type: ignore
+def mock_confluence() -> Iterator[MagicMock]:
     with patch("atlassian.Confluence") as mock_confluence:
         yield mock_confluence
 

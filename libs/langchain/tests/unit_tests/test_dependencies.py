@@ -1,7 +1,8 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any
 
 import pytest
 import toml
@@ -13,7 +14,7 @@ PYPROJECT_TOML = HERE / "../../pyproject.toml"
 
 
 @pytest.fixture()
-def uv_conf() -> Dict[str, Any]:
+def uv_conf() -> dict[str, Any]:
     """Load the pyproject.toml file."""
     with open(PYPROJECT_TOML) as f:
         return toml.load(f)

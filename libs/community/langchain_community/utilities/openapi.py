@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 try:
     from openapi_pydantic import OpenAPI
 except ImportError:
-    OpenAPI = object  # type: ignore
+    OpenAPI = object
 
 
 class OpenAPISpec(OpenAPI):
