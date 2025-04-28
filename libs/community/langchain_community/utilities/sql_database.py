@@ -358,10 +358,17 @@ class SQLDatabase:
                 tables.append(self._custom_table_info[table.name])
                 continue
 
-            # Ignore JSON datatyped columns
-            for k, v in table.columns.items():  # AttributeError: items in sqlalchemy v1
-                if type(v.type) is NullType:
-                    table._columns.remove(v)
+            # Ignore JSON datatyped columns - SQLAlchemy v1.x compatibility
+            try:
+                # For SQLAlchemy v2.x
+                for k, v in table.columns.items():
+                    if type(v.type) is NullType:
+                        table._columns.remove(v)
+            except AttributeError:
+                # For SQLAlchemy v1.x
+                for k, v in dict(table.columns).items():
+                    if type(v.type) is NullType:
+                        table._columns.remove(v)
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
