@@ -1,10 +1,8 @@
-# /home/bch/Project/sub_project/langchain/libs/community/tests/unit_tests/test_sql_get_table_info.py
 import unittest
 from typing import Dict, Optional
 from unittest.mock import MagicMock, patch
 
 from sqlalchemy import Column, Integer, MetaData, String, Table
-from sqlalchemy.exc import NoInspectionAvailable
 
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -26,19 +24,43 @@ class TestSQLDatabaseComments(unittest.TestCase):
         self.mock_inspector.get_indexes.return_value = []
         # Mock get_columns to return something reasonable for reflection
         self.mock_inspector.get_columns.return_value = [
-            {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": None},
-            {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
-            {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+            {
+                "name": "id",
+                "type": Integer(),
+                "nullable": False,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
+            {
+                "name": "name",
+                "type": String(100),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
+            {
+                "name": "age",
+                "type": Integer(),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
         ]
         # Mock get_pk_constraint for reflection
-        self.mock_inspector.get_pk_constraint.return_value = {'constrained_columns': ['id'], 'name': None}
+        self.mock_inspector.get_pk_constraint.return_value = {
+            "constrained_columns": ["id"],
+            "name": None,
+        }
         # Mock get_foreign_keys for reflection
         self.mock_inspector.get_foreign_keys.return_value = []
 
-
         # Patch sqlalchemy.inspect to return our mock inspector
         self.patch_inspector = patch(
-            "langchain_community.utilities.sql_database.inspect", return_value=self.mock_inspector
+            "langchain_community.utilities.sql_database.inspect",
+            return_value=self.mock_inspector,
         )
         # Start the patch *before* creating the SQLDatabase instance
         self.mock_inspect = self.patch_inspector.start()
@@ -48,11 +70,13 @@ class TestSQLDatabaseComments(unittest.TestCase):
 
         # Create test database object *after* patching inspect
         try:
-            # Use lazy_table_reflection=True to avoid immediate reflection calls in __init__
-            self.db = SQLDatabase(engine=self.mock_engine, metadata=self.metadata, lazy_table_reflection=True)
+            self.db = SQLDatabase(
+                engine=self.mock_engine,
+                metadata=self.metadata,
+                lazy_table_reflection=True,
+            )
         except Exception as e:
-             self.fail(f"Unexpected exception during SQLDatabase init: {e}")
-
+            self.fail(f"Unexpected exception during SQLDatabase init: {e}")
 
     def tearDown(self) -> None:
         """Cleanup after each test"""
@@ -96,12 +120,34 @@ class TestSQLDatabaseComments(unittest.TestCase):
         # Mock reflection to return the columns with comments
         # This is crucial because lazy reflection will call inspect later
         self.mock_inspector.get_columns.return_value = [
-            {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": comments.get("id")},
-            {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": comments.get("name")},
-            {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": comments.get("age")},
+            {
+                "name": "id",
+                "type": Integer(),
+                "nullable": False,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": comments.get("id"),
+            },
+            {
+                "name": "name",
+                "type": String(100),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": comments.get("name"),
+            },
+            {
+                "name": "age",
+                "type": Integer(),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": comments.get("age"),
+            },
         ]
-        self.mock_inspector.get_table_names.return_value = ["test_table"] # Ensure table is discoverable
-
+        self.mock_inspector.get_table_names.return_value = [
+            "test_table"
+        ]  # Ensure table is discoverable
 
         # No need to mock CreateTable here, let the actual code call it.
         # We will patch it during the get_table_info call in the tests.
@@ -122,7 +168,9 @@ class TestSQLDatabaseComments(unittest.TestCase):
         )
 
         # Patch CreateTable specifically for the get_table_info call
-        with patch("langchain_community.utilities.sql_database.CreateTable") as MockCreateTable:
+        with patch(
+            "langchain_community.utilities.sql_database.CreateTable"
+        ) as MockCreateTable:
             # Mock the compile method to return a specific string
             mock_compiler = MockCreateTable.return_value.compile
             mock_compiler.return_value = expected_create_table_sql
@@ -139,7 +187,6 @@ class TestSQLDatabaseComments(unittest.TestCase):
         self.assertIn("'name': 'Name of the person'", table_info)
         self.assertIn("'age': 'Age of the person'", table_info)
         self.assertIn("*/", table_info)
-
 
     def test_postgres_get_col_comments(self) -> None:
         """Test retrieving column comments from PostgreSQL"""
@@ -159,9 +206,30 @@ class TestSQLDatabaseComments(unittest.TestCase):
         self.setup_mock_table_with_comments("sqlite", comments={})
         # Mock reflection to return columns *without* comments
         self.mock_inspector.get_columns.return_value = [
-             {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": None},
-             {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
-             {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+            {
+                "name": "id",
+                "type": Integer(),
+                "nullable": False,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
+            {
+                "name": "name",
+                "type": String(100),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
+            {
+                "name": "age",
+                "type": Integer(),
+                "nullable": True,
+                "default": None,
+                "autoincrement": "auto",
+                "comment": None,
+            },
         ]
 
         # Define the expected CREATE TABLE string
@@ -171,7 +239,9 @@ class TestSQLDatabaseComments(unittest.TestCase):
         )
 
         # Patch CreateTable specifically for the get_table_info call
-        with patch("langchain_community.utilities.sql_database.CreateTable") as MockCreateTable:
+        with patch(
+            "langchain_community.utilities.sql_database.CreateTable"
+        ) as MockCreateTable:
             mock_compiler = MockCreateTable.return_value.compile
             mock_compiler.return_value = expected_create_table_sql
 
