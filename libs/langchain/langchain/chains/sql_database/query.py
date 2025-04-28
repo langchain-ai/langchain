@@ -145,10 +145,9 @@ def create_sql_query_chain(
         "input": lambda x: x["question"] + "\nSQLQuery: ",
         "table_info": lambda x: db.get_table_info(
             table_names=x.get("table_names_to_use"),
-            **table_info_kwargs, 
+            **table_info_kwargs,
         ),
     }
-    
     return (
         RunnablePassthrough.assign(**inputs)  # type: ignore[return-value]
         | (
