@@ -15,7 +15,7 @@ class SceneXplainInput(BaseModel):
     query: str = Field(..., description="The link to the image to explain")
 
 
-class SceneXplainTool(BaseTool):  # type: ignore[override]
+class SceneXplainTool(BaseTool):
     """Tool that explains images."""
 
     name: str = "image_explainer"
@@ -24,7 +24,7 @@ class SceneXplainTool(BaseTool):  # type: ignore[override]
         "for an image. The input can be an image file of any format, and "
         "the output will be a text description that covers every detail of the image."
     )
-    api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)  # type: ignore[arg-type]
+    api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None

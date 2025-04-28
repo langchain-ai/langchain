@@ -89,7 +89,7 @@ def test_initialization() -> None:
     """Test chat model initialization."""
 
     for model in [
-        QianfanChatEndpoint(model="BLOOMZ-7B", timeout=40),  # type: ignore[call-arg]
+        QianfanChatEndpoint(model="BLOOMZ-7B", timeout=40),
         QianfanChatEndpoint(model="BLOOMZ-7B", request_timeout=40),  # type: ignore[call-arg]
     ]:
         assert model.model == "BLOOMZ-7B"
@@ -132,7 +132,7 @@ def test_endpoint_param() -> None:
     """Test user custom model deployments like some open source models."""
     chat = QianfanChatEndpoint()  # type: ignore[call-arg]
     response = chat.invoke(
-        [HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")]  # type: ignore[call-arg]
+        [HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")]
     )
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -261,7 +261,7 @@ def test_functions_call_thoughts() -> None:
     prompt_msgs = [
         HumanMessagePromptTemplate.from_template(prompt_tmpl),
     ]
-    prompt = ChatPromptTemplate(messages=prompt_msgs)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=prompt_msgs)
 
     chain = prompt | chat.bind(functions=_FUNCTIONS)
 
@@ -274,7 +274,7 @@ def test_functions_call_thoughts() -> None:
 def test_functions_call() -> None:
     chat = QianfanChatEndpoint(model="ERNIE-Bot")  # type: ignore[call-arg]
 
-    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
+    prompt = ChatPromptTemplate(
         messages=[
             HumanMessage(content="What's the temperature in Shanghai today?"),
             AIMessage(
@@ -340,8 +340,8 @@ def test_qianfan_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     chat = QianfanChatEndpoint(  # type: ignore[call-arg]
-        qianfan_ak="test-api-key",  # type: ignore[arg-type]
-        qianfan_sk="test-secret-key",  # type: ignore[arg-type]
+        qianfan_ak="test-api-key",
+        qianfan_sk="test-secret-key",
     )
     print(chat.qianfan_ak, end="")  # noqa: T201
     captured = capsys.readouterr()
@@ -356,8 +356,8 @@ def test_qianfan_key_masked_when_passed_via_constructor(
 def test_uses_actual_secret_value_from_secret_str() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     chat = QianfanChatEndpoint(  # type: ignore[call-arg]
-        qianfan_ak="test-api-key",  # type: ignore[arg-type]
-        qianfan_sk="test-secret-key",  # type: ignore[arg-type]
+        qianfan_ak="test-api-key",
+        qianfan_sk="test-secret-key",
     )
     assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"
     assert cast(SecretStr, chat.qianfan_sk).get_secret_value() == "test-secret-key"
@@ -371,8 +371,8 @@ def test_init_api_key_param() -> None:
             secret_key="test-secret-key",  # type: ignore[arg-type]
         ),
         QianfanChatEndpoint(  # type: ignore[call-arg]
-            qianfan_ak="test-api-key",  # type: ignore[arg-type]
-            qianfan_sk="test-secret-key",  # type: ignore[arg-type]
+            qianfan_ak="test-api-key",
+            qianfan_sk="test-secret-key",
         ),
     ]:
         assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"

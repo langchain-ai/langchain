@@ -51,7 +51,7 @@ class FlightSearchSchema(BaseModel):
     )
 
 
-class AmadeusFlightSearch(AmadeusBaseTool):  # type: ignore[override, override]
+class AmadeusFlightSearch(AmadeusBaseTool):
     """Tool for searching for a single flight between two airports."""
 
     name: str = "single_flight_search"

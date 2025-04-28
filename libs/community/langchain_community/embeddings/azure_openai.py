@@ -20,7 +20,7 @@ from langchain_community.utils.openai import is_openai_v1
     removal="1.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """`Azure OpenAI` Embeddings API."""
 
     azure_endpoint: Union[str, None] = None
@@ -170,16 +170,16 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
                 "default_query": self.default_query,
                 "http_client": self.http_client,
             }
-            self.client = openai.AzureOpenAI(**client_params).embeddings  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+            self.client = openai.AzureOpenAI(**client_params).embeddings
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (
                     self.azure_ad_async_token_provider
                 )
 
-            self.async_client = openai.AsyncAzureOpenAI(**client_params).embeddings  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+            self.async_client = openai.AsyncAzureOpenAI(**client_params).embeddings
         else:
-            self.client = openai.Embedding  # type: ignore[attr-defined]
+            self.client = openai.Embedding
         return self
 
     @property

@@ -75,7 +75,7 @@ class PowerBIToolkit(BaseToolkit):
                 powerbi=self.powerbi,
                 examples=self.examples,
                 max_iterations=self.max_iterations,
-                output_token_limit=self.output_token_limit,  # type: ignore[arg-type]
+                output_token_limit=self.output_token_limit,
                 tiktoken_model_name=self.tiktoken_model_name,
             ),
             InfoPowerBITool(powerbi=self.powerbi),

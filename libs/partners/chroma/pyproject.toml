@@ -14,7 +14,7 @@ dependencies = [
 ]
 name = "langchain-chroma"
 version = "0.2.3"
-description = "An integration package connecting Chroma and LangChain"
+description = "An integration package connecting Chroma and LangChain."
 readme = "README.md"
 
 [project.urls]

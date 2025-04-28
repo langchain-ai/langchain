@@ -12,7 +12,7 @@ from pydantic import model_validator
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsText2SpeechTool(BaseTool):  # type: ignore[override]
+class AzureCogsText2SpeechTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Text2Speech API.
 
     In order to set this up, follow instructions at:

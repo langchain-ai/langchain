@@ -375,9 +375,9 @@ def test_chain(model_name: str, question: str) -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        ChatOpenAI(temperature=0, model_name=model_name),  # type: ignore[call-arg]
+        ChatOpenAI(temperature=0, model_name=model_name),
         graph=graph,
-        verbose=True,  # type: ignore[call-arg]
+        verbose=True,
     )
     try:
         chain.invoke({chain.input_key: question})
