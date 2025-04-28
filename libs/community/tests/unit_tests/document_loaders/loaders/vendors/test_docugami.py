@@ -12,7 +12,7 @@ DOCUGAMI_XML_PATH = Path(__file__).parent / "test_data" / "docugami-example.xml"
 @pytest.mark.requires("dgml_utils")
 def test_docugami_loader_local() -> None:
     """Test DocugamiLoader."""
-    loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])  # type: ignore[call-arg]
+    loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])
     docs = loader.load()
 
     assert len(docs) == 25

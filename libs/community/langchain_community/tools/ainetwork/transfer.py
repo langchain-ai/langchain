@@ -14,7 +14,7 @@ class TransferSchema(BaseModel):
     amount: int = Field(..., description="Amount of AIN to transfer")
 
 
-class AINTransfer(AINBaseTool):  # type: ignore[override, override]
+class AINTransfer(AINBaseTool):
     """Tool for transfer operations."""
 
     name: str = "AINtransfer"

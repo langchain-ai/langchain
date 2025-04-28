@@ -20,7 +20,7 @@ class MockResponseDict(dict):
 def test_embedding_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test valid call to OCI Generative AI embedding service."""
     oci_gen_ai_client = MagicMock()
-    embeddings = OCIGenAIEmbeddings(  # type: ignore[call-arg]
+    embeddings = OCIGenAIEmbeddings(
         model_id=test_model_id,
         service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
         client=oci_gen_ai_client,

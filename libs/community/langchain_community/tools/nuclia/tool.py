@@ -54,7 +54,7 @@ class NUASchema(BaseModel):
     )
 
 
-class NucliaUnderstandingAPI(BaseTool):  # type: ignore[override, override]
+class NucliaUnderstandingAPI(BaseTool):
     """Tool to process files with the Nuclia Understanding API."""
 
     name: str = "nuclia_understanding_api"
@@ -75,7 +75,7 @@ class NucliaUnderstandingAPI(BaseTool):  # type: ignore[override, override]
         else:
             self._config["NUA_KEY"] = key
         self._config["enable_ml"] = enable_ml
-        super().__init__()  # type: ignore[call-arg]
+        super().__init__()
 
     def _run(
         self,

@@ -10,9 +10,9 @@ def test_initialization_with_alias() -> None:
     api_key = "your-api-key"
     group_id = "your-group-id"
 
-    embeddings = MiniMaxEmbeddings(  # type: ignore[arg-type, call-arg]
+    embeddings = MiniMaxEmbeddings(
         api_key=api_key,  # type: ignore[arg-type]
-        group_id=group_id,  # type: ignore[arg-type]
+        group_id=group_id,
     )
 
     assert cast(SecretStr, embeddings.minimax_api_key).get_secret_value() == api_key

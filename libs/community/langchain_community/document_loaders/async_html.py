@@ -226,8 +226,8 @@ class AsyncHtmlLoader(BaseLoader):
             # in a separate loop, in a separate thread.
             with ThreadPoolExecutor(max_workers=1) as executor:
                 future: Future[List[str]] = executor.submit(
-                    asyncio.run,  # type: ignore[arg-type]
-                    self.fetch_all(self.web_paths),  # type: ignore[arg-type]
+                    asyncio.run,
+                    self.fetch_all(self.web_paths),
                 )
                 results = future.result()
         except RuntimeError:

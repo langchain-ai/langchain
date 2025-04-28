@@ -128,7 +128,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
-            tool_calls=tool_calls,  # type: ignore[arg-type]
+            tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
     elif role == "tool":
@@ -137,7 +137,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=content,
-            tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
+            tool_call_id=_dict.get("tool_call_id"),
             additional_kwargs=additional_kwargs,
         )
     elif role == "system":

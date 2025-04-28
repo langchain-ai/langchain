@@ -13,7 +13,7 @@ class Inputs(BaseModel):
     query: str
 
 
-class PolygonTickerNews(BaseTool):  # type: ignore[override, override]
+class PolygonTickerNews(BaseTool):
     """Tool that gets the latest news for a given ticker from Polygon"""
 
     mode: str = "get_ticker_news"

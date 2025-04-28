@@ -15,7 +15,7 @@ dependencies = [
 ]
 name = "langchain-huggingface"
 version = "0.1.2"
-description = "An integration package connecting Hugging Face and LangChain"
+description = "An integration package connecting Hugging Face and LangChain."
 readme = "README.md"
 
 [project.urls]

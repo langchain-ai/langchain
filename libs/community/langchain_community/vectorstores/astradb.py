@@ -245,7 +245,7 @@ class AstraDB(VectorStore):
     async def aclear(self) -> None:
         """Empty the collection of all its stored entries."""
         await self.astra_env.aensure_db_setup()
-        await self.async_collection.delete_many({})  # type: ignore[union-attr]
+        await self.async_collection.delete_many({})
 
     def delete_by_document_id(self, document_id: str) -> bool:
         """
@@ -258,7 +258,7 @@ class AstraDB(VectorStore):
             True if a document has indeed been deleted, False if ID not found.
         """
         self.astra_env.ensure_db_setup()
-        deletion_response = self.collection.delete_one(document_id)  # type: ignore[union-attr]
+        deletion_response = self.collection.delete_one(document_id)
         return ((deletion_response or {}).get("status") or {}).get(
             "deletedCount", 0
         ) == 1

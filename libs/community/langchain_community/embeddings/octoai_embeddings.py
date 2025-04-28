@@ -74,8 +74,8 @@ class OctoAIEmbeddings(OpenAIEmbeddings):
             else:
                 values["openai_api_base"] = values["endpoint_url"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.Embedding  # type: ignore[attr-defined]
-                values["async_client"] = openai.Embedding  # type: ignore[attr-defined]
+                values["client"] = openai.Embedding
+                values["async_client"] = openai.Embedding
 
         except ImportError:
             raise ImportError(

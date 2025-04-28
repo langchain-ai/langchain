@@ -222,7 +222,7 @@ class HanaDB(VectorStore):
         return self.embedding
 
     @staticmethod
-    def _sanitize_name(input_str: str) -> str:  # type: ignore[misc]
+    def _sanitize_name(input_str: str) -> str:
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
@@ -356,7 +356,7 @@ class HanaDB(VectorStore):
         finally:
             cur.close()
 
-    def add_texts(  # type: ignore[override]
+    def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
