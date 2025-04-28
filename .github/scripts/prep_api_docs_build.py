@@ -20,6 +20,8 @@ def get_target_dir(package_name: str) -> Path:
     base_path = Path("langchain/libs")
     if package_name_short == "experimental":
         return base_path / "experimental"
+    if package_name_short == "community":
+        return base_path / "community"
     return base_path / "partners" / package_name_short
 
 

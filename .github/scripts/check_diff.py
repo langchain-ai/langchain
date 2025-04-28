@@ -16,7 +16,6 @@ LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
     "libs/langchain",
-    "libs/community",
 ]
 
 # when set to True, we are ignoring core dependents
@@ -134,12 +133,6 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/langchain" and job == "extended-tests":
         py_versions = ["3.9", "3.13"]
 
-    elif dir_ == "libs/community" and job == "extended-tests":
-        py_versions = ["3.9", "3.12"]
-
-    elif dir_ == "libs/community" and job == "compile-integration-tests":
-        # community integration deps are slow in 3.12
-        py_versions = ["3.9", "3.11"]
     elif dir_ == ".":
         # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.9", "3.12"]
@@ -184,11 +177,6 @@ def _get_pydantic_test_configs(
         else "0"
     )
 
-    custom_mins = {
-        # depends on pydantic-settings 2.4 which requires pydantic 2.7
-        "libs/community": 7,
-    }
-
     max_pydantic_minor = min(
         int(dir_max_pydantic_minor),
         int(core_max_pydantic_minor),
@@ -196,7 +184,6 @@ def _get_pydantic_test_configs(
     min_pydantic_minor = max(
         int(dir_min_pydantic_minor),
         int(core_min_pydantic_minor),
-        custom_mins.get(dir_, 0),
     )
 
     configs = [
