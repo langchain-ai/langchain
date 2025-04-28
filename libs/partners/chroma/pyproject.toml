@@ -10,7 +10,7 @@ dependencies = [
     "langchain-core>=0.3.52",
     "numpy>=1.26.0; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
-    "chromadb>=1.0",
+    "chromadb>=1.0,<=1.0.6",
 ]
 name = "langchain-chroma"
 version = "0.2.3"

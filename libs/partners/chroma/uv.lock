@@ -330,7 +330,7 @@ wheels = [
 
 [[package]]
 name = "chromadb"
-version = "1.0.7"
+version = "1.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bcrypt" },
@@ -365,13 +365,13 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/51/e9/ba5e890debace86df886031c505b27684c5e043c8f9e77b5546ba1abad4d/chromadb-1.0.7.tar.gz", hash = "sha256:70419c0add91a6326677bcc90518c3ea3d2ec7952c714845a7f9d57d0d9d09eb", size = 1155548 }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/75/e192613ed43a87351d6d6b55825d84cdb2fefeec1bcb9ca319e4e7ddc9fa/chromadb-1.0.6.tar.gz", hash = "sha256:3015d952cd1bce064a06265a44768b01a1e977314385574c2be26c3ba802f957", size = 1154314 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/e9/4a33bba524992d7473fbe0182378926865fd0beb38140b7adef345ca1c90/chromadb-1.0.7-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:dd5cb62a1bf22399f189a3eef1510b6b0a8111040cb0024bbba9d019a662781e", size = 17649960 },
-    { url = "https://files.pythonhosted.org/packages/e1/03/a05f15c65f15d30aaee7140ef51b4e4795a9c1d2cebeb5d110ff648d8a1b/chromadb-1.0.7-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:96c9310b6a6426860e0e45123113059930120d7df0599cb14e2cace64dd3c5d0", size = 16945680 },
-    { url = "https://files.pythonhosted.org/packages/df/5c/0c82ad86843e4c2d8736caef03ac88b4b461a45e0e7f8add3031bd598849/chromadb-1.0.7-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b38d7ae02ade8fc1af42ce78da219f6ac479b66ea2d0af5ca3544422b8abd66a", size = 17464880 },
-    { url = "https://files.pythonhosted.org/packages/7d/37/66846c00e87a8c9c9fb07e58a06a23a4f9d46bdd82b9411fd10a49080413/chromadb-1.0.7-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2da6530b60c56e4f53096f773764d009ba65dc11f07bdaaf4d6a26d3b2d8b094", size = 18333226 },
-    { url = "https://files.pythonhosted.org/packages/3f/9a/b502962b2bcd608bed94ef670a7dce8a8976df6dc4d732bbc28e4184e6e8/chromadb-1.0.7-cp39-abi3-win_amd64.whl", hash = "sha256:358d3f199cf833432eadd12706c89867384ad0587e908ab94e3d674fc840ed6f", size = 18289673 },
+    { url = "https://files.pythonhosted.org/packages/52/af/61ad8153b8c1be96a4d24bf1fcdda02d89a4ea6615927175daaae818a76c/chromadb-1.0.6-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b8c4ca895803a38711b690cd9cd0c65e7186915403d2dc46a7f8342dde09ff76", size = 17623580 },
+    { url = "https://files.pythonhosted.org/packages/02/76/07f6862cae1a497db52e5cbb321d465815e7e6c4dc1b91218e95fe8a8230/chromadb-1.0.6-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:fa160bd792e320c3460bbd5389e5b008907e012d73583a484d35b7abc3dbdf32", size = 16915984 },
+    { url = "https://files.pythonhosted.org/packages/9c/1d/87fef1593862ce43b4d9403ec7daa7649f9d8e54e1e561882a010b478638/chromadb-1.0.6-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:15cef3cd93b5fd5de9c1a56f8ab4858534a522a09a4207996c8d94e564d303da", size = 17407440 },
+    { url = "https://files.pythonhosted.org/packages/5d/55/6cf12977304b42503cd10953d56ded4f109982bf55f45f9b21f00c6be152/chromadb-1.0.6-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d67081bb92f4366e22c2bd9157618cbef93daa274351816a95a0e6e1d1546ff", size = 18291216 },
+    { url = "https://files.pythonhosted.org/packages/7b/5d/a277458f47ad8a1cdec10d08fc408ac6da188877536cc9e4bbf691a157c8/chromadb-1.0.6-cp39-abi3-win_amd64.whl", hash = "sha256:ea0de6c4210d984ea67717d9f932bcf912409427ca241014f49d3e22f79f3126", size = 18230710 },
 ]
 
 [[package]]
@@ -858,7 +858,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "chromadb", specifier = ">=1.0" },
+    { name = "chromadb", specifier = ">=1.0,<=1.0.6" },
     { name = "langchain-core", editable = "../../core" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.0" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
