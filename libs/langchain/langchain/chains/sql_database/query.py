@@ -133,9 +133,10 @@ def create_sql_query_chain(
     table_info_kwargs = {}
     if get_col_comments:
         if db.dialect not in ("postgresql", "mysql", "oracle"):
-            print(
-                f"Warning: get_col_comments=True is not supported for dialect "
-                f"'{db.dialect}'. Ignoring."
+            raise ValueError(
+                f"get_col_comments=True is only supported for dialects "
+                f"'postgresql', 'mysql', and 'oracle'. Received dialect: "
+                f"{db.dialect}"
             )
         else:
             table_info_kwargs["get_col_comments"] = True
