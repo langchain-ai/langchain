@@ -61,7 +61,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_to_openai_image_block,
+    convert_to_openai_data_block,
     is_data_content_block,
 )
 from langchain_core.messages.ai import (
@@ -186,45 +186,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
-def _format_data_content_block(block: dict) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
-    if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)
-
-    elif block["type"] == "file":
-        if block["source_type"] == "base64":
-            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
-            if filename := block.get("filename"):
-                file["filename"] = filename
-            elif (metadata := block.get("metadata")) and ("filename" in metadata):
-                file["filename"] = metadata["filename"]
-            else:
-                warnings.warn(
-                    "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the content block: {'type': 'file', 'source_type': 'base64', "
-                    "'mime_type': 'application/pdf', 'data': '...', "
-                    "'filename': 'my-pdf'}"
-                )
-            formatted_block = {"type": "file", "file": file}
-        elif block["source_type"] == "id":
-            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
-        else:
-            raise ValueError("source_type base64 or id is required for file blocks.")
-    elif block["type"] == "audio":
-        if block["source_type"] == "base64":
-            format = block["mime_type"].split("/")[-1]
-            formatted_block = {
-                "type": "input_audio",
-                "input_audio": {"data": block["data"], "format": format},
-            }
-        else:
-            raise ValueError("source_type base64 is required for audio blocks.")
-    else:
-        raise ValueError(f"Block of type {block['type']} is not supported.")
-
-    return formatted_block
-
-
 def _format_message_content(content: Any) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
@@ -238,7 +199,7 @@ def _format_message_content(content: Any) -> Any:
             ):
                 continue
             elif isinstance(block, dict) and is_data_content_block(block):
-                formatted_content.append(_format_data_content_block(block))
+                formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -577,6 +538,10 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+    service_tier: Optional[str] = None
+    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
+    for users of OpenAI's scale tier service.
+    """
 
     use_responses_api: Optional[bool] = None
     """Whether to use the Responses API instead of the Chat API.
@@ -694,6 +659,7 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
         }
 
         params = {
@@ -2365,6 +2331,27 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "logprobs": None,
             }
 
+    .. dropdown:: Flex processing
+
+        OpenAI offers a variety of
+        `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
+        The "flex" tier offers cheaper pricing for requests, with the trade-off that
+        responses may take longer and resources might not always be available.
+        This approach is best suited for non-critical tasks, including model testing,
+        data enhancement, or jobs that can be run asynchronously.
+
+        To use it, initialize the model with ``service_tier="flex"``:
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+
+        Note that this is a beta feature that is only available for a subset of models.
+        See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
+        for more detail.
+
     """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
@@ -3091,6 +3078,23 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
+def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+    text blocks. OpenAI API does not support this key, so we need to remove it.
+
+    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
+    back in.
+    """
+    new_reasoning = reasoning.copy()
+    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+        new_summary = []
+        for block in reasoning["summary"]:
+            new_block = {k: v for k, v in block.items() if k != "index"}
+            new_summary.append(new_block)
+        new_reasoning["summary"] = new_summary
+    return new_reasoning
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
@@ -3118,7 +3122,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             # Reasoning items
             reasoning_items = []
             if reasoning := lc_msg.additional_kwargs.get("reasoning"):
-                reasoning_items.append(reasoning)
+                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
             # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
@@ -3178,9 +3182,12 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 msg["content"] = new_blocks
             if msg["content"]:
                 input_.append(msg)
-            input_.extend(reasoning_items)
             input_.extend(function_calls)
-            input_.extend(computer_calls)
+            if computer_calls:
+                # Hack: we only add reasoning items if computer calls are present. See:
+                # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
+                input_.extend(reasoning_items)
+                input_.extend(computer_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 new_blocks = []
@@ -3390,8 +3397,6 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         if parsed := msg.additional_kwargs.get("parsed"):
             additional_kwargs["parsed"] = parsed
-        if reasoning := msg.additional_kwargs.get("reasoning"):
-            additional_kwargs["reasoning"] = reasoning
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
@@ -3432,6 +3437,27 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
+        additional_kwargs["reasoning"] = chunk.item.model_dump(
+            exclude_none=True, mode="json"
+        )
+    elif chunk.type == "response.reasoning_summary_part.added":
+        additional_kwargs["reasoning"] = {
+            # langchain-core uses the `index` key to aggregate text blocks.
+            "summary": [
+                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+            ]
+        }
+    elif chunk.type == "response.reasoning_summary_text.delta":
+        additional_kwargs["reasoning"] = {
+            "summary": [
+                {
+                    "index": chunk.summary_index,
+                    "type": "summary_text",
+                    "text": chunk.delta,
+                }
+            ]
+        }
     else:
         return None
 

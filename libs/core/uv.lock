@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -938,7 +937,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.54"
+version = "0.3.56"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -1105,7 +1104,7 @@ test-integration = [
 ]
 typing = [
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
-    { name = "mypy", specifier = ">=1.10,<2.0" },
+    { name = "mypy", specifier = ">=1.15,<2.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
 ]

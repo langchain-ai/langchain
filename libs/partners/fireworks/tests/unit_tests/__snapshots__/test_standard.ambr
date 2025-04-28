@@ -17,11 +17,12 @@
       }),
       'max_retries': 2,
       'max_tokens': 100,
-      'model_name': 'accounts/fireworks/models/mixtral-8x7b-instruct',
+      'model_name': 'accounts/fireworks/models/llama-v3p1-70b-instruct',
       'n': 1,
       'request_timeout': 60.0,
       'stop': list([
       ]),
+      'temperature': 0.0,
     }),
     'lc': 1,
     'name': 'ChatFireworks',
