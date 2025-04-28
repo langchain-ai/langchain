@@ -35,7 +35,8 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-    get_col_comments: Optional[bool] = False,
+    *,
+    get_col_comments: Optional[bool] = None,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
     """Create a chain that generates SQL queries.
 
