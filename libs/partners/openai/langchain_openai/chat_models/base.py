@@ -732,7 +732,11 @@ class BaseChatOpenAI(BaseChatModel):
 
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
-            if model_name := chunk.get("model"):
+            if model_name := (
+                chunk.get("model", [])
+                # from beta.chat.completions.stream
+                or chunk.get("chunk", {}).get("model", [])
+            ):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
                 generation_info["system_fingerprint"] = system_fingerprint
