@@ -643,3 +643,10 @@ packages:
   repo: valyu-network/langchain-valyu
   downloads: 120
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
+- name: langchain-hana
+  path: .
+  repo: SAP/langchain-integration-for-sap-hana-cloud
+  name_title: SAP HANA
+  provider_page: sap
+  downloads: 315
+  downloads_updated_at: '2025-04-27T19:45:43.938924+00:00'

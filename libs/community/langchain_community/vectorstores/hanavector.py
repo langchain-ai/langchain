@@ -19,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -66,8 +67,24 @@ default_vector_column: str = "VEC_VECTOR"
 default_vector_column_length: int = -1  # -1 means dynamic length
 
 
+@deprecated(
+    since="0.3.23",
+    removal="1.0",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "Please use HanaDB from the langchain_hana package instead. "
+        "See https://github.com/SAP/langchain-integration-for-sap-hana-cloud "
+        "for details."
+    ),
+    alternative="from langchain_hana import HanaDB;",
+    pending=False,
+)
 class HanaDB(VectorStore):
     """SAP HANA Cloud Vector Engine
+
+    **DEPRECATED**: This class is deprecated and will no longer be maintained.
+    Please use HanaDB from the langchain_hana package instead. It offers an
+    improved implementation and full support.
 
     The prerequisite for using this class is the installation of the ``hdbcli``
     Python package.
