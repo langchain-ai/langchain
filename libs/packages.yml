@@ -650,3 +650,7 @@ packages:
   provider_page: sap
   downloads: 315
   downloads_updated_at: '2025-04-27T19:45:43.938924+00:00'
+- name: langchain-gel
+  path: .
+  repo: geldata/langchain-gel
+  provider_page: gel
