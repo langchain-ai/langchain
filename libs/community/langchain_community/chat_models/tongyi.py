@@ -140,7 +140,7 @@ def convert_dict_to_message(
             else AIMessage(
                 content=content,
                 additional_kwargs=additional_kwargs,
-                tool_calls=tool_calls,  # type: ignore[arg-type]
+                tool_calls=tool_calls,
                 invalid_tool_calls=invalid_tool_calls,
             )
         )
@@ -163,7 +163,7 @@ def convert_dict_to_message(
             if is_chunk
             else ToolMessage(
                 content=_dict.get("content", ""),
-                tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
+                tool_call_id=_dict.get("tool_call_id"),
                 additional_kwargs=additional_kwargs,
             )
         )
@@ -894,7 +894,7 @@ class ChatTongyi(BaseChatModel):
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema],  # type: ignore[list-item]
-                first_tool_only=True,  # type: ignore[list-item]
+                first_tool_only=True,
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

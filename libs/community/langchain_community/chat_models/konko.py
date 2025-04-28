@@ -42,7 +42,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 logger = logging.getLogger(__name__)
 
 
-class ChatKonko(ChatOpenAI):  # type: ignore[override]
+class ChatKonko(ChatOpenAI):
     """`ChatKonko` Chat large language models API.
 
     To use, you should have the ``konko`` python package installed, and the

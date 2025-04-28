@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from O365 import Account
 
 
-class O365BaseTool(BaseTool):  # type: ignore[override]
+class O365BaseTool(BaseTool):
     """Base class for the Office 365 tools."""
 
     account: Account = Field(default_factory=authenticate)

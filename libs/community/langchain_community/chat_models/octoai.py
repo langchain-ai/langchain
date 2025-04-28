@@ -98,7 +98,7 @@ class ChatOctoAI(ChatOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
+                values["client"] = openai.ChatCompletion
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

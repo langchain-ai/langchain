@@ -34,7 +34,7 @@ class SearchInput(BaseModel):
     )
 
 
-class AskNewsSearch(BaseTool):  # type: ignore[override]
+class AskNewsSearch(BaseTool):
     """Tool that searches the AskNews API."""
 
     name: str = "asknews_search"
@@ -43,7 +43,7 @@ class AskNewsSearch(BaseTool):  # type: ignore[override]
         "news. If you needs news from more than 48 hours ago, you can estimate the "
         "number of hours back to search."
     )
-    api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)  # type: ignore[arg-type]
+    api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)
     max_results: int = 10
     args_schema: Optional[Type[BaseModel]] = SearchInput
 
