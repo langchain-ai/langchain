@@ -1,6 +1,7 @@
 # HANA Translator/query constructor
 from typing import Dict, Tuple, Union
 
+from langchain_core._api import deprecated
 from langchain_core.structured_query import (
     Comparator,
     Comparison,
@@ -11,8 +12,25 @@ from langchain_core.structured_query import (
 )
 
 
+@deprecated(
+    since="0.3.23",
+    removal="1.0",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "Please use query_constructors.HanaTranslator from the "
+        "langchain_hana package instead. "
+        "See https://github.com/SAP/langchain-integration-for-sap-hana-cloud "
+        "for details."
+    ),
+    alternative="from langchain_hana.query_constructors import HanaTranslator;",
+    pending=False,
+)
 class HanaTranslator(Visitor):
     """
+    **DEPRECATED**: This class is deprecated and will no longer be maintained.
+    Please use query_constructors.HanaTranslator from the langchain_hana
+    package instead. It offers an improved implementation and full support.
+
     Translate internal query language elements to valid filters params for
     HANA vectorstore.
     """
