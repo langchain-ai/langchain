@@ -205,8 +205,8 @@ class HuggingFaceEndpoint(LLM):
         )
 
         from huggingface_hub import (  # type: ignore[import]
-            AsyncInferenceClient,
-            InferenceClient,
+            AsyncInferenceClient,  # type: ignore[import]
+            InferenceClient,  # type: ignore[import]
         )
 
         # Instantiate clients with supported kwargs

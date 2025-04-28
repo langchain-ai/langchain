@@ -48,13 +48,9 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.tool import (
-    ToolCallChunk,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
-from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
+from langchain_core.messages.tool import ToolCallChunk
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     make_invalid_tool_call,
@@ -73,11 +69,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import (
-    BaseModel,
-    Field,
-    model_validator,
-)
+from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
 from ..llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -236,8 +228,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 def _is_huggingface_hub(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_hub import (  # type: ignore[import-not-found]
-            HuggingFaceHub,
+        from langchain_community.llms.huggingface_hub import (
+            HuggingFaceHub,  # type: ignore[import-not-found]
         )
 
         return isinstance(llm, HuggingFaceHub)
@@ -307,8 +299,8 @@ def _convert_chunk_to_message_chunk(
 
 def _is_huggingface_textgen_inference(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_text_gen_inference import (  # type: ignore[import-not-found]
-            HuggingFaceTextGenInference,
+        from langchain_community.llms.huggingface_text_gen_inference import (
+            HuggingFaceTextGenInference,  # type: ignore[import-not-found]
         )
 
         return isinstance(llm, HuggingFaceTextGenInference)
@@ -956,9 +948,9 @@ class ChatHuggingFace(BaseChatModel):
                     "Pydantic schema is not supported for function calling"
                 )
             else:
-                output_parser: Union[
-                    JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
-                ] = JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
+                output_parser: Union[JsonOutputKeyToolsParser, JsonOutputParser] = (
+                    JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
+                )
         elif method == "json_schema":
             if schema is None:
                 raise ValueError(
@@ -974,12 +966,8 @@ class ChatHuggingFace(BaseChatModel):
                 },
             )
             output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
-            ] = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()  # type: ignore[arg-type]
-            )
+                JsonOutputKeyToolsParser, JsonOutputParser
+            ] = JsonOutputParser()  # type: ignore[arg-type]
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
@@ -989,12 +977,8 @@ class ChatHuggingFace(BaseChatModel):
                 },
             )
             output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
-            ] = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()  # type: ignore[arg-type]
-            )
+                JsonOutputKeyToolsParser, JsonOutputParser
+            ] = JsonOutputParser()  # type: ignore[arg-type]
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
