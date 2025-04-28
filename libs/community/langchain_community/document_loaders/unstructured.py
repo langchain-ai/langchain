@@ -245,8 +245,8 @@ def get_elements_from_api(
         from unstructured.partition.api import partition_multiple_via_api
 
         _doc_elements = partition_multiple_via_api(
-            filenames=file_path,  # type: ignore
-            files=file,  # type: ignore
+            filenames=file_path,
+            files=file,
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,

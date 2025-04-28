@@ -6,7 +6,7 @@ https://arxiv.org/abs/2212.10496
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
@@ -38,23 +38,23 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys for Hyde's LLM chain."""
         return self.llm_chain.input_schema.model_json_schema()["required"]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys for Hyde's LLM chain."""
         if isinstance(self.llm_chain, LLMChain):
             return self.llm_chain.output_keys
         else:
             return ["text"]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Call the base embeddings."""
         return self.base_embeddings.embed_documents(texts)
 
-    def combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:
+    def combine_embeddings(self, embeddings: list[list[float]]) -> list[float]:
         """Combine embeddings into final embeddings."""
         try:
             import numpy as np
@@ -73,7 +73,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
             num_vectors = len(embeddings)
             return [sum(dim_values) / num_vectors for dim_values in zip(*embeddings)]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Generate a hypothetical document and embedded it."""
         var_name = self.input_keys[0]
         result = self.llm_chain.invoke({var_name: text})
@@ -86,9 +86,9 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Call the internal llm chain."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         return self.llm_chain.invoke(

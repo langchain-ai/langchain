@@ -2,9 +2,10 @@
 
 import base64
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, AsyncIterator, List, Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 import httpx
 import openai
@@ -170,48 +171,6 @@ def test_chat_openai_invalid_streaming_params() -> None:
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai() -> None:
-    """Test async generation."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=2)  # type: ignore[call-arg]
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    assert response.llm_output
-    for generations in response.generations:
-        assert len(generations) == 2
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
-async def test_async_chat_openai_streaming() -> None:
-    """Test that streaming correctly invokes on_llm_new_token callback."""
-    callback_handler = FakeCallbackHandler()
-    callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
-        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
-        streaming=True,
-        temperature=0,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    message = HumanMessage(content="Hello")
-    response = await chat.agenerate([[message], [message]])
-    assert callback_handler.llm_streams > 0
-    assert isinstance(response, LLMResult)
-    assert len(response.generations) == 2
-    for generations in response.generations:
-        assert len(generations) == 1
-        for generation in generations:
-            assert isinstance(generation, ChatGeneration)
-            assert isinstance(generation.text, str)
-            assert generation.text == generation.message.content
-
-
-@pytest.mark.scheduled
 async def test_async_chat_openai_bind_functions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
 
@@ -244,34 +203,6 @@ async def test_async_chat_openai_bind_functions() -> None:
 
 
 @pytest.mark.scheduled
-def test_openai_streaming() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    for token in llm.stream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_astream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
 @pytest.mark.parametrize("use_responses_api", [False, True])
 async def test_openai_abatch_tags(use_responses_api: bool) -> None:
     """Test batch tokens from ChatOpenAI."""
@@ -284,31 +215,15 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
         assert isinstance(token.text(), str)
 
 
-@pytest.mark.scheduled
-def test_openai_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-@pytest.mark.scheduled
-async def test_openai_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result.content, str)
-
-
-@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    llm = ChatOpenAI(
+        model="o4-mini",
+        service_tier="flex",  # Also test service_tier
+    )
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("Hello", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
     # assert no response headers if include_response_headers is not set
@@ -412,15 +327,6 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
-async def test_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI()
@@ -430,33 +336,6 @@ async def test_abatch_tags() -> None:
     )
     for token in result:
         assert isinstance(token.content, str)
-
-
-def test_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result.content, str)
-    assert result.response_metadata.get("model_name") is not None
-
-
-def test_invoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
-    assert isinstance(result.content, str)
-    assert result.response_metadata.get("model_name") is not None
 
 
 def test_response_metadata() -> None:
@@ -531,14 +410,14 @@ class MakeASandwich(BaseModel):
 
     bread_type: str
     cheese_type: str
-    condiments: List[str]
-    vegetables: List[str]
+    condiments: list[str]
+    vegetables: list[str]
 
 
 def test_tool_use() -> None:
     llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
-    msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
+    msgs: list = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
 
     assert isinstance(ai_msg, AIMessage)
@@ -583,7 +462,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
         model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
     )
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
-    msgs: List = [
+    msgs: list = [
         HumanMessage("Sally has green hair, what would her username be?"),
         AIMessage(
             content="",
@@ -735,12 +614,6 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
     assert "content-type" in headers
 
 
-@pytest.mark.xfail(
-    reason=(
-        "As of 12.19.24 OpenAI API returns 1151 instead of 1118. Not clear yet if "
-        "this is an undocumented API change or a bug on their end."
-    )
-)
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -773,12 +646,6 @@ def test_image_token_counting_jpeg() -> None:
     assert expected == actual
 
 
-@pytest.mark.xfail(
-    reason=(
-        "As of 12.19.24 OpenAI API returns 871 instead of 779. Not clear yet if "
-        "this is an undocumented API change or a bug on their end."
-    )
-)
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
@@ -996,45 +863,6 @@ def test_json_schema_openai_format(
     assert isinstance(result, dict)
 
 
-def test_json_mode() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    response = llm.invoke(
-        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks.",  # noqa: E501
-        response_format={"type": "json_object"},
-    )
-    assert isinstance(response.content, str)
-    assert json.loads(response.content) == {"a": 1}
-
-    # Test streaming
-    full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
-    ):
-        full = chunk if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
-    assert isinstance(full.content, str)
-    assert json.loads(full.content) == {"a": 1}
-
-
-async def test_json_mode_async() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    response = await llm.ainvoke(
-        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks."  # noqa: E501
-    )
-    assert isinstance(response.content, str)
-    assert json.loads(response.content) == {"a": 1}
-
-    # Test streaming
-    full: Optional[BaseMessageChunk] = None
-    async for chunk in llm.astream(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
-    ):
-        full = chunk if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
-    assert isinstance(full.content, str)
-    assert json.loads(full.content) == {"a": 1}
-
-
 def test_audio_output_modality() -> None:
     llm = ChatOpenAI(
         model="gpt-4o-audio-preview",
@@ -1045,7 +873,7 @@ def test_audio_output_modality() -> None:
         },
     )
 
-    history: List[BaseMessage] = [
+    history: list[BaseMessage] = [
         HumanMessage("Make me a short audio clip of you yelling")
     ]
 

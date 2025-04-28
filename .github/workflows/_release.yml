@@ -395,8 +395,11 @@ jobs:
 
           # Checkout the latest package files
           rm -rf $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}/*
-          cd $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}
-          git checkout "$LATEST_PACKAGE_TAG" -- .
+          rm -rf $GITHUB_WORKSPACE/libs/standard-tests/*
+          cd $GITHUB_WORKSPACE/libs/
+          git checkout "$LATEST_PACKAGE_TAG" -- standard-tests/
+          git checkout "$LATEST_PACKAGE_TAG" -- partners/${{ matrix.partner }}/
+          cd partners/${{ matrix.partner }}
 
           # Print as a sanity check
           echo "Version number from pyproject.toml: "

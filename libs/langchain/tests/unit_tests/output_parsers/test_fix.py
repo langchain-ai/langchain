@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -171,7 +171,7 @@ def test_output_fixing_parser_output_type(
 def test_output_fixing_parser_parse_with_retry_chain(
     input: str,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     # NOTE: get_format_instructions of some parsers behave randomly
@@ -208,7 +208,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
 async def test_output_fixing_parser_aparse_with_retry_chain(
     input: str,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     instructions = base_parser.get_format_instructions()

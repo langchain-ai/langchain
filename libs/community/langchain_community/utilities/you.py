@@ -240,7 +240,6 @@ class YouSearchAPIWrapper(BaseModel):
         if self.endpoint_type == "snippet":
             self.endpoint_type = "search"
         response = requests.get(
-            # type: ignore
             f"{YOU_API_URL}/{self.endpoint_type}",
             params=params,
             headers=headers,

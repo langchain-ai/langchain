@@ -1,24 +1,10 @@
 """Hugging Face Chat Wrapper."""
 
 import json
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -80,8 +66,8 @@ from ..llms.huggingface_pipeline import HuggingFacePipeline
 class TGI_RESPONSE:
     """Response from the TextGenInference API."""
 
-    choices: List[Any]
-    usage: Dict
+    choices: list[Any]
+    usage: dict
 
 
 @dataclass
@@ -90,7 +76,7 @@ class TGI_MESSAGE:
 
     role: str
     content: str
-    tool_calls: List[Dict]
+    tool_calls: list[dict]
 
 
 def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
@@ -126,7 +112,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any]
+    message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -187,7 +173,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return HumanMessage(content=_dict.get("content", ""))
     elif role == "assistant":
         content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
+        additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -239,14 +225,14 @@ def _is_huggingface_hub(llm: Any) -> bool:
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     choice = chunk["choices"][0]
     _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
-    tool_call_chunks: List[ToolCallChunk] = []
+    additional_kwargs: dict = {}
+    tool_call_chunks: list[ToolCallChunk] = []
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -345,11 +331,11 @@ class ChatHuggingFace(BaseChatModel):
             'HuggingFacePipeline' LLM to be used.
 
     Key init args — client params:
-        custom_get_token_ids: Optional[Callable[[str], List[int]]]
+        custom_get_token_ids: Optional[Callable[[str], list[int]]]
             Optional encoder to use for counting tokens.
-        metadata: Optional[Dict[str, Any]]
+        metadata: Optional[dict[str, Any]]
             Metadata to add to the run trace.
-        tags: Optional[List[str]]
+        tags: Optional[list[str]]
             Tags to add to the run trace.
         tokenizer: Any
         verbose: bool
@@ -486,7 +472,7 @@ class ChatHuggingFace(BaseChatModel):
     """Model ID for the model. Only used for HuggingFaceEndpoint."""
     temperature: Optional[float] = None
     """What sampling temperature to use."""
-    stop: Optional[Union[str, List[str]]] = Field(default=None, alias="stop_sequences")
+    stop: Optional[Union[str, list[str]]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     presence_penalty: Optional[float] = None
     """Penalizes repeated tokens."""
@@ -500,7 +486,7 @@ class ChatHuggingFace(BaseChatModel):
     """Number of most likely tokens to return at each token position, each with
      an associated log probability. `logprobs` must be set to true 
      if this parameter is used."""
-    logit_bias: Optional[Dict[int, int]] = None
+    logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -510,7 +496,7 @@ class ChatHuggingFace(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     def __init__(self, **kwargs: Any):
@@ -560,8 +546,8 @@ class ChatHuggingFace(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
@@ -602,8 +588,8 @@ class ChatHuggingFace(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
@@ -644,8 +630,8 @@ class ChatHuggingFace(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -653,7 +639,7 @@ class ChatHuggingFace(BaseChatModel):
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {**params, **kwargs, "stream": True}
 
-            default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+            default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
             for chunk in self.llm.client.chat_completion(
                 messages=message_dicts, **params
             ):
@@ -693,15 +679,15 @@ class ChatHuggingFace(BaseChatModel):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
 
         async for chunk in await self.llm.async_client.chat_completion(
             messages=message_dicts, **params
@@ -731,7 +717,7 @@ class ChatHuggingFace(BaseChatModel):
 
     def _to_chat_prompt(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
@@ -815,7 +801,7 @@ class ChatHuggingFace(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required"], bool]
@@ -873,14 +859,14 @@ class ChatHuggingFace(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        schema: Optional[Union[dict, type[BaseModel]]] = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -888,7 +874,7 @@ class ChatHuggingFace(BaseChatModel):
                 The output schema. Can be passed in as:
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.7),
+                    - a typedDict class (support added in 0.1.7),
 
                 Pydantic class is currently supported.
 
@@ -998,8 +984,8 @@ class ChatHuggingFace(BaseChatModel):
             return llm | output_parser
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        self, messages: list[BaseMessage], stop: Optional[list[str]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = self._default_params
         if stop is not None:
             params["stop"] = stop
@@ -1007,7 +993,7 @@ class ChatHuggingFace(BaseChatModel):
         return message_dicts, params
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Hugging Face
         Inference Providers API."""
         params = {

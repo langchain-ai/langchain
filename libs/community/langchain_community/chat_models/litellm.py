@@ -452,6 +452,7 @@ class ChatLiteLLM(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
+        added_model_name = False
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
@@ -460,7 +461,15 @@ class ChatLiteLLM(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
+            usage = chunk.get("usage", {})
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if isinstance(chunk, AIMessageChunk):
+                if not added_model_name:
+                    chunk.response_metadata = {
+                        "model_name": self.model_name or self.model
+                    }
+                    added_model_name = True
+                chunk.usage_metadata = _create_usage_metadata(usage)
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
@@ -478,6 +487,7 @@ class ChatLiteLLM(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
+        added_model_name = False
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
@@ -486,7 +496,15 @@ class ChatLiteLLM(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
+            usage = chunk.get("usage", {})
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if isinstance(chunk, AIMessageChunk):
+                if not added_model_name:
+                    chunk.response_metadata = {
+                        "model_name": self.model_name or self.model
+                    }
+                    added_model_name = True
+                chunk.usage_metadata = _create_usage_metadata(usage)
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:

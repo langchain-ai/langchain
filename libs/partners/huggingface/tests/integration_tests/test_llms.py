@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 from langchain_huggingface.llms import HuggingFacePipeline
 

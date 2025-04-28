@@ -9,7 +9,7 @@ from langchain_community.llms.aleph_alpha import AlephAlpha
 
 @pytest.mark.requires("aleph_alpha_client")
 def test_api_key_is_secret_string() -> None:
-    llm = AlephAlpha(aleph_alpha_api_key="secret-api-key")  # type: ignore
+    llm = AlephAlpha(aleph_alpha_api_key="secret-api-key")  # type: ignore[arg-type]
     assert isinstance(llm.aleph_alpha_api_key, SecretStr)
 
 
@@ -17,7 +17,7 @@ def test_api_key_is_secret_string() -> None:
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    llm = AlephAlpha(aleph_alpha_api_key="secret-api-key")  # type: ignore
+    llm = AlephAlpha(aleph_alpha_api_key="secret-api-key")  # type: ignore[arg-type]
     print(llm.aleph_alpha_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 

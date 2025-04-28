@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env
@@ -101,7 +101,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             )
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
@@ -117,7 +117,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         responses = self.client.feature_extraction(text=texts, **_model_kwargs)
         return responses
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
@@ -134,7 +134,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         )
         return responses
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:
@@ -146,7 +146,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         response = self.embed_documents([text])[0]
         return response
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:

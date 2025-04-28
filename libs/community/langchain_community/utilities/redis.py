@@ -99,7 +99,7 @@ def get_client(redis_url: str, **kwargs: Any) -> RedisType:
     correct redis server connection. The default service name is "mymaster". The
     optional second part of the path is the redis db number to connect to.
 
-    An optional username or password is used for booth connections to the rediserver
+    An optional username or password is used for both connections to the rediserver
     and the sentinel, different passwords for server and sentinel are not supported.
     And as another constraint only one sentinel instance can be given:
 
@@ -148,7 +148,7 @@ def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
     If username and/or password for authentication is given the
     same credentials are used for the Redis Sentinel as well as Redis Server.
     With this implementation using a redis url only it is not possible
-    to use different data for authentication on booth systems.
+    to use different data for authentication on both systems.
     """
     import redis
 

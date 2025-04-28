@@ -1,4 +1,4 @@
-from typing import Any, Dict, List  # type: ignore[import-not-found]
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
@@ -16,9 +16,7 @@ from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
 )
-from langchain_huggingface.llms import (
-    HuggingFaceEndpoint,
-)
+from langchain_huggingface.llms import HuggingFaceEndpoint
 
 
 @pytest.fixture
@@ -69,7 +67,7 @@ def test_create_chat_result(chat_hugging_face: Any) -> None:
     ],
 )
 def test_to_chat_prompt_errors(
-    chat_hugging_face: Any, messages: List[BaseMessage], expected_error: str
+    chat_hugging_face: Any, messages: list[BaseMessage], expected_error: str
 ) -> None:
     with pytest.raises(ValueError) as e:
         chat_hugging_face._to_chat_prompt(messages)
@@ -113,7 +111,7 @@ def test_to_chat_prompt_valid_messages(chat_hugging_face: Any) -> None:
     ],
 )
 def test_to_chatml_format(
-    chat_hugging_face: Any, message: BaseMessage, expected: Dict[str, str]
+    chat_hugging_face: Any, message: BaseMessage, expected: dict[str, str]
 ) -> None:
     result = chat_hugging_face._to_chatml_format(message)
     assert result == expected
@@ -152,14 +150,14 @@ def test_to_chatml_format_with_invalid_type(chat_hugging_face: Any) -> None:
     ],
 )
 def test_convert_dict_to_message(
-    msg_dict: Dict[str, Any], expected_type: type, expected_content: str
+    msg_dict: dict[str, Any], expected_type: type, expected_content: str
 ) -> None:
     result = _convert_dict_to_message(msg_dict)
     assert isinstance(result, expected_type)
     assert result.content == expected_content
 
 
-def tool_mock() -> Dict:
+def tool_mock() -> dict:
     return {"function": {"name": "test_tool"}}
 
 
@@ -184,7 +182,7 @@ def tool_mock() -> Dict:
 )
 def test_bind_tools_errors(
     chat_hugging_face: Any,
-    tools: Dict[str, str],
+    tools: dict[str, str],
     tool_choice: Any,
     expected_exception: Any,
     expected_message: str,

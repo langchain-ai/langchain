@@ -35,7 +35,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from the local file"""
         items = json.loads(self.file_path.read_text(encoding=self.encoding))
         messages = messages_from_dict(items)

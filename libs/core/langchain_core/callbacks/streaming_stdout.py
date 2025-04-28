@@ -24,8 +24,8 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when LLM starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized LLM.
-            prompts (List[str]): The prompts to run.
+            serialized (dict[str, Any]): The serialized LLM.
+            prompts (list[str]): The prompts to run.
             **kwargs (Any): Additional keyword arguments.
         """
 
@@ -38,8 +38,8 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when LLM starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized LLM.
-            messages (List[List[BaseMessage]]): The messages to run.
+            serialized (dict[str, Any]): The serialized LLM.
+            messages (list[list[BaseMessage]]): The messages to run.
             **kwargs (Any): Additional keyword arguments.
         """
 
@@ -76,8 +76,8 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when a chain starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized chain.
-            inputs (Dict[str, Any]): The inputs to the chain.
+            serialized (dict[str, Any]): The serialized chain.
+            inputs (dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
 
@@ -85,7 +85,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when a chain ends running.
 
         Args:
-            outputs (Dict[str, Any]): The outputs of the chain.
+            outputs (dict[str, Any]): The outputs of the chain.
             **kwargs (Any): Additional keyword arguments.
         """
 
@@ -103,7 +103,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when the tool starts running.
 
         Args:
-            serialized (Dict[str, Any]): The serialized tool.
+            serialized (dict[str, Any]): The serialized tool.
             input_str (str): The input string.
             **kwargs (Any): Additional keyword arguments.
         """

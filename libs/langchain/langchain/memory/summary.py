@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache as BaseCache  # For model_rebuild
@@ -32,10 +32,10 @@ class SummarizerMixin(BaseModel):
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
     prompt: BasePromptTemplate = SUMMARY_PROMPT
-    summary_message_cls: Type[BaseMessage] = SystemMessage
+    summary_message_cls: type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
+        self, messages: list[BaseMessage], existing_summary: str
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -47,7 +47,7 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
     async def apredict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
+        self, messages: list[BaseMessage], existing_summary: str
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -95,14 +95,14 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         return obj
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
             buffer: Any = [self.summary_message_cls(content=self.buffer)]
@@ -111,7 +111,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         return {self.memory_key: buffer}
 
     @pre_init
-    def validate_prompt_input_variables(cls, values: Dict) -> Dict:
+    def validate_prompt_input_variables(cls, values: dict) -> dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
@@ -122,7 +122,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
             )
         return values
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
         self.buffer = self.predict_new_summary(

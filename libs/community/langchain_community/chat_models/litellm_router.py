@@ -42,7 +42,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
     def __init__(self, *, router: Any, **kwargs: Any) -> None:
         """Construct Chat LiteLLM Router."""
-        super().__init__(router=router, **kwargs)  # type: ignore
+        super().__init__(router=router, **kwargs)  # type: ignore[call-arg]
         self.router = router
 
     @property

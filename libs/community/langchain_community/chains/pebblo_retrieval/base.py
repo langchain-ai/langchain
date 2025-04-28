@@ -313,8 +313,12 @@ class PebbloRetrievalQA(Chain):
         )
 
     @staticmethod
-    def _get_app_details(  # type: ignore
-        app_name: str, owner: str, description: str, llm: BaseLanguageModel, **kwargs
+    def _get_app_details(
+        app_name: str,
+        owner: str,
+        description: str,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> App:
         """Fetch app details. Internal method.
         Returns:

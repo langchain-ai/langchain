@@ -20,7 +20,7 @@ from freezegun import freeze_time
 from packaging import version
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks.manager import (
@@ -305,7 +305,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "integer",
     }
 
-    fake_ret = FakeRetriever()  # str -> List[Document]
+    fake_ret = FakeRetriever()  # str -> list[Document]
 
     assert fake_ret.get_input_jsonschema() == {
         "title": "FakeRetrieverInput",
@@ -354,7 +354,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "array",
     }
 
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     assert _schema(fake_llm.input_schema) == snapshot(name="fake_llm_input_schema")
     assert _schema(fake_llm.output_schema) == {
@@ -362,7 +362,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "string",
     }
 
-    fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
+    fake_chat = FakeListChatModel(responses=["a"])  # str -> list[list[str]]
 
     assert _schema(fake_chat.input_schema) == snapshot(name="fake_chat_input_schema")
     assert _schema(fake_chat.output_schema) == snapshot(name="fake_chat_output_schema")
@@ -508,9 +508,9 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
 
 def test_passthrough_assign_schema() -> None:
-    retriever = FakeRetriever()  # str -> List[Document]
+    retriever = FakeRetriever()  # str -> list[Document]
     prompt = PromptTemplate.from_template("{context} {question}")
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     seq_w_assign: Runnable = (
         RunnablePassthrough.assign(context=itemgetter("question") | retriever)
@@ -557,7 +557,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(second_lambda).get_input_jsonschema() == {  # type: ignore[arg-type]
+    assert RunnableLambda(second_lambda).get_input_jsonschema() == {
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
@@ -647,12 +647,12 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
     if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
-            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
+            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore[arg-type]
         ) == snapshot(name="schema8")
 
 
 def test_with_types_with_type_generics() -> None:
-    """Verify that with_types works if we use things like List[int]."""
+    """Verify that with_types works if we use things like list[int]."""
 
     def foo(x: int) -> None:
         """Add one to the input."""
@@ -746,7 +746,7 @@ def test_schema_complex_seq() -> None:
 
 
 def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
-    fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
+    fake_llm = FakeListLLM(responses=["a"])  # str -> list[list[str]]
 
     assert fake_llm.invoke("...") == "a"
 
@@ -1012,7 +1012,7 @@ def test_passthrough_tap(mocker: MockerFixture) -> None:
 
     seq: Runnable = RunnablePassthrough(mock) | fake | RunnablePassthrough(mock)
 
-    assert seq.invoke("hello", my_kwarg="value") == 5  # type: ignore[call-arg]
+    assert seq.invoke("hello", my_kwarg="value") == 5
     assert mock.call_args_list == [
         mocker.call("hello", my_kwarg="value"),
         mocker.call(5),
@@ -3883,6 +3883,7 @@ def test_retrying(mocker: MockerFixture) -> None:
         runnable.with_retry(
             stop_after_attempt=2,
             retry_if_exception_type=(ValueError,),
+            exponential_jitter_params={"initial": 0.1},
         ).invoke(1)
 
     assert _lambda_mock.call_count == 2  # retried
@@ -4487,7 +4488,7 @@ def test_runnable_branch_invoke() -> None:
     branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
         # mypy cannot infer types from the lambda
-        (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
     )
@@ -5358,7 +5359,7 @@ async def test_astream_log_deep_copies() -> None:
 
     def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
         """Get run log."""
-        run_log = RunLog(state=None)  # type: ignore
+        run_log = RunLog(state=None)  # type: ignore[arg-type]
         for log_patch in run_log_patches:
             run_log = run_log + log_patch
         return run_log
@@ -5378,7 +5379,7 @@ async def test_astream_log_deep_copies() -> None:
     state = run_log.state.copy()
     # Ignoring type here since we know that the state is a dict
     # so we can delete `id` for testing purposes
-    state.pop("id")  # type: ignore
+    state.pop("id")  # type: ignore[misc]
     assert state == {
         "final_output": 2,
         "logs": {},
@@ -5437,7 +5438,7 @@ def test_default_transform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
-            return cast("Output", input)  # type: ignore
+            return cast("Output", input)
 
     runnable = CustomRunnable[dict[str, str], dict[str, str]]()
     chunks = iter(
@@ -5607,7 +5608,7 @@ def test_closing_iterator_doesnt_raise_error() -> None:
     st = chain_.stream("hello")
     next(st)
     # This is a generator so close is defined on it.
-    st.close()  # type: ignore
+    st.close()  # type: ignore[attr-defined]
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False

@@ -360,7 +360,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -371,14 +371,13 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         .. code-block:: python
 
             # This is a RunnableAssign
-            from typing import Dict
             from langchain_core.runnables.passthrough import (
                 RunnableAssign,
                 RunnableParallel,
             )
             from langchain_core.runnables.base import RunnableLambda
 
-            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+            def add_ten(x: dict[str, int]) -> dict[str, int]:
                 return {"added": x["input"] + 10}
 
             mapper = RunnableParallel(
@@ -456,9 +455,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             for name, field_info in map_output_schema.model_fields.items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            return create_model_v2(  # type: ignore[call-overload]
-                "RunnableAssignOutput", field_definitions=fields
-            )
+            return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
@@ -569,7 +566,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
-                map_output,  # type: ignore
+                map_output,
                 None,
             )
             # consume passthrough stream
@@ -676,7 +673,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from dict[str, Any] inputs.
 
     RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract

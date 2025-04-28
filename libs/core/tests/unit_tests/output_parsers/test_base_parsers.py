@@ -43,9 +43,7 @@ def test_base_generation_parser() -> None:
 
             content = generation.message.content
             assert isinstance(content, str)
-            return content.swapcase()  # type: ignore
-
-    StrInvertCase.model_rebuild()
+            return content.swapcase()
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()
@@ -86,7 +84,7 @@ def test_base_transform_output_parser() -> None:
                 raise OutputParserException(msg)
             content = generation.message.content
             assert isinstance(content, str)
-            return content.swapcase()  # type: ignore
+            return content.swapcase()
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()
