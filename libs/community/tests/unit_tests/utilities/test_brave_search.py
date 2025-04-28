@@ -18,7 +18,7 @@ def test_api_key_from_env(monkeypatch: Any) -> None:
     env_key = "env-api-key"
     monkeypatch.setenv("BRAVE_SEARCH_API_KEY", env_key)
     # Do not pass the api_key explicitly
-    wrapper = BraveSearchWrapper()  # type: ignore[call-arg]
+    wrapper = BraveSearchWrapper()
     assert wrapper.api_key.get_secret_value() == env_key
 
 
@@ -29,4 +29,4 @@ def test_api_key_missing(monkeypatch: Any) -> None:
     monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
     with pytest.raises(ValueError):
         # This should raise an error because no api_key is available.
-        BraveSearchWrapper()  # type: ignore[call-arg]
+        BraveSearchWrapper()

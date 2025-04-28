@@ -32,7 +32,7 @@ def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrow
     )
 
 
-class BaseBrowserTool(BaseTool):  # type: ignore[override]
+class BaseBrowserTool(BaseTool):
     """Base class for browser tools."""
 
     sync_browser: Optional["SyncBrowser"] = None

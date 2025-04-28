@@ -26,7 +26,7 @@ class BaseSparkSQLTool(BaseModel):
     )
 
 
-class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
+class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for querying a Spark SQL."""
 
     name: str = "query_sql_db"
@@ -45,7 +45,7 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
         return self.db.run_no_throw(query)
 
 
-class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
+class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting metadata about a Spark SQL."""
 
     name: str = "schema_sql_db"
@@ -65,7 +65,7 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
         return self.db.get_table_info_no_throw(table_names.split(", "))
 
 
-class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
+class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting tables names."""
 
     name: str = "list_tables_sql_db"
@@ -80,7 +80,7 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
         return ", ".join(self.db.get_usable_table_names())
 
 
-class QueryCheckerTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
+class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     """Use an LLM to check if a query is correct.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 

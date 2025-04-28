@@ -88,7 +88,7 @@ def multiply(a: int, b: int) -> int:
 
 def test_tool_call() -> None:
     """Test tool calling by ChatZhipuAI"""
-    chat = ChatZhipuAI(model="glm-4-long")  # type: ignore[call-arg]
+    chat = ChatZhipuAI(model="glm-4-long")
     tools = [add, multiply]
     chat_with_tools = chat.bind_tools(tools)
 
@@ -103,7 +103,7 @@ def test_tool_call() -> None:
     messages.append(ai_msg)  # type: ignore[arg-type]
     for tool_call in ai_msg.tool_calls:
         selected_tool = {"add": add, "multiply": multiply}[tool_call["name"].lower()]
-        tool_output = selected_tool.invoke(tool_call["args"])  # type: ignore[attr-defined]
+        tool_output = selected_tool.invoke(tool_call["args"])
         messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))  # type: ignore[arg-type]
     response = chat_with_tools.invoke(messages)
     assert isinstance(response, AIMessage)

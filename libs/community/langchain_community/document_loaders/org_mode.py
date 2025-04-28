@@ -52,4 +52,4 @@ class UnstructuredOrgModeLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.org import partition_org
 
-        return partition_org(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_org(filename=self.file_path, **self.unstructured_kwargs)

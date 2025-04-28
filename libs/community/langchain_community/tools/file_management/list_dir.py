@@ -18,7 +18,7 @@ class DirectoryListingInput(BaseModel):
     dir_path: str = Field(default=".", description="Subdirectory to list.")
 
 
-class ListDirectoryTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
+class ListDirectoryTool(BaseFileToolMixin, BaseTool):
     """Tool that lists files and directories in a specified folder."""
 
     name: str = "list_directory"

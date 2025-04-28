@@ -17,7 +17,7 @@ from langchain_community.tools.azure_cognitive_services.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsSpeech2TextTool(BaseTool):  # type: ignore[override]
+class AzureCogsSpeech2TextTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Speech2Text API.
 
     In order to set this up, follow instructions at:

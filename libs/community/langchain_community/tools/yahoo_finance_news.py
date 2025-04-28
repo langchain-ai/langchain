@@ -16,7 +16,7 @@ class YahooFinanceNewsInput(BaseModel):
     query: str = Field(description="company ticker query to look up")
 
 
-class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
+class YahooFinanceNewsTool(BaseTool):
     """Tool that searches financial news on Yahoo Finance."""
 
     name: str = "yahoo_finance_news"
