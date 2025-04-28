@@ -56,7 +56,6 @@ test = [
 langchain-core = { path = "./libs/core", editable = true }
 langchain-text-splitters = { path = "./libs/text-splitters", editable = true }
 langchain-tests = { path = "./libs/standard-tests", editable = true }
-langchain-community = { path = "./libs/community", editable = true }
 langchain = { path = "./libs/langchain", editable = true }
 langchain-openai = { path = "./libs/partners/openai", editable = true }
 langchain-anthropic = { path = "./libs/partners/anthropic", editable = true }
