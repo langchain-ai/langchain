@@ -35,7 +35,7 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-    get_col_comments: bool = False,
+    get_col_comments: Optional[bool] = False,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
     """Create a chain that generates SQL queries.
 
@@ -60,6 +60,8 @@ def create_sql_query_chain(
         prompt: The prompt to use. If none is provided, will choose one
             based on dialect. Defaults to None. See Prompt section below for more.
         k: The number of results per select statement to return. Defaults to 5.
+        get_col_comments: Whether to retrieve column comments along with table info.
+            Defaults to False.
 
     Returns:
         A chain that takes in a question and generates a SQL query that answers
@@ -127,17 +129,25 @@ def create_sql_query_chain(
         )
     if "dialect" in prompt_to_use.input_variables:
         prompt_to_use = prompt_to_use.partial(dialect=db.dialect)
-    if get_col_comments and db.dialect not in ("postgresql", "mysql", "oracle"):
-        # Disable column comments for unsupported dialects
-        get_col_comments = False
+
+    table_info_kwargs = {}
+    if get_col_comments:
+        if db.dialect not in ("postgresql", "mysql", "oracle"):
+            print(
+                f"Warning: get_col_comments=True is not supported for dialect "
+                f"'{db.dialect}'. Ignoring."
+            )
+        else:
+            table_info_kwargs["get_col_comments"] = True
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",
         "table_info": lambda x: db.get_table_info(
             table_names=x.get("table_names_to_use"),
-            get_col_comments=get_col_comments,
+            **table_info_kwargs, 
         ),
     }
+    
     return (
         RunnablePassthrough.assign(**inputs)  # type: ignore[return-value]
         | (
