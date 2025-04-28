@@ -16,7 +16,7 @@ class TextToSpeechInput(BaseModel):
     query: str = Field(description="text to generate audio from")
 
 
-class EdenAiTextToSpeechTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiTextToSpeechTool(EdenaiTool):
     """Tool that queries the Eden AI Text to speech API.
     for api reference check edenai documentation:
     https://docs.edenai.co/reference/audio_text_to_speech_create.

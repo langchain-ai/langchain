@@ -12,10 +12,10 @@ def test_laser_embedding_documents(lang: str) -> None:
     User warning is returned by LASER library implementation
     so will ignore in testing."""
     documents = ["hello", "world"]
-    embedding = LaserEmbeddings(lang=lang)  # type: ignore[call-arg]
+    embedding = LaserEmbeddings(lang=lang)
     output = embedding.embed_documents(documents)
-    assert len(output) == 2  # type: ignore[arg-type]
-    assert len(output[0]) == 1024  # type: ignore[index]
+    assert len(output) == 2
+    assert len(output[0]) == 1024
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning:")
@@ -25,6 +25,6 @@ def test_laser_embedding_query(lang: str) -> None:
     User warning is returned by LASER library implementation
     so will ignore in testing."""
     query = "hello world"
-    embedding = LaserEmbeddings(lang=lang)  # type: ignore[call-arg]
+    embedding = LaserEmbeddings(lang=lang)
     output = embedding.embed_query(query)
     assert len(output) == 1024

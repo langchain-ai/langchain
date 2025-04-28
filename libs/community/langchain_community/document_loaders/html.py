@@ -48,4 +48,4 @@ class UnstructuredHTMLLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.html import partition_html
 
-        return partition_html(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_html(filename=self.file_path, **self.unstructured_kwargs)

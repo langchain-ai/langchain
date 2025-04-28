@@ -18,7 +18,7 @@ class SleepInput(BaseModel):
     sleep_time: int = Field(..., description="Time to sleep in seconds")
 
 
-class SleepTool(BaseTool):  # type: ignore[override]
+class SleepTool(BaseTool):
     """Tool that adds the capability to sleep."""
 
     name: str = "sleep"

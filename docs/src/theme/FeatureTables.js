@@ -367,6 +367,12 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/openai/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html"
             },
             {
+                name: "Google Gemini",
+                link: "google-generative-ai",
+                package: "langchain-google-genai",
+                apiLink: "https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html"
+            },
+            {
                 name: "Together",
                 link: "together",
                 package: "langchain-together",

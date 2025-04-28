@@ -15,7 +15,7 @@ from langchain_community.tools.azure_ai_services.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureAiServicesDocumentIntelligenceTool(BaseTool):  # type: ignore[override]
+class AzureAiServicesDocumentIntelligenceTool(BaseTool):
     """Tool that queries the Azure AI Services Document Intelligence API.
 
     In order to set this up, follow instructions at:

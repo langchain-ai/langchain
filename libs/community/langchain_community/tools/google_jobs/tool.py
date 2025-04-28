@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
 
 
-class GoogleJobsQueryRun(BaseTool):  # type: ignore[override]
+class GoogleJobsQueryRun(BaseTool):
     """Tool that queries the Google Jobs API."""
 
     name: str = "google_jobs"

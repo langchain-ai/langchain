@@ -49,7 +49,7 @@ def is_gemini_model(model_name: str) -> bool:
     return model_name is not None and "gemini" in model_name
 
 
-def completion_with_retry(  # type: ignore[no-redef]
+def completion_with_retry(
     llm: VertexAI,
     prompt: List[Union[str, "Image"]],
     stream: bool = False,
@@ -124,7 +124,7 @@ class _VertexAIBase(BaseModel):
         return cls.task_executor
 
 
-class _VertexAICommon(_VertexAIBase):  # type: ignore[override]
+class _VertexAICommon(_VertexAIBase):
     client: "_LanguageModel" = None  #: :meta private:
     client_preview: "_LanguageModel" = None  #: :meta private:
     model_name: str
@@ -208,7 +208,7 @@ class _VertexAICommon(_VertexAIBase):  # type: ignore[override]
     removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAI",
 )
-class VertexAI(_VertexAICommon, BaseLLM):  # type: ignore[override]
+class VertexAI(_VertexAICommon, BaseLLM):
     """Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
@@ -332,7 +332,7 @@ class VertexAI(_VertexAICommon, BaseLLM):  # type: ignore[override]
                     generation += chunk
                 generations.append([generation])
             else:
-                res = completion_with_retry(  # type: ignore[misc]
+                res = completion_with_retry(
                     self,
                     [prompt],
                     stream=should_stream,
@@ -375,7 +375,7 @@ class VertexAI(_VertexAICommon, BaseLLM):  # type: ignore[override]
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._prepare_params(stop=stop, stream=True, **kwargs)
-        for stream_resp in completion_with_retry(  # type: ignore[misc]
+        for stream_resp in completion_with_retry(
             self,
             [prompt],
             stream=True,
@@ -448,7 +448,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,  # type: ignore[arg-type]
+            project=self.project,
             location=self.location,
             endpoint=self.endpoint_id,
         )

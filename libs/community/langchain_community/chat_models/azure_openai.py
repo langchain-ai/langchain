@@ -227,7 +227,7 @@ class AzureChatOpenAI(ChatOpenAI):
                 **client_params
             ).chat.completions
         else:
-            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
+            values["client"] = openai.ChatCompletion
         return values
 
     @property

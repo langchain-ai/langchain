@@ -52,7 +52,7 @@ def test_chat_minimax_with_tool() -> None:
     messages.append(ai_msg)  # type: ignore[arg-type]
     for tool_call in ai_msg.tool_calls:
         selected_tool = {"add": add, "multiply": multiply}[tool_call["name"].lower()]
-        tool_output = selected_tool.invoke(tool_call["args"])  # type: ignore[attr-defined]
+        tool_output = selected_tool.invoke(tool_call["args"])
         messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))  # type: ignore[arg-type]
     response = chat_with_tools.invoke(messages)
     assert isinstance(response, AIMessage)
