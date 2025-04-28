@@ -1,5 +1,4 @@
 import asyncio
-from typing import List
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -12,7 +11,7 @@ from langchain_core.retrievers import BaseRetriever
 class MergerRetriever(BaseRetriever):
     """Retriever that merges the results of multiple retrievers."""
 
-    retrievers: List[BaseRetriever]
+    retrievers: list[BaseRetriever]
     """A list of retrievers to merge."""
 
     def _get_relevant_documents(
@@ -20,7 +19,7 @@ class MergerRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Get the relevant documents for a given query.
 
@@ -41,7 +40,7 @@ class MergerRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Asynchronously get the relevant documents for a given query.
 
@@ -59,7 +58,7 @@ class MergerRetriever(BaseRetriever):
 
     def merge_documents(
         self, query: str, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Merge the results of the retrievers.
 
@@ -74,9 +73,7 @@ class MergerRetriever(BaseRetriever):
         retriever_docs = [
             retriever.invoke(
                 query,
-                config={
-                    "callbacks": run_manager.get_child("retriever_{}".format(i + 1))
-                },
+                config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
             )
             for i, retriever in enumerate(self.retrievers)
         ]
@@ -93,7 +90,7 @@ class MergerRetriever(BaseRetriever):
 
     async def amerge_documents(
         self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         """
         Asynchronously merge the results of the retrievers.
 
@@ -109,9 +106,7 @@ class MergerRetriever(BaseRetriever):
             *(
                 retriever.ainvoke(
                     query,
-                    config={
-                        "callbacks": run_manager.get_child("retriever_{}".format(i + 1))
-                    },
+                    config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
                 )
                 for i, retriever in enumerate(self.retrievers)
             )

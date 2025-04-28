@@ -17,7 +17,7 @@ from typing import (
     overload,
 )
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.load import dumps
@@ -84,7 +84,7 @@ class RunState(TypedDict):
     """Type of the object being run, eg. prompt, chain, llm, etc."""
 
     # Do we want tags/metadata on the root run? Client kinda knows it in most situations
-    # tags: List[str]
+    # tags: list[str]
 
     logs: dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
@@ -618,7 +618,7 @@ async def _astream_log_implementation(
     The implementation has been factored out (at least temporarily) as both
     astream_log and astream_events relies on it.
     """
-    import jsonpatch  # type: ignore[import]
+    import jsonpatch
 
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.tracers.log_stream import (
@@ -657,7 +657,7 @@ async def _astream_log_implementation(
                     final_output = chunk
                 else:
                     try:
-                        final_output = final_output + chunk  # type: ignore
+                        final_output = final_output + chunk  # type: ignore[operator]
                     except TypeError:
                         prev_final_output = None
                         final_output = chunk

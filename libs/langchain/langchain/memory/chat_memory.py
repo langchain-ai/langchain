@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.chat_history import (
@@ -41,8 +41,8 @@ class BaseChatMemory(BaseMemory, ABC):
     return_messages: bool = False
 
     def _get_input_output(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
-    ) -> Tuple[str, str]:
+        self, inputs: dict[str, Any], outputs: dict[str, str]
+    ) -> tuple[str, str]:
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
         else:
@@ -67,7 +67,7 @@ class BaseChatMemory(BaseMemory, ABC):
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_messages(
@@ -78,7 +78,7 @@ class BaseChatMemory(BaseMemory, ABC):
         )
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: dict[str, Any], outputs: dict[str, str]
     ) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)

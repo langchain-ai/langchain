@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pytest
 
@@ -11,7 +9,7 @@ from langchain.evaluation.embedding_distance import (
 
 
 @pytest.fixture
-def vectors() -> Tuple[np.ndarray, np.ndarray]:
+def vectors() -> tuple[np.ndarray, np.ndarray]:
     """Create two random vectors."""
     vector_a = np.array(
         [
@@ -59,7 +57,7 @@ def embedding_distance_eval_chain() -> EmbeddingDistanceEvalChain:
 @pytest.mark.requires("scipy")
 def test_pairwise_embedding_distance_eval_chain_cosine_similarity(
     pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
-    vectors: Tuple[np.ndarray, np.ndarray],
+    vectors: tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the cosine similarity."""
     pairwise_embedding_distance_eval_chain.distance_metric = EmbeddingDistance.COSINE
@@ -73,7 +71,7 @@ def test_pairwise_embedding_distance_eval_chain_cosine_similarity(
 @pytest.mark.requires("scipy")
 def test_pairwise_embedding_distance_eval_chain_euclidean_distance(
     pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
-    vectors: Tuple[np.ndarray, np.ndarray],
+    vectors: tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the euclidean distance."""
     from scipy.spatial.distance import euclidean
@@ -87,7 +85,7 @@ def test_pairwise_embedding_distance_eval_chain_euclidean_distance(
 @pytest.mark.requires("scipy")
 def test_pairwise_embedding_distance_eval_chain_manhattan_distance(
     pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
-    vectors: Tuple[np.ndarray, np.ndarray],
+    vectors: tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the manhattan distance."""
     from scipy.spatial.distance import cityblock
@@ -101,7 +99,7 @@ def test_pairwise_embedding_distance_eval_chain_manhattan_distance(
 @pytest.mark.requires("scipy")
 def test_pairwise_embedding_distance_eval_chain_chebyshev_distance(
     pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
-    vectors: Tuple[np.ndarray, np.ndarray],
+    vectors: tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the chebyshev distance."""
     from scipy.spatial.distance import chebyshev
@@ -115,7 +113,7 @@ def test_pairwise_embedding_distance_eval_chain_chebyshev_distance(
 @pytest.mark.requires("scipy")
 def test_pairwise_embedding_distance_eval_chain_hamming_distance(
     pairwise_embedding_distance_eval_chain: PairwiseEmbeddingDistanceEvalChain,
-    vectors: Tuple[np.ndarray, np.ndarray],
+    vectors: tuple[np.ndarray, np.ndarray],
 ) -> None:
     """Test the hamming distance."""
     from scipy.spatial.distance import hamming

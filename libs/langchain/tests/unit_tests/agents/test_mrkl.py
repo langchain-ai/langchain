@@ -1,7 +1,5 @@
 """Test MRKL functionality."""
 
-from typing import Tuple
-
 import pytest
 from langchain_core.agents import AgentAction
 from langchain_core.exceptions import OutputParserException
@@ -14,7 +12,7 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def get_action_and_input(text: str) -> Tuple[str, str]:
+def get_action_and_input(text: str) -> tuple[str, str]:
     output = MRKLOutputParser().parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)

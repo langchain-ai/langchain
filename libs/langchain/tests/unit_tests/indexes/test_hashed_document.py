@@ -14,9 +14,9 @@ def test_hashed_document_hashing() -> None:
 def test_hashing_with_missing_content() -> None:
     """Check that ValueError is raised if page_content is missing."""
     with pytest.raises(TypeError):
-        _HashedDocument(
+        _HashedDocument(  # type: ignore[call-arg]
             metadata={"key": "value"},
-        )  # type: ignore
+        )
 
 
 def test_uid_auto_assigned_to_hash() -> None:

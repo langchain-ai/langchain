@@ -71,4 +71,4 @@ def cosine_similarity_top_k(
     top_k_idxs = top_k_idxs[np.argsort(score_array.ravel()[top_k_idxs])][::-1]
     ret_idxs = np.unravel_index(top_k_idxs, score_array.shape)
     scores = score_array.ravel()[top_k_idxs].tolist()
-    return list(zip(*ret_idxs)), scores  # type: ignore
+    return list(zip(*ret_idxs)), scores  # type: ignore[return-value]

@@ -2,18 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Sequence
 from json import JSONDecodeError
 from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -111,7 +107,7 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
 
 def _is_assistants_builtin_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
 ) -> bool:
     """Determine if tool corresponds to OpenAI Assistants built-in."""
     assistants_builtin_tools = ("code_interpreter", "file_search")
@@ -123,28 +119,28 @@ def _is_assistants_builtin_tool(
 
 
 def _get_assistants_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-) -> Dict[str, Any]:
+    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
     Note that OpenAI assistants supports several built-in tools,
     such as "code_interpreter" and "file_search".
     """
     if _is_assistants_builtin_tool(tool):
-        return tool  # type: ignore
+        return tool  # type: ignore[return-value]
     else:
         return convert_to_openai_tool(tool)
 
 
 OutputType = Union[
-    List[OpenAIAssistantAction],
+    list[OpenAIAssistantAction],
     OpenAIAssistantFinish,
-    List["ThreadMessage"],
-    List["RequiredActionFunctionToolCall"],
+    list["ThreadMessage"],
+    list["RequiredActionFunctionToolCall"],
 ]
 
 
-class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
+class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """Run an OpenAI Assistant.
 
     Example using OpenAI tools:
@@ -271,7 +267,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
+            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore[misc]
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -398,7 +394,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,  # type: ignore
+            tools=openai_tools,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
@@ -498,7 +494,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             return response
 
     def _parse_intermediate_steps(
-        self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
+        self, intermediate_steps: list[tuple[OpenAIAssistantAction, str]]
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
@@ -588,6 +584,9 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             answer: Any = [
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
+            attachments = [
+                attachment for msg in new_messages for attachment in msg.attachments
+            ]
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
@@ -605,6 +604,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     "output": answer,
                     "thread_id": run.thread_id,
                     "run_id": run.id,
+                    "attachments": attachments,
                 },
                 log="",
                 run_id=run.id,
@@ -652,7 +652,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         return run
 
     async def _aparse_intermediate_steps(
-        self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
+        self, intermediate_steps: list[tuple[OpenAIAssistantAction, str]]
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)

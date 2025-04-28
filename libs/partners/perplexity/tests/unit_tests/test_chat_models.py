@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
@@ -51,7 +51,7 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
         "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
     }
-    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
     mock_stream = MagicMock()
     mock_stream.__iter__.return_value = mock_chunks
     patcher = mocker.patch.object(
@@ -103,7 +103,7 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
             }
         ],
     }
-    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
     mock_stream = MagicMock()
     mock_stream.__iter__.return_value = mock_chunks
     patcher = mocker.patch.object(
@@ -162,7 +162,7 @@ def test_perplexity_stream_includes_citations_and_related_questions(
         "citations": ["example.com", "example2.com"],
         "related_questions": ["example_question_1", "example_question_2"],
     }
-    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
     mock_stream = MagicMock()
     mock_stream.__iter__.return_value = mock_chunks
     patcher = mocker.patch.object(

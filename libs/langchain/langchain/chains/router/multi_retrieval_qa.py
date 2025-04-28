@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
@@ -19,7 +20,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 )
 
 
-class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
+class MultiRetrievalQAChain(MultiRouteChain):
     """A multi-route chain that uses an LLM router chain to choose amongst retrieval
     qa chains."""
 
@@ -31,14 +32,14 @@ class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
     """Default chain to use when router doesn't map input to one of the destinations."""
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return ["result"]
 
     @classmethod
     def from_retrievers(
         cls,
         llm: BaseLanguageModel,
-        retriever_infos: List[Dict[str, Any]],
+        retriever_infos: list[dict[str, Any]],
         default_retriever: Optional[BaseRetriever] = None,
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,

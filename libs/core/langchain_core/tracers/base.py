@@ -133,6 +133,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_llm_start(llm_run)
         return llm_run
 
+    @override
     def on_llm_new_token(
         self,
         token: str,
@@ -161,11 +162,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             run_id=run_id,
             chunk=chunk,
             parent_run_id=parent_run_id,
-            **kwargs,
         )
         self._on_llm_new_token(llm_run, token, chunk)
         return llm_run
 
+    @override
     def on_retry(
         self,
         retry_state: RetryCallState,
@@ -188,6 +189,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             run_id=run_id,
         )
 
+    @override
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run.
 
@@ -235,6 +237,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_llm_error(llm_run)
         return llm_run
 
+    @override
     def on_chain_start(
         self,
         serialized: dict[str, Any],
@@ -279,6 +282,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_chain_start(chain_run)
         return chain_run
 
+    @override
     def on_chain_end(
         self,
         outputs: dict[str, Any],
@@ -302,12 +306,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             outputs=outputs,
             run_id=run_id,
             inputs=inputs,
-            **kwargs,
         )
         self._end_trace(chain_run)
         self._on_chain_end(chain_run)
         return chain_run
 
+    @override
     def on_chain_error(
         self,
         error: BaseException,
@@ -331,7 +335,6 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             error=error,
             run_id=run_id,
             inputs=inputs,
-            **kwargs,
         )
         self._end_trace(chain_run)
         self._on_chain_error(chain_run)
@@ -381,6 +384,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_tool_start(tool_run)
         return tool_run
 
+    @override
     def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run.
 
@@ -395,12 +399,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         tool_run = self._complete_tool_run(
             output=output,
             run_id=run_id,
-            **kwargs,
         )
         self._end_trace(tool_run)
         self._on_tool_end(tool_run)
         return tool_run
 
+    @override
     def on_tool_error(
         self,
         error: BaseException,
@@ -467,6 +471,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self._on_retriever_start(retrieval_run)
         return retrieval_run
 
+    @override
     def on_retriever_error(
         self,
         error: BaseException,
@@ -487,12 +492,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         retrieval_run = self._errored_retrieval_run(
             error=error,
             run_id=run_id,
-            **kwargs,
         )
         self._end_trace(retrieval_run)
         self._on_retriever_error(retrieval_run)
         return retrieval_run
 
+    @override
     def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> Run:
@@ -509,7 +514,6 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         retrieval_run = self._complete_retrieval_run(
             documents=documents,
             run_id=run_id,
-            **kwargs,
         )
         self._end_trace(retrieval_run)
         self._on_retriever_end(retrieval_run)
@@ -623,7 +627,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
             run_id=run_id,
             chunk=chunk,
             parent_run_id=parent_run_id,
-            **kwargs,
         )
         await self._on_llm_new_token(llm_run, token, chunk)
 
@@ -715,7 +718,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
             outputs=outputs,
             run_id=run_id,
             inputs=inputs,
-            **kwargs,
         )
         tasks = [self._end_trace(chain_run), self._on_chain_end(chain_run)]
         await asyncio.gather(*tasks)
@@ -733,7 +735,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
             error=error,
             inputs=inputs,
             run_id=run_id,
-            **kwargs,
         )
         tasks = [self._end_trace(chain_run), self._on_chain_error(chain_run)]
         await asyncio.gather(*tasks)
@@ -776,7 +777,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tool_run = self._complete_tool_run(
             output=output,
             run_id=run_id,
-            **kwargs,
         )
         tasks = [self._end_trace(tool_run), self._on_tool_end(tool_run)]
         await asyncio.gather(*tasks)
@@ -839,7 +839,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         retrieval_run = self._errored_retrieval_run(
             error=error,
             run_id=run_id,
-            **kwargs,
         )
         tasks = [
             self._end_trace(retrieval_run),
@@ -860,7 +859,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         retrieval_run = self._complete_retrieval_run(
             documents=documents,
             run_id=run_id,
-            **kwargs,
         )
         tasks = [self._end_trace(retrieval_run), self._on_retriever_end(retrieval_run)]
         await asyncio.gather(*tasks)

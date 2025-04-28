@@ -202,7 +202,7 @@ class AIMessage(BaseMessage):
             raw_tool_calls := values.get("additional_kwargs", {}).get("tool_calls")
         ):
             try:
-                if issubclass(cls, AIMessageChunk):  # type: ignore
+                if issubclass(cls, AIMessageChunk):
                     values["tool_call_chunks"] = default_tool_chunk_parser(
                         raw_tool_calls
                     )
@@ -235,6 +235,7 @@ class AIMessage(BaseMessage):
 
         return values
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the message.
 
@@ -275,16 +276,13 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.model_rebuild()
-
-
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """Message chunk from an AI."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization).
     Defaults to "AIMessageChunk"."""
 
@@ -369,7 +367,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return self
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
         if isinstance(other, (list, tuple)) and all(

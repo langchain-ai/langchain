@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -10,24 +10,24 @@ class FakeChain(Chain):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True
-    the_input_keys: List[str] = ["foo"]
-    the_output_keys: List[str] = ["bar"]
+    the_input_keys: list[str] = ["foo"]
+    the_output_keys: list[str] = ["bar"]
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys."""
         return self.the_input_keys
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output key of bar."""
         return self.the_output_keys
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         return {"bar": "bar"}
 
 
