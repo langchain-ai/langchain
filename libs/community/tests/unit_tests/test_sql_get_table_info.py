@@ -1,3 +1,4 @@
+# /home/bch/Project/sub_project/langchain/libs/community/tests/unit_tests/test_sql_get_table_info.py
 import unittest
 from typing import Dict, Optional
 from unittest.mock import MagicMock, patch
@@ -23,6 +24,17 @@ class TestSQLDatabaseComments(unittest.TestCase):
         self.mock_inspector.get_table_names.return_value = ["test_table"]
         self.mock_inspector.get_view_names.return_value = []
         self.mock_inspector.get_indexes.return_value = []
+        # Mock get_columns to return something reasonable for reflection
+        self.mock_inspector.get_columns.return_value = [
+            {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": None},
+            {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+            {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+        ]
+        # Mock get_pk_constraint for reflection
+        self.mock_inspector.get_pk_constraint.return_value = {'constrained_columns': ['id'], 'name': None}
+        # Mock get_foreign_keys for reflection
+        self.mock_inspector.get_foreign_keys.return_value = []
+
 
         # Patch sqlalchemy.inspect to return our mock inspector
         self.patch_inspector = patch(
@@ -36,15 +48,11 @@ class TestSQLDatabaseComments(unittest.TestCase):
 
         # Create test database object *after* patching inspect
         try:
+            # Use lazy_table_reflection=True to avoid immediate reflection calls in __init__
             self.db = SQLDatabase(engine=self.mock_engine, metadata=self.metadata, lazy_table_reflection=True)
-        except NoInspectionAvailable:
-            # This might still happen if the mock setup isn't perfect,
-            # but the core issue is addressed by patching earlier.
-            # For the test's purpose, we can proceed if the patch was the issue.
-            self.fail(
-                "SQLDatabase initialization failed even after patching inspect. "
-                "Check mock setup."
-            )
+        except Exception as e:
+             self.fail(f"Unexpected exception during SQLDatabase init: {e}")
+
 
     def tearDown(self) -> None:
         """Cleanup after each test"""
@@ -73,6 +81,9 @@ class TestSQLDatabaseComments(unittest.TestCase):
         # Set engine dialect
         self.mock_engine.dialect.name = dialect
 
+        # Clear existing metadata if necessary, or use a fresh MetaData object
+        self.metadata.clear()
+
         # Create test table
         test_table = Table(
             "test_table",
@@ -82,84 +93,96 @@ class TestSQLDatabaseComments(unittest.TestCase):
             Column("age", Integer, comment=comments.get("age")),
         )
 
-        # Mock table compilation function.
-        # We need to patch the CreateTable class within the test file's scope
-        # or where it's imported in sql_database.py if that's different.
-        # Assuming it's imported directly from sqlalchemy.schema
-        with patch("langchain_community.utilities.sql_database.CreateTable") as MockCreateTable:
-            mock_compiler = MockCreateTable.return_value.compile
-            mock_compiler.return_value = (
-                "CREATE TABLE test_table (\n\tid INTEGER PRIMARY KEY,"
-                "\n\tname VARCHAR(100),\n\tage INTEGER\n)"
-            )
+        # Mock reflection to return the columns with comments
+        # This is crucial because lazy reflection will call inspect later
+        self.mock_inspector.get_columns.return_value = [
+            {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": comments.get("id")},
+            {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": comments.get("name")},
+            {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": comments.get("age")},
+        ]
+        self.mock_inspector.get_table_names.return_value = ["test_table"] # Ensure table is discoverable
 
-        # Insert table into metadata (mocking internal SQLAlchemy behavior)
-        self.metadata._add_table("test_table", None, test_table)
+
+        # No need to mock CreateTable here, let the actual code call it.
+        # We will patch it during the get_table_info call in the tests.
+
+        # No need to manually add table to metadata, reflection handles it
+        # self.metadata._add_table("test_table", None, test_table)
 
         return test_table
 
+    def _run_test_with_mocked_createtable(self, dialect: str) -> None:
+        """Helper function to run comment tests with CreateTable mocked."""
+        self.setup_mock_table_with_comments(dialect)
+
+        # Define the expected CREATE TABLE string
+        expected_create_table_sql = (
+            "CREATE TABLE test_table (\n\tid INTEGER NOT NULL, "
+            "\n\tname VARCHAR(100), \n\tage INTEGER, \n\tPRIMARY KEY (id)\n)"
+        )
+
+        # Patch CreateTable specifically for the get_table_info call
+        with patch("langchain_community.utilities.sql_database.CreateTable") as MockCreateTable:
+            # Mock the compile method to return a specific string
+            mock_compiler = MockCreateTable.return_value.compile
+            mock_compiler.return_value = expected_create_table_sql
+
+            # Call get_table_info with get_col_comments=True
+            table_info = self.db.get_table_info(get_col_comments=True)
+
+        # Verify CREATE TABLE statement (using the mocked value)
+        self.assertIn(expected_create_table_sql.strip(), table_info)
+
+        # Verify comments are included in table info in the correct format
+        self.assertIn("/*\nColumn Comments:", table_info)
+        self.assertIn("'id': 'Primary key'", table_info)
+        self.assertIn("'name': 'Name of the person'", table_info)
+        self.assertIn("'age': 'Age of the person'", table_info)
+        self.assertIn("*/", table_info)
+
+
     def test_postgres_get_col_comments(self) -> None:
         """Test retrieving column comments from PostgreSQL"""
-        # Setup PostgreSQL table with comments
-        self.setup_mock_table_with_comments("postgresql")
-
-        # Call get_table_info with get_col_comments=True
-        table_info = self.db.get_table_info(get_col_comments=True)
-
-        # Verify comments are included in table info
-        self.assertIn("Column 'id': Primary key", table_info)
-        self.assertIn("Column 'name': Name of the person", table_info)
-        self.assertIn("Column 'age': Age of the person", table_info)
+        self._run_test_with_mocked_createtable("postgresql")
 
     def test_mysql_get_col_comments(self) -> None:
         """Test retrieving column comments from MySQL"""
-        # Setup MySQL table with comments
-        self.setup_mock_table_with_comments("mysql")
-
-        # Call get_table_info with get_col_comments=True
-        table_info = self.db.get_table_info(get_col_comments=True)
-
-        # Verify comments are included in table info
-        self.assertIn("Column 'id': Primary key", table_info)
-        self.assertIn("Column 'name': Name of the person", table_info)
-        self.assertIn("Column 'age': Age of the person", table_info)
+        self._run_test_with_mocked_createtable("mysql")
 
     def test_oracle_get_col_comments(self) -> None:
         """Test retrieving column comments from Oracle"""
-        # Setup Oracle table with comments
-        self.setup_mock_table_with_comments("oracle")
-
-        # Call get_table_info with get_col_comments=True
-        table_info = self.db.get_table_info(get_col_comments=True)
-
-        # Verify comments are included in table info
-        self.assertIn("Column 'id': Primary key", table_info)
-        self.assertIn("Column 'name': Name of the person", table_info)
-        self.assertIn("Column 'age': Age of the person", table_info)
+        self._run_test_with_mocked_createtable("oracle")
 
     def test_sqlite_no_comments(self) -> None:
-        """Test that SQLite does not support column comments"""
-        # Setup SQLite table (without comments)
+        """Test that SQLite does not add a comment block when comments are missing."""
+        # Setup SQLite table (comments will be ignored by SQLAlchemy for SQLite)
         self.setup_mock_table_with_comments("sqlite", comments={})
+        # Mock reflection to return columns *without* comments
+        self.mock_inspector.get_columns.return_value = [
+             {"name": "id", "type": Integer(), "nullable": False, "default": None, "autoincrement": "auto", "comment": None},
+             {"name": "name", "type": String(100), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+             {"name": "age", "type": Integer(), "nullable": True, "default": None, "autoincrement": "auto", "comment": None},
+        ]
 
-        # Check that an exception is raised when calling get_table_info
-        # Note: The check for dialect support happens in create_sql_query_chain,
-        # not directly in get_table_info. get_table_info might still try
-        # and fail if comments are requested for an unsupported dialect.
-        # Let's adjust the test to reflect the expected behavior of get_table_info.
-        # It should *try* to get comments but might fail or return nothing.
-        # The ValueError is raised higher up.
-        try:
+        # Define the expected CREATE TABLE string
+        expected_create_table_sql = (
+            "CREATE TABLE test_table (\n\tid INTEGER NOT NULL, "
+            "\n\tname VARCHAR(100), \n\tage INTEGER, \n\tPRIMARY KEY (id)\n)"
+        )
+
+        # Patch CreateTable specifically for the get_table_info call
+        with patch("langchain_community.utilities.sql_database.CreateTable") as MockCreateTable:
+            mock_compiler = MockCreateTable.return_value.compile
+            mock_compiler.return_value = expected_create_table_sql
+
+            # Call get_table_info with get_col_comments=True
+            # Even if True, SQLite won't have comments to add.
             table_info = self.db.get_table_info(get_col_comments=True)
-            # Depending on the exact mocking, it might succeed but find no comments
-            self.assertNotIn("Column Comments:", table_info)
-        except ValueError as e:
-            # Or it might raise an error if the mock setup leads to it
-            self.assertIn(
-                "Column comments are available on PostgreSQL, MySQL, Oracle", str(e)
-            )
-        except Exception as e:
-            self.fail(f"Unexpected exception raised: {e}")
+
+        # Verify CREATE TABLE statement
+        self.assertIn(expected_create_table_sql.strip(), table_info)
+        # Verify comments block is NOT included
+        self.assertNotIn("Column Comments:", table_info)
 
 
 if __name__ == "__main__":
