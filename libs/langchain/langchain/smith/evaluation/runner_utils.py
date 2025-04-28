@@ -331,7 +331,7 @@ def _validate_example_inputs_for_language_model(
     input_mapper: Optional[Callable[[dict], Any]],
 ) -> None:
     if input_mapper:
-        prompt_input = input_mapper(first_example.inputs)
+        prompt_input = input_mapper(first_example.inputs or {})
         if not isinstance(prompt_input, str) and not (
             isinstance(prompt_input, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_input)
@@ -344,10 +344,10 @@ def _validate_example_inputs_for_language_model(
             )
     else:
         try:
-            _get_prompt(first_example.inputs)
+            _get_prompt(first_example.inputs or {})
         except InputFormatError:
             try:
-                _get_messages(first_example.inputs)
+                _get_messages(first_example.inputs or {})
             except InputFormatError:
                 raise InputFormatError(
                     "Example inputs do not match language model input format. "
@@ -366,7 +366,7 @@ def _validate_example_inputs_for_chain(
 ) -> None:
     """Validate that the example inputs match the chain input keys."""
     if input_mapper:
-        first_inputs = input_mapper(first_example.inputs)
+        first_inputs = input_mapper(first_example.inputs or {})
         missing_keys = set(chain.input_keys).difference(first_inputs)
         if not isinstance(first_inputs, dict):
             raise InputFormatError(
@@ -780,7 +780,7 @@ async def _arun_llm_or_chain(
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             output: Any = await _arun_llm(
                 llm_or_chain_factory,
-                example.inputs,
+                example.inputs or {},
                 tags=config["tags"],
                 callbacks=config["callbacks"],
                 input_mapper=input_mapper,
@@ -790,7 +790,7 @@ async def _arun_llm_or_chain(
             chain = llm_or_chain_factory()
             output = await _arun_chain(
                 chain,
-                example.inputs,
+                example.inputs or {},
                 tags=config["tags"],
                 callbacks=config["callbacks"],
                 input_mapper=input_mapper,
@@ -932,7 +932,7 @@ def _run_llm_or_chain(
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
             output: Any = _run_llm(
                 llm_or_chain_factory,
-                example.inputs,
+                example.inputs or {},
                 config["callbacks"],
                 tags=config["tags"],
                 input_mapper=input_mapper,
@@ -942,7 +942,7 @@ def _run_llm_or_chain(
             chain = llm_or_chain_factory()
             output = _run_chain(
                 chain,
-                example.inputs,
+                example.inputs or {},
                 config["callbacks"],
                 tags=config["tags"],
                 input_mapper=input_mapper,
