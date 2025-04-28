@@ -381,7 +381,7 @@ class Chroma(VectorStore):
             where: dict used to filter results by metadata.
                     E.g. {"color" : "red"}.
             where_document: dict used to filter by the document contents.
-                    E.g. {"$contains": "hello"}}.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
