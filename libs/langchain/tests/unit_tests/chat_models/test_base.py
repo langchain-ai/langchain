@@ -119,6 +119,7 @@ def test_configurable() -> None:
             "reasoning_effort": None,
             "frequency_penalty": None,
             "seed": None,
+            "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,
             "logit_bias": None,
