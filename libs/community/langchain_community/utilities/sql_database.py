@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union, TypedDict
+from typing import (Any, Dict, Iterable, List, Literal, Optional, Sequence, Union,
+                    TypedDict)
 
 import sqlalchemy
 from langchain_core._api import deprecated
@@ -445,7 +446,8 @@ class SQLDatabase:
             else:
                 raise ValueError(f"Unsupported operator: {operator}")
 
-            command = select(table).where(filter_clause).limit(self._sample_rows_in_table_info)
+            command = (select(table).where(filter_clause)
+                       .limit(self._sample_rows_in_table_info))
 
         # save the columns in string format
         columns_str = "\t".join([col.name for col in table.columns])
