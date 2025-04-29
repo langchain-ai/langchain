@@ -401,7 +401,7 @@ ASRInputType = AudioStream
 ASROutputType = str
 
 
-class RivaASR(  # type: ignore[override]
+class RivaASR(
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[ASRInputType, ASROutputType],
@@ -509,7 +509,7 @@ TTSInputType = Union[str, AnyMessage, PromptValue]
 TTSOutputType = bytes
 
 
-class RivaTTS(  # type: ignore[override]
+class RivaTTS(
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[TTSInputType, TTSOutputType],

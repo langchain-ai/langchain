@@ -96,7 +96,7 @@ class GenericLoader(BaseLoader):
 
     def __init__(
         self,
-        blob_loader: BlobLoader,  # type: ignore[valid-type]
+        blob_loader: BlobLoader,
         blob_parser: BaseBlobParser,
     ) -> None:
         """A generic document loader.
@@ -112,7 +112,7 @@ class GenericLoader(BaseLoader):
         self,
     ) -> Iterator[Document]:
         """Load documents lazily. Use this when working at a large scale."""
-        for blob in self.blob_loader.yield_blobs():  # type: ignore[attr-defined]
+        for blob in self.blob_loader.yield_blobs():
             yield from self.blob_parser.lazy_parse(blob)
 
     def load_and_split(
@@ -159,7 +159,7 @@ class GenericLoader(BaseLoader):
         Returns:
             A generic document loader.
         """
-        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined, misc]
+        blob_loader = FileSystemBlobLoader(
             path,
             glob=glob,
             exclude=exclude,

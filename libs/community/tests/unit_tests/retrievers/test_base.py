@@ -178,12 +178,12 @@ class FakeRetrieverV2(BaseRetriever):
 
 @pytest.fixture
 def fake_retriever_v2() -> BaseRetriever:
-    return FakeRetrieverV2()  # type: ignore[abstract]
+    return FakeRetrieverV2()
 
 
 @pytest.fixture
 def fake_erroring_retriever_v2() -> BaseRetriever:
-    return FakeRetrieverV2(throw_error=True)  # type: ignore[abstract]
+    return FakeRetrieverV2(throw_error=True)
 
 
 def test_fake_retriever_v2(

@@ -12,12 +12,7 @@ from langchain_core._api import warn_deprecated
 # * Creating namespaces for pydantic v1 and v2 should allow us to write code that
 #   unambiguously uses either v1 or v2 API.
 # * This change is easier to roll out and roll back.
-
-try:
-    from pydantic.v1 import *  # noqa: F403
-except ImportError:
-    from pydantic import *  # type: ignore # noqa: F403
-
+from pydantic.v1 import *  # noqa: F403
 
 try:
     _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])

@@ -18,7 +18,7 @@ class SearxSearchQueryInput(BaseModel):
     query: str = Field(description="query to look up on searx")
 
 
-class SearxSearchRun(BaseTool):  # type: ignore[override, override]
+class SearxSearchRun(BaseTool):
     """Tool that queries a Searx instance."""
 
     name: str = "searx_search"
@@ -48,7 +48,7 @@ class SearxSearchRun(BaseTool):  # type: ignore[override, override]
         return await self.wrapper.arun(query, **self.kwargs)
 
 
-class SearxSearchResults(BaseTool):  # type: ignore[override, override]
+class SearxSearchResults(BaseTool):
     """Tool that queries a Searx instance and gets back json."""
 
     name: str = "searx_search_results"

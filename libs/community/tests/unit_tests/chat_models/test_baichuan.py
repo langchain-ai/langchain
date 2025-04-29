@@ -25,7 +25,7 @@ def test_initialization() -> None:
     """Test chat model initialization."""
 
     for model in [
-        ChatBaichuan(model="Baichuan2-Turbo-192K", api_key="test-api-key", timeout=40),  # type: ignore[arg-type, call-arg]
+        ChatBaichuan(model="Baichuan2-Turbo-192K", api_key="test-api-key", timeout=40),  # type: ignore[arg-type]
         ChatBaichuan(  # type: ignore[call-arg]
             model="Baichuan2-Turbo-192K",
             baichuan_api_key="test-api-key",
@@ -149,8 +149,8 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
 
 
 def test_chat_baichuan_with_base_url() -> None:
-    chat = ChatBaichuan(  # type: ignore[call-arg]
+    chat = ChatBaichuan(
         api_key="your-api-key",  # type: ignore[arg-type]
-        base_url="https://exmaple.com",  # type: ignore[arg-type]
+        base_url="https://exmaple.com",
     )
     assert chat.baichuan_api_base == "https://exmaple.com"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from abc import abstractmethod
 from typing import Any, Optional
 
@@ -239,7 +240,7 @@ class StringExampleMapper(Serializable):
         return self.map(example)
 
 
-class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, override]
+class StringRunEvaluatorChain(Chain, RunEvaluator):
     """Evaluate Run and optional examples."""
 
     run_mapper: StringRunMapper
@@ -325,7 +326,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
         return feedback
 
     def evaluate_run(
-        self, run: Run, example: Optional[Example] = None
+        self,
+        run: Run,
+        example: Optional[Example] = None,
+        evaluator_run_id: Optional[uuid.UUID] = None,
     ) -> EvaluationResult:
         """Evaluate an example."""
         try:
@@ -339,7 +343,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, ov
             )
 
     async def aevaluate_run(
-        self, run: Run, example: Optional[Example] = None
+        self,
+        run: Run,
+        example: Optional[Example] = None,
+        evaluator_run_id: Optional[uuid.UUID] = None,
     ) -> EvaluationResult:
         """Evaluate an example."""
         try:

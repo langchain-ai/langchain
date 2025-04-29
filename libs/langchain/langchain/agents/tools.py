@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.tools import BaseTool, tool
 
 
-class InvalidTool(BaseTool):  # type: ignore[override]
+class InvalidTool(BaseTool):
     """Tool that is run when invalid tool name is encountered by agent."""
 
     name: str = "invalid_tool"

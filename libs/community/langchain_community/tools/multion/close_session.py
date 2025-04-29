@@ -27,7 +27,7 @@ class CloseSessionSchema(BaseModel):
     )
 
 
-class MultionCloseSession(BaseTool):  # type: ignore[override, override]
+class MultionCloseSession(BaseTool):
     """Tool that closes an existing Multion Browser Window with provided fields.
 
     Attributes:

@@ -20,7 +20,7 @@ else:
         pass
 
 
-class SlackBaseTool(BaseTool):  # type: ignore[override]
+class SlackBaseTool(BaseTool):
     """Base class for Slack tools."""
 
     client: WebClient = Field(default_factory=login)

@@ -11,7 +11,7 @@ from pydantic import model_validator
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsTextAnalyticsHealthTool(BaseTool):  # type: ignore[override]
+class AzureCogsTextAnalyticsHealthTool(BaseTool):
     """Tool that queries the Azure Cognitive Services Text Analytics for Health API.
 
     In order to set this up, follow instructions at:
