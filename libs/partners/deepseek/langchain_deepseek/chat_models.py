@@ -255,12 +255,12 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
-                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
+                if (reasoning_content := top.get("delta", {}).get("reasoning_content")) != None:
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning_content
                     )
                 # Handle use via OpenRouter
-                elif reasoning := top.get("delta", {}).get("reasoning"):
+                elif (reasoning := top.get("delta", {}).get("reasoning")) != None:
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning
                     )
