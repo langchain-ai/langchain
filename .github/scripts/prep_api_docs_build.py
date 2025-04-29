@@ -69,7 +69,7 @@ def main():
         clean_target_directories([
             p
             for p in package_yaml["packages"]
-            if p["repo"].startswith("langchain-ai/")
+            if (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
         ])
 
@@ -78,7 +78,7 @@ def main():
             p
             for p in package_yaml["packages"]
             if not p.get("disabled", False)
-            and p["repo"].startswith("langchain-ai/")
+            and (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
         ])
 

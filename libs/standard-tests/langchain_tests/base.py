@@ -41,14 +41,12 @@ class BaseStandardTests(ABC):
         base_tests = set(
             [method for method in dir(comparison_class) if method.startswith("test_")]
         )
-        non_standard_tests = running_tests - base_tests
-        assert not non_standard_tests, f"Non-standard tests found: {non_standard_tests}"
         deleted_tests = base_tests - running_tests
         assert not deleted_tests, f"Standard tests deleted: {deleted_tests}"
 
         overridden_tests = [
             method
-            for method in running_tests
+            for method in base_tests
             if getattr(self.__class__, method) is not getattr(comparison_class, method)
         ]
 

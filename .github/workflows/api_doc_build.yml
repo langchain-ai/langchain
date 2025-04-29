@@ -26,7 +26,20 @@ jobs:
         id: get-unsorted-repos
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.packages[].repo' langchain/libs/packages.yml
+          cmd: |
+            yq '
+              .packages[]
+              | select(
+                  (
+                    (.repo | test("^langchain-ai/"))
+                    and
+                    (.repo != "langchain-ai/langchain")
+                  )
+                  or
+                  (.include_in_api_ref // false)
+                )
+              | .repo
+            ' langchain/libs/packages.yml
 
       - name: Parse YAML and checkout repos
         env:
@@ -38,11 +51,9 @@ jobs:
           
           # Checkout each unique repository that is in langchain-ai org
           for repo in $REPOS; do
-            if [[ "$repo" != "langchain-ai/langchain" && "$repo" == langchain-ai/* ]]; then
-              REPO_NAME=$(echo $repo | cut -d'/' -f2)
-              echo "Checking out $repo to $REPO_NAME"
-              git clone --depth 1 https://github.com/$repo.git $REPO_NAME
-            fi
+            REPO_NAME=$(echo $repo | cut -d'/' -f2)
+            echo "Checking out $repo to $REPO_NAME"
+            git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
       - name: Setup python ${{ env.PYTHON_VERSION }}

@@ -1,7 +1,7 @@
 """Test ChatAnthropic chat model."""
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -136,7 +136,7 @@ def test_anthropic_complex_structured_output() -> None:
         sender_address: Optional[str] = Field(
             None, description="The sender's address, if available"
         )
-        action_items: List[str] = Field(
+        action_items: list[str] = Field(
             ..., description="A list of action items requested by the email"
         )
         topic: str = Field(

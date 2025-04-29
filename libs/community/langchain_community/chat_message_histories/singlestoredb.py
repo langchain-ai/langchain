@@ -6,6 +6,7 @@ from typing import (
     List,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -16,6 +17,18 @@ from langchain_core.messages import (
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.22",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `SingleStoreChatMessageHistory` "
+        "implementation in `langchain_singlestore`. "
+        "See <https://github.com/singlestore-labs/langchain-singlestore> for details "
+        " about the new implementation."
+    ),
+    alternative="from langchain_singlestore import SingleStoreChatMessageHistory",
+    pending=True,
+)
 class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in a SingleStoreDB database."""
 
@@ -212,7 +225,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             conn.close()
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from SingleStoreDB"""
         self._create_table_if_not_exists()
         conn = self.connection_pool.connect()

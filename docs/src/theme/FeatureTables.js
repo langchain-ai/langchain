@@ -237,6 +237,17 @@ const FEATURE_TABLES = {
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
             },
+            {
+                "name": "ChatPerplexity",
+                "package": "langchain-perplexity",
+                "link": "perplexity",
+                "structured_output": true,
+                "tool_calling": false,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/perplexity/chat_models/langchain_perplexity.chat_models.ChatPerplexity.html"
+            }
         ],
     },
     llms: {
@@ -354,6 +365,12 @@ const FEATURE_TABLES = {
                 link: "openai",
                 package: "langchain-openai",
                 apiLink: "https://python.langchain.com/api_reference/openai/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html"
+            },
+            {
+                name: "Google Gemini",
+                link: "google-generative-ai",
+                package: "langchain-google-genai",
+                apiLink: "https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html"
             },
             {
                 name: "Together",
@@ -1118,6 +1135,19 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: false,
+            },
+            {
+                name: "openGauss",
+                link: "openGauss",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: true,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
             },
             {
                 name: "PGVector",

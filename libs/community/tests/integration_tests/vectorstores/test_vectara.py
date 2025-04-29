@@ -105,7 +105,7 @@ def test_vectara_add_documents(vectara1: Vectara) -> None:
 def vectara2() -> Generator[Vectara, None, None]:
     # download documents to local storage and then upload as files
     # attention paper and deep learning book
-    vectara2: Vectara = Vectara()  # type: ignore
+    vectara2: Vectara = Vectara()
 
     urls = [
         (
@@ -268,7 +268,7 @@ def vectara3() -> Iterable[Vectara]:
     vectara3.delete(doc_ids)
 
 
-def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:
     # test max marginal relevance
     output1 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -299,7 +299,7 @@ def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[
     )
 
 
-def test_vectara_rerankers(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_rerankers(vectara3: Vectara) -> None:
     # test Vectara multi-lingual reranker
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(reranker="rerank_multilingual_v1", rerank_k=50)

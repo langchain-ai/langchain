@@ -135,7 +135,7 @@ def _get_assistants_tool(
         Dict[str, Any]: A dictionary of tools that are converted into OpenAI tools.
     """
     if _is_assistants_builtin_tool(tool):
-        return tool  # type: ignore
+        return tool  # type: ignore[return-value]
     else:
         return convert_to_openai_tool(tool)
 
@@ -288,8 +288,8 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
-            tool_resources=tool_resources,  # type: ignore[arg-type]
+            tools=[_get_assistants_tool(tool) for tool in tools],
+            tool_resources=tool_resources,
             model=model,
             extra_body=extra_body,
             **model_kwargs,
@@ -430,8 +430,8 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,  # type: ignore
-            tool_resources=tool_resources,  # type: ignore[arg-type]
+            tools=openai_tools,
+            tool_resources=tool_resources,
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)

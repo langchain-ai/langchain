@@ -1,7 +1,5 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional, Type
-
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
@@ -17,7 +15,7 @@ rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 
 class BaseTestGroq(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq
 
     @pytest.mark.xfail(reason="Not yet implemented.")
@@ -41,10 +39,5 @@ class TestGroqLlama(BaseTestGroq):
         }
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return "any"
-
-    @property
     def supports_json_mode(self) -> bool:
-        return False  # Not supported in streaming mode
+        return True

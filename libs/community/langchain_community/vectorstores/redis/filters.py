@@ -140,7 +140,7 @@ class RedisTag(RedisFilterField):
         elif isinstance(other, str):
             other = [other]
 
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, operator)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, operator)  # type: ignore[arg-type]
 
     @check_operator_misuse
     def __eq__(
@@ -240,7 +240,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") == 90210
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
@@ -254,7 +254,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("zipcode") != 90210
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __gt__(self, other: Union[int, float]) -> "RedisFilterExpression":
@@ -267,7 +267,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") > 18
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GT)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GT)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __lt__(self, other: Union[int, float]) -> "RedisFilterExpression":
@@ -280,7 +280,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") < 18
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LT)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LT)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __ge__(self, other: Union[int, float]) -> "RedisFilterExpression":
@@ -293,7 +293,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") >= 18
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GE)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.GE)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __le__(self, other: Union[int, float]) -> "RedisFilterExpression":
@@ -306,7 +306,7 @@ class RedisNum(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisNum
             >>> filter = RedisNum("age") <= 18
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LE)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LE)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
 
@@ -336,7 +336,7 @@ class RedisText(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisText
             >>> filter = RedisText("job") == "engineer"
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.EQ)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     @check_operator_misuse
@@ -350,7 +350,7 @@ class RedisText(RedisFilterField):
             >>> from langchain_community.vectorstores.redis import RedisText
             >>> filter = RedisText("job") != "engineer"
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.NE)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __mod__(self, other: str) -> "RedisFilterExpression":
@@ -366,7 +366,7 @@ class RedisText(RedisFilterField):
             >>> filter = RedisText("job") % "engineer|doctor" # contains either term
             >>> filter = RedisText("job") % "engineer doctor" # contains both terms
         """
-        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LIKE)  # type: ignore
+        self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LIKE)  # type: ignore[arg-type]
         return RedisFilterExpression(str(self))
 
     def __str__(self) -> str:

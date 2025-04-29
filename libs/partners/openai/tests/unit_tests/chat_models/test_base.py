@@ -3,7 +3,7 @@
 import json
 from functools import partial
 from types import TracebackType
-from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -34,7 +34,10 @@ from openai.types.responses.response_function_web_search import (
 )
 from openai.types.responses.response_output_refusal import ResponseOutputRefusal
 from openai.types.responses.response_output_text import ResponseOutputText
-from openai.types.responses.response_usage import OutputTokensDetails
+from openai.types.responses.response_usage import (
+    InputTokensDetails,
+    OutputTokensDetails,
+)
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -238,7 +241,7 @@ class MockAsyncContextManager:
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:
@@ -267,7 +270,7 @@ class MockSyncContextManager:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:
@@ -379,7 +382,7 @@ DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"
 
 
 @pytest.fixture
-def mock_deepseek_completion() -> List[Dict]:
+def mock_deepseek_completion() -> list[dict]:
     list_chunk_data = DEEPSEEK_STREAM_DATA.split("\n")
     result_list = []
     for msg in list_chunk_data:
@@ -447,7 +450,7 @@ OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":
 
 
 @pytest.fixture
-def mock_openai_completion() -> List[Dict]:
+def mock_openai_completion() -> list[dict]:
     list_chunk_data = OPENAI_STREAM_DATA.split("\n")
     result_list = []
     for msg in list_chunk_data:
@@ -612,7 +615,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
 
 
 def test_custom_token_counting() -> None:
-    def token_encoder(text: str) -> List[int]:
+    def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
     llm = ChatOpenAI(custom_get_token_ids=token_encoder)
@@ -646,6 +649,51 @@ def test_format_message_content() -> None:
     ]
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
+    # Standard multi-modal inputs
+    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
+    assert expected == _format_message_content(content)
+
+    content = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/png",
+        }
+    ]
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,<base64 data>"},
+        }
+    ]
+    assert expected == _format_message_content(content)
+
+    content = [
+        {
+            "type": "file",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        }
+    ]
+    expected = [
+        {
+            "type": "file",
+            "file": {
+                "filename": "my_file",
+                "file_data": "data:application/pdf;base64,<base64 data>",
+            },
+        }
+    ]
+    assert expected == _format_message_content(content)
+
+    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
+    assert expected == _format_message_content(content)
+
 
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
@@ -659,8 +707,8 @@ class MakeASandwich(BaseModel):
 
     bread_type: str
     cheese_type: str
-    condiments: List[str]
-    vegetables: List[str]
+    condiments: list[str]
+    vegetables: list[str]
 
 
 @pytest.mark.parametrize(
@@ -692,7 +740,7 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_with_structured_output(
-    schema: Union[Type, Dict[str, Any], None],
+    schema: Union[type, dict[str, Any], None],
     method: Literal["function_calling", "json_mode", "json_schema"],
     include_raw: bool,
     strict: Optional[bool],
@@ -749,6 +797,25 @@ def test_get_num_tokens_from_messages() -> None:
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
 
+    # Test file inputs
+    messages = [
+        HumanMessage(
+            [
+                "Summarize this document.",
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "my file",
+                        "file_data": "data:application/pdf;base64,<data>",
+                    },
+                },
+            ]
+        )
+    ]
+    with pytest.warns(match="file inputs are not supported"):
+        actual = llm.get_num_tokens_from_messages(messages)
+        assert actual == 13
+
 
 class Foo(BaseModel):
     bar: int
@@ -765,7 +832,7 @@ class Foo(BaseModel):
         # FooV1
     ],
 )
-def test_schema_from_with_structured_output(schema: Type) -> None:
+def test_schema_from_with_structured_output(schema: type) -> None:
     """Test schema from with_structured_output."""
 
     llm = ChatOpenAI(model="gpt-4o")
@@ -1002,6 +1069,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
             input_tokens=10,
             output_tokens=3,
             total_tokens=13,
+            input_tokens_details=InputTokensDetails(cached_tokens=0),
             output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
         ),
     )
@@ -1569,23 +1637,6 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[1]["id"] == "func_456"
 
 
-def test__construct_responses_api_input_missing_function_call_ids() -> None:
-    """Test AI messages with tool calls but missing function call IDs raise an error."""
-    tool_calls = [
-        {
-            "id": "call_123",
-            "name": "get_weather",
-            "args": {"location": "San Francisco"},
-            "type": "tool_call",
-        }
-    ]
-
-    ai_message = AIMessage(content="", tool_calls=tool_calls)
-
-    with pytest.raises(ValueError):
-        _construct_responses_api_input([ai_message])
-
-
 def test__construct_responses_api_input_tool_message_conversion() -> None:
     """Test that tool messages are properly converted to function_call_output."""
     messages = [
@@ -1681,3 +1732,9 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
 
     # assert no mutation has occurred
     assert messages_copy == messages
+
+
+def test_service_tier() -> None:
+    llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["service_tier"] == "flex"

@@ -183,7 +183,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in MongoDB Atlas
-        insert_result = self._collection.insert_many(to_insert)  # type: ignore
+        insert_result = self._collection.insert_many(to_insert)
         return insert_result.inserted_ids
 
     def _similarity_search_with_score(
@@ -210,7 +210,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         ]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
-        cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
+        cursor = self._collection.aggregate(pipeline)
         docs = []
         for res in cursor:
             text = res.pop(self._text_key)

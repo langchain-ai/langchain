@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.41",
-    "langchain-text-splitters<1.0.0,>=0.3.6",
+    "langchain-core<1.0.0,>=0.3.55",
+    "langchain-text-splitters<1.0.0,>=0.3.8",
     "langsmith<0.4,>=0.1.17",
     "pydantic<3.0.0,>=2.7.4",
     "SQLAlchemy<3,>=1.4",
@@ -17,7 +17,7 @@ dependencies = [
     "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
 ]
 name = "langchain"
-version = "0.3.20"
+version = "0.3.24"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -25,6 +25,7 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
+azure-ai = ["langchain-azure-ai"]
 cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
@@ -37,14 +38,12 @@ groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
+perplexity = ["langchain-perplexity"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
-
-[project.scripts]
-langchain-server = "langchain.server:main"
 
 [dependency-groups]
 test = [
@@ -72,7 +71,8 @@ test = [
     "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
-    "numpy<3,>=1.26.4",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
@@ -91,7 +91,7 @@ lint = [
     "cffi; python_version >= \"3.10\"",
 ]
 typing = [
-    "mypy<2.0,>=1.10",
+    "mypy<2.0,>=1.15",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
     "types-toml<1.0.0.0,>=0.10.8.1",
@@ -101,7 +101,8 @@ typing = [
     "mypy-protobuf<4.0.0,>=3.0.0",
     "langchain-core",
     "langchain-text-splitters",
-    "numpy<3,>=1.26.4",
+    "numpy>=1.26.4; python_version < '3.13'",
+    "numpy>=2.1.0; python_version >= '3.13'",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",
@@ -125,7 +126,7 @@ exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+warn_unused_ignores = "True"
 
 [tool.codespell]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
@@ -133,7 +134,8 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "D"]
+select = ["E", "F", "I", "PGH003", "T201", "D", "UP"]
+ignore = ["UP007", ]
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]

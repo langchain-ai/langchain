@@ -59,9 +59,9 @@ class DocumentLoaderAsParser(BaseBlobParser):
         """
         Use underlying DocumentLoader to lazily parse the blob.
         """
-        doc_loader = self.DocumentLoaderClass(
+        doc_loader = self.DocumentLoaderClass(  # type: ignore[call-arg]
             file_path=blob.path, **self.document_loader_kwargs
-        )  # type: ignore
+        )
         for document in doc_loader.lazy_load():
             document.metadata.update(blob.metadata)
             yield document

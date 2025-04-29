@@ -716,7 +716,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
+                    first_tool_only=True,
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -725,7 +725,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

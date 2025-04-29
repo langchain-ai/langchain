@@ -1,3 +1,5 @@
+"""Utilities to render tools."""
+
 from __future__ import annotations
 
 from inspect import signature

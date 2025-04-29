@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
@@ -42,6 +43,16 @@ def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
         return content
 
     return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
+
+def sanitize_schema(schema: str) -> str:
+    """Sanitize a schema name to only contain letters, digits, and underscores."""
+    if not re.match(r"^[a-zA-Z0-9_]+$", schema):
+        raise ValueError(
+            f"Schema name '{schema}' contains invalid characters. "
+            "Schema names must contain only letters, digits, and underscores."
+        )
+    return schema
 
 
 class SQLDatabase:
@@ -305,7 +316,9 @@ class SQLDatabase:
         """Information about all tables in the database."""
         return self.get_table_info()
 
-    def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
+    def get_table_info(
+        self, table_names: Optional[List[str]] = None, get_col_comments: bool = False
+    ) -> str:
         """Get information about specified tables.
 
         Follows best practices as specified in: Rajkumar et al, 2022
@@ -345,14 +358,39 @@ class SQLDatabase:
                 tables.append(self._custom_table_info[table.name])
                 continue
 
-            # Ignore JSON datatyped columns
-            for k, v in table.columns.items():  # AttributeError: items in sqlalchemy v1
-                if type(v.type) is NullType:
-                    table._columns.remove(v)
+            # Ignore JSON datatyped columns - SQLAlchemy v1.x compatibility
+            try:
+                # For SQLAlchemy v2.x
+                for k, v in table.columns.items():
+                    if type(v.type) is NullType:
+                        table._columns.remove(v)
+            except AttributeError:
+                # For SQLAlchemy v1.x
+                for k, v in dict(table.columns).items():
+                    if type(v.type) is NullType:
+                        table._columns.remove(v)
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
+
+            # Add column comments as dictionary
+            if get_col_comments:
+                try:
+                    column_comments_dict = {}
+                    for column in table.columns:
+                        if column.comment:
+                            column_comments_dict[column.name] = column.comment
+
+                    if column_comments_dict:
+                        table_info += (
+                            f"\n\n/*\nColumn Comments: {column_comments_dict}\n*/"
+                        )
+                except Exception:
+                    raise ValueError(
+                        "Column comments are available on PostgreSQL, MySQL, Oracle"
+                    )
+
             has_extra_info = (
                 self._indexes_in_table_info or self._sample_rows_in_table_info
             )
@@ -384,7 +422,7 @@ class SQLDatabase:
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows_result = connection.execute(command)  # type: ignore
+                sample_rows_result = connection.execute(command)
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_result)
@@ -463,6 +501,11 @@ class SQLDatabase:
                     connection.exec_driver_sql(
                         "SET search_path TO %s",
                         (self._schema,),
+                        execution_options=execution_options,
+                    )
+                elif self.dialect == "hana":
+                    connection.exec_driver_sql(
+                        f"SET SCHEMA {sanitize_schema(self._schema)}",
                         execution_options=execution_options,
                     )
 

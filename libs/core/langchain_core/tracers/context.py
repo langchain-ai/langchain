@@ -1,3 +1,5 @@
+"""Context management for tracers."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -39,7 +41,7 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
     """Throw an error because this has been replaced by tracing_v2_enabled."""
     msg = (
@@ -63,7 +65,7 @@ def tracing_v2_enabled(
             Defaults to "default".
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        tags (List[str], optional): The tags to add to the run.
+        tags (list[str], optional): The tags to add to the run.
             Defaults to None.
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
@@ -89,11 +91,11 @@ def tracing_v2_enabled(
         tags=tags,
         client=client,
     )
+    token = tracing_v2_callback_var.set(cb)
     try:
-        tracing_v2_callback_var.set(cb)
         yield cb
     finally:
-        tracing_v2_callback_var.set(None)
+        tracing_v2_callback_var.reset(token)
 
 
 @contextmanager
@@ -109,9 +111,11 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
                 run_id = runs_cb.traced_runs[0].id
     """
     cb = RunCollectorCallbackHandler()
-    run_collector_var.set(cb)
-    yield cb
-    run_collector_var.set(None)
+    token = run_collector_var.set(cb)
+    try:
+        yield cb
+    finally:
+        run_collector_var.reset(token)
 
 
 def _get_trace_callbacks(
@@ -126,15 +130,13 @@ def _get_trace_callbacks(
             example_id=example_id,
         )
         if callback_manager is None:
-            from langchain_core.callbacks.base import Callbacks
-
-            cb = cast(Callbacks, [tracer])
+            cb = cast("Callbacks", [tracer])
         else:
             if not any(
                 isinstance(handler, LangChainTracer)
                 for handler in callback_manager.handlers
             ):
-                callback_manager.add_handler(tracer, True)
+                callback_manager.add_handler(tracer)
                 # If it already has a LangChainTracer, we don't need to add another one.
                 # this would likely mess up the trace hierarchy.
             cb = callback_manager
@@ -184,7 +186,7 @@ _configure_hooks: list[
 
 def register_configure_hook(
     context_var: ContextVar[Optional[Any]],
-    inheritable: bool,
+    inheritable: bool,  # noqa: FBT001
     handle_class: Optional[type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:
@@ -204,13 +206,12 @@ def register_configure_hook(
     if env_var is not None and handle_class is None:
         msg = "If env_var is set, handle_class must also be set to a non-None value."
         raise ValueError(msg)
-    from langchain_core.callbacks.base import BaseCallbackHandler
 
     _configure_hooks.append(
         (
             # the typings of ContextVar do not have the generic arg set as covariant
             # so we have to cast it
-            cast(ContextVar[Optional[BaseCallbackHandler]], context_var),
+            cast("ContextVar[Optional[BaseCallbackHandler]]", context_var),
             inheritable,
             handle_class,
             env_var,
@@ -218,4 +219,4 @@ def register_configure_hook(
     )
 
 
-register_configure_hook(run_collector_var, False)
+register_configure_hook(run_collector_var, inheritable=False)

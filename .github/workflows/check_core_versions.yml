@@ -1,0 +1,29 @@
+name: Check `langchain-core` version equality
+
+on:
+  pull_request:
+    paths:
+      - 'libs/core/pyproject.toml'
+      - 'libs/core/langchain_core/version.py'
+
+jobs:
+  check_version_equality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version equality
+        run: |
+          PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
+          VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' libs/core/langchain_core/version.py)
+
+          # Compare the two versions
+          if [ "$PYPROJECT_VERSION" != "$VERSION_PY_VERSION" ]; then
+            echo "langchain-core versions in pyproject.toml and version.py do not match!"
+            echo "pyproject.toml version: $PYPROJECT_VERSION"
+            echo "version.py version: $VERSION_PY_VERSION"
+            exit 1
+          else
+            echo "Versions match: $PYPROJECT_VERSION"
+          fi

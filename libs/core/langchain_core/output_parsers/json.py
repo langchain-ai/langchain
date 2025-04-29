@@ -1,10 +1,12 @@
+"""Parser for JSON output."""
+
 from __future__ import annotations
 
 import json
 from json import JSONDecodeError
 from typing import Annotated, Any, Optional, TypeVar, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 import pydantic
 from pydantic import SkipValidation
 
@@ -17,16 +19,16 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.pydantic import IS_PYDANTIC_V1
 
-if PYDANTIC_MAJOR_VERSION < 2:
+if IS_PYDANTIC_V1:
     PydanticBaseModel = pydantic.BaseModel
 
 else:
     from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -41,7 +43,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore
+    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
@@ -51,8 +53,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
         if issubclass(pydantic_object, pydantic.BaseModel):
             return pydantic_object.model_json_schema()
-        elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+        if issubclass(pydantic_object, pydantic.v1.BaseModel):
             return pydantic_object.schema()
+        return None
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
@@ -104,19 +107,18 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         """
         if self.pydantic_object is None:
             return "Return a JSON object."
-        else:
-            # Copy schema to avoid altering original Pydantic schema.
-            schema = dict(self._get_schema(self.pydantic_object).items())
+        # Copy schema to avoid altering original Pydantic schema.
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
-            # Remove extraneous fields.
-            reduced_schema = schema
-            if "title" in reduced_schema:
-                del reduced_schema["title"]
-            if "type" in reduced_schema:
-                del reduced_schema["type"]
-            # Ensure json in context is well-formed with double quotes.
-            schema_str = json.dumps(reduced_schema, ensure_ascii=False)
-            return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
+        # Remove extraneous fields.
+        reduced_schema = schema
+        if "title" in reduced_schema:
+            del reduced_schema["title"]
+        if "type" in reduced_schema:
+            del reduced_schema["type"]
+        # Ensure json in context is well-formed with double quotes.
+        schema_str = json.dumps(reduced_schema, ensure_ascii=False)
+        return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
     @property
     def _type(self) -> str:
@@ -125,5 +127,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
 # For backwards compatibility
 SimpleJsonOutputParser = JsonOutputParser
-parse_partial_json = parse_partial_json
-parse_and_check_json_markdown = parse_and_check_json_markdown
+
+
+__all__ = [
+    "JsonOutputParser",
+    "SimpleJsonOutputParser",  # For backwards compatibility
+    "parse_partial_json",  # For backwards compatibility
+    "parse_and_check_json_markdown",  # For backwards compatibility
+]

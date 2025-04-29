@@ -60,7 +60,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             self.collection.create_index("SessionId")
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve the messages from MongoDB"""
         from pymongo import errors
 

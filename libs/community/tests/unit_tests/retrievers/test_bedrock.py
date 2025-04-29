@@ -32,7 +32,7 @@ def test_create_client() -> None:
     # Import error if boto3 is not installed
     # Value error if credentials are not supplied.
     with pytest.raises((ImportError, ValueError)):
-        AmazonKnowledgeBasesRetriever()  # type: ignore
+        AmazonKnowledgeBasesRetriever()  # type: ignore[call-arg]
 
 
 def test_standard_params(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
@@ -58,7 +58,7 @@ def test_get_relevant_documents(
     }
     documents: List[Document] = amazon_retriever._get_relevant_documents(
         query,
-        run_manager=None,  # type: ignore
+        run_manager=None,  # type: ignore[arg-type]
     )
 
     assert len(documents) == 3

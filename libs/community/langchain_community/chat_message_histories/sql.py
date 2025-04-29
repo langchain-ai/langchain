@@ -47,7 +47,7 @@ try:
     from sqlalchemy.ext.asyncio import async_sessionmaker
 except ImportError:
     # dummy for sqlalchemy < 2
-    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def create_message_model(table_name: str, DynamicBase: Any) -> Any:
     """
 
     # Model declared inside a function to have a dynamic table name.
-    class Message(DynamicBase):  # type: ignore[valid-type, misc]
+    class Message(DynamicBase):
         __tablename__ = table_name
         id = Column(Integer, primary_key=True)
         session_id = Column(Text)
@@ -242,7 +242,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             self._table_created = True
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """Retrieve all messages from db"""
         with self._make_sync_session() as session:
             result = (

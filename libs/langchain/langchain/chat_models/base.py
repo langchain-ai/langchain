@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
@@ -47,7 +41,7 @@ __all__ = [
 
 
 @overload
-def init_chat_model(  # type: ignore[overload-overlap]
+def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
@@ -73,7 +67,7 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = ...,
+    configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -87,7 +81,7 @@ def init_chat_model(
     *,
     model_provider: Optional[str] = None,
     configurable_fields: Optional[
-        Union[Literal["any"], List[str], Tuple[str, ...]]
+        Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
@@ -108,6 +102,7 @@ def init_chat_model(
             - 'openai'              -> langchain-openai
             - 'anthropic'           -> langchain-anthropic
             - 'azure_openai'        -> langchain-openai
+            - 'azure_ai'            -> langchain-azure-ai
             - 'google_vertexai'     -> langchain-google-vertexai
             - 'google_genai'        -> langchain-google-genai
             - 'bedrock'             -> langchain-aws
@@ -124,6 +119,7 @@ def init_chat_model(
             - 'ibm'                 -> langchain-ibm
             - 'nvidia'              -> langchain-nvidia-ai-endpoints
             - 'xai'                 -> langchain-xai
+            - 'perplexity'          -> langchain-perplexity
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -137,6 +133,7 @@ def init_chat_model(
             - 'mistral...'                      -> 'mistralai'
             - 'deepseek...'                     -> 'deepseek'
             - 'grok...'                         -> 'xai'
+            - 'sonar...'                        -> 'perplexity'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -350,12 +347,17 @@ def _init_chat_model_helper(
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
+    elif model_provider == "azure_ai":
+        _check_pkg("langchain_azure_ai")
+        from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+        return AzureAIChatCompletionsModel(model=model, **kwargs)
     elif model_provider == "cohere":
         _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
@@ -400,7 +402,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
-        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
@@ -447,6 +449,11 @@ def _init_chat_model_helper(
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
+    elif model_provider == "perplexity":
+        _check_pkg("langchain_perplexity")
+        from langchain_perplexity import ChatPerplexity
+
+        return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -459,6 +466,7 @@ _SUPPORTED_PROVIDERS = {
     "openai",
     "anthropic",
     "azure_openai",
+    "azure_ai",
     "cohere",
     "google_vertexai",
     "google_genai",
@@ -474,6 +482,7 @@ _SUPPORTED_PROVIDERS = {
     "deepseek",
     "ibm",
     "xai",
+    "perplexity",
 }
 
 
@@ -496,11 +505,13 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "deepseek"
     elif model_name.startswith("grok"):
         return "xai"
+    elif model_name.startswith("sonar"):
+        return "perplexity"
     else:
         return None
 
 
-def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
     if (
         not model_provider
         and ":" in model
@@ -540,12 +551,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         *,
         default_config: Optional[dict] = None,
-        configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = "any",
+        configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = "any",
         config_prefix: str = "",
-        queued_declarative_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
+        queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
     ) -> None:
         self._default_config: dict = default_config or {}
-        self._configurable_fields: Union[Literal["any"], List[str]] = (
+        self._configurable_fields: Union[Literal["any"], list[str]] = (
             configurable_fields
             if configurable_fields == "any"
             else list(configurable_fields)
@@ -555,7 +566,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
-        self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
+        self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
             queued_declarative_operations
         )
 
@@ -656,7 +667,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         return Union[
             str,
             Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            list[AnyMessage],
         ]
 
     def invoke(
@@ -694,12 +705,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     def batch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -717,12 +728,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -745,7 +756,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Any, Exception]]]:
+    ) -> Iterator[tuple[int, Union[Any, Exception]]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -768,7 +779,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> AsyncIterator[Tuple[int, Any]]:
+    ) -> AsyncIterator[tuple[int, Any]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -794,8 +805,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Any]:
-        for x in self._model(config).transform(input, config=config, **kwargs):
-            yield x
+        yield from self._model(config).transform(input, config=config, **kwargs)
 
     async def atransform(
         self,
@@ -901,13 +911,13 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)

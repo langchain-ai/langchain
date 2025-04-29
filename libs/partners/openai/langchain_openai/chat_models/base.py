@@ -10,6 +10,7 @@ import re
 import ssl
 import sys
 import warnings
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -18,17 +19,9 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -68,6 +61,8 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    convert_to_openai_data_block,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
@@ -137,7 +132,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
+        additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -203,6 +198,8 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking")
             ):
                 continue
+            elif isinstance(block, dict) and is_data_content_block(block):
+                formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -243,7 +240,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any] = {"content": _format_message_content(message.content)}
+    message_dict: dict[str, Any] = {"content": _format_message_content(message.content)}
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
 
@@ -304,12 +301,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
+    additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -418,8 +415,8 @@ class _FunctionCall(TypedDict):
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class _AllReturnType(TypedDict):
@@ -437,7 +434,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Model name to use."""
     temperature: Optional[float] = None
     """What sampling temperature to use."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
@@ -451,11 +448,17 @@ class BaseChatOpenAI(BaseChatModel):
     openai_proxy: Optional[str] = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
-    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
+    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata.
+
+    .. versionadded:: 0.3.9
+    """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
     presence_penalty: Optional[float] = None
@@ -470,7 +473,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of most likely tokens to return at each token position, each with
      an associated log probability. `logprobs` must be set to true 
      if this parameter is used."""
-    logit_bias: Optional[Dict[int, int]] = None
+    logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -511,14 +514,14 @@ class BaseChatOpenAI(BaseChatModel):
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
-    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
+    stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
-    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    disabled_params: Optional[dict[str, Any]] = Field(default=None)
     """Parameters of the OpenAI client or chat.completions endpoint that should be 
     disabled for the given model.
     
@@ -527,13 +530,17 @@ class BaseChatOpenAI(BaseChatModel):
     used, or it's a list of disabled values for the parameter.
     
     For example, older models may not support the 'parallel_tool_calls' parameter at 
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can ben passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
     in.
     
     If a parameter is disabled then it will not be used by default in any methods, e.g.
     in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
+    """
+    service_tier: Optional[str] = None
+    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
+    for users of OpenAI's scale tier service.
     """
 
     use_responses_api: Optional[bool] = None
@@ -548,7 +555,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
@@ -556,7 +563,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_temperature(cls, values: Dict[str, Any]) -> Any:
+    def validate_temperature(cls, values: dict[str, Any]) -> Any:
         """Currently o1 models only allow temperature=1."""
         model = values.get("model_name") or values.get("model") or ""
         if model.startswith("o1") and "temperature" not in values:
@@ -636,7 +643,7 @@ class BaseChatOpenAI(BaseChatModel):
         return self
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         exclude_if_none = {
             "presence_penalty": self.presence_penalty,
@@ -652,6 +659,7 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
         }
 
         params = {
@@ -663,7 +671,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         return params
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
         for output in llm_outputs:
@@ -691,8 +699,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,
-        default_chunk_class: Type,
-        base_generation_info: Optional[Dict],
+        default_chunk_class: type,
+        base_generation_info: Optional[dict],
     ) -> Optional[ChatGenerationChunk]:
         if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
             return None
@@ -743,58 +751,108 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _stream_responses(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        context_manager = self.root_client.responses.create(**payload)
+        if self.include_response_headers:
+            raw_context_manager = self.root_client.with_raw_response.responses.create(
+                **payload
+            )
+            context_manager = raw_context_manager.parse()
+            headers = {"headers": dict(raw_context_manager.headers)}
+        else:
+            context_manager = self.root_client.responses.create(**payload)
+            headers = {}
+        original_schema_obj = kwargs.get("response_format")
 
         with context_manager as response:
+            is_first_chunk = True
             for chunk in response:
+                metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk
+                    chunk, schema=original_schema_obj, metadata=metadata
                 ):
                     if run_manager:
                         run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
+                    is_first_chunk = False
                     yield generation_chunk
 
     async def _astream_responses(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        context_manager = await self.root_async_client.responses.create(**payload)
+        if self.include_response_headers:
+            raw_context_manager = (
+                await self.root_async_client.with_raw_response.responses.create(
+                    **payload
+                )
+            )
+            context_manager = raw_context_manager.parse()
+            headers = {"headers": dict(raw_context_manager.headers)}
+        else:
+            context_manager = await self.root_async_client.responses.create(**payload)
+            headers = {}
+        original_schema_obj = kwargs.get("response_format")
 
         async with context_manager as response:
+            is_first_chunk = True
             async for chunk in response:
+                metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk
+                    chunk, schema=original_schema_obj, metadata=metadata
                 ):
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
+                    is_first_chunk = False
                     yield generation_chunk
+
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of precedence
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
         if "response_format" in payload:
@@ -852,8 +910,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -875,13 +933,26 @@ class BaseChatOpenAI(BaseChatModel):
                 response = self.root_client.beta.chat.completions.parse(**payload)
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
+        elif self._use_responses_api(payload):
+            original_schema_obj = kwargs.get("response_format")
+            if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                response = self.root_client.responses.parse(**payload)
+            else:
+                if self.include_response_headers:
+                    raw_response = self.root_client.with_raw_response.responses.create(
+                        **payload
+                    )
+                    response = raw_response.parse()
+                    generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = self.root_client.responses.create(**payload)
+            return _construct_lc_result_from_responses_api(
+                response, schema=original_schema_obj, metadata=generation_info
+            )
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
-        elif self._use_responses_api(payload):
-            response = self.root_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(response)
         else:
             response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
@@ -896,7 +967,7 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
@@ -913,7 +984,7 @@ class BaseChatOpenAI(BaseChatModel):
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
+        generation_info: Optional[dict] = None,
     ) -> ChatResult:
         generations = []
 
@@ -963,14 +1034,19 @@ class BaseChatOpenAI(BaseChatModel):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
         if "response_format" in payload:
@@ -1032,8 +1108,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -1057,13 +1133,28 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
+        elif self._use_responses_api(payload):
+            original_schema_obj = kwargs.get("response_format")
+            if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                response = await self.root_async_client.responses.parse(**payload)
+            else:
+                if self.include_response_headers:
+                    raw_response = (
+                        await self.root_async_client.with_raw_response.responses.create(
+                            **payload
+                        )
+                    )
+                    response = raw_response.parse()
+                    generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = await self.root_async_client.responses.create(**payload)
+            return _construct_lc_result_from_responses_api(
+                response, schema=original_schema_obj, metadata=generation_info
+            )
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
-        elif self._use_responses_api(payload):
-            response = await self.root_async_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(response)
         else:
             response = await self.async_client.create(**payload)
         return await run_in_executor(
@@ -1071,13 +1162,13 @@ class BaseChatOpenAI(BaseChatModel):
         )
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, stop: Optional[list[str]] = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """Get the parameters used to invoke the model."""
         return {
             "model": self.model_name,
@@ -1087,7 +1178,7 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1110,7 +1201,7 @@ class BaseChatOpenAI(BaseChatModel):
         """Return type of chat model."""
         return "openai-chat"
 
-    def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
+    def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
         if self.tiktoken_model_name is not None:
             model = self.tiktoken_model_name
         else:
@@ -1122,7 +1213,7 @@ class BaseChatOpenAI(BaseChatModel):
             encoding = tiktoken.get_encoding(model)
         return model, encoding
 
-    def get_token_ids(self, text: str) -> List[int]:
+    def get_token_ids(self, text: str) -> list[int]:
         """Get the tokens present in the text with tiktoken package."""
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
@@ -1134,9 +1225,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     def get_num_tokens_from_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         tools: Optional[
-            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
@@ -1209,6 +1300,12 @@ class BaseChatOpenAI(BaseChatModel):
                                 encoding.encode(val["function"]["arguments"])
                             )
                             num_tokens += len(encoding.encode(val["function"]["name"]))
+                        elif val["type"] == "file":
+                            warnings.warn(
+                                "Token counts for file inputs are not supported. "
+                                "Ignoring file inputs."
+                            )
+                            pass
                         else:
                             raise ValueError(
                                 f"Unrecognized content block type\n\n{val}"
@@ -1232,7 +1329,7 @@ class BaseChatOpenAI(BaseChatModel):
     )
     def bind_functions(
         self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         function_call: Optional[
             Union[_FunctionCall, str, Literal["auto", "none"]]
         ] = None,
@@ -1285,7 +1382,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
@@ -1382,6 +1479,7 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
+        tools: Optional[list] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1442,6 +1540,51 @@ class BaseChatOpenAI(BaseChatModel):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that:
+
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": None,
+                            "parsed": None,
+                        }
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1463,6 +1606,9 @@ class BaseChatOpenAI(BaseChatModel):
 
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -1512,7 +1658,7 @@ class BaseChatOpenAI(BaseChatModel):
                 parallel_tool_calls=False,
                 strict=strict,
                 ls_structured_output_format={
-                    "kwargs": {"method": method},
+                    "kwargs": {"method": method, "strict": strict},
                     "schema": schema,
                 },
             )
@@ -1547,13 +1693,18 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(
+            bind_kwargs = dict(
                 response_format=response_format,
                 ls_structured_output_format={
-                    "kwargs": {"method": method},
+                    "kwargs": {"method": method, "strict": strict},
                     "schema": convert_to_openai_tool(schema),
                 },
             )
+            if tools:
+                bind_kwargs["tools"] = [
+                    convert_to_openai_tool(t, strict=strict) for t in tools
+                ]
+            llm = self.bind(**bind_kwargs)
             if is_pydantic_schema:
                 output_parser = RunnableLambda(
                     partial(_oai_structured_outputs_parser, schema=cast(type, schema))
@@ -1578,7 +1729,7 @@ class BaseChatOpenAI(BaseChatModel):
         else:
             return llm | output_parser
 
-    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+    def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
             return kwargs
         filtered = {}
@@ -1960,6 +2111,40 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
+    .. dropdown:: Reasoning output
+
+        OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
+        that expose a summary of internal reasoning processes.
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            reasoning = {
+                "effort": "medium",  # 'low', 'medium', or 'high'
+                "summary": "auto",  # 'detailed', 'auto', or None
+            }
+
+            llm = ChatOpenAI(
+                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+            )
+            response = llm.invoke("What is 3^3?")
+
+            print(f"Output: {response.text()}")
+            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+        .. code-block:: none
+
+            Output: 3^3 = 27.
+
+            Reasoning: {
+                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
+                'summary': [
+                    {'text': 'The user wants to know...', 'type': 'summary_text'}
+                ],
+                'type': 'reasoning'
+            }
+
     .. dropdown:: Structured output
 
         .. code-block:: python
@@ -2146,28 +2331,44 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "logprobs": None,
             }
 
-    """  # noqa: E501
+    .. dropdown:: Flex processing
 
-    stream_usage: bool = False
-    """Whether to include usage metadata in streaming output. If True, additional
-    message chunks will be generated during the stream including usage metadata.
-    """
+        OpenAI offers a variety of
+        `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
+        The "flex" tier offers cheaper pricing for requests, with the trade-off that
+        responses may take longer and resources might not always be available.
+        This approach is best suited for non-critical tasks, including model testing,
+        data enhancement, or jobs that can be run asynchronously.
+
+        To use it, initialize the model with ``service_tier="flex"``:
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+
+        Note that this is a beta feature that is only available for a subset of models.
+        See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
+        for more detail.
+
+    """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "openai"]
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
+    def lc_attributes(self) -> dict[str, Any]:
+        attributes: dict[str, Any] = {}
 
         if self.openai_organization:
             attributes["openai_organization"] = self.openai_organization
@@ -2186,7 +2387,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         return True
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         params = super()._default_params
         if "max_tokens" in params:
@@ -2198,7 +2399,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
@@ -2214,55 +2415,21 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     message["role"] = "developer"
         return payload
 
-    def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> bool:
-        """Determine whether to include usage metadata in streaming output.
-
-        For backwards compatibility, we check for `stream_options` passed
-        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
-        """
-        stream_usage_sources = [  # order of preference
-            stream_usage,
-            kwargs.get("stream_options", {}).get("include_usage"),
-            self.model_kwargs.get("stream_options", {}).get("include_usage"),
-            self.stream_usage,
-        ]
-        for source in stream_usage_sources:
-            if isinstance(source, bool):
-                return source
-        return self.stream_usage
-
-    def _stream(
-        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> Iterator[ChatGenerationChunk]:
-        """Set default stream_options."""
-        if self._use_responses_api(kwargs):
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
             return super()._stream_responses(*args, **kwargs)
         else:
-            stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-            # Note: stream_options is not a valid parameter for Azure OpenAI.
-            # To support users proxying Azure through ChatOpenAI, here we only specify
-            # stream_options if include_usage is set to True.
-            # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
-            # for release notes.
-            if stream_usage:
-                kwargs["stream_options"] = {"include_usage": stream_usage}
-
             return super()._stream(*args, **kwargs)
 
     async def _astream(
-        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> AsyncIterator[ChatGenerationChunk]:
-        """Set default stream_options."""
-        if self._use_responses_api(kwargs):
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
         else:
-            stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-            if stream_usage:
-                kwargs["stream_options"] = {"include_usage": stream_usage}
-
             async for chunk in super()._astream(*args, **kwargs):
                 yield chunk
 
@@ -2609,7 +2776,7 @@ def _lc_invalid_tool_call_to_openai_tool_call(
     }
 
 
-def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
+def _url_to_size(image_source: str) -> Optional[tuple[int, int]]:
     try:
         from PIL import Image  # type: ignore[import]
     except ImportError:
@@ -2661,7 +2828,7 @@ def _is_b64(s: str) -> bool:
     return s.startswith("data:image")
 
 
-def _resize(width: int, height: int) -> Tuple[int, int]:
+def _resize(width: int, height: int) -> tuple[int, int]:
     # larger side must be <= 2048
     if width > 2048 or height > 2048:
         if width > height:
@@ -2682,8 +2849,8 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
-) -> Union[Dict, TypeBaseModel]:
+    schema: Union[dict[str, Any], type], *, strict: Optional[bool] = None
+) -> Union[dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
 
@@ -2705,8 +2872,10 @@ def _convert_to_openai_response_format(
         function["schema"] = function.pop("parameters")
         response_format = {"type": "json_schema", "json_schema": function}
 
-    if strict is not None and strict is not response_format["json_schema"].get(
-        "strict"
+    if (
+        strict is not None
+        and strict is not response_format["json_schema"].get("strict")
+        and isinstance(schema, dict)
     ):
         msg = (
             f"Output schema already has 'strict' value set to "
@@ -2719,8 +2888,8 @@ def _convert_to_openai_response_format(
 
 
 def _oai_structured_outputs_parser(
-    ai_msg: AIMessage, schema: Type[_BM]
-) -> PydanticBaseModel:
+    ai_msg: AIMessage, schema: type[_BM]
+) -> Optional[PydanticBaseModel]:
     if parsed := ai_msg.additional_kwargs.get("parsed"):
         if isinstance(parsed, dict):
             return schema(**parsed)
@@ -2728,6 +2897,8 @@ def _oai_structured_outputs_parser(
             return parsed
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
+    elif ai_msg.tool_calls:
+        return None
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
@@ -2819,6 +2990,13 @@ def _use_responses_api(payload: dict) -> bool:
 def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
 ) -> dict:
+    # Rename legacy parameters
+    for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
+        if legacy_token_param in payload:
+            payload["max_output_tokens"] = payload.pop(legacy_token_param)
+    if "reasoning_effort" in payload:
+        payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):
         new_tools: list = []
@@ -2833,58 +3011,144 @@ def _construct_responses_api_payload(
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
         # responses api: {"type": "function", "name": "..."}
-        if tool_choice["type"] == "function" and "function" in tool_choice:
+        if (
+            isinstance(tool_choice, dict)
+            and tool_choice["type"] == "function"
+            and "function" in tool_choice
+        ):
             payload["tool_choice"] = {"type": "function", **tool_choice["function"]}
         else:
             payload["tool_choice"] = tool_choice
-    if response_format := payload.pop("response_format", None):
+
+    # Structured output
+    if schema := payload.pop("response_format", None):
         if payload.get("text"):
             text = payload["text"]
             raise ValueError(
                 "Can specify at most one of 'response_format' or 'text', received both:"
-                f"\n{response_format=}\n{text=}"
+                f"\n{schema=}\n{text=}"
             )
-        # chat api: {"type": "json_schema, "json_schema": {"schema": {...}, "name": "...", "description": "...", "strict": ...}}  # noqa: E501
-        # responses api: {"type": "json_schema, "schema": {...}, "name": "...", "description": "...", "strict": ...}  # noqa: E501
-        if response_format["type"] == "json_schema":
-            payload["text"] = {"type": "json_schema", **response_format["json_schema"]}
+
+        # For pydantic + non-streaming case, we use responses.parse.
+        # Otherwise, we use responses.create.
+        strict = payload.pop("strict", None)
+        if not payload.get("stream") and _is_pydantic_class(schema):
+            payload["text_format"] = schema
         else:
-            payload["text"] = response_format
+            if _is_pydantic_class(schema):
+                schema_dict = schema.model_json_schema()
+                strict = True
+            else:
+                schema_dict = schema
+            if schema_dict == {"type": "json_object"}:  # JSON mode
+                payload["text"] = {"format": {"type": "json_object"}}
+            elif (
+                (
+                    response_format := _convert_to_openai_response_format(
+                        schema_dict, strict=strict
+                    )
+                )
+                and (isinstance(response_format, dict))
+                and (response_format["type"] == "json_schema")
+            ):
+                payload["text"] = {
+                    "format": {"type": "json_schema", **response_format["json_schema"]}
+                }
+            else:
+                pass
     return payload
+
+
+def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
+    computer_call_output: dict = {
+        "call_id": message.tool_call_id,
+        "type": "computer_call_output",
+    }
+    if isinstance(message.content, list):
+        # Use first input_image block
+        output = next(
+            block
+            for block in message.content
+            if cast(dict, block)["type"] == "input_image"
+        )
+    else:
+        # string, assume image_url
+        output = {"type": "input_image", "image_url": message.content}
+    computer_call_output["output"] = output
+    return computer_call_output
+
+
+def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+    text blocks. OpenAI API does not support this key, so we need to remove it.
+
+    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
+    back in.
+    """
+    new_reasoning = reasoning.copy()
+    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+        new_summary = []
+        for block in reasoning["summary"]:
+            new_block = {k: v for k, v in block.items() if k != "index"}
+            new_summary.append(new_block)
+        new_reasoning["summary"] = new_summary
+    return new_reasoning
 
 
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
+        # "name" parameter unsupported
+        if "name" in msg:
+            msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
-            if not isinstance(tool_output, str):
-                tool_output = _stringify(tool_output)
-            function_call_output = {
-                "type": "function_call_output",
-                "output": tool_output,
-                "call_id": msg["tool_call_id"],
-            }
-            input_.append(function_call_output)
+            if lc_msg.additional_kwargs.get("type") == "computer_call_output":
+                computer_call_output = _make_computer_call_output_from_message(
+                    cast(ToolMessage, lc_msg)
+                )
+                input_.append(computer_call_output)
+            else:
+                if not isinstance(tool_output, str):
+                    tool_output = _stringify(tool_output)
+                function_call_output = {
+                    "type": "function_call_output",
+                    "output": tool_output,
+                    "call_id": msg["tool_call_id"],
+                }
+                input_.append(function_call_output)
         elif msg["role"] == "assistant":
+            # Reasoning items
+            reasoning_items = []
+            if reasoning := lc_msg.additional_kwargs.get("reasoning"):
+                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
+            # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
                 # TODO: should you be able to preserve the function call object id on
                 #  the langchain tool calls themselves?
-                if not lc_msg.additional_kwargs.get(_FUNCTION_CALL_IDS_MAP_KEY):
-                    raise ValueError("")
-                function_call_ids = lc_msg.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY]
+                function_call_ids = lc_msg.additional_kwargs.get(
+                    _FUNCTION_CALL_IDS_MAP_KEY
+                )
                 for tool_call in tool_calls:
                     function_call = {
                         "type": "function_call",
                         "name": tool_call["function"]["name"],
                         "arguments": tool_call["function"]["arguments"],
                         "call_id": tool_call["id"],
-                        "id": function_call_ids[tool_call["id"]],
                     }
+                    if function_call_ids is not None and (
+                        _id := function_call_ids.get(tool_call["id"])
+                    ):
+                        function_call["id"] = _id
                     function_calls.append(function_call)
-
+            # Computer calls
+            computer_calls = []
+            tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
+            for tool_output in tool_outputs:
+                if tool_output.get("type") == "computer_call":
+                    computer_calls.append(tool_output)
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
@@ -2919,6 +3183,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             if msg["content"]:
                 input_.append(msg)
             input_.extend(function_calls)
+            if computer_calls:
+                # Hack: we only add reasoning items if computer calls are present. See:
+                # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
+                input_.extend(reasoning_items)
+                input_.extend(computer_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 new_blocks = []
@@ -2937,6 +3206,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         if block["image_url"].get("detail"):
                             new_block["detail"] = block["image_url"]["detail"]
                         new_blocks.append(new_block)
+                    elif block["type"] == "file":
+                        new_block = {"type": "input_file", **block["file"]}
+                        new_blocks.append(new_block)
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)
                     else:
@@ -2949,7 +3221,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     return input_
 
 
-def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
+def _construct_lc_result_from_responses_api(
+    response: Response,
+    schema: Optional[type[_BM]] = None,
+    metadata: Optional[dict] = None,
+) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
@@ -2969,6 +3245,8 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
             "model",
         )
     }
+    if metadata:
+        response_metadata.update(metadata)
     # for compatibility with chat completion calls.
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
@@ -2994,6 +3272,8 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
                         ],
                     }
                     content_blocks.append(block)
+                    if hasattr(content, "parsed"):
+                        additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
                     additional_kwargs["refusal"] = content.refusal
             msg_id = output.id
@@ -3034,6 +3314,39 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
                 additional_kwargs["tool_outputs"].append(tool_output)
             else:
                 additional_kwargs["tool_outputs"] = [tool_output]
+    # Workaround for parsing structured output in the streaming case.
+    #    from openai import OpenAI
+    #    from pydantic import BaseModel
+
+    #    class Foo(BaseModel):
+    #        response: str
+
+    #    client = OpenAI()
+
+    #    client.responses.parse(
+    #        model="gpt-4o-mini",
+    #        input=[{"content": "how are ya", "role": "user"}],
+    #        text_format=Foo,
+    #        stream=True,  # <-- errors
+    #    )
+    if (
+        schema is not None
+        and "parsed" not in additional_kwargs
+        and response.output_text  # tool calls can generate empty output text
+        and response.text
+        and (text_config := response.text.model_dump())
+        and (format_ := text_config.get("format", {}))
+        and (format_.get("type") == "json_schema")
+    ):
+        try:
+            parsed_dict = json.loads(response.output_text)
+            if schema and _is_pydantic_class(schema):
+                parsed = schema(**parsed_dict)
+            else:
+                parsed = parsed_dict
+            additional_kwargs["parsed"] = parsed
+        except json.JSONDecodeError:
+            pass
     message = AIMessage(
         content=content_blocks,
         id=msg_id,
@@ -3047,12 +3360,15 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
 
 
 def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any,
+    chunk: Any, schema: Optional[type[_BM]] = None, metadata: Optional[dict] = None
 ) -> Optional[ChatGenerationChunk]:
     content = []
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
-    response_metadata = {}
+    if metadata:
+        response_metadata = metadata
+    else:
+        response_metadata = {}
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
@@ -3074,11 +3390,13 @@ def _convert_responses_chunk_to_generation_chunk(
         msg = cast(
             AIMessage,
             (
-                _construct_lc_result_from_responses_api(chunk.response)
+                _construct_lc_result_from_responses_api(chunk.response, schema=schema)
                 .generations[0]
                 .message
             ),
         )
+        if parsed := msg.additional_kwargs.get("parsed"):
+            additional_kwargs["parsed"] = parsed
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
@@ -3104,6 +3422,7 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "web_search_call",
         "file_search_call",
+        "computer_call",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
@@ -3118,6 +3437,27 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
+        additional_kwargs["reasoning"] = chunk.item.model_dump(
+            exclude_none=True, mode="json"
+        )
+    elif chunk.type == "response.reasoning_summary_part.added":
+        additional_kwargs["reasoning"] = {
+            # langchain-core uses the `index` key to aggregate text blocks.
+            "summary": [
+                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+            ]
+        }
+    elif chunk.type == "response.reasoning_summary_text.delta":
+        additional_kwargs["reasoning"] = {
+            "summary": [
+                {
+                    "index": chunk.summary_index,
+                    "type": "summary_text",
+                    "text": chunk.delta,
+                }
+            ]
+        }
     else:
         return None
 

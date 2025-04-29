@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.output_parsers.json import parse_and_check_json_markdown
@@ -31,15 +31,15 @@ def _get_sub_string(schema: ResponseSchema) -> str:
     )
 
 
-class StructuredOutputParser(BaseOutputParser[Dict[str, Any]]):
+class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
     """Parse the output of an LLM call to a structured output."""
 
-    response_schemas: List[ResponseSchema]
+    response_schemas: list[ResponseSchema]
     """The schemas for the response."""
 
     @classmethod
     def from_response_schemas(
-        cls, response_schemas: List[ResponseSchema]
+        cls, response_schemas: list[ResponseSchema]
     ) -> StructuredOutputParser:
         return cls(response_schemas=response_schemas)
 
@@ -92,7 +92,7 @@ class StructuredOutputParser(BaseOutputParser[Dict[str, Any]]):
         else:
             return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         expected_keys = [rs.name for rs in self.response_schemas]
         return parse_and_check_json_markdown(text, expected_keys)
 

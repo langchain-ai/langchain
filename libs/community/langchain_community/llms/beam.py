@@ -19,7 +19,7 @@ DEFAULT_NUM_TRIES = 10
 DEFAULT_SLEEP_TIME = 4
 
 
-class Beam(LLM):  # type: ignore[override, override, override, override]
+class Beam(LLM):
     """Beam API for gpt2 large language model.
 
     To use, you should have the ``beam-sdk`` python package installed,
@@ -201,7 +201,7 @@ class Beam(LLM):  # type: ignore[override, override, override, override]
     def _deploy(self) -> str:
         """Call to Beam."""
         try:
-            import beam  # type: ignore
+            import beam
 
             if beam.__path__ == "":
                 raise ImportError

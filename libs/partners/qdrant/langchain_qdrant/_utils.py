@@ -1,8 +1,8 @@
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 
-Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
 
 
 def maximal_marginal_relevance(
@@ -10,7 +10,7 @@ def maximal_marginal_relevance(
     embedding_list: list,
     lambda_mult: float = 0.5,
     k: int = 4,
-) -> List[int]:
+) -> list[int]:
     """Calculate maximal marginal relevance."""
     if min(k, len(embedding_list)) <= 0:
         return []

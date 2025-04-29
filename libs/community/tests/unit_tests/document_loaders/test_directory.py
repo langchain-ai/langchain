@@ -48,7 +48,7 @@ def test_exclude_ignores_matching_files(tmp_path: Path) -> None:
     loader = DirectoryLoader(
         str(tmp_path),
         exclude=["*.py"],
-        loader_cls=CustomLoader,  # type: ignore
+        loader_cls=CustomLoader,
     )
     data = loader.load()
     assert len(data) == 1

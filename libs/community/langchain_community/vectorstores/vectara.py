@@ -467,7 +467,7 @@ class Vectara(VectorStore):
         }
 
         if config.lambda_val > 0:
-            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {  # type: ignore
+            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {  # type: ignore[index]
                 "lambda": config.lambda_val
             }
 
@@ -495,7 +495,7 @@ class Vectara(VectorStore):
                 }
             ]
             if chat:
-                body["query"][0]["summary"][0]["chat"] = {  # type: ignore
+                body["query"][0]["summary"][0]["chat"] = {  # type: ignore[index]
                     "store": True,
                     "conversationId": chat_conv_id,
                 }
@@ -731,7 +731,7 @@ class Vectara(VectorStore):
         )
 
 
-class VectaraRetriever(VectorStoreRetriever):  # type: ignore[override]
+class VectaraRetriever(VectorStoreRetriever):
     """Vectara Retriever class."""
 
     vectorstore: Vectara

@@ -1,6 +1,6 @@
 """Pass input through a moderation endpoint."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -42,7 +42,7 @@ class OpenAIModerationChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
@@ -78,7 +78,7 @@ class OpenAIModerationChain(Chain):
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -86,7 +86,7 @@ class OpenAIModerationChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -108,9 +108,9 @@ class OpenAIModerationChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         text = inputs[self.input_key]
         if self.openai_pre_1_0:
             results = self.client.create(text)
@@ -122,9 +122,9 @@ class OpenAIModerationChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if self.openai_pre_1_0:
             return await super()._acall(inputs, run_manager=run_manager)
         text = inputs[self.input_key]

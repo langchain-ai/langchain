@@ -69,22 +69,22 @@ class TestDocumentDBVectorSearch:
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-        # insure the test collection is empty
+        # ensure the test collection is empty
         collection = prepare_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]
+        assert collection.count_documents({}) == 0
 
     @classmethod
     def teardown_class(cls) -> None:
         collection = prepare_collection()
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})
         collection.drop_indexes()
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         collection = prepare_collection()
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})
         collection.drop_indexes()
 
     def test_from_documents_cosine_distance(

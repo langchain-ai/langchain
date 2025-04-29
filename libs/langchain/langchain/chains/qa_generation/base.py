@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -103,18 +103,18 @@ class QAGenerationChain(Chain):
         raise NotImplementedError
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return [self.output_key]
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, List]:
+    ) -> dict[str, list]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
         results = self.llm_chain.generate(
             [{"text": d.page_content} for d in docs], run_manager=run_manager

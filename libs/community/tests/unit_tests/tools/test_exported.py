@@ -24,7 +24,7 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
             if tool_class in _EXCLUDE:
                 continue
             default_name = get_fields(tool_class)["name"].default
-            if skip_tools_without_default_names and default_name in [  # type: ignore
+            if skip_tools_without_default_names and default_name in [
                 None,
                 "",
             ]:

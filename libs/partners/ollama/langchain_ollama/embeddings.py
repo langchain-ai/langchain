@@ -1,6 +1,6 @@
 """Ollama embeddings models."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -164,6 +164,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """The number of GPUs to use. On macOS it defaults to 1 to
     enable metal support, 0 to disable."""
 
+    keep_alive: Optional[int] = None
+    """controls how long the model will stay loaded into memory
+    following the request (default: 5m)
+    """
+
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
     By default, Ollama will detect this for optimal performance.
@@ -183,7 +188,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[List[str]] = None
+    stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -206,7 +211,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     )
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "mirostat": self.mirostat,
@@ -232,24 +237,26 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         embedded_docs = self._client.embed(
-            self.model, texts, options=self._default_params
+            self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
         return embedded_docs
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
-        embedded_docs = (await self._async_client.embed(self.model, texts))[
-            "embeddings"
-        ]
+        embedded_docs = (
+            await self._async_client.embed(
+                self.model, texts, keep_alive=self.keep_alive
+            )
+        )["embeddings"]
         return embedded_docs
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return (await self.aembed_documents([text]))[0]

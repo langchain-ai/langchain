@@ -43,7 +43,7 @@ def test_pydantic_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type,var-annotated]
     chain = prompt | model | parser
 
     res = chain.invoke({})
@@ -66,7 +66,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type,var-annotated]
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
@@ -88,7 +88,7 @@ def test_json_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type]
     chain = prompt | model | parser
 
     res = chain.invoke({})
@@ -146,7 +146,6 @@ def test_pydantic_output_parser() -> None:
     )
 
     result = pydantic_parser.parse(DEF_RESULT)
-    print("parse_result:", result)  # noqa: T201
     assert result == DEF_EXPECTED_RESULT
     assert pydantic_parser.OutputType is TestModel
 
@@ -157,9 +156,10 @@ def test_pydantic_output_parser_fail() -> None:
         pydantic_object=TestModel
     )
 
-    with pytest.raises(OutputParserException) as e:
+    with pytest.raises(
+        OutputParserException, match="Failed to parse TestModel from completion"
+    ):
         pydantic_parser.parse(DEF_RESULT_FAIL)
-        assert "Failed to parse TestModel from completion" in str(e)
 
 
 def test_pydantic_output_parser_type_inference() -> None:
@@ -171,7 +171,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)  # type: ignore
+    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)
     schema = pydantic_parser.get_output_schema().model_json_schema()
 
     assert schema == {
@@ -202,5 +202,5 @@ def test_format_instructions_preserves_language() -> None:
             )
         )
 
-    parser = PydanticOutputParser(pydantic_object=Foo)  # type: ignore
+    parser = PydanticOutputParser(pydantic_object=Foo)
     assert description in parser.get_format_instructions()

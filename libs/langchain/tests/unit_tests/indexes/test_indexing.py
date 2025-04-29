@@ -1,14 +1,8 @@
+from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Type,
 )
 from unittest.mock import patch
 
@@ -48,7 +42,7 @@ class InMemoryVectorStore(VectorStore):
 
     def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
-        self.store: Dict[str, Document] = {}
+        self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
@@ -63,13 +57,13 @@ class InMemoryVectorStore(VectorStore):
             for _id in ids:
                 self.store.pop(_id, None)
 
-    def add_documents(  # type: ignore
+    def add_documents(
         self,
         documents: Sequence[Document],
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -94,7 +88,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if ids and len(ids) != len(documents):
             raise ValueError(
                 f"Expected {len(ids)} ids, got {len(documents)} documents."
@@ -114,18 +108,18 @@ class InMemoryVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[list[dict[Any, Any]]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add the given texts to the store (insert behavior)."""
         raise NotImplementedError()
 
     @classmethod
     def from_texts(
-        cls: Type[VST],
-        texts: List[str],
+        cls: type[VST],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[list[dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> VST:
         """Create a vector store from a list of texts."""
@@ -133,7 +127,7 @@ class InMemoryVectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Find the most similar documents to the given query."""
         raise NotImplementedError()
 
@@ -146,7 +140,7 @@ def record_manager() -> SQLRecordManager:
     return record_manager
 
 
-@pytest_asyncio.fixture  # type: ignore
+@pytest_asyncio.fixture
 @pytest.mark.requires("aiosqlite")
 async def arecord_manager() -> SQLRecordManager:
     """Timestamped set fixture."""
@@ -298,7 +292,7 @@ def test_index_simple_delete_full(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"mutated document 1", "This is another document."}
@@ -374,7 +368,7 @@ async def test_aindex_simple_delete_full(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"mutated document 1", "This is another document."}
@@ -667,7 +661,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -726,7 +720,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {
@@ -794,7 +788,7 @@ def test_incremental_indexing_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -844,7 +838,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -990,7 +984,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -1049,7 +1043,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
     )
     assert doc_texts == {

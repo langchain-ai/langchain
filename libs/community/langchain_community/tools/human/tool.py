@@ -12,7 +12,7 @@ def _print_func(text: str) -> None:
     print(text)  # noqa: T201
 
 
-class HumanInputRun(BaseTool):  # type: ignore[override]
+class HumanInputRun(BaseTool):
     """Tool that asks user for input."""
 
     name: str = "human"

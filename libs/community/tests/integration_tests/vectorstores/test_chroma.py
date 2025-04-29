@@ -206,7 +206,7 @@ def test_chroma_update_document() -> None:
         embedding=embedding,
         ids=[document_id],
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
+    old_embedding = docsearch._collection.peek()["embeddings"][
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -226,7 +226,7 @@ def test_chroma_update_document() -> None:
     assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
+    new_embedding = docsearch._collection.peek()["embeddings"][
         docsearch._collection.peek()["ids"].index(document_id)
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]
@@ -342,9 +342,9 @@ def test_chroma_large_batch() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
+    docs = ["This is a test document"] * (client.max_batch_size + 100)
     Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -370,9 +370,9 @@ def test_chroma_large_batch_update() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
+    docs = ["This is a test document"] * (client.max_batch_size + 100)
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
@@ -406,7 +406,7 @@ def test_chroma_legacy_batching() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function.embed_documents,
     )
     docs = ["This is a test document"] * 100
     Chroma.from_texts(

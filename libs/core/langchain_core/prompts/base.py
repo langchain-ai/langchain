@@ -1,3 +1,5 @@
+"""Base class for prompt templates."""
+
 from __future__ import annotations
 
 import contextlib
@@ -98,6 +100,7 @@ class BasePromptTemplate(
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         Returns ["langchain", "schema", "prompt_template"].
         """
         return ["langchain", "schema", "prompt_template"]
@@ -105,6 +108,7 @@ class BasePromptTemplate(
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable.
+
         Returns True.
         """
         return True
@@ -123,6 +127,7 @@ class BasePromptTemplate(
         """Return the output type of the prompt."""
         return Union[StringPromptValue, ChatPromptValueConcrete]
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -190,6 +195,7 @@ class BasePromptTemplate(
         _inner_input = self._validate_input(inner_input)
         return await self.aformat_prompt(**_inner_input)
 
+    @override
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
@@ -215,6 +221,7 @@ class BasePromptTemplate(
             serialized=self._serialized,
         )
 
+    @override
     async def ainvoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:

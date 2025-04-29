@@ -85,7 +85,7 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) 
         client = QdrantClient(path=str(tmpdir))
         assert 5 == client.count(collection_name).count
         assert all(
-            vector_name in point.vector  # type: ignore[operator]
+            vector_name in point.vector
             for point in client.scroll(collection_name, with_vectors=True)[0]
         )
 
@@ -284,6 +284,6 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload() -> None:
     )
 
     collection_info = vec_store.client.get_collection(collection_name)
-    assert collection_info.config.params.vectors.on_disk is True  # type: ignore
+    assert collection_info.config.params.vectors.on_disk is True
     assert collection_info.config.optimizer_config.memmap_threshold == 1000
     assert collection_info.config.params.on_disk_payload is True

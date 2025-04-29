@@ -1,6 +1,6 @@
 """Test functionality related to combining documents."""
 
-from typing import Any, List
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
@@ -14,11 +14,11 @@ from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def _fake_docs_len_func(docs: List[Document]) -> int:
+def _fake_docs_len_func(docs: list[Document]) -> int:
     return len(_fake_combine_docs_func(docs))
 
 
-def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
+def _fake_combine_docs_func(docs: list[Document], **kwargs: Any) -> str:
     return "".join([d.page_content for d in docs])
 
 

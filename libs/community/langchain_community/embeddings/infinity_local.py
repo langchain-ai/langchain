@@ -68,7 +68,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
         """Validate that api key and python package exists in environment."""
 
         try:
-            from infinity_emb import AsyncEmbeddingEngine  # type: ignore
+            from infinity_emb import AsyncEmbeddingEngine
         except ImportError:
             raise ImportError(
                 "Please install the "

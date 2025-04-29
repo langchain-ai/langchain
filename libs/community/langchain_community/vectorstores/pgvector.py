@@ -33,7 +33,7 @@ try:
     from sqlalchemy import SQLColumnExpression
 except ImportError:
     # for sqlalchemy < 2
-    SQLColumnExpression = Any  # type: ignore
+    SQLColumnExpression = Any  # type: ignore[assignment,misc]
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -126,7 +126,7 @@ def _get_embedding_collection_store(
         def get_by_name(
             cls, session: Session, name: str
         ) -> Optional["CollectionStore"]:
-            return session.query(cls).filter(cls.name == name).first()  # type: ignore
+            return session.query(cls).filter(cls.name == name).first()
 
         @classmethod
         def get_or_create(
@@ -375,7 +375,7 @@ class PGVector(VectorStore):
 
     def create_vector_extension(self) -> None:
         try:
-            with Session(self._bind) as session:  # type: ignore[arg-type]
+            with Session(self._bind) as session:
                 # The advisor lock fixes issue arising from concurrent
                 # creation of the vector extension.
                 # https://github.com/langchain-ai/langchain/issues/12933
@@ -393,24 +393,24 @@ class PGVector(VectorStore):
             raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
-        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
+        with Session(self._bind) as session, session.begin():
             Base.metadata.create_all(session.get_bind())
 
     def drop_tables(self) -> None:
-        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
+        with Session(self._bind) as session, session.begin():
             Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        with Session(self._bind) as session:  # type: ignore[arg-type]
+        with Session(self._bind) as session:
             self.CollectionStore.get_or_create(
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with Session(self._bind) as session:  # type: ignore[arg-type]
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 self.logger.warning("Collection not found")
@@ -421,7 +421,7 @@ class PGVector(VectorStore):
     @contextlib.contextmanager
     def _make_session(self) -> Generator[Session, None, None]:
         """Create a context manager for the session, bind to _conn string."""
-        yield Session(self._bind)  # type: ignore[arg-type]
+        yield Session(self._bind)
 
     def delete(
         self,
@@ -435,7 +435,7 @@ class PGVector(VectorStore):
             ids: List of ids to delete.
             collection_only: Only delete ids in the collection.
         """
-        with Session(self._bind) as session:  # type: ignore[arg-type]
+        with Session(self._bind) as session:
             if ids is not None:
                 self.logger.debug(
                     "Trying to delete vectors by ids (represented by the model "
@@ -523,7 +523,7 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        with Session(self._bind) as session:  # type: ignore[arg-type]
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -935,7 +935,7 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Any]:
         """Query the collection."""
-        with Session(self._bind) as session:  # type: ignore[arg-type]
+        with Session(self._bind) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -956,7 +956,7 @@ class PGVector(VectorStore):
             results: List[Any] = (
                 session.query(
                     self.EmbeddingStore,
-                    self.distance_strategy(embedding).label("distance"),  # type: ignore
+                    self.distance_strategy(embedding).label("distance"),
                 )
                 .filter(*filter_by)
                 .order_by(sqlalchemy.asc("distance"))

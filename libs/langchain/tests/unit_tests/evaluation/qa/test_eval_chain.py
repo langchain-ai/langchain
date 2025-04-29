@@ -2,7 +2,6 @@
 
 import os
 import sys
-from typing import Type
 from unittest.mock import patch
 
 import pytest
@@ -38,7 +37,7 @@ def test_eval_chain() -> None:
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
 @pytest.mark.parametrize("chain_cls", [ContextQAEvalChain, CotQAEvalChain])
-def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
+def test_context_eval_chain(chain_cls: type[ContextQAEvalChain]) -> None:
     """Test a simple eval chain."""
     example = {
         "query": "What's my name",
@@ -62,24 +61,24 @@ def test_load_criteria_evaluator() -> None:
     # Patch the env with an openai-api-key
     with patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}):
         # Check it can load using a string arg (even if that's not how it's typed)
-        load_evaluator("criteria")  # type: ignore
+        load_evaluator("criteria")  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
 def test_implements_string_evaluator_protocol(
-    chain_cls: Type[LLMChain],
+    chain_cls: type[LLMChain],
 ) -> None:
     assert issubclass(chain_cls, StringEvaluator)
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
 def test_returns_expected_results(
-    chain_cls: Type[LLMChain],
+    chain_cls: type[LLMChain],
 ) -> None:
     fake_llm = FakeLLM(
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
-    chain = chain_cls.from_llm(fake_llm)  # type: ignore
+    chain = chain_cls.from_llm(fake_llm)  # type: ignore[attr-defined]
     results = chain.evaluate_strings(
         prediction="my prediction", reference="my reference", input="my input"
     )

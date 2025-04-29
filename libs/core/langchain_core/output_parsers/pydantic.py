@@ -1,3 +1,5 @@
+"""Output parsers using Pydantic."""
+
 import json
 from typing import Annotated, Generic, Optional
 
@@ -9,7 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
+    IS_PYDANTIC_V2,
     PydanticBaseModel,
     TBaseModel,
 )
@@ -18,20 +20,19 @@ from langchain_core.utils.pydantic import (
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]  # type: ignore
+    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
-        if PYDANTIC_MAJOR_VERSION == 2:
+        if IS_PYDANTIC_V2:
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
                     return self.pydantic_object.model_validate(obj)
-                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
+                if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
-                else:
-                    msg = f"Unsupported model version for PydanticOutputParser: \
+                msg = f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
-                    raise OutputParserException(msg)
+                raise OutputParserException(msg)
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
@@ -111,9 +112,6 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def OutputType(self) -> type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
-
-
-PydanticOutputParser.model_rebuild()
 
 
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.

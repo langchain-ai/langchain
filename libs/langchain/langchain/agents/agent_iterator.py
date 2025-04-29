@@ -3,15 +3,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections.abc import AsyncIterator, Iterator
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Tuple,
     Union,
 )
 from uuid import UUID
@@ -53,7 +49,7 @@ class AgentExecutorIterator:
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[UUID] = None,
         include_run_info: bool = False,
@@ -90,17 +86,17 @@ class AgentExecutorIterator:
         self.yield_actions = yield_actions
         self.reset()
 
-    _inputs: Dict[str, str]
+    _inputs: dict[str, str]
     callbacks: Callbacks
     tags: Optional[list[str]]
-    metadata: Optional[Dict[str, Any]]
+    metadata: Optional[dict[str, Any]]
     run_name: Optional[str]
     run_id: Optional[UUID]
     include_run_info: bool
     yield_actions: bool
 
     @property
-    def inputs(self) -> Dict[str, str]:
+    def inputs(self) -> dict[str, str]:
         """The inputs to the AgentExecutor."""
         return self._inputs
 
@@ -120,12 +116,12 @@ class AgentExecutorIterator:
         self.inputs = self.inputs
 
     @property
-    def name_to_tool_map(self) -> Dict[str, BaseTool]:
+    def name_to_tool_map(self) -> dict[str, BaseTool]:
         """A mapping of tool names to tools."""
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
-    def color_mapping(self) -> Dict[str, str]:
+    def color_mapping(self) -> dict[str, str]:
         """A mapping of tool names to colors."""
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
@@ -156,7 +152,7 @@ class AgentExecutorIterator:
 
     def make_final_outputs(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         run_manager: Union[CallbackManagerForChainRun, AsyncCallbackManagerForChainRun],
     ) -> AddableDict:
         # have access to intermediate steps by design in iterator,
@@ -171,7 +167,7 @@ class AgentExecutorIterator:
             prepared_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
         return prepared_outputs
 
-    def __iter__(self: "AgentExecutorIterator") -> Iterator[AddableDict]:
+    def __iter__(self: AgentExecutorIterator) -> Iterator[AddableDict]:
         logger.debug("Initialising AgentExecutorIterator")
         self.reset()
         callback_manager = CallbackManager.configure(
@@ -311,7 +307,7 @@ class AgentExecutorIterator:
 
     def _process_next_step_output(
         self,
-        next_step_output: Union[AgentFinish, List[Tuple[AgentAction, str]]],
+        next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
         run_manager: CallbackManagerForChainRun,
     ) -> AddableDict:
         """
@@ -339,7 +335,7 @@ class AgentExecutorIterator:
 
     async def _aprocess_next_step_output(
         self,
-        next_step_output: Union[AgentFinish, List[Tuple[AgentAction, str]]],
+        next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
         """

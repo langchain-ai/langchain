@@ -1352,7 +1352,7 @@ class FAISS(VectorStore):
             satisfies the filter conditions, otherwise False.
 
         Raises:
-            ValueError: If the filter is invalid or contains unsuported operators.
+            ValueError: If the filter is invalid or contains unsupported operators.
         """
         if callable(filter):
             return filter

@@ -33,7 +33,7 @@ class _QuerySQLDatabaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct SQL query.")
 
 
-class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
+class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database.
 
     .. versionchanged:: 0.3.12
@@ -64,7 +64,7 @@ class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overr
     removal="1.0",
     alternative_import="langchain_community.tools.QuerySQLDatabaseTool",
 )
-class QuerySQLDataBaseTool(QuerySQLDatabaseTool):  # type: ignore[override]
+class QuerySQLDataBaseTool(QuerySQLDatabaseTool):
     """
     Equivalent stub to QuerySQLDatabaseTool for backwards compatibility.
     :private:"""
@@ -82,7 +82,7 @@ class _InfoSQLDatabaseToolInput(BaseModel):
     )
 
 
-class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
+class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
     name: str = "sql_db_schema"
@@ -104,7 +104,7 @@ class _ListSQLDatabaseToolInput(BaseModel):
     tool_input: str = Field("", description="An empty string")
 
 
-class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
+class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
     name: str = "sql_db_list_tables"
@@ -124,7 +124,7 @@ class _QuerySQLCheckerToolInput(BaseModel):
     query: str = Field(..., description="A detailed and SQL query to be checked.")
 
 
-class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
+class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     """Use an LLM to check if a query is correct.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
