@@ -1506,11 +1506,9 @@ class ZeroxPDFLoader(BasePDFLoader):
         """
         """Lazy load given path as pages."""
         if self.web_path:
-            blob = Blob.from_data(  # type: ignore[attr-defined]
-                open(self.file_path, "rb").read(), path=self.web_path
-            )
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.lazy_parse(blob)
 
 

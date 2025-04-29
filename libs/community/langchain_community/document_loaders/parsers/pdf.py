@@ -1659,7 +1659,7 @@ class ZeroxPDFParser(BaseBlobParser):
         parsed = urlparse(url)
         return bool(parsed.netloc) and bool(parsed.scheme)
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob.
 
         Args:
