@@ -34,11 +34,6 @@ jobs:
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: Install deps outside pyproject
-        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
-        shell: bash
-        run: VIRTUAL_ENV=.venv uv pip install "boto3<2" "google-cloud-aiplatform<2"
-
       - name: Run integration tests
         shell: bash
         env:
