@@ -20,7 +20,7 @@ class KonlpyTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         self._separator = separator
         try:
-            from konlpy.tag import Kkma
+            import konlpy
         except ImportError:
             raise ImportError(
                 """
@@ -28,7 +28,7 @@ class KonlpyTextSplitter(TextSplitter):
                 `pip install konlpy`
                 """
             )
-        self.kkma = Kkma()
+        self.kkma = konlpy.tag.Kkma()
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
