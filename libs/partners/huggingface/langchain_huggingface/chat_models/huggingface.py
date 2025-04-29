@@ -880,12 +880,9 @@ class ChatHuggingFace(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
-                    Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
-                - "json_schema":
-                    Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
-                - "json_mode":
-                    Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                - "function_calling": uses tool-calling features.
+                - "json_schema": uses dedicated structured output features.
+                - "json_mode": uses JSON mode.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
