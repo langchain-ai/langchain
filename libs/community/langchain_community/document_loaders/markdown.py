@@ -93,4 +93,4 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.md import partition_md
 
-        return partition_md(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_md(filename=self.file_path, **self.unstructured_kwargs)

@@ -33,7 +33,7 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
         """
         try:
             from google.api_core.client_options import ClientOptions
-            from google.cloud import translate  # type: ignore[attr-defined]
+            from google.cloud import translate
         except ImportError as exc:
             raise ImportError(
                 "Install Google Cloud Translate to use this parser."
@@ -76,7 +76,7 @@ class GoogleTranslateTransformer(BaseDocumentTransformer):
                 Options: `text/plain`, `text/html`
         """
         try:
-            from google.cloud import translate  # type: ignore[attr-defined]
+            from google.cloud import translate
         except ImportError as exc:
             raise ImportError(
                 "Install Google Cloud Translate to use this parser."

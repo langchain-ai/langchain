@@ -15,7 +15,7 @@ class ExplicitImageInput(BaseModel):
     query: HttpUrl = Field(description="url of the image to analyze")
 
 
-class EdenAiExplicitImageTool(EdenaiTool):  # type: ignore[override, override, override]
+class EdenAiExplicitImageTool(EdenaiTool):
     """Tool that queries the Eden AI Explicit image detection.
 
     for api reference check edenai documentation:

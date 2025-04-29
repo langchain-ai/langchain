@@ -151,7 +151,7 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
                 )
             self.astra_db.create_collection(
                 collection_name,
-                dimension=embedding_dimension,  # type: ignore[arg-type]
+                dimension=embedding_dimension,
                 metric=metric,
             )
 

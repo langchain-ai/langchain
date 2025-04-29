@@ -81,7 +81,7 @@ class NeuralDBVectorStore(VectorStore):
         NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB(**model_kwargs))  # type: ignore[call-arg]
+        return cls(db=ndb.NeuralDB(**model_kwargs))
 
     @classmethod
     def from_checkpoint(  # type: ignore[no-untyped-def]
@@ -116,7 +116,7 @@ class NeuralDBVectorStore(VectorStore):
         NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))  # type: ignore[call-arg]
+        return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))
 
     @classmethod
     def from_texts(
@@ -157,7 +157,7 @@ class NeuralDBVectorStore(VectorStore):
         df = pd.DataFrame({"texts": texts})
         if metadatas:
             df = pd.concat([df, pd.DataFrame.from_records(metadatas)], axis=1)
-        temp = tempfile.NamedTemporaryFile("w", delete=False, delete_on_close=False)  # type: ignore[call-overload]
+        temp = tempfile.NamedTemporaryFile("w", delete=False, delete_on_close=False)  # type: ignore[call-overload,unused-ignore]
         df.to_csv(temp)
         source_id = self.insert([ndb.CSV(temp.name)], **kwargs)[0]
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]

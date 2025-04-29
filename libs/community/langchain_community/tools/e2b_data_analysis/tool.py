@@ -39,7 +39,7 @@ def _unparse(tree: ast.AST) -> str:
         source_code = s.getvalue()
         s.close()
     else:
-        source_code = ast.unparse(tree)  # type: ignore[attr-defined]
+        source_code = ast.unparse(tree)
     return source_code
 
 
@@ -93,7 +93,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
     )
 
 
-class E2BDataAnalysisTool(BaseTool):  # type: ignore[override, override]
+class E2BDataAnalysisTool(BaseTool):
     """Tool for running python code in a sandboxed environment for data analysis."""
 
     name: str = "e2b_data_analysis"

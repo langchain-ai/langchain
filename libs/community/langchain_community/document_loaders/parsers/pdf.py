@@ -340,7 +340,7 @@ class PyPDFParser(BaseBlobParser):
         self.extraction_mode = extraction_mode
         self.extraction_kwargs = extraction_kwargs or {}
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """
         Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
@@ -380,7 +380,7 @@ class PyPDFParser(BaseBlobParser):
                     **self.extraction_kwargs,
                 )
 
-        with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
+        with blob.as_bytes_io() as pdf_file_obj:
             pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
 
             doc_metadata = _purge_metadata(
@@ -434,7 +434,7 @@ class PyPDFParser(BaseBlobParser):
         if "/XObject" not in cast(dict, page["/Resources"]).keys():
             return ""
 
-        xObject = page["/Resources"]["/XObject"].get_object()  # type: ignore[index]
+        xObject = page["/Resources"]["/XObject"].get_object()
         images = []
         for obj in xObject:
             np_image: Any = None
@@ -677,7 +677,7 @@ class PDFMinerParser(BaseBlobParser):
 
         return metadata
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """
         Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
@@ -919,7 +919,7 @@ class PyMuPDFParser(BaseBlobParser):
         self.extract_tables = extract_tables
         self.extract_tables_settings = extract_tables_settings
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         return self._lazy_parse(
             blob,
         )
@@ -930,7 +930,7 @@ class PyMuPDFParser(BaseBlobParser):
         # text-kwargs is present for backwards compatibility.
         # Users should not use it directly.
         text_kwargs: Optional[dict[str, Any]] = None,
-    ) -> Iterator[Document]:  # type: ignore[valid-type]
+    ) -> Iterator[Document]:
         """Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
@@ -990,8 +990,8 @@ class PyMuPDFParser(BaseBlobParser):
             )
 
         with PyMuPDFParser._lock:
-            with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
-                if blob.data is None:  # type: ignore[attr-defined]
+            with blob.as_bytes_io() as file_path:
+                if blob.data is None:
                     doc = pymupdf.open(file_path)
                 else:
                     doc = pymupdf.open(stream=file_path, filetype="pdf")
@@ -1066,8 +1066,8 @@ class PyMuPDFParser(BaseBlobParser):
                     "producer": "PyMuPDF",
                     "creator": "PyMuPDF",
                     "creationdate": "",
-                    "source": blob.source,  # type: ignore[attr-defined]
-                    "file_path": blob.source,  # type: ignore[attr-defined]
+                    "source": blob.source,
+                    "file_path": blob.source,
                     "total_pages": len(doc),
                 },
                 **{
@@ -1273,7 +1273,7 @@ class PyPDFium2Parser(BaseBlobParser):
         self.mode = mode
         self.pages_delimiter = pages_delimiter
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """
         Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
@@ -1299,7 +1299,7 @@ class PyPDFium2Parser(BaseBlobParser):
         # pypdfium2 is really finicky with respect to closing things,
         # if done incorrectly creates seg faults.
         with PyPDFium2Parser._lock:
-            with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+            with blob.as_bytes_io() as file_path:
                 pdf_reader = None
                 try:
                     pdf_reader = pypdfium2.PdfDocument(
@@ -1410,11 +1410,11 @@ class PDFPlumberParser(BaseBlobParser):
         self.dedupe = dedupe
         self.extract_images = extract_images
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         import pdfplumber
 
-        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+        with blob.as_bytes_io() as file_path:
             doc = pdfplumber.open(file_path)  # open document
 
             yield from [
@@ -1424,8 +1424,8 @@ class PDFPlumberParser(BaseBlobParser):
                     + self._extract_images_from_page(page),
                     metadata=dict(
                         {
-                            "source": blob.source,  # type: ignore[attr-defined]
-                            "file_path": blob.source,  # type: ignore[attr-defined]
+                            "source": blob.source,
+                            "file_path": blob.source,
                             "page": page.page_number - 1,
                             "total_pages": len(doc.pages),
                         },
@@ -1593,14 +1593,14 @@ class AmazonTextractPDFParser(BaseBlobParser):
         else:
             self.boto3_textract_client = client
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Iterates over the Blob pages and returns an Iterator with a Document
         for each page, like the other parsers If multi-page document, blob.path
         has to be set to the S3 URI and for single page docs
         the blob.data is taken
         """
 
-        url_parse_result = urlparse(str(blob.path)) if blob.path else None  # type: ignore[attr-defined]
+        url_parse_result = urlparse(str(blob.path)) if blob.path else None
         # Either call with S3 path (multi-page) or with bytes (single-page)
         if (
             url_parse_result
@@ -1608,13 +1608,13 @@ class AmazonTextractPDFParser(BaseBlobParser):
             and url_parse_result.netloc
         ):
             textract_response_json = self.tc.call_textract(
-                input_document=str(blob.path),  # type: ignore[attr-defined]
+                input_document=str(blob.path),
                 features=self.textract_features,
                 boto3_textract_client=self.boto3_textract_client,
             )
         else:
             textract_response_json = self.tc.call_textract(
-                input_document=blob.as_bytes(),  # type: ignore[attr-defined]
+                input_document=blob.as_bytes(),
                 features=self.textract_features,
                 call_mode=self.tc.Textract_Call_Mode.FORCE_SYNC,
                 boto3_textract_client=self.boto3_textract_client,
@@ -1625,7 +1625,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
         for idx, page in enumerate(document.pages):
             yield Document(
                 page_content=page.get_text(config=self.linearization_config),
-                metadata={"source": blob.source, "page": idx + 1},  # type: ignore[attr-defined]
+                metadata={"source": blob.source, "page": idx + 1},
             )
 
 
@@ -1645,23 +1645,23 @@ class DocumentIntelligenceParser(BaseBlobParser):
         self.client = client
         self.model = model
 
-    def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:  # type: ignore[valid-type]
+    def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:
         for p in result.pages:
             content = " ".join([line.content for line in p.lines])
 
             d = Document(
                 page_content=content,
                 metadata={
-                    "source": blob.source,  # type: ignore[attr-defined]
+                    "source": blob.source,
                     "page": p.page_number,
                 },
             )
             yield d
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
 
-        with blob.as_bytes_io() as file_obj:  # type: ignore[attr-defined]
+        with blob.as_bytes_io() as file_obj:
             poller = self.client.begin_analyze_document(self.model, file_obj)
             result = poller.result()
 

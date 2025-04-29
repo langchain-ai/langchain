@@ -73,7 +73,7 @@ class WhatsAppChatLoader(BaseChatLoader):
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
                     results.append(
-                        HumanMessage(  # type: ignore[call-arg]
+                        HumanMessage(
                             role=sender,
                             content=text,
                             additional_kwargs={

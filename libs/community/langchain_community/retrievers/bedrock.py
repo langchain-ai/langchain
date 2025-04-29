@@ -7,13 +7,13 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import BaseModel, model_validator
 
 
-class VectorSearchConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class VectorSearchConfig(BaseModel, extra="allow"):
     """Configuration for vector search."""
 
     numberOfResults: int = 4
 
 
-class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
+class RetrievalConfig(BaseModel, extra="allow"):
     """Configuration for retrieval."""
 
     vectorSearchConfiguration: VectorSearchConfig

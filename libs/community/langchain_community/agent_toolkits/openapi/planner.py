@@ -64,7 +64,7 @@ def _get_default_llm_chain_factory(
     return partial(_get_default_llm_chain, prompt)
 
 
-class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests GET tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_get"
@@ -98,7 +98,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[ov
         raise NotImplementedError()
 
 
-class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests POST tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_post"
@@ -129,7 +129,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[o
         raise NotImplementedError()
 
 
-class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests PATCH tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_patch"
@@ -162,7 +162,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[
         raise NotImplementedError()
 
 
-class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """Requests PUT tool with LLM-instructed extraction of truncated responses."""
 
     name: str = "requests_put"
@@ -193,7 +193,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[ov
         raise NotImplementedError()
 
 
-class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[override]
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"
@@ -266,7 +266,7 @@ def _create_api_controller_agent(
     if "GET" in allowed_operations:
         get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
         tools.append(
-            RequestsGetToolWithParsing(  # type: ignore[call-arg]
+            RequestsGetToolWithParsing(
                 requests_wrapper=requests_wrapper,
                 llm_chain=get_llm_chain,
                 allow_dangerous_requests=allow_dangerous_requests,
@@ -275,7 +275,7 @@ def _create_api_controller_agent(
     if "POST" in allowed_operations:
         post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
         tools.append(
-            RequestsPostToolWithParsing(  # type: ignore[call-arg]
+            RequestsPostToolWithParsing(
                 requests_wrapper=requests_wrapper,
                 llm_chain=post_llm_chain,
                 allow_dangerous_requests=allow_dangerous_requests,
@@ -284,7 +284,7 @@ def _create_api_controller_agent(
     if "PUT" in allowed_operations:
         put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
         tools.append(
-            RequestsPutToolWithParsing(  # type: ignore[call-arg]
+            RequestsPutToolWithParsing(
                 requests_wrapper=requests_wrapper,
                 llm_chain=put_llm_chain,
                 allow_dangerous_requests=allow_dangerous_requests,
@@ -293,7 +293,7 @@ def _create_api_controller_agent(
     if "DELETE" in allowed_operations:
         delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
         tools.append(
-            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+            RequestsDeleteToolWithParsing(
                 requests_wrapper=requests_wrapper,
                 llm_chain=delete_llm_chain,
                 allow_dangerous_requests=allow_dangerous_requests,
@@ -302,7 +302,7 @@ def _create_api_controller_agent(
     if "PATCH" in allowed_operations:
         patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
         tools.append(
-            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+            RequestsPatchToolWithParsing(
                 requests_wrapper=requests_wrapper,
                 llm_chain=patch_llm_chain,
                 allow_dangerous_requests=allow_dangerous_requests,
