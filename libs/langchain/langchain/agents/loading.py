@@ -86,7 +86,7 @@ def load_agent_from_config(
         del config["output_parser"]
 
     combined_config = {**config, **kwargs}
-    return agent_cls(**combined_config)  # type: ignore
+    return agent_cls(**combined_config)
 
 
 @deprecated("0.1.0", removal="1.0")

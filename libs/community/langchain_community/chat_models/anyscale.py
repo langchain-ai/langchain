@@ -167,7 +167,7 @@ class ChatAnyscale(ChatOpenAI):
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-                values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
+                values["client"] = openai.ChatCompletion
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "

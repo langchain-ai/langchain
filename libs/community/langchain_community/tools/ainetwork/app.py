@@ -30,7 +30,7 @@ class AppSchema(BaseModel):
     )
 
 
-class AINAppOps(AINBaseTool):  # type: ignore[override, override]
+class AINAppOps(AINBaseTool):
     """Tool for app operations."""
 
     name: str = "AINappOps"

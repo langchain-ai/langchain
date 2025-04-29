@@ -18,7 +18,7 @@ class ExecPythonInput(BaseModel):
     code: str = Field(description="the Python code to execute")
 
 
-class ExecPython(BaseTool):  # type: ignore[override, override]
+class ExecPython(BaseTool):
     """Riza Code tool.
 
     Setup:
@@ -100,7 +100,7 @@ class ExecJavaScriptInput(BaseModel):
     code: str = Field(description="the JavaScript code to execute")
 
 
-class ExecJavaScript(BaseTool):  # type: ignore[override, override]
+class ExecJavaScript(BaseTool):
     """A tool implementation to execute JavaScript via Riza's Code Interpreter API."""
 
     name: str = "riza_exec_javascript"

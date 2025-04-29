@@ -1,19 +1,25 @@
 """**Load** module helps with serialization and deserialization."""
 
-from importlib import import_module
 from typing import TYPE_CHECKING
+
+from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.load.dump import dumpd, dumps
-    from langchain_core.load.load import load, loads
+    from langchain_core.load.load import loads
     from langchain_core.load.serializable import Serializable
 
-__all__ = ["dumpd", "dumps", "load", "loads", "Serializable"]
+# Unfortunately, we have to eagerly import load from langchain_core/load/load.py
+# eagerly to avoid a namespace conflict. We want users to still be able to use
+# `from langchain_core.load import load` to get the load function, but
+# the `from langchain_core.load.load import load` absolute import should also work.
+from langchain_core.load.load import load
+
+__all__ = ("dumpd", "dumps", "load", "loads", "Serializable")
 
 _dynamic_imports = {
     "dumpd": "dump",
     "dumps": "dump",
-    "load": "load",
     "loads": "load",
     "Serializable": "serializable",
 }
@@ -21,12 +27,7 @@ _dynamic_imports = {
 
 def __getattr__(attr_name: str) -> object:
     module_name = _dynamic_imports.get(attr_name)
-    package = __spec__.parent
-    if module_name == "__module__" or module_name is None:
-        result = import_module(f".{attr_name}", package=package)
-    else:
-        module = import_module(f".{module_name}", package=package)
-        result = getattr(module, attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
     return result
 

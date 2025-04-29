@@ -30,7 +30,7 @@ class TrainableLLM(Protocol):
     ) -> TrainResult: ...
 
 
-class Memorize(BaseTool):  # type: ignore[override]
+class Memorize(BaseTool):
     """Tool that trains a language model."""
 
     name: str = "memorize"

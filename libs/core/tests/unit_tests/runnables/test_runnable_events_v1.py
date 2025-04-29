@@ -1188,9 +1188,6 @@ class HardCodedRetriever(BaseRetriever):
         return self.documents
 
 
-HardCodedRetriever.model_rebuild()
-
-
 async def test_event_stream_with_retriever() -> None:
     """Test the event stream with a retriever."""
     retriever = HardCodedRetriever(

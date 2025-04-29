@@ -517,7 +517,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _chunk_size = chunk_size or self.chunk_size
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-        _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
                 input=tokens[i : i + _chunk_size], **self._invocation_params
@@ -573,7 +572,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
-        return self._get_len_safe_embeddings(texts, engine=engine)
+        return self._get_len_safe_embeddings(
+            texts, engine=engine, chunk_size=chunk_size
+        )
 
     async def aembed_documents(
         self, texts: list[str], chunk_size: int | None = None
@@ -603,7 +604,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
-        return await self._aget_len_safe_embeddings(texts, engine=engine)
+        return await self._aget_len_safe_embeddings(
+            texts, engine=engine, chunk_size=chunk_size
+        )
 
     def embed_query(self, text: str) -> list[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.

@@ -579,7 +579,7 @@ class AsyncRedisCache(_RedisCacheBase):
         try:
             async with self.redis.pipeline() as pipe:
                 self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-                await pipe.execute()  # type: ignore[attr-defined]
+                await pipe.execute()
         except Exception as e:
             logger.error(f"Redis async update failed: {e}")
 
@@ -2489,6 +2489,18 @@ class OpenSearchSemanticCache(BaseCache):
             del self._cache_dict[index_name]
 
 
+@deprecated(
+    since="0.3.22",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `SingleStoreSemanticCache` "
+        "implementation in `langchain_singlestore`. "
+        "See <https://github.com/singlestore-labs/langchain-singlestore> for details "
+        " about the new implementation."
+    ),
+    alternative="from langchain_singlestore import SingleStoreSemanticCache",
+    pending=True,
+)
 class SingleStoreDBSemanticCache(BaseCache):
     """Cache that uses SingleStore DB as a backend"""
 

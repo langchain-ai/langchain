@@ -99,7 +99,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(outputs[i]) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=outputs[i], metadata=doc.metadata)  # type: ignore[arg-type]
+                Document(page_content=outputs[i], metadata=doc.metadata)
             )
         return compressed_docs
 

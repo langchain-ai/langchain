@@ -52,7 +52,7 @@ class SlackChatLoader(BaseChatLoader):
                 )
             else:
                 results.append(
-                    HumanMessage(  # type: ignore[call-arg]
+                    HumanMessage(
                         role=sender,
                         content=text,
                         additional_kwargs={

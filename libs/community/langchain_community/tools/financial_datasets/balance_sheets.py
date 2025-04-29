@@ -24,7 +24,7 @@ class BalanceSheetsSchema(BaseModel):
     )
 
 
-class BalanceSheets(BaseTool):  # type: ignore[override, override]
+class BalanceSheets(BaseTool):
     """
     Tool that gets balance sheets for a given ticker over a given period.
     """

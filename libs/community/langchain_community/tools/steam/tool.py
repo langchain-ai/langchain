@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.steam import SteamWebAPIWrapper
 
 
-class SteamWebAPIQueryRun(BaseTool):  # type: ignore[override]
+class SteamWebAPIQueryRun(BaseTool):
     """Tool that searches the Steam Web API."""
 
     mode: str

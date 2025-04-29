@@ -12,7 +12,7 @@ from pydantic import model_validator
 logger = logging.getLogger(__name__)
 
 
-class AzureAiServicesTextToSpeechTool(BaseTool):  # type: ignore[override]
+class AzureAiServicesTextToSpeechTool(BaseTool):
     """Tool that queries the Azure AI Services Text to Speech API.
 
     In order to set this up, follow instructions at:

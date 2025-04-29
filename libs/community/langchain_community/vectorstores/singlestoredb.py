@@ -13,6 +13,7 @@ from typing import (
     Type,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
@@ -28,6 +29,18 @@ ORDERING_DIRECTIVE: dict = {
 }
 
 
+@deprecated(
+    since="0.3.22",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `SingleStoreVectorStore` "
+        "implementation in `langchain_singlestore`. "
+        "See <https://github.com/singlestore-labs/langchain-singlestore> for details "
+        "about the new implementation."
+    ),
+    alternative="from langchain_singlestore import SingleStoreVectorStore",
+    pending=True,
+)
 class SingleStoreDB(VectorStore):
     """`SingleStore DB` vector store.
 
