@@ -3,20 +3,13 @@
 from __future__ import annotations
 
 import re
-from typing import (Any, Dict, Iterable, List, Literal, Optional, Sequence, Union,
-                    TypedDict)
+from typing import (Any, Dict, Iterable, List, Literal, Optional, Sequence,
+                    TypedDict, Union)
 
 import sqlalchemy
 from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import URL, Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
