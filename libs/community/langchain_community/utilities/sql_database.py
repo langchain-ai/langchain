@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union, TypedDict
 
 import sqlalchemy
 from langchain_core._api import deprecated
@@ -66,6 +66,10 @@ def sanitize_schema(schema: str) -> str:
         )
     return schema
 
+class PartitionFilterDict(TypedDict):
+    column: str
+    operator: str
+    value: Any
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
@@ -77,7 +81,7 @@ class SQLDatabase:
         metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
-        partitioned_tables: Optional[Dict[str, Dict[str, Any]]] = None,
+        partitioned_tables: Optional[Dict[str, PartitionFilterDict]] = None,
         sample_rows_in_table_info: int = 3,
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
