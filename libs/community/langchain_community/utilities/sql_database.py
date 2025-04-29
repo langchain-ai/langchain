@@ -22,6 +22,18 @@ from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import Executable
 from sqlalchemy.types import NullType
 
+operator_map = {
+    '=': lambda col, val: col == val,
+    '!=': lambda col, val: col != val,
+    '>': lambda col, val: col > val,
+    '<': lambda col, val: col < val,
+    '>=': lambda col, val: col >= val,
+    '<=': lambda col, val: col <= val,
+    'in': lambda col, val: col.in_(val),
+    'between': lambda col, val: col.between(val[0], val[1]),
+    'like': lambda col, val: col.like(val),
+}
+
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
@@ -65,6 +77,7 @@ class SQLDatabase:
         metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
+        partitioned_tables: Optional[Dict[str, Dict[str, Any]]] = None,
         sample_rows_in_table_info: int = 3,
         indexes_in_table_info: bool = False,
         custom_table_info: Optional[dict] = None,
@@ -103,6 +116,7 @@ class SQLDatabase:
                 )
         usable_tables = self.get_usable_table_names()
         self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
+        self._partitioned_tables = partitioned_tables or {}
 
         if not isinstance(sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
@@ -414,7 +428,20 @@ class SQLDatabase:
 
     def _get_sample_rows(self, table: Table) -> str:
         # build the select command
-        command = select(table).limit(self._sample_rows_in_table_info)
+        if table.name not in self._partitioned_tables:
+            command = select(table).limit(self._sample_rows_in_table_info)
+        else:
+            filter_info = self._partitioned_tables[table.name]
+            column = table.c[filter_info["column"]]
+            operator = filter_info["operator"]
+            value = filter_info["value"]
+
+            if operator in operator_map:
+                filter_clause = operator_map[operator](column, value)
+            else:
+                raise ValueError(f"Unsupported operator: {operator}")
+
+            command = select(table).where(filter_clause).limit(self._sample_rows_in_table_info)
 
         # save the columns in string format
         columns_str = "\t".join([col.name for col in table.columns])
