@@ -14,6 +14,9 @@ class GitbookLoader(BaseLoader):
 
     1. load from either a single page, or
     2. load all (relative) paths in the sitemap, handling nested sitemap indexes.
+
+    When `load_all_paths=True`, the loader parses XML sitemaps and requires the
+    `lxml` package to be installed (`pip install lxml`).
     """
 
     def __init__(
@@ -34,7 +37,7 @@ class GitbookLoader(BaseLoader):
             web_page: The web page to load or the starting point from where
                 relative paths are discovered.
             load_all_paths: If set to True, all relative paths in the navbar
-                are loaded instead of only `web_page`.
+                are loaded instead of only `web_page`. Requires `lxml` package.
             base_url: If `load_all_paths` is True, the relative paths are
                 appended to this base url. Defaults to `web_page`.
             content_selector: The CSS selector for the content to load.
@@ -47,9 +50,11 @@ class GitbookLoader(BaseLoader):
             sitemap_url: Custom sitemap URL to use when load_all_paths is True.
                 Defaults to "{base_url}/sitemap.xml".
             allowed_domains: Optional set of allowed domains to fetch from.
-                If provided, only URLs from these domains will be processed.
-                Helps prevent SSRF vulnerabilities in server environments.
-                Defaults to None (all domains allowed).
+                If None (default), the loader will restrict crawling to the domain
+                of the `web_page` URL to prevent potential SSRF vulnerabilities.
+                Provide an explicit set (e.g., {"example.com", "docs.example.com"})
+                to allow crawling across multiple domains. Use with caution in
+                server environments where users might control the input URLs.
         """
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
@@ -82,19 +87,27 @@ class GitbookLoader(BaseLoader):
             )
 
     def _is_url_allowed(self, url: str) -> bool:
-        """Check if a URL's domain is allowed for processing.
-
-        Args:
-            url: The URL to check
-
-        Returns:
-            bool: True if the domain is allowed or if no allowed_domains set is defined
-        """
+        """Check if a URL has an allowed scheme and domain."""
+        # It's assumed self.allowed_domains is always set by __init__
+        # either explicitly or derived from web_page. If it's somehow still
+        # None here, it indicates an initialization issue, so denying is safer.
         if self.allowed_domains is None:
-            return True
+            return False  # Should not happen if init worked
 
-        netloc = urlparse(url).netloc
-        return netloc in self.allowed_domains
+        try:
+            parsed = urlparse(url)
+
+            # 1. Validate scheme (Minimal Enhancement)
+            if parsed.scheme not in ("http", "https"):
+                return False
+
+            # 2. Validate domain (Existing logic - handles suffix correctly)
+            # Ensure netloc is not empty before checking membership
+            if not parsed.netloc:
+                return False
+            return parsed.netloc in self.allowed_domains
+        except Exception:  # Catch potential urlparse errors
+            return False
 
     def _safe_add_url(
         self, url_list: List[str], url: str, url_type: str = "URL"
@@ -177,8 +190,9 @@ class GitbookLoader(BaseLoader):
                     original_web_paths = web_loader.web_paths
                     web_loader.web_paths = [sitemap_url]
 
-                    # Reuse the same loader for the next sitemap
-                    sitemap_soup = web_loader.scrape(parser="xml")
+                    # Reuse the same loader for the next sitemap,
+                    # explicitly use lxml-xml
+                    sitemap_soup = web_loader.scrape(parser="lxml-xml")
 
                     # Restore original web_paths
                     web_loader.web_paths = original_web_paths
@@ -234,8 +248,9 @@ class GitbookLoader(BaseLoader):
             original_web_paths = web_loader.web_paths
             web_loader.web_paths = new_urls
 
-            # Use the same WebBaseLoader's ascrape_all for efficient parallel fetching
-            soups = await web_loader.ascrape_all(new_urls, parser="xml")
+            # Use the same WebBaseLoader's ascrape_all for efficient parallel
+            # fetching, explicitly use lxml-xml
+            soups = await web_loader.ascrape_all(new_urls, parser="lxml-xml")
 
             # Restore original web_paths
             web_loader.web_paths = original_web_paths
@@ -271,7 +286,8 @@ class GitbookLoader(BaseLoader):
         else:
             # Get initial sitemap using the recursive method
             temp_loader = self._create_web_loader(self.start_url)
-            soup_info = temp_loader.scrape(parser="xml")
+            # Explicitly use lxml-xml for parsing the initial sitemap
+            soup_info = temp_loader.scrape(parser="lxml-xml")
 
             # Process sitemap(s) recursively to get all content URLs
             processed_urls: Set[str] = set()
@@ -313,7 +329,8 @@ class GitbookLoader(BaseLoader):
         else:
             # Get initial sitemap - web_loader will be created in _aprocess_sitemap
             temp_loader = self._create_web_loader(self.start_url)
-            soups = await temp_loader.ascrape_all([self.start_url], parser="xml")
+            # Explicitly use lxml-xml for parsing the initial sitemap
+            soups = await temp_loader.ascrape_all([self.start_url], parser="lxml-xml")
             soup_info = soups[0]
 
             # Process sitemap(s) recursively to get all content URLs
