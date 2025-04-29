@@ -20,7 +20,7 @@ else:
         pass
 
 
-class GmailBaseTool(BaseTool):  # type: ignore[override]
+class GmailBaseTool(BaseTool):
     """Base class for Gmail tools."""
 
     api_resource: Resource = Field(default_factory=build_resource_service)

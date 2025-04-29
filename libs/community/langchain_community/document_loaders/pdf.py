@@ -97,7 +97,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> list:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)
 
 
 class BasePDFLoader(BaseLoader, ABC):
@@ -310,11 +310,9 @@ class PyPDFLoader(BasePDFLoader):
         In this way, a paragraph can be continued on the next page.
         """
         if self.web_path:
-            blob = Blob.from_data(  # type: ignore[attr-defined]
-                open(self.file_path, "rb").read(), path=self.web_path
-            )
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.lazy_parse(blob)
 
 
@@ -426,11 +424,9 @@ class PyPDFium2Loader(BasePDFLoader):
         In this way, a paragraph can be continued on the next page.
         """
         if self.web_path:
-            blob = Blob.from_data(  # type: ignore[attr-defined]
-                open(self.file_path, "rb").read(), path=self.web_path
-            )
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 
@@ -690,11 +686,9 @@ class PDFMinerLoader(BasePDFLoader):
         In this way, a paragraph can be continued on the next page.
         """
         if self.web_path:
-            blob = Blob.from_data(  # type: ignore[attr-defined]
-                open(self.file_path, "rb").read(), path=self.web_path
-            )
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         yield from self.parser.lazy_parse(blob)
 
 
@@ -866,9 +860,9 @@ class PyMuPDFLoader(BasePDFLoader):
             )
         parser = self.parser
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         yield from parser._lazy_parse(blob, text_kwargs=kwargs)
 
     def load(self, **kwargs: Any) -> list[Document]:
@@ -1062,9 +1056,9 @@ class PDFPlumberLoader(BasePDFLoader):
             extract_images=self.extract_images,
         )
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
         else:
-            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+            blob = Blob.from_path(self.file_path)
         return parser.parse(blob)
 
 
@@ -1179,7 +1173,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         # raises ValueError when multipage and not on S3"""
 
         if self.web_path and self._is_s3_url(self.web_path):
-            blob = Blob(path=self.web_path)  # type: ignore[call-arg] # type: ignore[misc]
+            blob = Blob(path=self.web_path)
         else:
             blob = Blob.from_path(self.file_path)
             if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:
@@ -1192,7 +1186,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         yield from self.parser.parse(blob)
 
     @staticmethod
-    def _get_number_of_pages(blob: Blob) -> int:  # type: ignore[valid-type]
+    def _get_number_of_pages(blob: Blob) -> int:
         try:
             import pypdf
             from PIL import Image, ImageSequence
@@ -1202,22 +1196,20 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 "Could not import pypdf or Pilloe python package. "
                 "Please install it with `pip install pypdf Pillow`."
             )
-        if blob.mimetype == "application/pdf":  # type: ignore[attr-defined]
-            with blob.as_bytes_io() as input_pdf_file:  # type: ignore[attr-defined]
+        if blob.mimetype == "application/pdf":
+            with blob.as_bytes_io() as input_pdf_file:
                 pdf_reader = pypdf.PdfReader(input_pdf_file)
                 return len(pdf_reader.pages)
-        elif blob.mimetype == "image/tiff":  # type: ignore[attr-defined]
+        elif blob.mimetype == "image/tiff":
             num_pages = 0
-            img = Image.open(blob.as_bytes())  # type: ignore[attr-defined]
+            img = Image.open(blob.as_bytes())
             for _, _ in enumerate(ImageSequence.Iterator(img)):
                 num_pages += 1
             return num_pages
-        elif blob.mimetype in ["image/png", "image/jpeg"]:  # type: ignore[attr-defined]
+        elif blob.mimetype in ["image/png", "image/jpeg"]:
             return 1
         else:
-            raise ValueError(  # type: ignore[attr-defined]
-                f"unsupported mime type: {blob.mimetype}"
-            )
+            raise ValueError(f"unsupported mime type: {blob.mimetype}")
 
 
 class DedocPDFLoader(DedocBaseLoader):
@@ -1364,7 +1356,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+        blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
 
 

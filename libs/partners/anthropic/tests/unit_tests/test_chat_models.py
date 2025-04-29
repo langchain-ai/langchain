@@ -13,6 +13,7 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _format_image,
     _format_messages,
     _merge_messages,
     convert_to_anthropic_tool,
@@ -294,6 +295,12 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
+
+
+def test__format_image() -> None:
+    url = "dummyimage.com/600x400/000/fff"
+    with pytest.raises(ValueError):
+        _format_image(url)
 
 
 @pytest.fixture()
@@ -703,7 +710,7 @@ def test__format_messages_with_cache_control() -> None:
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": "<base64 data>",
-                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                    "cache_control": {"type": "ephemeral"},
                 },
             ]
         )
@@ -742,7 +749,7 @@ def test__format_messages_with_citations() -> None:
                     "source_type": "text",
                     "text": "The grass is green. The sky is blue.",
                     "mime_type": "text/plain",
-                    "metadata": {"citations": {"enabled": True}},
+                    "citations": {"enabled": True},
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
             ]
@@ -767,6 +774,56 @@ def test__format_messages_with_citations() -> None:
     ]
     actual_system, actual_messages = _format_messages(input_messages)
     assert actual_system is None
+    assert actual_messages == expected_messages
+
+
+def test__format_messages_openai_image_format() -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Can you highlight the differences between these two images?",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://<image url>"},
+            },
+        ],
+    )
+    actual_system, actual_messages = _format_messages([message])
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "Can you highlight the differences between these two images?"
+                    ),
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "<base64 data>",
+                    },
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": "https://<image url>",
+                    },
+                },
+            ],
+        }
+    ]
     assert actual_messages == expected_messages
 
 
@@ -874,3 +931,12 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "any"
     }
+
+
+def test_optional_description() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    class SampleModel(BaseModel):
+        sample_field: str
+
+    _ = llm.with_structured_output(SampleModel.model_json_schema())

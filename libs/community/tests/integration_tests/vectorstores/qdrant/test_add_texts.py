@@ -62,7 +62,7 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
     collection_name = uuid.uuid4().hex
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
-        vectors_config = {vector_name: vectors_config}  # type: ignore[assignment]
+        vectors_config = {vector_name: vectors_config}
     client.recreate_collection(collection_name, vectors_config=vectors_config)
 
     vec_store = Qdrant(
@@ -130,6 +130,6 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
 
     assert 5 == client.count(collection_name).count
     assert all(
-        vector_name in point.vector  # type: ignore[operator]
+        vector_name in point.vector
         for point in client.scroll(collection_name, with_vectors=True)[0]
     )

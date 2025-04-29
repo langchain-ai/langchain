@@ -95,7 +95,7 @@ def resolve_pairwise_criteria(
     return criteria_
 
 
-class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[override]
+class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
     """A parser for the output of the PairwiseStringEvalChain.
 
     Attributes:
@@ -151,7 +151,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[
         }
 
 
-class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
@@ -391,7 +391,7 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):  # type: ignore[override]
+class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs,
      with labeled preferences.

@@ -8,7 +8,6 @@ from abc import abstractmethod
 from collections.abc import (
     AsyncIterator,
     Iterator,
-    Mapping,  # noqa: F401 Needed by pydantic
     Sequence,
 )
 from functools import wraps
@@ -462,9 +461,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 config,
             )
         return (self.default, config)
-
-
-RunnableConfigurableFields.model_rebuild()
 
 
 # Before Python 3.11 native StrEnum is not available

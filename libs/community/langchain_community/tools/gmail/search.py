@@ -43,7 +43,7 @@ class SearchArgsSchema(BaseModel):
     )
 
 
-class GmailSearch(GmailBaseTool):  # type: ignore[override, override]
+class GmailSearch(GmailBaseTool):
     """Tool that searches for messages or threads in Gmail."""
 
     name: str = "search_gmail"

@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import Mapping, Sequence
 from contextvars import Context
 from functools import lru_cache
 from inspect import signature
@@ -33,8 +34,6 @@ if TYPE_CHECKING:
         Awaitable,
         Coroutine,
         Iterable,
-        Mapping,
-        Sequence,
     )
 
     from langchain_core.runnables.schema import StreamEvent
