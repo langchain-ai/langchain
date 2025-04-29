@@ -210,7 +210,7 @@ def _convert_agent_observation_to_messages(
             content = json.dumps(observation, ensure_ascii=False)
         except Exception:
             content = str(observation)
-    return [HumanMessage(content=content)]
+    return [AIMessage(content=content)]
 
 
 def _create_function_message(
