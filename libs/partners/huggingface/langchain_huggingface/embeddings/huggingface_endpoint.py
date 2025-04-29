@@ -77,13 +77,13 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             client = InferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
-                provider=self.provider,
+                provider=self.provider,  # type: ignore[arg-type]
             )
 
             async_client = AsyncInferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
-                provider=self.provider,
+                provider=self.provider,  # type: ignore[arg-type]
             )
 
             if self.task not in VALID_TASKS:
