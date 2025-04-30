@@ -646,7 +646,7 @@ packages:
 - name: langchain-hana
   path: .
   repo: SAP/langchain-integration-for-sap-hana-cloud
-  name_title: SAP HANA
+  name_title: SAP HANA Cloud
   provider_page: sap
   downloads: 315
   downloads_updated_at: '2025-04-27T19:45:43.938924+00:00'
