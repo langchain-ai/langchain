@@ -39,7 +39,6 @@ llm = OpenAI(
 chat = ChatOpenAI(callbacks=[handler])
 
 llm("Tell me a joke")
-
 ```
 
 ## Usage with chains and agents
@@ -83,16 +82,21 @@ agent_executor.run("how many letters in the word educa?", callbacks=[handler])
 Another example:
 
 ```python
-from langchain.agents import load_tools, initialize_agent, AgentType
+from langgraph.prebuilt import create_react_agent
+from langchain.agents import load_tools
 from langchain_openai import OpenAI
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
-
 
 handler = LLMonitorCallbackHandler()
 
 llm = OpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
-agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, metadata={ "agent_name": "GirlfriendAgeFinder" })  # <- recommended, assign a custom name
+
+agent = create_react_agent(
+    tools=tools,
+    llm=llm,
+    system_prompt="You are a helpful assistant."
+)
 
 agent.run(
     "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
