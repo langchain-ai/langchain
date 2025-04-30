@@ -538,6 +538,10 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+    service_tier: Optional[str] = None
+    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
+    for users of OpenAI's scale tier service.
+    """
 
     use_responses_api: Optional[bool] = None
     """Whether to use the Responses API instead of the Chat API.
@@ -655,6 +659,7 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
         }
 
         params = {
@@ -2326,6 +2331,27 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "logprobs": None,
             }
 
+    .. dropdown:: Flex processing
+
+        OpenAI offers a variety of
+        `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
+        The "flex" tier offers cheaper pricing for requests, with the trade-off that
+        responses may take longer and resources might not always be available.
+        This approach is best suited for non-critical tasks, including model testing,
+        data enhancement, or jobs that can be run asynchronously.
+
+        To use it, initialize the model with ``service_tier="flex"``:
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+
+        Note that this is a beta feature that is only available for a subset of models.
+        See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
+        for more detail.
+
     """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
@@ -3411,14 +3437,16 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
+        additional_kwargs["reasoning"] = chunk.item.model_dump(
+            exclude_none=True, mode="json"
+        )
     elif chunk.type == "response.reasoning_summary_part.added":
         additional_kwargs["reasoning"] = {
-            "type": "reasoning",
-            "id": chunk.item_id,
             # langchain-core uses the `index` key to aggregate text blocks.
             "summary": [
                 {"index": chunk.summary_index, "type": "summary_text", "text": ""}
-            ],
+            ]
         }
     elif chunk.type == "response.reasoning_summary_text.delta":
         additional_kwargs["reasoning"] = {

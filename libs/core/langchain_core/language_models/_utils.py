@@ -1,4 +1,5 @@
 import re
+from collections.abc import Sequence
 from typing import Optional
 
 from langchain_core.messages import BaseMessage
@@ -7,24 +8,30 @@ from langchain_core.messages import BaseMessage
 def _is_openai_data_block(block: dict) -> bool:
     """Check if the block contains multimodal data in OpenAI Chat Completions format."""
     if block.get("type") == "image_url":
-        url = block.get("image_url", {}).get("url")
-        if isinstance(url, str) and set(block.keys()) <= {
-            "type",
-            "image_url",
-            "detail",
-        }:
-            return True
+        if (
+            (set(block.keys()) <= {"type", "image_url", "detail"})
+            and (image_url := block.get("image_url"))
+            and isinstance(image_url, dict)
+        ):
+            url = image_url.get("url")
+            if isinstance(url, str):
+                return True
 
     elif block.get("type") == "file":
-        data = block.get("file", {}).get("file_data")
-        if isinstance(data, str):
-            return True
+        if (file := block.get("file")) and isinstance(file, dict):
+            file_data = file.get("file_data")
+            if isinstance(file_data, str):
+                return True
 
-    elif block.get("type") == "input_audio":
-        audio_data = block.get("input_audio", {}).get("data")
-        audio_format = block.get("input_audio", {}).get("format")
-        if isinstance(audio_data, str) and isinstance(audio_format, str):
-            return True
+    elif block.get("type") == "input_audio":  # noqa: SIM102
+        if (input_audio := block.get("input_audio")) and isinstance(input_audio, dict):
+            audio_data = input_audio.get("data")
+            audio_format = input_audio.get("format")
+            if isinstance(audio_data, str) and isinstance(audio_format, str):
+                return True
+
+    else:
+        return False
 
     return False
 
@@ -98,7 +105,7 @@ def _convert_openai_format_to_data_block(block: dict) -> dict:
     return block
 
 
-def _normalize_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
+def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
     """Extend support for message formats.
 
     Chat models implement support for images in OpenAI Chat Completions format, as well
