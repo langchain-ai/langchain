@@ -19,7 +19,7 @@ packages:
   downloads_updated_at: '2025-04-22T15:24:39.289813+00:00'
 - name: langchain-community
   path: libs/community
-  repo: langchain-ai/langchain
+  repo: langchain-ai/langchain-community
   downloads: 20961009
   downloads_updated_at: '2025-04-22T15:24:39.289813+00:00'
 - name: langchain-experimental
@@ -549,6 +549,7 @@ packages:
 - name: langchain-tavily
   path: .
   repo: tavily-ai/langchain-tavily
+  include_in_api_ref: true
   downloads: 13796
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
 - name: langchain-zotero-retriever
@@ -642,3 +643,10 @@ packages:
   repo: valyu-network/langchain-valyu
   downloads: 120
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
+- name: langchain-hana
+  path: .
+  repo: SAP/langchain-integration-for-sap-hana-cloud
+  name_title: SAP HANA
+  provider_page: sap
+  downloads: 315
+  downloads_updated_at: '2025-04-27T19:45:43.938924+00:00'
