@@ -115,7 +115,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         _model_kwargs = self.model_kwargs or {}
         #  api doc: https://huggingface.github.io/text-embeddings-inference/#/Text%20Embeddings%20Inference/embed
         responses = self.client.feature_extraction(text=texts, **_model_kwargs)
-        return responses
+        return responses.tolist()
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
@@ -132,7 +132,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         responses = await self.async_client.feature_extraction(
             text=texts, **_model_kwargs
         )
-        return responses
+        return responses.tolist()
 
     def embed_query(self, text: str) -> list[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
