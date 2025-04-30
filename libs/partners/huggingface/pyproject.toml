@@ -44,7 +44,6 @@ typing = ["mypy<2.0,>=1.10", "langchain-core"]
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
-langchain-community = { path = "../../community", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"

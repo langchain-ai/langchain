@@ -2220,7 +2220,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2396,7 +2395,7 @@ typing = [
 [[package]]
 name = "langchain-community"
 version = "0.3.22"
-source = { editable = "libs/community" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "dataclasses-json" },
@@ -2412,76 +2411,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "tenacity" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
-    { name = "dataclasses-json", specifier = ">=0.5.7,<0.7" },
-    { name = "httpx-sse", specifier = ">=0.4.0,<1.0.0" },
-    { name = "langchain", editable = "libs/langchain" },
-    { name = "langchain-core", editable = "libs/core" },
-    { name = "langsmith", specifier = ">=0.1.125,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.2" },
-    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pydantic-settings", specifier = ">=2.4.0,<3.0.0" },
-    { name = "pyyaml", specifier = ">=5.3" },
-    { name = "requests", specifier = ">=2,<3" },
-    { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
-]
-
-[package.metadata.requires-dev]
-codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [
-    { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", editable = "libs/core" },
-    { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
-]
-lint = [
-    { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
-    { name = "cffi", marker = "python_full_version >= '3.10'" },
-    { name = "ruff", specifier = ">=0.9,<0.10" },
-]
-test = [
-    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
-    { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
-    { name = "cffi", marker = "python_full_version >= '3.10'" },
-    { name = "duckdb-engine", specifier = ">=0.13.6,<1.0.0" },
-    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain", editable = "libs/langchain" },
-    { name = "langchain-core", editable = "libs/core" },
-    { name = "langchain-tests", editable = "libs/standard-tests" },
-    { name = "lark", specifier = ">=1.1.5,<2.0.0" },
-    { name = "pandas", specifier = ">=2.0.0,<3.0.0" },
-    { name = "pytest", specifier = ">=7.4.4,<8.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.20.3,<1.0.0" },
-    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
-    { name = "pytest-dotenv", specifier = ">=0.5.2,<1.0.0" },
-    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
-    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
-    { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "requests-mock", specifier = ">=1.11.0,<2.0.0" },
-    { name = "responses", specifier = ">=0.22.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
-    { name = "toml", specifier = ">=0.10.2" },
-]
-test-integration = [
-    { name = "pytest-vcr", specifier = ">=1.0.2,<2.0.0" },
-    { name = "vcrpy", specifier = ">=6,<7" },
-]
-typing = [
-    { name = "langchain", editable = "libs/langchain" },
-    { name = "langchain-core", editable = "libs/core" },
-    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
-    { name = "mypy", specifier = ">=1.15,<2.0" },
-    { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
-    { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
-    { name = "types-pytz", specifier = ">=2023.3.0.0,<2024.0.0.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
-    { name = "types-redis", specifier = ">=4.3.21.6,<5.0.0.0" },
-    { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
-    { name = "types-toml", specifier = ">=0.10.8.1,<1.0.0.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/04/a9/32b4fb08b82b264cba1096d7daa49de808e117046ebf9df4c382e23791db/langchain_community-0.3.22.tar.gz", hash = "sha256:36284687a9f64bc7820c0140beb3b96393f6c74c0b7ad8ba04ac35d673fe0988", size = 33230274 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/bb/ebd0f33408f95ebfdb48e2a551c50506c46efc57b836b57c792ccd14290d/langchain_community-0.3.22-py3-none-any.whl", hash = "sha256:02ecdc669408d587b9dda78462dbbe8c27168edd26bb205630d0bc753e7cce6b", size = 2529327 },
 ]
 
 [[package]]
@@ -2747,7 +2679,7 @@ codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 dev = [
     { name = "ipykernel", specifier = ">=6.29.2,<7.0.0" },
     { name = "langchain", editable = "libs/langchain" },
-    { name = "langchain-community", editable = "libs/community" },
+    { name = "langchain-community" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "langchain-openai", editable = "libs/partners/openai" },
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
