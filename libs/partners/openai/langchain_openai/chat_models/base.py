@@ -3182,8 +3182,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
             if msg["content"]:
-                if message_id := lc_msg.response_metadata.get("message_id"):
-                    msg["id"] = message_id
+                if lc_msg.id and lc_msg.id.startswith("msg_"):
+                    msg["id"] = lc_msg.id
                 input_.append(msg)
             input_.extend(function_calls)
             input_.extend(computer_calls)
@@ -3276,7 +3276,6 @@ def _construct_lc_result_from_responses_api(
                 if content.type == "refusal":
                     additional_kwargs["refusal"] = content.refusal
             msg_id = output.id
-            response_metadata["message_id"] = msg_id
         elif output.type == "function_call":
             try:
                 args = json.loads(output.arguments, strict=False)
