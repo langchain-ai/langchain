@@ -22,7 +22,8 @@ You can use it as part of a Self Ask chain:
 ```python
 from langchain_community.utilities import SearchApiAPIWrapper
 from langchain_openai import OpenAI
-from langchain.agents import initialize_agent, Tool
+from langchain.agents import Tool
+from langgraph.prebuilt import create_react_agent
 from langchain.agents import AgentType
 
 import os
@@ -40,7 +41,7 @@ tools = [
     )
 ]
 
-self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True)
+self_ask_with_search = create_react_agent(llm, tools, verbose=True)
 self_ask_with_search.run("Who lived longer: Plato, Socrates, or Aristotle?")
 ```
 
