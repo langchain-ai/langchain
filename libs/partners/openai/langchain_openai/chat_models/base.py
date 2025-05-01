@@ -3095,6 +3095,52 @@ def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
     return new_reasoning
 
 
+def _explode_on_id(msg: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Split a message dict into a list of message dicts, hoisting any `id`
+    that appears on a content block up to the outer level.
+
+    Consecutive content blocks that share the same non-None `id`
+    end up in the same outer block.
+    A content block **without** an `id` always goes into its *own* block.
+
+    Nothing else about the structure is assumed – every key except
+    `content` is copied unchanged into each resulting block.
+
+    The function avoids deepcopying large structures; only the small
+    pieces that actually change are copied.
+    """
+    base = {k: v for k, v in msg.items() if k != "content"}
+
+    out: list[dict[str, Any]] = []
+    current: Optional[dict[str, Any]] = None          # the block we’re filling
+    current_id: Optional[str] = None                  # id of that block
+
+    for part in msg.get("content", []):
+        pid = part.get("id")                          # may be None
+        stripped = {k: v for k, v in part.items() if k != "id"}
+
+        if pid is None:                               # always its own block #<-- TODO: fix this
+            if current is not None:                   # flush whatever we were building
+                out.append(current)
+                current = None
+            out.append({**base, "content": [stripped]})
+            continue
+
+        if pid != current_id:                         # start a new block
+            if current is not None:
+                out.append(current)
+            current_id = pid
+            current = {**base, "id": pid, "content": []}
+
+        current["content"].append(stripped)
+
+    if current is not None:                           # flush last block
+        out.append(current)
+
+    return out
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
@@ -3174,6 +3220,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 "type": "output_text",
                                 "text": block["text"],
                                 "annotations": block.get("annotations") or [],
+                                "id": block.get("id"),
                             }
                         )
                     elif block["type"] in ("output_text", "refusal"):
@@ -3182,9 +3229,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
             if msg["content"]:
-                if message_id := lc_msg.response_metadata.get("message_id"):
-                    msg["id"] = message_id
-                input_.append(msg)
+                input_.extend(_explode_on_id(msg))
             input_.extend(function_calls)
             input_.extend(computer_calls)
         elif msg["role"] == "user":
@@ -3269,14 +3314,14 @@ def _construct_lc_result_from_responses_api(
                             annotation.model_dump()
                             for annotation in content.annotations
                         ],
+                        "id": output.id,
                     }
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
                     additional_kwargs["refusal"] = content.refusal
-            msg_id = output.id
-            response_metadata["message_id"] = msg_id
+            msg_id = output.id  # backward compatibility
         elif output.type == "function_call":
             try:
                 args = json.loads(output.arguments, strict=False)
@@ -3402,7 +3447,9 @@ def _convert_responses_chunk_to_generation_chunk(
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
-        id = chunk.item.id
+        id = chunk.item.id  # backward compatibility
+    elif chunk.type == "response.content_part.done" and chunk.part.type == "output_text":
+        content.append({"type": "text", "text": "", "index": chunk.content_index, "id": chunk.item_id})
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
