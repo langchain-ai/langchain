@@ -2,7 +2,9 @@
 
 import os
 from typing import Any, Callable, Literal, cast
+from unittest.mock import patch
 
+import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -940,3 +942,15 @@ def test_optional_description() -> None:
         sample_field: str
 
     _ = llm.with_structured_output(SampleModel.model_json_schema())
+
+
+def test_get_num_tokens_from_messages_passes_kwargs() -> None:
+    """Test that get_num_tokens_from_messages passes kwargs to the model."""
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    with patch.object(anthropic, "Client") as _Client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
+
+    assert (
+        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    )
