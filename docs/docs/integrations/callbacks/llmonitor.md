@@ -84,18 +84,17 @@ Another example:
 ```python
 from langgraph.prebuilt import create_react_agent
 from langchain.agents import load_tools
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
 
 handler = LLMonitorCallbackHandler()
 
-llm = OpenAI(temperature=0)
+llm = ChatOpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 agent = create_react_agent(
     tools=tools,
-    llm=llm,
-    system_prompt="You are a helpful assistant."
+    llm=llm
 )
 
 agent.run(
