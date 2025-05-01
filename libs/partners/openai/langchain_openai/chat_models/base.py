@@ -736,6 +736,8 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
                 generation_info["system_fingerprint"] = system_fingerprint
+            if service_tier := chunk.get("service_tier"):
+                generation_info["service_tier"] = service_tier
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -1020,6 +1022,8 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if "id" in response_dict:
             llm_output["id"] = response_dict["id"]
+        if "service_tier" in response_dict:
+            llm_output["service_tier"] = response_dict["service_tier"]
 
         if isinstance(response, openai.BaseModel) and getattr(
             response, "choices", None
@@ -3243,6 +3247,7 @@ def _construct_lc_result_from_responses_api(
             "status",
             "user",
             "model",
+            "service_tier",
         )
     }
     if metadata:
