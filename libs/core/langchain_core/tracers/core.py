@@ -282,7 +282,7 @@ class _TracerCore(ABC):
             llm_run.outputs = {}
         else:
             llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
-        if not llm_run.extra.get("omit_auto_outputs", False):
+        if not llm_run.extra.get("__omit_auto_outputs", False):
             llm_run.outputs.update(response.model_dump())
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
@@ -306,7 +306,7 @@ class _TracerCore(ABC):
                 llm_run.outputs = {}
             else:
                 llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
-            if not llm_run.extra.get("omit_auto_outputs", False):
+            if not llm_run.extra.get("__omit_auto_outputs", False):
                 llm_run.outputs.update(response.model_dump())
             for i, generations in enumerate(response.generations):
                 for j, generation in enumerate(generations):
@@ -382,7 +382,7 @@ class _TracerCore(ABC):
         chain_run = self._get_run(run_id)
         if getattr(chain_run, "outputs", None) is None:
             chain_run.outputs = {}
-        if not chain_run.extra.get("omit_auto_outputs", False):
+        if not chain_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", chain_run.outputs).update(
                 self._get_chain_outputs(outputs)
             )
@@ -455,7 +455,7 @@ class _TracerCore(ABC):
         tool_run = self._get_run(run_id, run_type="tool")
         if getattr(tool_run, "outputs", None) is None:
             tool_run.outputs = {}
-        if not tool_run.extra.get("omit_auto_outputs", False):
+        if not tool_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", tool_run.outputs).update({"output": output})
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
@@ -511,7 +511,7 @@ class _TracerCore(ABC):
         retrieval_run = self._get_run(run_id, run_type="retriever")
         if getattr(retrieval_run, "outputs", None) is None:
             retrieval_run.outputs = {}
-        if not retrieval_run.extra.get("omit_auto_outputs", False):
+        if not retrieval_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", retrieval_run.outputs).update(
                 {"documents": documents}
             )
