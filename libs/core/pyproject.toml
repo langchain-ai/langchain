@@ -92,6 +92,7 @@ ignore = [
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09", # Too many something (arg, statements, etc)
+    "RUF012", # Doesn't play well with Pydantic
     "TC001", # Doesn't play well with Pydantic
     "TC002", # Doesn't play well with Pydantic
     "TC003", # Doesn't play well with Pydantic
@@ -105,7 +106,6 @@ ignore = [
     "BLE",
     "ERA",
     "PLR2004",
-    "RUF",
     "SLF",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]

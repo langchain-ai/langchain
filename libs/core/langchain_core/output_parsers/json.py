@@ -132,6 +132,6 @@ SimpleJsonOutputParser = JsonOutputParser
 __all__ = [
     "JsonOutputParser",
     "SimpleJsonOutputParser",  # For backwards compatibility
-    "parse_partial_json",  # For backwards compatibility
     "parse_and_check_json_markdown",  # For backwards compatibility
+    "parse_partial_json",  # For backwards compatibility
 ]

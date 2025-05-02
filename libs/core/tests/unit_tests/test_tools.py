@@ -2303,7 +2303,7 @@ def test_injected_arg_with_complex_type() -> None:
             self.value = "bar"
 
     @tool
-    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:  # noqa: ARG001
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
         """Tool that has an injected tool arg."""
         return foo.value
 
@@ -2479,7 +2479,7 @@ def test_simple_tool_args_schema_dict() -> None:
 
 def test_empty_string_tool_call_id() -> None:
     @tool
-    def foo(x: int) -> str:  # noqa: ARG001
+    def foo(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2491,7 +2491,7 @@ def test_empty_string_tool_call_id() -> None:
 def test_tool_decorator_description() -> None:
     # test basic tool
     @tool
-    def foo(x: int) -> str:  # noqa: ARG001
+    def foo(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2503,7 +2503,7 @@ def test_tool_decorator_description() -> None:
 
     # test basic tool with description
     @tool(description="description")
-    def foo_description(x: int) -> str:  # noqa: ARG001
+    def foo_description(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2522,7 +2522,7 @@ def test_tool_decorator_description() -> None:
         x: int
 
     @tool(args_schema=ArgsSchema)
-    def foo_args_schema(x: int) -> str:  # noqa: ARG001
+    def foo_args_schema(x: int) -> str:
         return "hi"
 
     assert foo_args_schema.description == "Bar."
@@ -2534,7 +2534,7 @@ def test_tool_decorator_description() -> None:
     )
 
     @tool(description="description", args_schema=ArgsSchema)
-    def foo_args_schema_description(x: int) -> str:  # noqa: ARG001
+    def foo_args_schema_description(x: int) -> str:
         return "hi"
 
     assert foo_args_schema_description.description == "description"
@@ -2556,11 +2556,11 @@ def test_tool_decorator_description() -> None:
     }
 
     @tool(args_schema=args_json_schema)
-    def foo_args_jsons_schema(x: int) -> str:  # noqa: ARG001
+    def foo_args_jsons_schema(x: int) -> str:
         return "hi"
 
     @tool(description="description", args_schema=args_json_schema)
-    def foo_args_jsons_schema_with_description(x: int) -> str:  # noqa: ARG001
+    def foo_args_jsons_schema_with_description(x: int) -> str:
         return "hi"
 
     assert foo_args_jsons_schema.description == "JSON Schema."
@@ -2620,10 +2620,10 @@ def test_title_property_preserved() -> None:
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool asynchronously."""
 
-    def sync_no_op(foo: int) -> str:  # noqa: ARG001
+    def sync_no_op(foo: int) -> str:
         return "good"
 
-    async def async_no_op(foo: int) -> str:  # noqa: ARG001
+    async def async_no_op(foo: int) -> str:
         return "good"
 
     tool = StructuredTool(
@@ -2668,10 +2668,10 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
 def test_tool_invoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool synchronously."""
 
-    def sync_no_op(foo: int) -> str:  # noqa: ARG001
+    def sync_no_op(foo: int) -> str:
         return "good"
 
-    async def async_no_op(foo: int) -> str:  # noqa: ARG001
+    async def async_no_op(foo: int) -> str:
         return "good"
 
     tool = StructuredTool(

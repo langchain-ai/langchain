@@ -273,7 +273,7 @@ def create_schema_from_function(
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
-            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+            filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
 
@@ -991,10 +991,8 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    return (
-        isinstance(obj, str)
-        or isinstance(obj, list)
-        and all(_is_message_content_block(e) for e in obj)
+    return isinstance(obj, str) or (
+        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
     )
 
 

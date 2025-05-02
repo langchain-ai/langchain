@@ -353,7 +353,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             f"Invalid input type {type(input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @override
     def invoke(
@@ -1194,7 +1194,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     async def _call_async(
         self,
@@ -1210,7 +1210,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1252,7 +1252,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @override
@@ -1278,7 +1278,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
