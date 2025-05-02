@@ -3191,7 +3191,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 input_.append(msg)
             input_.extend(function_calls)
             input_.extend(computer_calls)
-        elif msg["role"] == "user":
+        elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
                 for block in msg["content"]:
