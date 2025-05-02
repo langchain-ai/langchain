@@ -3192,7 +3192,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
                 input_.extend(reasoning_items)
                 input_.extend(computer_calls)
-        elif msg["role"] == "user":
+        elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
                 for block in msg["content"]:
