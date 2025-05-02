@@ -68,5 +68,6 @@ jobs:
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           WORKING_DIRECTORY: ${{ github.event.inputs.working-directory || 'all' }}
+          LANGSMITH_API_KEY: abc
         run: |
           ./docs/scripts/execute_notebooks.sh $WORKING_DIRECTORY
