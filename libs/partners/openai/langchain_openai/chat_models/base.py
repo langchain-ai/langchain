@@ -3127,6 +3127,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             reasoning_items = []
             if reasoning := lc_msg.additional_kwargs.get("reasoning"):
                 reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
+            input_.extend(reasoning_items)
             # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
@@ -3185,13 +3186,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
             if msg["content"]:
+                if lc_msg.id and lc_msg.id.startswith("msg_"):
+                    msg["id"] = lc_msg.id
                 input_.append(msg)
             input_.extend(function_calls)
-            if computer_calls:
-                # Hack: we only add reasoning items if computer calls are present. See:
-                # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
-                input_.extend(reasoning_items)
-                input_.extend(computer_calls)
+            input_.extend(computer_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 new_blocks = []
