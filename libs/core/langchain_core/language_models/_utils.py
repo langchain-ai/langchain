@@ -92,13 +92,13 @@ def _convert_openai_format_to_data_block(block: dict) -> dict:
 
     if block["type"] == "input_audio":
         data = block["input_audio"].get("data")
-        format = block["input_audio"].get("format")
-        if data and format:
+        audio_format = block["input_audio"].get("format")
+        if data and audio_format:
             return {
                 "type": "audio",
                 "source_type": "base64",
                 "data": data,
-                "mime_type": f"audio/{format}",
+                "mime_type": f"audio/{audio_format}",
             }
         return block
 
