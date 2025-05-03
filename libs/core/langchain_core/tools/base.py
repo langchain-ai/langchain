@@ -1090,7 +1090,7 @@ def get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if field_names_map[name] not in fields: # using the {alias: key} map to check for fields
+            if name not in field_names_map: # using the {alias: key} map to check for fields
                 continue
             annotations[field_names_map[name]] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
