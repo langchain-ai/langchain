@@ -1092,7 +1092,7 @@ def get_all_basemodel_annotations(
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
             if field_names_map[name] not in fields: # using the {alias: key} map to check for fields
                 continue
-            annotations[name] = param.annotation
+            annotations[field_names_map[name]] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
