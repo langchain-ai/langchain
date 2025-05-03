@@ -7,6 +7,7 @@ from typing import Any, Literal, Optional, Union, cast
 
 import openai
 import tiktoken
+from langchain_community.callbacks.manager import openai_callback_var
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -447,7 +448,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: list[str], *, engine: str, chunk_size: Optional[int] = None
+        self,
+        texts: list[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
     ) -> list[list[float]]:
         """
         Generate length-safe embeddings for a list of texts.
@@ -467,6 +472,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _chunk_size = chunk_size or self.chunk_size
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
+        usage: dict = {}
+        model: str = ""
         for i in _iter:
             response = self.client.create(
                 input=tokens[i : i + _chunk_size], **self._invocation_params
@@ -474,6 +481,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            usage.update(response["usage"])
+            model = response["model"]
+
+        callback = openai_callback_var.get()
+        if callback is not None:
+            callback.on_embedding_end(
+                model_name=model,
+                num_tokens=usage["total_tokens"],
+            )
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -496,7 +512,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
-        self, texts: list[str], *, engine: str, chunk_size: Optional[int] = None
+        self,
+        texts: list[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
     ) -> list[list[float]]:
         """
         Asynchronously generate length-safe embeddings for a list of texts.
@@ -517,6 +537,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _chunk_size = chunk_size or self.chunk_size
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
+        usage: dict = {}
+        model: str = ""
         for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
                 input=tokens[i : i + _chunk_size], **self._invocation_params
@@ -525,6 +547,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            usage.update(response["usage"])
+            model = response["model"]
+
+        callback = openai_callback_var.get()
+        if callback is not None:
+            callback.on_embedding_end(
+                model_name=model,
+                num_tokens=usage["total_tokens"],
+            )
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -545,7 +576,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
     def embed_documents(
-        self, texts: list[str], chunk_size: int | None = None
+        self,
+        texts: list[str],
+        chunk_size: int | None = None,
     ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -560,6 +593,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
+            usage: dict = {}
+            model: str = ""
             for i in range(0, len(texts), chunk_size_):
                 response = self.client.create(
                     input=texts[i : i + chunk_size_], **self._invocation_params
@@ -567,17 +602,30 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 if not isinstance(response, dict):
                     response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
+                usage.update(response["usage"])
+                model = response["model"]
+
+            callback = openai_callback_var.get()
+            if callback is not None:
+                callback.on_embedding_end(
+                    model_name=model,
+                    num_tokens=usage["total_tokens"],
+                )
             return embeddings
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
         return self._get_len_safe_embeddings(
-            texts, engine=engine, chunk_size=chunk_size
+            texts,
+            engine=engine,
+            chunk_size=chunk_size,
         )
 
     async def aembed_documents(
-        self, texts: list[str], chunk_size: int | None = None
+        self,
+        texts: list[str],
+        chunk_size: int | None = None,
     ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
@@ -592,6 +640,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
+            usage: dict = {}
+            model: str = ""
             for i in range(0, len(texts), chunk_size_):
                 response = await self.async_client.create(
                     input=texts[i : i + chunk_size_], **self._invocation_params
@@ -599,13 +649,25 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 if not isinstance(response, dict):
                     response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
+                usage.update(response["usage"])
+                model = response["model"]
+
+            callback = openai_callback_var.get()
+            if callback is not None:
+                callback.on_embedding_end(
+                    model_name=model,
+                    num_tokens=usage["total_tokens"],
+                )
+
             return embeddings
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
         return await self._aget_len_safe_embeddings(
-            texts, engine=engine, chunk_size=chunk_size
+            texts,
+            engine=engine,
+            chunk_size=chunk_size,
         )
 
     def embed_query(self, text: str) -> list[float]:
