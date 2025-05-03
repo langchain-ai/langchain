@@ -736,6 +736,8 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
                 generation_info["system_fingerprint"] = system_fingerprint
+            if service_tier := chunk.get("service_tier"):
+                generation_info["service_tier"] = service_tier
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -1020,6 +1022,8 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if "id" in response_dict:
             llm_output["id"] = response_dict["id"]
+        if "service_tier" in response_dict:
+            llm_output["service_tier"] = response_dict["service_tier"]
 
         if isinstance(response, openai.BaseModel) and getattr(
             response, "choices", None
@@ -3123,6 +3127,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             reasoning_items = []
             if reasoning := lc_msg.additional_kwargs.get("reasoning"):
                 reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
+            input_.extend(reasoning_items)
             # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
@@ -3181,14 +3186,12 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
             if msg["content"]:
+                if lc_msg.id and lc_msg.id.startswith("msg_"):
+                    msg["id"] = lc_msg.id
                 input_.append(msg)
             input_.extend(function_calls)
-            if computer_calls:
-                # Hack: we only add reasoning items if computer calls are present. See:
-                # https://community.openai.com/t/how-to-solve-badrequesterror-400-item-rs-of-type-reasoning-was-provided-without-its-required-following-item-error-in-responses-api/1151686/5
-                input_.extend(reasoning_items)
-                input_.extend(computer_calls)
-        elif msg["role"] == "user":
+            input_.extend(computer_calls)
+        elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
                 for block in msg["content"]:
@@ -3243,6 +3246,7 @@ def _construct_lc_result_from_responses_api(
             "status",
             "user",
             "model",
+            "service_tier",
         )
     }
     if metadata:
