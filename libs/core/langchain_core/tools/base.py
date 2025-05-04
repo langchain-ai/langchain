@@ -1079,7 +1079,6 @@ def get_all_basemodel_annotations(
     if isinstance(cls, type):
         annotations: dict[str, type] = {}
         fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
-        # create map from aliases to the original variable name (key)
         field_names_map = {}
         for key, field in fields.items():
             if field.alias:
@@ -1090,7 +1089,8 @@ def get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             if name in field_names_map and field_names_map[name] not in fields:
                 continue
-            annotations[field_names_map[name]] = param.annotation
+            if name in field_names_map:
+                annotations[field_names_map[name]] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
