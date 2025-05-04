@@ -47,6 +47,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
+    assert response.response_metadata["service_tier"]
     for tool_output in response.additional_kwargs["tool_outputs"]:
         assert tool_output["id"]
         assert tool_output["status"]
@@ -270,7 +271,7 @@ def test_function_calling_and_structured_output() -> None:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
     # Test structured output
     response = llm.invoke("how are ya", response_format=Foo)
