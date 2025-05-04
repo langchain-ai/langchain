@@ -164,6 +164,7 @@ packages:
   downloads: 2756214
   downloads_updated_at: '2025-04-22T15:24:39.289813+00:00'
 - name: langchain-astradb
+  name_title: DataStax Astra DB
   path: libs/astradb
   repo: langchain-ai/langchain-datastax
   downloads: 100973
