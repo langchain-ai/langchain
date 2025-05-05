@@ -2,7 +2,6 @@ import functools
 from importlib import util
 from typing import Any, Optional, Union
 
-from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
@@ -116,7 +115,6 @@ def _check_pkg(pkg: str) -> None:
         )
 
 
-@beta()
 def init_embeddings(
     model: str,
     *,

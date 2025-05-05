@@ -1588,6 +1588,7 @@ class ChatAnthropic(BaseChatModel):
         tools: Optional[
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
+        **kwargs: Any,
     ) -> int:
         """Count tokens in a sequence of input messages.
 
@@ -1647,7 +1648,6 @@ class ChatAnthropic(BaseChatModel):
                 https://docs.anthropic.com/en/docs/build-with-claude/token-counting
         """
         formatted_system, formatted_messages = _format_messages(messages)
-        kwargs: dict[str, Any] = {}
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
