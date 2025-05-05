@@ -46,7 +46,7 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
-from langchain_core.load import dumpd, dumps
+from langchain_core.load import dumpd, dumps, loads
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -1045,6 +1045,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         check_cache = self.cache or self.cache is None
         if check_cache:
             if llm_cache:
+                for idx, message in enumerate(messages):
+                    message.id = f"cached_message_{idx}"
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -1100,6 +1102,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 **result.generations[0].message.response_metadata,
             }
         if check_cache and llm_cache:
+            result.generations = loads(dumps(result.generations))
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 
