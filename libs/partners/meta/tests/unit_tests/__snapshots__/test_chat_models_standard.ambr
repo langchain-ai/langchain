@@ -1,0 +1,30 @@
+# serializer version: 1
+# name: TestLlamaStandard.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_meta',
+      'chat_models',
+      'ChatLlama',
+    ]),
+    'kwargs': dict({
+      'llama_api_base': 'https://api.llama.com/compat/v1/',
+      'llama_api_key': dict({
+        'id': list([
+          'LLAMA_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'Llama-3.3-8B-Instruct',
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'temperature': 0.0,
+    }),
+    'lc': 1,
+    'name': 'ChatLlama',
+    'type': 'constructor',
+  })
+# ---
