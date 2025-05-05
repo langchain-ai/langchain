@@ -1,6 +1,6 @@
 # langchain-meta
 
-This package contains the LangChain integrations for [Meta](https://llama.com/) through their [APIs](https://llama.developer.meta.com/).
+This package contains the LangChain integrations for [Meta](https://llama.com/) through their [APIs](https://llama.developer.meta.com?utm_source=partner-langchain&utm_medium=readme).
 
 ## Installation and Setup
 
@@ -10,7 +10,7 @@ This package contains the LangChain integrations for [Meta](https://llama.com/) 
 pip install -U langchain-meta
 ```
 
-- Get your Llama api key from the [Meta](https://llama.developer.meta.com/) and set it as an environment variable (`LLAMA_API_KEY`)
+- Get your Llama api key from the [Meta](https://llama.developer.meta.com?utm_source=partner-langchain&utm_medium=readme) and set it as an environment variable (`LLAMA_API_KEY`)
 
 ## Chat Completions
 
