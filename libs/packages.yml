@@ -618,7 +618,7 @@ packages:
   downloads: 2114
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
 - name: langchain-cloudflare
-  path: .
+  path: libs/langchain-cloudflare
   repo: cloudflare/langchain-cloudflare
   downloads: 766
   downloads_updated_at: '2025-04-22T15:25:24.644345+00:00'
