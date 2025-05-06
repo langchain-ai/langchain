@@ -7,12 +7,6 @@ repos:
       entry: make -C libs/core format
       files: ^libs/core/
       pass_filenames: false
-    - id: community
-      name: format community
-      language: system
-      entry: make -C libs/community format
-      files: ^libs/community/
-      pass_filenames: false
     - id: langchain
       name: format langchain
       language: system

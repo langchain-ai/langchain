@@ -58,6 +58,7 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -493,7 +494,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 input_messages = _normalize_messages(messages)
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
@@ -583,7 +584,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 **kwargs,
             ):
                 if chunk.message.id is None:
-                    chunk.message.id = f"run-{run_manager.run_id}"
+                    chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
@@ -1001,7 +1002,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1017,7 +1018,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"run-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1073,7 +1074,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1089,7 +1090,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"run-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )

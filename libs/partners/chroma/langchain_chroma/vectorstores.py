@@ -378,10 +378,10 @@ class Chroma(VectorStore):
             query_texts: List of query texts.
             query_embeddings: List of query embeddings.
             n_results: Number of results to return. Defaults to 4.
-            where: dict used to filter results by
-                    e.g. {"color" : "red", "price": 4.20}.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where: dict used to filter results by metadata.
+                    E.g. {"color" : "red"}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -417,7 +417,7 @@ class Chroma(VectorStore):
             uris: File path to the image.
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
-            ids: Optional list of IDs.
+            ids: Optional list of IDs. (Items without IDs will be assigned UUIDs)
             kwargs: Additional keyword arguments to pass.
 
         Returns:
@@ -507,7 +507,7 @@ class Chroma(VectorStore):
             texts: Texts to add to the vectorstore.
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
-            ids: Optional list of IDs.
+            ids: Optional list of IDs. (Items without IDs will be assigned UUIDs)
             kwargs: Additional keyword arguments.
 
         Returns:
@@ -619,8 +619,8 @@ class Chroma(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -650,7 +650,7 @@ class Chroma(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+                    E.g. {"$contains": "hello"}}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -680,8 +680,8 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where_document: dict used to filter by document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -722,8 +722,8 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -904,8 +904,8 @@ class Chroma(VectorStore):
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -955,8 +955,8 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -1012,7 +1012,7 @@ class Chroma(VectorStore):
             offset: The offset to start returning results from.
                     Useful for paging results with limit. Optional.
             where_document: A WhereDocument type dict used to filter by the documents.
-                            E.g. `{$contains: "hello"}`. Optional.
+                            E.g. `{"$contains": "hello"}`. Optional.
             include: A list of what to include in the results.
                      Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
                      Ids are always included.
