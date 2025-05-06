@@ -3373,3 +3373,18 @@ def test_html_splitter_with_media_preservation() -> None:
     ]
 
     assert documents == expected
+
+def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
+    """Test that regex lookahead separator is not re-inserted when merging."""
+    text = "SCE191 First chunk. SCE103 Second chunk."
+    splitter = CharacterTextSplitter(
+        separator=r"(?=SCE\d{3})",
+        is_separator_regex=True,
+        chunk_size=200,
+        chunk_overlap=0,
+        keep_separator=False
+    )
+    output = splitter.split_text(text)
+    assert output == [
+        "SCE191 First chunk. SCE103 Second chunk."
+    ]
