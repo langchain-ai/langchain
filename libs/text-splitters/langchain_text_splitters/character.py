@@ -18,14 +18,22 @@ class CharacterTextSplitter(TextSplitter):
         self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        # First we naively split the large input into a bunch of smaller ones.
-        separator = (
+        """Split text into chunks, ensuring regex separators aren't re-inserted."""
+        # determine the pattern to split on
+        sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        splits = _split_text_with_regex(text, separator, self._keep_separator)
-        _separator = "" if self._keep_separator else self._separator
-        return self._merge_splits(splits, _separator)
+        splits = _split_text_with_regex(text, sep_pattern, self._keep_separator)
+
+        # Decide merge separator:
+        #  - If keep_separator=True or using regex, do not re-insert any separator
+        #  - Otherwise (literal sep & keep_separator=False), re-insert the literal
+        if self._keep_separator or self._is_separator_regex:
+            merge_sep = ""
+        else:
+            merge_sep = self._separator
+
+        return self._merge_splits(splits, merge_sep)
 
 
 def _split_text_with_regex(
