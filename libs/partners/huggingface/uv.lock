@@ -914,7 +914,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.58"
+version = "0.3.59"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -973,7 +973,7 @@ typing = [
 
 [[package]]
 name = "langchain-huggingface"
-version = "0.1.2"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
