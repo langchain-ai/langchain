@@ -568,6 +568,25 @@ class ChatModelUnitTests(ChatModelTests):
                 name="random_image",
             )
 
+        (OpenAI Chat Completions format), as well as
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        (standard format).
+
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
 

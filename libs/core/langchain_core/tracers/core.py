@@ -278,7 +278,12 @@ class _TracerCore(ABC):
 
     def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.outputs = response.model_dump()
+        if getattr(llm_run, "outputs", None) is None:
+            llm_run.outputs = {}
+        else:
+            llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
+        if not llm_run.extra.get("__omit_auto_outputs", False):
+            llm_run.outputs.update(response.model_dump())
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
@@ -297,7 +302,12 @@ class _TracerCore(ABC):
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.error = self._get_stacktrace(error)
         if response:
-            llm_run.outputs = response.model_dump()
+            if getattr(llm_run, "outputs", None) is None:
+                llm_run.outputs = {}
+            else:
+                llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
+            if not llm_run.extra.get("__omit_auto_outputs", False):
+                llm_run.outputs.update(response.model_dump())
             for i, generations in enumerate(response.generations):
                 for j, generation in enumerate(generations):
                     output_generation = llm_run.outputs["generations"][i][j]
@@ -370,7 +380,12 @@ class _TracerCore(ABC):
     ) -> Run:
         """Update a chain run with outputs and end time."""
         chain_run = self._get_run(run_id)
-        chain_run.outputs = self._get_chain_outputs(outputs)
+        if getattr(chain_run, "outputs", None) is None:
+            chain_run.outputs = {}
+        if not chain_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", chain_run.outputs).update(
+                self._get_chain_outputs(outputs)
+            )
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
@@ -438,7 +453,10 @@ class _TracerCore(ABC):
     ) -> Run:
         """Update a tool run with outputs and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
-        tool_run.outputs = {"output": output}
+        if getattr(tool_run, "outputs", None) is None:
+            tool_run.outputs = {}
+        if not tool_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", tool_run.outputs).update({"output": output})
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run
@@ -491,7 +509,12 @@ class _TracerCore(ABC):
     ) -> Run:
         """Update a retrieval run with outputs and end time."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
-        retrieval_run.outputs = {"documents": documents}
+        if getattr(retrieval_run, "outputs", None) is None:
+            retrieval_run.outputs = {}
+        if not retrieval_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", retrieval_run.outputs).update(
+                {"documents": documents}
+            )
         retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         return retrieval_run
