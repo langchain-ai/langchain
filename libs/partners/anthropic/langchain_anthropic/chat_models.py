@@ -99,6 +99,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "text_editor_",
         "computer_",
         "bash_",
+        "web_search_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
