@@ -46,7 +46,7 @@ def test_stream() -> None:
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
                 chunks_with_input_token_counts += 1
-            if token.usage_metadata.get("output_tokens"):
+            elif token.usage_metadata.get("output_tokens"):
                 chunks_with_output_token_counts += 1
         chunks_with_model_name += int("model_name" in token.response_metadata)
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
@@ -85,7 +85,7 @@ async def test_astream() -> None:
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
                 chunks_with_input_token_counts += 1
-            if token.usage_metadata.get("output_tokens"):
+            elif token.usage_metadata.get("output_tokens"):
                 chunks_with_output_token_counts += 1
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
         raise AssertionError(
@@ -130,6 +130,11 @@ async def test_astream() -> None:
 
 async def test_stream_usage() -> None:
     """Test usage metadata can be excluded."""
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
     model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
     assert model.stream_usage
     async for token in model.astream("hi", stream_usage=False):
