@@ -3392,20 +3392,16 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 @pytest.mark.parametrize(
     "separator,is_regex,text,chunk_size,expected",
     [
-        #1) regex lookaround & split happens
+        # 1) regex lookaround & split happens
         #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
         (r"(?<=mid)", True, "abcmiddef", 5, ["abcmid", "def"]),
-
-        #2) regex lookaround & no split
+        # 2) regex lookaround & no split
         #   chunk_size=100 merges back into ["abcmiddef"]
         (r"(?<=mid)", True, "abcmiddef", 100, ["abcmiddef"]),
-
-
-        #3) literal separator & split happens
+        # 3) literal separator & split happens
         #   split on "mid" → ["abc","def"], chunk_size=3 keeps both
-        ("mid", False, "abcmiddef",  3, ["abc", "def"]),
-
-        #4) literal separator & no split
+        ("mid", False, "abcmiddef", 3, ["abc", "def"]),
+        # 4) literal separator & no split
         #   chunk_size=100 merges back into ["abcmiddef"]
         ("mid", False, "abcmiddef", 100, ["abcmiddef"]),
     ],
