@@ -130,8 +130,9 @@ async def test_astream() -> None:
 
 async def test_stream_usage() -> None:
     """Test usage metadata can be excluded."""
-    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
-    async for token in model.astream("hi"):
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
         assert isinstance(token, AIMessageChunk)
         assert token.usage_metadata is None
 
