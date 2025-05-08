@@ -866,29 +866,46 @@ class ChatAnthropic(BaseChatModel):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
         for more detail.
 
-        .. code-block:: python
+        Web search:
 
-            from langchain_anthropic import ChatAnthropic
+            .. code-block:: python
 
-            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+                from langchain_anthropic import ChatAnthropic
 
-            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
-            llm_with_tools = llm.bind_tools([tool])
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
 
-            response = llm_with_tools.invoke(
-                "There's a syntax error in my primes.py file. Can you help me fix it?"
-            )
-            print(response.text())
-            response.tool_calls
+                tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
+                llm_with_tools = llm.bind_tools([tool])
 
-        .. code-block:: none
+                response = llm_with_tools.invoke(
+                    "How do I update a web app to TypeScript 5.5?"
+                )
 
-            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+        Text editor:
 
-            [{'name': 'str_replace_editor',
-            'args': {'command': 'view', 'path': '/repo/primes.py'},
-            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
-            'type': 'tool_call'}]
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+                tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+                llm_with_tools = llm.bind_tools([tool])
+
+                response = llm_with_tools.invoke(
+                    "There's a syntax error in my primes.py file. Can you help me fix it?"
+                )
+                print(response.text())
+                response.tool_calls
+
+            .. code-block:: none
+
+                I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+
+                [{'name': 'str_replace_editor',
+                'args': {'command': 'view', 'path': '/repo/primes.py'},
+                'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+                'type': 'tool_call'}]
 
     Response metadata
         .. code-block:: python
