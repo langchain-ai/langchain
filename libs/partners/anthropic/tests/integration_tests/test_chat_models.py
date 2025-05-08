@@ -151,7 +151,7 @@ async def test_async_stream_twice() -> None:
         assert isinstance(token, AIMessageChunk)
 
     model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
-    async for token in model.astream("hi"):
+    async for token in model.astream("hi", stream_usage=False):
         assert isinstance(token, AIMessageChunk)
 
 
