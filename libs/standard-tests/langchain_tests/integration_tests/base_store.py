@@ -137,7 +137,7 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
     ) -> None:
         """Test that we can yield keys from the store."""
-        foo, bar, buzz = three_values
+        foo, bar, _buzz = three_values
         key_value_pairs = [("foo", foo), ("bar", bar)]
         kv_store.mset(key_value_pairs)
 
@@ -273,7 +273,7 @@ class BaseStoreAsyncTests(BaseStandardTests):
         self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
     ) -> None:
         """Test that we can yield keys from the store."""
-        foo, bar, buzz = three_values
+        foo, bar, _buzz = three_values
         key_value_pairs = [("foo", foo), ("bar", bar)]
         await kv_store.amset(key_value_pairs)
 

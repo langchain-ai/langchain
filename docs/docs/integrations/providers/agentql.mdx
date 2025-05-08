@@ -1,0 +1,35 @@
+# AgentQL
+
+[AgentQL](https://www.agentql.com/) provides web interaction and structured data extraction from any web page using an [AgentQL query](https://docs.agentql.com/agentql-query) or a Natural Language prompt. AgentQL can be used across multiple languages and web pages without breaking over time and change.
+
+## Installation and Setup
+
+Install the integration package:
+
+```bash
+pip install langchain-agentql
+```
+
+## API Key
+
+Get an API Key from our [Dev Portal](https://dev.agentql.com/) and add it to your environment variables:
+```
+export AGENTQL_API_KEY="your-api-key-here"
+```
+
+## DocumentLoader
+AgentQL's document loader provides structured data extraction from any web page using an AgentQL query.
+
+```python
+from langchain_agentql.document_loaders import AgentQLLoader
+```
+See our [document loader documentation and usage example](/docs/integrations/document_loaders/agentql).
+
+## Tools and Toolkits
+AgentQL tools provides web interaction and structured data extraction from any web page using an AgentQL query or a Natural Language prompt.
+
+```python
+from langchain_agentql.tools import ExtractWebDataTool, ExtractWebDataBrowserTool, GetWebElementBrowserTool
+from langchain_agentql import AgentQLBrowserToolkit
+```
+See our [tools documentation and usage example](/docs/integrations/tools/agentql).

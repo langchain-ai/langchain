@@ -1,8 +1,7 @@
 import functools
 from importlib import util
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
-from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
@@ -13,6 +12,7 @@ _SUPPORTED_PROVIDERS = {
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
+    "ollama": "langchain_ollama",
     "openai": "langchain_openai",
 }
 
@@ -24,7 +24,7 @@ def _get_provider_list() -> str:
     )
 
 
-def _parse_model_string(model_name: str) -> Tuple[str, str]:
+def _parse_model_string(model_name: str) -> tuple[str, str]:
     """Parse a model string into provider and model name components.
 
     The model string should be in the format 'provider:model-name', where provider
@@ -77,7 +77,7 @@ def _parse_model_string(model_name: str) -> Tuple[str, str]:
 
 def _infer_model_and_provider(
     model: str, *, provider: Optional[str] = None
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     if not model.strip():
         raise ValueError("Model name cannot be empty")
     if provider is None and ":" in model:
@@ -115,13 +115,12 @@ def _check_pkg(pkg: str) -> None:
         )
 
 
-@beta()
 def init_embeddings(
     model: str,
     *,
     provider: Optional[str] = None,
     **kwargs: Any,
-) -> Union[Embeddings, Runnable[Any, List[float]]]:
+) -> Union[Embeddings, Runnable[Any, list[float]]]:
     """Initialize an embeddings model from a model name and optional provider.
 
     **Note:** Must have the integration package corresponding to the model provider
@@ -174,8 +173,7 @@ def init_embeddings(
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
         raise ValueError(
-            "Must specify model name. "
-            f"Supported providers are: {', '.join(providers)}"
+            f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
@@ -210,6 +208,10 @@ def init_embeddings(
         from langchain_huggingface import HuggingFaceEmbeddings
 
         return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+    elif provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=model_name, **kwargs)
     else:
         raise ValueError(
             f"Provider '{provider}' is not supported.\n"

@@ -1,3 +1,5 @@
+"""Usage utilities."""
+
 from typing import Callable
 
 
@@ -33,5 +35,5 @@ def _dict_int_op(
             msg = (
                 f"Unknown value types: {types}. Only dict and int values are supported."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     return combined

@@ -1,9 +1,18 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..utils.import_utils import (
+    IMPORT_ERROR,
+    is_ipex_available,
+    is_optimum_intel_available,
+    is_optimum_intel_version,
+)
+
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
+_MIN_OPTIMUM_VERSION = "1.22"
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
@@ -31,16 +40,16 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     cache_folder: Optional[str] = None
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
     `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
-    encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    encode_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass when calling the `encode` method for the documents of
     the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`, 
     `precision`, `normalize_embeddings`, and more.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
-    query_encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    query_encode_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass when calling the `encode` method for the query of
     the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`, 
     `precision`, `normalize_embeddings`, and more.
@@ -61,7 +70,28 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        self._client = sentence_transformers.SentenceTransformer(
+        if self.model_kwargs.get("backend", "torch") == "ipex":
+            if not is_optimum_intel_available() or not is_ipex_available():
+                raise ImportError(
+                    f'Backend: ipex {IMPORT_ERROR.format("optimum[ipex]")}'
+                )
+
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
+                raise ImportError(
+                    f"Backend: ipex requires optimum-intel>="
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
+                    "`pip install --upgrade --upgrade-strategy eager "
+                    "`optimum[ipex]`."
+                )
+
+            from optimum.intel import IPEXSentenceTransformer  # type: ignore[import]
+
+            model_cls = IPEXSentenceTransformer
+
+        else:
+            model_cls = sentence_transformers.SentenceTransformer
+
+        self._client = model_cls(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
@@ -72,8 +102,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     )
 
     def _embed(
-        self, texts: list[str], encode_kwargs: Dict[str, Any]
-    ) -> List[List[float]]:
+        self, texts: list[str], encode_kwargs: dict[str, Any]
+    ) -> list[list[float]]:
         """
         Embed a text using the HuggingFace transformer model.
 
@@ -108,7 +138,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         return embeddings.tolist()
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
@@ -119,7 +149,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         """
         return self._embed(texts, self.encode_kwargs)
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:

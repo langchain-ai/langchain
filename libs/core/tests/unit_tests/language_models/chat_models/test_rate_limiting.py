@@ -1,14 +1,21 @@
 import time
-from typing import Optional as Optional
+
+import pytest
+from blockbuster import BlockBuster
 
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
 
 
+@pytest.fixture(autouse=True)
+def deactivate_blockbuster(blockbuster: BlockBuster) -> None:
+    # Deactivate BlockBuster to not disturb the rate limiter timings
+    blockbuster.deactivate()
+
+
 def test_rate_limit_invoke() -> None:
     """Add rate limiter."""
-
     model = GenericFakeChatModel(
         messages=iter(["hello", "world"]),
         rate_limiter=InMemoryRateLimiter(
@@ -35,7 +42,6 @@ def test_rate_limit_invoke() -> None:
 
 async def test_rate_limit_ainvoke() -> None:
     """Add rate limiter."""
-
     model = GenericFakeChatModel(
         messages=iter(["hello", "world", "!"]),
         rate_limiter=InMemoryRateLimiter(
@@ -219,9 +225,6 @@ class SerializableModel(GenericFakeChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
-
-
-SerializableModel.model_rebuild()
 
 
 def test_serialization_with_rate_limiter() -> None:

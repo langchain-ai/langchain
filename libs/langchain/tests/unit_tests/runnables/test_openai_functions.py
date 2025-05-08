@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -17,8 +17,8 @@ class FakeChatOpenAI(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -43,9 +43,9 @@ def test_openai_functions_router(
     snapshot: SnapshotAssertion, mocker: MockerFixture
 ) -> None:
     revise = mocker.Mock(
-        side_effect=lambda kw: f'Revised draft: no more {kw["notes"]}!'
+        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!"
     )
-    accept = mocker.Mock(side_effect=lambda kw: f'Accepted draft: {kw["draft"]}!')
+    accept = mocker.Mock(side_effect=lambda kw: f"Accepted draft: {kw['draft']}!")
 
     router = OpenAIFunctionsRouter(
         {

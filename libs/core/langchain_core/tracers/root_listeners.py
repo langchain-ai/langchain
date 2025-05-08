@@ -1,6 +1,7 @@
+"""Tracers that call listeners."""
+
 from collections.abc import Awaitable
-from typing import Callable, Optional, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -9,6 +10,9 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.tracers.base import AsyncBaseTracer, BaseTracer
 from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 Listener = Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
 AsyncListener = Union[
@@ -75,9 +79,8 @@ class RootListenersTracer(BaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 call_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                call_func_with_variable_args(self._arg_on_error, run, self.config)
+        elif self._arg_on_error is not None:
+            call_func_with_variable_args(self._arg_on_error, run, self.config)
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
@@ -139,8 +142,5 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 await acall_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                await acall_func_with_variable_args(
-                    self._arg_on_error, run, self.config
-                )
+        elif self._arg_on_error is not None:
+            await acall_func_with_variable_args(self._arg_on_error, run, self.config)

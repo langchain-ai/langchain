@@ -12,7 +12,7 @@
 # modifications should be discarded after the cassettes are generated.
 #
 # Usage:
-# In monorepo env, `poetry install --with dev,test`
+# In monorepo env, `uv sync --group dev --group test`
 # `./docs/scripts/update_cassettes.sh path/to/notebook`
 # e.g., `./docs/scripts/update_cassettes.sh docs/docs/how_to/tool_choice.ipynb`
 #
@@ -41,11 +41,11 @@ delete_cassettes "$WORKING_DIRECTORY"
 
 # Pre-download tiktoken files
 echo "Pre-downloading nltk and tiktoken files..."
-poetry run python docs/scripts/cache_data.py
+uv run python docs/scripts/cache_data.py
 
 # Prepare notebooks
 echo "Preparing notebooks for CI..."
-poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory "$WORKING_DIRECTORY"
+uv run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory "$WORKING_DIRECTORY"
 
 # Run notebooks
 echo "Running notebooks..."

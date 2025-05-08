@@ -16,7 +16,7 @@
       }),
       'max_retries': 2,
       'max_tokens': 100,
-      'model_name': 'mixtral-8x7b-32768',
+      'model_name': 'llama-3.1-8b-instant',
       'n': 1,
       'request_timeout': 60.0,
       'stop': list([

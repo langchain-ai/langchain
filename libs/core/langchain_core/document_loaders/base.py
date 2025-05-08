@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Optional
 
-from langchain_core.documents import Document
 from langchain_core.runnables import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_text_splitters import TextSplitter
 
-from langchain_core.documents.base import Blob
+    from langchain_core.documents import Document
+    from langchain_core.documents.base import Blob
 
 
 class BaseLoader(ABC):  # noqa: B024
@@ -48,7 +49,6 @@ class BaseLoader(ABC):  # noqa: B024
         Returns:
             List of Documents.
         """
-
         if text_splitter is None:
             try:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -80,7 +80,7 @@ class BaseLoader(ABC):  # noqa: B024
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
         while True:
-            doc = await run_in_executor(None, next, iterator, done)  # type: ignore[call-arg, arg-type]
+            doc = await run_in_executor(None, next, iterator, done)
             if doc is done:
                 break
             yield doc  # type: ignore[misc]

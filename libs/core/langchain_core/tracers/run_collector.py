@@ -24,8 +24,7 @@ class RunCollectorCallbackHandler(BaseTracer):
     def __init__(
         self, example_id: Optional[Union[UUID, str]] = None, **kwargs: Any
     ) -> None:
-        """
-        Initialize the RunCollectorCallbackHandler.
+        """Initialize the RunCollectorCallbackHandler.
 
         Parameters
         ----------
@@ -41,8 +40,7 @@ class RunCollectorCallbackHandler(BaseTracer):
         self.traced_runs: list[Run] = []
 
     def _persist_run(self, run: Run) -> None:
-        """
-        Persist a run by adding it to the traced_runs list.
+        """Persist a run by adding it to the traced_runs list.
 
         Parameters
         ----------

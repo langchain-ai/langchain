@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
@@ -47,7 +41,7 @@ __all__ = [
 
 
 @overload
-def init_chat_model(  # type: ignore[overload-overlap]
+def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
@@ -73,7 +67,7 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = ...,
+    configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -87,7 +81,7 @@ def init_chat_model(
     *,
     model_provider: Optional[str] = None,
     configurable_fields: Optional[
-        Union[Literal["any"], List[str], Tuple[str, ...]]
+        Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
@@ -98,13 +92,17 @@ def init_chat_model(
     installed.
 
     Args:
-        model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
-        model_provider: The model provider. Supported model_provider values and the
-            corresponding integration package are:
+        model: The name of the model, e.g. "o3-mini", "claude-3-5-sonnet-latest". You can
+            also specify model and model provider in a single argument using
+            '{model_provider}:{model}' format, e.g. "openai:o1".
+        model_provider: The model provider if not specified as part of model arg (see
+            above). Supported model_provider values and the corresponding integration
+            package are:
 
             - 'openai'              -> langchain-openai
             - 'anthropic'           -> langchain-anthropic
             - 'azure_openai'        -> langchain-openai
+            - 'azure_ai'            -> langchain-azure-ai
             - 'google_vertexai'     -> langchain-google-vertexai
             - 'google_genai'        -> langchain-google-genai
             - 'bedrock'             -> langchain-aws
@@ -117,6 +115,11 @@ def init_chat_model(
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
             - 'google_anthropic_vertex'    -> langchain-google-vertexai
+            - 'deepseek'            -> langchain-deepseek
+            - 'ibm'                 -> langchain-ibm
+            - 'nvidia'              -> langchain-nvidia-ai-endpoints
+            - 'xai'                 -> langchain-xai
+            - 'perplexity'          -> langchain-perplexity
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -128,6 +131,9 @@ def init_chat_model(
             - 'command...'                      -> 'cohere'
             - 'accounts/fireworks...'           -> 'fireworks'
             - 'mistral...'                      -> 'mistralai'
+            - 'deepseek...'                     -> 'deepseek'
+            - 'grok...'                         -> 'xai'
+            - 'sonar...'                        -> 'perplexity'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -179,13 +185,13 @@ def init_chat_model(
             # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
             from langchain.chat_models import init_chat_model
 
-            gpt_4o = init_chat_model("gpt-4o", model_provider="openai", temperature=0)
-            claude_opus = init_chat_model("claude-3-opus-20240229", model_provider="anthropic", temperature=0)
-            gemini_15 = init_chat_model("gemini-1.5-pro", model_provider="google_vertexai", temperature=0)
+            o3_mini = init_chat_model("openai:o3-mini", temperature=0)
+            claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
+            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.0-flash", temperature=0)
 
-            gpt_4o.invoke("what's your name")
-            claude_opus.invoke("what's your name")
-            gemini_15.invoke("what's your name")
+            o3_mini.invoke("what's your name")
+            claude_sonnet.invoke("what's your name")
+            gemini_2_flash.invoke("what's your name")
 
 
     .. dropdown:: Partially configurable model with no default
@@ -206,7 +212,7 @@ def init_chat_model(
 
             configurable_model.invoke(
                 "what's your name",
-                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
             )
             # claude-3.5 sonnet response
 
@@ -218,8 +224,7 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
 
             configurable_model_with_default = init_chat_model(
-                "gpt-4o",
-                model_provider="openai",
+                "openai:gpt-4o",
                 configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 config_prefix="foo",
                 temperature=0
@@ -232,8 +237,7 @@ def init_chat_model(
                 "what's your name",
                 config={
                     "configurable": {
-                        "foo_model": "claude-3-5-sonnet-20240620",
-                        "foo_model_provider": "anthropic",
+                        "foo_model": "anthropic:claude-3-5-sonnet-20240620",
                         "foo_temperature": 0.6
                     }
                 }
@@ -287,17 +291,21 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.12
 
-        Support for ChatOllama via langchain-ollama package added
+        Support for Ollama via langchain-ollama package added
         (langchain_ollama.ChatOllama). Previously,
         the now-deprecated langchain-community version of Ollama was imported
         (langchain_community.chat_models.ChatOllama).
 
-        Support for langchain_aws.ChatBedrockConverse added
+        Support for AWS Bedrock models via the Converse API added
         (model_provider="bedrock_converse").
 
     .. versionchanged:: 0.3.5
 
         Out of beta.
+
+    .. versionchanged:: 0.3.19
+
+        Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
     if not model and not configurable_fields:
@@ -339,12 +347,17 @@ def _init_chat_model_helper(
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
+    elif model_provider == "azure_ai":
+        _check_pkg("langchain_azure_ai")
+        from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+        return AzureAIChatCompletionsModel(model=model, **kwargs)
     elif model_provider == "cohere":
         _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
@@ -389,7 +402,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
-        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg]
+        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     elif model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
@@ -416,6 +429,31 @@ def _init_chat_model_helper(
         from langchain_google_vertexai.model_garden import ChatAnthropicVertex
 
         return ChatAnthropicVertex(model=model, **kwargs)
+    elif model_provider == "deepseek":
+        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
+        from langchain_deepseek import ChatDeepSeek
+
+        return ChatDeepSeek(model=model, **kwargs)
+    elif model_provider == "nvidia":
+        _check_pkg("langchain_nvidia_ai_endpoints")
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        return ChatNVIDIA(model=model, **kwargs)
+    elif model_provider == "ibm":
+        _check_pkg("langchain_ibm")
+        from langchain_ibm import ChatWatsonx
+
+        return ChatWatsonx(model_id=model, **kwargs)
+    elif model_provider == "xai":
+        _check_pkg("langchain_xai")
+        from langchain_xai import ChatXAI
+
+        return ChatXAI(model=model, **kwargs)
+    elif model_provider == "perplexity":
+        _check_pkg("langchain_perplexity")
+        from langchain_perplexity import ChatPerplexity
+
+        return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -428,6 +466,7 @@ _SUPPORTED_PROVIDERS = {
     "openai",
     "anthropic",
     "azure_openai",
+    "azure_ai",
     "cohere",
     "google_vertexai",
     "google_genai",
@@ -440,11 +479,15 @@ _SUPPORTED_PROVIDERS = {
     "bedrock",
     "bedrock_converse",
     "google_anthropic_vertex",
+    "deepseek",
+    "ibm",
+    "xai",
+    "perplexity",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1")):
+    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
     elif model_name.startswith("claude"):
         return "anthropic"
@@ -458,11 +501,17 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "bedrock"
     elif model_name.startswith("mistral"):
         return "mistralai"
+    elif model_name.startswith("deepseek"):
+        return "deepseek"
+    elif model_name.startswith("grok"):
+        return "xai"
+    elif model_name.startswith("sonar"):
+        return "perplexity"
     else:
         return None
 
 
-def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
     if (
         not model_provider
         and ":" in model
@@ -480,12 +529,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
     return model, model_provider
 
 
-def _check_pkg(pkg: str) -> None:
+def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
-        pkg_kebab = pkg.replace("_", "-")
+        pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
         raise ImportError(
-            f"Unable to import {pkg_kebab}. Please install with "
-            f"`pip install -U {pkg_kebab}`"
+            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
 
 
@@ -503,12 +551,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         *,
         default_config: Optional[dict] = None,
-        configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = "any",
+        configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = "any",
         config_prefix: str = "",
-        queued_declarative_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
+        queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
     ) -> None:
         self._default_config: dict = default_config or {}
-        self._configurable_fields: Union[Literal["any"], List[str]] = (
+        self._configurable_fields: Union[Literal["any"], list[str]] = (
             configurable_fields
             if configurable_fields == "any"
             else list(configurable_fields)
@@ -518,7 +566,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
-        self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
+        self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
             queued_declarative_operations
         )
 
@@ -590,7 +638,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
             queued_declarative_operations.append(
-                ("with_config", (), {"config": remaining_config})
+                (
+                    "with_config",
+                    (),
+                    {"config": remaining_config},
+                )
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
@@ -615,7 +667,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         return Union[
             str,
             Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            list[AnyMessage],
         ]
 
     def invoke(
@@ -653,12 +705,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     def batch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -676,12 +728,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -704,7 +756,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Any, Exception]]]:
+    ) -> Iterator[tuple[int, Union[Any, Exception]]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -727,7 +779,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> AsyncIterator[Tuple[int, Any]]:
+    ) -> AsyncIterator[tuple[int, Any]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -753,8 +805,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Any]:
-        for x in self._model(config).transform(input, config=config, **kwargs):
-            yield x
+        yield from self._model(config).transform(input, config=config, **kwargs)
 
     async def atransform(
         self,
@@ -834,7 +885,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
-        version: Literal["v1", "v2"],
+        version: Literal["v1", "v2"] = "v2",
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -860,13 +911,13 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)

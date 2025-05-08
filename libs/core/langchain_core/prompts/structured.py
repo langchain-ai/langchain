@@ -1,3 +1,5 @@
+"""Structured prompt template for a language model."""
+
 from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     Any,
@@ -7,6 +9,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, Field
+from typing_extensions import override
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.language_models.base import BaseLanguageModel
@@ -28,7 +31,7 @@ from langchain_core.utils import get_pydantic_field_names
 class StructuredPrompt(ChatPromptTemplate):
     """Structured prompt template for a language model."""
 
-    schema_: Union[dict, type[BaseModel]]
+    schema_: Union[dict, type]
     """Schema for the structured prompt."""
     structured_output_kwargs: dict[str, Any] = Field(default_factory=dict)
 
@@ -41,6 +44,14 @@ class StructuredPrompt(ChatPromptTemplate):
         template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
+        """Create a structured prompt template.
+
+        Args:
+            messages: sequence of messages.
+            schema_: schema for the structured prompt.
+            structured_output_kwargs: additional kwargs for structured output.
+            template_format: template format for the prompt.
+        """
         schema_ = schema_ or kwargs.pop("schema")
         structured_output_kwargs = structured_output_kwargs or {}
         for k in set(kwargs).difference(get_pydantic_field_names(self.__class__)):
@@ -66,13 +77,12 @@ class StructuredPrompt(ChatPromptTemplate):
     def from_messages_and_schema(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        schema: Union[dict, type[BaseModel]],
+        schema: Union[dict, type],
         **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python
@@ -108,6 +118,7 @@ class StructuredPrompt(ChatPromptTemplate):
         """
         return cls(messages, schema, **kwargs)
 
+    @override
     def __or__(
         self,
         other: Union[
@@ -155,6 +166,5 @@ class StructuredPrompt(ChatPromptTemplate):
                 *others[1:],
                 name=name,
             )
-        else:
-            msg = "Structured prompts need to be piped to a language model."
-            raise NotImplementedError(msg)
+        msg = "Structured prompts need to be piped to a language model."
+        raise NotImplementedError(msg)

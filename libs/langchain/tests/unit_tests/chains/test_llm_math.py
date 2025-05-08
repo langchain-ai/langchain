@@ -33,7 +33,7 @@ def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
     """Test complex question that should need python."""
     question = "What is the square root of 2?"
     output = fake_llm_math_chain.run(question)
-    assert output == f"Answer: {2**.5}"
+    assert output == f"Answer: {2**0.5}"
 
 
 @pytest.mark.requires("numexpr")

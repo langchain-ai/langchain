@@ -20,6 +20,8 @@ def get_target_dir(package_name: str) -> Path:
     base_path = Path("langchain/libs")
     if package_name_short == "experimental":
         return base_path / "experimental"
+    if package_name_short == "community":
+        return base_path / "community"
     return base_path / "partners" / package_name_short
 
 
@@ -64,19 +66,29 @@ def main():
     try:
         # Load packages configuration
         package_yaml = load_packages_yaml()
-        packages = [
+
+        # Clean target directories
+        clean_target_directories([
+            p
+            for p in package_yaml["packages"]
+            if (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
+            and p["repo"] != "langchain-ai/langchain"
+        ])
+
+        # Move libraries to their new locations
+        move_libraries([
             p
             for p in package_yaml["packages"]
             if not p.get("disabled", False)
-            and p["repo"].startswith("langchain-ai/")
+            and (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
-        ]
+        ])
 
-        # Clean target directories
-        clean_target_directories(packages)
-
-        # Move libraries to their new locations
-        move_libraries(packages)
+        # Delete ones without a pyproject.toml
+        for partner in Path("langchain/libs/partners").iterdir():
+            if partner.is_dir() and not (partner / "pyproject.toml").exists():
+                print(f"Removing {partner} as it does not have a pyproject.toml")
+                shutil.rmtree(partner)
 
         print("Library sync completed successfully!")
 

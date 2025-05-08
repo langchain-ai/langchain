@@ -7,14 +7,17 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_core.vectorstores import VectorStore
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 
 class CustomAddTextsVectorstore(VectorStore):
@@ -23,6 +26,7 @@ class CustomAddTextsVectorstore(VectorStore):
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
@@ -49,7 +53,8 @@ class CustomAddTextsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    @override
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
@@ -72,6 +77,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_documents(
         self,
         documents: list[Document],
@@ -93,7 +99,8 @@ class CustomAddDocumentsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    @override
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
@@ -117,7 +124,6 @@ def test_default_add_documents(vs_class: type[VectorStore]) -> None:
     """Test that we can implement the upsert method of the CustomVectorStore
     class without violating the Liskov Substitution Principle.
     """
-
     store = vs_class()
 
     # Check upsert with id

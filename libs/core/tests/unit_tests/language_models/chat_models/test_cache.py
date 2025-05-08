@@ -3,6 +3,7 @@
 from typing import Any, Optional
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
@@ -30,6 +31,7 @@ class InMemoryCache(BaseCache):
         """Update cache based on prompt and llm_string."""
         self._cache[(prompt, llm_string)] = return_val
 
+    @override
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
@@ -227,7 +229,7 @@ def test_global_cache_batch() -> None:
         assert results[0].content == results[1].content
         assert {results[0].content, results[1].content}.issubset({"hello", "goodbye"})
 
-        ## RACE CONDITION -- note behavior is different from async
+        # RACE CONDITION -- note behavior is different from async
         # Now, reset cache and test the race condition
         # For now we just hard-code the result, if this changes
         # we can investigate further

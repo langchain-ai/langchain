@@ -25,7 +25,6 @@ from langchain_core.messages import (
 
 def test_serde_any_message() -> None:
     """Test AnyMessage() serder."""
-
     lc_objects = [
         HumanMessage(content="human"),
         HumanMessageChunk(content="human"),

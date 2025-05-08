@@ -1,0 +1,379 @@
+---
+sidebar_label: Graph RAG
+description: Graph traversal over any Vector Store using document metadata.
+---
+
+import ChatModelTabs from "@theme/ChatModelTabs";
+import EmbeddingTabs from "@theme/EmbeddingTabs";
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+# Graph RAG
+
+This guide provides an introduction to Graph RAG. For detailed documentation of all
+supported features and configurations, refer to the
+[Graph RAG Project Page](https://datastax.github.io/graph-rag/).
+
+## Overview
+
+The `GraphRetriever` from the `langchain-graph-retriever` package provides a LangChain
+[retriever](/docs/concepts/retrievers/) that combines **unstructured** similarity search
+on vectors with **structured** traversal of metadata properties. This enables graph-based
+retrieval over an **existing** vector store.
+
+### Integration details
+
+| Retriever | Source | PyPI Package | Latest | Project Page |
+| :--- | :--- | :---: | :---: | :---: |
+| GraphRetriever | [github.com/datastax/graph-rag](https://github.com/datastax/graph-rag/tree/main/packages/langchain-graph-retriever) | [langchain-graph-retriever](https://pypi.org/project/langchain-graph-retriever/) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-graph-retriever?style=flat-square&label=%20&color=orange) | [Graph RAG](https://datastax.github.io/graph-rag/) |
+
+
+## Benefits
+
+* [**Link based on existing metadata:**](https://datastax.github.io/graph-rag/get-started/)
+  Use existing metadata fields without additional processing. Retrieve more from an
+  existing vector store!
+
+* [**Change links on demand:**](https://datastax.github.io/graph-rag/get-started/edges/)
+  Edges can be specified on-the-fly, allowing different relationships to be traversed
+  based on the question.
+
+
+* [**Pluggable Traversal Strategies:**](https://datastax.github.io/graph-rag/get-started/strategies/)
+  Use built-in traversal strategies like Eager or MMR, or define custom logic to select
+  which nodes to explore.
+
+* [**Broad compatibility:**](https://datastax.github.io/graph-rag/get-started/adapters/)
+  Adapters are available for a variety of vector stores with support for additional
+  stores easily added.
+
+## Setup
+
+### Installation
+
+This retriever lives in the `langchain-graph-retriever` package.
+
+```bash
+pip install -qU langchain-graph-retriever
+```
+## Instantiation
+
+The following examples will show how to perform graph traversal over some sample
+Documents about animals.
+
+### Prerequisites
+
+<details>
+  <summary>Toggle for Details</summary>
+  <div>
+    1. Ensure you have Python 3.10+ installed
+
+    1. Install the following package that provides sample data.
+        ```bash
+        pip install -qU graph_rag_example_helpers
+        ```
+
+    1. Download the test documents:
+        ```python
+        from graph_rag_example_helpers.datasets.animals import fetch_documents
+        animals = fetch_documents()
+        ```
+
+    1. <EmbeddingTabs/>
+  </div>
+</details>
+
+### Populating the Vector store
+
+This section shows how to populate a variety of vector stores with the sample data.
+
+For help on choosing one of the vector stores below, or to add support for your
+vector store, consult the documentation about
+[Adapters and Supported Stores](https://datastax.github.io/graph-rag/guide/adapters/).
+
+<Tabs groupId="vector-store" queryString>
+  <TabItem value="astra-db" label="AstraDB" default>
+    <div style={{ paddingLeft: '30px' }}>
+      Install the `langchain-graph-retriever` package with the `astra` extra:
+
+      ```bash
+      pip install "langchain-graph-retriever[astra]"
+      ```
+
+      Then create a vector store and load the test documents:
+
+      ```python
+      from langchain_astradb import AstraDBVectorStore
+
+      vector_store = AstraDBVectorStore.from_documents(
+          documents=animals,
+          embedding=embeddings,
+          collection_name="animals",
+          api_endpoint=ASTRA_DB_API_ENDPOINT,
+          token=ASTRA_DB_APPLICATION_TOKEN,
+      )
+      ```
+      For the `ASTRA_DB_API_ENDPOINT` and `ASTRA_DB_APPLICATION_TOKEN` credentials,
+      consult the [AstraDB Vector Store Guide](/docs/integrations/vectorstores/astradb).
+
+      :::note
+      For faster initial testing, consider using the **InMemory** Vector Store.
+      :::
+    </div>
+  </TabItem>
+  <TabItem value="cassandra" label="Apache Cassandra">
+    <div style={{ paddingLeft: '30px' }}>
+      Install the `langchain-graph-retriever` package with the `cassandra` extra:
+
+      ```bash
+      pip install "langchain-graph-retriever[cassandra]"
+      ```
+
+      Then create a vector store and load the test documents:
+
+      ```python
+      from langchain_community.vectorstores.cassandra import Cassandra
+      from langchain_graph_retriever.transformers import ShreddingTransformer
+
+      vector_store = Cassandra.from_documents(
+          documents=list(ShreddingTransformer().transform_documents(animals)),
+          embedding=embeddings,
+          table_name="animals",
+      )
+      ```
+
+      For help creating a Cassandra connection, consult the
+      [Apache Cassandra Vector Store Guide](/docs/integrations/vectorstores/cassandra#connection-parameters)
+
+      :::note
+      Apache Cassandra doesn't support searching in nested metadata. Because of this
+      it is necessary to use the [`ShreddingTransformer`](https://datastax.github.io/graph-rag/reference/langchain_graph_retriever/transformers/#langchain_graph_retriever.transformers.shredding.ShreddingTransformer)
+      when inserting documents.
+      :::
+    </div>
+  </TabItem>
+  <TabItem value="opensearch" label="OpenSearch">
+    <div style={{ paddingLeft: '30px' }}>
+      Install the `langchain-graph-retriever` package with the `opensearch` extra:
+
+      ```bash
+      pip install "langchain-graph-retriever[opensearch]"
+      ```
+
+      Then create a vector store and load the test documents:
+
+      ```python
+      from langchain_community.vectorstores import OpenSearchVectorSearch
+
+      vector_store = OpenSearchVectorSearch.from_documents(
+          documents=animals,
+          embedding=embeddings,
+          engine="faiss",
+          index_name="animals",
+          opensearch_url=OPEN_SEARCH_URL,
+          bulk_size=500,
+      )
+      ```
+
+      For help creating an OpenSearch connection, consult the
+      [OpenSearch Vector Store Guide](/docs/integrations/vectorstores/opensearch).
+    </div>
+  </TabItem>
+  <TabItem value="chroma" label="Chroma">
+    <div style={{ paddingLeft: '30px' }}>
+      Install the `langchain-graph-retriever` package with the `chroma` extra:
+
+      ```bash
+      pip install "langchain-graph-retriever[chroma]"
+      ```
+
+      Then create a vector store and load the test documents:
+
+      ```python
+      from langchain_chroma.vectorstores import Chroma
+      from langchain_graph_retriever.transformers import ShreddingTransformer
+
+      vector_store = Chroma.from_documents(
+          documents=list(ShreddingTransformer().transform_documents(animals)),
+          embedding=embeddings,
+          collection_name="animals",
+      )
+      ```
+
+      For help creating an Chroma connection, consult the
+      [Chroma Vector Store Guide](/docs/integrations/vectorstores/chroma).
+
+      :::note
+      Chroma doesn't support searching in nested metadata. Because of this
+      it is necessary to use the [`ShreddingTransformer`](https://datastax.github.io/graph-rag/reference/langchain_graph_retriever/transformers/#langchain_graph_retriever.transformers.shredding.ShreddingTransformer)
+      when inserting documents.
+      :::
+    </div>
+  </TabItem>
+  <TabItem value="in-memory" label="InMemory" default>
+    <div style={{ paddingLeft: '30px' }}>
+      Install the `langchain-graph-retriever` package:
+
+      ```bash
+      pip install "langchain-graph-retriever"
+      ```
+
+      Then create a vector store and load the test documents:
+
+      ```python
+      from langchain_core.vectorstores import InMemoryVectorStore
+
+      vector_store = InMemoryVectorStore.from_documents(
+          documents=animals,
+          embedding=embeddings,
+      )
+      ```
+
+      :::tip
+      Using the `InMemoryVectorStore` is the fastest way to get started with Graph RAG
+      but it isn't recommended for production use. Instead it is recommended to use
+      **AstraDB** or **OpenSearch**.
+      :::
+    </div>
+  </TabItem>
+</Tabs>
+
+### Graph Traversal
+
+This graph retriever starts with a single animal that best matches the query, then
+traverses to other animals sharing the same `habitat` and/or `origin`.
+
+  ```python
+  from graph_retriever.strategies import Eager
+  from langchain_graph_retriever import GraphRetriever
+
+  traversal_retriever = GraphRetriever(
+      store = vector_store,
+      edges = [("habitat", "habitat"), ("origin", "origin")],
+      strategy = Eager(k=5, start_k=1, max_depth=2),
+  )
+  ```
+
+The above creates a graph traversing retriever that starts with the nearest
+animal (`start_k=1`), retrieves 5 documents (`k=5`) and limits the search to documents
+that are at most 2 steps away from the first animal (`max_depth=2`).
+
+The `edges` define how metadata values can be used for traversal. In this case, every
+animal is connected to other animals with the same `habitat` and/or `origin`.
+
+```python
+results = traversal_retriever.invoke("what animals could be found near a capybara?")
+
+for doc in results:
+    print(f"{doc.id}: {doc.page_content}")
+```
+
+```output
+capybara: capybaras are the largest rodents in the world and are highly social animals.
+heron: herons are wading birds known for their long legs and necks, often seen near water.
+crocodile: crocodiles are large reptiles with powerful jaws and a long lifespan, often living over 70 years.
+frog: frogs are amphibians known for their jumping ability and croaking sounds.
+duck: ducks are waterfowl birds known for their webbed feet and quacking sounds.
+```
+
+Graph traversal improves retrieval quality by leveraging structured relationships in
+the data. Unlike standard similarity search (see below), it provides a clear,
+explainable rationale for why documents are selected.
+
+In this case, the documents `capybara`, `heron`, `frog`, `crocodile`, and `newt` all
+share the same `habitat=wetlands`, as defined by their metadata. This should increase
+Document Relevance and the quality of the answer from the LLM.
+
+### Comparison to Standard Retrieval
+
+When `max_depth=0`, the graph traversing retriever behaves like a standard retriever:
+
+```python
+standard_retriever = GraphRetriever(
+    store = vector_store,
+    edges = [("habitat", "habitat"), ("origin", "origin")],
+    strategy = Eager(k=5, start_k=5, max_depth=0),
+)
+```
+
+This creates a retriever that starts with the nearest 5 animals (`start_k=5`),
+and returns them without any traversal (`max_depth=0`). The edge definitions
+are ignored in this case.
+
+This is essentially the same as:
+
+```python
+standard_retriever = vector_store.as_retriever(search_kwargs={"k":5})
+```
+
+For either case, invoking the retriever returns:
+
+```python
+results = standard_retriever.invoke("what animals could be found near a capybara?")
+
+for doc in results:
+    print(f"{doc.id}: {doc.page_content}")
+```
+
+```output
+capybara: capybaras are the largest rodents in the world and are highly social animals.
+iguana: iguanas are large herbivorous lizards often found basking in trees and near water.
+guinea pig: guinea pigs are small rodents often kept as pets due to their gentle and social nature.
+hippopotamus: hippopotamuses are large semi-aquatic mammals known for their massive size and territorial behavior.
+boar: boars are wild relatives of pigs, known for their tough hides and tusks.
+```
+
+These documents are joined based on similarity alone. Any structural data that existed
+in the store is ignored. As compared to graph retrieval, this can decrease Document
+Relevance because the returned results have a lower chance of being helpful to answer
+the query.
+
+## Usage
+
+Following the examples above, `.invoke` is used to initiate retrieval on a query.
+
+## Use within a chain
+
+Like other retrievers, `GraphRetriever` can be incorporated into LLM applications
+via [chains](/docs/how_to/sequence/).
+
+<ChatModelTabs customVarName="llm" />
+
+```python
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
+prompt = ChatPromptTemplate.from_template(
+"""Answer the question based only on the context provided.
+
+Context: {context}
+
+Question: {question}"""
+)
+
+def format_docs(docs):
+    return "\n\n".join(f"text: {doc.page_content} metadata: {doc.metadata}" for doc in docs)
+
+chain = (
+    {"context": traversal_retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+```
+
+```python
+chain.invoke("what animals could be found near a capybara?")
+```
+
+```output
+Animals that could be found near a capybara include herons, crocodiles, frogs,
+and ducks, as they all inhabit wetlands.
+```
+
+## API reference
+
+To explore all available parameters and advanced configurations, refer to the
+[Graph RAG API reference](https://datastax.github.io/graph-rag/reference/).

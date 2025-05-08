@@ -1,6 +1,6 @@
 """Tool for the Exa Search API."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -16,7 +16,7 @@ from pydantic import Field, SecretStr, model_validator
 from langchain_exa._utilities import initialize_client
 
 
-class ExaSearchResults(BaseTool):
+class ExaSearchResults(BaseTool):  # type: ignore[override]
     """Exa Search tool.
 
     Setup:
@@ -66,7 +66,7 @@ class ExaSearchResults(BaseTool):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values
@@ -77,15 +77,15 @@ class ExaSearchResults(BaseTool):
         num_results: int,
         text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
-        include_domains: Optional[List[str]] = None,
-        exclude_domains: Optional[List[str]] = None,
+        include_domains: Optional[list[str]] = None,
+        exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
         use_autoprompt: Optional[bool] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Union[list[dict], str]:
         """Use the tool."""
         try:
             return self.client.search_and_contents(
@@ -105,7 +105,7 @@ class ExaSearchResults(BaseTool):
             return repr(e)
 
 
-class ExaFindSimilarResults(BaseTool):
+class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     """Tool that queries the Metaphor Search API and gets back json."""
 
     name: str = "exa_find_similar_results_json"
@@ -120,7 +120,7 @@ class ExaFindSimilarResults(BaseTool):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values
@@ -131,8 +131,8 @@ class ExaFindSimilarResults(BaseTool):
         num_results: int,
         text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
-        include_domains: Optional[List[str]] = None,
-        exclude_domains: Optional[List[str]] = None,
+        include_domains: Optional[list[str]] = None,
+        exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
@@ -140,7 +140,7 @@ class ExaFindSimilarResults(BaseTool):
         exclude_source_domain: Optional[bool] = None,
         category: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Union[list[dict], str]:
         """Use the tool."""
         try:
             return self.client.find_similar_and_contents(

@@ -4,6 +4,8 @@ from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
 
+from typing_extensions import override
+
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import (
     FakeListChatModel,
@@ -171,6 +173,7 @@ async def test_callback_handlers() -> None:
             # Required to implement since this is an abstract method
             pass
 
+        @override
         async def on_llm_new_token(
             self,
             token: str,
@@ -191,7 +194,12 @@ async def test_callback_handlers() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
     tokens: list[str] = []
     # New model
-    results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
+    results = [
+        chunk
+        async for chunk in model.astream(
+            "meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}
+        )
+    ]
     assert results == [
         _any_id_ai_message_chunk(content="hello"),
         _any_id_ai_message_chunk(content=" "),

@@ -1,9 +1,13 @@
 import base64
+import inspect
 import json
-from typing import List, Optional, cast
+from typing import Any, List, Literal, Optional, cast
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
+from langchain_core._api import warn_deprecated
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -17,10 +21,14 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
-from langchain_core.utils.function_calling import tool_example_to_messages
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    tool_example_to_messages,
+)
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -28,7 +36,9 @@ from langchain_tests.unit_tests.chat_models import (
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-def _get_joke_class() -> type[BaseModel]:
+def _get_joke_class(
+    schema_type: Literal["pydantic", "typeddict", "json_schema"],
+) -> Any:
     """
     :private:
     """
@@ -39,7 +49,46 @@ def _get_joke_class() -> type[BaseModel]:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    return Joke
+    def validate_joke(result: Any) -> bool:
+        return isinstance(result, Joke)
+
+    class JokeDict(TypedDict):
+        """Joke to tell user."""
+
+        setup: Annotated[str, ..., "question to set up a joke"]
+        punchline: Annotated[str, ..., "answer to resolve the joke"]
+
+    def validate_joke_dict(result: Any) -> bool:
+        return all(key in ["setup", "punchline"] for key in result.keys())
+
+    if schema_type == "pydantic":
+        return Joke, validate_joke
+
+    elif schema_type == "typeddict":
+        return JokeDict, validate_joke_dict
+
+    elif schema_type == "json_schema":
+        return Joke.model_json_schema(), validate_joke_dict
+    else:
+        raise ValueError("Invalid schema type")
+
+
+class _TestCallbackHandler(BaseCallbackHandler):
+    options: list[Optional[dict]]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.options = []
+
+    def on_chat_model_start(
+        self,
+        serialized: Any,
+        messages: Any,
+        *,
+        options: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.options.append(options)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -157,12 +206,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        Some tests for tool calling features attempt to force tool calling via a
-        `tool_choice` parameter. A common value for this parameter is "any". Defaults
-        to `None`.
-
-        Note: if the value is set to "tool_name", the name of the tool used in each
-        test will be set as the value for `tool_choice`.
+        .. warning:: Deprecated since version 0.3.15:
+           This property will be removed in version 0.3.20. If a model supports
+           ``tool_choice``, it should accept ``tool_choice="any"`` and
+           ``tool_choice=<string name of tool>``. If a model does not
+           support forcing tool calling, override the ``has_tool_choice`` property to
+           return ``False``.
 
         Example:
 
@@ -171,6 +220,26 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def tool_choice_value(self) -> Optional[str]:
                 return "any"
+
+    .. dropdown:: has_tool_choice
+
+        Boolean property indicating whether the chat model supports forcing tool
+        calling via a ``tool_choice`` parameter.
+
+        By default, this is determined by whether the parameter is included in the
+        signature for the corresponding ``bind_tools`` method.
+
+        If ``True``, the minimum requirement for this feature is that
+        ``tool_choice="any"`` will force a tool call, and ``tool_choice=<tool name>``
+        will force a call to a specific tool.
+
+        Example override:
+
+        .. code-block:: python
+
+            @property
+            def has_tool_choice(self) -> bool:
+                return False
 
     .. dropdown:: has_structured_output
 
@@ -190,6 +259,19 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def has_structured_output(self) -> bool:
                 return True
+
+    .. dropdown:: structured_output_kwargs
+
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 
@@ -216,13 +298,21 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         .. code-block:: python
 
-            [
-                {"type": "text", "text": "describe the weather in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ]
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "<base64 image data>",
+                "mime_type": "image/jpeg",  # or appropriate mime-type
+            }
+
+        In addition to OpenAI-style content blocks:
+
+        .. code-block:: python
+
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            }
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
@@ -232,6 +322,86 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             @property
             def supports_image_inputs(self) -> bool:
+                return True
+
+    .. dropdown:: supports_image_urls
+
+        Boolean property indicating whether the chat model supports image inputs from
+        URLs. Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://...",
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_urls(self) -> bool:
+                return True
+
+    .. dropdown:: supports_pdf_inputs
+
+        Boolean property indicating whether the chat model supports PDF inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "file",
+                "source_type": "base64",
+                "data": "<base64 file data>",
+                "mime_type": "application/pdf",
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_pdf_inputs(self) -> bool:
+                return True
+
+    .. dropdown:: supports_audio_inputs
+
+        Boolean property indicating whether the chat model supports audio inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_audio_inputs(self) -> bool:
                 return True
 
     .. dropdown:: supports_video_inputs
@@ -254,6 +424,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def returns_usage_metadata(self) -> bool:
                 return False
+
+        Models supporting ``usage_metadata`` should also return the name of the
+        underlying model in the ``response_metadata`` of the AIMessage.
 
     .. dropdown:: supports_anthropic_inputs
 
@@ -302,6 +475,25 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_image",
             )
+
+        (OpenAI Chat Completions format), as well as
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        (standard format).
 
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
@@ -356,7 +548,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
@@ -388,7 +580,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
@@ -482,7 +674,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.content, str)
+            assert isinstance(result.text(), str)
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
@@ -511,7 +703,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.content, str)
+            assert isinstance(result.text(), str)
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
@@ -540,7 +732,45 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
+        assert len(result.content) > 0
+
+    def test_double_messages_conversation(self, model: BaseChatModel) -> None:
+        """
+        Test to verify that the model can handle double-message conversations.
+
+        This should pass for all integrations. Tests the model's ability to process
+        a sequence of double-system, double-human, and double-ai messages as context
+        for generating the next response.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke()`.
+
+            Second, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
+            because this test is the "basic case" without double messages.
+
+            If that test passes those but not this one, you should verify that:
+            1. Your model API can handle double messages, or the integration should
+               merge messages before sending them to the API.
+            2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+        """
+        messages = [
+            SystemMessage("hello"),
+            SystemMessage("hello"),
+            HumanMessage("hello"),
+            HumanMessage("hello"),
+            AIMessage("hello"),
+            AIMessage("hello"),
+            HumanMessage("how are you"),
+        ]
+        result = model.invoke(messages)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
@@ -548,6 +778,11 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         This test is optional and should be skipped if the model does not return
         usage metadata (see Configuration below).
+
+        .. versionchanged:: 0.3.17
+
+            Additionally check for the presence of `model_name` in the response
+            metadata, which is needed for usage tracking in callback handlers.
 
         .. dropdown:: Configuration
 
@@ -619,6 +854,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                         )
                     )]
                 )
+
+            Check also that the response includes a ``"model_name"`` key in its
+            ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -629,6 +867,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["input_tokens"], int)
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
+
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = result.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
 
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
@@ -688,6 +932,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """
         Test to verify that the model returns correct usage metadata in streaming mode.
+
+        .. versionchanged:: 0.3.17
+
+            Additionally check for the presence of `model_name` in the response
+            metadata, which is needed for usage tracking in callback handlers.
 
         .. dropdown:: Configuration
 
@@ -771,6 +1020,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                         )
                     )]
                 )
+
+            Check also that the aggregated response includes a ``"model_name"`` key
+            in its ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -794,6 +1046,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = full.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
@@ -847,7 +1105,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
 
         custom_model = self.chat_model_class(
-            **{**self.chat_model_params, "stop": ["you"]}
+            **{
+                **self.chat_model_params,
+                "stop": ["you"],
+            }
         )
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
@@ -888,16 +1149,33 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_calling(self, model: BaseChatModel) -> None:
                     super().test_tool_calling(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
-        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
+            tool_choice_value = "any"
+        # Emit warning if tool_choice_value property is overridden
+        if inspect.getattr_static(
+            self, "tool_choice_value"
+        ) is not inspect.getattr_static(ChatModelIntegrationTests, "tool_choice_value"):
+            warn_deprecated(
+                "0.3.15",
+                message=(
+                    "`tool_choice_value` will be removed in version 0.3.20. If a "
+                    "model supports `tool_choice`, it should accept `tool_choice='any' "
+                    "and `tool_choice=<string name of tool>`. If the model does not "
+                    "support `tool_choice`, override the `supports_tool_choice` "
+                    "property to return `False`."
+                ),
+                removal="0.3.20",
+            )
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -910,6 +1188,57 @@ class ChatModelIntegrationTests(ChatModelTests):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
+
+    def test_tool_choice(self, model: BaseChatModel) -> None:
+        """Test that the model can force tool calling via the ``tool_choice``
+        parameter. This test is skipped if the ``has_tool_choice`` property on the
+        test class is set to False.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_choice`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_choice(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check whether the ``test_tool_calling`` test is passing.
+            If it is not, refer to the troubleshooting steps in that test first.
+
+            If ``test_tool_calling`` is passing, check that the underlying model
+            supports forced tool calling. If it does, ``bind_tools`` should accept a
+            ``tool_choice`` parameter that can be used to force a tool call.
+
+            It should accept (1) the string ``"any"`` to force calling the bound tool,
+            and (2) the string name of the tool to force calling that tool.
+
+        """
+        if not self.has_tool_choice or not self.has_tool_calling:
+            pytest.skip("Test requires tool choice.")
+
+        @tool
+        def get_weather(location: str) -> str:
+            """Get weather at a location."""
+            return "It's sunny."
+
+        for tool_choice in ["any", "magic_function"]:
+            model_with_tools = model.bind_tools(
+                [magic_function, get_weather], tool_choice=tool_choice
+            )
+            result = model_with_tools.invoke("Hello!")
+            assert isinstance(result, AIMessage)
+            assert result.tool_calls
+            if tool_choice == "magic_function":
+                assert result.tool_calls[0]["name"] == "magic_function"
 
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls. This test is skipped if the
@@ -947,16 +1276,18 @@ class ChatModelIntegrationTests(ChatModelTests):
                 async def test_tool_calling_async(self, model: BaseChatModel) -> None:
                     await super().test_tool_calling_async(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
-        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
+            tool_choice_value = "any"
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
 
         # Test ainvoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -1008,20 +1339,19 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function_no_args"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
+            tool_choice_value = "any"
         model_with_tools = model.bind_tools(
-            [magic_function_no_args], tool_choice=tool_choice
+            [magic_function_no_args], tool_choice=tool_choice_value
         )
-        query = "What is the value of magic_function()? Use the tool."
+        query = "What is the value of magic_function_no_args()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
@@ -1083,10 +1413,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "greeting_generator"
+        if self.has_tool_choice:
+            tool_choice: Optional[str] = "any"
         else:
-            tool_choice = self.tool_choice_value
+            tool_choice = None
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
@@ -1096,23 +1426,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["args"].get("answer_style")
         assert tool_call["type"] == "tool_call"
 
-    def test_structured_output(self, model: BaseChatModel) -> None:
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1123,49 +1457,74 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
-        Joke = _get_joke_class()
-        # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
+        mock_callback = MagicMock()
+        mock_callback.on_chat_model_start = MagicMock()
 
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, Joke)
+        invoke_callback = _TestCallbackHandler()
 
-        # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
+        result = chat.invoke(
+            "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
+        )
+        validation_function(result)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
+        assert len(invoke_callback.options) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(invoke_callback.options[0], dict)
+        assert isinstance(
+            invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
+        )
+        assert invoke_callback.options[0]["ls_structured_output_format"][
+            "schema"
+        ] == convert_to_json_schema(schema)
 
-    async def test_structured_output_async(self, model: BaseChatModel) -> None:
+        stream_callback = _TestCallbackHandler()
+
+        for chunk in chat.stream(
+            "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
+        ):
+            validation_function(chunk)
+        assert chunk
+
+        assert len(stream_callback.options) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(stream_callback.options[0], dict)
+        assert isinstance(
+            stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
+        )
+        assert stream_callback.options[0]["ls_structured_output_format"][
+            "schema"
+        ] == convert_to_json_schema(schema)
+
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    async def test_structured_output_async(
+        self, model: BaseChatModel, schema_type: str
+    ) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1176,32 +1535,49 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
-        Joke = _get_joke_class()
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
 
-        # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
-        result = await chat.ainvoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
+        ainvoke_callback = _TestCallbackHandler()
 
-        async for chunk in chat.astream("Tell me a joke about cats."):
-            assert isinstance(chunk, Joke)
+        result = await chat.ainvoke(
+            "Tell me a joke about cats.", config={"callbacks": [ainvoke_callback]}
+        )
+        validation_function(result)
 
-        # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
-        result = await chat.ainvoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
+        assert len(ainvoke_callback.options) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(ainvoke_callback.options[0], dict)
+        assert isinstance(
+            ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
+        )
+        assert ainvoke_callback.options[0]["ls_structured_output_format"][
+            "schema"
+        ] == convert_to_json_schema(schema)
 
-        async for chunk in chat.astream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
+        astream_callback = _TestCallbackHandler()
+
+        async for chunk in chat.astream(
+            "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
+        ):
+            validation_function(chunk)
+        assert chunk
+
+        assert len(astream_callback.options) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+
+        assert isinstance(astream_callback.options[0], dict)
+        assert isinstance(
+            astream_callback.options[0]["ls_structured_output_format"]["schema"], dict
+        )
+        assert astream_callback.options[0]["ls_structured_output_format"][
+            "schema"
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
@@ -1211,19 +1587,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         pydantic.v1.BaseModel is available in the pydantic 2 package.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1234,8 +1613,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
@@ -1244,7 +1623,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
-        chat = model.with_structured_output(Joke)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1252,7 +1631,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(
+            Joke.schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1267,19 +1648,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         parameters.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1290,9 +1674,10 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
+        # Pydantic
         class Joke(BaseModel):
             """Joke to tell user."""
 
@@ -1301,7 +1686,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 default=None, description="answer to resolve the joke"
             )
 
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         setup_result = chat.invoke(
             "Give me the setup to a joke about cats, no punchline."
         )
@@ -1309,6 +1694,24 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
+
+        # Schema
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+
+        # TypedDict
+        class JokeDict(TypedDict):
+            """Joke to tell user."""
+
+            setup: Annotated[str, ..., "question to set up a joke"]
+            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+
+        chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
         """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_
@@ -1583,7 +1986,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         function_result = json.dumps({"result": 3})
 
         tool_schema = my_adder_tool.args_schema
-        assert tool_schema is not None
+        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
             [tool_schema(a=1, b=2)],
@@ -1595,11 +1998,169 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
+    def test_pdf_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process PDF inputs.
+
+        This test should be skipped (see Configuration below) if the model does not
+        support PDF inputs. These will take the form:
+
+        .. code-block:: python
+
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "<base64 image data>",
+                "mime_type": "application/pdf",
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_pdf_inputs`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+
+                    @property
+                    def supports_pdf_inputs(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model can correctly handle messages
+            with pdf content blocks, including base64-encoded files. Otherwise, set
+            the ``supports_pdf_inputs`` property to False.
+        """
+        if not self.supports_pdf_inputs:
+            pytest.skip("Model does not support PDF inputs.")
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "application/pdf",
+                    "data": pdf_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+    def test_audio_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process audio inputs.
+
+        This test should be skipped (see Configuration below) if the model does not
+        support audio inputs. These will take the form:
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_audio_inputs`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+
+                    @property
+                    def supports_audio_inputs(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model can correctly handle messages
+            with audio content blocks, specifically base64-encoded files. Otherwise,
+            set the ``supports_audio_inputs`` property to False.
+        """
+        if not self.supports_audio_inputs:
+            pytest.skip("Model does not support audio inputs.")
+        url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
+        audio_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "mime_type": "audio/wav",
+                    "data": audio_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": audio_data, "format": "wav"},
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
 
         This test should be skipped (see Configuration below) if the model does not
-        support image inputs These will take the form of messages with OpenAI-style
+        support image inputs. These will take the form:
+
+        .. code-block:: python
+
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "<base64 image data>",
+                "mime_type": "image/jpeg",  # or appropriate mime-type
+            }
+
+        For backward-compatibility, we must also support OpenAI-style
         image content blocks:
 
         .. code-block:: python
@@ -1614,6 +2175,17 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
+        If the property ``supports_image_urls`` is set to True, the test will also
+        check that we can process content blocks of the form:
+
+        .. code-block:: python
+
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "<url>",
+            }
+
         .. dropdown:: Configuration
 
             To disable this test, set ``supports_image_inputs`` to False in your
@@ -1626,16 +2198,23 @@ class ChatModelIntegrationTests(ChatModelTests):
                     def supports_image_inputs(self) -> bool:
                         return False
 
+                    # Can also explicitly disable testing image URLs:
+                    @property
+                    def supports_image_urls(self) -> bool:
+                        return False
+
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the model can correctly handle messages
-            with image content blocks in OpenAI format, including base64-encoded
-            images. Otherwise, set the ``supports_image_inputs`` property to False.
+            with image content blocks, including base64-encoded images. Otherwise, set
+            the ``supports_image_inputs`` property to False.
         """
         if not self.supports_image_inputs:
-            return
+            pytest.skip("Model does not support image message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+        # OpenAI format, base64 data
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
@@ -1645,7 +2224,35 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
             ],
         )
-        model.invoke([message])
+        _ = model.invoke([message])
+
+        # Standard format, base64 data
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "mime_type": "image/jpeg",
+                    "data": image_data,
+                },
+            ],
+        )
+        _ = model.invoke([message])
+
+        # Standard format, URL
+        if self.supports_image_urls:
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "image",
+                        "source_type": "url",
+                        "url": image_url,
+                    },
+                ],
+            )
+            _ = model.invoke([message])
 
     def test_image_tool_message(self, model: BaseChatModel) -> None:
         """Test that the model can process ToolMessages with image inputs.
@@ -1665,6 +2272,26 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_image",
             )
+
+        containing image content blocks in OpenAI Chat Completions format, in addition
+        to messages of the form:
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        containing image content blocks in standard format.
 
         This test can be skipped by setting the ``supports_image_tool_message`` property
         to False (see Configuration below).
@@ -1689,34 +2316,59 @@ class ChatModelIntegrationTests(ChatModelTests):
             False.
         """
         if not self.supports_image_tool_message:
-            return
+            pytest.skip("Model does not support image tool message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-        messages = [
-            HumanMessage("get a random image using the tool and describe the weather"),
-            AIMessage(
-                [],
-                tool_calls=[
-                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
-                ],
-            ),
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            ),
-        ]
 
-        def random_image() -> str:
-            """Return a random image."""
-            return ""
+        # Support both OpenAI and standard formats
+        oai_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
 
-        model.bind_tools([random_image]).invoke(messages)
+        standard_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+
+        for tool_message in [oai_format_message, standard_format_message]:
+            messages = [
+                HumanMessage(
+                    "get a random image using the tool and describe the weather"
+                ),
+                AIMessage(
+                    [],
+                    tool_calls=[
+                        {
+                            "type": "tool_call",
+                            "id": "1",
+                            "name": "random_image",
+                            "args": {},
+                        }
+                    ],
+                ),
+                tool_message,
+            ]
+
+            def random_image() -> str:
+                """Return a random image."""
+                return ""
+
+            _ = model.bind_tools([random_image]).invoke(messages)
 
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.
@@ -1786,7 +2438,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             set the ``supports_anthropic_inputs`` property to False.
         """  # noqa: E501
         if not self.supports_anthropic_inputs:
-            return
+            pytest.skip("Model does not explicitly support Anthropic inputs.")
 
         class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
@@ -1824,26 +2476,55 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "id": "foo",
                         "name": "color_picker",
                     },
+                ],
+                tool_calls=[
+                    {
+                        "name": "color_picker",
+                        "args": {"fav_color": "green"},
+                        "id": "foo",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage("That's a great pick!", tool_call_id="foo"),
+        ]
+        response = model.bind_tools([color_picker]).invoke(messages)
+        assert isinstance(response, AIMessage)
+
+        # Test thinking blocks
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Hello",
+                    },
+                ]
+            ),
+            AIMessage(
+                [
+                    {
+                        "type": "thinking",
+                        "thinking": "I'm thinking...",
+                        "signature": "abc123",
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, how are you?",
+                    },
                 ]
             ),
             HumanMessage(
                 [
                     {
-                        "type": "tool_result",
-                        "tool_use_id": "foo",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
-                            }
-                        ],
-                        "is_error": False,
+                        "type": "text",
+                        "text": "Well, thanks.",
                     },
-                    {"type": "text", "text": "what's my sister's favorite color"},
                 ]
             ),
         ]
-        model.bind_tools([color_picker]).invoke(messages)
+        response = model.invoke(messages)
+        assert isinstance(response, AIMessage)
 
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool
@@ -1883,9 +2564,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that the ``status`` field on ``ToolMessage``
             objects is either ignored or passed to the model appropriately.
-
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1933,8 +2611,73 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
+
+    def test_agent_loop(self, model: BaseChatModel) -> None:
+        """Test that the model supports a simple ReAct agent loop. This test is skipped
+        if the ``has_tool_calling`` property on the test class is set to False.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that ``bind_tools`` is implemented to correctly
+            translate LangChain tool objects into the appropriate schema for your
+            chat model.
+
+            Check also that all required information (e.g., tool calling identifiers)
+            from AIMessage objects is propagated correctly to model payloads.
+
+            This test may fail if the chat model does not consistently generate tool
+            calls in response to an appropriate query. In these cases you can ``xfail``
+            the test:
+
+            .. code-block:: python
+
+                @pytest.mark.xfail(reason=("Does not support tool_choice."))
+                def test_agent_loop(self, model: BaseChatModel) -> None:
+                    super().test_agent_loop(model)
+
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        @tool
+        def get_weather(location: str) -> str:
+            """Call to surf the web."""
+            return "It's sunny."
+
+        llm_with_tools = model.bind_tools([get_weather])
+        input_message = HumanMessage("What is the weather in San Francisco, CA?")
+        tool_call_message = llm_with_tools.invoke([input_message])
+        assert isinstance(tool_call_message, AIMessage)
+        tool_calls = tool_call_message.tool_calls
+        assert len(tool_calls) == 1
+        tool_call = tool_calls[0]
+        tool_message = get_weather.invoke(tool_call)
+        assert isinstance(tool_message, ToolMessage)
+        response = llm_with_tools.invoke(
+            [
+                input_message,
+                tool_call_message,
+                tool_message,
+            ]
+        )
+        assert isinstance(response, AIMessage)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""

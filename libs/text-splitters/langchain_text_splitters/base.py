@@ -68,7 +68,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Split text into multiple components."""
 
     def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
+        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
     ) -> List[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
@@ -158,7 +158,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
 
             def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.encode(text))
+                return len(tokenizer.tokenize(text))
 
         except ImportError:
             raise ValueError(

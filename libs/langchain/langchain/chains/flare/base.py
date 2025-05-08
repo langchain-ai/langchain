@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
-import numpy as np
 from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
@@ -23,8 +24,10 @@ from langchain.chains.flare.prompts import (
 )
 from langchain.chains.llm import LLMChain
 
+logger = logging.getLogger(__name__)
 
-def _extract_tokens_and_log_probs(response: AIMessage) -> Tuple[List[str], List[float]]:
+
+def _extract_tokens_and_log_probs(response: AIMessage) -> tuple[list[str], list[float]]:
     """Extract tokens and log probabilities from chat model response."""
     tokens = []
     log_probs = []
@@ -45,7 +48,7 @@ class QuestionGeneratorChain(LLMChain):
         return False
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys for the chain."""
         return ["user_input", "context", "response"]
 
@@ -56,8 +59,25 @@ def _low_confidence_spans(
     min_prob: float,
     min_token_gap: int,
     num_pad_tokens: int,
-) -> List[str]:
-    _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+) -> list[str]:
+    try:
+        import numpy as np
+
+        _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+    except ImportError:
+        logger.warning(
+            "NumPy not found in the current Python environment. FlareChain will use a "
+            "pure Python implementation for internal calculations, which may "
+            "significantly impact performance, especially for large datasets. For "
+            "optimal speed and efficiency, consider installing NumPy: pip install numpy"
+        )
+        import math
+
+        _low_idx = [  # type: ignore[assignment]
+            idx
+            for idx, log_prob in enumerate(log_probs)
+            if math.exp(log_prob) < min_prob
+        ]
     low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]
     if len(low_idx) == 0:
         return []
@@ -98,22 +118,22 @@ class FlareChain(Chain):
     """Whether to start with retrieval."""
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys for the chain."""
         return ["user_input"]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys for the chain."""
         return ["response"]
 
     def _do_generation(
         self,
-        questions: List[str],
+        questions: list[str],
         user_input: str,
         response: str,
         _run_manager: CallbackManagerForChainRun,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         callbacks = _run_manager.get_child()
         docs = []
         for question in questions:
@@ -134,12 +154,12 @@ class FlareChain(Chain):
 
     def _do_retrieval(
         self,
-        low_confidence_spans: List[str],
+        low_confidence_spans: list[str],
         _run_manager: CallbackManagerForChainRun,
         user_input: str,
         response: str,
         initial_response: str,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         question_gen_inputs = [
             {
                 "user_input": user_input,
@@ -168,9 +188,9 @@ class FlareChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
 
         user_input = inputs[self.input_keys[0]]
@@ -236,7 +256,9 @@ class FlareChain(Chain):
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
-        llm = ChatOpenAI(max_tokens=max_generation_len, logprobs=True, temperature=0)
+        llm = ChatOpenAI(
+            max_completion_tokens=max_generation_len, logprobs=True, temperature=0
+        )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(

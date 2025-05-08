@@ -65,11 +65,11 @@ def test_example_id_assignment_threadsafe() -> None:
 def test_tracer_with_run_tree_parent() -> None:
     mock_session = unittest.mock.MagicMock()
     client = Client(session=mock_session, api_key="test")
-    parent = RunTree(name="parent", inputs={"input": "foo"}, _client=client)  # type: ignore
+    parent = RunTree(name="parent", inputs={"input": "foo"}, ls_client=client)
     run_id = uuid.uuid4()
     tracer = LangChainTracer(client=client)
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
-    tracer.run_map[str(parent.id)] = parent  # type: ignore
+    tracer.run_map[str(parent.id)] = parent
     tracer.on_chain_start(
         {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
     )
@@ -83,7 +83,6 @@ def test_tracer_with_run_tree_parent() -> None:
 
 def test_log_lock() -> None:
     """Test that example assigned at callback start/end is honored."""
-
     client = unittest.mock.MagicMock(spec=Client)
     tracer = LangChainTracer(client=client)
 
@@ -96,9 +95,7 @@ def test_log_lock() -> None:
 
 
 class LangChainProjectNameTest(unittest.TestCase):
-    """
-    Test that the project name is set correctly for runs.
-    """
+    """Test that the project name is set correctly for runs."""
 
     class SetProperTracerProjectTestCase:
         def __init__(

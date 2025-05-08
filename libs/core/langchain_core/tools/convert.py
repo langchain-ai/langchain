@@ -1,3 +1,5 @@
+"""Convert functions and runnables to tools."""
+
 import inspect
 from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
 
@@ -5,7 +7,7 @@ from pydantic import BaseModel, Field, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
-from langchain_core.tools.base import BaseTool
+from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
 
@@ -13,8 +15,9 @@ from langchain_core.tools.structured import StructuredTool
 @overload
 def tool(
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -27,8 +30,9 @@ def tool(
     name_or_callable: str,
     runnable: Runnable,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -40,8 +44,9 @@ def tool(
 def tool(
     name_or_callable: Callable,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -53,8 +58,9 @@ def tool(
 def tool(
     name_or_callable: str,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -66,8 +72,9 @@ def tool(
     name_or_callable: Optional[Union[str, Callable]] = None,
     runnable: Optional[Runnable] = None,
     *args: Any,
+    description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -83,6 +90,15 @@ def tool(
             converted to a tool. Must be provided as a positional argument.
         runnable: Optional runnable to convert to a tool. Must be provided as a
             positional argument.
+        description: Optional description for the tool.
+            Precedence for the tool description value is as follows:
+                - `description` argument
+                    (used even if docstring and/or `args_schema` are provided)
+                - tool function docstring
+                    (used even if `args_schema` is provided)
+                - `args_schema` description
+                    (used only if `description` / docstring are not provided)
+        *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
         args_schema: optional argument schema for user to specify.
@@ -124,7 +140,7 @@ def tool(
                 return
 
             @tool(response_format="content_and_artifact")
-            def search_api(query: str) -> Tuple[str, dict]:
+            def search_api(query: str) -> tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
     .. versionadded:: 0.2.14
@@ -198,7 +214,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
-    """
+    """  # noqa: D214,D405,D410,D411,D412,D416
 
     def _create_tool_factory(
         tool_name: str,
@@ -213,6 +229,7 @@ def tool(
         """
 
         def _tool_factory(dec_func: Union[Callable, Runnable]) -> BaseTool:
+            tool_description = description
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -232,25 +249,23 @@ def tool(
 
                 coroutine = ainvoke_wrapper
                 func = invoke_wrapper
-                schema: Optional[type[BaseModel]] = runnable.input_schema
-                description = repr(runnable)
+                schema: Optional[ArgsSchema] = runnable.input_schema
+                tool_description = description or repr(runnable)
             elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func
                 func = None
                 schema = args_schema
-                description = None
             else:
                 coroutine = None
                 func = dec_func
                 schema = args_schema
-                description = None
 
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
                     coroutine,
                     name=tool_name,
-                    description=description,
+                    description=tool_description,
                     return_direct=return_direct,
                     args_schema=schema,
                     infer_schema=infer_schema,
@@ -295,14 +310,14 @@ def tool(
             msg = "Name must be a string for tool constructor"
             raise ValueError(msg)
         return _create_tool_factory(name_or_callable)(runnable)
-    elif name_or_callable is not None:
+    if name_or_callable is not None:
         if callable(name_or_callable) and hasattr(name_or_callable, "__name__"):
             # Used as a decorator without parameters
             # @tool
             # def my_tool():
             #    pass
             return _create_tool_factory(name_or_callable.__name__)(name_or_callable)
-        elif isinstance(name_or_callable, str):
+        if isinstance(name_or_callable, str):
             # Used with a new name for the tool
             # @tool("search")
             # def my_tool():
@@ -314,24 +329,23 @@ def tool(
             # def my_tool():
             #    pass
             return _create_tool_factory(name_or_callable)
-        else:
-            msg = (
-                f"The first argument must be a string or a callable with a __name__ "
-                f"for tool decorator. Got {type(name_or_callable)}"
-            )
-            raise ValueError(msg)
-    else:
-        # Tool is used as a decorator with parameters specified
-        # @tool(parse_docstring=True)
-        # def my_tool():
-        #    pass
-        def _partial(func: Union[Callable, Runnable]) -> BaseTool:
-            """Partial function that takes a callable and returns a tool."""
-            name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
-            tool_factory = _create_tool_factory(name_)
-            return tool_factory(func)
+        msg = (
+            f"The first argument must be a string or a callable with a __name__ "
+            f"for tool decorator. Got {type(name_or_callable)}"
+        )
+        raise ValueError(msg)
 
-        return _partial
+    # Tool is used as a decorator with parameters specified
+    # @tool(parse_docstring=True)
+    # def my_tool():
+    #    pass
+    def _partial(func: Union[Callable, Runnable]) -> BaseTool:
+        """Partial function that takes a callable and returns a tool."""
+        name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
+        tool_factory = _create_tool_factory(name_)
+        return tool_factory(func)
+
+    return _partial
 
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
@@ -357,7 +371,7 @@ def _get_schema_from_runnable_and_arg_types(
             )
             raise TypeError(msg) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore
+    return create_model(name, **fields)  # type: ignore[call-overload]
 
 
 def convert_runnable_to_tool(
@@ -393,31 +407,30 @@ def convert_runnable_to_tool(
             coroutine=runnable.ainvoke,
             description=description,
         )
+
+    async def ainvoke_wrapper(
+        callbacks: Optional[Callbacks] = None, **kwargs: Any
+    ) -> Any:
+        return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
+
+    def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
+        return runnable.invoke(kwargs, config={"callbacks": callbacks})
+
+    if (
+        arg_types is None
+        and schema.get("type") == "object"
+        and schema.get("properties")
+    ):
+        args_schema = runnable.input_schema
     else:
-
-        async def ainvoke_wrapper(
-            callbacks: Optional[Callbacks] = None, **kwargs: Any
-        ) -> Any:
-            return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
-
-        def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
-            return runnable.invoke(kwargs, config={"callbacks": callbacks})
-
-        if (
-            arg_types is None
-            and schema.get("type") == "object"
-            and schema.get("properties")
-        ):
-            args_schema = runnable.input_schema
-        else:
-            args_schema = _get_schema_from_runnable_and_arg_types(
-                runnable, name, arg_types=arg_types
-            )
-
-        return StructuredTool.from_function(
-            name=name,
-            func=invoke_wrapper,
-            coroutine=ainvoke_wrapper,
-            description=description,
-            args_schema=args_schema,
+        args_schema = _get_schema_from_runnable_and_arg_types(
+            runnable, name, arg_types=arg_types
         )
+
+    return StructuredTool.from_function(
+        name=name,
+        func=invoke_wrapper,
+        coroutine=ainvoke_wrapper,
+        description=description,
+        args_schema=args_schema,
+    )

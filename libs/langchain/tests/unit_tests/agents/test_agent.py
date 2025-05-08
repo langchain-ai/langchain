@@ -1,8 +1,9 @@
 """Unit tests for agents."""
 
+import asyncio
 import json
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -42,13 +43,13 @@ from tests.unit_tests.stubs import (
 class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
-    responses: List[str]
+    responses: list[str]
     i: int = -1
 
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -66,7 +67,7 @@ class FakeListLLM(LLM):
         return self._call(*args, **kwargs)
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {}
 
     @property
@@ -391,8 +392,8 @@ def test_agent_with_new_prefix_suffix() -> None:
     )
 
     # avoids "BasePromptTemplate" has no attribute "template" error
-    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore
-    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore
+    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore[union-attr]
+    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore[union-attr]
     assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
     assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
 
@@ -451,7 +452,10 @@ async def test_runnable_agent() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     )
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
@@ -459,10 +463,10 @@ async def test_runnable_agent() -> None:
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[])  # type: ignore[arg-type]
+    executor = AgentExecutor(agent=agent, tools=[])
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result: Any = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -470,8 +474,8 @@ async def test_runnable_agent() -> None:
     assert result == {"foo": "meow", "question": "hello"}
 
     # Batch
-    result = executor.batch(  # type: ignore[assignment]
-        [{"question": "hello"}, {"question": "hello"}]
+    result = await asyncio.to_thread(
+        executor.batch, [{"question": "hello"}, {"question": "hello"}]
     )
     assert result == [
         {"foo": "meow", "question": "hello"},
@@ -479,16 +483,14 @@ async def test_runnable_agent() -> None:
     ]
 
     # abatch
-    result = await executor.abatch(  # type: ignore[assignment]
-        [{"question": "hello"}, {"question": "hello"}]
-    )
+    result = await executor.abatch([{"question": "hello"}, {"question": "hello"}])
     assert result == [
         {"foo": "meow", "question": "hello"},
         {"foo": "meow", "question": "hello"},
     ]
 
     # Stream
-    results = list(executor.stream({"question": "hello"}))
+    results = await asyncio.to_thread(list, executor.stream({"question": "hello"}))
     assert results == [
         {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]}
     ]
@@ -505,7 +507,7 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results: List[RunLogPatch] = [  # type: ignore[no-redef]
+    results: list[RunLogPatch] = [  # type: ignore[no-redef]
         r async for r in executor.astream_log({"question": "hello"})
     ]
     # # Let's stream just the llm tokens.
@@ -525,7 +527,7 @@ async def test_runnable_agent() -> None:
             run_log = result
         else:
             # `+` is defined for RunLogPatch
-            run_log = run_log + result  # type: ignore[union-attr]
+            run_log = run_log + result
 
     assert isinstance(run_log, RunLog)
 
@@ -539,12 +541,18 @@ async def test_runnable_agent_with_function_calls() -> None:
     """Test agent with intermediate agent actions."""
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle(
-        [AIMessage(content="looking for pet..."), AIMessage(content="Found Pet")]
+        [
+            AIMessage(content="looking for pet..."),
+            AIMessage(content="Found Pet"),
+        ]
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     )
 
     parser_responses = cycle(
@@ -575,10 +583,10 @@ async def test_runnable_agent_with_function_calls() -> None:
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -635,12 +643,18 @@ async def test_runnable_with_multi_action_per_step() -> None:
     """Test an agent that can make multiple function calls at once."""
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle(
-        [AIMessage(content="looking for pet..."), AIMessage(content="Found Pet")]
+        [
+            AIMessage(content="looking for pet..."),
+            AIMessage(content="Found Pet"),
+        ]
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     )
 
     parser_responses = cycle(
@@ -687,10 +701,10 @@ async def test_runnable_with_multi_action_per_step() -> None:
         return "purrrr"
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -838,13 +852,13 @@ async def test_openai_agent_with_streaming() -> None:
     # decorator.
     agent = create_openai_functions_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+    executor = AgentExecutor(agent=agent, tools=[find_pet])
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {
         "output": "The cat is spying from under the bed.",
         "question": "hello",
@@ -861,7 +875,7 @@ async def test_openai_agent_with_streaming() -> None:
                         {
                             "additional_kwargs": {
                                 "function_call": {
-                                    "arguments": '{"pet": ' '"cat"}',
+                                    "arguments": '{"pet": "cat"}',
                                     "name": "find_pet",
                                 }
                             },
@@ -880,7 +894,7 @@ async def test_openai_agent_with_streaming() -> None:
                 {
                     "additional_kwargs": {
                         "function_call": {
-                            "arguments": '{"pet": ' '"cat"}',
+                            "arguments": '{"pet": "cat"}',
                             "name": "find_pet",
                         }
                     },
@@ -909,10 +923,7 @@ async def test_openai_agent_with_streaming() -> None:
             "steps": [
                 {
                     "action": {
-                        "log": "\n"
-                        "Invoking: `find_pet` with `{'pet': 'cat'}`\n"
-                        "\n"
-                        "\n",
+                        "log": "\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                         "tool": "find_pet",
                         "tool_input": {"pet": "cat"},
                         "type": "AgentActionMessageLog",
@@ -973,7 +984,7 @@ async def test_openai_agent_with_streaming() -> None:
     ]
 
 
-def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMessage:
+def _make_tools_invocation(name_to_arguments: dict[str, dict[str, Any]]) -> AIMessage:
     """Create an AIMessage that represents a tools invocation.
 
     Args:
@@ -995,7 +1006,7 @@ def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMe
         additional_kwargs={
             "tool_calls": raw_tool_calls,
         },
-        tool_calls=tool_calls,  # type: ignore[arg-type]
+        tool_calls=tool_calls,
     )
 
 
@@ -1013,7 +1024,7 @@ async def test_openai_agent_tools_agent() -> None:
         ]
     )
 
-    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore
+    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore[assignment,misc]
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @tool
@@ -1042,19 +1053,19 @@ async def test_openai_agent_tools_agent() -> None:
     # decorator.
     openai_agent = create_openai_tools_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
     tool_calling_agent = create_tool_calling_agent(
         model,
-        [find_pet],  # type: ignore[list-item]
+        [find_pet],
         template,
     )
     for agent in [openai_agent, tool_calling_agent]:
-        executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
+        executor = AgentExecutor(agent=agent, tools=[find_pet])
 
         # Invoke
-        result = executor.invoke({"question": "hello"})
+        result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
         assert result == {
             "output": "The cat is spying from under the bed.",
             "question": "hello",
@@ -1062,15 +1073,131 @@ async def test_openai_agent_tools_agent() -> None:
 
         # astream
         chunks = [chunk async for chunk in executor.astream({"question": "hello"})]
-        assert (
-            chunks
-            == [
-                {
-                    "actions": [
-                        OpenAIToolAgentAction(
+        assert chunks == [
+            {
+                "actions": [
+                    OpenAIToolAgentAction(
+                        tool="find_pet",
+                        tool_input={"pet": "cat"},
+                        log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
+                        message_log=[
+                            _AnyIdAIMessageChunk(
+                                content="",
+                                additional_kwargs={
+                                    "tool_calls": [
+                                        {
+                                            "function": {
+                                                "name": "find_pet",
+                                                "arguments": '{"pet": "cat"}',
+                                            },
+                                            "id": "0",
+                                        },
+                                        {
+                                            "function": {
+                                                "name": "check_time",
+                                                "arguments": "{}",
+                                            },
+                                            "id": "1",
+                                        },
+                                    ]
+                                },
+                            )
+                        ],
+                        tool_call_id="0",
+                    )
+                ],
+                "messages": [
+                    _AnyIdAIMessageChunk(
+                        content="",
+                        additional_kwargs={
+                            "tool_calls": [
+                                {
+                                    "function": {
+                                        "name": "find_pet",
+                                        "arguments": '{"pet": "cat"}',
+                                    },
+                                    "id": "0",
+                                },
+                                {
+                                    "function": {
+                                        "name": "check_time",
+                                        "arguments": "{}",
+                                    },
+                                    "id": "1",
+                                },
+                            ]
+                        },
+                    )
+                ],
+            },
+            {
+                "actions": [
+                    OpenAIToolAgentAction(
+                        tool="check_time",
+                        tool_input={},
+                        log="\nInvoking: `check_time` with `{}`\n\n\n",
+                        message_log=[
+                            _AnyIdAIMessageChunk(
+                                content="",
+                                additional_kwargs={
+                                    "tool_calls": [
+                                        {
+                                            "function": {
+                                                "name": "find_pet",
+                                                "arguments": '{"pet": "cat"}',
+                                            },
+                                            "id": "0",
+                                        },
+                                        {
+                                            "function": {
+                                                "name": "check_time",
+                                                "arguments": "{}",
+                                            },
+                                            "id": "1",
+                                        },
+                                    ]
+                                },
+                            )
+                        ],
+                        tool_call_id="1",
+                    )
+                ],
+                "messages": [
+                    _AnyIdAIMessageChunk(
+                        content="",
+                        additional_kwargs={
+                            "tool_calls": [
+                                {
+                                    "function": {
+                                        "name": "find_pet",
+                                        "arguments": '{"pet": "cat"}',
+                                    },
+                                    "id": "0",
+                                },
+                                {
+                                    "function": {
+                                        "name": "check_time",
+                                        "arguments": "{}",
+                                    },
+                                    "id": "1",
+                                },
+                            ]
+                        },
+                    )
+                ],
+            },
+            {
+                "messages": [
+                    FunctionMessage(
+                        content="Spying from under the bed.", name="find_pet"
+                    )
+                ],
+                "steps": [
+                    AgentStep(
+                        action=OpenAIToolAgentAction(
                             tool="find_pet",
                             tool_input={"pet": "cat"},
-                            log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
+                            log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",  # noqa: E501
                             message_log=[
                                 _AnyIdAIMessageChunk(
                                     content="",
@@ -1095,35 +1222,21 @@ async def test_openai_agent_tools_agent() -> None:
                                 )
                             ],
                             tool_call_id="0",
-                        )
-                    ],
-                    "messages": [
-                        _AnyIdAIMessageChunk(
-                            content="",
-                            additional_kwargs={
-                                "tool_calls": [
-                                    {
-                                        "function": {
-                                            "name": "find_pet",
-                                            "arguments": '{"pet": "cat"}',
-                                        },
-                                        "id": "0",
-                                    },
-                                    {
-                                        "function": {
-                                            "name": "check_time",
-                                            "arguments": "{}",
-                                        },
-                                        "id": "1",
-                                    },
-                                ]
-                            },
-                        )
-                    ],
-                },
-                {
-                    "actions": [
-                        OpenAIToolAgentAction(
+                        ),
+                        observation="Spying from under the bed.",
+                    )
+                ],
+            },
+            {
+                "messages": [
+                    FunctionMessage(
+                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        name="check_time",
+                    )
+                ],
+                "steps": [
+                    AgentStep(
+                        action=OpenAIToolAgentAction(
                             tool="check_time",
                             tool_input={},
                             log="\nInvoking: `check_time` with `{}`\n\n\n",
@@ -1151,124 +1264,19 @@ async def test_openai_agent_tools_agent() -> None:
                                 )
                             ],
                             tool_call_id="1",
-                        )
-                    ],
-                    "messages": [
-                        _AnyIdAIMessageChunk(
-                            content="",
-                            additional_kwargs={
-                                "tool_calls": [
-                                    {
-                                        "function": {
-                                            "name": "find_pet",
-                                            "arguments": '{"pet": "cat"}',
-                                        },
-                                        "id": "0",
-                                    },
-                                    {
-                                        "function": {
-                                            "name": "check_time",
-                                            "arguments": "{}",
-                                        },
-                                        "id": "1",
-                                    },
-                                ]
-                            },
-                        )
-                    ],
-                },
-                {
-                    "messages": [
-                        FunctionMessage(
-                            content="Spying from under the bed.", name="find_pet"
-                        )
-                    ],
-                    "steps": [
-                        AgentStep(
-                            action=OpenAIToolAgentAction(
-                                tool="find_pet",
-                                tool_input={"pet": "cat"},
-                                log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",  # noqa: E501
-                                message_log=[
-                                    _AnyIdAIMessageChunk(
-                                        content="",
-                                        additional_kwargs={
-                                            "tool_calls": [
-                                                {
-                                                    "function": {
-                                                        "name": "find_pet",
-                                                        "arguments": '{"pet": "cat"}',
-                                                    },
-                                                    "id": "0",
-                                                },
-                                                {
-                                                    "function": {
-                                                        "name": "check_time",
-                                                        "arguments": "{}",
-                                                    },
-                                                    "id": "1",
-                                                },
-                                            ]
-                                        },
-                                    )
-                                ],
-                                tool_call_id="0",
-                            ),
-                            observation="Spying from under the bed.",
-                        )
-                    ],
-                },
-                {
-                    "messages": [
-                        FunctionMessage(
-                            content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
-                            name="check_time",
-                        )
-                    ],
-                    "steps": [
-                        AgentStep(
-                            action=OpenAIToolAgentAction(
-                                tool="check_time",
-                                tool_input={},
-                                log="\nInvoking: `check_time` with `{}`\n\n\n",
-                                message_log=[
-                                    _AnyIdAIMessageChunk(
-                                        content="",
-                                        additional_kwargs={
-                                            "tool_calls": [
-                                                {
-                                                    "function": {
-                                                        "name": "find_pet",
-                                                        "arguments": '{"pet": "cat"}',
-                                                    },
-                                                    "id": "0",
-                                                },
-                                                {
-                                                    "function": {
-                                                        "name": "check_time",
-                                                        "arguments": "{}",
-                                                    },
-                                                    "id": "1",
-                                                },
-                                            ]
-                                        },
-                                    )
-                                ],
-                                tool_call_id="1",
-                            ),
-                            observation="check_time is not a valid tool, "
-                            "try one of [find_pet].",
-                        )
-                    ],
-                },
-                {
-                    "messages": [
-                        AIMessage(content="The cat is spying from under the bed.")
-                    ],
-                    "output": "The cat is spying from under the bed.",
-                },
-            ]
-        )
+                        ),
+                        observation="check_time is not a valid tool, "
+                        "try one of [find_pet].",
+                    )
+                ],
+            },
+            {
+                "messages": [
+                    AIMessage(content="The cat is spying from under the bed.")
+                ],
+                "output": "The cat is spying from under the bed.",
+            },
+        ]
 
         # astream_log
         log_patches = [

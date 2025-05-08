@@ -1,9 +1,11 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator, List, cast
-from unittest.mock import patch
+from collections.abc import AsyncGenerator, Generator
+from typing import Any, cast
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import (
@@ -103,13 +105,13 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
     ],
 )
 def test_convert_message_to_mistral_chat_message(
-    message: BaseMessage, expected: Dict
+    message: BaseMessage, expected: dict
 ) -> None:
     result = _convert_message_to_mistral_chat_message(message)
     assert result == expected
 
 
-def _make_completion_response_from_token(token: str) -> Dict:
+def _make_completion_response_from_token(token: str) -> dict:
     return dict(
         id="abc123",
         model="fake_model",
@@ -235,7 +237,7 @@ def test__convert_dict_to_message_tool_call() -> None:
 
 
 def test_custom_token_counting() -> None:
-    def token_encoder(text: str) -> List[int]:
+    def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
     llm = ChatMistralAI(custom_get_token_ids=token_encoder)
@@ -255,3 +257,61 @@ def test_tool_id_conversion() -> None:
     for input_id, expected_output in result_map.items():
         assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
         assert _is_valid_mistral_tool_call_id(expected_output)
+
+
+def test_extra_kwargs() -> None:
+    # Check that foo is saved in extra_kwargs.
+    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    assert llm.model_kwargs == {"foo": 3}
+
+    # Test that if extra_kwargs are provided, they are added to it.
+    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    assert llm.model_kwargs == {"foo": 3, "bar": 2}
+
+    # Test that if provided twice it errors
+    with pytest.raises(ValueError):
+        ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_retry_with_failure_then_success() -> None:
+    """Test that retry mechanism works correctly when
+    first request fails and second succeeds."""
+    # Create a real ChatMistralAI instance
+    chat = ChatMistralAI(max_retries=3)
+
+    # Set up the actual retry mechanism (not just mocking it)
+    # We'll track how many times the function is called
+    call_count = 0
+
+    def mock_post(*args: Any, **kwargs: Any) -> MagicMock:
+        nonlocal call_count
+        call_count += 1
+
+        if call_count == 1:
+            raise httpx.RequestError("Connection error", request=MagicMock())
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello!",
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 1,
+                "completion_tokens": 1,
+                "total_tokens": 2,
+            },
+        }
+        return mock_response
+
+    with patch.object(chat.client, "post", side_effect=mock_post):
+        result = chat.invoke("Hello")
+        assert result.content == "Hello!"
+        assert call_count == 2, f"Expected 2 calls, but got {call_count}"

@@ -1,8 +1,10 @@
+"""Pydantic v1 compatibility shim."""
+
 from importlib import metadata
 
 from langchain_core._api.deprecation import warn_deprecated
 
-## Create namespaces for pydantic v1 and v2.
+# Create namespaces for pydantic v1 and v2.
 # This code must stay at the top of the file before other modules may
 # attempt to import pydantic since it adds pydantic_v1 and pydantic_v2 to sys.modules.
 #
@@ -16,7 +18,7 @@ from langchain_core._api.deprecation import warn_deprecated
 try:
     from pydantic.v1 import *  # noqa: F403
 except ImportError:
-    from pydantic import *  # type: ignore # noqa: F403
+    from pydantic import *  # type: ignore[assignment,no-redef] # noqa: F403
 
 
 try:

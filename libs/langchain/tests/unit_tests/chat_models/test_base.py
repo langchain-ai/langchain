@@ -107,23 +107,24 @@ def test_configurable() -> None:
             "disable_streaming": False,
             "disabled_params": None,
             "model_name": "gpt-4o",
-            "temperature": 0.7,
+            "temperature": None,
             "model_kwargs": {},
             "openai_api_key": SecretStr("foo"),
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
             "request_timeout": None,
-            "max_retries": 2,
+            "max_retries": None,
             "presence_penalty": None,
             "reasoning_effort": None,
             "frequency_penalty": None,
             "seed": None,
+            "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,
             "logit_bias": None,
             "streaming": False,
-            "n": 1,
+            "n": None,
             "top_p": None,
             "max_tokens": None,
             "tiktoken_model_name": None,
@@ -133,6 +134,7 @@ def test_configurable() -> None:
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_responses_api": None,
         },
         "kwargs": {
             "tools": [
@@ -172,7 +174,7 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"  # type: ignore[attr-defined]
+    assert model.model_name == "gpt-4o"
 
     model_with_tools = model.bind_tools(
         [{"name": "foo", "description": "foo", "parameters": {}}]
@@ -193,6 +195,7 @@ def test_configurable_with_default() -> None:
             "model": "claude-3-sonnet-20240229",
             "max_tokens": 1024,
             "temperature": None,
+            "thinking": None,
             "top_k": None,
             "top_p": None,
             "default_request_timeout": None,

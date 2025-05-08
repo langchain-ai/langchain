@@ -86,14 +86,6 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "link": "/docs/integrations/tools/riza",
         "self_hosting": True,
     },
-    "E2B Data Analysis": {
-        "langauges": "Python. In beta: JavaScript, R, Java",
-        "sandbox_lifetime": "24 Hours",
-        "upload": True,
-        "return_results": "Text, Images, Videos",
-        "link": "/docs/integrations/tools/e2b_data_analysis",
-        "self_hosting": True,
-    },
     "Azure Container Apps dynamic sessions": {
         "langauges": "Python",
         "sandbox_lifetime": "1 Hour",
@@ -155,6 +147,21 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": True,
         "pricing": "40 free requests/day",
     },
+    "AgentQL Toolkit": {
+        "link": "/docs/integrations/tools/agentql",
+        "interactions": True,
+        "pricing": "Free trial, with pay-as-you-go and flat rate plans after",
+    },
+    "Hyperbrowser Browser Agent Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_browser_agent_tools",
+        "interactions": True,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
+    "Hyperbrowser Web Scraping Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_web_scraping_tools",
+        "interactions": False,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
@@ -169,6 +176,14 @@ DATABASE_TOOL_FEAT_TABLE = {
     "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
+    },
+}
+
+FINANCE_TOOL_FEAT_TABLE = {
+    "GOAT": {
+        "link": "/docs/integrations/tools/goat",
+        "pricing": "Free",
+        "capabilities": "Create and receive payments, purchase physical goods, make investments, and more.",
     },
 }
 
@@ -222,6 +237,12 @@ The following table shows tools that can be used to automate tasks in web browse
 The following table shows tools that can be used to automate tasks in databases:
 
 {database_table}
+
+## Finance
+
+The following table shows tools that can be used to execute financial transactions such as payments, purchases, and more:
+
+{finance_table}
 
 ## All tools
 
@@ -286,6 +307,22 @@ def get_database_table() -> str:
         # Fields are in the order of the header
         row = [
             f"[{database_tool}]({feats['link']})",
+        ]
+        for h in header[1:]:
+            row.append(feats.get(h))
+        rows.append(row)
+    return "\n".join(["|".join(row) for row in rows])
+
+
+def get_finance_table() -> str:
+    """Get the table of finance tools."""
+    header = ["tool", "pricing", "capabilities"]
+    title = ["Tool/Toolkit", "Pricing", "Capabilities"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    for finance_tool, feats in sorted(FINANCE_TOOL_FEAT_TABLE.items()):
+        # Fields are in the order of the header
+        row = [
+            f"[{finance_tool}]({feats['link']})",
         ]
         for h in header[1:]:
             row.append(feats.get(h))
@@ -358,6 +395,7 @@ if __name__ == "__main__":
         productivity_table=get_productivity_table(),
         webbrowsing_table=get_webbrowsing_table(),
         database_table=get_database_table(),
+        finance_table=get_finance_table(),
     )
     with open(output_integrations_dir / "tools" / "index.mdx", "w") as f:
         f.write(tools_page)

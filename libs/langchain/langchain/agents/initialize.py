@@ -1,6 +1,7 @@
 """Load agent."""
 
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -84,8 +85,7 @@ def initialize_agent(
             pass
     else:
         raise ValueError(
-            "Somehow both `agent` and `agent_path` are None, "
-            "this should never happen."
+            "Somehow both `agent` and `agent_path` are None, this should never happen."
         )
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,

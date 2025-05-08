@@ -37,9 +37,9 @@ If you don't have access, you can skip this section
 
 
 ```shell
-export LANGCHAIN_TRACING_V2=true
-export LANGCHAIN_API_KEY=<your-api-key>
-export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
+export LANGSMITH_TRACING=true
+export LANGSMITH_API_KEY=<your-api-key>
+export LANGSMITH_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
 ## Launch LangServe

@@ -6,19 +6,13 @@ import ast
 import asyncio
 import inspect
 import textwrap
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Coroutine,
-    Iterable,
-    Mapping,
-    Sequence,
-)
+from collections.abc import Mapping, Sequence
+from contextvars import Context
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     NamedTuple,
@@ -30,14 +24,23 @@ from typing import (
 
 from typing_extensions import TypeGuard, override
 
-from langchain_core.runnables.schema import StreamEvent
-
 # Re-export create-model for backwards compatibility
-from langchain_core.utils.pydantic import create_model as create_model
+from langchain_core.utils.pydantic import create_model  # noqa: F401
 
-Input = TypeVar("Input", contravariant=True)
+if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterable,
+        AsyncIterator,
+        Awaitable,
+        Coroutine,
+        Iterable,
+    )
+
+    from langchain_core.runnables.schema import StreamEvent
+
+Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output", covariant=True)
+Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -119,7 +122,28 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
 
 @lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
+    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
     return accepts_context(asyncio.create_task)
+
+
+def coro_with_context(
+    coro: Awaitable[Any], context: Context, *, create_task: bool = False
+) -> Awaitable[Any]:
+    """Await a coroutine with a context.
+
+    Args:
+        coro: The coroutine to await.
+        context: The context to use.
+        create_task: Whether to create a task. Defaults to False.
+
+    Returns:
+        The coroutine with the context.
+    """
+    if asyncio_accepts_context():
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
+    if create_task:
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
+    return coro
 
 
 class IsLocalDict(ast.NodeVisitor):
@@ -182,6 +206,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
+        """Create a IsFunctionArgDict visitor."""
         self.keys: set[str] = set()
 
     @override
@@ -234,6 +259,7 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
+        """Create a NonLocals visitor."""
         self.loads: set[str] = set()
         self.stores: set[str] = set()
 
@@ -271,12 +297,27 @@ class NonLocals(ast.NodeVisitor):
             if isinstance(parent, ast.Name):
                 self.loads.add(parent.id + "." + attr_expr)
                 self.loads.discard(parent.id)
+            elif isinstance(parent, ast.Call):
+                if isinstance(parent.func, ast.Name):
+                    self.loads.add(parent.func.id)
+                else:
+                    parent = parent.func
+                    attr_expr = ""
+                    while isinstance(parent, ast.Attribute):
+                        if attr_expr:
+                            attr_expr = parent.attr + "." + attr_expr
+                        else:
+                            attr_expr = parent.attr
+                        parent = parent.value
+                    if isinstance(parent, ast.Name):
+                        self.loads.add(parent.id + "." + attr_expr)
 
 
 class FunctionNonLocals(ast.NodeVisitor):
     """Get the nonlocal variables accessed of a function."""
 
     def __init__(self) -> None:
+        """Create a FunctionNonLocals visitor."""
         self.nonlocals: set[str] = set()
 
     @override
@@ -352,7 +393,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
         func: The function to check.
 
     Returns:
-        Optional[List[str]]: The keys of the first argument if it is a dict,
+        Optional[list[str]]: The keys of the first argument if it is a dict,
             None otherwise.
     """
     try:
@@ -383,9 +424,9 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError, SystemError):
         return name
+    return visitor.source if visitor.count == 1 else name
 
 
 @lru_cache(maxsize=256)
@@ -396,7 +437,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         func: The function to check.
 
     Returns:
-        List[Any]: The nonlocal variables accessed by the function.
+        list[Any]: The nonlocal variables accessed by the function.
     """
     try:
         code = inspect.getsource(func)
@@ -404,7 +445,11 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: list[Any] = []
-        closure = inspect.getclosurevars(func)
+        closure = (
+            inspect.getclosurevars(func.__wrapped__)
+            if hasattr(func, "__wrapped__") and callable(func.__wrapped__)
+            else inspect.getclosurevars(func)
+        )
         candidates = {**closure.globals, **closure.nonlocals}
         for k, v in candidates.items():
             if k in visitor.nonlocals:
@@ -415,16 +460,16 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                     for part in kk.split(".")[1:]:
                         if vv is None:
                             break
-                        else:
-                            try:
-                                vv = getattr(vv, part)
-                            except AttributeError:
-                                break
+                        try:
+                            vv = getattr(vv, part)
+                        except AttributeError:
+                            break
                     else:
                         values.append(vv)
-        return values
     except (SyntaxError, TypeError, OSError, SystemError):
         return []
+
+    return values
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
@@ -444,11 +489,14 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
 
 
 class AddableDict(dict[str, Any]):
-    """
-    Dictionary that can be added to another dictionary.
-    """
+    """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
+        """Add a dictionary to this dictionary.
+
+        Args:
+            other: The other dictionary to add.
+        """
         chunk = AddableDict(self)
         for key in other:
             if key not in chunk or chunk[key] is None:
@@ -462,6 +510,11 @@ class AddableDict(dict[str, Any]):
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
+        """Add this dictionary to another dictionary.
+
+        Args:
+            other: The other dictionary to be added to.
+        """
         chunk = AddableDict(other)
         for key in self:
             if key not in chunk or chunk[key] is None:
@@ -482,7 +535,8 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co: ...
+    def __add__(self, x: _T_contra, /) -> _T_co:
+        """Add the object to another object."""
 
 
 Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
@@ -536,6 +590,7 @@ class ConfigurableField(NamedTuple):
     annotation: Optional[Any] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
 
@@ -560,6 +615,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
 
@@ -584,6 +640,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
@@ -625,7 +682,7 @@ def get_unique_config_specs(
         specs: The config specs.
 
     Returns:
-        List[ConfigurableFieldSpec]: The unique config specs.
+        list[ConfigurableFieldSpec]: The unique config specs.
 
     Raises:
         ValueError: If the runnable sequence contains conflicting config specs.

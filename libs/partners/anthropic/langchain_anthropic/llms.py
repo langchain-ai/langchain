@@ -1,13 +1,9 @@
 import re
 import warnings
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
     Optional,
 )
 
@@ -83,11 +79,11 @@ class _AnthropicCommon(BaseLanguageModel):
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict) -> Any:
+    def build_extra(cls, values: dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
         return values
@@ -131,7 +127,7 @@ class _AnthropicCommon(BaseLanguageModel):
         """Get the identifying parameters."""
         return {**{}, **self._default_params}
 
-    def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
+    def _get_anthropic_stop(self, stop: Optional[list[str]] = None) -> list[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
 
@@ -165,7 +161,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_warning(cls, values: Dict) -> Any:
+    def raise_warning(cls, values: dict) -> Any:
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
@@ -180,7 +176,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return "anthropic-llm"
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
     @classmethod
@@ -188,7 +184,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return True
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
@@ -203,7 +199,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -233,7 +229,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -277,7 +273,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -303,7 +299,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -338,7 +334,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:

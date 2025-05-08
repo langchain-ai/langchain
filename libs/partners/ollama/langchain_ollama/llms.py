@@ -1,13 +1,9 @@
 """Ollama large language models."""
 
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
     Union,
 )
@@ -84,7 +80,12 @@ class OllamaLLM(BaseLLM):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[List[str]] = None
+    seed: Optional[int] = None
+    """Sets the random number seed to use for generation. Setting this
+    to a specific number will make the model generate the same text for
+    the same prompt."""
+
+    stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -129,9 +130,9 @@ class OllamaLLM(BaseLLM):
     def _generate_params(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
@@ -150,6 +151,7 @@ class OllamaLLM(BaseLLM):
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
+                "seed": self.seed,
                 "stop": self.stop if stop is None else stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
@@ -175,7 +177,7 @@ class OllamaLLM(BaseLLM):
         return "ollama-llm"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -194,7 +196,7 @@ class OllamaLLM(BaseLLM):
     async def _acreate_generate_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
         async for part in await self._async_client.generate(
@@ -205,7 +207,7 @@ class OllamaLLM(BaseLLM):
     def _create_generate_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
         yield from self._client.generate(
@@ -215,7 +217,7 @@ class OllamaLLM(BaseLLM):
     async def _astream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -247,7 +249,7 @@ class OllamaLLM(BaseLLM):
     def _stream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -278,8 +280,8 @@ class OllamaLLM(BaseLLM):
 
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -297,8 +299,8 @@ class OllamaLLM(BaseLLM):
 
     async def _agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -317,7 +319,7 @@ class OllamaLLM(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -339,7 +341,7 @@ class OllamaLLM(BaseLLM):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:

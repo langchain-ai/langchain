@@ -2,17 +2,28 @@
 
 from typing import (
     Any,
-    Dict,
-    List,
+    Literal,
     Optional,
+    TypeVar,
+    Union,
 )
 
 import openai
-from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.language_models.chat_models import (
+    LangSmithParams,
+    LanguageModelInput,
+)
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
+from langchain_core.runnables import Runnable
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
-from pydantic import ConfigDict, Field, SecretStr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -90,7 +101,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -273,7 +284,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     )
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
         For example,
@@ -282,17 +293,17 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return {"xai_api_key": "XAI_API_KEY"}
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain_xai", "chat_models"]
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
         """
-        attributes: Dict[str, Any] = {}
+        attributes: dict[str, Any] = {}
 
         if self.xai_api_base:
             attributes["xai_api_base"] = self.xai_api_base
@@ -310,7 +321,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return "xai-chat"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -320,9 +331,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             raise ValueError("n must be at least 1.")
-        if self.n > 1 and self.streaming:
+        if self.n is not None and self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
         client_params: dict = {
@@ -331,10 +342,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             ),
             "base_url": self.xai_api_base,
             "timeout": self.request_timeout,
-            "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
 
         if client_params["api_key"] is None:
             raise ValueError(
@@ -347,9 +359,132 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             self.client = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)
         if not (self.async_client or None):
             async_specific: dict = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).chat.completions
+            self.root_async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,
+            )
         return self
+
+    def _create_chat_result(
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[dict] = None,
+    ) -> ChatResult:
+        rtn = super()._create_chat_result(response, generation_info)
+
+        if not isinstance(response, openai.BaseModel):
+            return rtn
+
+        if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
+            rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                response.choices[0].message.reasoning_content  # type: ignore
+            )
+
+        return rtn
+
+    def _convert_chunk_to_generation_chunk(
+        self,
+        chunk: dict,
+        default_chunk_class: type,
+        base_generation_info: Optional[dict],
+    ) -> Optional[ChatGenerationChunk]:
+        generation_chunk = super()._convert_chunk_to_generation_chunk(
+            chunk,
+            default_chunk_class,
+            base_generation_info,
+        )
+        if (choices := chunk.get("choices")) and generation_chunk:
+            top = choices[0]
+            if isinstance(generation_chunk.message, AIMessageChunk):
+                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning_content
+                    )
+
+        return generation_chunk
+
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        include_raw: bool = False,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.20),
+                - or a Pydantic class.
+
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+            method: The method for steering model generation, one of:
+
+                - "function_calling":
+                    Uses xAI's `tool-calling features <https://docs.x.ai/docs/guides/function-calling>`_.
+                - "json_schema":
+                    Uses xAI's `structured output feature <https://docs.x.ai/docs/guides/structured-outputs>`_.
+                - "json_mode":
+                    Uses xAI's JSON mode feature.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+            strict:
+
+                - True:
+                    Model output is guaranteed to exactly match the schema.
+                    The input schema will also be validated according to
+                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+                - False:
+                    Input schema will not be validated and model output will not be
+                    validated.
+                - None:
+                    ``strict`` argument will not be passed to the model.
+
+            kwargs: Additional keyword args aren't supported.
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
+
+        """  # noqa: E501
+        # Some applications require that incompatible parameters (e.g., unsupported
+        # methods) be handled.
+        if method == "function_calling" and strict:
+            strict = None
+        return super().with_structured_output(
+            schema, method=method, include_raw=include_raw, strict=strict, **kwargs
+        )

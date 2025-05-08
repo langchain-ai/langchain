@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -13,7 +13,7 @@ from pydantic import Field, SecretStr, model_validator
 from langchain_exa._utilities import initialize_client
 
 
-def _get_metadata(result: Any) -> Dict[str, Any]:
+def _get_metadata(result: Any) -> dict[str, Any]:
     """Get the metadata from a result object."""
     metadata = {
         "title": result.title,
@@ -35,9 +35,9 @@ class ExaSearchRetriever(BaseRetriever):
 
     k: int = 10  # num_results
     """The number of search results to return."""
-    include_domains: Optional[List[str]] = None
+    include_domains: Optional[list[str]] = None
     """A list of domains to include in the search."""
-    exclude_domains: Optional[List[str]] = None
+    exclude_domains: Optional[list[str]] = None
     """A list of domains to exclude from the search."""
     start_crawl_date: Optional[str] = None
     """The start date for the crawl (in YYYY-MM-DD format)."""
@@ -62,14 +62,14 @@ class ExaSearchRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         response = self.client.search_and_contents(  # type: ignore[misc]
             query,
             num_results=self.k,

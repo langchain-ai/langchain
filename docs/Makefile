@@ -27,7 +27,7 @@ install-py-deps:
 	$(PYTHON) -m pip install -q --upgrade pip
 	$(PYTHON) -m pip install -q --upgrade uv
 	$(PYTHON) -m uv pip install -q --pre -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install -q --pre $$($(PYTHON) scripts/partner_deps_list.py)
+	$(PYTHON) -m uv pip install -q --pre $$($(PYTHON) scripts/partner_deps_list.py) --overrides vercel_overrides.txt
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)

@@ -1,3 +1,5 @@
+"""Utilities for working with HTML."""
+
 import logging
 import re
 from collections.abc import Sequence
@@ -42,7 +44,7 @@ def find_all_links(
         pattern: Regex to use for extracting links from raw HTML.
 
     Returns:
-        List[str]: all links
+        list[str]: all links
     """
     pattern = pattern or DEFAULT_LINK_REGEX
     return list(set(re.findall(pattern, raw_html)))
@@ -70,8 +72,9 @@ def extract_sub_links(
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
+
     Returns:
-        List[str]: sub links.
+        list[str]: sub links.
     """
     base_url_to_use = base_url if base_url is not None else url
     parsed_base_url = urlparse(base_url_to_use)
@@ -82,7 +85,7 @@ def extract_sub_links(
         try:
             parsed_link = urlparse(link)
             # Some may be absolute links like https://to/path
-            if parsed_link.scheme == "http" or parsed_link.scheme == "https":
+            if parsed_link.scheme in {"http", "https"}:
                 absolute_path = link
             # Some may have omitted the protocol like //to/path
             elif link.startswith("//"):
@@ -94,10 +97,11 @@ def extract_sub_links(
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:
-                logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
+                logger.warning(
+                    "Unable to load link %s. Raised exception:\n\n%s", link, e
+                )
                 continue
-            else:
-                raise e
+            raise
 
     results = []
     for path in absolute_paths:

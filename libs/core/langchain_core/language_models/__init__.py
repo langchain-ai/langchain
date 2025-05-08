@@ -1,4 +1,6 @@
-"""**Language Model** is a type of model that can generate text or complete
+"""Language models.
+
+**Language Model** is a type of model that can generate text or complete
 text prompts.
 
 LangChain has two main classes to work with language models: **Chat Models**
@@ -39,25 +41,33 @@ https://python.langchain.com/docs/how_to/custom_llm/
 
 """  # noqa: E501
 
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LangSmithParams,
-    LanguageModelInput,
-    LanguageModelLike,
-    LanguageModelOutput,
-    get_tokenizer,
-)
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
-from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
-from langchain_core.language_models.fake_chat_models import (
-    FakeListChatModel,
-    FakeMessagesListChatModel,
-    GenericFakeChatModel,
-    ParrotFakeChatModel,
-)
-from langchain_core.language_models.llms import LLM, BaseLLM
+from typing import TYPE_CHECKING
 
-__all__ = [
+from langchain_core._import_utils import import_attr
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.base import (
+        BaseLanguageModel,
+        LangSmithParams,
+        LanguageModelInput,
+        LanguageModelLike,
+        LanguageModelOutput,
+        get_tokenizer,
+    )
+    from langchain_core.language_models.chat_models import (
+        BaseChatModel,
+        SimpleChatModel,
+    )
+    from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
+    from langchain_core.language_models.fake_chat_models import (
+        FakeListChatModel,
+        FakeMessagesListChatModel,
+        GenericFakeChatModel,
+        ParrotFakeChatModel,
+    )
+    from langchain_core.language_models.llms import LLM, BaseLLM
+
+__all__ = (
     "BaseLanguageModel",
     "BaseChatModel",
     "SimpleChatModel",
@@ -74,4 +84,34 @@ __all__ = [
     "FakeMessagesListChatModel",
     "GenericFakeChatModel",
     "ParrotFakeChatModel",
-]
+)
+
+_dynamic_imports = {
+    "BaseLanguageModel": "base",
+    "LangSmithParams": "base",
+    "LanguageModelInput": "base",
+    "LanguageModelLike": "base",
+    "LanguageModelOutput": "base",
+    "get_tokenizer": "base",
+    "BaseChatModel": "chat_models",
+    "SimpleChatModel": "chat_models",
+    "FakeListLLM": "fake",
+    "FakeStreamingListLLM": "fake",
+    "FakeListChatModel": "fake_chat_models",
+    "FakeMessagesListChatModel": "fake_chat_models",
+    "GenericFakeChatModel": "fake_chat_models",
+    "ParrotFakeChatModel": "fake_chat_models",
+    "LLM": "llms",
+    "BaseLLM": "llms",
+}
+
+
+def __getattr__(attr_name: str) -> object:
+    module_name = _dynamic_imports.get(attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
+    globals()[attr_name] = result
+    return result
+
+
+def __dir__() -> list[str]:
+    return list(__all__)

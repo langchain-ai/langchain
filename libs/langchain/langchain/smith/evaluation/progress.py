@@ -1,7 +1,8 @@
 """A simple progress bar for the console."""
 
 import threading
-from typing import Any, Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
@@ -51,7 +52,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
 
     def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

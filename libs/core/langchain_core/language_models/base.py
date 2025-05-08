@@ -1,3 +1,5 @@
+"""Base language models class."""
+
 from __future__ import annotations
 
 import warnings
@@ -18,6 +20,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict, override
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
+from langchain_core.callbacks import Callbacks
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
@@ -29,8 +33,6 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
-    from langchain_core.caches import BaseCache
-    from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
 
 
@@ -59,7 +61,7 @@ def get_tokenizer() -> Any:
     every time it is called.
     """
     try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import]
+        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
     except ImportError as e:
         msg = (
             "Could not import transformers python package. "
@@ -141,8 +143,7 @@ class BaseLanguageModel(
         """
         if verbose is None:
             return _get_verbosity()
-        else:
-            return verbose
+        return verbose
 
     @property
     @override
@@ -233,7 +234,7 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+        self, schema: Union[dict, type], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
@@ -349,8 +350,7 @@ class BaseLanguageModel(
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
-        else:
-            return _get_token_ids_default_method(text)
+        return _get_token_ids_default_method(text)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
@@ -390,7 +390,7 @@ class BaseLanguageModel(
                 "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
                 stacklevel=2,
             )
-        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
+        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
 
     @classmethod
     def _all_required_field_names(cls) -> set:

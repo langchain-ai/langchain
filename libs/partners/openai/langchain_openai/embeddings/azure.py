@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Optional, Union
+from collections.abc import Awaitable
+from typing import Callable, Optional, Union, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
-from typing_extensions import Self, cast
+from typing_extensions import Self
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -198,7 +199,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if not self.client:

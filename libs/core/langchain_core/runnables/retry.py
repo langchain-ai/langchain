@@ -1,3 +1,5 @@
+"""Runnable that retries a Runnable if it fails."""
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,9 +18,11 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import TypedDict, override
 
-from langchain_core.runnables.base import Input, Output, RunnableBindingBase
+from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.utils import Input, Output
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -28,6 +32,19 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")
+
+
+class ExponentialJitterParams(TypedDict, total=False):
+    """Parameters for ``tenacity.wait_exponential_jitter``."""
+
+    initial: float
+    """Initial wait."""
+    max: float
+    """Maximum wait."""
+    exp_base: float
+    """Base for exponential backoff."""
+    jitter: float
+    """Random additional wait sampled from random.uniform(0, jitter)."""
 
 
 class RunnableRetry(RunnableBindingBase[Input, Output]):
@@ -43,7 +60,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     way to use it is through the `.with_retry()` method on all Runnables.
 
     Example:
-
     Here's an example that uses a RunnableLambda to raise an exception
 
         .. code-block:: python
@@ -60,6 +76,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 retry_if_exception_type=(ValueError,), # Retry only on ValueError
                 wait_exponential_jitter=True, # Add jitter to the exponential backoff
                 stop_after_attempt=2, # Try twice
+                exponential_jitter_params={"initial": 2},  # if desired, customize backoff
             )
 
             # The method invocation above is equivalent to the longer form below:
@@ -68,7 +85,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 bound=runnable,
                 retry_exception_types=(ValueError,),
                 max_attempt_number=2,
-                wait_exponential_jitter=True
+                wait_exponential_jitter=True,
+                exponential_jitter_params={"initial": 2},
             )
 
     This logic can be used to retry any Runnable, including a chain of Runnables,
@@ -92,7 +110,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             # Bad
             chain = template | model
             retryable_chain = chain.with_retry()
-    """
+    """  # noqa: E501
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
@@ -107,13 +125,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     wait_exponential_jitter: bool = True
     """Whether to add jitter to the exponential backoff."""
 
+    exponential_jitter_params: Optional[ExponentialJitterParams] = None
+    """Parameters for ``tenacity.wait_exponential_jitter``. Namely: ``initial``,
+    ``max``, ``exp_base``, and ``jitter`` (all float values).
+    """
+
     max_attempt_number: int = 3
     """The maximum number of attempts to retry the Runnable."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
 
     @property
     def _kwargs_retrying(self) -> dict[str, Any]:
@@ -123,7 +141,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
 
         if self.wait_exponential_jitter:
-            kwargs["wait"] = wait_exponential_jitter()
+            kwargs["wait"] = wait_exponential_jitter(
+                **(self.exponential_jitter_params or {})
+            )
 
         if self.retry_exception_types:
             kwargs["retry"] = retry_if_exception_type(self.retry_exception_types)
@@ -136,8 +156,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     def _async_retrying(self, **kwargs: Any) -> AsyncRetrying:
         return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
+    @staticmethod
     def _patch_config(
-        self,
         config: RunnableConfig,
         run_manager: "T",
         retry_state: RetryCallState,
@@ -174,6 +194,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -197,6 +218,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -246,16 +268,17 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     def batch(
         self,
         inputs: list[Input],
@@ -312,16 +335,17 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     async def abatch(
         self,
         inputs: list[Input],

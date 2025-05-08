@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import BaseModel, model_validator
+from typing_extensions import override
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -16,7 +17,9 @@ from langchain_core.prompts.string import (
     get_template_variables,
     mustache_schema,
 )
-from langchain_core.runnables.config import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.config import RunnableConfig
 
 
 class PromptTemplate(StringPromptTemplate):
@@ -56,14 +59,15 @@ class PromptTemplate(StringPromptTemplate):
     """
 
     @property
+    @override
     def lc_attributes(self) -> dict[str, Any]:
         return {
             "template_format": self.template_format,
         }
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "prompt"]
 
     template: str
@@ -114,6 +118,7 @@ class PromptTemplate(StringPromptTemplate):
 
         return values
 
+    @override
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         """Get the input schema for the prompt.
 
@@ -149,8 +154,7 @@ class PromptTemplate(StringPromptTemplate):
                 if k in partial_variables:
                     msg = "Cannot have same variable partialed twice."
                     raise ValueError(msg)
-                else:
-                    partial_variables[k] = v
+                partial_variables[k] = v
             return PromptTemplate(
                 template=template,
                 input_variables=input_variables,
@@ -158,12 +162,11 @@ class PromptTemplate(StringPromptTemplate):
                 template_format="f-string",
                 validate_template=validate_template,
             )
-        elif isinstance(other, str):
+        if isinstance(other, str):
             prompt = PromptTemplate.from_template(other)
             return self + prompt
-        else:
-            msg = f"Unsupported operand type for +: {type(other)}"
-            raise NotImplementedError(msg)
+        msg = f"Unsupported operand type for +: {type(other)}"
+        raise NotImplementedError(msg)
 
     @property
     def _prompt_type(self) -> str:
@@ -235,8 +238,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), encoding=encoding) as f:
-            template = f.read()
+        template = Path(template_file).read_text(encoding=encoding)
         if input_variables:
             warnings.warn(
                 "`input_variables' is deprecated and ignored.",
@@ -284,7 +286,6 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-
         input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 
@@ -296,7 +297,7 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=input_variables,
             template=template,
-            template_format=template_format,  # type: ignore[arg-type]
+            template_format=template_format,
             partial_variables=_partial_variables,
             **kwargs,
         )

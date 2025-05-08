@@ -1,4 +1,4 @@
-from typing import Type, cast
+from typing import cast
 
 import pytest
 from langchain_core.load import dumpd
@@ -72,7 +72,7 @@ def test_azure_openai_embeddings_secrets() -> None:
 @pytest.mark.parametrize(
     "model_class", [AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings]
 )
-def test_azure_openai_api_key_is_secret_string(model_class: Type) -> None:
+def test_azure_openai_api_key_is_secret_string(model_class: type) -> None:
     """Test that the API key is stored as a SecretStr."""
     model = model_class(
         openai_api_key="secret-api-key",
@@ -88,7 +88,7 @@ def test_azure_openai_api_key_is_secret_string(model_class: Type) -> None:
     "model_class", [AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings]
 )
 def test_azure_openai_api_key_masked_when_passed_from_env(
-    model_class: Type, monkeypatch: MonkeyPatch, capsys: CaptureFixture
+    model_class: type, monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "secret-api-key")
@@ -109,7 +109,7 @@ def test_azure_openai_api_key_masked_when_passed_from_env(
     "model_class", [AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings]
 )
 def test_azure_openai_api_key_masked_when_passed_via_constructor(
-    model_class: Type, capsys: CaptureFixture
+    model_class: type, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     model = model_class(
@@ -133,7 +133,7 @@ def test_azure_openai_api_key_masked_when_passed_via_constructor(
     "model_class", [AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings]
 )
 def test_azure_openai_uses_actual_secret_value_from_secretstr(
-    model_class: Type,
+    model_class: type,
 ) -> None:
     """Test that the actual secret value is correctly retrieved."""
     model = model_class(
@@ -147,7 +147,7 @@ def test_azure_openai_uses_actual_secret_value_from_secretstr(
 
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
-def test_openai_api_key_is_secret_string(model_class: Type) -> None:
+def test_openai_api_key_is_secret_string(model_class: type) -> None:
     """Test that the API key is stored as a SecretStr."""
     model = model_class(openai_api_key="secret-api-key")
     assert isinstance(model.openai_api_key, SecretStr)
@@ -155,7 +155,7 @@ def test_openai_api_key_is_secret_string(model_class: Type) -> None:
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_api_key_masked_when_passed_from_env(
-    model_class: Type, monkeypatch: MonkeyPatch, capsys: CaptureFixture
+    model_class: type, monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("OPENAI_API_KEY", "secret-api-key")
@@ -168,7 +168,7 @@ def test_openai_api_key_masked_when_passed_from_env(
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_api_key_masked_when_passed_via_constructor(
-    model_class: Type, capsys: CaptureFixture
+    model_class: type, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     model = model_class(openai_api_key="secret-api-key")
@@ -179,14 +179,14 @@ def test_openai_api_key_masked_when_passed_via_constructor(
 
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
-def test_openai_uses_actual_secret_value_from_secretstr(model_class: Type) -> None:
+def test_openai_uses_actual_secret_value_from_secretstr(model_class: type) -> None:
     """Test that the actual secret value is correctly retrieved."""
     model = model_class(openai_api_key="secret-api-key")
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
 
 
 @pytest.mark.parametrize("model_class", [AzureChatOpenAI, AzureOpenAI])
-def test_azure_serialized_secrets(model_class: Type) -> None:
+def test_azure_serialized_secrets(model_class: type) -> None:
     """Test that the actual secret value is correctly retrieved."""
     model = model_class(
         openai_api_key="secret-api-key", api_version="foo", azure_endpoint="foo"

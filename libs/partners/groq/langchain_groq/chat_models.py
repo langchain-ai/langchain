@@ -4,20 +4,13 @@ from __future__ import annotations
 
 import json
 import warnings
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     cast,
@@ -86,6 +79,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_groq.version import __version__
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -107,7 +102,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "mixtral-8x7b-32768".
+            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
@@ -138,7 +133,7 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             llm = ChatGroq(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
@@ -162,7 +157,7 @@ class ChatGroq(BaseChatModel):
             response_metadata={'token_usage': {'completion_tokens': 38,
             'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
             0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
@@ -170,7 +165,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -220,7 +215,7 @@ class ChatGroq(BaseChatModel):
            response_metadata={'token_usage': {'completion_tokens': 53,
            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
@@ -293,7 +288,7 @@ class ChatGroq(BaseChatModel):
             'prompt_time': 0.007518279,
             'queue_time': None,
             'total_time': 0.11947467},
-            'model_name': 'mixtral-8x7b-32768',
+            'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
@@ -301,13 +296,13 @@ class ChatGroq(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="mixtral-8x7b-32768", alias="model")
+    model_name: str = Field(alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
@@ -322,7 +317,7 @@ class ChatGroq(BaseChatModel):
     groq_proxy: Optional[str] = Field(
         default_factory=from_env("GROQ_PROXY", default=None)
     )
-    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
+    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to Groq completion API. Can be float, httpx.Timeout or
@@ -351,7 +346,7 @@ class ChatGroq(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -386,27 +381,31 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
-        client_params: Dict[str, Any] = {
+        default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
+            self.default_headers or {}
+        )
+
+        client_params: dict[str, Any] = {
             "api_key": (
                 self.groq_api_key.get_secret_value() if self.groq_api_key else None
             ),
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": default_headers,
             "default_query": self.default_query,
         }
 
         try:
             import groq
 
-            sync_specific: Dict[str, Any] = {"http_client": self.http_client}
+            sync_specific: dict[str, Any] = {"http_client": self.http_client}
             if not self.client:
                 self.client = groq.Groq(
                     **client_params, **sync_specific
                 ).chat.completions
             if not self.async_client:
-                async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
+                async_specific: dict[str, Any] = {"http_client": self.http_async_client}
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
@@ -421,7 +420,7 @@ class ChatGroq(BaseChatModel):
     # Serializable class method overrides
     #
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"groq_api_key": "GROQ_API_KEY"}
 
     @classmethod
@@ -438,7 +437,7 @@ class ChatGroq(BaseChatModel):
         return "groq-chat"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -454,10 +453,28 @@ class ChatGroq(BaseChatModel):
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Determine if a given model call should hit the streaming API."""
+        base_should_stream = super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+        if base_should_stream and ("response_format" in kwargs):
+            # Streaming not supported in JSON mode.
+            return kwargs["response_format"] != {"type": "json_object"}
+        return base_should_stream
+
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -476,8 +493,8 @@ class ChatGroq(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -497,8 +514,8 @@ class ChatGroq(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -506,7 +523,7 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -517,6 +534,9 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                if system_fingerprint := chunk.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -533,8 +553,8 @@ class ChatGroq(BaseChatModel):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
@@ -542,7 +562,7 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.async_client.create(
             messages=message_dicts, **params
         ):
@@ -555,6 +575,9 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                if system_fingerprint := chunk.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -575,7 +598,7 @@ class ChatGroq(BaseChatModel):
     # Internal methods
     #
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Groq API."""
         params = {
             "model": self.model_name,
@@ -622,15 +645,15 @@ class ChatGroq(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        self, messages: list[BaseMessage], stop: Optional[list[str]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = self._default_params
         if stop is not None:
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
         for output in llm_outputs:
@@ -658,7 +681,7 @@ class ChatGroq(BaseChatModel):
     )
     def bind_functions(
         self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         function_call: Optional[
             Union[_FunctionCall, str, Literal["auto", "none"]]
         ] = None,
@@ -713,7 +736,7 @@ class ChatGroq(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "any", "none"], bool]
@@ -761,12 +784,12 @@ class ChatGroq(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        schema: Optional[Union[dict, type[BaseModel]]] = None,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -981,17 +1004,30 @@ class ChatGroq(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "json_schema":
+            # Some applications require that incompatible parameters (e.g., unsupported
+            # methods) be handled.
+            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools([schema], tool_choice=tool_name)
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1002,7 +1038,13 @@ class ChatGroq(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_mode"},
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
@@ -1047,7 +1089,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any]
+    message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -1093,13 +1135,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     choice = chunk["choices"][0]
     _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
+    additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -1153,7 +1195,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return HumanMessage(content=_dict.get("content", ""))
     elif role == "assistant":
         content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
+        additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
