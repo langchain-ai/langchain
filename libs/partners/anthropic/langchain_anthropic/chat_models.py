@@ -1744,6 +1744,12 @@ def _make_message_chunk_from_anthropic_event(
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         usage_metadata = _create_usage_metadata(event.message.usage)
+        # We pick up a cumulative count of output_tokens at the end of the stream,
+        # so here we zero out to avoid double counting.
+        usage_metadata["total_tokens"] = (
+            usage_metadata["total_tokens"] - usage_metadata["output_tokens"]
+        )
+        usage_metadata["output_tokens"] = 0
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
@@ -1817,7 +1823,11 @@ def _make_message_chunk_from_anthropic_event(
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
             )
     elif event.type == "message_delta" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.usage)
+        usage_metadata = UsageMetadata(
+            input_tokens=0,
+            output_tokens=event.usage.output_tokens,
+            total_tokens=event.usage.output_tokens,
+        )
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
