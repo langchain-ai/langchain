@@ -9,12 +9,12 @@ from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 MODEL_NAME = "claude-3-5-haiku-latest"
 
 
-# def test_stream() -> None:
-#     """Test streaming tokens from Anthropic."""
-#     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+def test_stream() -> None:
+    """Test streaming tokens from Anthropic."""
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
-#     for token in llm.stream("I'm Pickle Rick"):
-#         pass
+    for token in llm.stream("I'm Pickle Rick"):
+        pass
 
 
 async def test_astream() -> None:
