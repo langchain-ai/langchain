@@ -23,16 +23,16 @@ class CharacterTextSplitter(TextSplitter):
         sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        
+
         # 2. Initial split (keep separator if requested)
         splits = _split_text_with_regex(text, sep_pattern, self._keep_separator)
-        
+
         # 3. Detect zero-width lookaround so we never re-insert it
         lookaround_prefixes = ("(?=", "(?<!", "(?<=", "(?!")
         is_lookaround = self._is_separator_regex and any(
             self._separator.startswith(p) for p in lookaround_prefixes
         )
-        
+
         # 4. Decide merge separator:
         #    - if keep_separator or lookaround → don’t re-insert
         #    - else → re-insert literal separator
