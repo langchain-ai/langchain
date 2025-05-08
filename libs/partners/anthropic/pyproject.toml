@@ -8,11 +8,11 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "anthropic<1,>=0.51.0",
-    "langchain-core<1.0.0,>=0.3.53",
+    "langchain-core<1.0.0,>=0.3.59",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.12"
+version = "0.3.13"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
