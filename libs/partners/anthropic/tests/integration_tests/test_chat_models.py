@@ -134,6 +134,9 @@ async def test_stream_usage() -> None:
     async for token in model.astream("hi"):
         assert isinstance(token, AIMessageChunk)
         assert token.usage_metadata is None
+
+
+async def test_stream_usage_override() -> None:
     # check we override with kwarg
     model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
     assert model.stream_usage
