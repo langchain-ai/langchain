@@ -3407,8 +3407,12 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     ],
 )
 def test_character_text_splitter_chunk_size_effect(
-    separator, is_regex, text, chunk_size, expected
-):
+    separator: str,
+    is_regex: bool,
+    text: str,
+    chunk_size: int,
+    expected: List[str],
+) -> None:
     splitter = CharacterTextSplitter(
         separator=separator,
         is_separator_regex=is_regex,
