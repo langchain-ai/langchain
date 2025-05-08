@@ -146,7 +146,7 @@ async def test_stream_usage_override() -> None:
 
 
 async def test_async_stream_twice() -> None:
-    model = ChatAnthropic(model_name=MODEL_NAME)
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)
     async for token in model.astream("hi"):
         assert isinstance(token, AIMessageChunk)
 
