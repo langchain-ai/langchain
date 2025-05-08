@@ -145,6 +145,15 @@ async def test_stream_usage_override() -> None:
         assert token.usage_metadata is None
 
 
+async def test_async_stream_twice() -> None:
+    model = ChatAnthropic(model_name=MODEL_NAME)
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+
+
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
