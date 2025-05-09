@@ -565,7 +565,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input=texts[i : i + chunk_size_], **self._invocation_params
                 )
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
@@ -597,7 +597,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     input=texts[i : i + chunk_size_], **self._invocation_params
                 )
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
