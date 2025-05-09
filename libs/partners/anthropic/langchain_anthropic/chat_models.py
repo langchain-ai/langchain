@@ -1759,15 +1759,13 @@ def _make_message_chunk_from_anthropic_event(
     """
     message_chunk: Optional[AIMessageChunk] = None
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-    if event.type == "message_start" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.message.usage)
+    if event.type == "message_start":
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
             response_metadata = {}
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
-            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
     elif (
