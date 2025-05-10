@@ -7,7 +7,6 @@ import pytest
 from pydantic import ConfigDict
 
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
     IS_PYDANTIC_V2,
     PYDANTIC_VERSION,
     _create_subset_model_v2,
@@ -96,11 +95,7 @@ def test_with_aliases() -> None:
 
 def test_is_basemodel_subclass() -> None:
     """Test pydantic."""
-    if IS_PYDANTIC_V1:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        assert is_basemodel_subclass(BaseModelV1Proper)
-    elif IS_PYDANTIC_V2:
+    if IS_PYDANTIC_V2:
         from pydantic import BaseModel as BaseModelV2
         from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -114,14 +109,7 @@ def test_is_basemodel_subclass() -> None:
 
 def test_is_basemodel_instance() -> None:
     """Test pydantic."""
-    if IS_PYDANTIC_V1:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        class FooV1(BaseModelV1Proper):
-            x: int
-
-        assert is_basemodel_instance(FooV1(x=5))
-    elif IS_PYDANTIC_V2:
+    if IS_PYDANTIC_V2:
         from pydantic import BaseModel as BaseModelV2
         from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -166,17 +154,6 @@ def test_with_field_metadata() -> None:
         "title": "Foo",
         "type": "object",
     }
-
-
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Only tests Pydantic v1")
-def test_fields_pydantic_v1() -> None:
-    from pydantic import BaseModel
-
-    class Foo(BaseModel):
-        x: int
-
-    fields = get_fields(Foo)
-    assert fields == {"x": Foo.model_fields["x"]}
 
 
 @pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Only tests Pydantic v2")
