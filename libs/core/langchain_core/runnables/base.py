@@ -2799,7 +2799,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Returns:
             A list of Runnables.
         """
-        return [self.first] + self.middle + [self.last]
+        return [self.first, *self.middle, self.last]
 
     @classmethod
     @override
@@ -3353,7 +3353,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     ) -> Iterator[Output]:
         from langchain_core.beta.runnables.context import config_with_context
 
-        steps = [self.first] + self.middle + [self.last]
+        steps = [self.first, *self.middle, self.last]
         config = config_with_context(config, self.steps)
 
         # transform the input stream of each step with the next
@@ -3380,7 +3380,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Output]:
         from langchain_core.beta.runnables.context import aconfig_with_context
 
-        steps = [self.first] + self.middle + [self.last]
+        steps = [self.first, *self.middle, self.last]
         config = aconfig_with_context(config, self.steps)
 
         # stream the last steps
@@ -4203,7 +4203,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         if not hasattr(self, "_transform"):
-            msg = f"{repr(self)} only supports async methods."
+            msg = f"{self!r} only supports async methods."
             raise NotImplementedError(msg)
         return self._transform_stream_with_config(
             input,
@@ -4238,7 +4238,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         if not hasattr(self, "_atransform"):
-            msg = f"{repr(self)} only supports sync methods."
+            msg = f"{self!r} only supports sync methods."
             raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
@@ -5781,7 +5781,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
-            config_factories=[listener_config_factory] + self.config_factories,
+            config_factories=[listener_config_factory, *self.config_factories],
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
