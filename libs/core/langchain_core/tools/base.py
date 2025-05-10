@@ -593,7 +593,7 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
             return {
-                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
+                k: getattr(result, k) for k, v in result_dict.items()
             }
         return tool_input
 
