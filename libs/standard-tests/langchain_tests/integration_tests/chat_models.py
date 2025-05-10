@@ -476,6 +476,25 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
+        (OpenAI Chat Completions format), as well as
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        (standard format).
+
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
 
@@ -2254,6 +2273,26 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
+        containing image content blocks in OpenAI Chat Completions format, in addition
+        to messages of the form:
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        containing image content blocks in standard format.
+
         This test can be skipped by setting the ``supports_image_tool_message`` property
         to False (see Configuration below).
 
@@ -2280,31 +2319,56 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image tool message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-        messages = [
-            HumanMessage("get a random image using the tool and describe the weather"),
-            AIMessage(
-                [],
-                tool_calls=[
-                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
-                ],
-            ),
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            ),
-        ]
 
-        def random_image() -> str:
-            """Return a random image."""
-            return ""
+        # Support both OpenAI and standard formats
+        oai_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
 
-        model.bind_tools([random_image]).invoke(messages)
+        standard_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+
+        for tool_message in [oai_format_message, standard_format_message]:
+            messages = [
+                HumanMessage(
+                    "get a random image using the tool and describe the weather"
+                ),
+                AIMessage(
+                    [],
+                    tool_calls=[
+                        {
+                            "type": "tool_call",
+                            "id": "1",
+                            "name": "random_image",
+                            "args": {},
+                        }
+                    ],
+                ),
+                tool_message,
+            ]
+
+            def random_image() -> str:
+                """Return a random image."""
+                return ""
+
+            _ = model.bind_tools([random_image]).invoke(messages)
 
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.

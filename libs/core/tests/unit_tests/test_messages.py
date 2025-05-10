@@ -178,6 +178,22 @@ def test_message_chunks() -> None:
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right
 
+    # Test ID order of precedence
+    null_id = AIMessageChunk(content="", id=None)
+    default_id = AIMessageChunk(
+        content="", id="run-abc123"
+    )  # LangChain-assigned run ID
+    meaningful_id = AIMessageChunk(content="", id="msg_def456")  # provider-assigned ID
+
+    assert (null_id + default_id).id == "run-abc123"
+    assert (default_id + null_id).id == "run-abc123"
+
+    assert (null_id + meaningful_id).id == "msg_def456"
+    assert (meaningful_id + null_id).id == "msg_def456"
+
+    assert (default_id + meaningful_id).id == "msg_def456"
+    assert (meaningful_id + default_id).id == "msg_def456"
+
 
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(

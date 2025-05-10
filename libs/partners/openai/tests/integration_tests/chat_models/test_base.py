@@ -350,6 +350,7 @@ def test_response_metadata() -> None:
             "logprobs",
             "system_fingerprint",
             "finish_reason",
+            "service_tier",
         )
     )
     assert "content" in result.response_metadata["logprobs"]
@@ -367,6 +368,7 @@ async def test_async_response_metadata() -> None:
             "logprobs",
             "system_fingerprint",
             "finish_reason",
+            "service_tier",
         )
     )
     assert "content" in result.response_metadata["logprobs"]
@@ -380,7 +382,7 @@ def test_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in ("logprobs", "finish_reason")
+        for k in ("logprobs", "finish_reason", "service_tier")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
@@ -393,7 +395,7 @@ async def test_async_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in ("logprobs", "finish_reason")
+        for k in ("logprobs", "finish_reason", "service_tier")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
