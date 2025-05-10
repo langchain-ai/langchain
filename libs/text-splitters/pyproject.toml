@@ -40,7 +40,7 @@ test_integration = [
     "spacy<3.8.4,>=3.0.0; python_version < \"3.10.0\"",
     "spacy<4.0.0,>=3.0.0; python_version < \"3.13.0\"",
     "nltk<4.0.0,>=3.9.1",
-    "transformers<5.0.0,>=4.47.0",
+    "transformers<5.0.0,>=4.51.3",
     "sentence-transformers>=2.6.0; python_version < \"3.13\"",
 ]
 
@@ -54,20 +54,7 @@ enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
 
 [[tool.mypy.overrides]]
-module = [
-    "transformers",
-    "sentence_transformers",
-    "nltk.tokenize",
-    "konlpy.tag",
-    "bs4",
-    "pytest",
-    "spacy",
-    "spacy.lang.en",
-    "numpy",
-    "nltk",
-    "spacy.cli",
-    "torch",
-]
+module = ["konlpy", "nltk", "sentence_transformers", "spacy",]
 ignore_missing_imports = "True"
 
 [tool.ruff]
