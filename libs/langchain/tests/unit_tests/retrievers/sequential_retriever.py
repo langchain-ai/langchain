@@ -1,4 +1,5 @@
-from langchain_core.retrievers import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 
 class SequentialRetriever(BaseRetriever):

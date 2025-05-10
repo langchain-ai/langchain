@@ -11,7 +11,8 @@ from langchain_core.tools import BaseTool
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
-from langchain.agents.loading import AGENT_TO_CLASS, load_agent
+from langchain.agents.loading import load_agent
+from langchain.agents.types import AGENT_TO_CLASS
 
 
 @deprecated(

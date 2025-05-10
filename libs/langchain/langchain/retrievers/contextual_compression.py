@@ -4,13 +4,9 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from pydantic import ConfigDict
-
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
 
 
 class ContextualCompressionRetriever(BaseRetriever):

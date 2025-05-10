@@ -7,7 +7,7 @@ import string
 from collections.abc import Sequence
 from typing import Any, Optional
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from pydantic import ConfigDict
