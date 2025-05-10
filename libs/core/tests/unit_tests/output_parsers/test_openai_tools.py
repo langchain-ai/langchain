@@ -639,7 +639,7 @@ def test_parse_with_different_pydantic_1_proper() -> None:
 
 def test_max_tokens_error(caplog: Any) -> None:
     parser = PydanticToolsParser(tools=[NameCollector], first_tool_only=True)
-    input = AIMessage(
+    message = AIMessage(
         content="",
         tool_calls=[
             {
@@ -651,7 +651,7 @@ def test_max_tokens_error(caplog: Any) -> None:
         response_metadata={"stop_reason": "max_tokens"},
     )
     with pytest.raises(ValidationError):
-        _ = parser.invoke(input)
+        _ = parser.invoke(message)
     assert any(
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
         for record, msg in zip(caplog.records, caplog.messages)
