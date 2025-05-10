@@ -16,6 +16,7 @@ from typing import (
     TypedDict,
     cast,
 )
+from urllib.parse import urlparse
 
 import requests
 from langchain_core._api import beta
@@ -49,6 +50,10 @@ class HTMLHeaderTextSplitter:
     Document or aggregate them into semantically meaningful chunks. It also
     gracefully handles multiple levels of nested headers, creating a rich,
     hierarchical representation of the content.
+
+    For security, when using the `split_text_from_url` method, only HTTP and HTTPS
+    URL schemes are allowed by default to prevent local file inclusion (LFI). This
+    behavior can be customized using the `allowed_schemes` parameter.
 
     Args:
         headers_to_split_on (List[Tuple[str, str]]): A list of (header_tag,
@@ -144,13 +149,14 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def split_text_from_url(
-        self, url: str, timeout: int = 10, **kwargs: Any
+        self, url: str, timeout: int = 10, allowed_schemes: List[str] = None, **kwargs: Any
     ) -> List[Document]:
         """Fetch text content from a URL and split it into documents.
 
         Args:
             url: The URL to fetch content from.
             timeout: Timeout for the request. Defaults to 10.
+            allowed_schemes: List of allowed URL schemes. Defaults to ["http", "https"].
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
@@ -158,7 +164,29 @@ class HTMLHeaderTextSplitter:
 
         Raises:
             requests.RequestException: If the HTTP request fails.
+            ValueError: If the URL scheme is not allowed.
         """
+        # Set default allowed schemes if none provided
+        if allowed_schemes is None:
+            allowed_schemes = ["http", "https"]
+        
+        # Parse URL to get scheme
+        try:
+            parsed_url = urlparse(url)
+            scheme = parsed_url.scheme.lower()
+            
+            # Validate URL scheme
+            if scheme not in allowed_schemes:
+                allowed_schemes_str = ", ".join(allowed_schemes)
+                raise ValueError(
+                    f"URL scheme '{scheme}' is not allowed. Allowed schemes: {allowed_schemes_str}"
+                )
+                
+        except Exception as e:
+            if isinstance(e, ValueError) and "URL scheme" in str(e):
+                raise
+            raise ValueError(f"Invalid URL format: {url}") from e
+        
         kwargs.setdefault("timeout", timeout)
         response = requests.get(url, **kwargs)
         response.raise_for_status()
@@ -353,8 +381,8 @@ class HTMLSectionSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
-        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
-    ) -> list[Document]:
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
+    ) -> List[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -389,8 +417,10 @@ class HTMLSectionSplitter:
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
         try:
-            from bs4 import BeautifulSoup
-            from bs4.element import PageElement
+            from bs4 import (
+                BeautifulSoup,  # type: ignore[import-untyped]
+                PageElement,
+            )
         except ImportError as e:
             raise ImportError(
                 "Unable to import BeautifulSoup/PageElement, \
@@ -409,13 +439,13 @@ class HTMLSectionSplitter:
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
-                section_content: list[str] = []
+                section_content: List = []
             else:
                 current_header = header_element.text.strip()
                 current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
-                if i + 1 < len(headers) and element == headers[i + 1]:  # type: ignore[comparison-overlap]
+                if i + 1 < len(headers) and element == headers[i + 1]:
                     break
                 if isinstance(element, str):
                     section_content.append(element)
@@ -635,8 +665,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._stopword_removal:
             try:
-                import nltk
-                from nltk.corpus import stopwords  # type: ignore[import-untyped]
+                import nltk  # type: ignore
+                from nltk.corpus import stopwords  # type: ignore
 
                 nltk.download("stopwords")
                 self._stopwords = set(stopwords.words(self._stopword_lang))
@@ -900,7 +930,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return documents
 
     def _create_documents(
-        self, headers: dict[str, str], content: str, preserved_elements: dict[str, str]
+        self, headers: dict, content: str, preserved_elements: dict
     ) -> List[Document]:
         """Creates Document objects from the provided headers, content, and elements.
 
@@ -926,7 +956,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
-        self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]
+        self, content: str, metadata: dict, preserved_elements: dict
     ) -> List[Document]:
         """Further splits the content into smaller chunks.
 
@@ -957,7 +987,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return result
 
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict[str, str]
+        self, content: str, preserved_elements: dict
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 
