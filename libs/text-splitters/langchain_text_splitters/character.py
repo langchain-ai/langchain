@@ -18,14 +18,30 @@ class CharacterTextSplitter(TextSplitter):
         self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        # First we naively split the large input into a bunch of smaller ones.
-        separator = (
+        """Split into chunks without re-inserting lookaround separators."""
+        # 1. Determine split pattern: raw regex or escaped literal
+        sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        splits = _split_text_with_regex(text, separator, self._keep_separator)
-        _separator = "" if self._keep_separator else self._separator
-        return self._merge_splits(splits, _separator)
+
+        # 2. Initial split (keep separator if requested)
+        splits = _split_text_with_regex(text, sep_pattern, self._keep_separator)
+
+        # 3. Detect zero-width lookaround so we never re-insert it
+        lookaround_prefixes = ("(?=", "(?<!", "(?<=", "(?!")
+        is_lookaround = self._is_separator_regex and any(
+            self._separator.startswith(p) for p in lookaround_prefixes
+        )
+
+        # 4. Decide merge separator:
+        #    - if keep_separator or lookaround → don’t re-insert
+        #    - else → re-insert literal separator
+        merge_sep = ""
+        if not (self._keep_separator or is_lookaround):
+            merge_sep = self._separator
+
+        # 5. Merge adjacent splits and return
+        return self._merge_splits(splits, merge_sep)
 
 
 def _split_text_with_regex(
