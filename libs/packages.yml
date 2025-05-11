@@ -656,3 +656,6 @@ packages:
   path: .
   repo: geldata/langchain-gel
   provider_page: gel
+- name: langchain-aerospike
+  path: .
+  repo: aerospike/langchain-aerospike
