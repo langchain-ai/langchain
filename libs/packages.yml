@@ -652,6 +652,10 @@ packages:
   provider_page: sap
   downloads: 350
   downloads_updated_at: '2025-05-08T20:27:18.592135+00:00'
+- name: langchain-gel
+  path: .
+  repo: geldata/langchain-gel
+  provider_page: gel
 - name: langchain-aerospike
   path: .
   repo: aerospike/langchain-aerospike
