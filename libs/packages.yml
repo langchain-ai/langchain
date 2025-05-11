@@ -659,3 +659,6 @@ packages:
 - name: langchain-aerospike
   path: .
   repo: aerospike/langchain-aerospike
+- name: langchain-brightdata
+  repo: luminati-io/langchain-brightdata
+  path: .
