@@ -144,7 +144,7 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    annotations = typing.get_type_hints(fn,include_extras=True)
+    annotations = typing.get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
