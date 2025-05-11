@@ -153,6 +153,10 @@
     {
       "source": "/api_reference/tests/:path(.*/?)*",
       "destination": "/api_reference/standard_tests/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/milvus_hybrid_search(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/"
     }
   ]
 }
