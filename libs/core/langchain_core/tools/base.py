@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import builtins
 import functools
 import inspect
@@ -91,7 +90,7 @@ def _eval_typing_expr(expr: str) -> type[Any]:
             for k in ("str", "int", "float", "bool", "list", "dict", "set", "tuple")
         }
     )
-    return ast.literal_eval(expr, safe_globals)
+    return eval(expr, safe_globals)  # noqa: S307
 
 
 def _is_annotated_type(typ: type[Any]) -> bool:
