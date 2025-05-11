@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import builtins
 import functools
 import inspect
 import json
@@ -81,18 +80,6 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
-def _eval_typing_expr(expr: str) -> type[Any]:
-    # Create a safe namespace with all typing and built-in types
-    safe_globals = {k: getattr(typing, k) for k in dir(typing) if not k.startswith("_")}
-    safe_globals.update(
-        {
-            k: getattr(builtins, k)
-            for k in ("str", "int", "float", "bool", "list", "dict", "set", "tuple")
-        }
-    )
-    return eval(expr, safe_globals)  # noqa: S307
-
-
 def _is_annotated_type(typ: type[Any]) -> bool:
     return get_origin(typ) is typing.Annotated
 
@@ -157,15 +144,7 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if hasattr(inspect, "get_annotations"):
-        # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)
-    else:
-        annotations = getattr(fn, "__annotations__", {})
-    annotations = {
-        k: _eval_typing_expr(v) if isinstance(v, str) else v
-        for k, v in annotations.items()
-    }
+    annotations = typing.get_type_hints(fn,include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
