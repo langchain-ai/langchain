@@ -1077,21 +1077,17 @@ def get_all_basemodel_annotations(
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
-        annotations: dict[str, type] = {}
-
         # Gather pydantic field objects (v2: model_fields / v1: __fields__)
-        model_fields = getattr(cls, "model_fields", None) or getattr(cls, "__fields__", {})
+        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
-        # Account for aliases, as inspect.signature uses the alias name
-        signature_name_to_field_name = {
-            field.alias or name: name for name, field in model_fields.items()
-        }
-
+        annotations: dict[str, type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if (field_name := signature_name_to_field_name.get(name)) is None:
+            if fields and name not in fields and name not in alias_map:
                 continue
+            field_name = alias_map.get(name, name)
             annotations[field_name] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]

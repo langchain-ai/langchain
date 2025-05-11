@@ -2150,7 +2150,7 @@ def test_get_all_basemodel_annotations_aliases() -> None:
     class CalculatorInput(BaseModel):
         a: int = Field(description="first number", alias="A")
         b: int = Field(description="second number")
-    
+
     actual = get_all_basemodel_annotations(CalculatorInput)
     assert actual == {"a": int, "b": int}
 
