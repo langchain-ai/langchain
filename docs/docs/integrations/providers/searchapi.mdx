@@ -73,8 +73,17 @@ You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
 
 ```python
-from langchain.agents import load_tools
-tools = load_tools(["searchapi"])
+from langchain_community.utilities import SearchApiAPIWrapper
+from langchain_core.tools import Tool
+
+search = SearchApiAPIWrapper()
+tools = [
+    Tool(
+        name="intermediate_answer",
+        func=search.run,
+        description="useful for when you need to ask with search",
+    )
+]
 ```
 
 For more information on tools, see [this page](/docs/how_to/tools_builtin).
