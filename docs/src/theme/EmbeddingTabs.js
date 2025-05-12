@@ -78,7 +78,7 @@ export default function EmbeddingTabs(props) {
       {
         value: "GoogleGenAI",
         label: "Google Gemini",
-        text: `from langchain_google_genai import GoogleGenerativeAIEmbeddings\n\n${embeddingVarName} = GoogleGenerativeAIEmbeddings(${googleParamsOrDefault})`,
+        text: `from langchain_google_genai import GoogleGenerativeAIEmbeddings\n\n${embeddingVarName} = GoogleGenerativeAIEmbeddings(${googleGenAIParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-google-genai",
         default: false,
@@ -87,7 +87,7 @@ export default function EmbeddingTabs(props) {
       {
         value: "GoogleVertexAI",
         label: "Google Vertex",
-        text: `from langchain_google_vertexai import VertexAIEmbeddings\n\n${embeddingVarName} = VertexAIEmbeddings(${googleParamsOrDefault})`,
+        text: `from langchain_google_vertexai import VertexAIEmbeddings\n\n${embeddingVarName} = VertexAIEmbeddings(${googleVertexAIParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-google-vertexai",
         default: false,
