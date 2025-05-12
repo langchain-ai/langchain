@@ -614,6 +614,39 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
         assert res.name == "Erick"
 
 
+def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
+    # Test that we ignore function calls if tool_calls are present
+    llm = ChatOpenAI(model="gpt-4.1-mini")
+    messages = [
+        HumanMessage("What's the weather in Boston?"),
+        AIMessage(
+            content="",
+            additional_kwargs={
+                "function_call": {
+                    "name": "get_weather",
+                    "arguments": '{"location": "Boston"}',
+                }
+            },
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "Boston"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(content="It's sunny.", name="get_weather", tool_call_id="abc123"),
+    ]
+    with patch.object(llm, "client", mock_client):
+        _ = llm.invoke(messages)
+        _, call_kwargs = mock_client.create.call_args
+        call_messages = call_kwargs["messages"]
+        tool_call_message = call_messages[1]
+        assert "tool_calls" in tool_call_message
+        assert "function_call" not in tool_call_message
+
+
 def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
