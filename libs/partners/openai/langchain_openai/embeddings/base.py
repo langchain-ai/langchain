@@ -545,7 +545,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
     def embed_documents(
-        self, texts: list[str], chunk_size: int | None = None
+        self, texts: list[str], chunk_size: Optional[int] = None
     ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
@@ -577,7 +577,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
 
     async def aembed_documents(
-        self, texts: list[str], chunk_size: int | None = None
+        self, texts: list[str], chunk_size: Optional[int] = None
     ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
