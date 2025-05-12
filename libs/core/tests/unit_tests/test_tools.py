@@ -2146,6 +2146,15 @@ def test__get_all_basemodel_annotations_v1() -> None:
     assert actual == expected
 
 
+def test_get_all_basemodel_annotations_aliases() -> None:
+    class CalculatorInput(BaseModel):
+        a: int = Field(description="first number", alias="A")
+        b: int = Field(description="second number")
+
+    actual = get_all_basemodel_annotations(CalculatorInput)
+    assert actual == {"a": int, "b": int}
+
+
 def test_tool_annotations_preserved() -> None:
     """Test that annotations are preserved when creating a tool."""
 
