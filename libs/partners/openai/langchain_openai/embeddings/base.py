@@ -563,6 +563,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             List of embeddings, one for each text.
@@ -596,6 +597,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             List of embeddings, one for each text.
@@ -625,6 +627,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             text: The text to embed.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             Embedding for the text.
@@ -636,6 +639,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             text: The text to embed.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             Embedding for the text.
