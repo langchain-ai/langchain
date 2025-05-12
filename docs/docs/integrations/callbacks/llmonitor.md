@@ -101,7 +101,7 @@ agent = create_react_agent("openai:gpt-4.1-mini", tools)
 
 input_message = {
     "role": "user",
-    "content": "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+    "content": "What's the weather in SF?",
 }
 
 agent.invoke({"messages": [input_message]})
@@ -117,7 +117,7 @@ with identify("user-123"):
     llm.invoke("Tell me a joke")
 
 with identify("user-456", user_props={"email": "user456@test.com"}):
-    agent.run("Who is Leo DiCaprio's girlfriend?")
+    agent.invoke(...)
 ```
 ## Support
 
