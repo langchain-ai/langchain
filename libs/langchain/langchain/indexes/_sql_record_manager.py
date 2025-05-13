@@ -45,7 +45,7 @@ try:
     from sqlalchemy.ext.asyncio import async_sessionmaker
 except ImportError:
     # dummy for sqlalchemy < 2
-    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore[assignment,misc]
 
 Base = declarative_base()
 

@@ -21,7 +21,7 @@ def calculator(expression: str) -> str:
 
 @pytest.fixture
 def tools() -> list[BaseTool]:
-    return [search, calculator]  # type: ignore
+    return [search, calculator]
 
 
 def test_render_text_description(tools: list[BaseTool]) -> None:

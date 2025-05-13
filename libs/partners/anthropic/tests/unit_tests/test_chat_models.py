@@ -1,8 +1,10 @@
 """Test chat model integration."""
 
 import os
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable, Literal, Optional, cast
+from unittest.mock import patch
 
+import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -13,6 +15,8 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _create_usage_metadata,
+    _format_image,
     _format_messages,
     _merge_messages,
     convert_to_anthropic_tool,
@@ -294,6 +298,12 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
+
+
+def test__format_image() -> None:
+    url = "dummyimage.com/600x400/000/fff"
+    with pytest.raises(ValueError):
+        _format_image(url)
 
 
 @pytest.fixture()
@@ -703,7 +713,7 @@ def test__format_messages_with_cache_control() -> None:
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": "<base64 data>",
-                    "metadata": {"cache_control": {"type": "ephemeral"}},
+                    "cache_control": {"type": "ephemeral"},
                 },
             ]
         )
@@ -742,7 +752,7 @@ def test__format_messages_with_citations() -> None:
                     "source_type": "text",
                     "text": "The grass is green. The sky is blue.",
                     "mime_type": "text/plain",
-                    "metadata": {"citations": {"enabled": True}},
+                    "citations": {"enabled": True},
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
             ]
@@ -767,6 +777,56 @@ def test__format_messages_with_citations() -> None:
     ]
     actual_system, actual_messages = _format_messages(input_messages)
     assert actual_system is None
+    assert actual_messages == expected_messages
+
+
+def test__format_messages_openai_image_format() -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Can you highlight the differences between these two images?",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://<image url>"},
+            },
+        ],
+    )
+    actual_system, actual_messages = _format_messages([message])
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "Can you highlight the differences between these two images?"
+                    ),
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "<base64 data>",
+                    },
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": "https://<image url>",
+                    },
+                },
+            ],
+        }
+    ]
     assert actual_messages == expected_messages
 
 
@@ -874,3 +934,63 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "any"
     }
+
+
+def test_optional_description() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    class SampleModel(BaseModel):
+        sample_field: str
+
+    _ = llm.with_structured_output(SampleModel.model_json_schema())
+
+
+def test_get_num_tokens_from_messages_passes_kwargs() -> None:
+    """Test that get_num_tokens_from_messages passes kwargs to the model."""
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    with patch.object(anthropic, "Client") as _Client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
+
+    assert (
+        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    )
+
+
+def test_usage_metadata_standardization() -> None:
+    class UsageModel(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+        cache_read_input_tokens: int = 3
+        cache_creation_input_tokens: int = 2
+
+    # Happy path
+    usage = UsageModel()
+    result = _create_usage_metadata(usage)
+    assert result["input_tokens"] == 15  # 10 + 3 + 2
+    assert result["output_tokens"] == 5
+    assert result["total_tokens"] == 20
+    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+
+    # Null input and output tokens
+    class UsageModelNulls(BaseModel):
+        input_tokens: Optional[int] = None
+        output_tokens: Optional[int] = None
+        cache_read_input_tokens: Optional[int] = None
+        cache_creation_input_tokens: Optional[int] = None
+
+    usage_nulls = UsageModelNulls()
+    result = _create_usage_metadata(usage_nulls)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+
+    # Test missing fields
+    class UsageModelMissing(BaseModel):
+        pass
+
+    usage_missing = UsageModelMissing()
+    result = _create_usage_metadata(usage_missing)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0

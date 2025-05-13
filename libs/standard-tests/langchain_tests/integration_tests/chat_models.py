@@ -377,6 +377,33 @@ class ChatModelIntegrationTests(ChatModelTests):
             def supports_pdf_inputs(self) -> bool:
                 return True
 
+    .. dropdown:: supports_audio_inputs
+
+        Boolean property indicating whether the chat model supports audio inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_audio_inputs(self) -> bool:
+                return True
+
     .. dropdown:: supports_video_inputs
 
         Boolean property indicating whether the chat model supports image inputs.
@@ -448,6 +475,25 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_image",
             )
+
+        (OpenAI Chat Completions format), as well as
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        (standard format).
 
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
@@ -2009,6 +2055,96 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         _ = model.invoke([message])
 
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+    def test_audio_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process audio inputs.
+
+        This test should be skipped (see Configuration below) if the model does not
+        support audio inputs. These will take the form:
+
+        .. code-block:: python
+
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 audio data>",
+                "mime_type": "audio/wav",  # or appropriate mime-type
+            }
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_audio_inputs`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+
+                    @property
+                    def supports_audio_inputs(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model can correctly handle messages
+            with audio content blocks, specifically base64-encoded files. Otherwise,
+            set the ``supports_audio_inputs`` property to False.
+        """
+        if not self.supports_audio_inputs:
+            pytest.skip("Model does not support audio inputs.")
+        url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
+        audio_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "mime_type": "audio/wav",
+                    "data": audio_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": audio_data, "format": "wav"},
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
 
@@ -2137,6 +2273,26 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
+        containing image content blocks in OpenAI Chat Completions format, in addition
+        to messages of the form:
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        containing image content blocks in standard format.
+
         This test can be skipped by setting the ``supports_image_tool_message`` property
         to False (see Configuration below).
 
@@ -2163,31 +2319,56 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image tool message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-        messages = [
-            HumanMessage("get a random image using the tool and describe the weather"),
-            AIMessage(
-                [],
-                tool_calls=[
-                    {"type": "tool_call", "id": "1", "name": "random_image", "args": {}}
-                ],
-            ),
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            ),
-        ]
 
-        def random_image() -> str:
-            """Return a random image."""
-            return ""
+        # Support both OpenAI and standard formats
+        oai_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
 
-        model.bind_tools([random_image]).invoke(messages)
+        standard_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+
+        for tool_message in [oai_format_message, standard_format_message]:
+            messages = [
+                HumanMessage(
+                    "get a random image using the tool and describe the weather"
+                ),
+                AIMessage(
+                    [],
+                    tool_calls=[
+                        {
+                            "type": "tool_call",
+                            "id": "1",
+                            "name": "random_image",
+                            "args": {},
+                        }
+                    ],
+                ),
+                tool_message,
+            ]
+
+            def random_image() -> str:
+                """Return a random image."""
+                return ""
+
+            _ = model.bind_tools([random_image]).invoke(messages)
 
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.

@@ -61,7 +61,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_to_openai_image_block,
+    convert_to_openai_data_block,
     is_data_content_block,
 )
 from langchain_core.messages.ai import (
@@ -186,32 +186,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
-def _format_data_content_block(block: dict) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
-    if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)
-
-    elif block["type"] == "file":
-        if block["source_type"] == "base64":
-            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
-            if (metadata := block.get("metadata")) and ("filename" in metadata):
-                file["filename"] = metadata["filename"]
-            else:
-                warnings.warn(
-                    "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the metadata: {'type': 'file', 'source_type': 'base64', "
-                    "'mime_type': 'application/pdf', 'data': '...', "
-                    "'metadata': {'filename': 'my-pdf'}}"
-                )
-            formatted_block = {"type": "file", "file": file}
-        elif block["source_type"] == "id":
-            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
-    else:
-        raise ValueError(f"Block of type {block['type']} is not supported.")
-
-    return formatted_block
-
-
 def _format_message_content(content: Any) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
@@ -225,7 +199,7 @@ def _format_message_content(content: Any) -> Any:
             ):
                 continue
             elif isinstance(block, dict) and is_data_content_block(block):
-                formatted_content.append(_format_data_content_block(block))
+                formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -277,8 +251,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "user"
     elif isinstance(message, AIMessage):
         message_dict["role"] = "assistant"
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
         if message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
                 _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
@@ -293,6 +265,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
                 for tool_call in message_dict["tool_calls"]
             ]
+        elif "function_call" in message.additional_kwargs:
+            # OpenAI raises 400 if both function_call and tool_calls are present in the
+            # same message.
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
         else:
             pass
         # If tool calls present, content null value should be None not empty string.
@@ -564,6 +540,10 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+    service_tier: Optional[str] = None
+    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
+    for users of OpenAI's scale tier service.
+    """
 
     use_responses_api: Optional[bool] = None
     """Whether to use the Responses API instead of the Chat API.
@@ -681,6 +661,7 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
         }
 
         params = {
@@ -757,6 +738,8 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
                 generation_info["system_fingerprint"] = system_fingerprint
+            if service_tier := chunk.get("service_tier"):
+                generation_info["service_tier"] = service_tier
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -1041,6 +1024,8 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if "id" in response_dict:
             llm_output["id"] = response_dict["id"]
+        if "service_tier" in response_dict:
+            llm_output["service_tier"] = response_dict["service_tier"]
 
         if isinstance(response, openai.BaseModel) and getattr(
             response, "choices", None
@@ -2132,6 +2117,40 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
+    .. dropdown:: Reasoning output
+
+        OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
+        that expose a summary of internal reasoning processes.
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            reasoning = {
+                "effort": "medium",  # 'low', 'medium', or 'high'
+                "summary": "auto",  # 'detailed', 'auto', or None
+            }
+
+            llm = ChatOpenAI(
+                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+            )
+            response = llm.invoke("What is 3^3?")
+
+            print(f"Output: {response.text()}")
+            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+        .. code-block:: none
+
+            Output: 3^3 = 27.
+
+            Reasoning: {
+                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
+                'summary': [
+                    {'text': 'The user wants to know...', 'type': 'summary_text'}
+                ],
+                'type': 'reasoning'
+            }
+
     .. dropdown:: Structured output
 
         .. code-block:: python
@@ -2317,6 +2336,27 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "finish_reason": "stop",
                 "logprobs": None,
             }
+
+    .. dropdown:: Flex processing
+
+        OpenAI offers a variety of
+        `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
+        The "flex" tier offers cheaper pricing for requests, with the trade-off that
+        responses may take longer and resources might not always be available.
+        This approach is best suited for non-critical tasks, including model testing,
+        data enhancement, or jobs that can be run asynchronously.
+
+        To use it, initialize the model with ``service_tier="flex"``:
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+
+        Note that this is a beta feature that is only available for a subset of models.
+        See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
+        for more detail.
 
     """  # noqa: E501
 
@@ -2886,9 +2926,9 @@ class OpenAIRefusalError(Exception):
 
 
 def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
-    input_tokens = oai_token_usage.get("prompt_tokens", 0)
-    output_tokens = oai_token_usage.get("completion_tokens", 0)
-    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_tokens = oai_token_usage.get("prompt_tokens") or 0
+    output_tokens = oai_token_usage.get("completion_tokens") or 0
+    total_tokens = oai_token_usage.get("total_tokens") or input_tokens + output_tokens
     input_token_details: dict = {
         "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
             "audio_tokens"
@@ -3044,6 +3084,23 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
+def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+    text blocks. OpenAI API does not support this key, so we need to remove it.
+
+    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
+    back in.
+    """
+    new_reasoning = reasoning.copy()
+    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+        new_summary = []
+        for block in reasoning["summary"]:
+            new_block = {k: v for k, v in block.items() if k != "index"}
+            new_summary.append(new_block)
+        new_reasoning["summary"] = new_summary
+    return new_reasoning
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
@@ -3071,7 +3128,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             # Reasoning items
             reasoning_items = []
             if reasoning := lc_msg.additional_kwargs.get("reasoning"):
-                reasoning_items.append(reasoning)
+                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
+            input_.extend(reasoning_items)
             # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
@@ -3130,11 +3188,12 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
             if msg["content"]:
+                if lc_msg.id and lc_msg.id.startswith("msg_"):
+                    msg["id"] = lc_msg.id
                 input_.append(msg)
-            input_.extend(reasoning_items)
             input_.extend(function_calls)
             input_.extend(computer_calls)
-        elif msg["role"] == "user":
+        elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
                 for block in msg["content"]:
@@ -3189,6 +3248,7 @@ def _construct_lc_result_from_responses_api(
             "status",
             "user",
             "model",
+            "service_tier",
         )
     }
     if metadata:
@@ -3343,8 +3403,6 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         if parsed := msg.additional_kwargs.get("parsed"):
             additional_kwargs["parsed"] = parsed
-        if reasoning := msg.additional_kwargs.get("reasoning"):
-            additional_kwargs["reasoning"] = reasoning
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
@@ -3385,6 +3443,27 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
+        additional_kwargs["reasoning"] = chunk.item.model_dump(
+            exclude_none=True, mode="json"
+        )
+    elif chunk.type == "response.reasoning_summary_part.added":
+        additional_kwargs["reasoning"] = {
+            # langchain-core uses the `index` key to aggregate text blocks.
+            "summary": [
+                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+            ]
+        }
+    elif chunk.type == "response.reasoning_summary_text.delta":
+        additional_kwargs["reasoning"] = {
+            "summary": [
+                {
+                    "index": chunk.summary_index,
+                    "type": "summary_text",
+                    "text": chunk.delta,
+                }
+            ]
+        }
     else:
         return None
 
