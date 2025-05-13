@@ -779,7 +779,7 @@ async def aindex(
 
             _source_ids = cast("Sequence[str]", source_ids)
 
-            while uids_to_delete := record_manager.alist_keys(
+            while uids_to_delete := await record_manager.alist_keys(
                 group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
