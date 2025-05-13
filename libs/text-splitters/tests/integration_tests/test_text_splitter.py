@@ -120,7 +120,7 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
     )
     assert expected == actual
 
-
+@pytest.mark.requires("langchain")
 def test_text_splitter_start_index() -> None:
     from langchain.docstore.document import Document
 
