@@ -1882,7 +1882,7 @@ async def test_adeduplication(
     }
 
 
-def test_cleanup_with_different_batchsize(
+def test_full_cleanup_with_different_batchsize(
     record_manager: InMemoryRecordManager, vector_store: VectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
@@ -1894,33 +1894,122 @@ def test_cleanup_with_different_batchsize(
         for d in range(1000)
     ]
 
-    assert index(docs, record_manager, vector_store, cleanup="full") == {
-        "num_added": 1000,
-        "num_deleted": 0,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+    original_delete = record_manager.delete_keys
+    def limited_delete(keys: Iterable[str]):
+        if len(keys) > 50:
+            raise ValueError("Too many keys to delete")
+        original_delete(keys)
+    with patch.object(record_manager, "delete_keys", side_effect=limited_delete):
+
+        assert index(docs, record_manager, vector_store, cleanup="full") == {
+            "num_added": 1000,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+        docs = [
+            Document(
+                page_content="Different doc",
+                metadata={"source": str(d)},
+            )
+            for d in range(1001)
+        ]
+
+        assert index(
+            docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
+        ) == {
+            "num_added": 1001,
+            "num_deleted": 1000,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+def test_incremental_cleanup_with_different_batchsize(
+        record_manager: InMemoryRecordManager, vector_store: VectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+
 
     docs = [
         Document(
-            page_content="Different doc",
+            page_content="This is a test document.",
             metadata={"source": str(d)},
         )
-        for d in range(1001)
+        for d in range(1000)
     ]
+    original_delete = record_manager.delete_keys
+    def limited_delete(keys: Iterable[str]):
+        if len(keys) > 50:
+            raise ValueError("Too many keys to delete")
+        original_delete(keys)
+    with patch.object(record_manager, "delete_keys", side_effect=limited_delete):
+        assert index(docs, record_manager, vector_store, source_id_key="source", cleanup="incremental") == {
+            "num_added": 1000,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
 
-    assert index(
-        docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
-    ) == {
-        "num_added": 1001,
-        "num_deleted": 1000,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+        docs = [
+            Document(
+                page_content="Different doc",
+                metadata={"source": str(d)},
+            )
+            for d in range(1001)
+        ]
 
+        assert index(
+            docs, record_manager, vector_store, source_id_key="source", cleanup="incremental", cleanup_batch_size=17) == {
+               "num_added": 1001,
+               "num_deleted": 1000,
+               "num_skipped": 0,
+               "num_updated": 0,
+           }
 
-async def test_async_cleanup_with_different_batchsize(
-    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+async def test_afull_cleanup_with_different_batchsize(
+        arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": str(d)},
+        )
+        for d in range(1000)
+    ]
+    original_adelete = arecord_manager.adelete_keys
+    async def alimited_delete(keys: Iterable[str]):
+        if len(keys) > 50:
+            raise ValueError("Too many keys to delete")
+        await original_adelete(keys)
+    with patch.object(arecord_manager, "adelete_keys", side_effect=alimited_delete):
+        assert await aindex(docs, arecord_manager, vector_store, cleanup="full") == {
+            "num_added": 1000,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+        docs = [
+            Document(
+                page_content="Different doc",
+                metadata={"source": str(d)},
+            )
+            for d in range(1001)
+        ]
+
+        assert await aindex(
+            docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
+        ) == {
+            "num_added": 1001,
+            "num_deleted": 1000,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+async def test_aincremental_cleanup_with_different_batchsize(
+        arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
     docs = [
@@ -1931,29 +2020,35 @@ async def test_async_cleanup_with_different_batchsize(
         for d in range(1000)
     ]
 
-    assert await aindex(docs, arecord_manager, vector_store, cleanup="full") == {
-        "num_added": 1000,
-        "num_deleted": 0,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+    original_adelete = arecord_manager.adelete_keys
+    async def alimited_delete(keys: Iterable[str]):
+        if len(keys) > 50:
+            raise ValueError("Too many keys to delete")
+        await original_adelete(keys)
+    with patch.object(arecord_manager, "adelete_keys", side_effect=alimited_delete):
+        assert await aindex(docs, arecord_manager, vector_store, source_id_key="source", cleanup="incremental") == {
+            "num_added": 1000,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
 
-    docs = [
-        Document(
-            page_content="Different doc",
-            metadata={"source": str(d)},
-        )
-        for d in range(1001)
-    ]
+        docs = [
+            Document(
+                page_content="Different doc",
+                metadata={"source": str(d)},
+            )
+            for d in range(1001)
+        ]
 
-    assert await aindex(
-        docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
-    ) == {
-        "num_added": 1001,
-        "num_deleted": 1000,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+        assert await aindex(
+            docs, arecord_manager, vector_store, cleanup="incremental", source_id_key="source", cleanup_batch_size=17
+        ) == {
+                   "num_added": 1001,
+                   "num_deleted": 1000,
+                   "num_skipped": 0,
+                   "num_updated": 0,
+               }
 
 
 def test_deduplication_v2(
