@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 import httpx
+import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_tests.integration_tests import ChatModelIntegrationTests
@@ -96,7 +97,22 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": pdf_data,
-                    "metadata": {"filename": "my-pdf"},  # OpenAI requires a filename
+                    "filename": "my-pdf",  # OpenAI requires a filename
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
                 },
             ]
         )
@@ -111,3 +127,30 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         return cast(AIMessage, full)
     else:
         return cast(AIMessage, llm.invoke(input_))
+
+
+@pytest.mark.skip()  # Test either finishes in 5 seconds or 5 minutes.
+def test_audio_model() -> None:
+    class AudioModelTests(ChatModelIntegrationTests):
+        @property
+        def chat_model_class(self) -> type[ChatOpenAI]:
+            return ChatOpenAI
+
+        @property
+        def chat_model_params(self) -> dict:
+            return {
+                "model": "gpt-4o-audio-preview",
+                "temperature": 0,
+                "model_kwargs": {
+                    "modalities": ["text", "audio"],
+                    "audio": {"voice": "alloy", "format": "wav"},
+                },
+            }
+
+        @property
+        def supports_audio_inputs(self) -> bool:
+            return True
+
+    test_instance = AudioModelTests()
+    model = test_instance.chat_model_class(**test_instance.chat_model_params)
+    AudioModelTests().test_audio_inputs(model)

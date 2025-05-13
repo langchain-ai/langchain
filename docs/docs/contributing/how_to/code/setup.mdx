@@ -13,23 +13,33 @@ Install `uv`: **[documentation on how to install it](https://docs.astral.sh/uv/g
 
 This repository contains multiple packages:
 - `langchain-core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
-- `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
-- `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.
 - Partner integrations: Partner packages in `libs/partners` that are independently version controlled.
+
+:::note
+
+Some LangChain packages live outside the monorepo, see for example
+[langchain-community](https://github.com/langchain-ai/langchain-community) for various
+third-party integrations and
+[langchain-experimental](https://github.com/langchain-ai/langchain-experimental) for
+abstractions that are experimental (either in the sense that the techniques are novel
+and still being tested, or they require giving the LLM more access than would be
+possible in most production systems).
+
+:::
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
-For this quickstart, start with langchain-community:
+For this quickstart, start with `langchain`:
 
 ```bash
-cd libs/community
+cd libs/langchain
 ```
 
 ## Local Development Dependencies
 
-Install langchain-community development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
+Install development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
 ```bash
 uv sync
@@ -62,19 +72,12 @@ make docker_tests
 
 There are also [integration tests and code-coverage](../testing.mdx) available.
 
-### Only develop langchain_core or langchain_community
+### Developing langchain_core
 
-If you are only developing `langchain_core` or `langchain_community`, you can simply install the dependencies for the respective projects and run tests:
+If you are only developing `langchain_core`, you can simply install the dependencies for the project and run tests:
 
 ```bash
 cd libs/core
-make test
-```
-
-Or:
-
-```bash
-cd libs/community
 make test
 ```
 

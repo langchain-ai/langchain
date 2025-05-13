@@ -144,7 +144,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
+class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """A chain for scoring on a scale of 1-10 the output of a model.
 
     Attributes:
@@ -396,7 +396,7 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledScoreStringEvalChain(ScoreStringEvalChain):  # type: ignore[override]
+class LabeledScoreStringEvalChain(ScoreStringEvalChain):
     """A chain for scoring the output of a model on a scale of 1-10.
 
     Attributes:

@@ -36,6 +36,9 @@ from langchain_core.utils.usage import _dict_int_op
 logger = logging.getLogger(__name__)
 
 
+_LC_ID_PREFIX = "run-"
+
+
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
 
@@ -418,10 +421,19 @@ def add_ai_message_chunks(
         usage_metadata = None
 
     id = None
-    for id_ in [left.id] + [o.id for o in others]:
-        if id_:
+    candidates = [left.id] + [o.id for o in others]
+    # first pass: pick the first non‐run-* id
+    for id_ in candidates:
+        if id_ and not id_.startswith(_LC_ID_PREFIX):
             id = id_
             break
+    else:
+        # second pass: no provider-assigned id found, just take the first non‐null
+        for id_ in candidates:
+            if id_:
+                id = id_
+                break
+
     return left.__class__(
         example=left.example,
         content=content,

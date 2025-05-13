@@ -82,8 +82,8 @@ class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
 
     name: str
-    description: str
     input_schema: dict[str, Any]
+    description: NotRequired[str]
     cache_control: NotRequired[dict[str, str]]
 
 
@@ -99,35 +99,52 @@ def _is_builtin_tool(tool: Any) -> bool:
         "text_editor_",
         "computer_",
         "bash_",
+        "web_search_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
 
-def _format_image(image_url: str) -> dict:
+def _format_image(url: str) -> dict:
     """
-    Formats an image of format data:image/jpeg;base64,{b64_string}
-    to a dict for anthropic api
-
+    Converts part["image_url"]["url"] strings (OpenAI format)
+    to the correct Anthropic format:
     {
       "type": "base64",
       "media_type": "image/jpeg",
       "data": "/9j/4AAQSkZJRg...",
     }
-
-    And throws an error if it's not a b64 image
-    """
-    regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
-    match = re.match(regex, image_url)
-    if match is None:
-        raise ValueError(
-            "Anthropic only supports base64-encoded images currently."
-            " Example: data:image/png;base64,'/9j/4AAQSk'..."
-        )
-    return {
-        "type": "base64",
-        "media_type": match.group("media_type"),
-        "data": match.group("data"),
+    Or
+    {
+      "type": "url",
+      "url": "https://example.com/image.jpg",
     }
+    """
+    # Base64 encoded image
+    base64_regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
+    base64_match = re.match(base64_regex, url)
+
+    if base64_match:
+        return {
+            "type": "base64",
+            "media_type": base64_match.group("media_type"),
+            "data": base64_match.group("data"),
+        }
+
+    # Url
+    url_regex = r"^https?://.*$"
+    url_match = re.match(url_regex, url)
+
+    if url_match:
+        return {
+            "type": "url",
+            "url": url,
+        }
+
+    raise ValueError(
+        "Malformed url parameter."
+        " Must be either an image URL (https://example.com/image.jpg)"
+        " or base64 encoded string (data:image/png;base64,'/9j/4AAQSk'...)"
+    )
 
 
 def _merge_messages(
@@ -239,11 +256,12 @@ def _format_data_content_block(block: dict) -> dict:
     else:
         raise ValueError(f"Block of type {block['type']} is not supported.")
 
-    if formatted_block and (metadata := block.get("metadata")):
-        if "cache_control" in metadata:
-            formatted_block["cache_control"] = metadata["cache_control"]
-        if "citations" in metadata:
-            formatted_block["citations"] = metadata["citations"]
+    if formatted_block:
+        for key in ["cache_control", "citations", "title", "context"]:
+            if key in block:
+                formatted_block[key] = block[key]
+            elif (metadata := block.get("metadata")) and key in metadata:
+                formatted_block[key] = metadata[key]
 
     return formatted_block
 
@@ -577,20 +595,37 @@ class ChatAnthropic(BaseChatModel):
         See ``ChatAnthropic.with_structured_output()`` for more.
 
     Image input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             import base64
+
             import httpx
+            from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage
 
             image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
             image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
             message = HumanMessage(
                 content=[
-                    {"type": "text", "text": "describe the weather in this image"},
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                        "type": "text",
+                        "text": "Can you highlight the differences between these two images?",
+                    },
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": image_data,
+                        "mime_type": "image/jpeg",
+                    },
+                    {
+                        "type": "image",
+                        "source_type": "url",
+                        "url": image_url,
                     },
                 ],
             )
@@ -599,9 +634,12 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
+            "After examining both images carefully, I can see that they are actually identical."
 
     PDF input:
+        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
+        for more detail.
+
         .. code-block:: python
 
             from base64 import b64encode
@@ -619,12 +657,10 @@ class ChatAnthropic(BaseChatModel):
                         [
                             "Summarize this document.",
                             {
-                                "type": "document",
-                                "source": {
-                                    "type": "base64",
-                                    "data": data,
-                                    "media_type": "application/pdf",
-                                },
+                                "type": "file",
+                                "source_type": "base64",
+                                "mime_type": "application/pdf",
+                                "data": data,
                             },
                         ]
                     )
@@ -830,29 +866,46 @@ class ChatAnthropic(BaseChatModel):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
         for more detail.
 
-        .. code-block:: python
+        Web search:
 
-            from langchain_anthropic import ChatAnthropic
+            .. code-block:: python
 
-            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+                from langchain_anthropic import ChatAnthropic
 
-            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
-            llm_with_tools = llm.bind_tools([tool])
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
 
-            response = llm_with_tools.invoke(
-                "There's a syntax error in my primes.py file. Can you help me fix it?"
-            )
-            print(response.text())
-            response.tool_calls
+                tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
+                llm_with_tools = llm.bind_tools([tool])
 
-        .. code-block:: none
+                response = llm_with_tools.invoke(
+                    "How do I update a web app to TypeScript 5.5?"
+                )
 
-            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+        Text editor:
 
-            [{'name': 'str_replace_editor',
-            'args': {'command': 'view', 'path': '/repo/primes.py'},
-            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
-            'type': 'tool_call'}]
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+                tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+                llm_with_tools = llm.bind_tools([tool])
+
+                response = llm_with_tools.invoke(
+                    "There's a syntax error in my primes.py file. Can you help me fix it?"
+                )
+                print(response.text())
+                response.tool_calls
+
+            .. code-block:: none
+
+                I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+
+                [{'name': 'str_replace_editor',
+                'args': {'command': 'view', 'path': '/repo/primes.py'},
+                'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+                'type': 'tool_call'}]
 
     Response metadata
         .. code-block:: python
@@ -1553,6 +1606,7 @@ class ChatAnthropic(BaseChatModel):
         tools: Optional[
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
+        **kwargs: Any,
     ) -> int:
         """Count tokens in a sequence of input messages.
 
@@ -1612,7 +1666,6 @@ class ChatAnthropic(BaseChatModel):
                 https://docs.anthropic.com/en/docs/build-with-claude/token-counting
         """
         formatted_system, formatted_messages = _format_messages(messages)
-        kwargs: dict[str, Any] = {}
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
@@ -1640,9 +1693,10 @@ def convert_to_anthropic_tool(
         oai_formatted = convert_to_openai_tool(tool)["function"]
         anthropic_formatted = AnthropicTool(
             name=oai_formatted["name"],
-            description=oai_formatted["description"],
             input_schema=oai_formatted["parameters"],
         )
+        if "description" in oai_formatted:
+            anthropic_formatted["description"] = oai_formatted["description"]
     return anthropic_formatted
 
 
@@ -1707,6 +1761,12 @@ def _make_message_chunk_from_anthropic_event(
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         usage_metadata = _create_usage_metadata(event.message.usage)
+        # We pick up a cumulative count of output_tokens at the end of the stream,
+        # so here we zero out to avoid double counting.
+        usage_metadata["total_tokens"] = (
+            usage_metadata["total_tokens"] - usage_metadata["output_tokens"]
+        )
+        usage_metadata["output_tokens"] = 0
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
@@ -1780,7 +1840,11 @@ def _make_message_chunk_from_anthropic_event(
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
             )
     elif event.type == "message_delta" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.usage)
+        usage_metadata = UsageMetadata(
+            input_tokens=0,
+            output_tokens=event.usage.output_tokens,
+            total_tokens=event.usage.output_tokens,
+        )
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
@@ -1808,11 +1872,11 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
 
     # Anthropic input_tokens exclude cached token counts.
     input_tokens = (
-        getattr(anthropic_usage, "input_tokens", 0)
+        (getattr(anthropic_usage, "input_tokens", 0) or 0)
         + (input_token_details["cache_read"] or 0)
         + (input_token_details["cache_creation"] or 0)
     )
-    output_tokens = getattr(anthropic_usage, "output_tokens", 0)
+    output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,

@@ -974,6 +974,11 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
                         {"text": "What's in this image?"},
                         {"type": "text", "text": "What's in this image?"},
                         {
+                            "type": "text",
+                            "text": "What's in this image?",
+                            "cache_control": {"type": "{foo}"},
+                        },
+                        {
                             "type": "image_url",
                             "image_url": "data:image/jpeg;base64,{my_image}",
                         },
@@ -1012,7 +1017,7 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
 @pytest.mark.xfail(
     reason=(
         "In a breaking release, we can update `_convert_to_message_template` to use "
-        "_DictMessagePromptTemplate for all `dict` inputs, allowing for templatization "
+        "DictPromptTemplate for all `dict` inputs, allowing for templatization "
         "of message attributes outside content blocks. That would enable the below "
         "test to pass."
     )
