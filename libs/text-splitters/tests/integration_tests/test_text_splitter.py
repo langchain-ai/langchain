@@ -5,8 +5,8 @@ from typing import Any
 import pytest
 
 from langchain_text_splitters import (
-    TokenTextSplitter,
     RecursiveCharacterTextSplitter,
+    TokenTextSplitter,
 )
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.sentence_transformers import (
