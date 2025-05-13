@@ -124,10 +124,10 @@ class Serializable(BaseModel, ABC):
         as part of the serialized representation.
     """
 
-    # Remove default BaseModel init docstring.
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""  # noqa: D419
-        super().__init__(*args, **kwargs)
+    # # Remove default BaseModel init docstring.
+    # def __init__(self, *args: Any, **kwargs: Any) -> None:
+    #     """"""  # noqa: D419
+    #     super().__init__(*args, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
