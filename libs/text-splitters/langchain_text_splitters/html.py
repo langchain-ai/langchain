@@ -16,6 +16,7 @@ from typing import (
     TypedDict,
     cast,
 )
+from urllib.parse import urlparse
 
 import requests
 from langchain_core._api import beta
@@ -144,13 +145,14 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def split_text_from_url(
-        self, url: str, timeout: int = 10, **kwargs: Any
+        self, url: str, timeout: int = 10, allowed_schemes: Optional[List[str]] = None, **kwargs: Any
     ) -> List[Document]:
         """Fetch text content from a URL and split it into documents.
 
         Args:
             url: The URL to fetch content from.
             timeout: Timeout for the request. Defaults to 10.
+            allowed_schemes: List of allowed URL schemes.
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
@@ -159,6 +161,25 @@ class HTMLHeaderTextSplitter:
         Raises:
             requests.RequestException: If the HTTP request fails.
         """
+        if allowed_schemes is None:
+            allowed_schemes = ["http", "https"]
+
+        try:
+            parsed_url = urlparse(url)
+            scheme = parsed_url.scheme.lower()
+
+            if scheme not in allowed_schemes:
+                allowed_schemes_str = ", ".join(allowed_schemes)
+                raise ValueError(
+                    f"URL scheme '{scheme}' is not allowed. "
+                    f"Allowed schemes: {allowed_schemes_str}"
+                )
+
+        except Exception as e:
+            if isinstance(e, ValueError) and "URL scheme" in str(e):
+                raise
+            raise ValueError(f"Invalid URL format: {url}") from e
+
         kwargs.setdefault("timeout", timeout)
         response = requests.get(url, **kwargs)
         response.raise_for_status()
