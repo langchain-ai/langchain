@@ -79,7 +79,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    offset = index + previous_chunk_len - self._chunk_overlap
+                    offset = index
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
