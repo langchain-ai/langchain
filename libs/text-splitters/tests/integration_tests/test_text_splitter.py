@@ -6,6 +6,7 @@ import pytest
 
 from langchain_text_splitters import (
     TokenTextSplitter,
+    RecursiveCharacterTextSplitter,
 )
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.sentence_transformers import (
@@ -118,3 +119,27 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
+
+def test_text_splitter_start_index() -> None:
+    from langchain.docstore.document import Document
+
+    text = """
+    The View3DAttributes function is used to create View3DAttributes objects which are then passed
+    to the SetView3D function to set the view when the visualization window is in 3D. Note that
+
+    View3DAttributes can be used in arithmetic expressions so you can add views together, multiply
+    them by a scale factor, etc. You can even interpolate views (e.g. view0 * (1. - t) + view1 * t).
+    """
+    doc = Document(page_content=text)
+
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        model_name = "gpt-3.5-turbo",
+        chunk_size = 15,
+        chunk_overlap = int(15 * 0.1),
+        add_start_index = True,
+        strip_whitespace = True,
+    )
+
+    for doc in text_splitter.split_documents([doc]):
+        assert doc.metadata['start_index'] >= 0
