@@ -1,0 +1,29 @@
+[build-system]
+build-backend = "pdm.backend"
+requires = ["pdm-backend"]
+
+[project]
+authors = [
+  {name = "Desearch", email = "support@desearch.ai"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "langchain-core>=0.1.0",
+  "desearch-py>=1.0.0",
+  "langchain-deepseek>=0.1.0",
+  "python-dotenv>=0.21.0",
+  "pytest>=7.0.0",
+]
+description = "LangChain integration with Desearch API for search and data-fetching tools."
+license = {text = "MIT"}
+name = "langchain-desearch"
+readme = "README.md"
+requires-python = ">=3.7"
+version = "1.0.5"
+
+[project.urls]
+Homepage = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/desearch"
