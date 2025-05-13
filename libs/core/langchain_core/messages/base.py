@@ -75,7 +75,7 @@ class BaseMessage(Serializable):
         Args:
             content: The string contents of the message.
         """
-        super().__init__(content=content, **kwargs)
+        super().__init__(content=content, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

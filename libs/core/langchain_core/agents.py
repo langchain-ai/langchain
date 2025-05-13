@@ -69,7 +69,7 @@ class AgentAction(Serializable):
             tool_input: The input to pass in to the Tool.
             log: Additional information to log about the action.
         """
-        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
+        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -149,7 +149,7 @@ class AgentFinish(Serializable):
 
     def __init__(self, return_values: dict, log: str, **kwargs: Any):
         """Override init to support instantiation by position for backward compat."""
-        super().__init__(return_values=return_values, log=log, **kwargs)
+        super().__init__(return_values=return_values, log=log, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
