@@ -98,7 +98,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
         raise ImportError(msg) from e
     env = Environment()  # noqa: S701
     ast = env.parse(template)
-    return meta.find_undeclared_variables(ast)
+    return meta.find_undeclared_variables(ast)  # type: ignore[no-untyped-call]
 
 
 def mustache_formatter(template: str, /, **kwargs: Any) -> str:
