@@ -13,8 +13,7 @@ dependencies = [
     "PyYAML>=5.3",
     "packaging<25,>=23.2",
     "typing-extensions>=4.7",
-    "pydantic<3.0.0,>=2.5.2; python_full_version < \"3.12.4\"",
-    "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
+    "pydantic>=2.7.4",
 ]
 name = "langchain-core"
 version = "0.3.59"
