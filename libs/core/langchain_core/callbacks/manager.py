@@ -764,7 +764,6 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             inheritable_metadata=self.inheritable_metadata,
         )
 
-
     async def on_llm_new_token(
         self,
         token: str,
@@ -1008,7 +1007,6 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-
     async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run when agent action is received.
 
@@ -1031,7 +1029,6 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             tags=self.tags,
             **kwargs,
         )
-
 
     async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run when agent finish is received.
@@ -1129,7 +1126,6 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
             inheritable_metadata=self.inheritable_metadata,
         )
 
-
     async def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Async run when the tool ends running.
 
@@ -1149,7 +1145,6 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
             tags=self.tags,
             **kwargs,
         )
-
 
     async def on_tool_error(
         self,
