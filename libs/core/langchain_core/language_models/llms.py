@@ -522,7 +522,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        if type(self)._stream == BaseLLM._stream:
+        if type(self)._stream == BaseLLM._stream:  # noqa: SLF001
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
@@ -590,8 +590,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         if (
-            type(self)._astream is BaseLLM._astream
-            and type(self)._stream is BaseLLM._stream
+            type(self)._astream is BaseLLM._astream  # noqa: SLF001
+            and type(self)._stream is BaseLLM._stream  # noqa: SLF001
         ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return

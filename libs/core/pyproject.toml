@@ -7,7 +7,7 @@ authors = []
 license = {text = "MIT"}
 requires-python = ">=3.9"
 dependencies = [
-    "langsmith<0.4,>=0.1.125",
+    "langsmith<0.4,>=0.1.126",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
@@ -105,7 +105,6 @@ ignore = [
     "ERA",
     "PLR2004",
     "RUF",
-    "SLF",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
@@ -132,5 +131,5 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D", "S",]
+"tests/**" = [ "D", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]

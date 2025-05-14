@@ -412,8 +412,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream
-        async_not_implemented = type(self)._astream == BaseChatModel._astream
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
+        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
