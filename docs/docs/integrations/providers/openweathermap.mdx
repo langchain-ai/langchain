@@ -37,8 +37,12 @@ You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
 
 ```python
-from langchain.agents import load_tools
-tools = load_tools(["openweathermap-api"])
+import os
+from langchain_community.utilities import OpenWeatherMapAPIWrapper
+
+os.environ["OPENWEATHERMAP_API_KEY"] = ""
+weather = OpenWeatherMapAPIWrapper()
+tools = [weather.run]
 ```
 
 For more information on tools, see [this page](/docs/how_to/tools_builtin).
