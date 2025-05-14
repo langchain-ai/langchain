@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
@@ -121,10 +122,7 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
     assert expected == actual
 
 
-@pytest.mark.requires("langchain")
 def test_text_splitter_from_tiktoken_start_index() -> None:
-    from langchain.docstore.document import Document
-
     text = """
     The View3DAttributes function is used to create View3DAttributes objects
     which are then passed
@@ -150,9 +148,7 @@ def test_text_splitter_from_tiktoken_start_index() -> None:
         assert doc.metadata["start_index"] >= 0
 
 
-@pytest.mark.requires("langchain")
 def test_text_splitter_from_huggingface_start_index() -> None:
-    from langchain.docstore.document import Document
     from transformers import AutoTokenizer
 
     text = """
