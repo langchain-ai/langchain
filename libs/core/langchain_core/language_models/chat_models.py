@@ -494,9 +494,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
+                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
@@ -586,13 +587,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
+            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
                 **kwargs,
             ):
                 if chunk.message.id is None:
-                    chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                    chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
