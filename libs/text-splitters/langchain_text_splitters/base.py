@@ -35,7 +35,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        chunk_start_function: Callable[[str], int] = lambda s, x : 0 if s is None else len(s) - x,
+        chunk_start_function: Callable[[str], int] = lambda s, x :
+                                  0 if s is None else len(s) - x,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
@@ -85,7 +86,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    offset = index + self._chunk_start_function(previous_chunk, self._chunk_overlap)
+                    offset = index + self._chunk_start_function(
+                        previous_chunk,
+                        self._chunk_overlap,
+                    )
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk = chunk
@@ -181,7 +185,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, chunk_start_function=_chunk_start_function, **kwargs)
+        return cls(
+            length_function=_huggingface_tokenizer_length,
+            chunk_start_function=_chunk_start_function,
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(
@@ -239,7 +247,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             }
             kwargs = {**kwargs, **extra_kwargs}
 
-        return cls(length_function=_tiktoken_encoder, chunk_start_function=_chunk_start_function, **kwargs)
+        return cls(
+            length_function=_tiktoken_encoder,
+            chunk_start_function=_chunk_start_function,
+            **kwargs,
+        )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
@@ -280,7 +292,7 @@ class TokenTextSplitter(TextSplitter):
 
         # We only want to replace the chunk_start_function if the user hasn't
         # added their own.
-        if not "chunk_start_function" in kwargs:
+        if "chunk_start_function" not in kwargs:
 
             def _chunk_start_function(previous_chunk, chunk_overlap):
                 if previous_chunk is None:
