@@ -121,7 +121,7 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
     assert expected == actual
 
 
-# @pyest.mark.requires("langchain")
+@pytest.mark.requires("langchain")
 def test_text_splitter_from_tiktoken_start_index() -> None:
     from langchain.docstore.document import Document
 
