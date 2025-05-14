@@ -20,13 +20,11 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
-from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
@@ -150,9 +148,7 @@ def _convert_pydantic_to_openai_function(
         The function description.
     """
     if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
-    elif hasattr(model, "schema"):
-        schema = model.schema()  # Pydantic 1
+        schema = model.model_json_schema()
     else:
         msg = "Model must be a Pydantic model."
         raise TypeError(msg)
@@ -249,6 +245,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
         "type[BaseModel]",
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
+    print(model)
     return _convert_pydantic_to_openai_function(model)
 
 
@@ -336,7 +333,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_json_schema_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(tool.tool_call_schema, BaseModel):
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
@@ -466,7 +463,7 @@ def convert_to_openai_function(
             oai_function["description"] = function_copy.pop("description")
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
-    elif isinstance(function, type) and is_basemodel_subclass(function):
+    elif isinstance(function, type) and issubclass(function, BaseModel):
         oai_function = cast("dict", _convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(

@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     Optional,
     TypedDict,
@@ -886,7 +885,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    messages: Annotated[list[MessageLike], SkipValidation()]
+    messages: SkipValidation[list[MessageLike]]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""

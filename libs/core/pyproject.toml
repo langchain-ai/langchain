@@ -125,7 +125,7 @@ filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarn
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator"]
 
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]

@@ -75,7 +75,6 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
     import uuid
@@ -625,7 +624,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -1298,7 +1297,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Return type of chat model."""
 
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1456,9 +1455,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "schema": schema,
             },
         )
-        if isinstance(schema, type) and is_basemodel_subclass(schema):
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
+                tools=[schema], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

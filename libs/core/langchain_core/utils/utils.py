@@ -15,10 +15,6 @@ from pydantic import SecretStr
 from requests import HTTPError, Response
 from typing_extensions import override
 
-from langchain_core.utils.pydantic import (
-    is_pydantic_v1_subclass,
-)
-
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive.".
@@ -206,16 +202,10 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
         set[str]: Field names.
     """
     all_required_field_names = set()
-    if is_pydantic_v1_subclass(pydantic_cls):
-        for field in pydantic_cls.__fields__.values():
-            all_required_field_names.add(field.name)
-            if field.has_alias:
-                all_required_field_names.add(field.alias)
-    else:  # Assuming pydantic 2 for now
-        for name, field in pydantic_cls.model_fields.items():
-            all_required_field_names.add(name)
-            if field.alias:
-                all_required_field_names.add(field.alias)
+    for name, field in pydantic_cls.model_fields.items():
+        all_required_field_names.add(name)
+        if field.alias:
+            all_required_field_names.add(field.alias)
     return all_required_field_names
 
 

@@ -33,9 +33,6 @@ from pydantic import (
     model_validator,
     validate_arguments,
 )
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
-from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
 
 from langchain_core._api import deprecated
@@ -59,14 +56,7 @@ from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
 )
-from langchain_core.utils.pydantic import (
-    TypeBaseModel,
-    _create_subset_model,
-    get_fields,
-    is_basemodel_subclass,
-    is_pydantic_v1_subclass,
-    is_pydantic_v2_subclass,
-)
+from langchain_core.utils.pydantic import _create_subset_model, get_fields
 
 if TYPE_CHECKING:
     import uuid
@@ -165,36 +155,6 @@ def _infer_arg_descriptions(
     return description, arg_descriptions
 
 
-def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
-    """Determine if a type annotation is a Pydantic model."""
-    base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
-    try:
-        return issubclass(annotation, base_model_class)
-    except TypeError:
-        return False
-
-
-def _function_annotations_are_pydantic_v1(
-    signature: inspect.Signature, func: Callable
-) -> bool:
-    """Determine if all Pydantic annotations in a function signature are from V1."""
-    any_v1_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
-        for parameter in signature.parameters.values()
-    )
-    any_v2_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
-        for parameter in signature.parameters.values()
-    )
-    if any_v1_annotations and any_v2_annotations:
-        msg = (
-            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
-            "Only one version of Pydantic annotations per function is supported."
-        )
-        raise NotImplementedError(msg)
-    return any_v1_annotations and not any_v2_annotations
-
-
 class _SchemaConfig:
     """Configuration for the pydantic model.
 
@@ -241,16 +201,13 @@ def create_schema_from_function(
     """
     sig = inspect.signature(func)
 
-    if _function_annotations_are_pydantic_v1(sig, func):
-        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
-    else:
-        # https://docs.pydantic.dev/latest/usage/validation_decorator/
-        with warnings.catch_warnings():
-            # We are using deprecated functionality here.
-            # This code should be re-written to simply construct a pydantic model
-            # using inspect.signature and create_model.
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+    # https://docs.pydantic.dev/latest/usage/validation_decorator/
+    with warnings.catch_warnings():
+        # We are using deprecated functionality here.
+        # This code should be re-written to simply construct a pydantic model
+        # using inspect.signature and create_model.
+        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+        validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
     # If qualified name has a ".", then it likely belongs in a class namespace
@@ -321,7 +278,7 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
-ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+ArgsSchema = Union[type[BaseModel], dict[str, Any]]
 
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
@@ -361,7 +318,7 @@ class ChildTool(BaseTool):
     You can provide few-shot examples as a part of the description.
     """
 
-    args_schema: Annotated[Optional[ArgsSchema], SkipValidation()] = Field(
+    args_schema: SkipValidation[Optional[ArgsSchema]] = Field(
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
@@ -369,8 +326,6 @@ class ChildTool(BaseTool):
     Args schema should be either:
 
     - A subclass of pydantic.BaseModel.
-    or
-    - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
     or
     - a JSON schema dict
     """
@@ -414,7 +369,7 @@ class ChildTool(BaseTool):
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[
-        Union[bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]]
+        Union[bool, str, Callable[[ValidationError], str]]
     ] = False
     """Handle the content of the ValidationError thrown."""
 
@@ -431,7 +386,7 @@ class ChildTool(BaseTool):
         if (
             "args_schema" in kwargs
             and kwargs["args_schema"] is not None
-            and not is_basemodel_subclass(kwargs["args_schema"])
+            and not issubclass(kwargs["args_schema"], BaseModel)
             and not isinstance(kwargs["args_schema"], dict)
         ):
             msg = (
@@ -543,10 +498,7 @@ class ChildTool(BaseTool):
                     )
                     raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
-                if hasattr(input_args, "model_validate"):
-                    input_args.model_validate({key_: tool_input})
-                else:
-                    input_args.parse_obj({key_: tool_input})
+                input_args.model_validate({key_: tool_input})
             return tool_input
         if input_args is not None:
             if isinstance(input_args, dict):
@@ -569,24 +521,6 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
-            elif issubclass(input_args, BaseModelV1):
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
             else:
                 msg = (
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
@@ -643,7 +577,7 @@ class ChildTool(BaseTool):
         if (
             self.args_schema is not None
             and isinstance(self.args_schema, type)
-            and is_basemodel_subclass(self.args_schema)
+            and issubclass(self.args_schema, BaseModel)
             and not get_fields(self.args_schema)
         ):
             # StructuredTool with no args
@@ -754,7 +688,7 @@ class ChildTool(BaseTool):
                     content, artifact = response
             else:
                 content = response
-        except (ValidationError, ValidationErrorV1) as e:
+        except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -901,11 +835,9 @@ def _is_tool_call(x: Any) -> bool:
 
 
 def _handle_validation_error(
-    e: Union[ValidationError, ValidationErrorV1],
+    e: ValidationError,
     *,
-    flag: Union[
-        Literal[True], str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
-    ],
+    flag: Union[Literal[True], str, Callable[[ValidationError], str]],
 ) -> str:
     if isinstance(flag, bool):
         content = "Tool input validation error"
@@ -1067,7 +999,7 @@ def _is_injected_arg_type(
 
 
 def get_all_basemodel_annotations(
-    cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
+    cls: type[BaseModel], *, default_to_bound: bool = True
 ) -> dict[str, type]:
     """Get all annotations from a Pydantic BaseModel and its parents.
 
@@ -1075,58 +1007,17 @@ def get_all_basemodel_annotations(
         cls: The Pydantic BaseModel class.
         default_to_bound: Whether to default to the bound of a TypeVar if it exists.
     """
-    # cls has no subscript: cls = FooBar
-    if isinstance(cls, type):
-        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
-        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
-        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+    fields = cls.model_fields
+    alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
-        annotations: dict[str, type] = {}
-        for name, param in inspect.signature(cls).parameters.items():
-            # Exclude hidden init args added by pydantic Config. For example if
-            # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if fields and name not in fields and name not in alias_map:
-                continue
-            field_name = alias_map.get(name, name)
-            annotations[field_name] = param.annotation
-        orig_bases: tuple = getattr(cls, "__orig_bases__", ())
-    # cls has subscript: cls = FooBar[int]
-    else:
-        annotations = get_all_basemodel_annotations(
-            get_origin(cls), default_to_bound=False
-        )
-        orig_bases = (cls,)
-
-    # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
-    if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
-        # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
-        # if cls = FooBar inherits from Baz, orig_bases will contain Baz
-        # if cls = FooBar[int], orig_bases will contain FooBar[int]
-        for parent in orig_bases:
-            # if class = FooBar inherits from Baz, parent = Baz
-            if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
-                annotations.update(
-                    get_all_basemodel_annotations(parent, default_to_bound=False)
-                )
-                continue
-
-            parent_origin = get_origin(parent)
-
-            # if class = FooBar inherits from non-pydantic class
-            if not parent_origin:
-                continue
-
-            # if class = FooBar inherits from Baz[str]:
-            # parent = Baz[str],
-            # parent_origin = Baz,
-            # generic_type_vars = (type vars in Baz)
-            # generic_map = {type var in Baz: str}
-            generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())
-            generic_map = dict(zip(generic_type_vars, get_args(parent)))
-            for field in getattr(parent_origin, "__annotations__", {}):
-                annotations[field] = _replace_type_vars(
-                    annotations[field], generic_map, default_to_bound=default_to_bound
-                )
+    annotations: dict[str, type] = {}
+    for name, param in inspect.signature(cls).parameters.items():
+        # Exclude hidden init args added by pydantic's ConfigDict. For example if
+        # BaseModel(extra="allow") then "extra_data" will part of init sig.
+        if fields and name not in fields and name not in alias_map:
+            continue
+        field_name = alias_map.get(name, name)
+        annotations[field_name] = param.annotation
 
     return {
         k: _replace_type_vars(v, default_to_bound=default_to_bound)

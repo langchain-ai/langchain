@@ -2,8 +2,6 @@ from typing import Any, Union
 
 from pydantic import BaseModel
 
-from langchain_core.utils.pydantic import is_basemodel_subclass
-
 
 # Function to replace allOf with $ref
 def replace_all_of_with_ref(schema: Any) -> None:
@@ -30,8 +28,6 @@ def replace_all_of_with_ref(schema: Any) -> None:
 
 def remove_all_none_default(schema: Any) -> None:
     """Removing all none defaults.
-
-    Pydantic v1 did not generate these, but Pydantic v2 does.
 
     The None defaults usually represent **NotRequired** fields, and the None value
     is actually **incorrect** as a value since the fields do not allow a None value.
@@ -75,13 +71,9 @@ def _remove_enum(obj: Any) -> None:
 
 def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
-    if not is_basemodel_subclass(obj):
+    if not (isinstance(obj, type) and issubclass(obj, BaseModel)):
         msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
         raise TypeError(msg)
-    # Remap to old style schema
-    if not hasattr(obj, "model_json_schema"):  # V1 model
-        return obj.schema()
-
     schema_ = obj.model_json_schema(ref_template="#/definitions/{model}")
     if "$defs" in schema_:
         schema_["definitions"] = schema_["$defs"]

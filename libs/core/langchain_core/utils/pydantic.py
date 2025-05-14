@@ -2,172 +2,38 @@
 
 from __future__ import annotations
 
-import inspect
 import textwrap
 import warnings
 from contextlib import nullcontext
 from functools import lru_cache, wraps
-from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Optional,
-    TypeVar,
-    Union,
     cast,
-    overload,
 )
 
-import pydantic
 from packaging import version
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    PydanticDeprecationWarning,
-    RootModel,
-    root_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 from pydantic import (
     create_model as _create_model_base,
 )
-from pydantic.fields import FieldInfo as FieldInfoV2
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMode,
     JsonSchemaValue,
 )
+from pydantic.version import VERSION as PYDANTIC_VERSION_STRING
 from typing_extensions import override
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema
 
-try:
-    import pydantic
-
-    PYDANTIC_VERSION = version.parse(pydantic.__version__)
-except ImportError:
-    PYDANTIC_VERSION = version.parse("0.0.0")
-
-
-def get_pydantic_major_version() -> int:
-    """DEPRECATED - Get the major version of Pydantic.
-
-    Use PYDANTIC_VERSION.major instead.
-    """
-    warnings.warn(
-        "get_pydantic_major_version is deprecated. Use PYDANTIC_VERSION.major instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return PYDANTIC_VERSION.major
-
-
-PYDANTIC_MAJOR_VERSION = PYDANTIC_VERSION.major
+PYDANTIC_VERSION = version.parse(PYDANTIC_VERSION_STRING)
 PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
-
-IS_PYDANTIC_V1 = PYDANTIC_VERSION.major == 1
-IS_PYDANTIC_V2 = PYDANTIC_VERSION.major == 2
-
-if IS_PYDANTIC_V1:
-    from pydantic.fields import FieldInfo as FieldInfoV1
-
-    PydanticBaseModel = pydantic.BaseModel
-    TypeBaseModel = type[BaseModel]
-elif IS_PYDANTIC_V2:
-    from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
-
-    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
-    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore[misc]
-else:
-    msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
-    raise ValueError(msg)
-
-
-TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
-
-
-def is_pydantic_v1_subclass(cls: type) -> bool:
-    """Check if the installed Pydantic version is 1.x-like."""
-    if IS_PYDANTIC_V1:
-        return True
-    if IS_PYDANTIC_V2:
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        if issubclass(cls, BaseModelV1):
-            return True
-    return False
-
-
-def is_pydantic_v2_subclass(cls: type) -> bool:
-    """Check if the installed Pydantic version is 1.x-like."""
-    from pydantic import BaseModel
-
-    return IS_PYDANTIC_V2 and issubclass(cls, BaseModel)
-
-
-def is_basemodel_subclass(cls: type) -> bool:
-    """Check if the given class is a subclass of Pydantic BaseModel.
-
-    Check if the given class is a subclass of any of the following:
-
-    * pydantic.BaseModel in Pydantic 1.x
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
-    """
-    # Before we can use issubclass on the cls we need to check if it is a class
-    if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
-        return False
-
-    if IS_PYDANTIC_V1:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        if issubclass(cls, BaseModelV1Proper):
-            return True
-    elif IS_PYDANTIC_V2:
-        from pydantic import BaseModel as BaseModelV2
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        if issubclass(cls, BaseModelV2):
-            return True
-
-        if issubclass(cls, BaseModelV1):
-            return True
-    else:
-        msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
-        raise ValueError(msg)
-    return False
-
-
-def is_basemodel_instance(obj: Any) -> bool:
-    """Check if the given class is an instance of Pydantic BaseModel.
-
-    Check if the given class is an instance of any of the following:
-
-    * pydantic.BaseModel in Pydantic 1.x
-    * pydantic.BaseModel in Pydantic 2.x
-    * pydantic.v1.BaseModel in Pydantic 2.x
-    """
-    if IS_PYDANTIC_V1:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        if isinstance(obj, BaseModelV1Proper):
-            return True
-    elif IS_PYDANTIC_V2:
-        from pydantic import BaseModel as BaseModelV2
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        if isinstance(obj, BaseModelV2):
-            return True
-
-        if isinstance(obj, BaseModelV1):
-            return True
-    else:
-        msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
-        raise ValueError(msg)
-    return False
 
 
 # How to type hint this?
@@ -180,50 +46,35 @@ def pre_init(func: Callable) -> Any:
     Returns:
         Any: The decorated function.
     """
-    with warnings.catch_warnings():
-        warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
 
-        @root_validator(pre=True)
-        @wraps(func)
-        def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
-            """Decorator to run a function before model initialization.
+    @model_validator(mode="before")
+    @wraps(func)
+    def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
+        """Decorator to run a function before model initialization.
 
-            Args:
-                cls (Type[BaseModel]): The model class.
-                values (dict[str, Any]): The values to initialize the model with.
+        Args:
+            cls (Type[BaseModel]): The model class.
+            values (dict[str, Any]): The values to initialize the model with.
 
-            Returns:
-                dict[str, Any]: The values to initialize the model with.
-            """
-            # Insert default values
-            fields = cls.model_fields
-            for name, field_info in fields.items():
-                # Check if allow_population_by_field_name is enabled
-                # If yes, then set the field name to the alias
-                if (
-                    hasattr(cls, "Config")
-                    and hasattr(cls.Config, "allow_population_by_field_name")
-                    and cls.Config.allow_population_by_field_name
-                    and field_info.alias in values
-                ):
-                    values[name] = values.pop(field_info.alias)
-                if (
-                    hasattr(cls, "model_config")
-                    and cls.model_config.get("populate_by_name")
-                    and field_info.alias in values
-                ):
-                    values[name] = values.pop(field_info.alias)
+        Returns:
+            dict[str, Any]: The values to initialize the model with.
+        """
+        # Insert default values
+        fields = cls.model_fields
+        for name, field_info in fields.items():
+            if cls.model_config.get("populate_by_name") and field_info.alias in values:
+                values[name] = values.pop(field_info.alias)
 
-                if (
-                    name not in values or values[name] is None
-                ) and not field_info.is_required():
-                    if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()  # type: ignore[call-arg]
-                    else:
-                        values[name] = field_info.default
+            if (
+                name not in values or values[name] is None
+            ) and not field_info.is_required():
+                if field_info.default_factory is not None:
+                    values[name] = field_info.default_factory()  # type: ignore[call-arg]
+                else:
+                    values[name] = field_info.default
 
-            # Call the decorated function
-            return func(cls, values)
+        # Call the decorated function
+        return func(cls, values)
 
     return wrapper
 
@@ -241,55 +92,15 @@ class _IgnoreUnserializable(GenerateJsonSchema):
         return {}
 
 
-def _create_subset_model_v1(
-    name: str,
-    model: type[BaseModel],
-    field_names: list,
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
-    if IS_PYDANTIC_V1:
-        from pydantic import create_model
-    elif IS_PYDANTIC_V2:
-        from pydantic.v1 import create_model  # type: ignore[no-redef]
-    else:
-        msg = f"Unsupported pydantic version: {PYDANTIC_VERSION.major}"
-        raise NotImplementedError(msg)
-
-    fields = {}
-
-    for field_name in field_names:
-        # Using pydantic v1 so can access __fields__ as a dict.
-        field = model.__fields__[field_name]  # type: ignore[index]
-        t = (
-            # this isn't perfect but should work for most functions
-            field.outer_type_
-            if field.required and not field.allow_none
-            else Optional[field.outer_type_]
-        )
-        if descriptions and field_name in descriptions:
-            field.field_info.description = descriptions[field_name]
-        fields[field_name] = (t, field.field_info)
-
-    rtn = create_model(name, **fields)  # type: ignore[call-overload]
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
-    return rtn
-
-
 def _create_subset_model_v2(
     name: str,
-    model: type[pydantic.BaseModel],
+    model: type[BaseModel],
     field_names: list[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> type[pydantic.BaseModel]:
+) -> type[BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model
-    from pydantic.fields import FieldInfo
-
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
@@ -300,7 +111,7 @@ def _create_subset_model_v2(
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
 
-    rtn = create_model(  # type: ignore[call-overload]
+    rtn = _create_model_base(
         name, **fields, __config__=ConfigDict(arbitrary_types_allowed=True)
     )
 
@@ -319,89 +130,34 @@ def _create_subset_model_v2(
     return rtn
 
 
-# Private functionality to create a subset model that's compatible across
-# different versions of pydantic.
-# Handles pydantic versions 1.x and 2.x. including v1 of pydantic in 2.x.
-# However, can't find a way to type hint this.
 def _create_subset_model(
     name: str,
-    model: TypeBaseModel,
+    model: type[BaseModel],
     field_names: list[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model."""
-    if IS_PYDANTIC_V1:
-        return _create_subset_model_v1(
-            name,
-            model,
-            field_names,
-            descriptions=descriptions,
-            fn_description=fn_description,
-        )
-    if IS_PYDANTIC_V2:
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        if issubclass(model, BaseModelV1):
-            return _create_subset_model_v1(
-                name,
-                model,
-                field_names,
-                descriptions=descriptions,
-                fn_description=fn_description,
-            )
-        return _create_subset_model_v2(
-            name,
-            model,
-            field_names,
-            descriptions=descriptions,
-            fn_description=fn_description,
-        )
-    msg = f"Unsupported pydantic version: {PYDANTIC_VERSION.major}"
-    raise NotImplementedError(msg)
+    return _create_subset_model_v2(
+        name,
+        model,
+        field_names,
+        descriptions=descriptions,
+        fn_description=fn_description,
+    )
 
 
-if IS_PYDANTIC_V2:
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
-
-    @overload
-    def get_fields(model: type[BaseModelV2]) -> dict[str, FieldInfoV2]: ...
-
-    @overload
-    def get_fields(model: BaseModelV2) -> dict[str, FieldInfoV2]: ...
-
-    @overload
-    def get_fields(model: type[BaseModelV1]) -> dict[str, FieldInfoV1]: ...
-
-    @overload
-    def get_fields(model: BaseModelV1) -> dict[str, FieldInfoV1]: ...
-
-    def get_fields(
-        model: Union[type[Union[BaseModelV2, BaseModelV1]], BaseModelV2, BaseModelV1],
-    ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
-        """Get the field names of a Pydantic model."""
-        if hasattr(model, "model_fields"):
-            return model.model_fields
-
-        if hasattr(model, "__fields__"):
-            return model.__fields__  # type: ignore[return-value]
+def get_fields(
+    model: type[BaseModel],
+) -> dict[str, FieldInfo]:
+    """Get the field names of a Pydantic model."""
+    try:
+        return model.model_fields
+    except AttributeError as exc:
         msg = f"Expected a Pydantic model. Got {type(model)}"
-        raise TypeError(msg)
+        raise TypeError(msg) from exc
 
-elif IS_PYDANTIC_V1:
-    from pydantic import BaseModel as BaseModelV1_
-
-    def get_fields(  # type: ignore[no-redef]
-        model: Union[type[BaseModelV1_], BaseModelV1_],
-    ) -> dict[str, FieldInfoV1]:
-        """Get the field names of a Pydantic model."""
-        return model.__fields__  # type: ignore[return-value]
-
-else:
-    msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
-    raise ValueError(msg)
 
 _SchemaConfig = ConfigDict(
     arbitrary_types_allowed=True, frozen=True, protected_namespaces=()
@@ -458,17 +214,6 @@ def _create_root_model(
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
     with warnings.catch_warnings():
-        try:
-            if (
-                isinstance(type_, type)
-                and not isinstance(type_, GenericAlias)
-                and issubclass(type_, BaseModelV1)
-            ):
-                warnings.filterwarnings(
-                    action="ignore", category=PydanticDeprecationWarning
-                )
-        except TypeError:
-            pass
         custom_root_type = type(name, (RootModel,), base_class_attributes)
     return cast("type[BaseModel]", custom_root_type)
 
@@ -545,9 +290,6 @@ _RESERVED_NAMES = {key for key in dir(BaseModel) if not key.startswith("_")}
 
 def _remap_field_definitions(field_definitions: dict[str, Any]) -> dict[str, Any]:
     """This remaps fields to avoid colliding with internal pydantic fields."""
-    from pydantic import Field
-    from pydantic.fields import FieldInfo
-
     remapped = {}
     for key, value in field_definitions.items():
         if key.startswith("_") or key in _RESERVED_NAMES:
@@ -595,7 +337,7 @@ def create_model_v2(
         root: Type for a root model (RootModel)
 
     Returns:
-        Type[BaseModel]: The created model.
+        type[BaseModel]: The created model.
     """
     field_definitions = field_definitions or {}
 
