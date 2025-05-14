@@ -124,15 +124,10 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
 
 def test_text_splitter_from_tiktoken_start_index() -> None:
     text = """
-    The View3DAttributes function is used to create View3DAttributes objects
+    The Foo function is used to create Foo objects
     which are then passed
-    to the SetView3D function to set the view when the visualization window is
-    in 3D. Note that
-    
-    View3DAttributes can be used in arithmetic expressions so you can add views
-    together, multiply
-    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
-    (1. - t) + view1 * t).
+    to the Bar function to set the view when the foo window is
+    in 3D.
     """
     doc = Document(page_content=text)
 
@@ -152,15 +147,10 @@ def test_text_splitter_from_huggingface_start_index() -> None:
     from transformers import AutoTokenizer
 
     text = """
-    The View3DAttributes function is used to create View3DAttributes objects
+    The Foo function is used to create Foo objects
     which are then passed
-    to the SetView3D function to set the view when the visualization window is
-    in 3D. Note that
-    
-    View3DAttributes can be used in arithmetic expressions so you can add views
-    together, multiply
-    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
-    (1. - t) + view1 * t).
+    to the Bar function to set the view when the foo window is
+    in 3D.
     """
     doc = Document(page_content=text)
 
@@ -178,15 +168,10 @@ def test_text_splitter_from_huggingface_start_index() -> None:
 
 def test_token_text_splitter_start_index() -> None:
     text = """
-    The View3DAttributes function is used to create View3DAttributes objects
+    The Foo function is used to create Foo objects
     which are then passed
-    to the SetView3D function to set the view when the visualization window is
-    in 3D. Note that
-    
-    View3DAttributes can be used in arithmetic expressions so you can add views
-    together, multiply
-    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
-    (1. - t) + view1 * t).
+    to the Bar function to set the view when the foo window is
+    in 3D.
     """
     chunker = TokenTextSplitter(
         add_start_index=True,
