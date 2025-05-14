@@ -35,8 +35,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        chunk_start_function: Callable[[str], int] = lambda s, x :
-                                  0 if s is None else len(s) - x,
+        chunk_start_function: Callable[[str], int] = lambda s, x: 0
+        if s is None
+        else len(s) - x,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
@@ -175,9 +176,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     return 0
 
                 encoded_previous_chunk = tokenizer.encode(previous_chunk)
-                earliest_start = len(tokenizer.decode(
-                    encoded_previous_chunk[:
-                        max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+                earliest_start = len(
+                    tokenizer.decode(
+                        encoded_previous_chunk[
+                            : max(0, len(encoded_previous_chunk) - chunk_overlap)
+                        ]
+                    )
+                )
                 return earliest_start
 
         except ImportError:
@@ -233,9 +238,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 allowed_special=allowed_special,
                 disallowed_special=disallowed_special,
             )
-            earliest_start = len(enc.decode(
-                encoded_previous_chunk[:
-                    max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+            earliest_start = len(
+                enc.decode(
+                    encoded_previous_chunk[
+                        : max(0, len(encoded_previous_chunk) - chunk_overlap)
+                    ]
+                )
+            )
             return earliest_start
 
         if issubclass(cls, TokenTextSplitter):
@@ -303,9 +312,13 @@ class TokenTextSplitter(TextSplitter):
                     allowed_special=self._allowed_special,
                     disallowed_special=self._disallowed_special,
                 )
-                earliest_start = len(self._tokenizer.decode(
-                    encoded_previous_chunk[:
-                        max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+                earliest_start = len(
+                    self._tokenizer.decode(
+                        encoded_previous_chunk[
+                            : max(0, len(encoded_previous_chunk) - chunk_overlap)
+                        ]
+                    )
+                )
 
                 return earliest_start
 
@@ -342,6 +355,7 @@ class TokenTextSplitter(TextSplitter):
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
+
 
 class Language(str, Enum):
     """Enum of the programming languages."""
