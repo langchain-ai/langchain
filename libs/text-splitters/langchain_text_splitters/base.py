@@ -278,6 +278,27 @@ class TokenTextSplitter(TextSplitter):
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
 
+        # We only want to replace the chunk_start_function if the user hasn't
+        # added their own.
+        if not "chunk_start_function" in kwargs:
+
+            def _chunk_start_function(previous_chunk, chunk_overlap):
+                if previous_chunk is None:
+                    return 0
+
+                encoded_previous_chunk = self._tokenizer.encode(
+                    previous_chunk,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                )
+                earliest_start = len(self._tokenizer.decode(
+                    encoded_previous_chunk[:
+                        max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+
+                return earliest_start
+
+            self._chunk_start_function = _chunk_start_function
+
     def split_text(self, text: str) -> List[str]:
         """Splits the input text into smaller chunks based on tokenization.
 
@@ -309,7 +330,6 @@ class TokenTextSplitter(TextSplitter):
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
-
 
 class Language(str, Enum):
     """Enum of the programming languages."""
