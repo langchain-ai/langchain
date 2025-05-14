@@ -35,7 +35,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        chunk_start_function: Callable[[str], int] = lambda s, x: 0
+        chunk_start_function: Callable[[Union[str, None], int], int] = lambda s, x: 0
         if s is None
         else len(s) - x,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
@@ -171,7 +171,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.tokenize(text))
 
-            def _chunk_start_function(previous_chunk, chunk_overlap):
+            def _chunk_start_function(
+                previous_chunk: Union[str, None],
+                chunk_overlap: int,
+            ) -> int:
                 if previous_chunk is None:
                     return 0
 
@@ -229,7 +232,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
             )
 
-        def _chunk_start_function(previous_chunk, chunk_overlap):
+        def _chunk_start_function(
+            previous_chunk: Union[str, None],
+            chunk_overlap: int,
+        ) -> int:
             if previous_chunk is None:
                 return 0
 
@@ -303,7 +309,10 @@ class TokenTextSplitter(TextSplitter):
         # added their own.
         if "chunk_start_function" not in kwargs:
 
-            def _chunk_start_function(previous_chunk, chunk_overlap):
+            def _chunk_start_function(
+                previous_chunk: Union[str, None],
+                chunk_overlap: int,
+            ) -> int:
                 if previous_chunk is None:
                     return 0
 
