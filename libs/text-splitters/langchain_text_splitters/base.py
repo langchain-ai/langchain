@@ -35,6 +35,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
+        chunk_start_function: Callable[[str], int] = lambda s, x : 0 if s is None else len(s) - x,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
@@ -45,6 +46,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
+            chunk_start_function: Given a previous chunk and a chunk overlap,
+                                  this function returns the earliest start index
+                                  of the current chunk in relation to the previous.
             keep_separator: Whether to keep the separator and where to place it
                             in each corresponding chunk (True='start')
             add_start_index: If `True`, includes chunk's start index in metadata
@@ -59,6 +63,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
+        self._chunk_start_function = chunk_start_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
@@ -73,13 +78,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
+
         for i, text in enumerate(texts):
             index = 0
+            previous_chunk = None
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    index = text.find(chunk, max(0, index))
+                    offset = index + self._chunk_start_function(previous_chunk, self._chunk_overlap)
+                    index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
+                    previous_chunk = chunk
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
@@ -157,12 +166,22 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.tokenize(text))
 
+            def _chunk_start_function(previous_chunk, chunk_overlap):
+                if previous_chunk is None:
+                    return 0
+
+                encoded_previous_chunk = tokenizer.encode(previous_chunk)
+                earliest_start = len(tokenizer.decode(
+                    encoded_previous_chunk[:
+                        max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+                return earliest_start
+
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+        return cls(length_function=_huggingface_tokenizer_length, chunk_start_function=_chunk_start_function, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -197,6 +216,20 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
             )
 
+        def _chunk_start_function(previous_chunk, chunk_overlap):
+            if previous_chunk is None:
+                return 0
+
+            encoded_previous_chunk = enc.encode(
+                previous_chunk,
+                allowed_special=allowed_special,
+                disallowed_special=disallowed_special,
+            )
+            earliest_start = len(enc.decode(
+                encoded_previous_chunk[:
+                    max(0, len(encoded_previous_chunk) - chunk_overlap)]))
+            return earliest_start
+
         if issubclass(cls, TokenTextSplitter):
             extra_kwargs = {
                 "encoding_name": encoding_name,
@@ -206,7 +239,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             }
             kwargs = {**kwargs, **extra_kwargs}
 
-        return cls(length_function=_tiktoken_encoder, **kwargs)
+        return cls(length_function=_tiktoken_encoder, chunk_start_function=_chunk_start_function, **kwargs)
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
