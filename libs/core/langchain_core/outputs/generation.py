@@ -38,7 +38,7 @@ class Generation(Serializable):
 
     # workaround for ChatGeneration so that we can use a computed field to populate
     # the text field from the message content (parent class needs to have a property)
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def text(self) -> str:
         """The text contents of the output."""

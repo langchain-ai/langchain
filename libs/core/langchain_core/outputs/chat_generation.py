@@ -31,7 +31,7 @@ class ChatGeneration(Generation):
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def text(self) -> str:
         """Set the text attribute to be the contents of the message."""
@@ -57,7 +57,7 @@ class ChatGenerationChunk(ChatGeneration):
     ChatGeneration chunks can be concatenated with other ChatGeneration chunks.
     """
 
-    message: BaseMessageChunk  # type: ignore[assignment]
+    message: BaseMessageChunk
     """The message chunk output by the chat model."""
 
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
