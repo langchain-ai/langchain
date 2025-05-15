@@ -5,10 +5,10 @@ from typing import Any, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
+from langchain_core.memory import BaseMemory
 from langchain_core.vectorstores import VectorStoreRetriever
 from pydantic import Field
 
-from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 
 
