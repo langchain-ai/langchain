@@ -126,7 +126,7 @@ Please see the [Configurable Runnables](#configurable-runnables) section for mor
 LangChain will automatically try to infer the input and output types of a Runnable based on available information.
 
 Currently, this inference does not work well for more complex Runnables that are built using [LCEL](/docs/concepts/lcel) composition, and the inferred input and / or output types may be incorrect. In these cases, we recommend that users override the inferred input and output types using the `with_types` method ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.with_types
-).
+)).
 
 ## RunnableConfig
 
@@ -194,7 +194,7 @@ In Python 3.11 and above, this works out of the box, and you do not need to do a
 In Python 3.9 and 3.10, if you are using **async code**, you need to manually pass the `RunnableConfig` through to the `Runnable` when invoking it. 
 
 This is due to a limitation in [asyncio's tasks](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task)  in Python 3.9 and 3.10 which did
-not accept a `context` argument).
+not accept a `context` argument.
 
 Propagating the `RunnableConfig` manually is done like so:
 

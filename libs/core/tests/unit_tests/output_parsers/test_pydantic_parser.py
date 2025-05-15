@@ -191,14 +191,14 @@ def test_format_instructions_preserves_language() -> None:
 
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
     )
 
     class Foo(BaseModel):
         hello: str = Field(
             description=(
                 "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
             )
         )
 

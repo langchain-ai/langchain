@@ -3,9 +3,10 @@
 from typing import Any, Optional
 
 import pytest
-from langchain_core.agents import AgentAction, BaseMessage
+from langchain_core.agents import AgentAction
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
 
@@ -123,7 +124,7 @@ def test_trajectory_eval_chain(
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm, agent_tools=[foo])  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm, agent_tools=[foo])
     # Test when ref is not provided
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
@@ -151,7 +152,7 @@ def test_trajectory_eval_chain_no_tools(
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm)  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm)
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
@@ -175,7 +176,7 @@ def test_old_api_works(intermediate_steps: list[tuple[AgentAction, str]]) -> Non
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm)  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm)
     res = chain(
         {
             "question": "What is your favorite food?",

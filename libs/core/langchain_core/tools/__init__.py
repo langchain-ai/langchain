@@ -19,8 +19,9 @@ tool for the job.
 
 from __future__ import annotations
 
-from importlib import import_module
 from typing import TYPE_CHECKING
+
+from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.tools.base import (
@@ -51,27 +52,27 @@ if TYPE_CHECKING:
     from langchain_core.tools.simple import Tool
     from langchain_core.tools.structured import StructuredTool
 
-__all__ = [
+__all__ = (
+    "FILTERED_ARGS",
     "ArgsSchema",
     "BaseTool",
     "BaseToolkit",
-    "FILTERED_ARGS",
-    "SchemaAnnotationError",
-    "ToolException",
     "InjectedToolArg",
     "InjectedToolCallId",
-    "_get_runnable_config_param",
-    "create_schema_from_function",
-    "convert_runnable_to_tool",
-    "tool",
+    "RetrieverInput",
+    "SchemaAnnotationError",
+    "StructuredTool",
+    "Tool",
+    "ToolException",
     "ToolsRenderer",
+    "_get_runnable_config_param",
+    "convert_runnable_to_tool",
+    "create_retriever_tool",
+    "create_schema_from_function",
     "render_text_description",
     "render_text_description_and_args",
-    "RetrieverInput",
-    "create_retriever_tool",
-    "Tool",
-    "StructuredTool",
-]
+    "tool",
+)
 
 _dynamic_imports = {
     "FILTERED_ARGS": "base",
@@ -98,12 +99,7 @@ _dynamic_imports = {
 
 def __getattr__(attr_name: str) -> object:
     module_name = _dynamic_imports.get(attr_name)
-    package = __spec__.parent
-    if module_name == "__module__" or module_name is None:
-        result = import_module(f".{attr_name}", package=package)
-    else:
-        module = import_module(f".{module_name}", package=package)
-        result = getattr(module, attr_name)
+    result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
     return result
 

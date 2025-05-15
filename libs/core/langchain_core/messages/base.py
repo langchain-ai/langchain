@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
@@ -52,20 +52,13 @@ class BaseMessage(Serializable):
     model implementation.
     """
 
-    id: Optional[str] = None
+    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
     model_config = ConfigDict(
         extra="allow",
     )
-
-    @field_validator("id", mode="before")
-    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
-        """Coerce the id field to a string."""
-        if id_value is not None:
-            return str(id_value)
-        return id_value
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -108,8 +101,7 @@ class BaseMessage(Serializable):
             block
             for block in self.content
             if isinstance(block, str)
-            or block.get("type") == "text"
-            and isinstance(block.get("text"), str)
+            or (block.get("type") == "text" and isinstance(block.get("text"), str))
         ]
         return "".join(
             block if isinstance(block, str) else block["text"] for block in blocks
@@ -168,7 +160,7 @@ def merge_content(
                 merged += content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged] + content  # type: ignore[assignment,operator]
+                merged = [merged, *content]
         elif isinstance(content, list):
             # If both are lists
             merged = merge_lists(cast("list", merged), content)  # type: ignore[assignment]

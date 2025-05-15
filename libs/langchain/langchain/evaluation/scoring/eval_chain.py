@@ -6,7 +6,7 @@ import logging
 import re
 from typing import Any, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
@@ -144,7 +144,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
+class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """A chain for scoring on a scale of 1-10 the output of a model.
 
     Attributes:
@@ -396,7 +396,7 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledScoreStringEvalChain(ScoreStringEvalChain):  # type: ignore[override]
+class LabeledScoreStringEvalChain(ScoreStringEvalChain):
     """A chain for scoring the output of a model on a scale of 1-10.
 
     Attributes:

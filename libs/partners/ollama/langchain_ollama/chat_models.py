@@ -26,6 +26,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -435,8 +436,22 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client.
-    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """Additional kwargs to pass to the httpx clients. 
+    These arguments are passed to both synchronous and async clients.
+    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+    to synchronous and asynchronous clients.
+    """
+
+    async_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before
+    passing to the httpx AsyncClient.
+    For a full list of the params, see [this link](https://www.python-httpx.org/api/#asyncclient)
+    """
+
+    sync_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before
+    passing to the httpx Client.
+    For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
     """
 
     _client: Client = PrivateAttr(default=None)  # type: ignore
@@ -502,8 +517,17 @@ class ChatOllama(BaseChatModel):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
-        self._client = Client(host=self.base_url, **client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+
+        sync_client_kwargs = client_kwargs
+        if self.sync_client_kwargs:
+            sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
+
+        async_client_kwargs = client_kwargs
+        if self.async_client_kwargs:
+            async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+
+        self._client = Client(host=self.base_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
         return self
 
     def _convert_messages_to_ollama_messages(
@@ -511,7 +535,7 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: list = []
         for message in messages:
-            role: Literal["user", "assistant", "system", "tool"]
+            role: str
             tool_call_id: Optional[str] = None
             tool_calls: Optional[list[dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
@@ -528,6 +552,8 @@ class ChatOllama(BaseChatModel):
                 )
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ChatMessage):
+                role = message.role
             elif isinstance(message, ToolMessage):
                 role = "tool"
                 tool_call_id = message.tool_call_id

@@ -614,6 +614,50 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
         assert res.name == "Erick"
 
 
+def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
+    # Test that we ignore function calls if tool_calls are present
+    llm = ChatOpenAI(model="gpt-4.1-mini")
+    tool_call_message = AIMessage(
+        content="",
+        additional_kwargs={
+            "function_call": {
+                "name": "get_weather",
+                "arguments": '{"location": "Boston"}',
+            }
+        },
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "args": {"location": "Boston"},
+                "id": "abc123",
+                "type": "tool_call",
+            }
+        ],
+    )
+    messages = [
+        HumanMessage("What's the weather in Boston?"),
+        tool_call_message,
+        ToolMessage(content="It's sunny.", name="get_weather", tool_call_id="abc123"),
+    ]
+    with patch.object(llm, "client", mock_client):
+        _ = llm.invoke(messages)
+        _, call_kwargs = mock_client.create.call_args
+        call_messages = call_kwargs["messages"]
+        tool_call_message_payload = call_messages[1]
+        assert "tool_calls" in tool_call_message_payload
+        assert "function_call" not in tool_call_message_payload
+
+    # Test we don't ignore function calls if tool_calls are not present
+    cast(AIMessage, messages[1]).tool_calls = []
+    with patch.object(llm, "client", mock_client):
+        _ = llm.invoke(messages)
+        _, call_kwargs = mock_client.create.call_args
+        call_messages = call_kwargs["messages"]
+        tool_call_message_payload = call_messages[1]
+        assert "function_call" in tool_call_message_payload
+        assert "tool_calls" not in tool_call_message_payload
+
+
 def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
@@ -676,7 +720,7 @@ def test_format_message_content() -> None:
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
-            "metadata": {"filename": "my_file"},
+            "filename": "my_file",
         }
     ]
     expected = [
@@ -956,13 +1000,17 @@ def test__get_request_payload() -> None:
     messages: list = [
         SystemMessage("hello"),
         SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
+        SystemMessage(content=[{"type": "text", "text": "hello!"}]),
         {"role": "human", "content": "how are you"},
+        {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
     ]
     expected = {
         "messages": [
             {"role": "system", "content": "hello"},
             {"role": "developer", "content": "bye"},
+            {"role": "system", "content": [{"type": "text", "text": "hello!"}]},
             {"role": "user", "content": "how are you"},
+            {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
         "model": "gpt-4o-2024-08-06",
         "stream": False,
@@ -977,7 +1025,9 @@ def test__get_request_payload() -> None:
         "messages": [
             {"role": "developer", "content": "hello"},
             {"role": "developer", "content": "bye"},
+            {"role": "developer", "content": [{"type": "text", "text": "hello!"}]},
             {"role": "user", "content": "how are you"},
+            {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
         "model": "o3-mini",
         "stream": False,
@@ -1658,6 +1708,9 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     """Test conversion of a conversation with multiple message types."""
     messages = [
         SystemMessage(content="You are a helpful assistant."),
+        SystemMessage(
+            content=[{"type": "text", "text": "You are a very helpful assistant!"}]
+        ),
         HumanMessage(content="What's the weather in San Francisco?"),
         HumanMessage(
             content=[{"type": "text", "text": "What's the weather in San Francisco?"}]
@@ -1698,31 +1751,36 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert result[0]["role"] == "system"
     assert result[0]["content"] == "You are a helpful assistant."
 
+    assert result[1]["role"] == "system"
+    assert result[1]["content"] == [
+        {"type": "input_text", "text": "You are a very helpful assistant!"}
+    ]
+
     # Check human message
-    assert result[1]["role"] == "user"
-    assert result[1]["content"] == "What's the weather in San Francisco?"
     assert result[2]["role"] == "user"
-    assert result[2]["content"] == [
+    assert result[2]["content"] == "What's the weather in San Francisco?"
+    assert result[3]["role"] == "user"
+    assert result[3]["content"] == [
         {"type": "input_text", "text": "What's the weather in San Francisco?"}
     ]
 
     # Check function call
-    assert result[3]["type"] == "function_call"
-    assert result[3]["name"] == "get_weather"
-    assert result[3]["arguments"] == '{"location": "San Francisco"}'
-    assert result[3]["call_id"] == "call_123"
-    assert result[3]["id"] == "func_456"
+    assert result[4]["type"] == "function_call"
+    assert result[4]["name"] == "get_weather"
+    assert result[4]["arguments"] == '{"location": "San Francisco"}'
+    assert result[4]["call_id"] == "call_123"
+    assert result[4]["id"] == "func_456"
 
     # Check function call output
-    assert result[4]["type"] == "function_call_output"
-    assert result[4]["output"] == '{"temperature": 72, "conditions": "sunny"}'
-    assert result[4]["call_id"] == "call_123"
-
-    assert result[5]["role"] == "assistant"
-    assert result[5]["content"] == "The weather in San Francisco is 72°F and sunny."
+    assert result[5]["type"] == "function_call_output"
+    assert result[5]["output"] == '{"temperature": 72, "conditions": "sunny"}'
+    assert result[5]["call_id"] == "call_123"
 
     assert result[6]["role"] == "assistant"
-    assert result[6]["content"] == [
+    assert result[6]["content"] == "The weather in San Francisco is 72°F and sunny."
+
+    assert result[7]["role"] == "assistant"
+    assert result[7]["content"] == [
         {
             "type": "output_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
@@ -1732,3 +1790,28 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
 
     # assert no mutation has occurred
     assert messages_copy == messages
+
+    # Test dict messages
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    message_dicts: list = [
+        {"role": "developer", "content": "This is a developer message."},
+        {
+            "role": "developer",
+            "content": [{"type": "text", "text": "This is a developer message!"}],
+        },
+    ]
+    payload = llm._get_request_payload(message_dicts)
+    result = payload["input"]
+    assert len(result) == 2
+    assert result[0]["role"] == "developer"
+    assert result[0]["content"] == "This is a developer message."
+    assert result[1]["role"] == "developer"
+    assert result[1]["content"] == [
+        {"type": "input_text", "text": "This is a developer message!"}
+    ]
+
+
+def test_service_tier() -> None:
+    llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["service_tier"] == "flex"

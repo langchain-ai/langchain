@@ -12,7 +12,7 @@ from langchain.agents.format_scratchpad import (
 from langchain.memory.chat_memory import BaseChatMemory
 
 
-class AgentTokenBufferMemory(BaseChatMemory):  # type: ignore[override]
+class AgentTokenBufferMemory(BaseChatMemory):
     """Memory used to save agent output AND intermediate steps.
 
     Parameters:

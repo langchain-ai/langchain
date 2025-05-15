@@ -3,7 +3,7 @@
 import contextlib
 import re
 import xml
-import xml.etree.ElementTree as ET  # noqa: N817
+import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder

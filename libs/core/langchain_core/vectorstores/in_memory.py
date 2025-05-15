@@ -155,7 +155,7 @@ class InMemoryVectorStore(VectorStore):
 
             [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
 
-    """  # noqa: E501
+    """
 
     def __init__(self, embedding: Embeddings) -> None:
         """Initialize with the given embedding function.

@@ -8,7 +8,6 @@ from abc import abstractmethod
 from collections.abc import (
     AsyncIterator,
     Iterator,
-    Mapping,  # noqa: F401 Needed by pydantic
     Sequence,
 )
 from functools import wraps
@@ -132,7 +131,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))
+            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
         return runnable, cast("RunnableConfig", config)
 
     @abstractmethod
@@ -464,9 +463,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         return (self.default, config)
 
 
-RunnableConfigurableFields.model_rebuild()
-
-
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
     """String enum."""
@@ -566,7 +562,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     self.which.name or self.which.id,
                     (
                         (v, v)
-                        for v in list(self.alternatives.keys()) + [self.default_key]
+                        for v in [*list(self.alternatives.keys()), self.default_key]
                     ),
                 )
                 _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)

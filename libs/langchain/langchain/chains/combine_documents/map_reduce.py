@@ -8,7 +8,7 @@ from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -120,7 +120,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 **{
                     self.output_key: (str, None),
                     "intermediate_steps": (list[str], None),
-                },  # type: ignore[call-overload]
+                },
             )
 
         return super().get_output_schema(config)

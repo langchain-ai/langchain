@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
@@ -165,7 +165,7 @@ def resolve_criteria(
     return criteria_
 
 
-class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -509,7 +509,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):  # type: ignor
         return self._prepare_output(result)
 
 
-class LabeledCriteriaEvalChain(CriteriaEvalChain):  # type: ignore[override]
+class LabeledCriteriaEvalChain(CriteriaEvalChain):
     """Criteria evaluation chain that requires references."""
 
     @classmethod

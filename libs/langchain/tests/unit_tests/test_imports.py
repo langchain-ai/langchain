@@ -141,7 +141,7 @@ def _dict_from_ast(node: ast.Dict) -> dict[str, str]:
     """
     result: dict[str, str] = {}
     for key, value in zip(node.keys, node.values):
-        py_key = _literal_eval_str(key)  # type: ignore
+        py_key = _literal_eval_str(key)  # type: ignore[arg-type]
         py_value = _literal_eval_str(value)
         result[py_key] = py_value
     return result

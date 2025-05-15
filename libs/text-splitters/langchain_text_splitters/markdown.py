@@ -404,18 +404,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line: str) -> Union[re.Match, None]:
+    def _match_header(self, line: str) -> Union[re.Match[str], None]:
         match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
         return None
 
-    def _match_code(self, line: str) -> Union[re.Match, None]:
+    def _match_code(self, line: str) -> Union[re.Match[str], None]:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> Union[re.Match, None]:
+    def _match_horz(self, line: str) -> Union[re.Match[str], None]:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]

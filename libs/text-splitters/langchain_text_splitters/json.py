@@ -49,12 +49,12 @@ class RecursiveJsonSplitter:
         )
 
     @staticmethod
-    def _json_size(data: Dict) -> int:
+    def _json_size(data: dict[str, Any]) -> int:
         """Calculate the size of the serialized JSON object."""
         return len(json.dumps(data))
 
     @staticmethod
-    def _set_nested_dict(d: Dict, path: List[str], value: Any) -> None:
+    def _set_nested_dict(d: dict[str, Any], path: list[str], value: Any) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
@@ -76,10 +76,10 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: Dict[str, Any],
-        current_path: Optional[List[str]] = None,
-        chunks: Optional[List[Dict]] = None,
-    ) -> List[Dict]:
+        data: dict[str, Any],
+        current_path: Optional[list[str]] = None,
+        chunks: Optional[list[dict[str, Any]]] = None,
+    ) -> list[dict[str, Any]]:
         """Split json into maximum size dictionaries while preserving structure."""
         current_path = current_path or []
         chunks = chunks if chunks is not None else [{}]
@@ -107,9 +107,9 @@ class RecursiveJsonSplitter:
 
     def split_json(
         self,
-        json_data: Dict[str, Any],
+        json_data: dict[str, Any],
         convert_lists: bool = False,
-    ) -> List[Dict]:
+    ) -> list[dict[str, Any]]:
         """Splits JSON into a list of JSON chunks."""
         if convert_lists:
             chunks = self._json_split(self._list_to_dict_preprocessing(json_data))
@@ -135,11 +135,11 @@ class RecursiveJsonSplitter:
 
     def create_documents(
         self,
-        texts: List[Dict],
+        texts: list[dict[str, Any]],
         convert_lists: bool = False,
         ensure_ascii: bool = True,
-        metadatas: Optional[List[dict]] = None,
-    ) -> List[Document]:
+        metadatas: Optional[list[dict[Any, Any]]] = None,
+    ) -> list[Document]:
         """Create documents from a list of json objects (Dict)."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []

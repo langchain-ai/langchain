@@ -136,6 +136,13 @@ ${llmVarName} = AzureChatOpenAI(
       packageName: "langchain[openai]",
     },
     {
+      value: "google_genai",
+      label: "Google Gemini",
+      model: "gemini-2.0-flash",
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain[google-genai]",
+    },
+    {
       value: "google_vertexai",
       label: "Google Vertex",
       model: "gemini-2.0-flash-001",

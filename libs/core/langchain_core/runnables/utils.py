@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import Mapping, Sequence
 from contextvars import Context
 from functools import lru_cache
 from inspect import signature
@@ -33,8 +34,6 @@ if TYPE_CHECKING:
         Awaitable,
         Coroutine,
         Iterable,
-        Mapping,
-        Sequence,
     )
 
     from langchain_core.runnables.schema import StreamEvent
@@ -700,7 +699,7 @@ def get_unique_config_specs(
         else:
             msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {id}: {[first, *others]}"
             )
             raise ValueError(msg)
     return unique
@@ -773,9 +772,8 @@ def is_async_generator(
         TypeGuard[Callable[..., AsyncIterator]: True if the function is
             an async generator, False otherwise.
     """
-    return (
-        inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return inspect.isasyncgenfunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -792,8 +790,7 @@ def is_async_callable(
         TypeGuard[Callable[..., Awaitable]: True if the function is async,
             False otherwise.
     """
-    return (
-        asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return asyncio.iscoroutinefunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

@@ -17,11 +17,11 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
-    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import model_validator
 from typing_extensions import Self
@@ -286,7 +286,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
-        return ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+        return ChatPromptTemplate(messages=messages)
 
     @classmethod
     def from_llm_and_tools(
