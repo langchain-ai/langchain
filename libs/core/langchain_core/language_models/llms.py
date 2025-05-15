@@ -103,7 +103,9 @@ def create_base_retry_decorator(
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
-                        loop.create_task(coro)
+                        # TODO: Fix RUF006 - this task should have a reference
+                        #  and be awaited somewhere
+                        loop.create_task(coro)  # noqa: RUF006
                     else:
                         asyncio.run(coro)
                 except Exception as e:
@@ -336,7 +338,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             f"Invalid input type {type(input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     def _get_ls_params(
         self,
@@ -522,7 +524,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        if type(self)._stream == BaseLLM._stream:
+        if type(self)._stream == BaseLLM._stream:  # noqa: SLF001
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
@@ -590,8 +592,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         if (
-            type(self)._astream is BaseLLM._astream
-            and type(self)._stream is BaseLLM._stream
+            type(self)._astream is BaseLLM._astream  # noqa: SLF001
+            and type(self)._stream is BaseLLM._stream  # noqa: SLF001
         ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return

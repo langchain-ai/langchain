@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from inspect import signature
 from typing import Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import (
     BaseDocumentCompressor,
     BaseDocumentTransformer,

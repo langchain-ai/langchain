@@ -131,7 +131,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))
+            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
         return runnable, cast("RunnableConfig", config)
 
     @abstractmethod
@@ -562,7 +562,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     self.which.name or self.which.id,
                     (
                         (v, v)
-                        for v in list(self.alternatives.keys()) + [self.default_key]
+                        for v in [*list(self.alternatives.keys()), self.default_key]
                     ),
                 )
                 _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)

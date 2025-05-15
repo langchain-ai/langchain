@@ -273,7 +273,7 @@ def create_schema_from_function(
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
-            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+            filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
 
@@ -848,7 +848,7 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
@@ -994,10 +994,8 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    return (
-        isinstance(obj, str)
-        or isinstance(obj, list)
-        and all(_is_message_content_block(e) for e in obj)
+    return isinstance(obj, str) or (
+        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
     )
 
 

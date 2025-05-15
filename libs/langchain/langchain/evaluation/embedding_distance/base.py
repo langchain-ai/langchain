@@ -6,10 +6,10 @@ from enum import Enum
 from importlib import util
 from typing import Any, Optional
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
-    Callbacks,
 )
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init

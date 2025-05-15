@@ -9,10 +9,10 @@ if TYPE_CHECKING:
     from langchain_core.vectorstores.in_memory import InMemoryVectorStore
 
 __all__ = (
-    "VectorStore",
     "VST",
-    "VectorStoreRetriever",
     "InMemoryVectorStore",
+    "VectorStore",
+    "VectorStoreRetriever",
 )
 
 _dynamic_imports = {

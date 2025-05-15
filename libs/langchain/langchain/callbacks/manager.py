@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
@@ -18,7 +19,6 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     CallbackManagerForToolRun,
-    Callbacks,
     ParentRunManager,
     RunManager,
     ahandle_event,

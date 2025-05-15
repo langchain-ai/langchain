@@ -50,8 +50,8 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    if rt._CLIENT is not None:
-        rt._CLIENT.flush()
+    if rt._CLIENT is not None:  # noqa: SLF001
+        rt._CLIENT.flush()  # noqa: SLF001
 
 
 def get_client() -> Client:
@@ -123,8 +123,8 @@ class LangChainTracer(BaseTracer):
                 run.tags = self.tags.copy()
 
         super()._start_trace(run)
-        if run._client is None:
-            run._client = self.client  # type: ignore[misc]
+        if run.ls_client is None:
+            run.ls_client = self.client
 
     def on_chat_model_start(
         self,

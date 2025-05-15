@@ -13,11 +13,11 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
-    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function

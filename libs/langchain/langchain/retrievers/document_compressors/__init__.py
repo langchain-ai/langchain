@@ -34,9 +34,10 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "DocumentCompressorPipeline",
     "EmbeddingsFilter",
+    "FlashrankRerank",
     "LLMListwiseRerank",
     "LLMChainExtractor",
     "LLMChainFilter",
     "CohereRerank",
     "CrossEncoderReranker",
-] + list(_module_lookup.keys())
+]

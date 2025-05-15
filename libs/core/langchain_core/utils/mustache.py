@@ -379,7 +379,7 @@ def _get_key(
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr]
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr] # noqa: SLF001
                     return resolved_scope
             except AttributeError:
                 if resolved_scope in (0, False):
@@ -571,7 +571,7 @@ def render(
                         padding=padding,
                         def_ldel=def_ldel,
                         def_rdel=def_rdel,
-                        scopes=data and [data] + scopes or scopes,
+                        scopes=(data and [data, *scopes]) or scopes,
                         warn=warn,
                         keep=keep,
                     ),
@@ -601,7 +601,7 @@ def render(
                 # For every item in the scope
                 for thing in scope:
                     # Append it as the most recent scope and render
-                    new_scope = [thing] + scopes
+                    new_scope = [thing, *scopes]
                     rend = render(
                         template=tags,
                         scopes=new_scope,
