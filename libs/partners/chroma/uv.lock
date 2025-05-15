@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -744,7 +743,7 @@ wheels = [
 
 [[package]]
 name = "langchain-chroma"
-version = "0.2.3"
+version = "0.2.4"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
@@ -822,7 +821,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.59"
+version = "0.3.60"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
