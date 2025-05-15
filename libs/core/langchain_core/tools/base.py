@@ -845,7 +845,7 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
@@ -1077,16 +1077,18 @@ def get_all_basemodel_annotations(
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
+        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
+        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+
         annotations: dict[str, type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if (
-                fields := getattr(cls, "model_fields", {})  # pydantic v2+
-                or getattr(cls, "__fields__", {})  # pydantic v1
-            ) and name not in fields:
+            if fields and name not in fields and name not in alias_map:
                 continue
-            annotations[name] = param.annotation
+            field_name = alias_map.get(name, name)
+            annotations[field_name] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:

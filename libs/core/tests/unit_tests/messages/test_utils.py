@@ -1211,6 +1211,13 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 },
                 {
                     "type": "file",
+                    "file": {
+                        "filename": "draconomicon.pdf",
+                        "file_data": "data:application/pdf;base64,<base64 string>",
+                    },
+                },
+                {
+                    "type": "file",
                     "source_type": "id",
                     "id": "file-abc123",
                 },
@@ -1220,13 +1227,20 @@ def test_convert_to_openai_messages_multimodal() -> None:
                     "data": "<base64 string>",
                     "mime_type": "audio/wav",
                 },
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": "<base64 string>",
+                        "format": "wav",
+                    },
+                },
             ]
         )
     ]
     result = convert_to_openai_messages(messages, text_format="block")
     assert len(result) == 1
     message = result[0]
-    assert len(message["content"]) == 6
+    assert len(message["content"]) == 8
 
     # Test adding filename
     messages = [

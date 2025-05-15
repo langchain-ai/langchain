@@ -8,7 +8,7 @@ from io import BufferedReader, BytesIO
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_core.load.serializable import Serializable
 
@@ -33,7 +33,7 @@ class BaseMedia(Serializable):
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
     # it has been adopted by enough vectorstore implementations.
-    id: Optional[str] = None
+    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 
     Ideally this should be unique across the document collection and formatted
@@ -44,17 +44,6 @@ class BaseMedia(Serializable):
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
-
-    @field_validator("id", mode="before")
-    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
-        """Coerce the id field to a string.
-
-        Args:
-            id_value: The id value to coerce.
-        """
-        if id_value is not None:
-            return str(id_value)
-        return id_value
 
 
 class Blob(BaseMedia):
