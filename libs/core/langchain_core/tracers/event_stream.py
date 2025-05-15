@@ -955,7 +955,7 @@ async def _astream_events_implementation_v2(
     if callbacks is None:
         config["callbacks"] = [event_streamer]
     elif isinstance(callbacks, list):
-        config["callbacks"] = callbacks + [event_streamer]
+        config["callbacks"] = [*callbacks, event_streamer]
     elif isinstance(callbacks, BaseCallbackManager):
         callbacks = callbacks.copy()
         callbacks.add_handler(event_streamer, inherit=True)

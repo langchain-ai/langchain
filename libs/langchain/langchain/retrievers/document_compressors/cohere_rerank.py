@@ -5,12 +5,10 @@ from copy import deepcopy
 from typing import Any, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict, model_validator
-
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 
 @deprecated(
