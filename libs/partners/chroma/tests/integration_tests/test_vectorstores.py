@@ -12,7 +12,7 @@ import chromadb
 import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
-from chromadb.api.segment import SegmentAPI
+from chromadb.api.rust import RustBindingsAPI
 from chromadb.api.types import Embeddable
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
@@ -311,9 +311,8 @@ def test_chroma_with_persistence() -> None:
             # to be able to delete the files after testing
             client = docsearch._client
             assert isinstance(client, chromadb.ClientCreator)
-            assert isinstance(client._server, SegmentAPI)
-            client._server._sysdb.stop()
-            client._server._manager.stop()
+            assert isinstance(client._server, RustBindingsAPI)
+            client._server.stop()
 
 
 def test_chroma_with_persistence_with_client_settings() -> None:
@@ -358,9 +357,8 @@ def test_chroma_with_persistence_with_client_settings() -> None:
             # to be able to delete the files after testing
             client = docsearch._client
             assert isinstance(client, chromadb.ClientCreator)
-            assert isinstance(client._server, SegmentAPI)
-            client._server._sysdb.stop()
-            client._server._manager.stop()
+            assert isinstance(client._server, RustBindingsAPI)
+            client._server.stop()
 
 
 def test_chroma_mmr() -> None:
