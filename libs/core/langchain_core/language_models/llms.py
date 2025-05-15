@@ -103,7 +103,9 @@ def create_base_retry_decorator(
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
-                        loop.create_task(coro)
+                        # TODO: Fix RUF006 - this task should have a reference
+                        #  and be awaited somewhere
+                        loop.create_task(coro)  # noqa: RUF006
                     else:
                         asyncio.run(coro)
                 except Exception as e:
@@ -336,7 +338,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             f"Invalid input type {type(input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     def _get_ls_params(
         self,
