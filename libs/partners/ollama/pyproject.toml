@@ -8,10 +8,10 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "ollama>=0.4.8,<1.0.0",
-    "langchain-core<1.0.0,>=0.3.52",
+    "langchain-core<1.0.0,>=0.3.60",
 ]
 name = "langchain-ollama"
-version = "0.3.2"
+version = "0.3.3"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 

@@ -462,7 +462,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.58"
+version = "0.3.59"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -477,10 +477,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33,<2.0" },
-    { name = "langsmith", specifier = ">=0.1.125,<0.4" },
+    { name = "langsmith", specifier = ">=0.1.126,<0.4" },
     { name = "packaging", specifier = ">=23.2,<25" },
-    { name = "pydantic", marker = "python_full_version < '3.12.4'", specifier = ">=2.5.2,<3.0.0" },
-    { name = "pydantic", marker = "python_full_version >= '3.12.4'", specifier = ">=2.7.4,<3.0.0" },
+    { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10.0.0" },
     { name = "typing-extensions", specifier = ">=4.7" },
@@ -521,7 +520,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.16"
+version = "0.3.17"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },

@@ -423,13 +423,13 @@ def add_ai_message_chunks(
 
     id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non‐run-* id
+    # first pass: pick the first non-run-* id
     for id_ in candidates:
         if id_ and not id_.startswith(_LC_ID_PREFIX):
             id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non‐null
+        # second pass: no provider-assigned id found, just take the first non-null
         for id_ in candidates:
             if id_:
                 id = id_
