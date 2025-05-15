@@ -16,10 +16,10 @@ from typing import (
 )
 
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
-    Callbacks,
 )
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel

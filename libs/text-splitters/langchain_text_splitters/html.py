@@ -636,10 +636,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if self._stopword_removal:
             try:
                 import nltk
-                from nltk.corpus import stopwords  # type: ignore[import-untyped]
 
                 nltk.download("stopwords")
-                self._stopwords = set(stopwords.words(self._stopword_lang))
+                self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
             except ImportError:
                 raise ImportError(
                     "Could not import nltk. Please install it with 'pip install nltk'."
