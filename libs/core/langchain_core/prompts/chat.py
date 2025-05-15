@@ -445,9 +445,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 raise ValueError(msg)
             prompt = []
             for tmpl in template:
-                if (
-                    isinstance(tmpl, str)
-                    or isinstance(tmpl, dict)
+                if isinstance(tmpl, str) or (
+                    isinstance(tmpl, dict)
                     and "text" in tmpl
                     and set(tmpl.keys()) <= {"type", "text"}
                 ):
@@ -524,7 +523,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     raise ValueError(msg)
             return cls(prompt=prompt, **kwargs)
         msg = f"Invalid template: {template}"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @classmethod
     def from_template_file(
@@ -1000,7 +999,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         if isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other]).partial(
+            return ChatPromptTemplate(messages=[*self.messages, other]).partial(
                 **partials
             )
         if isinstance(other, (list, tuple)):
@@ -1010,7 +1009,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
         if isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt]).partial(
+            return ChatPromptTemplate(messages=[*self.messages, prompt]).partial(
                 **partials
             )
         msg = f"Unsupported operand type for +: {type(other)}"
