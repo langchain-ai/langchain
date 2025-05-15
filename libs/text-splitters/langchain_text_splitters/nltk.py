@@ -24,14 +24,12 @@ class NLTKTextSplitter(TextSplitter):
         if self._use_span_tokenize and self._separator != "":
             raise ValueError("When use_span_tokenize is True, separator should be ''")
         try:
+            import nltk
+
             if self._use_span_tokenize:
-                from nltk.tokenize import _get_punkt_tokenizer
-
-                self._tokenizer = _get_punkt_tokenizer(self._language)
+                self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)
             else:
-                from nltk.tokenize import sent_tokenize
-
-                self._tokenizer = sent_tokenize
+                self._tokenizer = nltk.tokenize.sent_tokenize
         except ImportError:
             raise ImportError(
                 "NLTK is not installed, please install it with `pip install nltk`."

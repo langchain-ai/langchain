@@ -194,6 +194,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
+    # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
     @classmethod
     def _backwards_compat_tool_calls(cls, values: dict) -> Any:
