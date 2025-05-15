@@ -2,6 +2,8 @@
 
 This project integrates the Desearch API with LangChain tools to enable various search and data-fetching functionalities, such as web searches, Twitter data retrieval, and AI-powered searches.
 
+Website: https://desearch.ai
+
 ## Features
 
 - **Grouped Tools**:
@@ -29,6 +31,9 @@ The `search_tools` group contains tools for general-purpose searches:
 
 
 ### Examples
+
+Note: Ensure you have a valid DESEARCH_API_KEY in your .env file before running real tests.
+Get API key from https://console.desearch.ai/api-keys
 
 #### Using Tools
 ```python
