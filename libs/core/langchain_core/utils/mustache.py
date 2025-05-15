@@ -571,7 +571,7 @@ def render(
                         padding=padding,
                         def_ldel=def_ldel,
                         def_rdel=def_rdel,
-                        scopes=data and [data] + scopes or scopes,
+                        scopes=(data and [data, *scopes]) or scopes,
                         warn=warn,
                         keep=keep,
                     ),
@@ -601,7 +601,7 @@ def render(
                 # For every item in the scope
                 for thing in scope:
                     # Append it as the most recent scope and render
-                    new_scope = [thing] + scopes
+                    new_scope = [thing, *scopes]
                     rend = render(
                         template=tags,
                         scopes=new_scope,

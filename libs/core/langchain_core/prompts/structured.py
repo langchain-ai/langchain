@@ -153,10 +153,8 @@ class StructuredPrompt(ChatPromptTemplate):
             NotImplementedError: If the first element of `others`
             is not a language model.
         """
-        if (
-            others
-            and isinstance(others[0], BaseLanguageModel)
-            or hasattr(others[0], "with_structured_output")
+        if (others and isinstance(others[0], BaseLanguageModel)) or hasattr(
+            others[0], "with_structured_output"
         ):
             return RunnableSequence(
                 self,
