@@ -665,3 +665,4 @@ packages:
 - name: langchain-featherless-ai
   repo: featherless-ai/langchain-featherless-ai
   path: .
+  provider_page: featherless_ai
