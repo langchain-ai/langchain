@@ -100,7 +100,6 @@ ignore = [
     "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
-    "A",
     "ANN401",
     "BLE",
     "ERA",

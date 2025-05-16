@@ -192,7 +192,7 @@ def _build_sugiyama_layout(
     # Y
     #
 
-    vertices_ = {id: Vertex(f" {data} ") for id, data in vertices.items()}
+    vertices_ = {id_: Vertex(f" {data} ") for id_, data in vertices.items()}
     edges_ = [Edge(vertices_[s], vertices_[e], data=cond) for s, e, _, cond in edges]
     vertices_list = vertices_.values()
     graph = Graph(vertices_list, edges_)
