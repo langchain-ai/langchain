@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -19,12 +18,12 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
+from pydantic import BaseModel
+
+from langchain_core.utils.pydantic import _IgnoreUnserializable
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from pydantic import BaseModel
 
     from langchain_core.runnables.base import Runnable as RunnableType
 
@@ -233,7 +232,7 @@ def node_data_json(
                 "name": node_data_str(node.id, node.data),
             },
         }
-    elif inspect.isclass(node.data) and is_basemodel_subclass(node.data):
+    elif isinstance(node.data, type) and issubclass(node.data, BaseModel):
         json = (
             {
                 "type": "schema",

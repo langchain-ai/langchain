@@ -23,6 +23,7 @@ from typing import (
     cast,
 )
 
+from pydantic.fields import FieldInfo
 from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
@@ -39,8 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-# Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
+T = TypeVar("T", bound=Union[type, Callable[..., Any], FieldInfo])
 
 
 def _validate_deprecation_params(
@@ -152,10 +152,6 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import (  # type: ignore[attr-defined]
-            FieldInfoV1,
-            FieldInfoV2,
-        )
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -228,7 +224,7 @@ def deprecated(
                 )
                 return cast("T", obj)
 
-        elif isinstance(obj, FieldInfoV1):
+        elif isinstance(obj, FieldInfo):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -240,28 +236,7 @@ def deprecated(
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
-                    FieldInfoV1(
-                        default=obj.default,
-                        default_factory=obj.default_factory,
-                        description=new_doc,
-                        alias=obj.alias,
-                        exclude=obj.exclude,
-                    ),
-                )
-
-        elif isinstance(obj, FieldInfoV2):
-            wrapped = None
-            if not _obj_type:
-                _obj_type = "attribute"
-            if not _name:
-                msg = f"Field {obj} must have a name to be deprecated."
-                raise ValueError(msg)
-            old_doc = obj.description
-
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
-                return cast(
-                    "T",
-                    FieldInfoV2(
+                    FieldInfo(
                         default=obj.default,
                         default_factory=obj.default_factory,
                         description=new_doc,

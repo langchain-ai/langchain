@@ -1,45 +1,33 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic, Optional
+from typing import Generic, Optional, TypeVar
 
-import pydantic
-from pydantic import SkipValidation
+from pydantic import BaseModel, SkipValidation, ValidationError
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V2,
-    PydanticBaseModel,
-    TBaseModel,
-)
+
+BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
 
-class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
+class PydanticOutputParser(JsonOutputParser, Generic[BaseModelT]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
+    pydantic_object: SkipValidation[type[BaseModelT]]
     """The pydantic model to parse."""
 
-    def _parse_obj(self, obj: dict) -> TBaseModel:
-        if IS_PYDANTIC_V2:
-            try:
-                if issubclass(self.pydantic_object, pydantic.BaseModel):
-                    return self.pydantic_object.model_validate(obj)
-                if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
-                    return self.pydantic_object.parse_obj(obj)
-                msg = f"Unsupported model version for PydanticOutputParser: \
-                            {self.pydantic_object.__class__}"
-                raise OutputParserException(msg)
-            except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
-                raise self._parser_exception(e, obj) from e
-        else:  # pydantic v1
-            try:
-                return self.pydantic_object.parse_obj(obj)
-            except pydantic.ValidationError as e:
-                raise self._parser_exception(e, obj) from e
+    def _parse_obj(self, obj: dict) -> BaseModelT:
+        try:
+            if issubclass(self.pydantic_object, BaseModel):
+                return self.pydantic_object.model_validate(obj)
+            msg = f"Unsupported model version for PydanticOutputParser: \
+                        {self.pydantic_object.__class__}"
+            raise OutputParserException(msg)
+        except ValidationError as e:
+            raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
         self, e: Exception, json_object: dict
@@ -51,7 +39,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     def parse_result(
         self, result: list[Generation], *, partial: bool = False
-    ) -> Optional[TBaseModel]:
+    ) -> Optional[BaseModelT]:
         """Parse the result of an LLM call to a pydantic object.
 
         Args:
@@ -72,7 +60,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 return None
             raise
 
-    def parse(self, text: str) -> TBaseModel:
+    def parse(self, text: str) -> BaseModelT:
         """Parse the output of an LLM call to a pydantic object.
 
         Args:
@@ -109,7 +97,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     @property
     @override
-    def OutputType(self) -> type[TBaseModel]:
+    def OutputType(self) -> type[BaseModelT]:
         """Return the pydantic model."""
         return self.pydantic_object
 
@@ -126,7 +114,5 @@ Here is the output schema:
 
 # Re-exporting types for backwards compatibility
 __all__ = [
-    "PydanticBaseModel",
     "PydanticOutputParser",
-    "TBaseModel",
 ]

@@ -746,7 +746,7 @@ def test_tool_outputs() -> None:
     [ExtensionsAnnotated, TypingAnnotated],
     ids=["typing_extensions.Annotated", "typing.Annotated"],
 )
-def test__convert_typed_dict_to_openai_function(
+def test_convert_typed_dict_to_openai_function(
     typed_dict: TypeAlias, annotated: TypeAlias
 ) -> None:
     class SubTool(typed_dict):  # type: ignore[misc]
@@ -985,7 +985,7 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     class Tool(typed_dict):  # type: ignore[misc]
-        arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
+        arg1: typing.MutableSet
 
     # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):

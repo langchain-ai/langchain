@@ -21,9 +21,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -52,7 +50,6 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.tools.base import (
-    ArgsSchema,
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
@@ -65,8 +62,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -79,9 +74,7 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict:
     if isinstance(tool_schema, dict):
         return tool_schema
 
-    if hasattr(tool_schema, "model_json_schema"):
-        return tool_schema.model_json_schema()
-    return tool_schema.schema()
+    return tool_schema.model_json_schema()
 
 
 def test_unnamed_decorator() -> None:
@@ -99,14 +92,6 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
-    """Return the arguments directly."""
-
-    arg1: int
-    arg2: bool
-    arg3: Optional[dict] = None
-
-
-class _MockSchemaV1(BaseModelV1):
     """Return the arguments directly."""
 
     arg1: int
@@ -204,13 +189,6 @@ def test_decorator_with_specified_schema() -> None:
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
-
-    @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
-    def tool_func_v1(*, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        return f"{arg1} {arg2} {arg3}"
-
-    assert isinstance(tool_func_v1, BaseTool)
-    assert tool_func_v1.args_schema == _MockSchemaV1
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -343,50 +321,6 @@ def test_structured_tool_types_parsed() -> None:
         "some_base_model": SomeBaseModel(foo="bar"),
     }
     assert result == expected
-
-
-def test_structured_tool_types_parsed_pydantic_v1() -> None:
-    """Test the non-primitive types are correctly passed to structured tools."""
-
-    class SomeBaseModel(BaseModelV1):
-        foo: str
-
-    class AnotherBaseModel(BaseModelV1):
-        bar: str
-
-    @tool
-    def structured_tool(some_base_model: SomeBaseModel) -> AnotherBaseModel:
-        """Return the arguments directly."""
-        return AnotherBaseModel(bar=some_base_model.foo)
-
-    assert isinstance(structured_tool, StructuredTool)
-
-    expected = AnotherBaseModel(bar="baz")
-    for arg in [
-        SomeBaseModel(foo="baz"),
-        SomeBaseModel(foo="baz").dict(),
-    ]:
-        args = {"some_base_model": arg}
-        result = structured_tool.run(args)
-        assert result == expected
-
-
-def test_structured_tool_types_parsed_pydantic_mixed() -> None:
-    """Test handling of tool with mixed Pydantic version arguments."""
-
-    class SomeBaseModel(BaseModelV1):
-        foo: str
-
-    class AnotherBaseModel(BaseModel):
-        bar: str
-
-    with pytest.raises(NotImplementedError):
-
-        @tool
-        def structured_tool(
-            some_base_model: SomeBaseModel, another_base_model: AnotherBaseModel
-        ) -> None:
-            """Return the arguments directly."""
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -867,7 +801,7 @@ def test_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
+    def handling(e: ValidationError) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -884,9 +818,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[
-        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
-    ],
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -932,7 +864,7 @@ async def test_async_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
+    def handling(e: ValidationError) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -949,9 +881,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[
-        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
-    ],
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -1812,38 +1742,18 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
     }
 
 
-def generate_models() -> list[Any]:
-    """Generate a list of base models depending on the pydantic version."""
-
-    class FooProper(BaseModel):
-        a: int
-        b: str
-
-    return [FooProper]
+class FooProper(BaseModel):
+    a: int
+    b: str
 
 
-def generate_backwards_compatible_v1() -> list[Any]:
-    """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1
-
-    class FooV1Namespace(BaseModelV1):
-        a: int
-        b: str
-
-    return [FooV1Namespace]
-
-
-# This generates a list of models that can be used for testing that our APIs
-# behave well with either pydantic 1 proper,
-# pydantic v1 from pydantic 2,
-# or pydantic 2 proper.
-TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
+TEST_MODELS = [FooProper]
 
 
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
 def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     class SomeTool(BaseTool):
-        args_schema: type[pydantic_model] = pydantic_model
+        args_schema: type[BaseModel] = pydantic_model
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
@@ -1853,11 +1763,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     )
 
     input_schema = tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    input_json_schema = input_schema.model_json_schema()
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1882,22 +1788,13 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
 
 
 def test_args_schema_explicitly_typed() -> None:
-    """This should test that one can type the args schema as a pydantic model.
-
-    Please note that this will test using pydantic 2 even though BaseTool
-    is a pydantic 1 model!
-    """
-    # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel
+    """This should test that one can type the args schema as a pydantic model."""
 
     class Foo(BaseModel):
         a: int
         b: str
 
     class SomeTool(BaseTool):
-        # type ignoring here since we're allowing overriding a type
-        # signature of pydantic.v1.BaseModel with pydantic.BaseModel
-        # for pydantic 2!
         args_schema: type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
@@ -1944,11 +1841,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
     args_schema = cast("BaseModel", foo_tool.args_schema)
-    args_json_schema = (
-        args_schema.model_json_schema()
-        if hasattr(args_schema, "model_json_schema")
-        else args_schema.schema()
-    )
+    args_json_schema = args_schema.model_json_schema()
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1960,11 +1853,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    input_json_schema = input_schema.model_json_schema()
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2020,81 +1909,12 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
-@pytest.mark.parametrize("use_v1_namespace", [True, False])
-def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
+def test__get_all_basemodel_annotations_v2() -> None:
     A = TypeVar("A")
 
-    if use_v1_namespace:
-        from pydantic.v1 import BaseModel as BaseModel1
-
-        class ModelA(BaseModel1, Generic[A], extra="allow"):
-            a: A
-
-    else:
-        from pydantic import BaseModel as BaseModel2
-        from pydantic import ConfigDict
-
-        class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
-            a: A
-            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    class ModelB(ModelA[str]):
-        b: Annotated[ModelA[dict[str, Any]], "foo"]
-
-    class Mixin:
-        def foo(self) -> str:
-            return "foo"
-
-    class ModelC(Mixin, ModelB):
-        c: dict
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = get_all_basemodel_annotations(ModelC)
-    assert actual == expected
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = get_all_basemodel_annotations(ModelB)
-    assert actual == expected
-
-    expected = {"a": Any}
-    actual = get_all_basemodel_annotations(ModelA)
-    assert actual == expected
-
-    expected = {"a": int}
-    actual = get_all_basemodel_annotations(ModelA[int])
-    assert actual == expected
-
-    D = TypeVar("D", bound=Union[str, int])
-
-    class ModelD(ModelC, Generic[D]):
-        d: Optional[D]
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[str, int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD)
-    assert actual == expected
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD[int])
-    assert actual == expected
-
-
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
-def test__get_all_basemodel_annotations_v1() -> None:
-    A = TypeVar("A")
-
-    class ModelA(BaseModel, Generic[A], extra="allow"):
+    class ModelA(BaseModel, Generic[A]):
         a: A
+        model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[dict[str, Any]], "foo"]
@@ -2226,14 +2046,9 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
-def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic import Field as FieldV2
-    from pydantic import ValidationError as ValidationErrorV2
-
-    class Foo(BaseModelV2):
-        x: list[int] = FieldV2(
+def test_tool_args_schema_pydantic_with_metadata() -> None:
+    class Foo(BaseModel):
+        x: list[int] = Field(
             description="List of integers", min_length=10, max_length=15
         )
 
@@ -2260,7 +2075,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     }
 
     assert foo.invoke({"x": [0] * 10})
-    with pytest.raises(ValidationErrorV2):
+    with pytest.raises(ValidationError):
         foo.invoke({"x": [0] * 9})
 
 

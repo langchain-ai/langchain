@@ -7,7 +7,6 @@ from collections.abc import Awaitable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     Callable,
     Literal,
@@ -15,7 +14,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, SkipValidation
+from pydantic import BaseModel, Field, SkipValidation
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -30,7 +29,6 @@ from langchain_core.tools.base import (
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
@@ -40,9 +38,7 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
-        ..., description="The tool schema."
-    )
+    args_schema: SkipValidation[ArgsSchema] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]] = None
     """The function to run when the tool is called."""
@@ -196,7 +192,7 @@ class StructuredTool(BaseTool):
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
+            if isinstance(args_schema, type) and issubclass(args_schema, BaseModel):
                 description_ = args_schema.__doc__ or None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")

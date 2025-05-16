@@ -4,9 +4,9 @@ import copy
 import json
 import logging
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 
-from pydantic import SkipValidation, ValidationError
+from pydantic import BaseModel, SkipValidation, ValidationError
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
@@ -15,7 +15,6 @@ from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
-from langchain_core.utils.pydantic import TypeBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +263,7 @@ _MAX_TOKENS_ERROR = (
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: Annotated[list[TypeBaseModel], SkipValidation()]
+    tools: SkipValidation[list[type[BaseModel]]]
     """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all
