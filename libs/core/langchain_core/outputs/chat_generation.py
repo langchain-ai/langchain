@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Union
+from typing import Literal, Union
 
-from pydantic import model_validator
+from pydantic import computed_field
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.utils._merge import merge_dicts
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 class ChatGeneration(Generation):
@@ -28,48 +25,30 @@ class ChatGeneration(Generation):
     via callbacks).
     """
 
-    text: str = ""
-    """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
     message: BaseMessage
     """The message output by the chat model."""
-    # Override type to be ChatGeneration, ignore mypy error as this is intentional
+
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @model_validator(mode="after")
-    def set_text(self) -> Self:
-        """Set the text attribute to be the contents of the message.
-
-        Args:
-            values: The values of the object.
-
-        Returns:
-            The values of the object with the text attribute set.
-
-        Raises:
-            ValueError: If the message is not a string or a list.
-        """
-        try:
-            text = ""
-            if isinstance(self.message.content, str):
-                text = self.message.content
-            # Assumes text in content blocks in OpenAI format.
-            # Uses first text block.
-            elif isinstance(self.message.content, list):
-                for block in self.message.content:
-                    if isinstance(block, str):
-                        text = block
-                        break
-                    if isinstance(block, dict) and "text" in block:
-                        text = block["text"]
-                        break
-            else:
-                pass
-            self.text = text
-        except (KeyError, AttributeError) as e:
-            msg = "Error while initializing ChatGeneration"
-            raise ValueError(msg) from e
-        return self
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def text(self) -> str:
+        """Set the text attribute to be the contents of the message."""
+        text_ = ""
+        if isinstance(self.message.content, str):
+            text_ = self.message.content
+        # Assumes text in content blocks in OpenAI format.
+        # Uses first text block.
+        elif isinstance(self.message.content, list):
+            for block in self.message.content:
+                if isinstance(block, str):
+                    text_ = block
+                    break
+                if isinstance(block, dict) and "text" in block:
+                    text_ = block["text"]
+                    break
+        return text_
 
 
 class ChatGenerationChunk(ChatGeneration):
@@ -80,7 +59,7 @@ class ChatGenerationChunk(ChatGeneration):
 
     message: BaseMessageChunk
     """The message chunk output by the chat model."""
-    # Override type to be ChatGeneration, ignore mypy error as this is intentional
+
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
@@ -115,3 +94,16 @@ class ChatGenerationChunk(ChatGeneration):
             )
         msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
         raise TypeError(msg)
+
+
+def merge_chat_generation_chunks(
+    chunks: list[ChatGenerationChunk],
+) -> Union[ChatGenerationChunk, None]:
+    """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk."""
+    if not chunks:
+        return None
+
+    if len(chunks) == 1:
+        return chunks[0]
+
+    return chunks[0] + chunks[1:]

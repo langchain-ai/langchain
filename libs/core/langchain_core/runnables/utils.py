@@ -699,7 +699,7 @@ def get_unique_config_specs(
         else:
             msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {id}: {[first, *others]}"
             )
             raise ValueError(msg)
     return unique
@@ -772,9 +772,8 @@ def is_async_generator(
         TypeGuard[Callable[..., AsyncIterator]: True if the function is
             an async generator, False otherwise.
     """
-    return (
-        inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return inspect.isasyncgenfunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -791,8 +790,7 @@ def is_async_callable(
         TypeGuard[Callable[..., Awaitable]: True if the function is async,
             False otherwise.
     """
-    return (
-        asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return asyncio.iscoroutinefunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

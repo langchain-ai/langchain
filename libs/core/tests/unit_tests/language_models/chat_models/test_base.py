@@ -13,6 +13,7 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
+from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
@@ -455,3 +456,143 @@ def test_trace_images_in_openai_format() -> None:
             "url": "https://example.com/image.png",
         }
     ]
+
+
+def test_extend_support_to_openai_multimodal_formats() -> None:
+    """Test that chat models normalize OpenAI file and audio inputs."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Hello"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.com/image.png"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "draconomicon.pdf",
+                        "file_data": "data:application/pdf;base64,<base64 string>",
+                    },
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "file_data": "data:application/pdf;base64,<base64 string>",
+                    },
+                },
+                {
+                    "type": "file",
+                    "file": {"file_id": "<file id>"},
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": "<base64 data>", "format": "wav"},
+                },
+            ],
+        },
+    ]
+    expected_content = [
+        {"type": "text", "text": "Hello"},
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/image.png"},
+        },
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+        },
+        {
+            "type": "file",
+            "source_type": "base64",
+            "data": "<base64 string>",
+            "mime_type": "application/pdf",
+            "filename": "draconomicon.pdf",
+        },
+        {
+            "type": "file",
+            "source_type": "base64",
+            "data": "<base64 string>",
+            "mime_type": "application/pdf",
+        },
+        {
+            "type": "file",
+            "file": {"file_id": "<file id>"},
+        },
+        {
+            "type": "audio",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "audio/wav",
+        },
+    ]
+    response = llm.invoke(messages)
+    assert response.content == expected_content
+
+    # Test no mutation
+    assert messages[0]["content"] == [
+        {"type": "text", "text": "Hello"},
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/image.png"},
+        },
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+        },
+        {
+            "type": "file",
+            "file": {
+                "filename": "draconomicon.pdf",
+                "file_data": "data:application/pdf;base64,<base64 string>",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,<base64 string>",
+            },
+        },
+        {
+            "type": "file",
+            "file": {"file_id": "<file id>"},
+        },
+        {
+            "type": "input_audio",
+            "input_audio": {"data": "<base64 data>", "format": "wav"},
+        },
+    ]
+
+
+def test_normalize_messages_edge_cases() -> None:
+    # Test some blocks that should pass through
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "file": "uri",
+                },
+                {
+                    "type": "input_file",
+                    "file_data": "uri",
+                    "filename": "file-name",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": "uri",
+                },
+                {
+                    "type": "input_image",
+                    "image_url": "uri",
+                },
+            ]
+        )
+    ]
+    assert messages == _normalize_messages(messages)

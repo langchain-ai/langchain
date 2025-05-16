@@ -27,7 +27,7 @@ from langchain_core.runnables import (
     ensure_config,
     run_in_executor,
 )
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model
 from pydantic import (
     BaseModel,
     ConfigDict,

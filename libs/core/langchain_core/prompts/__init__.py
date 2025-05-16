@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         MessagesPlaceholder,
         SystemMessagePromptTemplate,
     )
+    from langchain_core.prompts.dict import DictPromptTemplate
     from langchain_core.prompts.few_shot import (
         FewShotChatMessagePromptTemplate,
         FewShotPromptTemplate,
@@ -68,21 +69,22 @@ __all__ = (
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
+    "DictPromptTemplate",
+    "FewShotChatMessagePromptTemplate",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
-    "FewShotChatMessagePromptTemplate",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",
     "PromptTemplate",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
-    "load_prompt",
-    "format_document",
     "aformat_document",
     "check_valid_template",
+    "format_document",
     "get_template_variables",
     "jinja2_formatter",
+    "load_prompt",
     "validate_jinja2",
 )
 
@@ -94,6 +96,7 @@ _dynamic_imports = {
     "BaseChatPromptTemplate": "chat",
     "ChatMessagePromptTemplate": "chat",
     "ChatPromptTemplate": "chat",
+    "DictPromptTemplate": "dict",
     "HumanMessagePromptTemplate": "chat",
     "MessagesPlaceholder": "chat",
     "SystemMessagePromptTemplate": "chat",

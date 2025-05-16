@@ -1,15 +1,11 @@
 from collections.abc import Sequence
 from typing import Callable, Optional
 
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
-
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
 
 
 def _get_similarity_function() -> Callable:

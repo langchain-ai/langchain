@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
     from langchain_core.messages.content_blocks import (
+        convert_to_openai_data_block,
         convert_to_openai_image_block,
         is_data_content_block,
     )
@@ -75,27 +76,28 @@ __all__ = (
     "HumanMessageChunk",
     "InvalidToolCall",
     "MessageLikeRepresentation",
+    "RemoveMessage",
     "SystemMessage",
     "SystemMessageChunk",
     "ToolCall",
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
-    "RemoveMessage",
     "_message_from_dict",
-    "convert_to_openai_image_block",
     "convert_to_messages",
+    "convert_to_openai_data_block",
+    "convert_to_openai_image_block",
+    "convert_to_openai_messages",
+    "filter_messages",
     "get_buffer_string",
     "is_data_content_block",
     "merge_content",
+    "merge_message_runs",
     "message_chunk_to_message",
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
-    "filter_messages",
-    "merge_message_runs",
     "trim_messages",
-    "convert_to_openai_messages",
 )
 
 _dynamic_imports = {
@@ -124,6 +126,7 @@ _dynamic_imports = {
     "MessageLikeRepresentation": "utils",
     "_message_from_dict": "utils",
     "convert_to_messages": "utils",
+    "convert_to_openai_data_block": "content_blocks",
     "convert_to_openai_image_block": "content_blocks",
     "convert_to_openai_messages": "utils",
     "filter_messages": "utils",

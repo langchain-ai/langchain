@@ -26,13 +26,13 @@ if TYPE_CHECKING:
 
 __all__ = (
     "BaseTracer",
+    "ConsoleCallbackHandler",
     "EvaluatorCallbackHandler",
     "LangChainTracer",
-    "ConsoleCallbackHandler",
+    "LogStreamCallbackHandler",
     "Run",
     "RunLog",
     "RunLogPatch",
-    "LogStreamCallbackHandler",
 )
 
 _dynamic_imports = {
