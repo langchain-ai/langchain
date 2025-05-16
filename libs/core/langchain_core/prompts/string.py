@@ -1,4 +1,3 @@
-# noqa:A005
 """BasePrompt schema definition."""
 
 from __future__ import annotations
