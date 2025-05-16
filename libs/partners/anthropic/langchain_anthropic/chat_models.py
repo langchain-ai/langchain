@@ -414,7 +414,7 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message)
-        raise ValueError(message)
+        raise e
     else:
         raise
 
