@@ -111,7 +111,12 @@ class Node(NamedTuple):
     data: Union[type[BaseModel], RunnableType, None]
     metadata: Optional[dict[str, Any]]
 
-    def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
+    def copy(
+        self,
+        *,
+        id: Optional[str] = None,  # noqa: A002
+        name: Optional[str] = None,
+    ) -> Node:
         """Return a copy of the node with optional new id and name.
 
         Args:
@@ -181,7 +186,10 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(id: str, data: Union[type[BaseModel], RunnableType, None]) -> str:
+def node_data_str(
+    id: str,  # noqa: A002
+    data: Union[type[BaseModel], RunnableType, None],
+) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -320,7 +328,7 @@ class Graph:
     def add_node(
         self,
         data: Union[type[BaseModel], RunnableType, None],
-        id: Optional[str] = None,
+        id: Optional[str] = None,  # noqa: A002
         *,
         metadata: Optional[dict[str, Any]] = None,
     ) -> Node:
@@ -340,8 +348,8 @@ class Graph:
         if id is not None and id in self.nodes:
             msg = f"Node with id {id} already exists"
             raise ValueError(msg)
-        id = id or self.next_id()
-        node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
+        id_ = id or self.next_id()
+        node = Node(id=id_, data=data, metadata=metadata, name=node_data_str(id_, data))
         self.nodes[node.id] = node
         return node
 
@@ -406,8 +414,8 @@ class Graph:
         if all(is_uuid(node.id) for node in graph.nodes.values()):
             prefix = ""
 
-        def prefixed(id: str) -> str:
-            return f"{prefix}:{id}" if prefix else id
+        def prefixed(id_: str) -> str:
+            return f"{prefix}:{id_}" if prefix else id_
 
         # prefix each node
         self.nodes.update(
@@ -450,8 +458,8 @@ class Graph:
 
         return Graph(
             nodes={
-                _get_node_id(id): node.copy(id=_get_node_id(id))
-                for id, node in self.nodes.items()
+                _get_node_id(id_): node.copy(id=_get_node_id(id_))
+                for id_, node in self.nodes.items()
             },
             edges=[
                 edge.copy(

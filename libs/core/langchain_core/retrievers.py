@@ -209,6 +209,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         return LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -269,6 +270,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             )
             return result
 
+    @override
     async def ainvoke(
         self,
         input: str,

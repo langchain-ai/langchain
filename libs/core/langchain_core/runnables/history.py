@@ -509,20 +509,20 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         )
         raise ValueError(msg)
 
-    def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
+    def _enter_history(self, value: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = hist.messages.copy()
 
         if not self.history_messages_key:
             # return all messages
             input_val = (
-                input if not self.input_messages_key else input[self.input_messages_key]
+                value if not self.input_messages_key else value[self.input_messages_key]
             )
             messages += self._get_input_messages(input_val)
         return messages
 
     async def _aenter_history(
-        self, input: dict[str, Any], config: RunnableConfig
+        self, value: dict[str, Any], config: RunnableConfig
     ) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = (await hist.aget_messages()).copy()
@@ -530,7 +530,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if not self.history_messages_key:
             # return all messages
             input_val = (
-                input if not self.input_messages_key else input[self.input_messages_key]
+                value if not self.input_messages_key else value[self.input_messages_key]
             )
             messages += self._get_input_messages(input_val)
         return messages
