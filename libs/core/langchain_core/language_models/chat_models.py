@@ -343,18 +343,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Get the output type for this runnable."""
         return AnyMessage
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        if isinstance(input, str):
-            return StringPromptValue(text=input)
-        if isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
         msg = (
-            f"Invalid input type {type(input)}. "
+            f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @override
     def invoke(
@@ -412,8 +412,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream
-        async_not_implemented = type(self)._astream == BaseChatModel._astream
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
+        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -1203,7 +1203,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     async def _call_async(
         self,
@@ -1219,7 +1219,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1261,7 +1261,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @override
@@ -1287,7 +1287,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override

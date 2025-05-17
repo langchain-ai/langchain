@@ -466,10 +466,9 @@ def index(
 
             _source_ids = cast("Sequence[str]", source_ids)
 
-            uids_to_delete = record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt
-            )
-            if uids_to_delete:
+            while uids_to_delete := record_manager.list_keys(
+                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+            ):
                 # Then delete from vector store.
                 _delete(destination, uids_to_delete)
                 # First delete from record store.
@@ -647,10 +646,13 @@ async def aindex(
                 )
                 raise ValueError(msg)
 
-        if type(destination).adelete == VectorStore.adelete:
-            # Checking if the vectorstore has overridden the default delete method
-            # implementation which just raises a NotImplementedError
-            msg = "Vectorstore has not implemented the delete method"
+        if (
+            type(destination).adelete == VectorStore.adelete
+            and type(destination).delete == VectorStore.delete
+        ):
+            # Checking if the vectorstore has overridden the default adelete or delete
+            # methods implementation which just raises a NotImplementedError
+            msg = "Vectorstore has not implemented the adelete or delete method"
             raise ValueError(msg)
     elif isinstance(destination, DocumentIndex):
         pass
@@ -780,10 +782,9 @@ async def aindex(
 
             _source_ids = cast("Sequence[str]", source_ids)
 
-            uids_to_delete = await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt
-            )
-            if uids_to_delete:
+            while uids_to_delete := await record_manager.alist_keys(
+                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+            ):
                 # Then delete from vector store.
                 await _adelete(destination, uids_to_delete)
                 # First delete from record store.

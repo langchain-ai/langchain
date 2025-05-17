@@ -3,9 +3,10 @@
 from typing import Any, Optional
 
 import pytest
-from langchain_core.agents import AgentAction, BaseMessage
+from langchain_core.agents import AgentAction
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
 

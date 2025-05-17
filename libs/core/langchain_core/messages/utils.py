@@ -212,7 +212,7 @@ def _create_message_from_message_type(
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,
+    id: Optional[str] = None,  # noqa: A002
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -885,7 +885,7 @@ def trim_messages(
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
-            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            next(iter(inspect.signature(token_counter).parameters.values())).annotation
             is BaseMessage
         ):
 
@@ -1460,7 +1460,7 @@ def _last_max_tokens(
     # Re-reverse the messages and add back the system message if needed
     result = reversed_result[::-1]
     if system_message:
-        result = [system_message] + result
+        result = [system_message, *result]
 
     return result
 
@@ -1543,7 +1543,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, ChatMessage):
         return message.role
     msg = f"Unknown BaseMessage type {message.__class__}."
-    raise ValueError(msg)  # noqa: TRY004
+    raise ValueError(msg)
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
