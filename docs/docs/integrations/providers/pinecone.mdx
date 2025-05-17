@@ -71,6 +71,20 @@ For more detailed usage, see the [Pinecone Sparse Embeddings notebook](/docs/int
 
 ## Retrievers
 
+### Pinecone Rerank retriever
+
+```bash
+pip install langchain_pinecone
+```
+
+```python
+from langchain_pinecone import PineconeRerank
+
+# Initialize reranker
+reranker = PineconeRerank(model="bge-reranker-v2-m3")
+```
+For more detailed information, see [this notebook](/docs/integrations/retrievers/pinecone_rerank).
+
 ### Pinecone Hybrid Search
 
 ```bash
