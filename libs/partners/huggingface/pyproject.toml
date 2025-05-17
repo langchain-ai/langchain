@@ -9,8 +9,6 @@ requires-python = ">=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.59",
     "tokenizers>=0.19.1",
-    "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
     "huggingface-hub>=0.30.2",
 ]
 name = "langchain-huggingface"
@@ -22,6 +20,12 @@ readme = "README.md"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-huggingface%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
+
+[project.optional-dependencies]
+full = [
+    "transformers>=4.39.0",
+    "sentence-transformers>=2.6.0",
+]
 
 [dependency-groups]
 test = [
@@ -53,7 +57,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP"]
-ignore = [ "UP007", ]
+ignore = ["UP007"]
 
 [tool.coverage.run]
 omit = ["tests/*"]
