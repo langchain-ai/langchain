@@ -62,6 +62,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
     convert_to_openai_data_block,
+    convert_to_openai_messages,
     is_data_content_block,
 )
 from langchain_core.messages.ai import (
@@ -231,6 +232,11 @@ def _format_message_content(content: Any) -> Any:
     return formatted_content
 
 
+@deprecated(
+    since="0.3.60",
+    alternative="langchain_core.messages.convert_to_openai_messages",
+    pending=True,
+)
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -240,66 +246,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: dict[str, Any] = {"content": _format_message_content(message.content)}
-    if (name := message.name or message.additional_kwargs.get("name")) is not None:
-        message_dict["name"] = name
-
-    # populate role and additional message data
-    if isinstance(message, ChatMessage):
-        message_dict["role"] = message.role
-    elif isinstance(message, HumanMessage):
-        message_dict["role"] = "user"
-    elif isinstance(message, AIMessage):
-        message_dict["role"] = "assistant"
-        if message.tool_calls or message.invalid_tool_calls:
-            message_dict["tool_calls"] = [
-                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
-            ] + [
-                _lc_invalid_tool_call_to_openai_tool_call(tc)
-                for tc in message.invalid_tool_calls
-            ]
-        elif "tool_calls" in message.additional_kwargs:
-            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            tool_call_supported_props = {"id", "type", "function"}
-            message_dict["tool_calls"] = [
-                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
-                for tool_call in message_dict["tool_calls"]
-            ]
-        elif "function_call" in message.additional_kwargs:
-            # OpenAI raises 400 if both function_call and tool_calls are present in the
-            # same message.
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-        else:
-            pass
-        # If tool calls present, content null value should be None not empty string.
-        if "function_call" in message_dict or "tool_calls" in message_dict:
-            message_dict["content"] = message_dict["content"] or None
-
-        if "audio" in message.additional_kwargs:
-            # openai doesn't support passing the data back - only the id
-            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
-            raw_audio = message.additional_kwargs["audio"]
-            audio = (
-                {"id": message.additional_kwargs["audio"]["id"]}
-                if "id" in raw_audio
-                else raw_audio
-            )
-            message_dict["audio"] = audio
-    elif isinstance(message, SystemMessage):
-        message_dict["role"] = message.additional_kwargs.get(
-            "__openai_role__", "system"
-        )
-    elif isinstance(message, FunctionMessage):
-        message_dict["role"] = "function"
-    elif isinstance(message, ToolMessage):
-        message_dict["role"] = "tool"
-        message_dict["tool_call_id"] = message.tool_call_id
-
-        supported_props = {"content", "role", "tool_call_id"}
-        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
-    else:
-        raise TypeError(f"Got unknown type {message}")
-    return message_dict
+    oai_message = convert_to_openai_messages(message)
+    # The linter does not know that `convert_to_openai_messages` will only return one
+    # message here.
+    if isinstance(oai_message, list):
+        return oai_message[0]
+    return oai_message
 
 
 def _convert_delta_to_message_chunk(
@@ -982,7 +934,7 @@ class BaseChatOpenAI(BaseChatModel):
         if self._use_responses_api(payload):
             payload = _construct_responses_api_payload(messages, payload)
         else:
-            payload["messages"] = [_convert_message_to_dict(m) for m in messages]
+            payload["messages"] = convert_to_openai_messages(messages)
         return payload
 
     def _create_chat_result(
@@ -1276,7 +1228,7 @@ class BaseChatOpenAI(BaseChatModel):
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
-        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        messages_dict = convert_to_openai_messages(messages)
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
