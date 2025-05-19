@@ -5253,7 +5253,7 @@ async def test_runnable_gen_transform() -> None:
             yield i + 1
 
     chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
-    achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
+    achain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.get_input_jsonschema() == {
         "title": "gen_indexes_input",

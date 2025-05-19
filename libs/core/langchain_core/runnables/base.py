@@ -565,8 +565,9 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Any, Other],
-            Callable[[Any], Other],
             Callable[[Iterator[Any]], Iterator[Other]],
+            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSerializable[Input, Other]:
@@ -577,8 +578,9 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         other: Union[
             Runnable[Other, Any],
-            Callable[[Other], Any],
             Callable[[Iterator[Other]], Iterator[Any]],
+            Callable[[AsyncIterator[Other]], AsyncIterator[Any]],
+            Callable[[Other], Any],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSerializable[Other, Output]:
@@ -2960,8 +2962,9 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         self,
         other: Union[
             Runnable[Any, Other],
-            Callable[[Any], Other],
             Callable[[Iterator[Any]], Iterator[Other]],
+            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSerializable[Input, Other]:
@@ -2988,8 +2991,9 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         self,
         other: Union[
             Runnable[Other, Any],
-            Callable[[Other], Any],
             Callable[[Iterator[Other]], Iterator[Any]],
+            Callable[[AsyncIterator[Other]], AsyncIterator[Any]],
+            Callable[[Other], Any],
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSerializable[Other, Output]:
