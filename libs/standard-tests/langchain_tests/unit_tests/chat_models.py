@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Type
 from unittest import mock
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 from langchain_core.language_models import BaseChatModel
 from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
@@ -850,3 +851,8 @@ class ChatModelUnitTests(ChatModelTests):
                         dumpd(model), valid_namespaces=model.get_lc_namespace()[:1]
                     ).dict()
                 )
+
+    @pytest.mark.benchmark
+    def test_init_time(self, benchmark: BenchmarkFixture) -> None:
+
+        _ = benchmark(self.chat_model_class, **self.chat_model_params)
