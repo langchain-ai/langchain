@@ -1,6 +1,6 @@
 """Structured prompt template for a language model."""
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
@@ -123,8 +123,9 @@ class StructuredPrompt(ChatPromptTemplate):
         self,
         other: Union[
             Runnable[Any, Other],
-            Callable[[Any], Other],
             Callable[[Iterator[Any]], Iterator[Other]],
+            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSerializable[dict, Other]:
@@ -134,8 +135,9 @@ class StructuredPrompt(ChatPromptTemplate):
         self,
         *others: Union[
             Runnable[Any, Other],
-            Callable[[Any], Other],
             Callable[[Iterator[Any]], Iterator[Other]],
+            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
+            Callable[[Any], Other],
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
         name: Optional[str] = None,
