@@ -1034,6 +1034,40 @@ def test__get_request_payload() -> None:
     }
     assert payload == expected
 
+    # Test we ignore reasoning blocks from other providers
+    reasoning_messages: list = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "reasoning_content", "reasoning_content": "reasoning..."},
+                {"type": "text", "text": "reasoned response"},
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "thinking", "thinking": "thinking..."},
+                {"type": "text", "text": "thoughtful response"},
+            ],
+        },
+    ]
+    expected = {
+        "messages": [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "reasoned response"}],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "thoughtful response"}],
+            },
+        ],
+        "model": "o3-mini",
+        "stream": False,
+    }
+    payload = llm._get_request_payload(reasoning_messages)
+    assert payload == expected
+
 
 def test_init_o1() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
