@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Type
 from unittest import mock
 
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture
 from langchain_core.language_models import BaseChatModel
 from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
@@ -24,6 +23,7 @@ from pydantic.v1 import (
 from pydantic.v1 import (
     ValidationError as ValidationErrorV1,
 )
+from pytest_benchmark.fixture import BenchmarkFixture
 from syrupy import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests
@@ -854,5 +854,4 @@ class ChatModelUnitTests(ChatModelTests):
 
     @pytest.mark.benchmark
     def test_init_time(self, benchmark: BenchmarkFixture) -> None:
-
         _ = benchmark(self.chat_model_class, **self.chat_model_params)

@@ -15,6 +15,7 @@ dependencies = [
     "pytest-socket<1,>=0.6.0",
     "pytest-benchmark",
     "pytest-codspeed",
+    "pytest-vcr",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]

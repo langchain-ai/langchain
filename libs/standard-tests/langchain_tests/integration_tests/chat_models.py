@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
+import vcr
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
@@ -28,6 +29,7 @@ from langchain_core.utils.function_calling import (
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from pytest_benchmark.fixture import BenchmarkFixture
 from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
@@ -2678,6 +2680,16 @@ class ChatModelIntegrationTests(ChatModelTests):
             ]
         )
         assert isinstance(response, AIMessage)
+
+    def test_stream_time(
+        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
+    ) -> None:
+        def _run():
+            with vcr.use_cassette("test_stream_time.yaml", record_mode="once"):
+                for _ in model.stream("Write a story about a cat."):
+                    pass
+
+        benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
