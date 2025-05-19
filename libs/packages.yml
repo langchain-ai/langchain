@@ -662,3 +662,6 @@ packages:
 - name: langchain-brightdata
   repo: luminati-io/langchain-brightdata
   path: .
+- name: langchain-featherless-ai
+  repo: featherlessai/langchain-featherless-ai
+  path: .
