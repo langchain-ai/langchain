@@ -152,8 +152,8 @@ packages:
   downloads: 20558
   downloads_updated_at: '2025-05-08T20:26:05.985970+00:00'
 - name: langchain-voyageai
-  path: libs/partners/voyageai
-  repo: langchain-ai/langchain
+  path: libs/voyageai
+  repo: voyage-ai/langchain-voyageai
   downloads: 27698
   downloads_updated_at: '2025-05-08T20:26:05.985970+00:00'
 - name: langchain-aws
