@@ -65,6 +65,7 @@ def test_arbitrary_roles_accepted_in_chatmessages(
 
     llm.invoke(messages)
 
+
 def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
     captured_headers = {}
 
@@ -76,10 +77,7 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(Client, "stream", mock_stream)
 
-    headers = {
-        "Authorization": "Bearer test-token",
-        "X-Custom-Header": "LangChainTest"
-    }
+    headers = {"Authorization": "Bearer test-token", "X-Custom-Header": "LangChainTest"}
 
     llm = ChatOllama(
         base_url="http://whocares:11434",

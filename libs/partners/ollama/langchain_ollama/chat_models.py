@@ -542,8 +542,7 @@ class ChatOllama(BaseChatModel):
         async_client_kwargs = {**client_kwargs, **async_client_kwargs}
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
-        self._async_client = AsyncClient(
-            host=self.base_url, **async_client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
         return self
 
     def _convert_messages_to_ollama_messages(
