@@ -456,7 +456,8 @@ class ChatOllama(BaseChatModel):
 
     headers: Optional[dict] = None
     """
-    Headers to pass to the httpx client.It can be used to set authorization for remotely hosted models.
+    Headers to pass to the httpx client.
+    It can be used to set authorization for remotely hosted models.
     """
 
     _client: Client = PrivateAttr(default=None)  # type: ignore
