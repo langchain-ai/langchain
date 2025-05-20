@@ -3,6 +3,7 @@ import pytest
 _BASE_FILTER_HEADERS = [
     ("authorization", "PLACEHOLDER"),
     ("x-api-key", "PLACEHOLDER"),
+    ("api-key", "PLACEHOLDER"),
 ]
 
 

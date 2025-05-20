@@ -3,6 +3,7 @@ from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
 
 _EXTRA_HEADERS = [
     ("openai-organization", "PLACEHOLDER"),
+    ("user-agent", "PLACEHOLDER"),
     ("x-openai-client-user-agent", "PLACEHOLDER"),
 ]
 
