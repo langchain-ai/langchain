@@ -70,9 +70,9 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
     captured_headers = {}
 
     # Mock the Client.stream method to capture headers
-    def mock_stream(self, request: Request, *args, **kwargs):
+    def mock_stream(self, method: str, url: str, *args:any, **kwargs:any):
         nonlocal captured_headers
-        captured_headers = dict(request.headers)
+        captured_headers = dict(kwargs.get("headers", {}))
         return _mock_httpx_client_stream()
 
     monkeypatch.setattr(Client, "stream", mock_stream)
@@ -90,3 +90,4 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert captured_headers.get("Authorization") == "Bearer test-token"
     assert captured_headers.get("X-Custom-Header") == "LangChainTest"
+
