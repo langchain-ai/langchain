@@ -2685,7 +2685,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
     ) -> None:
         def _run():
-            with vcr.use_cassette("test_stream_time.yaml", record_mode="once"):
+            cassette_name = f"{self.__class__.__name__}_test_stream_time.yaml"
+            with vcr.use_cassette(cassette_name, record_mode="once"):
                 for _ in model.stream("Write a story about a cat."):
                     pass
 
