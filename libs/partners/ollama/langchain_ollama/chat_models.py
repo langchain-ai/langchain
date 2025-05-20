@@ -454,6 +454,11 @@ class ChatOllama(BaseChatModel):
     For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
     """
 
+    headers: Optional[dict] = None
+    """
+    Headers to pass to the httpx client.It can be used to set authorization for remotely hosted models.
+    """
+
     _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
@@ -515,19 +520,30 @@ class ChatOllama(BaseChatModel):
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
-        """Set clients to use for ollama."""
-        client_kwargs = self.client_kwargs or {}
+        """Set clients to use for ollama, ensuring headers are accepted and merged."""
+        client_kwargs = dict(self.client_kwargs or {})
+        sync_client_kwargs = dict(self.sync_client_kwargs or {})
+        async_client_kwargs = dict(self.async_client_kwargs or {})
 
-        sync_client_kwargs = client_kwargs
-        if self.sync_client_kwargs:
-            sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
+        # Merge headers from self.headers into both sync and async kwargs
+        headers = dict(self.headers) if self.headers else {}
 
-        async_client_kwargs = client_kwargs
-        if self.async_client_kwargs:
-            async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+        # Merge headers into sync_client_kwargs
+        if "headers" in client_kwargs:
+            headers = {**client_kwargs["headers"], **headers}
+        if "headers" in sync_client_kwargs:
+            headers = {**sync_client_kwargs["headers"], **headers}
+        if headers:
+            sync_client_kwargs["headers"] = headers
+            async_client_kwargs["headers"] = headers
+
+        # Merge client_kwargs into sync/async kwargs
+        sync_client_kwargs = {**client_kwargs, **sync_client_kwargs}
+        async_client_kwargs = {**client_kwargs, **async_client_kwargs}
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        self._async_client = AsyncClient(
+            host=self.base_url, **async_client_kwargs)
         return self
 
     def _convert_messages_to_ollama_messages(
