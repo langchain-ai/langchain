@@ -70,7 +70,7 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
     captured_headers = {}
 
     # Mock the Client.stream method to capture headers
-    def mock_stream(self, method: str, url: str, *args:any, **kwargs:any):
+    def mock_stream(self, method: str, url: str, *args:any, **kwargs:any)-> Generator[Response, Any, Any]:
         nonlocal captured_headers
         captured_headers = dict(kwargs.get("headers", {}))
         return _mock_httpx_client_stream()
