@@ -331,7 +331,7 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Return dictionary representation of prompt.
 
         Args:
@@ -369,7 +369,7 @@ class BasePromptTemplate(
             raise ValueError(msg)
 
         # Fetch dictionary to save
-        prompt_dict = self.dict()
+        prompt_dict = self.model_dump()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)
