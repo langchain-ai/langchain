@@ -19,7 +19,7 @@ from typing import (
 )
 
 from langchain_core._api import warn_deprecated
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, messages_from_dict
 from langchain_core.outputs import ChatResult, LLMResult
@@ -1226,7 +1226,7 @@ class _DatasetRunContainer:
 
 def _is_jupyter_environment() -> bool:
     try:
-        from IPython import get_ipython
+        from IPython.core.getipython import get_ipython
 
         res = get_ipython()
         return get_ipython() is not None and "zmqshell" in str(type(res))

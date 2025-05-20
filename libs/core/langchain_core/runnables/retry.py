@@ -178,7 +178,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     def _invoke(
         self,
-        input: Input,
+        input_: Input,
         run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
         **kwargs: Any,
@@ -186,7 +186,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         for attempt in self._sync_retrying(reraise=True):
             with attempt:
                 result = super().invoke(
-                    input,
+                    input_,
                     self._patch_config(config, run_manager, attempt.retry_state),
                     **kwargs,
                 )
@@ -202,7 +202,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     async def _ainvoke(
         self,
-        input: Input,
+        input_: Input,
         run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
         **kwargs: Any,
@@ -210,7 +210,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         async for attempt in self._async_retrying(reraise=True):
             with attempt:
                 result = await super().ainvoke(
-                    input,
+                    input_,
                     self._patch_config(config, run_manager, attempt.retry_state),
                     **kwargs,
                 )
