@@ -91,4 +91,3 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert captured_headers.get("Authorization") == "Bearer test-token"
     assert captured_headers.get("X-Custom-Header") == "LangChainTest"
-
