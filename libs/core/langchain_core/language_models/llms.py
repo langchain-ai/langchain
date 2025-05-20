@@ -530,7 +530,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         else:
             prompt = self._convert_input(input).to_string()
             config = ensure_config(config)
-            params = self.dict()
+            params = self.model_dump()
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
@@ -600,7 +600,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         prompt = self._convert_input(input).to_string()
         config = ensure_config(config)
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
@@ -943,7 +943,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         options = {"stop": stop}
         (
@@ -1195,7 +1195,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         options = {"stop": stop}
         (
@@ -1402,7 +1402,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         """Return type of llm."""
 
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1429,7 +1429,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self.dict()
+        prompt_dict = self.model_dump()
 
         if save_path.suffix == ".json":
             with save_path.open("w") as f:
