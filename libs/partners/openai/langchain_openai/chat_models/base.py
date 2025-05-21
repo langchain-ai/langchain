@@ -3155,15 +3155,19 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             # Built-in tool calls
             computer_calls = []
             code_interpreter_calls = []
+            mcp_calls = []
             tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
             for tool_output in tool_outputs:
                 if tool_output.get("type") == "computer_call":
                     computer_calls.append(tool_output)
                 elif tool_output.get("type") == "code_interpreter_call":
                     code_interpreter_calls.append(tool_output)
+                elif tool_output.get("type") == "mcp_call":
+                    mcp_calls.append(tool_output)
                 else:
                     pass
             input_.extend(code_interpreter_calls)
+            input_.extend(mcp_calls)
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
