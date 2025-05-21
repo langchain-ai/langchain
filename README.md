@@ -1,5 +1,3 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 <br />
 <div align="center">
 
@@ -10,7 +8,7 @@
   <h1 align="center">🦜️🔗 GigaChain (GigaChat + LangChain)</h1>
 
   <p align="center">
-    Набор решений для разработки LLM-приложений на русском языке с поддержкой GigaChat
+    Набор решений для разработки LLM-приложений и мультиагентых систем на русском языке с поддержкой GigaChat, LangChain, LangGraph, LangChain4j.
     <br />
     <a href="https://github.com/ai-forever/gigachain/issues">Создать issue</a>
     ·
@@ -27,266 +25,84 @@
 
 GigaChain – это набор решений для создания приложений с использованием больших языковых моделей (*LLM*). GigaChain охватывает все этапы разработки от прототипирования и исследования, до запуска в эксплуатацию и поддержки.
 
-В состав GigaChain входят такие библиотеки для работы с [моделями GigaChat](https://developers.sber.ru/docs/ru/gigachat/models), как:
+Для работы вам понадобится [ключ авторизации для доступа к GigaChat API](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api?tool=python#poluchenie-avtorizatsionnyh-dannyh).
 
-langchain-gigachat — партнерский пакет популярного open source фреймворка LangChain для разработки комплексных LLM-приложений. Пакет позволяет использовать все возможности фреймворка и моделей GigaChat, в том числе создание агентов с помощью [LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/). Библиотека langchain-gigachat доступна как для [Python](https://github.com/ai-forever/langchain-gigachat), так и для [JavaScript](https://github.com/ai-forever/langchainjs/tree/main/libs/langchain-gigachat).
-  * Документация LangChain: [для Python](https://python.langchain.com/docs/introduction/), [для JavaScript](https://js.langchain.com/docs/introduction/?ref=blog.apify.com);
-  * Страница [партнерского пакета langchain-gigachat для Python](https://python.langchain.com/docs/integrations/llms/gigachat/) в официальной документации LangChain.
-* gigachat — обертка для [REST API GigaChat](https://developers.sber.ru/docs/ru/gigachat/api/reference/rest/gigachat-api). Она управляет авторизацией запросов, упрощает отправку сообщений в модели GigaChat и предоставляет другие методы для работы с API. Библиотека доступна как для [Python](https://github.com/ai-forever/gigachat), так и для [JavaScript](https://github.com/ai-forever/gigachat-js).
+Наши решения: [Фреймворки](#фреймворки) | [SDK для работы с моделями GigaChat](#sdk-для-работы-с-моделями-gigachat) | [Утилиты и MCP-сервера](#утилиты-и-mcp-сервера) 
 
-В этом репозитории вы найдете краткие инструкции по началу работы с библиотеками, а так же ссылки на различные примеры их использования.
 
-## Требования
+## Фреймворки
 
-Для работы с библиотеками langchain-gigachat и gigachat вам понадобятся:
+В состав GigaChain входят библиотеки для интеграции с популярными фреймворками LangChain, LangGraph и LangChain4j.
 
-* Python версии 3.9 и выше для работы с библиотеками Python.
-* Node.js версии 16 и выше для работы с библиотеками JavaScript.
-* Ключ авторизации для работы с API. О том, как получить ключ авторизации — в [документации GigaChat API](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
-* [Сертификаты НУЦ Минцифры](https://developers.sber.ru/docs/ru/gigachat/certificates).
+Библиотеки доступны на [Python](#python-), [JavaScript/TypeScript](#javascripttypescript-) и [Java](#java-).
 
-  Если нужно, вы можете отключить проверку сертификатов. Подробнее — в примерах ниже.
+Они позволяют использовать модели GigaChat со всеми возможностями и инфраструктурой, которую предоставляют фреймворки для разработки комплексных LLM-приложений, AI-агентов и мультиагентных систем.
 
-## Быстрый старт для Python
+### Python [![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-gigachat?style=flat-round)](https://pypistats.org/packages/langchain-gigachat)[![GitHub star chart](https://img.shields.io/github/stars/ai-forever/langchain-gigachat?style=flat-round)](https://www.star-history.com/#ai-forever/langchain-gigachat)
 
-### langchain-gigachat
+[`langchain-gigachat`](https://github.com/ai-forever/langchain-gigachat) – интеграционная библиотека для работы с LangChain и LangGraph.
 
-Для установки библиотеки используйте менеджер пакетов pip:
+[Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/README.md)
 
-```sh
-pip install langchain-gigachat
-```
+[Документация LangChain](https://python.langchain.com/docs/introduction/) | [Документация LangGraph](https://langchain-ai.github.io/langgraph/) | [Чат-бот по документации](https://chat.langchain.com)
 
-Запустите пример:
+### JavaScript/TypeScript ![npm](https://img.shields.io/npm/dm/langchain-gigachat)[![GitHub star chart](https://img.shields.io/github/stars/ai-forever/langchainjs?style=flat-round)](https://www.star-history.com/#ai-forever/langchainjs)
 
-```py
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_gigachat.chat_models import GigaChat
+[`langchain-gigachat`](https://github.com/ai-forever/langchainjs) интеграционная библиотека для работы с LangChainJS и LangGraphJS.
 
-giga = GigaChat(
-    # Для авторизации запросов используйте ключ, полученный в проекте GigaChat API
-    credentials="ваш_ключ_авторизации",
-    verify_ssl_certs=False,
-)
+[Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/js/README.md)
 
-messages = [
-    SystemMessage(
-        content="Ты эмпатичный бот-психолог, который помогает пользователю решить его проблемы."
-    )
-]
+[Документация LangChainJS](https://js.langchain.com/docs/introduction/) | [Документация LangGraphJS](https://langchain-ai.github.io/langgraphjs/) | [Чат-бот по JS-документации](https://chatjs.langchain.com/)
 
-while(True):
-    user_input = input("Пользователь: ")
-    if user_input == "пока":
-      break
-    messages.append(HumanMessage(content=user_input))
-    res = giga.invoke(messages)
-    messages.append(res)
-    print("GigaChat: ", res.content)
-```
+### Java [![GitHub star chart](https://img.shields.io/github/stars/ai-forever/langchain4j-gigachat?style=flat-round)](https://www.star-history.com/#ai-forever/langchain4j-gigachat)
 
-Объект GigaChat принимает параметры:
+[`langchain4j-gigachat`](https://github.com/ai-forever/langchain4j-gigachat) – библиотека для работы с фреймворком LangChain4j.
 
-* `credentials` — ключ авторизации для обмена сообщениями с GigaChat API. [Подробнее о получении ключа авторизации](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
-* `scope` — необязательный параметр, в котором можно указать версию API. По умолчанию запросы передаются в версию для физических лиц. Возможные значения:
-  
-  * `GIGACHAT_API_PERS` — версия API для физических лиц;
-  * `GIGACHAT_API_B2B` — доступ для ИП и юридических лиц [по предоплате](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#platnye-pakety2);
-  * `GIGACHAT_API_CORP` — доступ для ИП и юридических лиц [по схеме pay-as-you-go](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#oplata-pay-as-you-go).
+[Быстрый старт](https://github.com/ai-forever/langchain4j-gigachat?tab=readme-ov-file#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0) | [Сборник примеров](https://github.com/ai-forever/langchain4j-gigachat/tree/main/langchain4j-gigachat-examples#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80%D1%8B-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B-%D1%81-langchain4j-gigachat)
 
-* `model` — необязательный параметр, в котором можно задать [модель GigaChat](https://developers.sber.ru/docs/ru/gigachat/models). По умолчанию запросы передаются в модель GigaChat Lite (`model="GigaChat"`).
-* `verify_ssl_certs` — необязательный параметр, с помощью которого можно отключить проверку [сертификатов НУЦ Минцифры](https://developers.sber.ru/docs/ru/gigachat/certificates).
-* `streaming` — необязательный параметр, который включает и отключает [потоковую генерацию токенов](https://developers.sber.ru/docs/ru/gigachat/api/response-token-streaming). По умолчанию `False`. Потоковая генерация позволяет повысить отзывчивость интерфейса программы при работе с длинными текстами.
+[Документация LangChain4j](https://docs.langchain4j.dev/)
 
-> [!TIP]
-> Спросите [чат-бот LangChain](https://chat.langchain.com/), как использовать GigaChat с инструментами фреймворка.
-> 
-> Исходный код чат-бота — в [репозитории chat-langchain](https://github.com/langchain-ai/chat-langchain).
 
-### gigachat
+## SDK для работы с моделями GigaChat
 
-Для установки библиотеки используйте менеджер пакетов pip:
+Библиотеки-обертки для работы с [REST API GigaChat](https://developers.sber.ru/docs/ru/gigachat/api/reference/rest/gigachat-api).
+Они управляют авторизацией запросов, упрощают отправку сообщений и дают доступ к другим методам API. 
 
-```sh
-pip install gigachat
-```
+SDK доступны на языках:
 
-Вызовите подходящий метод для запроса в API:
+### Python [![GitHub Downloads (all assets, all releases)](https://img.shields.io/pypi/dm/gigachat?style=flat-square?style=flat-round)](https://pypistats.org/packages/gigachat)[![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gigachat?style=flat-round)](https://star-history.com/#ai-forever/gigachat)
 
-```py
-from gigachat import GigaChat
+[`gigachat`](https://github.com/ai-forever/gigachat/) | [Сборник примеров](https://github.com/ai-forever/gigachat/tree/main/examples#примеры-работы-с-gigachat) 
 
-# Для авторизации запросов используйте ключ, полученный в проекте GigaChat API
-with GigaChat(credentials="ваш_ключ_авторизации", verify_ssl_certs=False) as giga:
-    response = giga.chat("Какие факторы влияют на стоимость страховки на дом?")
-    print(response.choices[0].message.content)
-```
+### JavaScript/TypeScript ![GitHub Downloads (all assets, all releases)](https://img.shields.io/npm/dm/gigachat?style=flat-square?style=flat-round)[![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gigachat-js?style=flat-round)](https://star-history.com/#ai-forever/gigachat-js)
 
-Объект GigaChat принимает параметры:
+[`gigachat`](https://github.com/ai-forever/gigachat-js) | [Сборник примеров](https://github.com/ai-forever/gigachat-java/blob/main/gigachat-java-example/README.md#примеры-работы-с-библиотекой-gigachat)
 
-* `credentials` — ключ авторизации для обмена сообщениями с GigaChat API. [Подробнее о получении ключа авторизации](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
-* `scope` — необязательный параметр, в котором можно указать версию API. Возможные значения:
-  
-  * `GIGACHAT_API_PERS` — версия API для физических лиц;
-  * `GIGACHAT_API_B2B` — доступ для ИП и юридических лиц [по предоплате](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#platnye-pakety2);
-  * `GIGACHAT_API_CORP` — доступ для ИП и юридических лиц [по схеме pay-as-you-go](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#oplata-pay-as-you-go).
+### Java [![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gigachat-java?style=flat-round)](https://star-history.com/#ai-forever/gigachat-java)
 
-  По умолчанию запросы передаются в версию для физических лиц.
+[`gigachat-java`](https://github.com/ai-forever/gigachat-java) | [Сборник примеров](https://github.com/ai-forever/gigachat-js/tree/master/examples#примеры-работы-с-gigachat)
 
-* `model` — необязательный параметр, в котором можно явно задать [модель GigaChat](https://developers.sber.ru/docs/ru/gigachat/models). По умолчанию запросы передаются в модель GigaChat Lite (значение поля `GigaChat`).
-* `verify_ssl_certs` — необязательный параметр, с помощью которого можно отключить проверку [сертификатов НУЦ Минцифры](/https://developers.sber.ru/docs/ru/gigachat/certificates).
+## Утилиты и MCP-сервера
 
-В отличие от библиотеки langchain-gigachat, для запуска потоковой передачи используйте метод `stream()`:
+### GPT2GIGA [![GitHub Downloads (all assets, all releases)](https://img.shields.io/pypi/dm/gpt2giga?style=flat-square?style=flat-round)](https://pypistats.org/packages/gpt2giga)[![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gpt2giga?style=flat-round)](https://star-history.com/#ai-forever/gpt2giga)
 
-```py
-from gigachat import GigaChat
+[`gpt2giga`](https://github.com/ai-forever/gpt2giga) — прокси-сервер, перенаправляющий отправленные в OpenAI API запросы в GigaChat API. 
 
-for chunk in GigaChat(credentials="ваш_ключ_авторизации",verify_ssl_certs=False, scope="GIGACHAT_API_PERS", model="GigaChat-Max").stream("Напиши рассказ про двух котят."):
-    print(chunk.choices[0].delta.content, end="", flush=True)
-```
-> [!TIP]
-> Больше примеров работы с библиотекой — [в репозитории](https://github.com/ai-forever/gigachat/tree/main/examples).
+Список протестированных приложений, работающих с GPT2GIGA и GigaChat:
 
-## Быстрый старт для JavaScript
+* [Aider](https://aider.chat/) — AI-ассистент для написания приложений. [Запуск и настройка Aider](https://github.com/ai-forever/gpt2giga/tree/main/integrations/aider).
+* [n8n](https://n8n.io/) — платформа для создания no-code-агентов.
+* [Cline](https://github.com/cline/cline?tab=readme-ov-file#cline--1-on-openrouter) | [Roo Code](https://github.com/RooVetGit/Roo-Code/blob/main/locales/ru/README.md#roo-code-%D1%80%D0%B0%D0%BD%D0%B5%D0%B5-roo-cline) — AI-ассистенты для разработки, которые можно интегрировать в редактор кода.
 
-### langchain-gigachat
+### MCP-сервера
 
-Для установки библиотеки используйте менеджер пакетов npm:
+Model Context Protocol — открытый протокол, который унифицирует обмен контекстом между приложением и LLM. Использование MCP упрощает подключение больших языковых моделей к различным функциям (*инструментам*) и источникам данных.
 
-```sh
-npm install --save langchain-gigachat
-```
+Подробнее о протоколе — в [официальной документации](https://modelcontextprotocol.io/introduction).
 
-Запустите простой пример:
+Список MCP-серверов, предоставляющих инструменты для работы с GigaChat и другими сервисами Сбера:
 
-```js
-import { Agent } from 'node:https';
-import { GigaChat } from "langchain-gigachat"
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-
-const httpsAgent = new Agent({
-    rejectUnauthorized: false, // Отключение проверки сертификатов НУЦ Минцифры
-});
-
-const giga = new GigaChat({
-    credentials: 'ключ_авторизации',
-    model: 'GigaChat-Max',
-    httpsAgent
-})
-
-const messages = [
-    new SystemMessage("Переведи следующее сообщение на английский"),
-    new HumanMessage("Привет!"),
-];
-
-const resp = await giga.invoke(messages);
-
-console.log(resp.content);
-```
-
-Объект GigaChat принимает параметры:
-
-* `credentials` — ключ авторизации для обмена сообщениями с GigaChat API. [Подробнее о получении ключа авторизации](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
-* `scope` — необязательный параметр, в котором можно указать версию API. По умолчанию запросы передаются в версию для физических лиц. Возможные значения:
-  
-  * `GIGACHAT_API_PERS` — версия API для физических лиц;
-  * `GIGACHAT_API_B2B` — доступ для ИП и юридических лиц [по предоплате](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#platnye-pakety2);
-  * `GIGACHAT_API_CORP` — доступ для ИП и юридических лиц [по схеме pay-as-you-go](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#oplata-pay-as-you-go).
-
-* `model` — необязательный параметр, в котором можно задать [модель GigaChat](https://developers.sber.ru/docs/ru/gigachat/models). По умолчанию запросы передаются в модель GigaChat Lite (`model="GigaChat"`).
-* `httpsAgent` — необязательный параметр, который позволяет задать настройки HTTPS. Эти настройки будут использованы при подключении к серверу API. Вы можете использовать их для отключения проверки [сертификатов НУЦ Минцифры](/https://developers.sber.ru/docs/ru/gigachat/certificates).
-
-### gigachat
-
-Для установки библиотеки используйте менеджер пакетов npm:
-
-```sh
-npm install gigachat
-```
-
-Вызовите подходящий метод для запроса в API:
-
-```js
-import GigaChat from 'gigachat';
-import { Agent } from 'node:https';
-
-const httpsAgent = new Agent({
-  rejectUnauthorized: false, // Отключение проверки сертификатов НУЦ Минцифры
-});
-
-const giga = new GigaChat({
-  model: 'GigaChat',
-  credentials: 'ключ_авторизации',
-  httpsAgent: httpsAgent,
-});
-
-giga
-  .chat({
-    messages: [{ role: 'user', content: 'Привет, как дела?' }],
-  })
-  .then((resp) => {
-    console.log(resp.choices[0]?.message.content);
-  });
-```
-
-Объект GigaChat принимает параметры:
-
-* `credentials` — ключ авторизации для обмена сообщениями с GigaChat API. [Подробнее о получении ключа авторизации](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
-* `model` — необязательный параметр, в котором можно явно задать [модель GigaChat](https://developers.sber.ru/docs/ru/gigachat/models). По умолчанию запросы передаются в модель GigaChat Lite (значение поля `GigaChat`).
-* `scope` — необязательный параметр, в котором можно указать версию API. Возможные значения:
-  
-  * `GIGACHAT_API_PERS` — версия API для физических лиц;
-  * `GIGACHAT_API_B2B` — доступ для ИП и юридических лиц [по предоплате](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#platnye-pakety2);
-  * `GIGACHAT_API_CORP` — доступ для ИП и юридических лиц [по схеме pay-as-you-go](https://developers.sber.ru/docs/ru/gigachat/api/tariffs#oplata-pay-as-you-go).
-
-  По умолчанию запросы передаются в версию для физических лиц.
-
-Настройки HTTPS, которые добавляются при подключении к серверу API
-
-* `httpsAgent` — необязательный параметр, который позволяет задать настройки HTTPS. Эти настройки будут использованы при подключении к серверу API. Вы можете использовать их для отключения проверки [сертификатов НУЦ Минцифры](/https://developers.sber.ru/docs/ru/gigachat/certificates).
-
-> [!TIP]
-> Больше примеров работы с библиотекой — [в репозитории](https://github.com/ai-forever/gigachat-js/tree/master/examples).
-
-## Примеры
-
-Ниже представлен список интерактивных примеров для Python и JavaScript в формате Jupyter-блокнотов.
-
-### Python
-
-При запуске примеров могут возникать проблемы, связанные с особенностями локального окружения Python.
-Чтобы их избежать, используйте чистое виртуальное окружение.
-
-* Retrieval-Augmented Generation (RAG):
-  * [Ответы на вопросы по заданной книге](/cookbook/gigachat_qa.ipynb)
-  * [RAG с текстовым поиском на основе Yandex Search API](/cookbook/yandex_search/retriever.ipynb)
-* Агенты:
-  * [Агент для работы с функциями](/cookbook/gigachat_functions_agent.ipynb)
-  * [Агент «Продавец телефонов»](/cookbook/gigachat_phone_agent.ipynb)
-  * [Агент с текстовым поиском на основе Yandex Search API](/cookbook/yandex_search/tool.ipynb)
-  * [Дебаты агентов с разными ролями](/cookbook/agent_debates/README.md)
-  * [Агент для получения рекомендаций Spotify](/cookbook/playlists.ipynb)
-  * [Агент выполняющий код](/cookbook/repl_graph/repl.ipynb)
-  * [Агент и MCP-сервер](/cookbook/mcp/README.md)
-* [Извлечение структурированной информации](/cookbook/structured_output/structured_output.ipynb)
-* Работа с изображениями:
-  * [Распознавание изображения](/cookbook/gigachat_vision/gigachat_vision_simple.ipynb)
-  * [Генерация структурированных данных на основе изображений](/cookbook/gigachat_vision/gigachat_vision.ipynb)
-  * [Получение изображений и видео после генерации](/cookbook/images_and_videos/gigachat_with_images.ipynb)
-
-### JavaScript
-
-* [Retrieval-Augmented Generation (RAG)](/cookbook/js/rag.ipynb)
-* [Работа с функциями](/cookbook/js/tools.ipynb)
-* [Выделение сущностей в тексте](/cookbook/js/extraction.ipynb)
-* [Пример разработки агента на основе LangGraph.js и GigaChat API](/cookbook/js/langgraph_quickstart.ipynb)
-
-## Смотрите также
-
-* Документация GigaChat API:
-  * [Быстрый страт для физических лиц](https://developers.sber.ru/docs/ru/gigachat/individuals-quickstart)
-  * [Быстрый страт для ИП и юридических лиц](https://developers.sber.ru/docs/ru/gigachat/legal-quickstart)
-* Документация LangChain:
-    * [для Python](https://python.langchain.com/docs/introduction/);
-    * [для JavaScript](https://js.langchain.com/docs/introduction/?ref=blog.apify.com);
-* [Документация LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/).
+* [Think MCP](https://github.com/ai-forever/think-mcp) — инструмент для реализации размышлений («think») при работе AI-агентов
+* [MCP Giga Checker](https://github.com/ai-forever/mcp_giga_checker) — инструмент для проверки переданного текста на наличие содержимого, сгенерированного с помощью нейросетевых моделей.
+* [MCP Voice Salute](https://github.com/ai-forever/mcp_voice_salute) — инструменты для работы с [API сервиса синтеза и распознавания речи SaluteSpeech](https://developers.sber.ru/docs/ru/salutespeech/overview);
+* [MCP Kandinsky](https://github.com/ai-forever/mcp_kandinsky) — инструмент для генерации изображений с помощью нейросети Kandinsky 3.1.
