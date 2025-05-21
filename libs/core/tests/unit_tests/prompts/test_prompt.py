@@ -441,7 +441,7 @@ def test_basic_sandboxing_with_jinja2() -> None:
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
-        assert prompt.format() == []
+        prompt.format()
 
 
 @pytest.mark.requires("jinja2")
