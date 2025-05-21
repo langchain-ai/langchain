@@ -680,8 +680,7 @@ def test_image_token_counting_png() -> None:
     assert expected == actual
 
 
-@pytest.mark.parametrize("use_responses_api", [False, True])
-def test_tool_calling_strict(use_responses_api: bool) -> None:
+def test_tool_calling_strict() -> None:
     """Test tool calling with strict=True."""
 
     class magic_function(BaseModel):
@@ -689,14 +688,54 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
 
         input: int
 
-    model = ChatOpenAI(
-        model="gpt-4o", temperature=0, use_responses_api=use_responses_api
-    )
+    model = ChatOpenAI(model="gpt-4.1", temperature=0)
     model_with_tools = model.bind_tools([magic_function], strict=True)
 
     # invalid_magic_function adds metadata to schema that isn't supported by OpenAI.
     model_with_invalid_tool_schema = model.bind_tools(
         [invalid_magic_function], strict=True
+    )
+
+    # Test invoke
+    query = "What is the value of magic_function(3)? Use the tool."
+    response = model_with_tools.invoke(query)
+    _validate_tool_call_message(response)
+
+    # Test invalid tool schema
+    with pytest.raises(openai.BadRequestError):
+        model_with_invalid_tool_schema.invoke(query)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in model_with_tools.stream(query):
+        full = chunk if full is None else full + chunk  # type: ignore
+    assert isinstance(full, AIMessage)
+    _validate_tool_call_message(full)
+
+    # Test invalid tool schema
+    with pytest.raises(openai.BadRequestError):
+        next(model_with_invalid_tool_schema.stream(query))
+
+
+def test_tool_calling_strict_responses() -> None:
+    """Test tool calling with strict=True.
+
+    Responses API appears to have fewer constraints on schema when strict=True.
+    """
+
+    class magic_function_notrequired_arg(BaseModel):
+        """Applies a magic function to an input."""
+
+        input: Optional[int] = Field(default=None)
+
+    model = ChatOpenAI(model="gpt-4.1", temperature=0, use_responses_api=True)
+    # invalid_magic_function adds metadata to schema that as of 2025-05-20 appears
+    # supported by the Responses API, but not Chat Completions. We expect tool calls
+    # from this schema to be valid.
+    model_with_tools = model.bind_tools([invalid_magic_function], strict=True)
+    # Having a not-required argument in the schema remains invalid.
+    model_with_invalid_tool_schema = model.bind_tools(
+        [magic_function_notrequired_arg], strict=True
     )
 
     # Test invoke

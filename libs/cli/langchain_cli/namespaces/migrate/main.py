@@ -50,7 +50,7 @@ def migrate(
         "reflect any imports from new packages. For example, if you see new "
         "imports from langchain_openai, langchain_anthropic or "
         "langchain_text_splitters you "
-        "should them to your dependencies! \n\n"
+        "should add them to your dependencies! \n\n"
         '⚠️ This script is a "best-effort", and is likely to make some '
         "mistakes.\n\n"
         "🛡️ Backup your code prior to running the migration script -- it will "
