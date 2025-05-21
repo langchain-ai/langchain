@@ -400,12 +400,7 @@ def test_code_interpreter() -> None:
     assert len(tool_outputs) == 1
     container_id = tool_outputs[0]["container_id"]
     llm_with_tools = llm.bind_tools(
-        [
-            {
-            "type": "code_interpreter",
-            "container": container_id
-            }
-        ]
+        [{"type": "code_interpreter", "container": container_id}]
     )
 
     full: Optional[BaseMessageChunk] = None
@@ -417,12 +412,11 @@ def test_code_interpreter() -> None:
     assert isinstance(full, AIMessageChunk)
     tool_outputs = full.additional_kwargs["tool_outputs"]
     assert tool_outputs
-    assert any(
-        output["type"] == "code_interpreter_call" for output in tool_outputs
-    )
+    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
 
 def test_mcp_builtin() -> None:
-    # pytest.skip()
+    pytest.skip()  # TODO: set up VCR
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
 
     llm_with_tools = llm.bind_tools(
@@ -431,11 +425,7 @@ def test_mcp_builtin() -> None:
                 "type": "mcp",
                 "server_label": "deepwiki",
                 "server_url": "https://mcp.deepwiki.com/mcp",
-                "require_approval": {
-                    "always": {
-                        "tool_names": ["read_wiki_structure"]
-                    }
-                }
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
             }
         ]
     )
@@ -456,6 +446,5 @@ def test_mcp_builtin() -> None:
         ]
     )
     _ = llm_with_tools.invoke(
-        [approval_message],
-        previous_response_id=response.response_metadata["id"]
+        [approval_message], previous_response_id=response.response_metadata["id"]
     )
