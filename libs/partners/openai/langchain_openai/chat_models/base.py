@@ -3117,6 +3117,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     cast(ToolMessage, lc_msg)
                 )
                 input_.append(computer_call_output)
+            elif lc_msg.additional_kwargs.get("type") == "mcp_approval_response":
+                approval_params = {k: v for k, v in lc_msg.additional_kwargs.items() if k != "type"}
+                approval_response = {
+                    "type": "mcp_approval_response",
+                    "approval_request_id": cast(ToolMessage, lc_msg).tool_call_id,
+                    **approval_params,
+                }
+                input_.append(approval_response)
             else:
                 if not isinstance(tool_output, str):
                     tool_output = _stringify(tool_output)
