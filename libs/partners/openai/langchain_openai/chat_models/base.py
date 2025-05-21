@@ -1456,6 +1456,8 @@ class BaseChatOpenAI(BaseChatModel):
                     "file_search",
                     "web_search_preview",
                     "computer_use_preview",
+                    "code_interpreter",
+                    "mcp",
                 ):
                     tool_choice = {"type": tool_choice}
                 # 'any' is not natively supported by OpenAI API.
@@ -3429,6 +3431,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "web_search_call",
         "file_search_call",
         "computer_call",
+        "code_interpreter_call",
+        "mcp_call",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
