@@ -45,6 +45,8 @@ jobs:
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+          DEEPSEEK_API_KEY: foo
+          FIREWORKS_API_KEY: foo
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
