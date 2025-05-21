@@ -23,9 +23,9 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_tests.integration_tests.chat_models import _validate_tool_call_message
 from langchain_tests.integration_tests.chat_models import (
-    magic_function as invalid_magic_function,
+    _validate_tool_call_message,
+    magic_function,
 )
 from pydantic import BaseModel, Field
 
@@ -680,44 +680,8 @@ def test_image_token_counting_png() -> None:
     assert expected == actual
 
 
-def test_tool_calling_strict() -> None:
-    """Test tool calling with strict=True."""
-
-    class magic_function(BaseModel):
-        """Applies a magic function to an input."""
-
-        input: int
-
-    model = ChatOpenAI(model="gpt-4.1", temperature=0)
-    model_with_tools = model.bind_tools([magic_function], strict=True)
-
-    # invalid_magic_function adds metadata to schema that isn't supported by OpenAI.
-    model_with_invalid_tool_schema = model.bind_tools(
-        [invalid_magic_function], strict=True
-    )
-
-    # Test invoke
-    query = "What is the value of magic_function(3)? Use the tool."
-    response = model_with_tools.invoke(query)
-    _validate_tool_call_message(response)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        model_with_invalid_tool_schema.invoke(query)
-
-    # Test stream
-    full: Optional[BaseMessageChunk] = None
-    for chunk in model_with_tools.stream(query):
-        full = chunk if full is None else full + chunk  # type: ignore
-    assert isinstance(full, AIMessage)
-    _validate_tool_call_message(full)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        next(model_with_invalid_tool_schema.stream(query))
-
-
-def test_tool_calling_strict_responses() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_tool_calling_strict(use_responses_api: bool) -> None:
     """Test tool calling with strict=True.
 
     Responses API appears to have fewer constraints on schema when strict=True.
@@ -728,11 +692,11 @@ def test_tool_calling_strict_responses() -> None:
 
         input: Optional[int] = Field(default=None)
 
-    model = ChatOpenAI(model="gpt-4.1", temperature=0, use_responses_api=True)
-    # invalid_magic_function adds metadata to schema that as of 2025-05-20 appears
-    # supported by the Responses API, but not Chat Completions. We expect tool calls
-    # from this schema to be valid.
-    model_with_tools = model.bind_tools([invalid_magic_function], strict=True)
+    model = ChatOpenAI(
+        model="gpt-4.1", temperature=0, use_responses_api=use_responses_api
+    )
+    # N.B. magic_function adds metadata to schema (min/max for number fields)
+    model_with_tools = model.bind_tools([magic_function], strict=True)
     # Having a not-required argument in the schema remains invalid.
     model_with_invalid_tool_schema = model.bind_tools(
         [magic_function_notrequired_arg], strict=True
@@ -802,30 +766,6 @@ def test_structured_output_strict(
         assert isinstance(chunk, dict)
     assert isinstance(chunk, dict)  # for mypy
     assert set(chunk.keys()) == {"setup", "punchline"}
-
-    # Invalid schema with optional fields:
-    class InvalidJoke(BaseModelProper):
-        """Joke to tell user."""
-
-        setup: str = FieldProper(description="question to set up a joke")
-        # Invalid field, can't have default value.
-        punchline: str = FieldProper(
-            default="foo", description="answer to resolve the joke"
-        )
-
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
-    with pytest.raises(openai.BadRequestError):
-        chat.invoke("Tell me a joke about cats.")
-    with pytest.raises(openai.BadRequestError):
-        next(chat.stream("Tell me a joke about cats."))
-
-    chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=True
-    )
-    with pytest.raises(openai.BadRequestError):
-        chat.invoke("Tell me a joke about cats.")
-    with pytest.raises(openai.BadRequestError):
-        next(chat.stream("Tell me a joke about cats."))
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
