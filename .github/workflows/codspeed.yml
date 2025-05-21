@@ -49,5 +49,9 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             cd ${{ inputs.working-directory }}
-            uv run --no-sync pytest ./tests/benchmarks --codspeed
+            if [ "${{ inputs.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
           mode: walltime
