@@ -67,15 +67,16 @@ def test_arbitrary_roles_accepted_in_chatmessages(
 
 
 def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured_headers = {}
+    captured_headers: dict[str, str] = {}
 
     # Mock the Client.stream method to capture headers
     def mock_stream(
-        self, method: str, url: str, *args: any, **kwargs: any
-    ) -> Generator[Response, Any, Any]:
+        self: Client, method: str, url: str, *args: Any, **kwargs: Any
+    ) -> Generator[Response, Any, None]:
         nonlocal captured_headers
         captured_headers = dict(kwargs.get("headers", {}))
-        return _mock_httpx_client_stream()
+        with _mock_httpx_client_stream() as response:
+            yield response
 
     monkeypatch.setattr(Client, "stream", mock_stream)
 
