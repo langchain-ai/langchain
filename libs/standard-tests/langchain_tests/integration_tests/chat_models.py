@@ -2685,6 +2685,8 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_stream_time(
         self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
     ) -> None:
+        if not self.enable_vcr_tests:
+            pytest.skip("VCR not set up.")
         def _run() -> None:
             cassette_name = f"{self.__class__.__name__}_test_stream_time.yaml"
             with vcr.use_cassette(cassette_name, record_mode="once"):
