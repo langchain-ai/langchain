@@ -254,6 +254,8 @@ if __name__ == "__main__":
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
             dirs_to_run["lint"].add(".")
 
+        if file.startswith("libs/core"):
+            dirs_to_run["codspeed"].add(f"libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -267,8 +269,6 @@ if __name__ == "__main__":
                     found = True
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
-        if file.startswith("libs/core"):
-            dirs_to_run["codspeed"].add(f"libs/core")
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # note: won't run on external repo partners
