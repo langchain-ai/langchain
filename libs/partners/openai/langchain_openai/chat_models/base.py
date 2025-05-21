@@ -3446,6 +3446,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "computer_call",
         "code_interpreter_call",
         "mcp_call",
+        "mcp_list_tools",
+        "mcp_approval_request",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
