@@ -202,6 +202,10 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
+    def enable_vcr_tests(self) -> bool:
+        return False
+
+    @property
     def supported_usage_metadata_details(
         self,
     ) -> Dict[

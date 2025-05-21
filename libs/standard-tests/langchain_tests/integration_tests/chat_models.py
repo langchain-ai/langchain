@@ -2681,6 +2681,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(response, AIMessage)
 
+    @pytest.mark.benchmark
     def test_stream_time(
         self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
     ) -> None:
