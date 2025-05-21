@@ -23,7 +23,7 @@ from pydantic.v1 import (
 from pydantic.v1 import (
     ValidationError as ValidationErrorV1,
 )
-from pytest_benchmark.fixture import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from syrupy import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests

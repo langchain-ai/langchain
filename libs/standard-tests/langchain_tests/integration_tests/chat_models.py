@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
-import vcr
+import vcr  # type: ignore[import-untyped]
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
@@ -29,7 +29,7 @@ from langchain_core.utils.function_calling import (
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-from pytest_benchmark.fixture import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
@@ -2685,7 +2685,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_stream_time(
         self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
     ) -> None:
-        def _run():
+        def _run() -> None:
             cassette_name = f"{self.__class__.__name__}_test_stream_time.yaml"
             with vcr.use_cassette(cassette_name, record_mode="once"):
                 for _ in model.stream("Write a story about a cat."):
