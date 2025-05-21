@@ -11,6 +11,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    HumanMessage,
 )
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -418,4 +419,43 @@ def test_code_interpreter() -> None:
     assert tool_outputs
     assert any(
         output["type"] == "code_interpreter_call" for output in tool_outputs
+    )
+
+def test_mcp_builtin() -> None:
+    # pytest.skip()
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {
+                    "always": {
+                        "tool_names": ["read_wiki_structure"]
+                    }
+                }
+            }
+        ]
+    )
+    response = llm_with_tools.invoke(
+        "What transport protocols does the 2025-03-26 version of the MCP spec "
+        "(modelcontextprotocol/modelcontextprotocol) support?"
+    )
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": output["id"],
+            }
+            for output in response.additional_kwargs["tool_outputs"]
+            if output["type"] == "mcp_approval_request"
+        ]
+    )
+    _ = llm_with_tools.invoke(
+        [approval_message],
+        previous_response_id=response.response_metadata["id"]
     )

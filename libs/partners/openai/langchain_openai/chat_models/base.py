@@ -3228,6 +3228,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         new_blocks.append(new_block)
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)
+                    elif block["type"] == "mcp_approval_response":
+                        # Take MCP approval blocks as input items directly
+                        input_.append(block)
                     else:
                         pass
                 msg["content"] = new_blocks
