@@ -70,11 +70,15 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
     captured_headers: dict[str, str] = {}
 
     # Mock the Client.stream method to capture headers
+    @contextmanager
     def mock_stream(
         self: Client, method: str, url: str, *args: Any, **kwargs: Any
-    ) -> Generator[Response, Any, None]:
+    ) -> Generator[Response, None, None]:
         nonlocal captured_headers
-        captured_headers = dict(kwargs.get("headers", {}))
+        if hasattr(self, "headers"):
+            captured_headers = dict(getattr(self, "headers"))
+        else:
+            captured_headers = {}
         with _mock_httpx_client_stream() as response:
             yield response
 
@@ -91,5 +95,5 @@ def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
     messages = [ChatMessage(role="user", content="Hello world")]
     llm.invoke(messages)
 
-    assert captured_headers.get("Authorization") == "Bearer test-token"
-    assert captured_headers.get("X-Custom-Header") == "LangChainTest"
+    assert captured_headers.get("Authorization".lower()) == "Bearer test-token"
+    assert captured_headers.get("X-Custom-Header".lower()) == "LangChainTest"
