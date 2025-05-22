@@ -21,6 +21,8 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage
 from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
 from openai.types.responses.response_error import ResponseError
@@ -1849,3 +1851,77 @@ def test_service_tier() -> None:
     llm = ChatOpenAI(model="o4-mini", service_tier="flex")
     payload = llm._get_request_payload([HumanMessage("Hello")])
     assert payload["service_tier"] == "flex"
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.chat_model_start_inputs: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+        pass
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+def test_mcp_tracing() -> None:
+    # Test we exclude sensitive information from traces
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+
+    tracer = FakeTracer()
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Response:
+        return Response(
+            id="resp_123",
+            created_at=1234567890,
+            model="o4-mini",
+            object="response",
+            parallel_tool_calls=True,
+            tools=[],
+            tool_choice="auto",
+            output=[
+                ResponseOutputMessage(
+                    type="message",
+                    id="msg_123",
+                    content=[
+                        ResponseOutputText(
+                            type="output_text", text="Test response", annotations=[]
+                        )
+                    ],
+                    role="assistant",
+                    status="completed",
+                )
+            ],
+        )
+
+    mock_client.responses.create = mock_create
+    input_message = HumanMessage("Test query")
+    tools = [
+        {
+            "type": "mcp",
+            "server_label": "deepwiki",
+            "server_url": "https://mcp.deepwiki.com/mcp",
+            "require_approval": "always",
+            "headers": {"Authorization": "Bearer PLACEHOLDER"},
+        }
+    ]
+    with patch.object(llm, "root_client", mock_client):
+        llm_with_tools = llm.bind_tools(tools)
+        _ = llm_with_tools.invoke([input_message], config={"callbacks": [tracer]})
+
+    # Test headers are not traced
+    assert len(tracer.chat_model_start_inputs) == 1
+    invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
+    for tool in invocation_params["tools"]:
+        if "headers" in tool:
+            assert tool["headers"] == "**REDACTED**"
+    for substring in ["Authorization", "Bearer", "PLACEHOLDER"]:
+        assert substring not in str(tracer.chat_model_start_inputs)
+
+    # Test headers are correctly propagated to request
+    payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
+    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
