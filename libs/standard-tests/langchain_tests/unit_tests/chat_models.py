@@ -23,6 +23,7 @@ from pydantic.v1 import (
 from pydantic.v1 import (
     ValidationError as ValidationErrorV1,
 )
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from syrupy import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests
@@ -198,6 +199,10 @@ class ChatModelTests(BaseStandardTests):
     def supports_image_tool_message(self) -> bool:
         """(bool) whether the chat model supports ToolMessages that include image
         content."""
+        return False
+
+    @property
+    def enable_vcr_tests(self) -> bool:
         return False
 
     @property
@@ -850,3 +855,7 @@ class ChatModelUnitTests(ChatModelTests):
                         dumpd(model), valid_namespaces=model.get_lc_namespace()[:1]
                     ).dict()
                 )
+
+    @pytest.mark.benchmark
+    def test_init_time(self, benchmark: BenchmarkFixture) -> None:
+        _ = benchmark(self.chat_model_class, **self.chat_model_params)

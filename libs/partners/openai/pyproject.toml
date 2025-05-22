@@ -33,6 +33,7 @@ test = [
     "pytest-retry<1.8.0,>=1.7.0",
     "pytest-socket<1.0.0,>=0.6.0",
     "pytest-xdist<4.0.0,>=3.6.1",
+    "vcrpy>=7.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
     "langchain-core",
