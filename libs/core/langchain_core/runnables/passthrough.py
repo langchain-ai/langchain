@@ -672,7 +672,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             yield chunk
 
 
-class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
+class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
     """Runnable that picks keys from dict[str, Any] inputs.
 
     RunnablePick class represents a Runnable that selectively picks keys from a
