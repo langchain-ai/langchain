@@ -863,3 +863,21 @@ def test_image_tool_calling() -> None:
     ]
     llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
     llm.bind_tools([color_picker]).invoke(messages)
+
+
+# TODO: set up VCR
+def test_code_execution():
+    pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        default_headers={"anthropic-beta": "code-execution-2025-05-22"},
+    )
+
+    tool = {"type": "code_execution_20250522", "name": "code_execution"}
+    llm_with_tools = llm.bind_tools([tool])
+
+    response = llm_with_tools.invoke(
+        "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+    )
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}

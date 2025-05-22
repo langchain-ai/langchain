@@ -100,6 +100,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "computer_",
         "bash_",
         "web_search_",
+        "code_execution_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
@@ -888,6 +889,22 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm_with_tools.invoke(
                     "How do I update a web app to TypeScript 5.5?"
+                )
+
+        Code execution:
+
+            .. code-block:: python
+
+                llm = ChatAnthropic(
+                    model="claude-sonnet-4-20250514",
+                    default_headers={"anthropic-beta": "code-execution-2025-05-22"},
+                )
+
+                tool = {"type": "code_execution_20250522", "name": "code_execution"}
+                llm_with_tools = llm.bind_tools([tool])
+
+                response = llm_with_tools.invoke(
+                    "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                 )
 
         Text editor:
