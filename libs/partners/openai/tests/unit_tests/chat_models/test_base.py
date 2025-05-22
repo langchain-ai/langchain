@@ -1916,10 +1916,12 @@ def test_mcp_tracing() -> None:
     # Test headers are not traced
     assert len(tracer.chat_model_start_inputs) == 1
     invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
-    assert all("headers" not in tool for tool in invocation_params["tools"])
-    for substring in ["Authorization", "headers"]:
+    for tool in invocation_params["tools"]:
+        if "headers" in tool:
+            assert tool["headers"] == "**REDACTED**"
+    for substring in ["Authorization", "Bearer", "PLACEHOLDER"]:
         assert substring not in str(tracer.chat_model_start_inputs)
 
     # Test headers are correctly propagated to request
-    payload = llm_with_tools._get_request_payload([input_message], tools=tools)
+    payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"

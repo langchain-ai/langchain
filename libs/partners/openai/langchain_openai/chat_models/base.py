@@ -1194,10 +1194,10 @@ class BaseChatOpenAI(BaseChatModel):
             **self._default_params,
             **kwargs,
         }
-        # Filter headers from built-in remote MCP tool invocations
+        # Redact headers from built-in remote MCP tool invocations
         if (tools := params.get("tools")) and isinstance(tools, list):
             params["tools"] = [
-                {k: v for k, v in tool.items() if k != "headers"}
+                ({**tool, "headers": "**REDACTED**"} if "headers" in tool else tool)
                 if isinstance(tool, dict) and tool.get("type") == "mcp"
                 else tool
                 for tool in tools
