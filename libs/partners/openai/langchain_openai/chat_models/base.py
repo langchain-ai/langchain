@@ -1188,12 +1188,22 @@ class BaseChatOpenAI(BaseChatModel):
         self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> dict[str, Any]:
         """Get the parameters used to invoke the model."""
-        return {
+        params = {
             "model": self.model_name,
             **super()._get_invocation_params(stop=stop),
             **self._default_params,
             **kwargs,
         }
+        # Filter headers from built-in remote MCP tool invocations
+        if (tools := params.get("tools")) and isinstance(tools, list):
+            params["tools"] = [
+                {k: v for k, v in tool.items() if k != "headers"}
+                if isinstance(tool, dict) and tool.get("type") == "mcp"
+                else tool
+                for tool in tools
+            ]
+
+        return params
 
     def _get_ls_params(
         self, stop: Optional[list[str]] = None, **kwargs: Any
@@ -3396,7 +3406,9 @@ def _construct_lc_result_from_responses_api(
 
 
 def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any, schema: Optional[type[_BM]] = None, metadata: Optional[dict] = None,
+    chunk: Any,
+    schema: Optional[type[_BM]] = None,
+    metadata: Optional[dict] = None,
     has_reasoning: bool = False,
 ) -> Optional[ChatGenerationChunk]:
     content = []
