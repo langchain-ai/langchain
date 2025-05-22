@@ -553,7 +553,11 @@ def convert_to_openai_tool(
 
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with "type" in "file_search", "function", "computer_use_preview",
-        "web_search_preview", "code_interpreter", or "mcp".
+        "web_search_preview".
+
+    .. versionchanged:: 0.3.61
+
+        Added support for OpenAI's built-in code interpreter and remote MCP tools.
     """
     if isinstance(tool, dict):
         if tool.get("type") in (
