@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -55,14 +55,17 @@ class ExaSearchRetriever(BaseRetriever):
     """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
     highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
     """Whether to set the page content to the highlights of the results."""
-    text_contents_options: Union[TextContentsOptions, Dict[str, Any], Literal[True]] = (
+    text_contents_options: Union[TextContentsOptions, dict[str, Any], Literal[True]] = (
         True
     )
-    """How to set the page content of the results. Can be True or a dict with options like max_characters."""
+    """How to set the page content of the results. Can be True or a dict with options
+    like max_characters."""
     livecrawl: Optional[Literal["always", "fallback", "never"]] = None
-    """Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"."""
-    summary: Optional[Union[bool, Dict[str, str]]] = None
-    """Whether to include a summary of the content. Can be a boolean or a dict with a custom query."""
+    """Option to crawl live webpages if content is not in the index. Options: "always",
+    "fallback", "never"."""
+    summary: Optional[Union[bool, dict[str, str]]] = None
+    """Whether to include a summary of the content. Can be a boolean or a dict with a
+    custom query."""
 
     client: Exa = Field(default=None)
     exa_api_key: SecretStr = Field(default=None)

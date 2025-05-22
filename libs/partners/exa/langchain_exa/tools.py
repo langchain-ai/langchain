@@ -1,6 +1,6 @@
 """Tool for the Exa Search API."""
 
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -76,7 +76,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         query: str,
         num_results: int = 10,
         text_contents_options: Optional[
-            Union[TextContentsOptions, Dict[str, Any], bool]
+            Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
@@ -87,7 +87,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         end_published_date: Optional[str] = None,
         use_autoprompt: Optional[bool] = None,
         livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, Dict[str, str]]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,
         type: Optional[Literal["neural", "keyword", "auto"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
@@ -109,7 +109,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
             type: The type of search, 'keyword', 'neural', or 'auto'.
             run_manager: The run manager for callbacks.
-        """
+        """  # noqa: E501
         try:
             return self.client.search_and_contents(
                 query,
@@ -156,7 +156,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         url: str,
         num_results: int = 10,
         text_contents_options: Optional[
-            Union[TextContentsOptions, Dict[str, Any], bool]
+            Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
@@ -168,7 +168,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         exclude_source_domain: Optional[bool] = None,
         category: Optional[str] = None,
         livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, Dict[str, str]]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
         """Use the tool.
@@ -189,7 +189,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
             livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
             run_manager: The run manager for callbacks.
-        """
+        """  # noqa: E501
         try:
             return self.client.find_similar_and_contents(
                 url,
