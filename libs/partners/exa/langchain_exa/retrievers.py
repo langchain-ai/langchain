@@ -55,7 +55,9 @@ class ExaSearchRetriever(BaseRetriever):
     """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
     highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
     """Whether to set the page content to the highlights of the results."""
-    text_contents_options: Union[TextContentsOptions, Dict[str, Any], Literal[True]] = True
+    text_contents_options: Union[TextContentsOptions, Dict[str, Any], Literal[True]] = (
+        True
+    )
     """How to set the page content of the results. Can be True or a dict with options like max_characters."""
     livecrawl: Optional[Literal["always", "fallback", "never"]] = None
     """Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"."""

@@ -75,7 +75,9 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         self,
         query: str,
         num_results: int = 10,
-        text_contents_options: Optional[Union[TextContentsOptions, Dict[str, Any], bool]] = None,
+        text_contents_options: Optional[
+            Union[TextContentsOptions, Dict[str, Any], bool]
+        ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
@@ -90,7 +92,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
         """Use the tool.
-        
+
         Args:
             query: The search query.
             num_results: The number of search results to return (1 to 100). Default: 10
@@ -153,7 +155,9 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         self,
         url: str,
         num_results: int = 10,
-        text_contents_options: Optional[Union[TextContentsOptions, Dict[str, Any], bool]] = None,
+        text_contents_options: Optional[
+            Union[TextContentsOptions, Dict[str, Any], bool]
+        ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
@@ -168,7 +172,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
         """Use the tool.
-        
+
         Args:
             url: The URL to find similar pages for.
             num_results: The number of search results to return (1 to 100). Default: 10
