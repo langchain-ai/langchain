@@ -775,16 +775,22 @@ class BaseChatOpenAI(BaseChatModel):
 
         with context_manager as response:
             is_first_chunk = True
+            has_reasoning = False
             for chunk in response:
                 metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk, schema=original_schema_obj, metadata=metadata
+                    chunk,
+                    schema=original_schema_obj,
+                    metadata=metadata,
+                    has_reasoning=has_reasoning,
                 ):
                     if run_manager:
                         run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
+                    if "reasoning" in generation_chunk.message.additional_kwargs:
+                        has_reasoning = True
                     yield generation_chunk
 
     async def _astream_responses(
@@ -811,16 +817,22 @@ class BaseChatOpenAI(BaseChatModel):
 
         async with context_manager as response:
             is_first_chunk = True
+            has_reasoning = False
             async for chunk in response:
                 metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk, schema=original_schema_obj, metadata=metadata
+                    chunk,
+                    schema=original_schema_obj,
+                    metadata=metadata,
+                    has_reasoning=has_reasoning,
                 ):
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
+                    if "reasoning" in generation_chunk.message.additional_kwargs:
+                        has_reasoning = True
                     yield generation_chunk
 
     def _should_stream_usage(
@@ -3208,6 +3220,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
+                non_message_item_types = ("mcp_approval_response",)
                 for block in msg["content"]:
                     # chat api: {"type": "text", "text": "..."}
                     # responses api: {"type": "input_text", "text": "..."}
@@ -3228,13 +3241,15 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         new_blocks.append(new_block)
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)
-                    elif block["type"] == "mcp_approval_response":
-                        # Take MCP approval blocks as input items directly
+                    elif block["type"] in non_message_item_types:
                         input_.append(block)
                     else:
                         pass
                 msg["content"] = new_blocks
-            input_.append(msg)
+                if msg["content"]:
+                    input_.append(msg)
+            else:
+                input_.append(msg)
         else:
             input_.append(msg)
 
@@ -3381,7 +3396,8 @@ def _construct_lc_result_from_responses_api(
 
 
 def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any, schema: Optional[type[_BM]] = None, metadata: Optional[dict] = None
+    chunk: Any, schema: Optional[type[_BM]] = None, metadata: Optional[dict] = None,
+    has_reasoning: bool = False,
 ) -> Optional[ChatGenerationChunk]:
     content = []
     tool_call_chunks: list = []
@@ -3463,9 +3479,11 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
-        additional_kwargs["reasoning"] = chunk.item.model_dump(
-            exclude_none=True, mode="json"
-        )
+        if not has_reasoning:
+            # Hack until breaking release: store first reasoning item ID.
+            additional_kwargs["reasoning"] = chunk.item.model_dump(
+                exclude_none=True, mode="json"
+            )
     elif chunk.type == "response.reasoning_summary_part.added":
         additional_kwargs["reasoning"] = {
             # langchain-core uses the `index` key to aggregate text blocks.
