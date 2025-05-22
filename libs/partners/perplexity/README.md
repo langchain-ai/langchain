@@ -24,6 +24,6 @@ if not os.environ.get("PPLX_API_KEY"):
 
 from langchain.chat_models import init_chat_model
 
-llm = init_chat_model("llama-3.1-sonar-small-128k-online", model_provider="perplexity")
+llm = init_chat_model("sonar", model_provider="perplexity")
 llm.invoke("Hello, world!")
 ```
