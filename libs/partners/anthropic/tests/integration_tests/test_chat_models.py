@@ -882,6 +882,17 @@ def test_code_execution() -> None:
     block_types = {block["type"] for block in response.content}
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
 
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream(
+        "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}
+    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+
 
 def test_remote_mcp() -> None:
     pytest.skip()
@@ -905,4 +916,16 @@ def test_remote_mcp() -> None:
         "(modelcontextprotocol/modelcontextprotocol) support?"
     )
     block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "What transport protocols does the 2025-03-26 version of the MCP spec "
+        "(modelcontextprotocol/modelcontextprotocol) support?"
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}

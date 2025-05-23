@@ -1850,10 +1850,12 @@ def _make_message_chunk_from_anthropic_event(
         and event.content_block.type
         in (
             "tool_use",
+            "code_execution_tool_result",
             "document",
             "redacted_thinking",
             "mcp_tool_use",
             "mcp_tool_result",
+            "server_tool_use",
         )
     ):
         if coerce_content_to_string:
