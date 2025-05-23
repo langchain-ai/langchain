@@ -1,4 +1,5 @@
 import copy
+import json
 import re
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
@@ -358,6 +359,21 @@ def _format_messages(
                         else:
                             block.pop("text", None)
                             content.append(block)
+                    elif block["type"] == "server_tool_use":
+                        formatted_block = {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "id", "input", "name", "cache_control")
+                        }
+                        # Attempt to parse streamed output
+                        if block["input"] == {} and "partial_json" in block:
+                            try:
+                                input_ = json.loads(block["partial_json"])
+                                if input_:
+                                    formatted_block["input"] = input_
+                            except json.JSONDecodeError:
+                                pass
+                        content.append(formatted_block)
                     elif block["type"] == "text":
                         text = block.get("text", "")
                         # Only add non-empty strings for now as empty ones are not
@@ -393,6 +409,15 @@ def _format_messages(
                             [HumanMessage(block["content"])]
                         )[1][0]["content"]
                         content.append({**block, **{"content": tool_content}})
+                    elif block["type"] == "code_execution_tool_result":
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k
+                                in ("type", "content", "tool_use_id", "cache_control")
+                            }
+                        )
                     else:
                         content.append(block)
                 else:
@@ -1188,11 +1213,13 @@ class ChatAnthropic(BaseChatModel):
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
             )
+            block_start_event = None
             for event in stream:
-                msg = _make_message_chunk_from_anthropic_event(
+                msg, block_start_event = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
+                    block_start_event=block_start_event,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1222,11 +1249,13 @@ class ChatAnthropic(BaseChatModel):
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
             )
+            block_start_event = None
             async for event in stream:
-                msg = _make_message_chunk_from_anthropic_event(
+                msg, block_start_event = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
+                    block_start_event=block_start_event,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1835,7 +1864,8 @@ def _make_message_chunk_from_anthropic_event(
     *,
     stream_usage: bool = True,
     coerce_content_to_string: bool,
-) -> Optional[AIMessageChunk]:
+    block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
+) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
     """Convert Anthropic event to AIMessageChunk.
 
     Note that not all events will result in a message chunk. In these cases
@@ -1892,6 +1922,7 @@ def _make_message_chunk_from_anthropic_event(
             content=[content_block],
             tool_call_chunks=tool_call_chunks,  # type: ignore
         )
+        block_start_event = event
     elif event.type == "content_block_delta":
         if event.delta.type in ("text_delta", "citations_delta"):
             if coerce_content_to_string and hasattr(event.delta, "text"):
@@ -1921,15 +1952,23 @@ def _make_message_chunk_from_anthropic_event(
         elif event.delta.type == "input_json_delta":
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
-            tool_call_chunk = create_tool_call_chunk(
-                index=event.index,
-                id=None,
-                name=None,
-                args=event.delta.partial_json,
-            )
+            if (
+                (block_start_event is not None)
+                and hasattr(block_start_event, "content_block")
+                and (block_start_event.content_block.type == "tool_use")
+            ):
+                tool_call_chunk = create_tool_call_chunk(
+                    index=event.index,
+                    id=None,
+                    name=None,
+                    args=event.delta.partial_json,
+                )
+                tool_call_chunks = [tool_call_chunk]
+            else:
+                tool_call_chunks = []
             message_chunk = AIMessageChunk(
                 content=[content_block],
-                tool_call_chunks=[tool_call_chunk],  # type: ignore
+                tool_call_chunks=tool_call_chunks,  # type: ignore
             )
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = UsageMetadata(
@@ -1948,7 +1987,7 @@ def _make_message_chunk_from_anthropic_event(
     else:
         pass
 
-    return message_chunk
+    return message_chunk, block_start_event
 
 
 @deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")

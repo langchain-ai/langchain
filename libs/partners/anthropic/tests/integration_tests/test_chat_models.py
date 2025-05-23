@@ -871,28 +871,46 @@ def test_code_execution() -> None:
     pytest.skip()
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",
-        default_headers={"anthropic-beta": "code-execution-2025-05-22"},
+        betas=["code-execution-2025-05-22"],
     )
 
     tool = {"type": "code_execution_20250522", "name": "code_execution"}
     llm_with_tools = llm.bind_tools([tool])
 
-    response = llm_with_tools.invoke(
-        "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
-    )
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": (
+                    "Calculate the mean and standard deviation of "
+                    "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                ),
+            }
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
     block_types = {block["type"] for block in response.content}
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm_with_tools.stream(
-        "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
-    ):
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
-    block_types = {block["type"] for block in full.content}
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please add more comments to the code.",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
 
 
 def test_remote_mcp() -> None:
