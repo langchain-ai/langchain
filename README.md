@@ -76,11 +76,11 @@ SDK доступны на языках:
 
 ### JavaScript/TypeScript ![GitHub Downloads (all assets, all releases)](https://img.shields.io/npm/dm/gigachat?style=flat-square?style=flat-round)[![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gigachat-js?style=flat-round)](https://star-history.com/#ai-forever/gigachat-js)
 
-[`gigachat`](https://github.com/ai-forever/gigachat-js) | [Сборник примеров](https://github.com/ai-forever/gigachat-java/blob/main/gigachat-java-example/README.md#примеры-работы-с-библиотекой-gigachat)
-
+[`gigachat`](https://github.com/ai-forever/gigachat-js) | [Сборник примеров](https://github.com/ai-forever/gigachat-js/tree/master/examples#примеры-работы-с-gigachat)
 ### Java [![GitHub Repo stars](https://img.shields.io/github/stars/ai-forever/gigachat-java?style=flat-round)](https://star-history.com/#ai-forever/gigachat-java)
 
-[`gigachat-java`](https://github.com/ai-forever/gigachat-java) | [Сборник примеров](https://github.com/ai-forever/gigachat-js/tree/master/examples#примеры-работы-с-gigachat)
+[`gigachat-java`](https://github.com/ai-forever/gigachat-java) | [Сборник примеров](https://github.com/ai-forever/gigachat-java/blob/main/gigachat-java-example/README.md)
+
 
 ## Утилиты и MCP-сервера
 
