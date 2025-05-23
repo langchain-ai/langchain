@@ -1035,7 +1035,10 @@ class ChatAnthropic(BaseChatModel):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
-        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+        return {
+            "anthropic_api_key": "ANTHROPIC_API_KEY",
+            "mcp_servers": "ANTHROPIC_MCP_SERVERS",
+        }
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
