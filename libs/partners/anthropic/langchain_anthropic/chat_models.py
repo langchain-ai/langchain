@@ -14,6 +14,7 @@ from typing import (
 )
 
 import anthropic
+from anthropic.types.beta import BetaRequestMCPServerURLDefinitionParam
 from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -1003,6 +1004,13 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    betas: Optional[list[str]] = None
+    """List of beta features to enable. If specified, invocations will be routed
+    through client.beta.messages.create.
+
+    Example: ``betas=["mcp-client-2025-04-04"]``
+    """
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     streaming: bool = False
@@ -1016,6 +1024,9 @@ class ChatAnthropic(BaseChatModel):
     thinking: Optional[dict[str, Any]] = Field(default=None)
     """Parameters for Claude reasoning,
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
+
+    mcp_servers: Optional[list[BetaRequestMCPServerURLDefinitionParam]] = None
+    """List of MCP servers to use for the request."""
 
     @property
     def _llm_type(self) -> str:
@@ -1116,6 +1127,8 @@ class ChatAnthropic(BaseChatModel):
             "top_k": self.top_k,
             "top_p": self.top_p,
             "stop_sequences": stop or self.stop_sequences,
+            "betas": self.betas,
+            "mcp_servers": self.mcp_servers,
             "system": system,
             **self.model_kwargs,
             **kwargs,
@@ -1123,6 +1136,18 @@ class ChatAnthropic(BaseChatModel):
         if self.thinking is not None:
             payload["thinking"] = self.thinking
         return {k: v for k, v in payload.items() if v is not None}
+
+    def _create(self, payload: dict) -> Any:
+        if "betas" in payload:
+            return self._client.beta.messages.create(**payload)
+        else:
+            return self._client.messages.create(**payload)
+
+    async def _acreate(self, payload: dict) -> Any:
+        if "betas" in payload:
+            return await self._async_client.beta.messages.create(**payload)
+        else:
+            return await self._async_client.messages.create(**payload)
 
     def _stream(
         self,
@@ -1138,7 +1163,7 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = self._client.messages.create(**payload)
+            stream = self._create(payload)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1172,7 +1197,7 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = await self._async_client.messages.create(**payload)
+            stream = await self._acreate(payload)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1251,7 +1276,7 @@ class ChatAnthropic(BaseChatModel):
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = self._client.messages.create(**payload)
+            data = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         return self._format_output(data, **kwargs)
@@ -1270,7 +1295,7 @@ class ChatAnthropic(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = await self._async_client.messages.create(**payload)
+            data = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         return self._format_output(data, **kwargs)
@@ -1739,8 +1764,10 @@ def convert_to_anthropic_tool(
 
 
 def _tools_in_params(params: dict) -> bool:
-    return "tools" in params or (
-        "extra_body" in params and params["extra_body"].get("tools")
+    return (
+        "tools" in params
+        or ("extra_body" in params and params["extra_body"].get("tools"))
+        or "mcp_servers" in params
     )
 
 
@@ -1817,7 +1844,14 @@ def _make_message_chunk_from_anthropic_event(
     elif (
         event.type == "content_block_start"
         and event.content_block is not None
-        and event.content_block.type in ("tool_use", "document", "redacted_thinking")
+        and event.content_block.type
+        in (
+            "tool_use",
+            "document",
+            "redacted_thinking",
+            "mcp_tool_use",
+            "mcp_tool_result",
+        )
     ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
@@ -1866,7 +1900,6 @@ def _make_message_chunk_from_anthropic_event(
         elif event.delta.type == "input_json_delta":
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
-            content_block["type"] = "tool_use"
             tool_call_chunk = create_tool_call_chunk(
                 index=event.index,
                 id=None,

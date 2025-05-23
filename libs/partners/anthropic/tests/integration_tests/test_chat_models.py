@@ -881,3 +881,27 @@ def test_code_execution():
     )
     block_types = {block["type"] for block in response.content}
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+
+def test_remote_mcp():
+    pytest.skip()
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.deepwiki.com/mcp",
+            "name": "deepwiki",
+            "authorization_token": "PLACEHOLDER"
+        }
+    ]
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["mcp-client-2025-04-04"],
+        mcp_servers=mcp_servers,
+    )
+
+    response = llm.invoke(
+        "What transport protocols does the 2025-03-26 version of the MCP spec "
+        "(modelcontextprotocol/modelcontextprotocol) support?"
+    )
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
