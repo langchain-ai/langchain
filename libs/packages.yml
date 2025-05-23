@@ -258,6 +258,7 @@ packages:
 - name: langchain-snowflake
   path: libs/snowflake
   repo: langchain-ai/langchain-snowflake
+  provider_page: snowflake
   downloads: 2037
   downloads_updated_at: '2025-05-08T20:26:13.914570+00:00'
 - name: databricks-langchain
