@@ -533,20 +533,21 @@ class ChatAnthropic(BaseChatModel):
     **NOTE**: Any param which is not explicitly supported will be passed directly to the
     ``anthropic.Anthropic.messages.create(...)`` API every time to the model is
     invoked. For example:
-        .. code-block:: python
 
-            from langchain_anthropic import ChatAnthropic
-            import anthropic
+    .. code-block:: python
 
-            ChatAnthropic(..., extra_headers={}).invoke(...)
+        from langchain_anthropic import ChatAnthropic
+        import anthropic
 
-            # results in underlying API call of:
+        ChatAnthropic(..., extra_headers={}).invoke(...)
 
-            anthropic.Anthropic(..).messages.create(..., extra_headers={})
+        # results in underlying API call of:
 
-            # which is also equivalent to:
+        anthropic.Anthropic(..).messages.create(..., extra_headers={})
 
-            ChatAnthropic(...).invoke(..., extra_headers={})
+        # which is also equivalent to:
+
+        ChatAnthropic(...).invoke(..., extra_headers={})
 
     Invoke:
         .. code-block:: python
@@ -706,6 +707,35 @@ class ChatAnthropic(BaseChatModel):
 
             "After examining both images carefully, I can see that they are actually identical."
 
+        .. dropdown:: Files API
+
+            You can also pass in files that are managed through Anthropic's
+            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`_:
+
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(
+                    model="claude-sonnet-4-20250514",
+                    betas=["files-api-2025-04-14"],
+                )
+                input_message = {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Describe this document.",
+                        },
+                        {
+                            "type": "image",
+                            "source_type": "id",
+                            "id": "file_abc123...",
+                        },
+                    ],
+                }
+                llm.invoke([input_message])
+
     PDF input:
         See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`_
         for more detail.
@@ -741,6 +771,35 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             "This appears to be a simple document..."
+
+        .. dropdown:: Files API
+
+            You can also pass in files that are managed through Anthropic's
+            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`_:
+
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(
+                    model="claude-sonnet-4-20250514",
+                    betas=["files-api-2025-04-14"],
+                )
+                input_message = {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Describe this document.",
+                        },
+                        {
+                            "type": "file",
+                            "source_type": "id",
+                            "id": "file_abc123...",
+                        },
+                    ],
+                }
+                llm.invoke([input_message])
 
     Extended thinking:
         Claude 3.7 Sonnet supports an
@@ -858,7 +917,7 @@ class ChatAnthropic(BaseChatModel):
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
     Prompt caching:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`_
         for more detail.
 
         .. code-block:: python
@@ -894,6 +953,24 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             {'cache_read': 0, 'cache_creation': 1458}
+
+        .. dropdown:: Extended caching
+
+            The cache lifetime is 5 minutes by default. If this is too short, you can
+            apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
+            beta header:
+
+            .. code-block:: python
+
+                llm = ChatAnthropic(
+                    model="claude-3-7-sonnet-20250219",
+                    betas=["extended-cache-ttl-2025-04-11"],
+                )
+
+            and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`_
+            for detail.
 
     Token-efficient tool use (beta):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
@@ -936,7 +1013,7 @@ class ChatAnthropic(BaseChatModel):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
         for more detail.
 
-        Web search:
+        .. dropdown::  Web search
 
             .. code-block:: python
 
@@ -951,13 +1028,13 @@ class ChatAnthropic(BaseChatModel):
                     "How do I update a web app to TypeScript 5.5?"
                 )
 
-        Code execution:
+        .. dropdown::  Code execution
 
             .. code-block:: python
 
                 llm = ChatAnthropic(
                     model="claude-sonnet-4-20250514",
-                    default_headers={"anthropic-beta": "code-execution-2025-05-22"},
+                    betas=["code-execution-2025-05-22"],
                 )
 
                 tool = {"type": "code_execution_20250522", "name": "code_execution"}
@@ -967,7 +1044,37 @@ class ChatAnthropic(BaseChatModel):
                     "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                 )
 
-        Text editor:
+        .. dropdown::  Remote MCP
+
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                mcp_servers = [
+                    {
+                        "type": "url",
+                        "url": "https://mcp.deepwiki.com/mcp",
+                        "name": "deepwiki",
+                        "tool_configuration": {  # optional configuration
+                            "enabled": True,
+                            "allowed_tools": ["ask_question"],
+                        },
+                        "authorization_token": "PLACEHOLDER",  # optional authorization
+                    }
+                ]
+
+                llm = ChatAnthropic(
+                    model="claude-sonnet-4-20250514",
+                    betas=["mcp-client-2025-04-04"],
+                    mcp_servers=mcp_servers,
+                )
+
+                response = llm.invoke(
+                    "What transport protocols does the 2025-03-26 version of the MCP "
+                    "spec (modelcontextprotocol/modelcontextprotocol) support?"
+                )
+
+        .. dropdown::  Text editor
 
             .. code-block:: python
 
