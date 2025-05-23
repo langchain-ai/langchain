@@ -15,7 +15,6 @@ from typing import (
 )
 
 import anthropic
-from anthropic.types.beta import BetaRequestMCPServerURLDefinitionParam
 from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -1191,7 +1190,7 @@ class ChatAnthropic(BaseChatModel):
     """Parameters for Claude reasoning,
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
 
-    mcp_servers: Optional[list[BetaRequestMCPServerURLDefinitionParam]] = None
+    mcp_servers: Optional[list[dict[str, Any]]] = None
     """List of MCP servers to use for the request."""
 
     @property
