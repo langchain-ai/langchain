@@ -420,6 +420,7 @@ def _format_messages(
                     elif block["type"] in (
                         "code_execution_tool_result",
                         "mcp_tool_result",
+                        "web_search_tool_result",
                     ):
                         content.append(
                             {
@@ -1919,6 +1920,7 @@ def _make_message_chunk_from_anthropic_event(
             "mcp_tool_use",
             "mcp_tool_result",
             "server_tool_use",
+            "web_search_tool_result",
         )
     ):
         if coerce_content_to_string:

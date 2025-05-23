@@ -867,6 +867,46 @@ def test_image_tool_calling() -> None:
 
 
 # TODO: set up VCR
+def test_web_search() -> None:
+    pytest.skip()
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+
+    tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "How do I update a web app to TypeScript 5.5?",
+            }
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please repeat the last search, but focus on sources from 2024.",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
 def test_code_execution() -> None:
     pytest.skip()
     llm = ChatAnthropic(
