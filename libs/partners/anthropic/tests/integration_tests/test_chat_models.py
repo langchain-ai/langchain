@@ -1,6 +1,7 @@
 """Test ChatAnthropic chat model."""
 
 import json
+import os
 from base64 import b64encode
 from typing import Optional
 
@@ -929,3 +930,65 @@ def test_remote_mcp() -> None:
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+
+
+@pytest.mark.parametrize("block_format", ["anthropic", "standard"])
+def test_files_api_image(block_format: str) -> None:
+    image_file_id = os.getenv("ANTHROPIC_FILES_API_IMAGE_ID")
+    if not image_file_id:
+        pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["files-api-2025-04-14"],
+    )
+    if block_format == "anthropic":
+        block = {
+            "type": "image",
+            "source": {
+                "type": "file",
+                "file_id": image_file_id,
+            },
+        }
+    else:
+        # standard block format
+        block = {
+            "type": "image",
+            "source_type": "id",
+            "id": image_file_id,
+        }
+    input_message = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image."},
+            block,
+        ],
+    }
+    _ = llm.invoke([input_message])
+
+
+@pytest.mark.parametrize("block_format", ["anthropic", "standard"])
+def test_files_api_pdf(block_format: str) -> None:
+    pdf_file_id = os.getenv("ANTHROPIC_FILES_API_PDF_ID")
+    if not pdf_file_id:
+        pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["files-api-2025-04-14"],
+    )
+    if block_format == "anthropic":
+        block = {"type": "document", "source": {"type": "file", "file_id": pdf_file_id}}
+    else:
+        # standard block format
+        block = {
+            "type": "file",
+            "source_type": "id",
+            "id": pdf_file_id,
+        }
+    input_message = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this document."},
+            block,
+        ],
+    }
+    _ = llm.invoke([input_message])

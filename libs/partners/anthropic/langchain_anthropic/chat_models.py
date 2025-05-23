@@ -221,6 +221,14 @@ def _format_data_content_block(block: dict) -> dict:
                     "data": block["data"],
                 },
             }
+        elif block["source_type"] == "id":
+            formatted_block = {
+                "type": "image",
+                "source": {
+                    "type": "file",
+                    "file_id": block["id"],
+                },
+            }
         else:
             raise ValueError(
                 "Anthropic only supports 'url' and 'base64' source_type for image "
@@ -252,6 +260,14 @@ def _format_data_content_block(block: dict) -> dict:
                     "type": "text",
                     "media_type": block.get("mime_type") or "text/plain",
                     "data": block["text"],
+                },
+            }
+        elif block["source_type"] == "id":
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "file",
+                    "file_id": block["id"],
                 },
             }
 
