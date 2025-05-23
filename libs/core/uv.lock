@@ -935,7 +935,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.60"
+version = "0.3.61"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -1097,7 +1097,7 @@ test-integration = [
     { name = "sentence-transformers", marker = "python_full_version < '3.13'", specifier = ">=2.6.0" },
     { name = "spacy", marker = "python_full_version < '3.10'", specifier = ">=3.0.0,<3.8.4" },
     { name = "spacy", marker = "python_full_version < '3.13'", specifier = ">=3.0.0,<4.0.0" },
-    { name = "transformers", specifier = ">=4.47.0,<5.0.0" },
+    { name = "transformers", specifier = ">=4.51.3,<5.0.0" },
 ]
 typing = [
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },

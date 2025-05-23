@@ -11,6 +11,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    HumanMessage,
 )
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -377,3 +378,73 @@ def test_stream_reasoning_summary() -> None:
     message_2 = {"role": "user", "content": "Thank you."}
     response_2 = llm.invoke([message_1, response_1, message_2])
     assert isinstance(response_2, AIMessage)
+
+
+# TODO: VCR some of these
+def test_code_interpreter() -> None:
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm_with_tools = llm.bind_tools(
+        [{"type": "code_interpreter", "container": {"type": "auto"}}]
+    )
+    response = llm_with_tools.invoke(
+        "Write and run code to answer the question: what is 3^3?"
+    )
+    _check_response(response)
+    tool_outputs = response.additional_kwargs["tool_outputs"]
+    assert tool_outputs
+    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
+    # Test streaming
+    # Use same container
+    tool_outputs = response.additional_kwargs["tool_outputs"]
+    assert len(tool_outputs) == 1
+    container_id = tool_outputs[0]["container_id"]
+    llm_with_tools = llm.bind_tools(
+        [{"type": "code_interpreter", "container": container_id}]
+    )
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream(
+        "Write and run code to answer the question: what is 3^3?"
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    tool_outputs = full.additional_kwargs["tool_outputs"]
+    assert tool_outputs
+    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
+
+def test_mcp_builtin() -> None:
+    pytest.skip()  # TODO: set up VCR
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    response = llm_with_tools.invoke(
+        "What transport protocols does the 2025-03-26 version of the MCP spec "
+        "(modelcontextprotocol/modelcontextprotocol) support?"
+    )
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": output["id"],
+            }
+            for output in response.additional_kwargs["tool_outputs"]
+            if output["type"] == "mcp_approval_request"
+        ]
+    )
+    _ = llm_with_tools.invoke(
+        [approval_message], previous_response_id=response.response_metadata["id"]
+    )
