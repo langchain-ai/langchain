@@ -866,7 +866,7 @@ def test_image_tool_calling() -> None:
 
 
 # TODO: set up VCR
-def test_code_execution():
+def test_code_execution() -> None:
     pytest.skip()
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",
@@ -882,14 +882,15 @@ def test_code_execution():
     block_types = {block["type"] for block in response.content}
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
 
-def test_remote_mcp():
+
+def test_remote_mcp() -> None:
     pytest.skip()
     mcp_servers = [
         {
             "type": "url",
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
-            "authorization_token": "PLACEHOLDER"
+            "authorization_token": "PLACEHOLDER",
         }
     ]
 
