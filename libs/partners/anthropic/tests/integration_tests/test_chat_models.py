@@ -920,6 +920,7 @@ def test_remote_mcp() -> None:
             "type": "url",
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
+            "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
             "authorization_token": "PLACEHOLDER",
         }
     ]
@@ -930,24 +931,40 @@ def test_remote_mcp() -> None:
         mcp_servers=mcp_servers,
     )
 
-    response = llm.invoke(
-        "What transport protocols does the 2025-03-26 version of the MCP spec "
-        "(modelcontextprotocol/modelcontextprotocol) support?"
-    )
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": (
+                    "What transport protocols does the 2025-03-26 version of the MCP "
+                    "spec (modelcontextprotocol/modelcontextprotocol) support?"
+                ),
+            }
+        ],
+    }
+    response = llm.invoke([input_message])
     block_types = {block["type"] for block in response.content}
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream(
-        "What transport protocols does the 2025-03-26 version of the MCP spec "
-        "(modelcontextprotocol/modelcontextprotocol) support?"
-    ):
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please query the same tool again, but add 'please' to your query.",
+    }
+    _ = llm.invoke(
+        [input_message, full, next_message],
+    )
 
 
 @pytest.mark.parametrize("block_format", ["anthropic", "standard"])

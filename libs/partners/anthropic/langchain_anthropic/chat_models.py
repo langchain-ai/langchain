@@ -359,11 +359,19 @@ def _format_messages(
                         else:
                             block.pop("text", None)
                             content.append(block)
-                    elif block["type"] == "server_tool_use":
+                    elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
                             k: v
                             for k, v in block.items()
-                            if k in ("type", "id", "input", "name", "cache_control")
+                            if k
+                            in (
+                                "type",
+                                "id",
+                                "input",
+                                "name",
+                                "server_name",  # for mcp_tool_use
+                                "cache_control",
+                            )
                         }
                         # Attempt to parse streamed output
                         if block["input"] == {} and "partial_json" in block:
@@ -409,13 +417,22 @@ def _format_messages(
                             [HumanMessage(block["content"])]
                         )[1][0]["content"]
                         content.append({**block, **{"content": tool_content}})
-                    elif block["type"] == "code_execution_tool_result":
+                    elif block["type"] in (
+                        "code_execution_tool_result",
+                        "mcp_tool_result",
+                    ):
                         content.append(
                             {
                                 k: v
                                 for k, v in block.items()
                                 if k
-                                in ("type", "content", "tool_use_id", "cache_control")
+                                in (
+                                    "type",
+                                    "content",
+                                    "tool_use_id",
+                                    "is_error",  # for mcp_tool_result
+                                    "cache_control",
+                                )
                             }
                         )
                     else:
