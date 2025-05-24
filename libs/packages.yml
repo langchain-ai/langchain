@@ -671,3 +671,6 @@ packages:
 - name: langchain-featherless-ai
   repo: featherlessai/langchain-featherless-ai
   path: .
+- name: langchain-snowflake
+  repo: sfc-gh-mboos/langchain
+  path: libs/partners/snowflake
