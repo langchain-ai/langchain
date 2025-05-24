@@ -18,7 +18,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.51.0"
+version = "0.52.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -29,9 +29,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/4a/96f99a61ae299f9e5aa3e765d7342d95ab2e2ba5b69a3ffedb00ef779651/anthropic-0.51.0.tar.gz", hash = "sha256:6f824451277992af079554430d5b2c8ff5bc059cc2c968cdc3f06824437da201", size = 219063 }
+sdist = { url = "https://files.pythonhosted.org/packages/57/fd/8a9332f5baf352c272494a9d359863a53385a208954c1a7251a524071930/anthropic-0.52.0.tar.gz", hash = "sha256:f06bc924d7eb85f8a43fe587b875ff58b410d60251b7dc5f1387b322a35bd67b", size = 229372 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/6e/9637122c5f007103bd5a259f4250bd8f1533dd2473227670fd10a1457b62/anthropic-0.51.0-py3-none-any.whl", hash = "sha256:b8b47d482c9aa1f81b923555cebb687c2730309a20d01be554730c8302e0f62a", size = 263957 },
+    { url = "https://files.pythonhosted.org/packages/a0/43/172c0031654908bbac2a87d356fff4de1b4947a9b14b9658540b69416417/anthropic-0.52.0-py3-none-any.whl", hash = "sha256:c026daa164f0e3bde36ce9cbdd27f5f1419fff03306be1e138726f42e6a7810f", size = 286076 },
 ]
 
 [[package]]
@@ -451,7 +451,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.51.0,<1" },
+    { name = "anthropic", specifier = ">=0.52.0,<1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -486,7 +486,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.59"
+version = "0.3.61"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -501,10 +501,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33,<2.0" },
-    { name = "langsmith", specifier = ">=0.1.125,<0.4" },
+    { name = "langsmith", specifier = ">=0.1.126,<0.4" },
     { name = "packaging", specifier = ">=23.2,<25" },
-    { name = "pydantic", marker = "python_full_version < '3.12.4'", specifier = ">=2.5.2,<3.0.0" },
-    { name = "pydantic", marker = "python_full_version >= '3.12.4'", specifier = ">=2.7.4,<3.0.0" },
+    { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10.0.0" },
     { name = "typing-extensions", specifier = ">=4.7" },

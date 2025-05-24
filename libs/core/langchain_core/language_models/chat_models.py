@@ -129,6 +129,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     isinstance(block, dict)
                     and block.get("type") == "image"
                     and is_data_content_block(block)
+                    and block.get("source_type") != "id"
                 ):
                     if message_to_trace is message:
                         message_to_trace = message.model_copy()

@@ -2,7 +2,7 @@
 
 import os
 from typing import Any, Callable, Literal, Optional, cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import anthropic
 import pytest
@@ -10,6 +10,8 @@ from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -994,3 +996,63 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 0
     assert result["output_tokens"] == 0
     assert result["total_tokens"] == 0
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.chat_model_start_inputs: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+        pass
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+def test_mcp_tracing() -> None:
+    # Test we exclude sensitive information from traces
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.deepwiki.com/mcp",
+            "name": "deepwiki",
+            "authorization_token": "PLACEHOLDER",
+        }
+    ]
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["mcp-client-2025-04-04"],
+        mcp_servers=mcp_servers,
+    )
+
+    tracer = FakeTracer()
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Message:
+        return Message(
+            id="foo",
+            content=[TextBlock(type="text", text="bar")],
+            model="baz",
+            role="assistant",
+            stop_reason=None,
+            stop_sequence=None,
+            usage=Usage(input_tokens=2, output_tokens=1),
+            type="message",
+        )
+
+    mock_client.messages.create = mock_create
+    input_message = HumanMessage("Test query")
+    with patch.object(llm, "_client", mock_client):
+        _ = llm.invoke([input_message], config={"callbacks": [tracer]})
+
+    # Test headers are not traced
+    assert len(tracer.chat_model_start_inputs) == 1
+    assert "PLACEHOLDER" not in str(tracer.chat_model_start_inputs)
+
+    # Test headers are correctly propagated to request
+    payload = llm._get_request_payload([input_message])
+    assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"
