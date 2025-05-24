@@ -1,5 +1,7 @@
 """Tests for verifying that testing utility code works as expected."""
 
+import operator
+from functools import reduce
 from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -115,12 +117,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
-    accumulate_chunks = None
-    for chunk in chunks:
-        if accumulate_chunks is None:
-            accumulate_chunks = chunk
-        else:
-            accumulate_chunks += chunk
+    accumulate_chunks = reduce(operator.add, chunks)
 
     assert accumulate_chunks == AIMessageChunk(
         content="",
