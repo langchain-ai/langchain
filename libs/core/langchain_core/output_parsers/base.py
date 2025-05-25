@@ -324,9 +324,9 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
-        output_parser_dict = super().dict(**kwargs)
+        output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
         return output_parser_dict
