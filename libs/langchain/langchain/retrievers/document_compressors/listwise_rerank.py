@@ -24,7 +24,10 @@ def _get_prompt_input(input_: dict) -> dict[str, Any]:
     context = ""
     for index, doc in enumerate(documents):
         context += f"Document ID: {index}\n```{doc.page_content}```\n\n"
-    context += f"Documents = [Document ID: 0, ..., Document ID: {len(documents) - 1}]"
+    document_range = "empty list"
+    if len(documents) > 0:
+        document_range = f"Document ID: 0, ..., Document ID: {len(documents) - 1}"
+    context += f"Documents = [{document_range}]"
     return {"query": input_["query"], "context": context}
 
 
