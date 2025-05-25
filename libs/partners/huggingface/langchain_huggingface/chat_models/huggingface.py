@@ -776,7 +776,7 @@ class ChatHuggingFace(BaseChatModel):
             from transformers import AutoTokenizer  # type: ignore[import]
 
             self.tokenizer = (
-                AutoTokenizer.from_pretrained(self.model_id)
+                AutoTokenizer.from_pretrained(self.llm.model_id)
                 if self.tokenizer is None
                 else self.tokenizer
             )
