@@ -8,6 +8,7 @@ from typing import Any, Literal, Optional, Union, cast
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -525,7 +526,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
+        _iter, tokens, indices = await run_in_executor(
+            None, self._tokenize, texts, _chunk_size
+        )
         batched_embeddings: list[list[float]] = []
         for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
