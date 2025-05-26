@@ -3373,3 +3373,51 @@ def test_html_splitter_with_media_preservation() -> None:
     ]
 
     assert documents == expected
+
+
+def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
+    """Test that regex lookahead separator is not re-inserted when merging."""
+    text = "SCE191 First chunk. SCE103 Second chunk."
+    splitter = CharacterTextSplitter(
+        separator=r"(?=SCE\d{3})",
+        is_separator_regex=True,
+        chunk_size=200,
+        chunk_overlap=0,
+        keep_separator=False,
+    )
+    output = splitter.split_text(text)
+    assert output == ["SCE191 First chunk. SCE103 Second chunk."]
+
+
+@pytest.mark.parametrize(
+    "separator,is_regex,text,chunk_size,expected",
+    [
+        # 1) regex lookaround & split happens
+        #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
+        (r"(?<=mid)", True, "abcmiddef", 5, ["abcmid", "def"]),
+        # 2) regex lookaround & no split
+        #   chunk_size=100 merges back into ["abcmiddef"]
+        (r"(?<=mid)", True, "abcmiddef", 100, ["abcmiddef"]),
+        # 3) literal separator & split happens
+        #   split on "mid" → ["abc","def"], chunk_size=3 keeps both
+        ("mid", False, "abcmiddef", 3, ["abc", "def"]),
+        # 4) literal separator & no split
+        #   chunk_size=100 merges back into ["abcmiddef"]
+        ("mid", False, "abcmiddef", 100, ["abcmiddef"]),
+    ],
+)
+def test_character_text_splitter_chunk_size_effect(
+    separator: str,
+    is_regex: bool,
+    text: str,
+    chunk_size: int,
+    expected: List[str],
+) -> None:
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        is_separator_regex=is_regex,
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        keep_separator=False,
+    )
+    assert splitter.split_text(text) == expected

@@ -184,7 +184,7 @@ class StructuredQuery(Expr):
     def __init__(
         self,
         query: str,
-        filter: Optional[FilterDirective],
+        filter: Optional[FilterDirective],  # noqa: A002
         limit: Optional[int] = None,
         **kwargs: Any,
     ) -> None:

@@ -168,7 +168,7 @@ class FakeTracer(BaseTracer):
         self.runs.append(self._copy_run(run))
 
     def flattened_runs(self) -> list[Run]:
-        q = [] + self.runs
+        q = [*self.runs]
         result = []
         while q:
             parent = q.pop()
@@ -564,8 +564,8 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["bye", "hello"],
     }
 
-    def get_value(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
-        return input["variable_name"]
+    def get_value(value):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
+        return value["variable_name"]
 
     assert RunnableLambda(get_value).get_input_jsonschema() == {
         "title": "get_value_input",
@@ -574,8 +574,8 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["variable_name"],
     }
 
-    async def aget_value(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
-        return (input["variable_name"], input.get("another"))
+    async def aget_value(value):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
+        return (value["variable_name"], value.get("another"))
 
     assert RunnableLambda(aget_value).get_input_jsonschema() == {
         "title": "aget_value_input",
@@ -587,11 +587,11 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["another", "variable_name"],
     }
 
-    async def aget_values(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
+    async def aget_values(value):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
         return {
-            "hello": input["variable_name"],
-            "bye": input["variable_name"],
-            "byebye": input["yo"],
+            "hello": value["variable_name"],
+            "bye": value["variable_name"],
+            "byebye": value["yo"],
         }
 
     assert RunnableLambda(aget_values).get_input_jsonschema() == {
@@ -613,11 +613,11 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         bye: str
         byebye: int
 
-    async def aget_values_typed(input: InputType) -> OutputType:
+    async def aget_values_typed(value: InputType) -> OutputType:
         return {
-            "hello": input["variable_name"],
-            "bye": input["variable_name"],
-            "byebye": input["yo"],
+            "hello": value["variable_name"],
+            "bye": value["variable_name"],
+            "byebye": value["yo"],
         }
 
     assert _normalize_schema(
@@ -2592,8 +2592,8 @@ async def test_prompt_with_llm_and_async_lambda(
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
-    async def passthrough(input: Any) -> Any:
-        return input
+    async def passthrough(value: Any) -> Any:
+        return value
 
     chain = prompt | llm | passthrough
 
@@ -2946,12 +2946,12 @@ def test_higher_order_lambda_runnable(
         input={"question": lambda x: x["question"]},
     )
 
-    def router(input: dict[str, Any]) -> Runnable:
-        if input["key"] == "math":
+    def router(params: dict[str, Any]) -> Runnable:
+        if params["key"] == "math":
             return itemgetter("input") | math_chain
-        if input["key"] == "english":
+        if params["key"] == "english":
             return itemgetter("input") | english_chain
-        msg = f"Unknown key: {input['key']}"
+        msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
     chain: Runnable = input_map | router
@@ -3002,12 +3002,12 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         input={"question": lambda x: x["question"]},
     )
 
-    def router(input: dict[str, Any]) -> Runnable:
-        if input["key"] == "math":
+    def router(value: dict[str, Any]) -> Runnable:
+        if value["key"] == "math":
             return itemgetter("input") | math_chain
-        if input["key"] == "english":
+        if value["key"] == "english":
             return itemgetter("input") | english_chain
-        msg = f"Unknown key: {input['key']}"
+        msg = f"Unknown key: {value['key']}"
         raise ValueError(msg)
 
     chain: Runnable = input_map | router
@@ -3024,12 +3024,12 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     assert result2 == ["4", "2"]
 
     # Test ainvoke
-    async def arouter(input: dict[str, Any]) -> Runnable:
-        if input["key"] == "math":
+    async def arouter(params: dict[str, Any]) -> Runnable:
+        if params["key"] == "math":
             return itemgetter("input") | math_chain
-        if input["key"] == "english":
+        if params["key"] == "english":
             return itemgetter("input") | english_chain
-        msg = f"Unknown key: {input['key']}"
+        msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
     achain: Runnable = input_map | arouter
@@ -4125,6 +4125,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
+        @override
         def invoke(
             self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Any:
@@ -4135,15 +4136,15 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             inputs: list[str],
         ) -> list:
             outputs: list[Any] = []
-            for input in inputs:
-                if input.startswith(self.fail_starts_with):
+            for value in inputs:
+                if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {input}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
                         )
                     )
                 else:
-                    outputs.append(input + "a")
+                    outputs.append(value + "a")
             return outputs
 
         def batch(
@@ -4264,6 +4265,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         def __init__(self, fail_starts_with: str) -> None:
             self.fail_starts_with = fail_starts_with
 
+        @override
         def invoke(
             self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Any:
@@ -4274,15 +4276,15 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             inputs: list[str],
         ) -> list:
             outputs: list[Any] = []
-            for input in inputs:
-                if input.startswith(self.fail_starts_with):
+            for value in inputs:
+                if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {input}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
                         )
                     )
                 else:
-                    outputs.append(input + "a")
+                    outputs.append(value + "a")
             return outputs
 
         async def abatch(
@@ -5006,10 +5008,10 @@ def test_runnable_iter_context_config() -> None:
     fake = RunnableLambda(len)
 
     @chain
-    def gen(input: str) -> Iterator[int]:
-        yield fake.invoke(input)
-        yield fake.invoke(input * 2)
-        yield fake.invoke(input * 3)
+    def gen(value: str) -> Iterator[int]:
+        yield fake.invoke(value)
+        yield fake.invoke(value * 2)
+        yield fake.invoke(value * 3)
 
     assert gen.get_input_jsonschema() == {
         "title": "gen_input",
@@ -5064,10 +5066,10 @@ async def test_runnable_iter_context_config_async() -> None:
     fake = RunnableLambda(len)
 
     @chain
-    async def agen(input: str) -> AsyncIterator[int]:
-        yield await fake.ainvoke(input)
-        yield await fake.ainvoke(input * 2)
-        yield await fake.ainvoke(input * 3)
+    async def agen(value: str) -> AsyncIterator[int]:
+        yield await fake.ainvoke(value)
+        yield await fake.ainvoke(value * 2)
+        yield await fake.ainvoke(value * 3)
 
     assert agen.get_input_jsonschema() == {
         "title": "agen_input",
@@ -5130,10 +5132,10 @@ def test_runnable_lambda_context_config() -> None:
     fake = RunnableLambda(len)
 
     @chain
-    def fun(input: str) -> int:
-        output = fake.invoke(input)
-        output += fake.invoke(input * 2)
-        output += fake.invoke(input * 3)
+    def fun(value: str) -> int:
+        output = fake.invoke(value)
+        output += fake.invoke(value * 2)
+        output += fake.invoke(value * 3)
         return output
 
     assert fun.get_input_jsonschema() == {"title": "fun_input", "type": "string"}
@@ -5186,10 +5188,10 @@ async def test_runnable_lambda_context_config_async() -> None:
     fake = RunnableLambda(len)
 
     @chain
-    async def afun(input: str) -> int:
-        output = await fake.ainvoke(input)
-        output += await fake.ainvoke(input * 2)
-        output += await fake.ainvoke(input * 3)
+    async def afun(value: str) -> int:
+        output = await fake.ainvoke(value)
+        output += await fake.ainvoke(value * 2)
+        output += await fake.ainvoke(value * 3)
         return output
 
     assert afun.get_input_jsonschema() == {"title": "afun_input", "type": "string"}
@@ -5242,16 +5244,16 @@ async def test_runnable_gen_transform() -> None:
             for i in range(length):
                 yield i
 
-    def plus_one(input: Iterator[int]) -> Iterator[int]:
-        for i in input:
+    def plus_one(ints: Iterator[int]) -> Iterator[int]:
+        for i in ints:
             yield i + 1
 
-    async def aplus_one(input: AsyncIterator[int]) -> AsyncIterator[int]:
-        async for i in input:
+    async def aplus_one(ints: AsyncIterator[int]) -> AsyncIterator[int]:
+        async for i in ints:
             yield i + 1
 
     chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
-    achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
+    achain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.get_input_jsonschema() == {
         "title": "gen_indexes_input",
