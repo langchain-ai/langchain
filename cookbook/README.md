@@ -13,7 +13,8 @@
 | [gigachat_functions_agent](/cookbook/gigachat_functions_agent.ipynb)            | Агент с набором функций (отправка СМС, поиск фильмов и др.) на основе GigaChat API                                                  |
 | [gigachat_phone_agent](/cookbook/gigachat_phone_agent.ipynb)                    | Агент «Продавец телефонов», который общается с пользователем, работает с базой товаров и оформляет заказы                           |
 | [gigachat_qa](/cookbook/gigachat_qa.ipynb)                                      | Демонстрация методики RAG, на примере ответов на вопросы по данной книге                                                            |
-| [MCP_example](/cookbook/mcp/README.md)                                          | Пример работы агента, созданного на основе GigaChat, совместно с MCP-сервером                                                |
+| [lean_canvas](cookbook/lean_canvas/lean_canvas_agent.ipynb)                     | Генерация Lean Canvas **Пример дорабатывается**  
+| [MCP_example](/cookbook/mcp/README.md)                                          | Пример работы агента, созданного на основе GigaChat, совместно с MCP-сервером                                                       |
 | [playlists](/cookbook/playlists.ipynb)                                          | Составление плейлистов Spotify с помощью GigaChat API. **Пример дорабатывается**                                                    |
 | [reporter](/cookbook/reporter/README.md)                                        | Кластеризация и генерация отчетов на основе отзывов пользователей                                                                   |
 | [repl_graph](/cookbook/repl_graph/repl.ipynb)                                   | Создание базового агента способного решать задачи пользователей с помощью написания кода                                            | 

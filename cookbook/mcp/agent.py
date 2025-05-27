@@ -1,9 +1,8 @@
 # Create server parameters for stdio connection
 import asyncio
-import os
 
 from dotenv import find_dotenv, load_dotenv
-from langchain_gigachat.chat_models.gigachat import GigaChat
+from langchain_gigachat import GigaChat
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
 from mcp import ClientSession, StdioServerParameters
