@@ -213,6 +213,26 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 rating=7
             )
 
+    Live Search:
+        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`_
+        feature that enables Grok to ground its answers using results from web searches.
+
+        .. code-block:: python
+            from langchain_xai import ChatXAI
+
+            llm = ChatXAI(
+                model="grok-3-latest",
+                search_parameters={
+                    "mode": "auto",
+                    # Example optional parameters below:
+                    "max_search_results": 3,
+                    "from_date": "2025-05-26",
+                    "to_date": "2025-05-27",
+                }
+            )
+
+            llm.invoke("Provide me a digest of world news in the last 24 hours.")
+
     Token usage:
         .. code-block:: python
 
