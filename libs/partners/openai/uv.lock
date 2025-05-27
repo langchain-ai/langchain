@@ -479,7 +479,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.61"
+version = "0.3.62"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -640,6 +640,7 @@ dependencies = [
     { name = "pytest-socket" },
     { name = "pytest-vcr" },
     { name = "syrupy" },
+    { name = "vcrpy" },
 ]
 
 [package.metadata]
@@ -655,6 +656,7 @@ requires-dist = [
     { name = "pytest-socket", specifier = ">=0.6.0,<1" },
     { name = "pytest-vcr" },
     { name = "syrupy", specifier = ">=4,<5" },
+    { name = "vcrpy", specifier = ">=7.0" },
 ]
 
 [package.metadata.requires-dev]
