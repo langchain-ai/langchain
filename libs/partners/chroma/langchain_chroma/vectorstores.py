@@ -55,8 +55,14 @@ def _results_to_docs_and_scores(results: Any) -> list[tuple[Document, float]]:
 
 
 def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarray]]:
+    """Convert ChromaDB results to documents and vectors, filtering out None content."""
     return [
-        (Document(page_content=result[0], metadata=result[1] or {}, id=result[3]), result[2])
+        (
+            Document(
+                page_content=result[0], metadata=result[1] or {}, id=result[3]
+            ),
+            result[2],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
@@ -68,6 +74,7 @@ def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarra
 
 
 def safe_results_to_docs_and_scores(results):
+    """Convert results to documents and scores, filtering out None page_content."""
     return [
         Document(page_content=result[0], metadata=result[1] or {}, id=result[2])
         for result in results
