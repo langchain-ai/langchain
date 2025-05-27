@@ -812,18 +812,17 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
 
 def test_chroma_handles_none_page_content() -> None:
     """Test that Chroma gracefully handles None page_content values."""
-    from unittest.mock import patch
     from langchain_chroma.vectorstores import _results_to_docs_and_scores
-    
+
     mock_results = {
         "documents": [["valid content", None, "another valid content"]],
         "metadatas": [[{"key": "value1"}, {"key": "value2"}, {"key": "value3"}]],
         "ids": [["id1", "id2", "id3"]],
-        "distances": [[0.1, 0.2, 0.3]]
+        "distances": [[0.1, 0.2, 0.3]],
     }
-    
+
     docs_and_scores = _results_to_docs_and_scores(mock_results)
-    
+
     assert len(docs_and_scores) == 2
     assert docs_and_scores[0][0].page_content == "valid content"
     assert docs_and_scores[1][0].page_content == "another valid content"
@@ -834,15 +833,15 @@ def test_chroma_handles_none_page_content() -> None:
 def test_chroma_handles_none_page_content_with_vectors() -> None:
     """Test that Chroma gracefully handles None page_content values with vectors."""
     from langchain_chroma.vectorstores import _results_to_docs_and_vectors
-    
+
     mock_results = {
         "documents": [["valid content", None, "another valid content"]],
         "metadatas": [[{"key": "value1"}, {"key": "value2"}, {"key": "value3"}]],
         "ids": [["id1", "id2", "id3"]],
-        "embeddings": [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]]
+        "embeddings": [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]],
     }
     docs_and_vectors = _results_to_docs_and_vectors(mock_results)
-    
+
     assert len(docs_and_vectors) == 2
     assert docs_and_vectors[0][0].page_content == "valid content"
     assert docs_and_vectors[1][0].page_content == "another valid content"
