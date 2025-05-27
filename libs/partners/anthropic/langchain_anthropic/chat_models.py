@@ -1191,7 +1191,11 @@ class ChatAnthropic(BaseChatModel):
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
 
     mcp_servers: Optional[list[dict[str, Any]]] = None
-    """List of MCP servers to use for the request."""
+    """List of MCP servers to use for the request.
+
+    Example: ``mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
+    "name": "example-mcp"}]``
+    """
 
     @property
     def _llm_type(self) -> str:
