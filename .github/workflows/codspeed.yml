@@ -1,7 +1,6 @@
 name: CodSpeed
 
 on:
-  # Re-usable workflow
   workflow_call:
     inputs:
       working-directory:
@@ -13,7 +12,6 @@ on:
         type: string
         description: "Python version to use"
 
-  # Manual run (you will be prompted for the two inputs)
   workflow_dispatch:
 
 jobs:
@@ -29,7 +27,6 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      # Using this action is still necessary for CodSpeed to work
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python-version }}
