@@ -373,7 +373,7 @@ def _format_messages(
                             )
                         }
                         # Attempt to parse streamed output
-                        if block["input"] == {} and "partial_json" in block:
+                        if block.get("input") == {} and "partial_json" in block:
                             try:
                                 input_ = json.loads(block["partial_json"])
                                 if input_:
