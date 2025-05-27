@@ -58,9 +58,7 @@ def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarra
     """Convert ChromaDB results to documents and vectors, filtering out None content."""
     return [
         (
-            Document(
-                page_content=result[0], metadata=result[1] or {}, id=result[3]
-            ),
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[3]),
             result[2],
         )
         for result in zip(
@@ -80,6 +78,7 @@ def safe_results_to_docs_and_scores(results):
         for result in results
         if result[0] is not None
     ]
+
 
 Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
 
