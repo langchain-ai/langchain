@@ -37,7 +37,6 @@ IGNORED_PARTNERS = [
 ]
 
 PY_312_MAX_PACKAGES = [
-    "libs/partners/voyageai",
     "libs/partners/chroma", # https://github.com/chroma-core/chroma/issues/4382
 ]
 
