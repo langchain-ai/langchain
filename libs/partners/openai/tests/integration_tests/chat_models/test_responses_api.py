@@ -386,9 +386,11 @@ def test_code_interpreter() -> None:
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
     )
-    response = llm_with_tools.invoke(
-        "Write and run code to answer the question: what is 3^3?"
-    )
+    input_message = {
+        "role": "user",
+        "content": "Write and run code to answer the question: what is 3^3?",
+    }
+    response = llm_with_tools.invoke([input_message])
     _check_response(response)
     tool_outputs = response.additional_kwargs["tool_outputs"]
     assert tool_outputs
@@ -404,15 +406,17 @@ def test_code_interpreter() -> None:
     )
 
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm_with_tools.stream(
-        "Write and run code to answer the question: what is 3^3?"
-    ):
+    for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     tool_outputs = full.additional_kwargs["tool_outputs"]
     assert tool_outputs
     assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
+    # Test we can pass back in
+    next_message = {"role": "user", "content": "Please add more comments to the code."}
+    _ = llm_with_tools.invoke([input_message, full, next_message])
 
 
 def test_mcp_builtin() -> None:
