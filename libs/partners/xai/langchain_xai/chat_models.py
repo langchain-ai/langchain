@@ -218,6 +218,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         feature that enables Grok to ground its answers using results from web searches.
 
         .. code-block:: python
+
             from langchain_xai import ChatXAI
 
             llm = ChatXAI(
