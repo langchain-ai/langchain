@@ -574,7 +574,7 @@ def convert_to_openai_tool(
 
     .. versionchanged:: 0.3.63
 
-        Added support for OpenAI's image_generation built-in tool.
+        Added support for OpenAI's image generation built-in tool.
     """
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
