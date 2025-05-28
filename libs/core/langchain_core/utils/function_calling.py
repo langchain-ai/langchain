@@ -506,16 +506,17 @@ def convert_to_openai_function(
     return oai_function
 
 
-# List of well known tools supported by OpenAI's chat models or respones API.
+# List of well known tools supported by OpenAI's chat models or responses API.
 # These tools are not expected to be supported by other chat model providers
 # that conform to the OpenAI function-calling API.
 _WellKnownOpenAITools = (
+    "function",
     "file_search",
-    "web_search_preview",
     "computer_use_preview",
     "code_interpreter",
     "mcp",
     "image_generation",
+    "web_search_preview",
 )
 
 
