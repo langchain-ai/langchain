@@ -515,7 +515,7 @@ _WellKnownOpenAITools = (
     "computer_use_preview",
     "code_interpreter",
     "mcp",
-    "image_generation"
+    "image_generation",
 )
 
 
