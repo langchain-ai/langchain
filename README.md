@@ -40,7 +40,7 @@ GigaChain – это набор решений для создания прил�
 
 ### Python [![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-gigachat?style=flat-round)](https://pypistats.org/packages/langchain-gigachat)[![GitHub star chart](https://img.shields.io/github/stars/ai-forever/langchain-gigachat?style=flat-round)](https://www.star-history.com/#ai-forever/langchain-gigachat)
 
-[`langchain-gigachat`](https://github.com/ai-forever/langchain-gigachat) – интеграционная библиотека для работы с LangChain и LangGraph.
+[`langchain-gigachat`](https://github.com/ai-forever/langchain-gigachat/blob/master/libs/gigachat/README-ru_RU.md) – интеграционная библиотека для работы с LangChain и LangGraph.
 
 [Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/README.md)
 
@@ -48,7 +48,7 @@ GigaChain – это набор решений для создания прил�
 
 ### JavaScript/TypeScript ![npm](https://img.shields.io/npm/dm/langchain-gigachat)[![GitHub star chart](https://img.shields.io/github/stars/ai-forever/langchainjs?style=flat-round)](https://www.star-history.com/#ai-forever/langchainjs)
 
-[`langchain-gigachat`](https://github.com/ai-forever/langchainjs) интеграционная библиотека для работы с LangChainJS и LangGraphJS.
+[`langchain-gigachat`](https://github.com/ai-forever/langchainjs/blob/main/libs/langchain-gigachat/README-ru_RU.md) интеграционная библиотека для работы с LangChainJS и LangGraphJS.
 
 [Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/js/README.md)
 
