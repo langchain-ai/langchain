@@ -203,7 +203,12 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def enable_vcr_tests(self) -> bool:
-        """(bool) whether to enable VCR tests for the chat model."""
+        """(bool) whether to enable VCR tests for the chat model.
+
+        .. important::
+            See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
+            information.
+        """
         return False
 
     @property
@@ -633,18 +638,17 @@ class ChatModelUnitTests(ChatModelTests):
                 @property
                 def enable_vcr_tests(self) -> bool:
                     return True
-        
-        2. Configure VCR to exclude sensitive headers and other information from VCR
-        cassettes.
 
-            .. warning:: Excluding secrets from VCR cassettes.
-            VCR will by default record authentication headers and other sensitive
-            information in cassettes. Read below for how to configure what information
-            is recorded in cassettes.
+        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+
+            .. important::
+                VCR will by default record authentication headers and other sensitive
+                information in cassettes. Read below for how to configure what
+                information is recorded in cassettes.
 
             To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
             directory and implement the ``vcr_config`` fixture there.
-            
+
             ``langchain-tests`` excludes the headers ``"authorization"``,
             ``"x-api-key"``, and ``"api-key"`` from VCR cassettes. To pick up this
             configuration, you will need to add ``conftest.py`` as shown below. You can
@@ -658,10 +662,8 @@ class ChatModelUnitTests(ChatModelTests):
                 from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
 
                 _EXTRA_HEADERS = [
-                    # Specify additional headers to exclude
-                    ("openai-organization", "PLACEHOLDER"),
+                    # Specify additional headers to redact
                     ("user-agent", "PLACEHOLDER"),
-                    ("x-openai-client-user-agent", "PLACEHOLDER"),
                 ]
 
 
@@ -680,7 +682,31 @@ class ChatModelUnitTests(ChatModelTests):
 
                     return config
 
-        3. Run the tests to generate VCR cassettes.
+        3. Run tests to generate VCR cassettes.
+
+            Example:
+
+            .. code-block:: bash
+
+                uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+
+            This will generate a VCR cassette for the test in
+            ``tests/integration_tests/cassettes/``.
+
+            .. important::
+                You should inspect the generated cassette to ensure that it does not
+                contain sensitive information. If it does, you can modify the
+                ``vcr_config`` fixture to exclude headers or modify the response
+                before it is recorded.
+
+            You can then commit the cassette to your repository. Subsequent test runs
+            will use the cassette instead of making HTTP calls.
+
+            .. tip::
+                Adding ``--vcr-record=none`` to the pytest command will ensure that
+                no new cassettes are recorded, and only existing cassettes are used.
+                Consider adding this to your CI configuration (e.g., modify relevant
+                Makefile commands).
 
 
     Testing initialization from environment variables
