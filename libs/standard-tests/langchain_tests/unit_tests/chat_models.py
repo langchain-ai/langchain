@@ -203,6 +203,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def enable_vcr_tests(self) -> bool:
+        """(bool) whether to enable VCR tests for the chat model."""
         return False
 
     @property
@@ -617,6 +618,71 @@ class ChatModelUnitTests(ChatModelTests):
 
         Only needs to be overridden if these details are supplied.
 
+    .. dropdown:: enable_vcr_tests
+
+        Property controlling whether to enable select tests that rely on
+        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        as benchmarking tests.
+
+        To enable these tests, follow these steps:
+
+        1. Override the ``enable_vcr_tests`` property to return ``True``:
+
+            .. code-block:: python
+
+                @property
+                def enable_vcr_tests(self) -> bool:
+                    return True
+        
+        2. Configure VCR to exclude sensitive headers and other information from VCR
+        cassettes.
+
+            .. warning:: Excluding secrets from VCR cassettes.
+            VCR will by default record authentication headers and other sensitive
+            information in cassettes. Read below for how to configure what information
+            is recorded in cassettes.
+
+            To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
+            directory and implement the ``vcr_config`` fixture there.
+            
+            ``langchain-tests`` excludes the headers ``"authorization"``,
+            ``"x-api-key"``, and ``"api-key"`` from VCR cassettes. To pick up this
+            configuration, you will need to add ``conftest.py`` as shown below. You can
+            also exclude additional headers, override the default exclusions, or apply
+            other customizations to the VCR configuration. See example below:
+
+            .. code-block:: python
+                :caption: tests/conftest.py
+
+                import pytest
+                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+
+                _EXTRA_HEADERS = [
+                    # Specify additional headers to exclude
+                    ("openai-organization", "PLACEHOLDER"),
+                    ("user-agent", "PLACEHOLDER"),
+                    ("x-openai-client-user-agent", "PLACEHOLDER"),
+                ]
+
+
+                def remove_response_headers(response: dict) -> dict:
+                    # If desired, remove or modify headers in the response.
+                    response["headers"] = {}
+                    return response
+
+
+                @pytest.fixture(scope="session")
+                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                    \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                    config = _base_vcr_config.copy()
+                    config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                    config["before_record_response"] = remove_response_headers
+
+                    return config
+
+        3. Run the tests to generate VCR cassettes.
+
+
     Testing initialization from environment variables
         Some unit tests may require testing initialization from environment variables.
         These tests can be enabled by overriding the ``init_from_env_params``
@@ -858,4 +924,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     @pytest.mark.benchmark
     def test_init_time(self, benchmark: BenchmarkFixture) -> None:
+        """Test initialization time of the chat model. If this test fails, check that
+        we are not introducing undue overhead in the model's initialization.
+        """
         _ = benchmark(self.chat_model_class, **self.chat_model_params)
