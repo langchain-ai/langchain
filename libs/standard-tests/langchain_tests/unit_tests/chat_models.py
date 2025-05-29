@@ -682,6 +682,65 @@ class ChatModelUnitTests(ChatModelTests):
 
                     return config
 
+            .. dropdown:: Compressing cassettes
+
+                ``langchain-tests`` includes a custom VCR serializer that compresses
+                cassettes using gzip. To use it, register the ``"yaml.gz"`` serializer
+                to your VCR fixture and enable this serializer in the config. See
+                example below:
+
+                .. code-block:: python
+                    :caption: tests/conftest.py
+
+                    import pytest
+                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from vcr import VCR
+
+                    _EXTRA_HEADERS = [
+                        # Specify additional headers to redact
+                        ("user-agent", "PLACEHOLDER"),
+                    ]
+
+
+                    def remove_response_headers(response: dict) -> dict:
+                        # If desired, remove or modify headers in the response.
+                        response["headers"] = {}
+                        return response
+
+
+                    @pytest.fixture(scope="session")
+                    def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                        \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                        config = _base_vcr_config.copy()
+                        config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                        config["before_record_response"] = remove_response_headers
+                        # New: enable serializer and set file extension
+                        config["serializer"] = "yaml.gz"
+                        config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
+
+                        return config
+
+
+                    @pytest.fixture
+                    def vcr(vcr_config: dict) -> VCR:
+                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
+                        my_vcr = VCR(**vcr_config)
+                        my_vcr.register_serializer("yaml.gz", YamlGzipSerializer)
+                        return my_vcr
+
+                You can inspect the contents of the compressed cassettes (e.g., to
+                ensure no sensitive information is recorded) using the serializer:
+
+                .. code-block:: python
+
+                    from langchain_tests.conftest import YamlGzipSerializer
+
+                    with open("/path/to/tests/cassettes/TestClass_test.yaml.gz", "r") as f:
+                        data = f.read()
+
+                    YamlGzipSerializer.deserialize(data)
+
         3. Run tests to generate VCR cassettes.
 
             Example:
