@@ -29,9 +29,9 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = ["ruff<1.0,>=0.5"]
-dev = ["langchain-core","types-requests"]
+dev = ["langchain-core"]
 test_integration = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = ["mypy<2.0,>=1.10", "types-requests", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
