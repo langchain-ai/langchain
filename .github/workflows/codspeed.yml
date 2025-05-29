@@ -34,7 +34,9 @@ jobs:
         run: |
           uv venv
           uv pip install packaging requests
-          uv run .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
+          output=$(uv run .github/scripts/check_diff.py ${{ steps.files.outputs.all }})
+          echo "Script output: $output"
+          echo "$output" >> $GITHUB_OUTPUT
   codspeed:
     name: Run benchmarks
     needs: [ prepare_matrix ]
