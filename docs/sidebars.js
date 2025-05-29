@@ -49,7 +49,7 @@ module.exports = {
             {type: "doc", id: "how_to/tool_calling", label: "How to call tools"},
           ],
         },
-        {type: "doc", id: "integrations/chat", label: "Available integrations"},
+        {type: "doc", id: "integrations/chat/index", label: "Available integrations"},
       ],
     },
     {
@@ -59,7 +59,7 @@ module.exports = {
       items: [
         {type: "doc", id: "concepts/embedding_models", label: "Overview"},
         {type: "doc", id: "how_to/embed_text", label: "How to use embedding models"},
-        {type: "doc", id: "integrations/text_embedding", label: "Available integrations"},
+        {type: "doc", id: "integrations/text_embedding/index", label: "Available integrations"},
       ],
     },
     {
