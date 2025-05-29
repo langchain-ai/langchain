@@ -39,7 +39,8 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-
+install_types = true
+non_interactive = true
 [tool.ruff]
 target-version = "py39"
 
