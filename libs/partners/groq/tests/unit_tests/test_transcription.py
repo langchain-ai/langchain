@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from langchain_groq.transcription import TranscriptionGroq
-import requests
+import httpx
 
 def test_init_without_api_key_raises():
     # Clear env variable for test
@@ -15,7 +15,7 @@ def test_init_without_api_key_raises():
 
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
-@patch("requests.post")
+@patch("httpx.post")
 def test_transcribe_success(mock_post, mock_file):
     mock_post.return_value.status_code = 200
     mock_post.return_value.json.return_value = {"text": "Hello world"}
@@ -28,7 +28,7 @@ def test_transcribe_success(mock_post, mock_file):
 
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
-@patch("requests.post")
+@patch("httpx.post")
 def test_transcribe_failure(mock_post, mock_file):
     mock_post.return_value.status_code = 400
     mock_post.return_value.text = "Bad request"
