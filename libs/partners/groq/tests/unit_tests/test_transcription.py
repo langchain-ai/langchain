@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from langchain_groq.transcription import TranscriptionGroq
-import httpx
+
 
 def test_init_without_api_key_raises():
     # Clear env variable for test
