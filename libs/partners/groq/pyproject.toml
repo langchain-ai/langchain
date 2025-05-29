@@ -6,7 +6,7 @@ build-backend = "pdm.backend"
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.49", "groq<1,>=0.4.1"]
+dependencies = ["langchain-core<1.0.0,>=0.3.49", "groq<1,>=0.4.1","requests>=2.25.0"]
 name = "langchain-groq"
 version = "0.3.2"
 description = "An integration package connecting Groq and LangChain"
@@ -29,7 +29,10 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = ["ruff<1.0,>=0.5"]
-dev = ["langchain-core"]
+dev = [
+    "langchain-core",
+    "pyright>=1.1.401",
+]
 test_integration = ["langchain-core"]
 typing = ["mypy<2.0,>=1.10", "langchain-core"]
 
