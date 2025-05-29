@@ -8,10 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-  AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
-  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
-  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: foo
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo
   DEEPSEEK_API_KEY: foo
   FIREWORKS_API_KEY: foo
 
@@ -62,4 +60,3 @@ jobs:
               uv run --no-sync pytest ./tests/ --codspeed
             fi
           mode: ${{ matrix.mode || 'instrumentation' }}
-
