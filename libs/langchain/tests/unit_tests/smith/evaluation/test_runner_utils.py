@@ -343,11 +343,9 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                 },
                 "input": {"input": (example.inputs or {}).get("input")},
                 "reference": {
-                    "output": (
-                        example.outputs["output"]
-                        if example.outputs is not None
-                        else None
-                    )
+                    "output": example.outputs["output"]
+                    if example.outputs is not None
+                    else None
                 },
                 "feedback": [],
                 # No run since we mock the call to the llm above
