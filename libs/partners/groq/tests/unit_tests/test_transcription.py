@@ -28,7 +28,7 @@ def test_transcribe_success(mock_post, mock_file) -> None:
 
     # ✅ Optional but useful assertion
     called_files = mock_post.call_args.kwargs["files"]
-    assert isinstance(called_files, list)
+    assert isinstance(called_files, dict)
     assert any(f[0] == "file" for f in called_files)
 
 
