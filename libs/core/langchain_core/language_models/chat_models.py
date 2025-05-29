@@ -413,8 +413,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
-        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
+        sync_not_implemented = (
+            type(self)._stream == BaseChatModel._stream
+        )
+        async_not_implemented = (
+            type(self)._astream == BaseChatModel._astream
+        )
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -627,7 +631,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(
+        self, llm_outputs: list[Optional[dict]]
+    ) -> dict:
         return {}
 
     def _get_invocation_params(

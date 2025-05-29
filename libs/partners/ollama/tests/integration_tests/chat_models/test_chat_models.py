@@ -59,7 +59,7 @@ def test_structured_output(method: str) -> None:
     assert set(chunk.keys()) == {"setup", "punchline"}
 
 
-@pytest.mark.parametrize(("model"), [("llama3.1")])
+@pytest.mark.parametrize(("model"), ["llama3.1"])
 def test_structured_output_deeply_nested(model: str) -> None:
     """Test to verify structured output with a nested objects."""
     llm = ChatOllama(model=model, temperature=0)

@@ -19,12 +19,12 @@ def main():
         with open(path, "rb") as f:
             pyproject = tomllib.load(f)
         try:
-            pyproject["tool"]["poetry"]["group"]["typing"]["dependencies"]["mypy"] = (
-                "^1.10"
-            )
-            pyproject["tool"]["poetry"]["group"]["lint"]["dependencies"]["ruff"] = (
-                "^0.5"
-            )
+            pyproject["tool"]["poetry"]["group"]["typing"]["dependencies"][
+                "mypy"
+            ] = "^1.10"
+            pyproject["tool"]["poetry"]["group"]["lint"]["dependencies"][
+                "ruff"
+            ] = "^0.5"
         except KeyError:
             continue
         with open(path, "w") as f:
@@ -80,6 +80,7 @@ def main():
             capture_output=True,
             text=True,
         )
+
 
 if __name__ == "__main__":
     main()

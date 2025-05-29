@@ -5,9 +5,9 @@ from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 def test_generation_chunk() -> None:
     assert GenerationChunk(text="Hello, ") + GenerationChunk(
         text="world!"
-    ) == GenerationChunk(text="Hello, world!"), (
-        "GenerationChunk + GenerationChunk should be a GenerationChunk"
-    )
+    ) == GenerationChunk(
+        text="Hello, world!"
+    ), "GenerationChunk + GenerationChunk should be a GenerationChunk"
 
     assert GenerationChunk(text="Hello, ") + GenerationChunk(
         text="world!", generation_info={"foo": "bar"}
@@ -31,9 +31,9 @@ def test_chat_generation_chunk() -> None:
         message=HumanMessageChunk(content="Hello, ")
     ) + ChatGenerationChunk(
         message=HumanMessageChunk(content="world!")
-    ) == ChatGenerationChunk(message=HumanMessageChunk(content="Hello, world!")), (
-        "ChatGenerationChunk + ChatGenerationChunk should be a ChatGenerationChunk"
-    )
+    ) == ChatGenerationChunk(
+        message=HumanMessageChunk(content="Hello, world!")
+    ), "ChatGenerationChunk + ChatGenerationChunk should be a ChatGenerationChunk"
 
     assert ChatGenerationChunk(
         message=HumanMessageChunk(content="Hello, ")

@@ -61,12 +61,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
-        assert isinstance(event["run_id"], str), (
-            f"Event {event} run_id is not a string."
-        )
-        assert isinstance(event["parent_ids"], list), (
-            f"Event {event} parent_ids is not a list."
-        )
+        assert isinstance(
+            event["run_id"], str
+        ), f"Event {event} run_id is not a string."
+        assert isinstance(
+            event["parent_ids"], list
+        ), f"Event {event} parent_ids is not a list."
 
     return cast(
         "list[StreamEvent]",
@@ -1054,7 +1054,9 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
+    def with_parameters_and_callbacks(
+        x: int, y: str, callbacks: Callbacks
+    ) -> dict:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 

@@ -131,7 +131,9 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
+            runnable, config = runnable._prepare(
+                merge_configs(runnable.config, config)
+            )
         return runnable, cast("RunnableConfig", config)
 
     @abstractmethod

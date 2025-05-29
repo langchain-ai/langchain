@@ -178,7 +178,9 @@ def dummy_typing_typed_dict() -> type:
         """Dummy function."""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
+        arg2: TypingAnnotated[
+            Literal["bar", "baz"], ..., "one of 'bar', 'baz'"
+        ]
 
     return dummy_function
 

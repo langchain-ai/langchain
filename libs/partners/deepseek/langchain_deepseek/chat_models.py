@@ -235,9 +235,9 @@ class ChatDeepSeek(BaseChatOpenAI):
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
             ):
-                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                    reasoning
-                )
+                rtn.generations[0].message.additional_kwargs[
+                    "reasoning_content"
+                ] = reasoning
 
         return rtn
 

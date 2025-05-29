@@ -207,7 +207,9 @@ def deprecated(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -237,7 +239,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -258,7 +262,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:
                 return cast(
                     "T",
                     FieldInfoV2(
@@ -318,7 +324,9 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:
                 """Finalize the property."""
                 return cast(
                     "T",
