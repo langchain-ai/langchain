@@ -32,7 +32,6 @@ def test_transcribe_success(mock_post, mock_file):
     assert any(f[0] == "file" for f in called_files)
 
 
-
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
 @patch("httpx.post")
 def test_transcribe_failure(mock_post, mock_file):
