@@ -480,6 +480,7 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        local_metadata=config.get("configurable")
     )
 
 
