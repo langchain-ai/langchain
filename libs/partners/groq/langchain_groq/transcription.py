@@ -1,7 +1,7 @@
 """Groq Whisper API wrapper."""
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -24,7 +24,7 @@ class TranscriptionGroq:
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         with open(audio_path, "rb") as audio_file:
             # Correctly typed files list
-            files = [
+            files: dict[str, tuple[Optional[str], Any, Optional[str]]] = [
                 ("file", (audio_path, audio_file, "audio/mpeg")),
                 ("model", (None, self.model)),
             ]
