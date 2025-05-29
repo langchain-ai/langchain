@@ -57,6 +57,10 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     ]:
         return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
+    @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
