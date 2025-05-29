@@ -25,9 +25,9 @@ class TranscriptionGroq:
         with open(audio_path, "rb") as audio_file:
             # Correctly typed files list
             files: dict[str, tuple[Optional[str], Any, Optional[str]]] = {
-            "file": (audio_path, audio_file, "audio/mpeg"),
-            "model": (None, self.model, None),
-        }
+                "file": (audio_path, audio_file, "audio/mpeg"),
+                "model": (None, self.model, None),
+            }
 
             if language:
                 files["language"] = (None, language, None)
