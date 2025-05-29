@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
+        job-configs: ${{ fromJson(needs.prepare_matrix.outputs.codspeed) }}
       fail-fast: false
 
     steps:
