@@ -45,6 +45,13 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           uv sync --group lint --group typing
+      
+      - name: Ensure pip is available inside .venv
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          . .venv/bin/activate
+          python -m ensurepip --upgrade
+          python -m pip install --upgrade pip
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
