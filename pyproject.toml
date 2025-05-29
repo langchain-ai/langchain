@@ -20,6 +20,7 @@ dev = [
     "langchain",
     "langchain-openai",
     "ipykernel<7.0.0,>=6.29.2",
+    "types-requests>=2.32.0.20250515",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 typing = []
