@@ -8,6 +8,8 @@ on:
   workflow_dispatch:
 
 env:
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: foo
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo
   DEEPSEEK_API_KEY: foo
   FIREWORKS_API_KEY: foo
 
