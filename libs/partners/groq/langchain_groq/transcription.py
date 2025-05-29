@@ -29,8 +29,8 @@ class TranscriptionGroq:
             "model": (None, self.model, None),
         }
 
-        if language:
-            files["language"] = (None, language, None)
+            if language:
+                files["language"] = (None, language, None)
 
             headers = {"Authorization": f"Bearer {self.api_key}"}
             response = httpx.post(
