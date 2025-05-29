@@ -1,55 +1,61 @@
 name: CodSpeed
 
 on:
-  workflow_call:
-    inputs:
-      working-directory:
-        required: true
-        type: string
-        description: "From which folder this pipeline executes"
-      python-version:
-        required: true
-        type: string
-        description: "Python version to use"
+  push:
+    branches:
+        - master
+  pull_request:
+    paths:
+      - 'libs/core/**'
+      - 'libs/partners/**'
 
   workflow_dispatch:
+
+env:
+  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+  AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+  DEEPSEEK_API_KEY: foo
+  FIREWORKS_API_KEY: foo
 
 jobs:
   codspeed:
     name: Run benchmarks
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        - working-directory: libs/core
+          mode: walltime
+        - working-directory: libs/partners/openai
+        - working-directory: libs/partners/anthropic
+
     steps:
       - uses: actions/checkout@v4
 
+      # We have to use 3.12 as 3.13 is not yet supported
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: ${{ inputs.python-version }}
+          python-version: "3.12"
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ inputs.python-version }}
+          python-version: "3.12"
 
-      - name: install deps
+      - name: Install dependencies
         run: uv sync --group test
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ matrix.working-directory }}
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
-        env:
-          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
-          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
-          DEEPSEEK_API_KEY: foo
-          FIREWORKS_API_KEY: foo
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
-            cd ${{ inputs.working-directory }}
-            if [ "${{ inputs.working-directory }}" = "libs/core" ]; then
+            cd ${{ matrix.working-directory }}
+            if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
               uv run --no-sync pytest ./tests/benchmarks --codspeed
             else
               uv run --no-sync pytest ./tests/ --codspeed
             fi
-          mode: walltime
+          mode: ${{ matrix.mode || 'instrumentation' }}
