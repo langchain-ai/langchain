@@ -5,7 +5,7 @@ import pytest
 from langchain_groq.transcription import TranscriptionGroq
 
 
-def test_init_without_api_key_raises():
+def test_init_without_api_key_raises()-> None:
     # Clear env variable for test
     with patch.dict("os.environ", {}, clear=True):
         with pytest.raises(
@@ -16,7 +16,7 @@ def test_init_without_api_key_raises():
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
 @patch("httpx.post")
-def test_transcribe_success(mock_post, mock_file):
+def test_transcribe_success(mock_post, mock_file)-> None:
     mock_post.return_value.status_code = 200
     mock_post.return_value.json.return_value = {"text": "Hello world"}
 
@@ -34,7 +34,7 @@ def test_transcribe_success(mock_post, mock_file):
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
 @patch("httpx.post")
-def test_transcribe_failure(mock_post, mock_file):
+def test_transcribe_failure(mock_post, mock_file)-> None:
     mock_post.return_value.status_code = 400
     mock_post.return_value.text = "Bad request"
 

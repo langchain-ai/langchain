@@ -10,7 +10,7 @@ from langchain_groq import TranscriptionGroq
     reason="Missing test audio",
 )
 @pytest.mark.skipif("GROQ_API_KEY" not in os.environ, reason="GROQ_API_KEY not set")
-def test_transcription_real():
+def test_transcription_real()-> None:
     transcriber = TranscriptionGroq(model="whisper-large-v3-turbo")
     audio_path = "libs/partners/groq/tests/assets/hello.mp3"
     result = transcriber.transcribe(audio_path)
