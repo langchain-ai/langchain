@@ -775,12 +775,12 @@ class ChatHuggingFace(BaseChatModel):
         elif _is_huggingface_pipeline(self.llm):
             from transformers import AutoTokenizer  # type: ignore[import]
 
+            self.model_id = self.model_id or self.llm.model_id
             self.tokenizer = (
                 AutoTokenizer.from_pretrained(self.model_id)
                 if self.tokenizer is None
                 else self.tokenizer
             )
-            self.model_id = self.llm.model_id
             return
         elif _is_huggingface_endpoint(self.llm):
             self.model_id = self.llm.repo_id or self.llm.model

@@ -13,6 +13,10 @@ dependencies = [
     "httpx<1,>=0.25.0",
     "syrupy<5,>=4",
     "pytest-socket<1,>=0.6.0",
+    "pytest-benchmark",
+    "pytest-codspeed",
+    "pytest-vcr",
+    "vcrpy>=7.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]

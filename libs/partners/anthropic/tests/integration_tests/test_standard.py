@@ -42,6 +42,10 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
+    @property
     def supported_usage_metadata_details(
         self,
     ) -> dict[
