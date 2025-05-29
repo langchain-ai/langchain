@@ -64,7 +64,7 @@ jobs:
         run: uv sync --group test
         working-directory: ${{ matrix.job-configs.working-directory }}
 
-      - name: Run benchmarks ${{ split(matrix.job-configs.working-directory, '/') | last }}
+      - name: Run benchmarks ${{ matrix.job-configs.working-directory }}
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
