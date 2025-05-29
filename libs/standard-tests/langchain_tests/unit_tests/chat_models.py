@@ -1012,4 +1012,9 @@ class ChatModelUnitTests(ChatModelTests):
         """Test initialization time of the chat model. If this test fails, check that
         we are not introducing undue overhead in the model's initialization.
         """
-        _ = benchmark(self.chat_model_class, **self.chat_model_params)
+
+        def _init_in_loop() -> None:
+            for _ in range(10):
+                self.chat_model_class(**self.chat_model_params)
+
+        benchmark(_init_in_loop)

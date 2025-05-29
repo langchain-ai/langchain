@@ -5,10 +5,6 @@ on:
     branches:
         - master
   pull_request:
-    paths:
-      - 'libs/core/**'
-      - 'libs/partners/**'
-
   workflow_dispatch:
 
 env:
@@ -20,31 +16,21 @@ env:
   FIREWORKS_API_KEY: foo
 
 jobs:
-  prepare_matrix:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.12"
-      - id: files
-        uses: Ana06/get-changed-files@v2.3.0
-      - id: set-matrix
-        run: |
-          uv venv
-          uv pip install packaging requests
-          uv run .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
-    outputs:
-      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
   codspeed:
     name: Run benchmarks
-    needs: [ prepare_matrix ]
-    if: ${{ needs.prepare_matrix.outputs.codspeed != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job-configs: ${{ fromJson(needs.prepare_matrix.outputs.codspeed) }}
+        include:
+          - working-directory: libs/core
+            mode: walltime
+          - working-directory: libs/partners/openai
+          - working-directory: libs/partners/anthropic
+          - working-directory: libs/partners/deepseek
+          - working-directory: libs/partners/fireworks
+          - working-directory: libs/partners/xai
+          - working-directory: libs/partners/mistralai
+          - working-directory: libs/partners/groq
       fail-fast: false
 
     steps:
@@ -54,26 +40,26 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: ${{ matrix.job-configs.python-version }}
+          python-version: "3.12"
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.job-configs.python-version }}
+          python-version: "3.12"
 
       - name: Install dependencies
         run: uv sync --group test
-        working-directory: ${{ matrix.job-configs.working-directory }}
+        working-directory: ${{ matrix.working-directory }}
 
-      - name: Run benchmarks ${{ matrix.job-configs.working-directory }}
+      - name: Run benchmarks ${{ matrix.working-directory }}
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
-            cd ${{ matrix.job-configs.working-directory }}
-            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
+            cd ${{ matrix.working-directory }}
+            if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
               uv run --no-sync pytest ./tests/benchmarks --codspeed
             else
               uv run --no-sync pytest ./tests/ --codspeed
             fi
-          mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'instrumentation' }}
+          mode: ${{ matrix.mode || 'instrumentation' }}
 
