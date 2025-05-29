@@ -21,15 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        - working-directory: libs/core
-          mode: walltime
-        - working-directory: libs/partners/openai
-        - working-directory: libs/partners/anthropic
-        - working-directory: libs/partners/deepseek
-        - working-directory: libs/partners/fireworks
-        - working-directory: libs/partners/xai
-        - working-directory: libs/partners/mistral-ai
-        - working-directory: libs/partners/groq
+        include:
+          - working-directory: libs/core
+            mode: walltime
+          - working-directory: libs/partners/openai
+          - working-directory: libs/partners/anthropic
+          - working-directory: libs/partners/deepseek
+          - working-directory: libs/partners/fireworks
+          - working-directory: libs/partners/xai
+          - working-directory: libs/partners/mistral-ai
+          - working-directory: libs/partners/groq
       fail-fast: false
 
     steps:
