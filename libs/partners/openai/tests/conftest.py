@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from langchain_tests.conftest import YamlGzipSerializer
 from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
@@ -10,8 +12,16 @@ _EXTRA_HEADERS = [
 ]
 
 
+def remove_request_headers(request: Any) -> Any:
+    for k in request.headers:
+        request.headers[k] = "**REDACTED**"
+    request.uri = "**REDACTED**"
+    return request
+
+
 def remove_response_headers(response: dict) -> dict:
-    response["headers"] = {}
+    for k in response["headers"]:
+        response["headers"][k] = "**REDACTED**"
     return response
 
 
@@ -22,6 +32,7 @@ def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
     """
     config = _base_vcr_config.copy()
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+    config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers
     config["serializer"] = "yaml.gz"
     config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
