@@ -32,6 +32,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.3.0
       - id: set-matrix
         run: |
+          uv venv
           uv pip install packaging requests
           uv run .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
   codspeed:
