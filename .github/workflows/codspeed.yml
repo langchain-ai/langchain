@@ -62,7 +62,7 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --group test
-        working-directory: ${{ matrix.job-configs.python-version }}
+        working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
