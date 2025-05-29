@@ -38,6 +38,7 @@ jobs:
   codspeed:
     name: Run benchmarks
     needs: [ prepare_matrix ]
+    if: ${{ needs.prepare_matrix.outputs.codspeed != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
