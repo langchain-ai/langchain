@@ -3,7 +3,6 @@ from typing import Optional
 
 import httpx
 
-
 class TranscriptionGroq:
     """
     Transcribe audio using Groq Whisper models.
@@ -21,17 +20,20 @@ class TranscriptionGroq:
 
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         with open(audio_path, "rb") as audio_file:
-            files = {
-                "file": (audio_path, audio_file, "audio/mpeg"),
-                "model": (None, self.model),
-            }
+            # Correctly typed files list
+            files = [
+                ("file", (audio_path, audio_file, "audio/mpeg")),
+                ("model", (None, self.model)),
+            ]
             if language:
-                files["language"] = (None, language)
+                files.append(("language", (None, language)))
 
+            headers = {"Authorization": f"Bearer {self.api_key}"}
             response = httpx.post(
                 self.endpoint,
-                headers={"Authorization": f"Bearer {self.api_key}"},
-                files=files,
+                headers=headers,
+                files=files,  # Now this is correctly typed
+                timeout=60.0,
             )
 
         if response.status_code == 200:

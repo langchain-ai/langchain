@@ -26,6 +26,12 @@ def test_transcribe_success(mock_post, mock_file):
     mock_file.assert_called_once_with("fake_path.mp3", "rb")
     assert result == "Hello world"
 
+    # ✅ Optional but useful assertion
+    called_files = mock_post.call_args.kwargs["files"]
+    assert isinstance(called_files, list)
+    assert any(f[0] == "file" for f in called_files)
+
+
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"audio data")
 @patch("httpx.post")
