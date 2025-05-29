@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
+import vcr  # type: ignore[import-untyped]
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
@@ -28,6 +29,7 @@ from langchain_core.utils.function_calling import (
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
@@ -519,7 +521,151 @@ class ChatModelIntegrationTests(ChatModelTests):
         cached, audio, or reasoning.
 
         Only needs to be overridden if these details are supplied.
-    """
+
+    .. dropdown:: enable_vcr_tests
+
+        Property controlling whether to enable select tests that rely on
+        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        as benchmarking tests.
+
+        To enable these tests, follow these steps:
+
+        1. Override the ``enable_vcr_tests`` property to return ``True``:
+
+            .. code-block:: python
+
+                @property
+                def enable_vcr_tests(self) -> bool:
+                    return True
+
+        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+
+            .. important::
+                VCR will by default record authentication headers and other sensitive
+                information in cassettes. Read below for how to configure what
+                information is recorded in cassettes.
+
+            To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
+            directory and implement the ``vcr_config`` fixture there.
+
+            ``langchain-tests`` excludes the headers ``"authorization"``,
+            ``"x-api-key"``, and ``"api-key"`` from VCR cassettes. To pick up this
+            configuration, you will need to add ``conftest.py`` as shown below. You can
+            also exclude additional headers, override the default exclusions, or apply
+            other customizations to the VCR configuration. See example below:
+
+            .. code-block:: python
+                :caption: tests/conftest.py
+
+                import pytest
+                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+
+                _EXTRA_HEADERS = [
+                    # Specify additional headers to redact
+                    ("user-agent", "PLACEHOLDER"),
+                ]
+
+
+                def remove_response_headers(response: dict) -> dict:
+                    # If desired, remove or modify headers in the response.
+                    response["headers"] = {}
+                    return response
+
+
+                @pytest.fixture(scope="session")
+                def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                    \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                    config = _base_vcr_config.copy()
+                    config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                    config["before_record_response"] = remove_response_headers
+
+                    return config
+
+            .. dropdown:: Compressing cassettes
+
+                ``langchain-tests`` includes a custom VCR serializer that compresses
+                cassettes using gzip. To use it, register the ``"yaml.gz"`` serializer
+                to your VCR fixture and enable this serializer in the config. See
+                example below:
+
+                .. code-block:: python
+                    :caption: tests/conftest.py
+
+                    import pytest
+                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from vcr import VCR
+
+                    _EXTRA_HEADERS = [
+                        # Specify additional headers to redact
+                        ("user-agent", "PLACEHOLDER"),
+                    ]
+
+
+                    def remove_response_headers(response: dict) -> dict:
+                        # If desired, remove or modify headers in the response.
+                        response["headers"] = {}
+                        return response
+
+
+                    @pytest.fixture(scope="session")
+                    def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                        \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                        config = _base_vcr_config.copy()
+                        config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                        config["before_record_response"] = remove_response_headers
+                        # New: enable serializer and set file extension
+                        config["serializer"] = "yaml.gz"
+                        config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
+
+                        return config
+
+
+                    @pytest.fixture
+                    def vcr(vcr_config: dict) -> VCR:
+                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
+                        my_vcr = VCR(**vcr_config)
+                        my_vcr.register_serializer("yaml.gz", YamlGzipSerializer)
+                        return my_vcr
+
+                You can inspect the contents of the compressed cassettes (e.g., to
+                ensure no sensitive information is recorded) using the serializer:
+
+                .. code-block:: python
+
+                    from langchain_tests.conftest import YamlGzipSerializer
+
+                    with open("/path/to/tests/cassettes/TestClass_test.yaml.gz", "r") as f:
+                        data = f.read()
+
+                    YamlGzipSerializer.deserialize(data)
+
+        3. Run tests to generate VCR cassettes.
+
+            Example:
+
+            .. code-block:: bash
+
+                uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+
+            This will generate a VCR cassette for the test in
+            ``tests/integration_tests/cassettes/``.
+
+            .. important::
+                You should inspect the generated cassette to ensure that it does not
+                contain sensitive information. If it does, you can modify the
+                ``vcr_config`` fixture to exclude headers or modify the response
+                before it is recorded.
+
+            You can then commit the cassette to your repository. Subsequent test runs
+            will use the cassette instead of making HTTP calls.
+
+            .. tip::
+                Adding ``--vcr-record=none`` to the pytest command will ensure that
+                no new cassettes are recorded, and only existing cassettes are used.
+                Consider adding this to your CI configuration (e.g., modify relevant
+                Makefile commands).
+    """  # noqa: E501
 
     @property
     def standard_chat_model_params(self) -> dict:
@@ -2678,6 +2824,45 @@ class ChatModelIntegrationTests(ChatModelTests):
             ]
         )
         assert isinstance(response, AIMessage)
+
+    @pytest.mark.benchmark
+    def test_stream_time(
+        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
+    ) -> None:
+        """Test that streaming does not introduce undue overhead.
+
+        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelIntegrationTests>`
+        for more information.
+
+        .. dropdown:: Configuration
+
+            This test can be enabled or disabled using the ``enable_vcr_tests``
+            property. For example, to disable the test, set this property to ``False``:
+
+            .. code-block:: python
+
+                @property
+                def enable_vcr_tests(self) -> bool:
+                    return False
+
+            .. important::
+
+                VCR will by default record authentication headers and other sensitive
+                information in cassettes. See ``enable_vcr_tests`` dropdown
+                :class:`above <ChatModelIntegrationTests>` for how to configure what
+                information is recorded in cassettes.
+
+        """
+        if not self.enable_vcr_tests:
+            pytest.skip("VCR not set up.")
+
+        def _run() -> None:
+            cassette_name = f"{self.__class__.__name__}_test_stream_time"
+            with vcr.use_cassette(cassette_name, record_mode="once"):
+                for _ in model.stream("Write a story about a cat."):
+                    pass
+
+        benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
