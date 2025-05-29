@@ -1460,7 +1460,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         llm = self.bind_tools(
             [schema],
-            tool_choice="any",
+            tool_choice="required",
             ls_structured_output_format={
                 "kwargs": {"method": "function_calling"},
                 "schema": schema,
