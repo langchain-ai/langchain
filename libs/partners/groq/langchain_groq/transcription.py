@@ -1,7 +1,10 @@
+"""Groq Whisper API wrapper."""
+
 import os
 from typing import Optional
 
 import httpx
+
 
 class TranscriptionGroq:
     """
