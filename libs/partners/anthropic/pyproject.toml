@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.51.0",
-    "langchain-core<1.0.0,>=0.3.59",
+    "anthropic<1,>=0.52.0",
+    "langchain-core<1.0.0,>=0.3.62",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.13"
+version = "0.3.14"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
@@ -33,6 +33,7 @@ test = [
     "pytest-retry<1.8.0,>=1.7.0",
     "pytest-timeout<3.0.0,>=2.3.1",
     "pytest-socket<1.0.0,>=0.7.0",
+    "vcrpy>=7.0",
     "langchain-core",
     "langchain-tests",
 ]
@@ -42,7 +43,6 @@ dev = ["langchain-core"]
 test_integration = ["requests<3.0.0,>=2.32.3", "langchain-core"]
 typing = [
     "mypy<2.0,>=1.10",
-    "types-requests<3.0.0.0,>=2.32.0.20241016",
     "langchain-core",
 ]
 
