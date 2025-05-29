@@ -119,7 +119,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
         return _get_pydantic_test_configs(dir_)
 
-    if dir_ == "libs/core":
+    if job == "codspeed":
+        py_versions = ["3.12"]  # 3.13 is not yet supported
+    elif dir_ == "libs/core":
         py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
@@ -210,6 +212,8 @@ def _get_configs_for_multi_dirs(
         )
     elif job == "extended-tests":
         dirs = list(dirs_to_run["extended-test"])
+    elif job == "codspeed":
+        dirs = list(dirs_to_run["codspeed"])
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -225,6 +229,7 @@ if __name__ == "__main__":
         "lint": set(),
         "test": set(),
         "extended-test": set(),
+        "codspeed": set(),
     }
     docs_edited = False
 
@@ -248,6 +253,8 @@ if __name__ == "__main__":
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
             dirs_to_run["lint"].add(".")
 
+        if file.startswith("libs/core"):
+            dirs_to_run["codspeed"].add(f"libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -286,6 +293,7 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
+                dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file == "libs/packages.yml":
             continue
@@ -311,6 +319,7 @@ if __name__ == "__main__":
             "compile-integration-tests",
             "dependencies",
             "test-pydantic",
+            "codspeed",
         ]
     }
     map_job_to_configs["test-doc-imports"] = (
