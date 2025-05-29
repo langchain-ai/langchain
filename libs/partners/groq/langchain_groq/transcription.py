@@ -1,8 +1,7 @@
 import os
 from typing import Optional
 
-import requests
-
+import httpx
 
 class TranscriptionGroq:
     """
@@ -28,10 +27,12 @@ class TranscriptionGroq:
             if language:
                 files["language"] = (None, language)
 
-            response = requests.post(
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = httpx.post(
                 self.endpoint,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers=headers,
                 files=files,
+                timeout=60.0,  # Optional: to avoid hanging requests
             )
 
         if response.status_code == 200:
