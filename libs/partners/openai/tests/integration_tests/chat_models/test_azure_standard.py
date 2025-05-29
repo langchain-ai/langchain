@@ -38,10 +38,6 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def supports_json_mode(self) -> bool:
         return True
 
-    @property
-    def enable_vcr_tests(self) -> bool:
-        return True
-
 
 class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
     """Test a legacy model."""
@@ -62,7 +58,3 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
     @property
     def structured_output_kwargs(self) -> dict:
         return {"method": "function_calling"}
-
-    @property
-    def enable_vcr_tests(self) -> bool:
-        return True

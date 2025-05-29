@@ -99,7 +99,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
-  const [selectedModel, setSelectedModel] = useState("openai");
+  const [selectedModel, setSelectedModel] = useState("google_genai");
   const {
     overrideParams,
     customVarName,
