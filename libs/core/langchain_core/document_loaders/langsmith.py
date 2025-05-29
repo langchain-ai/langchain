@@ -50,7 +50,7 @@ class LangSmithLoader(BaseLoader):
         offset: int = 0,
         limit: Optional[int] = None,
         metadata: Optional[dict] = None,
-        filter: Optional[str] = None,
+        filter: Optional[str] = None,  # noqa: A002
         content_key: str = "",
         format_content: Optional[Callable[..., str]] = None,
         client: Optional[LangSmithClient] = None,

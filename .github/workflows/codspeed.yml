@@ -7,38 +7,73 @@ on:
   pull_request:
     paths:
       - 'libs/core/**'
-  # `workflow_dispatch` allows CodSpeed to trigger backtest
-  # performance analysis in order to generate initial data.
+      - 'libs/partners/**'
+
   workflow_dispatch:
 
+env:
+  AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+  AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+  DEEPSEEK_API_KEY: foo
+  FIREWORKS_API_KEY: foo
+
 jobs:
-  codspeed:
-    name: Run benchmarks
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks')) || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+  prepare_matrix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # We have to use 3.12, 3.13 is not yet supported
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+      - id: files
+        uses: Ana06/get-changed-files@v2.3.0
+      - id: set-matrix
+        run: |
+          uv venv
+          uv pip install packaging requests
+          uv run .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
+    outputs:
+      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
+  codspeed:
+    name: Run benchmarks
+    needs: [ prepare_matrix ]
+    if: ${{ needs.prepare_matrix.outputs.codspeed != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.prepare_matrix.outputs.codspeed) }}
+      fail-fast: false
 
-      # Using this action is still necessary for CodSpeed to work
+    steps:
+      - uses: actions/checkout@v4
+
+      # We have to use 3.12 as 3.13 is not yet supported
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.job-configs.python-version }}
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.job-configs.python-version }}
 
-      - name: install deps
+      - name: Install dependencies
         run: uv sync --group test
-        working-directory: ./libs/core
+        working-directory: ${{ matrix.job-configs.working-directory }}
 
-      - name: Run benchmarks
+      - name: Run benchmarks ${{ matrix.job-configs.working-directory }}
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
-            cd libs/core
-            uv run --no-sync pytest ./tests/benchmarks --codspeed
-          mode: walltime
+            cd ${{ matrix.job-configs.working-directory }}
+            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
+          mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'instrumentation' }}
+

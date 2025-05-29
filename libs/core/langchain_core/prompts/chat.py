@@ -471,16 +471,18 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     img_template = cast("_ImageTemplateParam", tmpl)["image_url"]
                     input_variables = []
                     if isinstance(img_template, str):
-                        vars = get_template_variables(img_template, template_format)
-                        if vars:
-                            if len(vars) > 1:
+                        variables = get_template_variables(
+                            img_template, template_format
+                        )
+                        if variables:
+                            if len(variables) > 1:
                                 msg = (
                                     "Only one format variable allowed per image"
-                                    f" template.\nGot: {vars}"
+                                    f" template.\nGot: {variables}"
                                     f"\nFrom: {tmpl}"
                                 )
                                 raise ValueError(msg)
-                            input_variables = [vars[0]]
+                            input_variables = [variables[0]]
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables,

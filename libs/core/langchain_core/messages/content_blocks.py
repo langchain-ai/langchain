@@ -140,10 +140,10 @@ def convert_to_openai_data_block(block: dict) -> dict:
 
     elif block["type"] == "audio":
         if block["source_type"] == "base64":
-            format = block["mime_type"].split("/")[-1]
+            audio_format = block["mime_type"].split("/")[-1]
             formatted_block = {
                 "type": "input_audio",
-                "input_audio": {"data": block["data"], "format": format},
+                "input_audio": {"data": block["data"], "format": audio_format},
             }
         else:
             error_msg = "source_type base64 is required for audio blocks."

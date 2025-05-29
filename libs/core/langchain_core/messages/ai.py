@@ -421,18 +421,18 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    id = None
+    chunk_id = None
     candidates = [left.id] + [o.id for o in others]
     # first pass: pick the first non-run-* id
     for id_ in candidates:
         if id_ and not id_.startswith(_LC_ID_PREFIX):
-            id = id_
+            chunk_id = id_
             break
     else:
         # second pass: no provider-assigned id found, just take the first non-null
         for id_ in candidates:
             if id_:
-                id = id_
+                chunk_id = id_
                 break
 
     return left.__class__(
@@ -442,7 +442,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
-        id=id,
+        id=chunk_id,
     )
 
 

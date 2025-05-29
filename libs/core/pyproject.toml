@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.60"
+version = "0.3.62"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -100,7 +100,6 @@ ignore = [
     "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
-    "A",
     "ANN401",
     "BLE",
     "ERA",

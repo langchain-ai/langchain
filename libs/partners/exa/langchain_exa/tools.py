@@ -1,6 +1,6 @@
 """Tool for the Exa Search API."""
 
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -74,8 +74,10 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
     def _run(
         self,
         query: str,
-        num_results: int,
-        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
+        num_results: int = 10,
+        text_contents_options: Optional[
+            Union[TextContentsOptions, dict[str, Any], bool]
+        ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
@@ -84,9 +86,30 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
         use_autoprompt: Optional[bool] = None,
+        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,
+        type: Optional[Literal["neural", "keyword", "auto"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            query: The search query.
+            num_results: The number of search results to return (1 to 100). Default: 10
+            text_contents_options: How to set the page content of the results. Can be True or a dict with options like max_characters.
+            highlights: Whether to include highlights in the results.
+            include_domains: A list of domains to include in the search.
+            exclude_domains: A list of domains to exclude from the search.
+            start_crawl_date: The start date for the crawl (in YYYY-MM-DD format).
+            end_crawl_date: The end date for the crawl (in YYYY-MM-DD format).
+            start_published_date: The start date for when the document was published (in YYYY-MM-DD format).
+            end_published_date: The end date for when the document was published (in YYYY-MM-DD format).
+            use_autoprompt: Whether to use autoprompt for the search.
+            livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
+            summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
+            type: The type of search, 'keyword', 'neural', or 'auto'.
+            run_manager: The run manager for callbacks.
+        """  # noqa: E501
         try:
             return self.client.search_and_contents(
                 query,
@@ -100,6 +123,9 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
                 start_published_date=start_published_date,
                 end_published_date=end_published_date,
                 use_autoprompt=use_autoprompt,
+                livecrawl=livecrawl,
+                summary=summary,
+                type=type,
             )  # type: ignore
         except Exception as e:
             return repr(e)
@@ -128,8 +154,10 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     def _run(
         self,
         url: str,
-        num_results: int,
-        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
+        num_results: int = 10,
+        text_contents_options: Optional[
+            Union[TextContentsOptions, dict[str, Any], bool]
+        ] = None,
         highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
@@ -139,9 +167,29 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         end_published_date: Optional[str] = None,
         exclude_source_domain: Optional[bool] = None,
         category: Optional[str] = None,
+        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            url: The URL to find similar pages for.
+            num_results: The number of search results to return (1 to 100). Default: 10
+            text_contents_options: How to set the page content of the results. Can be True or a dict with options like max_characters.
+            highlights: Whether to include highlights in the results.
+            include_domains: A list of domains to include in the search.
+            exclude_domains: A list of domains to exclude from the search.
+            start_crawl_date: The start date for the crawl (in YYYY-MM-DD format).
+            end_crawl_date: The end date for the crawl (in YYYY-MM-DD format).
+            start_published_date: The start date for when the document was published (in YYYY-MM-DD format).
+            end_published_date: The end date for when the document was published (in YYYY-MM-DD format).
+            exclude_source_domain: If True, exclude pages from the same domain as the source URL.
+            category: Filter for similar pages by category.
+            livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
+            summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
+            run_manager: The run manager for callbacks.
+        """  # noqa: E501
         try:
             return self.client.find_similar_and_contents(
                 url,
@@ -156,6 +204,8 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
                 end_published_date=end_published_date,
                 exclude_source_domain=exclude_source_domain,
                 category=category,
+                livecrawl=livecrawl,
+                summary=summary,
             )  # type: ignore
         except Exception as e:
             return repr(e)
