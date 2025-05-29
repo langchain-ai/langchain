@@ -24,12 +24,13 @@ class TranscriptionGroq:
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         with open(audio_path, "rb") as audio_file:
             # Correctly typed files list
-            files: dict[str, tuple[Optional[str], Any, Optional[str]]] = [
-                ("file", (audio_path, audio_file, "audio/mpeg")),
-                ("model", (None, self.model)),
-            ]
-            if language:
-                files.append(("language", (None, language)))
+            files: dict[str, tuple[Optional[str], Any, Optional[str]]] = {
+            "file": (audio_path, audio_file, "audio/mpeg"),
+            "model": (None, self.model, None),
+        }
+
+        if language:
+            files["language"] = (None, language, None)
 
             headers = {"Authorization": f"Bearer {self.api_key}"}
             response = httpx.post(
