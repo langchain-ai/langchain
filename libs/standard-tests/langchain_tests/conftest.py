@@ -6,7 +6,6 @@ import yaml
 from vcr import VCR  # type: ignore[import-untyped]
 from vcr.persisters.filesystem import CassetteNotFoundError
 from vcr.request import Request
-from vcr.serializers import yamlserializer  # type: ignore[import-untyped]
 
 
 class CustomSerializer:
