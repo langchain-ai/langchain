@@ -511,3 +511,62 @@ def test_image_generation_streaming() -> None:
     # _check_response(complete_ai_message)
     tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
     assert set(tool_output.keys()).issubset(expected_keys)
+
+
+def test_image_generation_multi_turn() -> None:
+    """Test multi-turn editing of image generation by passing in history."""
+    # Test multi-turn
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    # Test invocation
+    tool = {
+        "type": "image_generation",
+        # For testing purposes let's keep the quality low, so the test runs faster.
+        "quality": "low",
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    chat_history = [{"role": "user", "content": "Make a picture of a fuzzy cat"}]
+    ai_message = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message)
+    tool_output = ai_message.additional_kwargs["tool_outputs"][0]
+
+    # Example tool output for an image
+    # {
+    #     "background": "opaque",
+    #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
+    #     "output_format": "png",
+    #     "quality": "high",
+    #     "revised_prompt": "A fluffy, fuzzy cat sitting calmly, with soft fur, bright "
+    #     "eyes, and a cute, friendly expression. The background is "
+    #     "simple and light to emphasize the cat's texture and "
+    #     "fluffiness.",
+    #     "size": "1024x1024",
+    #     "status": "completed",
+    #     "type": "image_generation_call",
+    #     "result": # base64 encode image data
+    # }
+
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    assert set(tool_output.keys()).issubset(expected_keys)
+
+    chat_history.extend(
+        ai_message,  # AI message with tool output
+        # New request
+        {"role": "user", "content": "Now make it realistic."},
+    )
+
+    ai_message2 = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message2)
+    tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
+    assert set(tool_output2.keys()).issubset(expected_keys)

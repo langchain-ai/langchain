@@ -3057,7 +3057,8 @@ def _construct_responses_api_payload(
             if tool["type"] == "image_generation" and "partial_images" in tool:
                 raise NotImplementedError(
                     "Partial image generation is not yet supported "
-                    "via the LangChain ChatOpenAI client. "
+                    "via the LangChain ChatOpenAI client. Please "
+                    "drop the 'partial_images' key from the image_generation tool."
                 )
         payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
@@ -3216,7 +3217,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     pass
             input_.extend(code_interpreter_calls)
             input_.extend(mcp_calls)
-            input_.extend(image_generation_calls)
+
+            # A previous image generation call can be referenced by ID
+
+            input_.extend(
+                [
+                    {"type": "image_generation", "id": image_generation_call["id"]}
+                    for image_generation_call in image_generation_calls
+                ]
+            )
+
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
