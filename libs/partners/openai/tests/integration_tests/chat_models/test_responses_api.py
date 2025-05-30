@@ -12,6 +12,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    MessageLikeRepresentation,
 )
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -525,7 +526,9 @@ def test_image_generation_multi_turn() -> None:
     }
     llm_with_tools = llm.bind_tools([tool])
 
-    chat_history = [{"role": "user", "content": "Make a picture of a fuzzy cat"}]
+    chat_history: list[MessageLikeRepresentation] = [
+        {"role": "user", "content": "Make a picture of a fuzzy cat"}
+    ]
     ai_message = llm_with_tools.invoke(chat_history)
     _check_response(ai_message)
     tool_output = ai_message.additional_kwargs["tool_outputs"][0]
