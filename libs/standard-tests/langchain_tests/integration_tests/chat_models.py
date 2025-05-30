@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
-import vcr  # type: ignore[import-untyped]
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
@@ -31,6 +30,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
+from vcr import VCR
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -2833,7 +2833,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     @pytest.mark.benchmark
     def test_stream_time(
-        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
+        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: VCR
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
