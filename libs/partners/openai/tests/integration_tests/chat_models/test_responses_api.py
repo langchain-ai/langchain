@@ -561,9 +561,12 @@ def test_image_generation_multi_turn() -> None:
     assert set(tool_output.keys()).issubset(expected_keys)
 
     chat_history.extend(
-        ai_message,  # AI message with tool output
-        # New request
-        {"role": "user", "content": "Now make it realistic."},
+        [
+            # AI message with tool output
+            ai_message,
+            # New request
+            {"role": "user", "content": "Now make it realistic."},
+        ]
     )
 
     ai_message2 = llm_with_tools.invoke(chat_history)
