@@ -452,3 +452,10 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
+
+@pytest.mark.vcr
+def test_foo() -> None:
+    """Test foo"""
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    response = llm.invoke("foo")
+    assert response == "bar"
