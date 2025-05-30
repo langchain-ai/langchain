@@ -1,9 +1,11 @@
 import gzip
+from os import PathLike
 from pathlib import Path
+from typing import Union
 
 import pytest
 import yaml
-from vcr import VCR  # type: ignore[import-untyped]
+from vcr import VCR
 from vcr.persisters.filesystem import CassetteNotFoundError
 from vcr.request import Request
 
@@ -43,7 +45,9 @@ class CustomPersister:
     """A custom persister for VCR that uses the CustomSerializer."""
 
     @classmethod
-    def load_cassette(cls, cassette_path, serializer: CustomSerializer) -> dict:
+    def load_cassette(
+        cls, cassette_path: Union[str, PathLike[str]], serializer: CustomSerializer
+    ) -> tuple[dict, dict]:
         """Load a cassette from a file."""
         # If cassette path is already Path this is a no-op
         cassette_path = Path(cassette_path)
@@ -53,11 +57,14 @@ class CustomPersister:
             )
         with cassette_path.open(mode="rb") as f:
             data = f.read()
-        return serializer.deserialize(data)
+        deser = serializer.deserialize(data)
+        return deser["requests"], deser["responses"]
 
     @staticmethod
     def save_cassette(
-        cassette_path: str, cassette_dict: dict, serializer: CustomSerializer
+        cassette_path: Union[str, PathLike[str]],
+        cassette_dict: dict,
+        serializer: CustomSerializer,
     ) -> None:
         """Save a cassette to a file."""
         data = serializer.serialize(cassette_dict)

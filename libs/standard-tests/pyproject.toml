@@ -42,6 +42,15 @@ langchain-core = { path = "../core", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[[tool.mypy.overrides]]
+module = "yaml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "vcr.*"
+ignore_missing_imports = true
+
+
 [tool.ruff]
 target-version = "py39"
 
