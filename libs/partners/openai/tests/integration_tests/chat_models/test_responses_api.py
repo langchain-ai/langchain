@@ -453,7 +453,7 @@ def test_mcp_builtin() -> None:
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
 
-
+@pytest.mark.skip(reason="Re-enable once VCR is properly set up.")
 @pytest.mark.vcr()
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
