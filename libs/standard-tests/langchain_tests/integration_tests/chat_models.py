@@ -30,7 +30,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
-from vcr import VCR
+from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -621,14 +621,10 @@ class ChatModelIntegrationTests(ChatModelTests):
                         return config
 
 
-                    @pytest.fixture
-                    def vcr(vcr_config: dict) -> VCR:
-                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
-                        my_vcr = VCR(**vcr_config)
-                        # New: register serializer and persister
-                        my_vcr.register_serializer("yaml.gz", CustomSerializer)
-                        my_vcr.register_persister(CustomPersister)
-                        return my_vcr
+                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                        vcr.register_persister(CustomPersister())
+                        vcr.register_serializer("yaml.gz", CustomSerializer())
+
 
                 You can inspect the contents of the compressed cassettes (e.g., to
                 ensure no sensitive information is recorded) using
@@ -2832,8 +2828,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(response, AIMessage)
 
     @pytest.mark.benchmark
+    @pytest.mark.vcr
     def test_stream_time(
-        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: VCR
+        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: Cassette
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
@@ -2863,12 +2860,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("VCR not set up.")
 
         def _run() -> None:
-            cassette_name = f"{self.__class__.__name__}_test_stream_time"
-            with vcr.use_cassette(cassette_name, record_mode="once"):
-                for _ in model.stream("Write a story about a cat."):
-                    pass
+            for _ in model.stream("Write a story about a cat."):
+                pass
 
-        benchmark(_run)
+        if not vcr.responses:
+            _run()
+        else:
+            benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""

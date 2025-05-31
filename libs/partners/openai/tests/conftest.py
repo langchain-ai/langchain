@@ -39,10 +39,6 @@ def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
     return config
 
 
-@pytest.fixture
-def vcr(vcr_config: dict) -> VCR:
-    """Override the default vcr fixture to include custom serializers"""
-    my_vcr = VCR(**vcr_config)
-    my_vcr.register_serializer("yaml.gz", CustomSerializer)
-    my_vcr.register_persister(CustomPersister)
-    return my_vcr
+def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+    vcr.register_persister(CustomPersister())
+    vcr.register_serializer("yaml.gz", CustomSerializer())

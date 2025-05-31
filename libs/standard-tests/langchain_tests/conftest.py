@@ -96,7 +96,8 @@ def _base_vcr_config() -> dict:
     return {
         "record_mode": "once",
         "filter_headers": _BASE_FILTER_HEADERS.copy(),
-        "match_on": ["method", "scheme", "host", "port", "path", "query"],
+        "match_on": ["method", "uri", "body"],
+        "allow_playback_repeats": True,
         "decode_compressed_response": True,
         "cassette_library_dir": "tests/cassettes",
         "path_transformer": VCR.ensure_suffix(".yaml"),

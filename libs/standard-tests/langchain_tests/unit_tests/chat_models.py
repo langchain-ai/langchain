@@ -722,14 +722,10 @@ class ChatModelUnitTests(ChatModelTests):
                         return config
 
 
-                    @pytest.fixture
-                    def vcr(vcr_config: dict) -> VCR:
-                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
-                        my_vcr = VCR(**vcr_config)
-                        # New: register serializer and persister
-                        my_vcr.register_serializer("yaml.gz", CustomSerializer)
-                        my_vcr.register_persister(CustomPersister)
-                        return my_vcr
+                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                        vcr.register_persister(CustomPersister())
+                        vcr.register_serializer("yaml.gz", CustomSerializer())
+
 
                 You can inspect the contents of the compressed cassettes (e.g., to
                 ensure no sensitive information is recorded) using
