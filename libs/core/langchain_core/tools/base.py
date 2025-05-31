@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import typing
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -80,7 +81,7 @@ class SchemaAnnotationError(TypeError):
 
 
 def _is_annotated_type(typ: type[Any]) -> bool:
-    return get_origin(typ) is Annotated
+    return get_origin(typ) is typing.Annotated
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
@@ -143,11 +144,7 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if hasattr(inspect, "get_annotations"):
-        # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)
-    else:
-        annotations = getattr(fn, "__annotations__", {})
+    annotations = typing.get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
