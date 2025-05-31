@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
-import vcr  # type: ignore[import-untyped]
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
@@ -31,6 +30,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
+from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -592,7 +592,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import CustomPersister, CustomSerializer
                     from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
                     from vcr import VCR
 
@@ -621,24 +621,26 @@ class ChatModelIntegrationTests(ChatModelTests):
                         return config
 
 
-                    @pytest.fixture
-                    def vcr(vcr_config: dict) -> VCR:
-                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
-                        my_vcr = VCR(**vcr_config)
-                        my_vcr.register_serializer("yaml.gz", YamlGzipSerializer)
-                        return my_vcr
+                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                        vcr.register_persister(CustomPersister())
+                        vcr.register_serializer("yaml.gz", CustomSerializer())
+
 
                 You can inspect the contents of the compressed cassettes (e.g., to
-                ensure no sensitive information is recorded) using the serializer:
+                ensure no sensitive information is recorded) using
+
+                .. code-block:: bash
+
+                    gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+
+                or by using the serializer:
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import CustomPersister, CustomSerializer
 
-                    with open("/path/to/tests/cassettes/TestClass_test.yaml.gz", "r") as f:
-                        data = f.read()
-
-                    YamlGzipSerializer.deserialize(data)
+                    cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
+                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
 
         3. Run tests to generate VCR cassettes.
 
@@ -2826,8 +2828,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(response, AIMessage)
 
     @pytest.mark.benchmark
+    @pytest.mark.vcr
     def test_stream_time(
-        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: vcr.VCR
+        self, model: BaseChatModel, benchmark: BenchmarkFixture, vcr: Cassette
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
@@ -2857,12 +2860,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("VCR not set up.")
 
         def _run() -> None:
-            cassette_name = f"{self.__class__.__name__}_test_stream_time"
-            with vcr.use_cassette(cassette_name, record_mode="once"):
-                for _ in model.stream("Write a story about a cat."):
-                    pass
+            for _ in model.stream("Write a story about a cat."):
+                pass
 
-        benchmark(_run)
+        if not vcr.responses:
+            _run()
+        else:
+            benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
