@@ -777,7 +777,7 @@ class ChatHuggingFace(BaseChatModel):
 
             self.model_id = self.model_id or self.llm.model_id
             self.tokenizer = (
-                AutoTokenizer.from_pretrained(self.model_id)
+                AutoTokenizer.from_pretrained(self.llm.model_id)
                 if self.tokenizer is None
                 else self.tokenizer
             )
