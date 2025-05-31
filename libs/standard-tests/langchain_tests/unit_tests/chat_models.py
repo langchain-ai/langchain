@@ -693,7 +693,7 @@ class ChatModelUnitTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import CustomPersister, CustomSerializer
                     from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
                     from vcr import VCR
 
@@ -722,24 +722,26 @@ class ChatModelUnitTests(ChatModelTests):
                         return config
 
 
-                    @pytest.fixture
-                    def vcr(vcr_config: dict) -> VCR:
-                        \"\"\"Override the default vcr fixture to include custom serializers\"\"\"
-                        my_vcr = VCR(**vcr_config)
-                        my_vcr.register_serializer("yaml.gz", YamlGzipSerializer)
-                        return my_vcr
+                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                        vcr.register_persister(CustomPersister())
+                        vcr.register_serializer("yaml.gz", CustomSerializer())
+
 
                 You can inspect the contents of the compressed cassettes (e.g., to
-                ensure no sensitive information is recorded) using the serializer:
+                ensure no sensitive information is recorded) using
+
+                .. code-block:: bash
+
+                    gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+
+                or by using the serializer:
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import YamlGzipSerializer
+                    from langchain_tests.conftest import CustomPersister, CustomSerializer
 
-                    with open("/path/to/tests/cassettes/TestClass_test.yaml.gz", "r") as f:
-                        data = f.read()
-
-                    YamlGzipSerializer.deserialize(data)
+                    cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
+                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
 
         3. Run tests to generate VCR cassettes.
 
