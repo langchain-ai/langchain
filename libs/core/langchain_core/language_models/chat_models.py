@@ -51,7 +51,6 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     convert_to_messages,
     convert_to_openai_image_block,
@@ -446,13 +445,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessageChunk]:
+    ) -> Iterator[BaseMessage]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
-            yield cast(
-                "BaseMessageChunk",
-                self.invoke(input, config=config, stop=stop, **kwargs),
-            )
+            yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
@@ -537,13 +533,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessageChunk]:
+    ) -> AsyncIterator[BaseMessage]:
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
-            yield cast(
-                "BaseMessageChunk",
-                await self.ainvoke(input, config=config, stop=stop, **kwargs),
-            )
+            yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return
 
         config = ensure_config(config)
@@ -1454,7 +1447,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             PydanticToolsParser,
         )
 
-        if self.bind_tools is BaseChatModel.bind_tools:
+        if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 

@@ -210,7 +210,7 @@ def test_decorator_with_specified_schema() -> None:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
-    assert tool_func_v1.args_schema == _MockSchemaV1
+    assert tool_func_v1.args_schema == cast("ArgsSchema", _MockSchemaV1)
 
 
 def test_decorated_function_schema_equivalent() -> None:
