@@ -455,21 +455,18 @@ def test_mcp_builtin() -> None:
     )
 
 
-@pytest.mark.skip(reason="Re-enable once VCR is properly set up.")
 @pytest.mark.vcr()
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
     llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
-    # Test invocation
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
         "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
     }
-    llm_with_tools = llm.bind_tools([tool])
-    response = llm_with_tools.invoke("Make a picture of a fuzzy cat")
-    _check_response(response)
-    tool_output = response.additional_kwargs["tool_outputs"][0]
 
     # Example tool output for an image
     # {
@@ -499,11 +496,8 @@ def test_image_generation_streaming() -> None:
         "type",
     }
 
-    assert set(tool_output.keys()).issubset(expected_keys)
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
     full: Optional[BaseMessageChunk] = None
-    tool = {"type": "image_generation", "quality": "low"}
-    for chunk in llm.stream("Make a picture of a fuzzy cat", tools=[tool]):
+    for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     complete_ai_message = cast(AIMessageChunk, full)
@@ -514,7 +508,6 @@ def test_image_generation_streaming() -> None:
     assert set(tool_output.keys()).issubset(expected_keys)
 
 
-@pytest.mark.skip(reason="Re-enable once VCR is properly set up.")
 @pytest.mark.vcr()
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
@@ -525,11 +518,14 @@ def test_image_generation_multi_turn() -> None:
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
         "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
     }
     llm_with_tools = llm.bind_tools([tool])
 
     chat_history: list[MessageLikeRepresentation] = [
-        {"role": "user", "content": "Draw a random word in green font."}
+        {"role": "user", "content": "Draw a random short word in green font."}
     ]
     ai_message = llm_with_tools.invoke(chat_history)
     _check_response(ai_message)
