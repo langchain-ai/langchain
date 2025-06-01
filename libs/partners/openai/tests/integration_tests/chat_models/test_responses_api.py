@@ -514,6 +514,8 @@ def test_image_generation_streaming() -> None:
     assert set(tool_output.keys()).issubset(expected_keys)
 
 
+@pytest.mark.skip(reason="Re-enable once VCR is properly set up.")
+@pytest.mark.vcr()
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
