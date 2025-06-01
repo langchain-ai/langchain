@@ -527,7 +527,7 @@ def test_image_generation_multi_turn() -> None:
     llm_with_tools = llm.bind_tools([tool])
 
     chat_history: list[MessageLikeRepresentation] = [
-        {"role": "user", "content": "Make a picture of a fuzzy cat"}
+        {"role": "user", "content": "Draw a random word in green font."}
     ]
     ai_message = llm_with_tools.invoke(chat_history)
     _check_response(ai_message)
@@ -568,7 +568,13 @@ def test_image_generation_multi_turn() -> None:
             # AI message with tool output
             ai_message,
             # New request
-            {"role": "user", "content": "Now make it realistic."},
+            {
+                "role": "user",
+                "content": (
+                    "Now, change the font to blue. Keep the word and everything else "
+                    "the same."
+                ),
+            },
         ]
     )
 
