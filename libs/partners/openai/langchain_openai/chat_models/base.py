@@ -3211,7 +3211,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     code_interpreter_calls.append(tool_output)
                 elif tool_output.get("type") == "mcp_call":
                     mcp_calls.append(tool_output)
-                elif tool_output.get("type") == "image_generation":
+                elif tool_output.get("type") == "image_generation_call":
                     image_generation_calls.append(tool_output)
                 else:
                     pass
@@ -3222,7 +3222,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
 
             input_.extend(
                 [
-                    {"type": "image_generation", "id": image_generation_call["id"]}
+                    {"type": "image_generation_call", "id": image_generation_call["id"]}
                     for image_generation_call in image_generation_calls
                 ]
             )
