@@ -661,12 +661,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             You can then commit the cassette to your repository. Subsequent test runs
             will use the cassette instead of making HTTP calls.
-
-            .. tip::
-                Adding ``--vcr-record=none`` to the pytest command will ensure that
-                no new cassettes are recorded, and only existing cassettes are used.
-                Consider adding this to your CI configuration (e.g., modify relevant
-                Makefile commands).
     """  # noqa: E501
 
     @property
