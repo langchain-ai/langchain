@@ -42,7 +42,7 @@ GigaChain – это набор решений для создания прил�
 
 [`langchain-gigachat`](https://github.com/ai-forever/langchain-gigachat/blob/master/libs/gigachat/README-ru_RU.md) – интеграционная библиотека для работы с LangChain и LangGraph.
 
-[Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/README.md)
+[Быстрый старт](https://github.com/ai-forever/langchain-gigachat/blob/master/libs/gigachat/README-ru_RU.md#%D0%B1%D1%8B%D1%81%D1%82%D1%80%D1%8B%D0%B9-%D1%81%D1%82%D0%B0%D1%80%D1%82) | [Сборник примеров](/cookbook/README.md)
 
 [Документация LangChain](https://python.langchain.com/docs/introduction/) | [Документация LangGraph](https://langchain-ai.github.io/langgraph/) | [Чат-бот по документации](https://chat.langchain.com)
 
@@ -50,7 +50,7 @@ GigaChain – это набор решений для создания прил�
 
 [`langchain-gigachat`](https://github.com/ai-forever/langchainjs/blob/main/libs/langchain-gigachat/README-ru_RU.md) интеграционная библиотека для работы с LangChainJS и LangGraphJS.
 
-[Быстрый старт](https://github.com/ai-forever/langchain-gigachat) | [Сборник примеров](/cookbook/js/README.md)
+[Быстрый старт](https://github.com/ai-forever/langchainjs/blob/main/libs/langchain-gigachat/README-ru_RU.md#%D0%B1%D1%8B%D1%81%D1%82%D1%80%D1%8B%D0%B9-%D1%81%D1%82%D0%B0%D1%80%D1%82) | [Сборник примеров](/cookbook/js/README.md)
 
 [Документация LangChainJS](https://js.langchain.com/docs/introduction/) | [Документация LangGraphJS](https://langchain-ai.github.io/langgraphjs/) | [Чат-бот по JS-документации](https://chatjs.langchain.com/)
 
