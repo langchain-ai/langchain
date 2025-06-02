@@ -51,7 +51,7 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                from defusedxml.ElementTree import XMLParser as DefusedXMLParser
+                from defusedxml.ElementTree import XMLParser
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -59,7 +59,7 @@ class _StreamingParser:
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg) from e
-            _parser = DefusedXMLParser(target=TreeBuilder())
+            _parser = XMLParser(target=TreeBuilder())
         else:
             _parser = None
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
