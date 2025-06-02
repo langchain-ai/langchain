@@ -502,7 +502,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.62"
+version = "0.3.63"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -571,8 +571,8 @@ dependencies = [
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
+    { name = "pytest-recording" },
     { name = "pytest-socket" },
-    { name = "pytest-vcr" },
     { name = "syrupy" },
     { name = "vcrpy" },
 ]
@@ -587,8 +587,8 @@ requires-dist = [
     { name = "pytest-asyncio", specifier = ">=0.20,<1" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
+    { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1" },
-    { name = "pytest-vcr" },
     { name = "syrupy", specifier = ">=4,<5" },
     { name = "vcrpy", specifier = ">=7.0" },
 ]
@@ -1340,6 +1340,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-recording"
+version = "0.13.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+    { name = "vcrpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/32/9c/f4027c5f1693847b06d11caf4b4f6bb09f22c1581ada4663877ec166b8c6/pytest_recording-0.13.4.tar.gz", hash = "sha256:568d64b2a85992eec4ae0a419c855d5fd96782c5fb016784d86f18053792768c", size = 26576 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/c2/ce34735972cc42d912173e79f200fe66530225190c06655c5632a9d88f1e/pytest_recording-0.13.4-py3-none-any.whl", hash = "sha256:ad49a434b51b1c4f78e85b1e6b74fdcc2a0a581ca16e52c798c6ace971f7f439", size = 13723 },
+]
+
+[[package]]
 name = "pytest-retry"
 version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1373,19 +1386,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/93/0d/04719abc7a4bdb3a7a1f968f24b0f5253d698c9cc94975330e9d3145befb/pytest-timeout-2.3.1.tar.gz", hash = "sha256:12397729125c6ecbdaca01035b9e5239d4db97352320af155b3f5de1ba5165d9", size = 17697 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/03/27/14af9ef8321f5edc7527e47def2a21d8118c6f329a9342cc61387a0c0599/pytest_timeout-2.3.1-py3-none-any.whl", hash = "sha256:68188cb703edfc6a18fad98dc25a3c61e9f24d644b0b70f33af545219fc7813e", size = 14148 },
-]
-
-[[package]]
-name = "pytest-vcr"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-    { name = "vcrpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/60/104c619483c1a42775d3f8b27293f1ecfc0728014874d065e68cb9702d49/pytest-vcr-1.0.2.tar.gz", hash = "sha256:23ee51b75abbcc43d926272773aae4f39f93aceb75ed56852d0bf618f92e1896", size = 3810 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9d/d3/ff520d11e6ee400602711d1ece8168dcfc5b6d8146fb7db4244a6ad6a9c3/pytest_vcr-1.0.2-py2.py3-none-any.whl", hash = "sha256:2f316e0539399bea0296e8b8401145c62b6f85e9066af7e57b6151481b0d6d9c", size = 4137 },
 ]
 
 [[package]]

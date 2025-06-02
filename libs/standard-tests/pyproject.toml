@@ -15,7 +15,7 @@ dependencies = [
     "pytest-socket<1,>=0.6.0",
     "pytest-benchmark",
     "pytest-codspeed",
-    "pytest-vcr",
+    "pytest-recording",
     "vcrpy>=7.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
@@ -41,6 +41,15 @@ langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+
+[[tool.mypy.overrides]]
+module = "yaml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "vcr.*"
+ignore_missing_imports = true
+
 
 [tool.ruff]
 target-version = "py39"
