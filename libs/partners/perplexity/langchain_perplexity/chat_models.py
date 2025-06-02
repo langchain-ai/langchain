@@ -325,7 +325,7 @@ class ChatPerplexity(BaseChatModel):
             additional_kwargs = {}
             if first_chunk:
                 additional_kwargs["citations"] = chunk.get("citations", [])
-                for attr in ["images", "related_questions"]:
+                for attr in ["images", "related_questions", "search_results"]:
                     if attr in chunk:
                         additional_kwargs[attr] = chunk[attr]
 
@@ -376,7 +376,7 @@ class ChatPerplexity(BaseChatModel):
             usage_metadata = None
 
         additional_kwargs = {}
-        for attr in ["citations", "images", "related_questions"]:
+        for attr in ["citations", "images", "related_questions", "search_results"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
