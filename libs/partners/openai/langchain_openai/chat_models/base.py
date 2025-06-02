@@ -118,6 +118,15 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
+WellKnownTools = (
+    "file_search",
+    "web_search_preview",
+    "computer_use_preview",
+    "code_interpreter",
+    "mcp",
+    "image_generation",
+)
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -1487,13 +1496,7 @@ class BaseChatOpenAI(BaseChatModel):
                         "type": "function",
                         "function": {"name": tool_choice},
                     }
-                elif tool_choice in (
-                    "file_search",
-                    "web_search_preview",
-                    "computer_use_preview",
-                    "code_interpreter",
-                    "mcp",
-                ):
+                elif tool_choice in WellKnownTools:
                     tool_choice = {"type": tool_choice}
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
@@ -3050,6 +3053,13 @@ def _construct_responses_api_payload(
                 new_tools.append({"type": "function", **tool["function"]})
             else:
                 new_tools.append(tool)
+
+            if tool["type"] == "image_generation" and "partial_images" in tool:
+                raise NotImplementedError(
+                    "Partial image generation is not yet supported "
+                    "via the LangChain ChatOpenAI client. Please "
+                    "drop the 'partial_images' key from the image_generation tool."
+                )
         payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
@@ -3139,6 +3149,7 @@ def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
 
 
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
+    """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
@@ -3191,6 +3202,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             computer_calls = []
             code_interpreter_calls = []
             mcp_calls = []
+            image_generation_calls = []
             tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
             for tool_output in tool_outputs:
                 if tool_output.get("type") == "computer_call":
@@ -3199,10 +3211,22 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     code_interpreter_calls.append(tool_output)
                 elif tool_output.get("type") == "mcp_call":
                     mcp_calls.append(tool_output)
+                elif tool_output.get("type") == "image_generation_call":
+                    image_generation_calls.append(tool_output)
                 else:
                     pass
             input_.extend(code_interpreter_calls)
             input_.extend(mcp_calls)
+
+            # A previous image generation call can be referenced by ID
+
+            input_.extend(
+                [
+                    {"type": "image_generation_call", "id": image_generation_call["id"]}
+                    for image_generation_call in image_generation_calls
+                ]
+            )
+
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
@@ -3489,6 +3513,7 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_call",
         "mcp_list_tools",
         "mcp_approval_request",
+        "image_generation_call",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
@@ -3516,6 +3541,9 @@ def _convert_responses_chunk_to_generation_chunk(
                 {"index": chunk.summary_index, "type": "summary_text", "text": ""}
             ]
         }
+    elif chunk.type == "response.image_generation_call.partial_image":
+        # Partial images are not supported yet.
+        pass
     elif chunk.type == "response.reasoning_summary_text.delta":
         additional_kwargs["reasoning"] = {
             "summary": [
