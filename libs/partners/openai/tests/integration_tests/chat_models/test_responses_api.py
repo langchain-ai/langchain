@@ -12,6 +12,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    MessageLikeRepresentation,
 )
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -452,3 +453,130 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
+
+
+@pytest.mark.vcr()
+def test_image_generation_streaming() -> None:
+    """Test image generation streaming."""
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    tool = {
+        "type": "image_generation",
+        # For testing purposes let's keep the quality low, so the test runs faster.
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+
+    # Example tool output for an image
+    # {
+    #     "background": "opaque",
+    #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
+    #     "output_format": "png",
+    #     "quality": "high",
+    #     "revised_prompt": "A fluffy, fuzzy cat sitting calmly, with soft fur, bright "
+    #     "eyes, and a cute, friendly expression. The background is "
+    #     "simple and light to emphasize the cat's texture and "
+    #     "fluffiness.",
+    #     "size": "1024x1024",
+    #     "status": "completed",
+    #     "type": "image_generation_call",
+    #     "result": # base64 encode image data
+    # }
+
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    complete_ai_message = cast(AIMessageChunk, full)
+    # At the moment, the streaming API does not pick up annotations fully.
+    # So the following check is commented out.
+    # _check_response(complete_ai_message)
+    tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
+    assert set(tool_output.keys()).issubset(expected_keys)
+
+
+@pytest.mark.vcr()
+def test_image_generation_multi_turn() -> None:
+    """Test multi-turn editing of image generation by passing in history."""
+    # Test multi-turn
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    # Test invocation
+    tool = {
+        "type": "image_generation",
+        # For testing purposes let's keep the quality low, so the test runs faster.
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    chat_history: list[MessageLikeRepresentation] = [
+        {"role": "user", "content": "Draw a random short word in green font."}
+    ]
+    ai_message = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message)
+    tool_output = ai_message.additional_kwargs["tool_outputs"][0]
+
+    # Example tool output for an image
+    # {
+    #     "background": "opaque",
+    #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
+    #     "output_format": "png",
+    #     "quality": "high",
+    #     "revised_prompt": "A fluffy, fuzzy cat sitting calmly, with soft fur, bright "
+    #     "eyes, and a cute, friendly expression. The background is "
+    #     "simple and light to emphasize the cat's texture and "
+    #     "fluffiness.",
+    #     "size": "1024x1024",
+    #     "status": "completed",
+    #     "type": "image_generation_call",
+    #     "result": # base64 encode image data
+    # }
+
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    assert set(tool_output.keys()).issubset(expected_keys)
+
+    chat_history.extend(
+        [
+            # AI message with tool output
+            ai_message,
+            # New request
+            {
+                "role": "user",
+                "content": (
+                    "Now, change the font to blue. Keep the word and everything else "
+                    "the same."
+                ),
+            },
+        ]
+    )
+
+    ai_message2 = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message2)
+    tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
+    assert set(tool_output2.keys()).issubset(expected_keys)
