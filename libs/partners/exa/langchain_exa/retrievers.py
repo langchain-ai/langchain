@@ -27,6 +27,8 @@ def _get_metadata(result: Any) -> dict[str, Any]:
         metadata["highlights"] = result.highlights
     if getattr(result, "highlight_scores"):
         metadata["highlight_scores"] = result.highlight_scores
+    if getattr(result, "summary"):
+        metadata["summary"] = result.summary
     return metadata
 
 
@@ -34,7 +36,7 @@ class ExaSearchRetriever(BaseRetriever):
     """Exa Search retriever."""
 
     k: int = 10  # num_results
-    """The number of search results to return."""
+    """The number of search results to return (1 to 100)."""
     include_domains: Optional[list[str]] = None
     """A list of domains to include in the search."""
     exclude_domains: Optional[list[str]] = None
@@ -50,11 +52,20 @@ class ExaSearchRetriever(BaseRetriever):
     use_autoprompt: Optional[bool] = None
     """Whether to use autoprompt for the search."""
     type: str = "neural"
-    """The type of search, 'keyword' or 'neural'. Default: neural"""
+    """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
     highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
     """Whether to set the page content to the highlights of the results."""
-    text_contents_options: Union[TextContentsOptions, Literal[True]] = True
-    """How to set the page content of the results"""
+    text_contents_options: Union[TextContentsOptions, dict[str, Any], Literal[True]] = (
+        True
+    )
+    """How to set the page content of the results. Can be True or a dict with options
+    like max_characters."""
+    livecrawl: Optional[Literal["always", "fallback", "never"]] = None
+    """Option to crawl live webpages if content is not in the index. Options: "always",
+    "fallback", "never"."""
+    summary: Optional[Union[bool, dict[str, str]]] = None
+    """Whether to include a summary of the content. Can be a boolean or a dict with a
+    custom query."""
 
     client: Exa = Field(default=None)
     exa_api_key: SecretStr = Field(default=None)
@@ -82,6 +93,9 @@ class ExaSearchRetriever(BaseRetriever):
             start_published_date=self.start_published_date,
             end_published_date=self.end_published_date,
             use_autoprompt=self.use_autoprompt,
+            livecrawl=self.livecrawl,
+            summary=self.summary,
+            type=self.type,
         )
 
         results = response.results
