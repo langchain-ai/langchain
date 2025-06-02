@@ -213,6 +213,27 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 rating=7
             )
 
+    Live Search:
+        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`_
+        feature that enables Grok to ground its answers using results from web searches.
+
+        .. code-block:: python
+
+            from langchain_xai import ChatXAI
+
+            llm = ChatXAI(
+                model="grok-3-latest",
+                search_parameters={
+                    "mode": "auto",
+                    # Example optional parameters below:
+                    "max_search_results": 3,
+                    "from_date": "2025-05-26",
+                    "to_date": "2025-05-27",
+                }
+            )
+
+            llm.invoke("Provide me a digest of world news in the last 24 hours.")
+
     Token usage:
         .. code-block:: python
 
@@ -275,6 +296,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
+    search_parameters: Optional[dict[str, Any]] = None
+    """Parameters for search requests. Example: ``{"mode": "auto"}``."""
 
     openai_api_key: Optional[SecretStr] = None
     openai_api_base: Optional[str] = None
@@ -371,6 +394,18 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         return self
 
+    @property
+    def _default_params(self) -> dict[str, Any]:
+        """Get default parameters."""
+        params = super()._default_params
+        if self.search_parameters:
+            if "extra_body" in params:
+                params["extra_body"]["search_parameters"] = self.search_parameters
+            else:
+                params["extra_body"] = {"search_parameters": self.search_parameters}
+
+        return params
+
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
@@ -384,6 +419,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
                 response.choices[0].message.reasoning_content  # type: ignore
+            )
+
+        if hasattr(response, "citations"):
+            rtn.generations[0].message.additional_kwargs["citations"] = (
+                response.citations
             )
 
         return rtn
@@ -406,6 +446,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning_content
                     )
+
+        if (citations := chunk.get("citations")) and generation_chunk:
+            if isinstance(generation_chunk.message, AIMessageChunk):
+                generation_chunk.message.additional_kwargs["citations"] = citations
 
         return generation_chunk
 
