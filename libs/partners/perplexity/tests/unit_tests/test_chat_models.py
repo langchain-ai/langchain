@@ -193,3 +193,73 @@ def test_perplexity_stream_includes_citations_and_related_questions(
     }
 
     patcher.assert_called_once()
+
+
+def test_perplexity_stream_includes_citations_and_search_results(
+    mocker: MockerFixture,
+) -> None:
+    """Test that the stream method exposes `search_results` via additional_kwargs."""
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    mock_chunk_0 = {
+        "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
+        "citations": ["example.com/a", "example.com/b"],
+        "search_results": [
+            {
+                "title": "Mock result",
+                "url": "https://example.com/result",
+                "date": "None",
+            }
+        ],
+    }
+    mock_chunk_1 = {
+        "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
+        "citations": ["example.com/a", "example.com/b"],
+        "search_results": [
+            {
+                "title": "Mock result",
+                "url": "https://example.com/result",
+                "date": "None",
+            }
+        ],
+    }
+    mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    patcher = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_stream
+    )
+    stream = llm.stream("Hello langchain")
+    full: Optional[BaseMessageChunk] = None
+    for i, chunk in enumerate(stream):
+        full = chunk if full is None else full + chunk
+        assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
+        if i == 0:
+            assert chunk.additional_kwargs["citations"] == [
+                "example.com/a",
+                "example.com/b",
+            ]
+            assert chunk.additional_kwargs["search_results"] == [
+                {
+                    "title": "Mock result",
+                    "url": "https://example.com/result",
+                    "date": "None",
+                }
+            ]
+        else:
+            assert "citations" not in chunk.additional_kwargs
+            assert "search_results" not in chunk.additional_kwargs
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "Hello Perplexity"
+    assert full.additional_kwargs == {
+        "citations": ["example.com/a", "example.com/b"],
+        "search_results": [
+            {
+                "title": "Mock result",
+                "url": "https://example.com/result",
+                "date": "None",
+            }
+        ],
+    }
+
+    patcher.assert_called_once()
