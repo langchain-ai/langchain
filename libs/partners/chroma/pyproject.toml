@@ -33,10 +33,6 @@ test = [
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
     "pytest-socket<1.0.0,>=0.7.0",
-    "pytest-benchmark==5.1.0",
-    "pytest-recording==0.13.4",
-    "vcrpy>=6.0.1,<7.0.0",
-    "pytest-codspeed==3.2.0",
     "langchain-core",
     "langchain-tests",
 ]
