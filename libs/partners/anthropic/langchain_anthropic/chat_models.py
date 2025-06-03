@@ -2131,11 +2131,12 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     }
     # Add (beta) cache TTL information if available
     cache_creation = getattr(anthropic_usage, "cache_creation", None)
+    cache_creation_keys = ("ephemeral_1h_input_tokens", "ephemeral_5m_input_tokens")
     if cache_creation:
-        for k in ["ephemeral_1h_input_tokens", "ephemeral_5m_input_tokens"]:
-            v = getattr(cache_creation, k, None)
-            if v:
-                input_token_details[k] = v
+        if isinstance(cache_creation, BaseModel):
+            cache_creation = cache_creation.model_dump()
+        for k in cache_creation_keys:
+            input_token_details[k] = cache_creation.get(k)
 
     # Anthropic input_tokens exclude cached token counts.
     input_tokens = (
@@ -2149,6 +2150,6 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
         input_token_details=InputTokenDetails(
-            **{k: v for k, v in input_token_details.items() if v is not None}
+            **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
