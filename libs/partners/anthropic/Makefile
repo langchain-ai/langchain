@@ -19,6 +19,9 @@ integration_test integration_tests:
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
+make benchmark:
+	uv run --group test pytest ./tests -m benchmark
+
 
 ######################
 # LINTING AND FORMATTING
