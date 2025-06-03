@@ -24,7 +24,7 @@ You can use it as part of a Self Ask chain:
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_core.tools import Tool
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_react_agent, AgentExecutor
+from langgraph.prebuilt import create_react_agent
 
 import os
 
@@ -42,9 +42,12 @@ tools = [
 ]
 
 agent = create_react_agent(llm, tools)
-executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-executor.invoke({"input": "What is the hometown of the reigning men's U.S. Open champion?"})
+result = agent.invoke({
+    "messages": [("human", "What is the hometown of the reigning men's U.S. Open champion?")]
+})
+
+print(result)
 ```
 
 #### Output
