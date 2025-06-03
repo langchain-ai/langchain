@@ -77,6 +77,7 @@ if IS_PYDANTIC_V1:
     TypeBaseModel = type[BaseModel]
 elif IS_PYDANTIC_V2:
     from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
+    from pydantic.v1.fields import ModelField
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
@@ -373,20 +374,20 @@ if IS_PYDANTIC_V2:
     def get_fields(model: BaseModelV2) -> dict[str, FieldInfoV2]: ...
 
     @overload
-    def get_fields(model: type[BaseModelV1]) -> dict[str, FieldInfoV1]: ...
+    def get_fields(model: type[BaseModelV1]) -> dict[str, ModelField]: ...
 
     @overload
-    def get_fields(model: BaseModelV1) -> dict[str, FieldInfoV1]: ...
+    def get_fields(model: BaseModelV1) -> dict[str, ModelField]: ...
 
     def get_fields(
         model: Union[type[Union[BaseModelV2, BaseModelV1]], BaseModelV2, BaseModelV1],
-    ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
+    ) -> Union[dict[str, FieldInfoV2], dict[str, ModelField]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
             return model.model_fields
 
         if hasattr(model, "__fields__"):
-            return model.__fields__  # type: ignore[return-value]
+            return model.__fields__
         msg = f"Expected a Pydantic model. Got {type(model)}"
         raise TypeError(msg)
 
