@@ -70,7 +70,6 @@ class InputTokenDetails(TypedDict, total=False):
     Since there was a cache hit, the tokens were read from the cache. More precisely,
     the model state given these tokens was read from the cache.
     """
-    ephemeral_5m_input_tokens: int
 
 
 class OutputTokenDetails(TypedDict, total=False):
