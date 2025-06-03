@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.messages import AIMessageChunk, BaseMessage
 from pytest_mock import MockerFixture
 
 from langchain_perplexity import ChatPerplexity
@@ -58,9 +58,9 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessageChunk] = None
+    full: Optional[BaseMessage] = None
     for i, chunk in enumerate(stream):
-        full = chunk if full is None else full + chunk
+        full = chunk if full is None else cast(BaseMessage, full + chunk)
         assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
@@ -110,9 +110,9 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessageChunk] = None
+    full: Optional[BaseMessage] = None
     for i, chunk in enumerate(stream):
-        full = chunk if full is None else full + chunk
+        full = chunk if full is None else cast(BaseMessage, full + chunk)
         assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
@@ -169,9 +169,9 @@ def test_perplexity_stream_includes_citations_and_related_questions(
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessageChunk] = None
+    full: Optional[BaseMessage] = None
     for i, chunk in enumerate(stream):
-        full = chunk if full is None else full + chunk
+        full = chunk if full is None else cast(BaseMessage, full + chunk)
         assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
@@ -230,9 +230,9 @@ def test_perplexity_stream_includes_citations_and_search_results(
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessageChunk] = None
+    full: Optional[BaseMessage] = None
     for i, chunk in enumerate(stream):
-        full = chunk if full is None else full + chunk
+        full = chunk if full is None else cast(BaseMessage, full + chunk)
         assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
