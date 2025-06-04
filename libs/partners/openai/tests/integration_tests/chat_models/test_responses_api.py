@@ -292,7 +292,10 @@ def test_reasoning() -> None:
     llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
-    assert any(block.get("type") == "reasoning" for block in response.content)
+    assert any(
+        isinstance(block, dict) and block.get("type") == "reasoning"
+        for block in response.content
+    )
 
     # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
@@ -366,7 +369,9 @@ def test_stream_reasoning_summary() -> None:
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
     reasoning = next(
-        block for block in response_1.content if block.get("type") == "reasoning"
+        block
+        for block in response_1.content
+        if isinstance(block, dict) and block.get("type") == "reasoning"
     )
     assert isinstance(reasoning, dict)
     assert set(reasoning.keys()) == {"id", "type", "summary", "index"}

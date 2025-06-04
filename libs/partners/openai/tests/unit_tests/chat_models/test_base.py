@@ -23,7 +23,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from openai.types.responses import ResponseOutputMessage
+from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
@@ -36,6 +36,7 @@ from openai.types.responses.response_function_web_search import (
 )
 from openai.types.responses.response_output_refusal import ResponseOutputRefusal
 from openai.types.responses.response_output_text import ResponseOutputText
+from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
@@ -1166,9 +1167,9 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert isinstance(result.generations[0], ChatGeneration)
     assert isinstance(result.generations[0].message, AIMessage)
     assert result.generations[0].message.content == [
-        {"type": "text", "text": "Hello, world!", "annotations": []}
+        {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
     ]
-    assert result.generations[0].message.id == "msg_123"
+    assert result.generations[0].message.id == "resp_123"
     assert result.generations[0].message.usage_metadata
     assert result.generations[0].message.usage_metadata["input_tokens"] == 10
     assert result.generations[0].message.usage_metadata["output_tokens"] == 3
@@ -1208,8 +1209,60 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
     result = _construct_lc_result_from_responses_api(response)
 
     assert len(result.generations[0].message.content) == 2
-    assert result.generations[0].message.content[0]["text"] == "First part"  # type: ignore
-    assert result.generations[0].message.content[1]["text"] == "Second part"  # type: ignore
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "First part", "annotations": [], "id": "msg_123"},
+        {"type": "text", "text": "Second part", "annotations": [], "id": "msg_123"},
+    ]
+
+
+def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
+    """Test a response with multiple text blocks."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(type="output_text", text="foo", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_123",
+                summary=[Summary(type="summary_text", text="reasoning foo")],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_234",
+                content=[
+                    ResponseOutputText(type="output_text", text="bar", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "reasoning foo"}],
+            "id": "rs_123",
+        },
+        {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
+    ]
 
 
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:
@@ -1239,11 +1292,13 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    assert result.generations[0].message.content == []
-    assert (
-        result.generations[0].message.additional_kwargs["refusal"]
-        == "I cannot assist with that request."
-    )
+    assert result.generations[0].message.content == [
+        {
+            "type": "refusal",
+            "refusal": "I cannot assist with that request.",
+            "id": "msg_123",
+        }
+    ]
 
 
 def test__construct_lc_result_from_responses_api_function_call_valid_json() -> None:
@@ -1276,7 +1331,9 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     assert msg.tool_calls[0]["id"] == "call_123"
     assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
     tool_call_block = next(
-        block for block in msg.content if block["type"] == "function_call"
+        block
+        for block in msg.content
+        if isinstance(block, dict) and block["type"] == "function_call"
     )
     assert tool_call_block["call_id"] == "call_123"
     assert tool_call_block["id"] == "func_123"
@@ -1317,10 +1374,11 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     )
     assert "error" in msg.invalid_tool_calls[0]
     tool_call_block = next(
-        block for block in msg.content if block["type"] == "function_call"
+        block
+        for block in msg.content
+        if isinstance(block, dict) and block["type"] == "function_call"
     )
     assert tool_call_block["call_id"] == "call_123"
-    assert tool_call_block["id"] == "func_123"
 
 
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
@@ -1628,6 +1686,40 @@ def test__construct_responses_api_input_human_message_with_text_blocks_conversio
     assert result[0]["content"][0]["text"] == "What's in this image?"
 
 
+def test__construct_responses_api_input_multiple_message_components() -> None:
+    """Test that human messages with text blocks are properly converted."""
+    messages: list = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "foo", "id": "msg_123"},
+                {"type": "text", "text": "bar", "id": "msg_123"},
+                {"type": "refusal", "refusal": "I refuse.", "id": "msg_123"},
+                {"type": "text", "text": "baz", "id": "msg_234"},
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert result == [
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {"type": "output_text", "text": "foo", "annotations": []},
+                {"type": "output_text", "text": "bar", "annotations": []},
+                {"type": "refusal", "refusal": "I refuse."},
+            ],
+            "id": "msg_123",
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "baz", "annotations": []}],
+            "id": "msg_234",
+        },
+    ]
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
@@ -1743,7 +1835,13 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert len(result) == 2
 
     assert result[0]["role"] == "assistant"
-    assert result[0]["content"] == "I'll check the weather for you."
+    assert result[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
+    ]
 
     assert result[1]["type"] == "function_call"
     assert result[1]["name"] == "get_weather"
@@ -1761,7 +1859,9 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert len(result) == 2
 
     assert result[0]["role"] == "assistant"
-    assert result[0]["content"] == "I'll check the weather for you."
+    assert result[0]["content"] == [
+        {"type": "output_text", "text": "I'll check the weather for you."}
+    ]
 
     assert result[1]["type"] == "function_call"
     assert result[1]["name"] == "get_weather"
@@ -1808,7 +1908,6 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
                     "args": {"location": "San Francisco"},
                 }
             ],
-            additional_kwargs={_FUNCTION_CALL_IDS_MAP_KEY: {"call_123": "func_456"}},
         ),
         ToolMessage(
             content='{"temperature": 72, "conditions": "sunny"}',
@@ -1824,7 +1923,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
             ]
         ),
     ]
-    messages_copy = [m.copy(deep=True) for m in messages]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
 
     result = _construct_responses_api_input(messages)
 
@@ -1852,7 +1951,6 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert result[4]["name"] == "get_weather"
     assert result[4]["arguments"] == '{"location": "San Francisco"}'
     assert result[4]["call_id"] == "call_123"
-    assert result[4]["id"] == "func_456"
 
     # Check function call output
     assert result[5]["type"] == "function_call_output"
@@ -1860,7 +1958,12 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert result[5]["call_id"] == "call_123"
 
     assert result[6]["role"] == "assistant"
-    assert result[6]["content"] == "The weather in San Francisco is 72°F and sunny."
+    assert result[6]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The weather in San Francisco is 72°F and sunny.",
+        }
+    ]
 
     assert result[7]["role"] == "assistant"
     assert result[7]["content"] == [

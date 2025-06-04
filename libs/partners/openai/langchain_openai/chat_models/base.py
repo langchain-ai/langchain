@@ -3184,10 +3184,52 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
-            for block in msg.get("content") or []:
-                if isinstance(block, dict) and (block_type := block.get("type")):
-                    if block_type in ("reasoning", "function_call"):
-                        input_.append(_pop_index_and_sub_index(block))
+            if isinstance(msg.get("content"), list):
+                for block in msg["content"]:
+                    if isinstance(block, dict) and (block_type := block.get("type")):
+                        # Aggregate content blocks for a single message
+                        if block_type in ("text", "output_text", "refusal"):
+                            msg_id = block.get("id")
+                            if block_type in ("text", "output_text"):
+                                new_block = {
+                                    "type": "output_text",
+                                    "text": block["text"],
+                                    "annotations": block.get("annotations") or [],
+                                }
+                            elif block_type == "refusal":
+                                new_block = {
+                                    "type": "refusal",
+                                    "refusal": block["refusal"],
+                                }
+                            for item in input_:
+                                if (item_id := item.get("id")) and item_id == msg_id:
+                                    # If existing block with this ID, append to it
+                                    if "content" not in item:
+                                        item["content"] = []
+                                    item["content"].append(new_block)
+                                    break
+                            else:
+                                # If no block with this ID, create a new one
+                                input_.append(
+                                    {
+                                        "type": "message",
+                                        "role": "assistant",
+                                        "content": [new_block],
+                                        "id": msg_id,
+                                    }
+                                )
+                        elif block_type in ("reasoning", "function_call"):
+                            input_.append(_pop_index_and_sub_index(block))
+                        else:
+                            pass
+            elif isinstance(msg.get("content"), str):
+                input_.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": msg["content"]}],
+                    }
+                )
 
             # Add function calls from tool calls if not already present
             if tool_calls := msg.pop("tool_calls", None):
@@ -3234,41 +3276,6 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 ]
             )
 
-            msg["content"] = msg.get("content") or []
-            if lc_msg.additional_kwargs.get("refusal"):
-                if isinstance(msg["content"], str):
-                    msg["content"] = [
-                        {
-                            "type": "output_text",
-                            "text": msg["content"],
-                            "annotations": [],
-                        }
-                    ]
-                msg["content"] = msg["content"] + [
-                    {"type": "refusal", "refusal": lc_msg.additional_kwargs["refusal"]}
-                ]
-            if isinstance(msg["content"], list):
-                new_blocks = []
-                for block in msg["content"]:
-                    # chat api: {"type": "text", "text": "..."}
-                    # responses api: {"type": "output_text", "text": "...", "annotations": [...]}  # noqa: E501
-                    if block["type"] == "text":
-                        new_blocks.append(
-                            {
-                                "type": "output_text",
-                                "text": block["text"],
-                                "annotations": block.get("annotations") or [],
-                            }
-                        )
-                    elif block["type"] in ("output_text", "refusal"):
-                        new_blocks.append(block)
-                    else:
-                        pass
-                msg["content"] = new_blocks
-            if msg["content"]:
-                if lc_msg.id and lc_msg.id.startswith("msg_"):
-                    msg["id"] = lc_msg.id
-                input_.append(msg)
             input_.extend(computer_calls)
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
@@ -3324,6 +3331,8 @@ def _construct_lc_result_from_responses_api(
         if k
         in (
             "created_at",
+            # backwards compatibility: keep response ID in response_metadata as well as
+            # top-level-id
             "id",
             "incomplete_details",
             "metadata",
@@ -3347,7 +3356,6 @@ def _construct_lc_result_from_responses_api(
     tool_calls = []
     invalid_tool_calls = []
     additional_kwargs: dict = {}
-    msg_id = None
     for output in response.output:
         if output.type == "message":
             for content in output.content:
@@ -3359,13 +3367,15 @@ def _construct_lc_result_from_responses_api(
                             annotation.model_dump()
                             for annotation in content.annotations
                         ],
+                        "id": output.id,
                     }
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
-                    additional_kwargs["refusal"] = content.refusal
-            msg_id = output.id
+                    content_blocks.append(
+                        {"type": "refusal", "refusal": content.refusal, "id": output.id}
+                    )
         elif output.type == "function_call":
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
@@ -3434,7 +3444,7 @@ def _construct_lc_result_from_responses_api(
             pass
     message = AIMessage(
         content=content_blocks,
-        id=msg_id,
+        id=response.id,
         usage_metadata=usage_metadata,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
