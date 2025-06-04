@@ -3494,6 +3494,8 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
+    elif chunk.type == "response.output_text.done":
+        content.append({"id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
         response_metadata["id"] = chunk.response.id
     elif chunk.type == "response.completed":
