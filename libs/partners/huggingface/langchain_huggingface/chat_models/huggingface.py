@@ -730,7 +730,8 @@ class ChatHuggingFace(BaseChatModel):
 
             default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
             for chunk in self.llm.client.chat_completion(
-                messages=message_dicts, **params
+                messages=message_dicts,
+                **params,
             ):
                 if len(chunk["choices"]) == 0:
                     continue
@@ -788,7 +789,8 @@ class ChatHuggingFace(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
 
         async for chunk in await self.llm.async_client.chat_completion(
-            messages=message_dicts, **params
+            messages=message_dicts,
+            **params,
         ):
             if len(chunk["choices"]) == 0:
                 continue
