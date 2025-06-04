@@ -2889,7 +2889,7 @@ def _resize(width: int, height: int) -> tuple[int, int]:
             width = (width * 768) // height
             height = 768
         else:
-            height = (width * 768) // height
+            height = (height * 768) // width
             width = 768
     return width, height
 
