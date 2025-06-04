@@ -3,11 +3,11 @@
 import json
 import os
 from base64 import b64encode
-from typing import Optional
+from typing import Optional, cast
 
 import httpx
 import pytest
-import requests
+import requests  # type: ignore[import-untyped]
 from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
@@ -42,7 +42,10 @@ def test_stream() -> None:
     chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = token if full is None else full + token
+        if full is None:
+            full = cast(BaseMessageChunk, token)
+        else:
+            full = full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -81,7 +84,10 @@ async def test_astream() -> None:
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = token if full is None else full + token
+        if full is None:
+            full = cast(BaseMessageChunk, token)
+        else:
+            full = full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -697,7 +703,10 @@ def test_citations() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(messages):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
@@ -722,7 +731,10 @@ def test_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("Hello"):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("thinking" in block for block in full.content)
@@ -756,7 +768,10 @@ def test_redacted_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(query):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     stream_has_reasoning = False
