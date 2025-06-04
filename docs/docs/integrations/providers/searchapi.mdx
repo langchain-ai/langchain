@@ -22,12 +22,13 @@ You can use it as part of a Self Ask chain:
 ```python
 from langchain_community.utilities import SearchApiAPIWrapper
 from langchain_openai import OpenAI
-from langchain.agents import Tool, create_openai_functions_agent, AgentExecutor
+from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType
 
 import os
 
-os.environ["SEARCHAPI_API_KEY"] = "<your-searchapi-key>"
-os.environ['OPENAI_API_KEY'] = "<your-openai-key>"
+os.environ["SEARCHAPI_API_KEY"] = ""
+os.environ['OPENAI_API_KEY'] = ""
 
 llm = OpenAI(temperature=0)
 search = SearchApiAPIWrapper()
@@ -39,13 +40,8 @@ tools = [
     )
 ]
 
-# Create agent and executor
-agent = create_openai_functions_agent(llm=llm, tools=tools)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-# Run the agent
-response = agent_executor.invoke({"input": "Who lived longer: Plato, Socrates, or Aristotle?"})
-print(response["output"])
+self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True)
+self_ask_with_search.run("Who lived longer: Plato, Socrates, or Aristotle?")
 ```
 
 #### Output
