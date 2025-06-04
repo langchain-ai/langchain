@@ -2875,22 +2875,26 @@ def _is_b64(s: str) -> bool:
 
 
 def _resize(width: int, height: int) -> tuple[int, int]:
-    # larger side must be <= 2048
+    """Resize an image while preserving the aspect ratio."""
+
+    # scale such that the larger side does not exceed 2048
     if width > 2048 or height > 2048:
         if width > height:
-            height = (height * 2048) // width
-            width = 2048
+            ratio = 2048 / width
         else:
-            width = (width * 2048) // height
-            height = 2048
-    # smaller side must be <= 768
+            ratio = 2048 / height
+        width = max(1, int(round(width * ratio)))
+        height = max(1, int(round(height * ratio)))
+
+    # scale such that the smaller side does not exceed 768
     if width > 768 and height > 768:
-        if width > height:
-            width = (width * 768) // height
-            height = 768
+        if width < height:
+            ratio = 768 / width
         else:
-            height = (height * 768) // width
-            width = 768
+            ratio = 768 / height
+        width = max(1, int(round(width * ratio)))
+        height = max(1, int(round(height * ratio)))
+
     return width, height
 
 
