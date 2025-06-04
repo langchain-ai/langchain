@@ -642,7 +642,9 @@ class ChatHuggingFace(BaseChatModel):
             # or have a more robust way to distinguish.
             # For now, assume llm specific kwargs are handled by llm and others were for template
             llm_specific_kwargs = {
-                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+                k: v
+                for k, v in combined_kwargs.items()
+                if k in self.llm.__dict__
             }  # A basic heuristic
 
             if should_stream:
@@ -701,7 +703,9 @@ class ChatHuggingFace(BaseChatModel):
         else: # HuggingFaceHub
             llm_input = self._to_chat_prompt(messages, **combined_kwargs)
             llm_specific_kwargs = {
-                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+                k: v
+                for k, v in combined_kwargs.items()
+                if k in self.llm.__dict__
             }
             llm_result = await self.llm._agenerate(
                 prompts=[llm_input],
@@ -753,7 +757,9 @@ class ChatHuggingFace(BaseChatModel):
         else: # HuggingFaceHub or HuggingFacePipeline
             llm_input = self._to_chat_prompt(messages, **combined_kwargs)
             llm_specific_kwargs = {
-                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+                k: v
+                for k, v in combined_kwargs.items()
+                if k in self.llm.__dict__
             }
             stream_iter = self.llm._stream(
                 llm_input,
