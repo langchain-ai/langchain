@@ -643,15 +643,21 @@ class ChatHuggingFace(BaseChatModel):
             # For now, assume llm specific kwargs are handled by llm and others were for template
             llm_specific_kwargs = {
                 k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
-            } # A basic heuristic
+            }  # A basic heuristic
 
             if should_stream:
                 stream_iter = self.llm._stream(
-                    llm_input, stop=stop, run_manager=run_manager, **llm_specific_kwargs
+                    llm_input,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **llm_specific_kwargs,
                 )
                 return generate_from_stream(stream_iter)
             llm_result = self.llm._generate(
-                prompts=[llm_input], stop=stop, run_manager=run_manager, **llm_specific_kwargs
+                prompts=[llm_input],
+                stop=stop,
+                run_manager=run_manager,
+                **llm_specific_kwargs,
             )
             return self._to_chat_result(llm_result)
 
@@ -698,7 +704,10 @@ class ChatHuggingFace(BaseChatModel):
                 k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
             }
             llm_result = await self.llm._agenerate(
-                prompts=[llm_input], stop=stop, run_manager=run_manager, **llm_specific_kwargs
+                prompts=[llm_input],
+                stop=stop,
+                run_manager=run_manager,
+                **llm_specific_kwargs,
             )
             return self._to_chat_result(llm_result)
 
@@ -747,7 +756,10 @@ class ChatHuggingFace(BaseChatModel):
                 k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
             }
             stream_iter = self.llm._stream(
-                llm_input, stop=stop, run_manager=run_manager, **llm_specific_kwargs
+                llm_input,
+                stop=stop,
+                run_manager=run_manager,
+                **llm_specific_kwargs,
             )
             for chunk in stream_iter:  # chunk is a GenerationChunk
                 chat_chunk = ChatGenerationChunk(
@@ -795,7 +807,7 @@ class ChatHuggingFace(BaseChatModel):
                 )
             yield generation_chunk
 
-    def _to_chat_prompt(
+    def _to_chat_prompt(  # type: ignore[call-arg]
         self,
         messages: list[BaseMessage],
         **kwargs: Any,
