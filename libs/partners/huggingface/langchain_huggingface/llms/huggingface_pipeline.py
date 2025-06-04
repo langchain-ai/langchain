@@ -144,7 +144,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
-            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            err_msg = f"Backend: {backend} {IMPORT_ERROR.format(f'optimum[{backend}]')}"
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
