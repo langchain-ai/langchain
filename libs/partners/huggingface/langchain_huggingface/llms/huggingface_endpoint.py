@@ -206,9 +206,9 @@ class HuggingFaceEndpoint(LLM):
             "HF_TOKEN"
         )
 
-        from huggingface_hub import (  # type: ignore[import]
+        from huggingface_hub import (
             AsyncInferenceClient,  # type: ignore[import]
-            InferenceClient,  # type: ignore[import]
+            InferenceClient,  # type: ignore[import]; type: ignore[import]
         )
 
         # Instantiate clients with supported kwargs

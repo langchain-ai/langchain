@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
@@ -15,7 +16,6 @@ from langchain_core.tools import BaseTool
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
-    _is_huggingface_pipeline,
 )
 from langchain_huggingface.llms import HuggingFaceEndpoint, HuggingFacePipeline
 
@@ -28,18 +28,21 @@ def mock_hf_endpoint_llm() -> Mock:
     llm.__dict__ = {"some_llm_param": True}
     return llm
 
+
 @pytest.fixture
 def mock_hf_pipeline_llm() -> Mock:
     llm = Mock(spec=HuggingFacePipeline)
     llm.model_id = "test-model-id"
     # Mock the pipeline attribute expected by _stream and _generate
     llm.pipeline = MagicMock()
-    llm.pipeline.return_value = "test output" # for invoke
+    llm.pipeline.return_value = "test output"  # for invoke
 
     # For stream, the pipeline should return an iterator
     mock_stream_pipeline = MagicMock()
     mock_stream_pipeline.return_value = iter(["test ", "output"])
-    llm._stream = MagicMock(side_effect=lambda prompt, **kwargs: iter([MagicMock(text=prompt)])) # Simplified mock
+    llm._stream = MagicMock(
+        side_effect=lambda prompt, **kwargs: iter([MagicMock(text=prompt)])
+    )  # Simplified mock
 
     # Mock the __dict__ to simulate presence of attributes for kwarg filtering
     llm.__dict__ = {"some_llm_param": True}
@@ -48,7 +51,9 @@ def mock_hf_pipeline_llm() -> Mock:
 
 @pytest.fixture
 @patch("langchain_huggingface.chat_models.huggingface.AutoTokenizer.from_pretrained")
-def chat_hugging_face_pipeline(mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock) -> ChatHuggingFace:
+def chat_hugging_face_pipeline(
+    mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock
+) -> ChatHuggingFace:
     mock_tokenizer = MagicMock()
     mock_tokenizer.apply_chat_template = MagicMock(return_value="formatted_prompt")
     mock_from_pretrained.return_value = mock_tokenizer
@@ -57,11 +62,14 @@ def chat_hugging_face_pipeline(mock_from_pretrained: MagicMock, mock_hf_pipeline
     # chat_hf._resolve_model_id() # Ensure tokenizer is resolved
     return chat_hf
 
+
 @pytest.fixture
 @patch(
     "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
-) # Keep this for tests that might use the endpoint based mock_llm
-def chat_hugging_face_endpoint(mock_resolve_id: Any, mock_hf_endpoint_llm: Any) -> ChatHuggingFace:
+)  # Keep this for tests that might use the endpoint based mock_llm
+def chat_hugging_face_endpoint(
+    mock_resolve_id: Any, mock_hf_endpoint_llm: Any
+) -> ChatHuggingFace:
     chat_hf = ChatHuggingFace(llm=mock_hf_endpoint_llm, tokenizer=MagicMock())
     return chat_hf
 
@@ -105,11 +113,15 @@ def test_to_chat_prompt_errors(
     assert expected_error in str(e.value)
 
 
-def test_to_chat_prompt_valid_messages_no_kwargs(chat_hugging_face_pipeline: Any) -> None:
+def test_to_chat_prompt_valid_messages_no_kwargs(
+    chat_hugging_face_pipeline: Any,
+) -> None:
     messages = [AIMessage(content="Hello"), HumanMessage(content="How are you?")]
     expected_prompt = "Generated chat prompt"
 
-    chat_hugging_face_pipeline.tokenizer.apply_chat_template.return_value = expected_prompt
+    chat_hugging_face_pipeline.tokenizer.apply_chat_template.return_value = (
+        expected_prompt
+    )
 
     result = chat_hugging_face_pipeline._to_chat_prompt(messages)
 
@@ -123,10 +135,13 @@ def test_to_chat_prompt_valid_messages_no_kwargs(chat_hugging_face_pipeline: Any
         add_generation_prompt=True,
     )
 
+
 def test_to_chat_prompt_with_extra_kwargs(chat_hugging_face_pipeline: Any) -> None:
     messages = [AIMessage(content="Hello"), HumanMessage(content="How are you?")]
     expected_prompt = "Generated chat prompt with kwargs"
-    chat_hugging_face_pipeline.tokenizer.apply_chat_template.return_value = expected_prompt
+    chat_hugging_face_pipeline.tokenizer.apply_chat_template.return_value = (
+        expected_prompt
+    )
     extra_kwargs = {"foo": "bar", "another_arg": 123}
 
     result = chat_hugging_face_pipeline._to_chat_prompt(messages, **extra_kwargs)
@@ -144,8 +159,14 @@ def test_to_chat_prompt_with_extra_kwargs(chat_hugging_face_pipeline: Any) -> No
 
 
 @patch("langchain_huggingface.chat_models.huggingface.AutoTokenizer.from_pretrained")
-def test_custom_chat_template_for_pipeline(mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock) -> None:
-    custom_template = "{% for message in messages %}{{ message.role }}: {{ message.content }}{% endfor %}"
+def test_custom_chat_template_for_pipeline(
+    mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock
+) -> None:
+    custom_template = (
+        "{% for message in messages %}"
+        "{{ message.role }}: {{ message.content }}"
+        "{% endfor %}"
+    )
     mock_tokenizer = MagicMock()
     mock_tokenizer.apply_chat_template = MagicMock()
     mock_from_pretrained.return_value = mock_tokenizer
@@ -167,14 +188,19 @@ def test_invoke_with_pipeline_passes_kwargs_to_template(
     mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock
 ) -> None:
     mock_tokenizer = MagicMock()
-    mock_tokenizer.apply_chat_template = MagicMock(return_value="formatted_prompt_for_invoke")
+    mock_tokenizer.apply_chat_template = MagicMock(
+        return_value="formatted_prompt_for_invoke"
+    )
     mock_from_pretrained.return_value = mock_tokenizer
 
     chat = ChatHuggingFace(llm=mock_hf_pipeline_llm, tokenizer=mock_tokenizer)
 
     # Mock the llm's generate method as it's called by invoke
-    chat.llm._generate = MagicMock(return_value=ChatResult(generations=[MagicMock(message=AIMessage(content="response"))]))
-
+    chat.llm._generate = MagicMock(
+        return_value=ChatResult(
+            generations=[MagicMock(message=AIMessage(content="response"))]
+        )
+    )
 
     messages = [HumanMessage(content="Hi")]
     template_kwargs = {"custom_param": "value1", "another_one": False}
@@ -189,21 +215,25 @@ def test_invoke_with_pipeline_passes_kwargs_to_template(
         [{"role": "user", "content": "Hi"}],
         tokenize=False,
         add_generation_prompt=True,
-        **template_kwargs, # Assert that only template kwargs (or all if filtering is simple) are passed
+        **template_kwargs,  # Assert that only template kwargs are passed
     )
-    # Assert that llm._generate was called with its specific params
-    # The current filtering is `k in self.llm.__dict__` which is a bit weak for a unit test
-    # but we'll assume it works as intended for now or that combined_kwargs are passed if no filtering is done in `_generate` path
-    # For HuggingFacePipeline, `_generate` receives `llm_specific_kwargs`
-    # In our case, `llm_specific_kwargs` would be `{'some_llm_param': True}` if `max_new_tokens` is not in `llm.__dict__`
-    # This part of the test might need refinement based on exact filtering logic for llm_specific_kwargs
+    # Assert that llm._generate was called with its specific params.
+    # The current filtering (`k in self.llm.__dict__`) is a basic heuristic.
+    # It assumes that kwargs not in llm.__dict__ were intended for the template.
+    # For HuggingFacePipeline, _generate receives llm_specific_kwargs.
+    # For example, if max_new_tokens is not in llm.__dict__,
+    # it would be filtered out before calling llm._generate.
+    # Refinement of this logic may be needed for more complex scenarios.
+
 
 @patch("langchain_huggingface.chat_models.huggingface.AutoTokenizer.from_pretrained")
 def test_stream_with_pipeline_passes_kwargs_to_template(
     mock_from_pretrained: MagicMock, mock_hf_pipeline_llm: Mock
 ) -> None:
     mock_tokenizer = MagicMock()
-    mock_tokenizer.apply_chat_template = MagicMock(return_value="formatted_prompt_for_stream")
+    mock_tokenizer.apply_chat_template = MagicMock(
+        return_value="formatted_prompt_for_stream"
+    )
     mock_from_pretrained.return_value = mock_tokenizer
 
     chat = ChatHuggingFace(llm=mock_hf_pipeline_llm, tokenizer=mock_tokenizer)
@@ -211,10 +241,9 @@ def test_stream_with_pipeline_passes_kwargs_to_template(
     # Mock the llm's stream method
     # chat.llm._stream = MagicMock(return_value=iter([MagicMock(text="response")]))
 
-
     messages = [HumanMessage(content="Hi stream")]
     template_kwargs = {"stream_param": True, "detail_level": "high"}
-    llm_params = {"temperature": 0.5} # Example LLM param
+    llm_params = {"temperature": 0.5}  # Example LLM param
     all_kwargs = {**template_kwargs, **llm_params}
 
     list(chat.stream(messages, **all_kwargs))
@@ -223,9 +252,10 @@ def test_stream_with_pipeline_passes_kwargs_to_template(
         [{"role": "user", "content": "Hi stream"}],
         tokenize=False,
         add_generation_prompt=True,
-        **template_kwargs, # As above, check how kwargs are filtered
+        **template_kwargs,  # As above, check how kwargs are filtered
     )
-    # chat.llm._stream.assert_called_once() # Check if it was called, args are harder to assert precisely here
+    # chat.llm._stream.assert_called_once()
+    # Check if it was called, args are harder to assert precisely here
 
 
 @pytest.mark.asyncio
@@ -242,16 +272,18 @@ async def test_ainvoke_with_endpoint_passes_kwargs(
     mock_async_client = MagicMock()
     mock_async_client.chat_completion = AsyncMock(
         return_value={
-            "choices": [{"message": {"role": "assistant", "content": "async response"}}],
+            "choices": [
+                {"message": {"role": "assistant", "content": "async response"}}
+            ],
             "usage": {},
         }
     )
     mock_hf_endpoint_llm.async_client = mock_async_client
 
-    # Re-initialize ChatHuggingFace with the mocked tokenizer if _resolve_model_id is also mocked for endpoint
+    # Re-initialize ChatHuggingFace with the mocked tokenizer
+    # if _resolve_model_id is also mocked for endpoint.
     # For this test, let's assume tokenizer is correctly set up.
     chat = ChatHuggingFace(llm=mock_hf_endpoint_llm, tokenizer=mock_tokenizer)
-
 
     messages = [HumanMessage(content="Hi async")]
     # Kwargs for HuggingFaceEndpoint are passed directly to its client
@@ -263,15 +295,20 @@ async def test_ainvoke_with_endpoint_passes_kwargs(
     endpoint_kwargs = {"max_tokens": 50, "temperature": 0.7}
     await chat.ainvoke(messages, **endpoint_kwargs)
 
-    # Assert that the endpoint's async_client.chat_completion was called with these kwargs
-    # _create_message_dicts is called first, then chat_completion
-    # The kwargs are passed to chat_completion
-    expected_call_kwargs = {**chat.model_kwargs, **endpoint_kwargs} # model_kwargs is {} by default
+    # Assert that the endpoint's async_client.chat_completion
+    # was called with these kwargs.
+    # _create_message_dicts is called first, then chat_completion.
+    # The kwargs are passed to chat_completion.
+    expected_call_kwargs = {
+        **chat.model_kwargs,
+        **endpoint_kwargs,
+    }  # model_kwargs is {} by default
 
     # We need to check the second argument of the call (kwargs)
-    # call_args[0] is a tuple of positional args, call_args[1] is a dict of kwargs
+    # call_args[0] is a tuple of positional args,
+    # call_args[1] is a dict of kwargs
     args, called_kwargs = mock_async_client.chat_completion.call_args
-    assert "messages" in called_kwargs # messages is a kwarg here
+    assert "messages" in called_kwargs  # messages is a kwarg here
     for k, v in expected_call_kwargs.items():
         assert k in called_kwargs and called_kwargs[k] == v
 
@@ -281,21 +318,29 @@ async def test_ainvoke_with_endpoint_passes_kwargs(
 async def test_astream_with_endpoint_passes_kwargs(
     mock_from_pretrained: MagicMock, mock_hf_endpoint_llm: Mock
 ) -> None:
-    mock_tokenizer = MagicMock() # Not directly used by endpoint logic for apply_chat_template
+    mock_tokenizer = (
+        MagicMock()
+    )  # Not directly used by endpoint logic for apply_chat_template
     mock_from_pretrained.return_value = mock_tokenizer
 
     mock_async_client = MagicMock()
+
     # Mock async generator for chat_completion
     async def mock_gen(*args: Any, **kwargs: Any) -> AsyncIterator[dict]:
-        yield {"choices": [{"delta": {"role": "assistant", "content": "async stream"}}], "usage": {}}
+        yield {
+            "choices": [{"delta": {"role": "assistant", "content": "async stream"}}],
+            "usage": {},
+        }
 
-    mock_async_client.chat_completion = MagicMock(side_effect=mock_gen) # Use MagicMock for side_effect
+    mock_async_client.chat_completion = MagicMock(
+        side_effect=mock_gen
+    )  # Use MagicMock for side_effect
     mock_hf_endpoint_llm.async_client = mock_async_client
 
     chat = ChatHuggingFace(llm=mock_hf_endpoint_llm, tokenizer=mock_tokenizer)
 
     messages = [HumanMessage(content="Hi async stream")]
-    endpoint_kwargs = {"top_p": 0.9, "details": True} # Example endpoint kwargs
+    endpoint_kwargs = {"top_p": 0.9, "details": True}  # Example endpoint kwargs
 
     results = []
     async for chunk in chat.astream(messages, **endpoint_kwargs):
@@ -307,7 +352,7 @@ async def test_astream_with_endpoint_passes_kwargs(
     args, called_kwargs = mock_async_client.chat_completion.call_args
     assert "messages" in called_kwargs
     for k, v in expected_call_kwargs.items():
-         assert k in called_kwargs and called_kwargs[k] == v
+        assert k in called_kwargs and called_kwargs[k] == v
 
 
 @pytest.mark.parametrize(
@@ -335,7 +380,9 @@ def test_to_chatml_format(
 
 
 def test_to_chatml_format_with_invalid_type(chat_hugging_face_pipeline: Any) -> None:
-    message = FunctionMessage(name="func", content="invalid") # Use a concrete BaseMessage subclass
+    message = FunctionMessage(
+        name="func", content="invalid"
+    )  # Use a concrete BaseMessage subclass
     with pytest.raises(ValueError) as e:
         chat_hugging_face_pipeline._to_chatml_format(message)
     assert "Unknown message type:" in str(e.value)

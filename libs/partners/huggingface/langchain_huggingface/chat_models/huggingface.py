@@ -640,11 +640,10 @@ class ChatHuggingFace(BaseChatModel):
             # Filter out kwargs that are not part of llm._stream or llm._generate
             # This is a bit of a simplification; ideally, we'd inspect signatures
             # or have a more robust way to distinguish.
-            # For now, assume llm specific kwargs are handled by llm and others were for template
+            # For now, assume llm specific kwargs are handled by llm
+            # and others were for template
             llm_specific_kwargs = {
-                k: v
-                for k, v in combined_kwargs.items()
-                if k in self.llm.__dict__
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
             }  # A basic heuristic
 
             if should_stream:
@@ -676,7 +675,9 @@ class ChatHuggingFace(BaseChatModel):
 
         if _is_huggingface_textgen_inference(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
-            answer = await self.llm.async_client.chat(messages=message_dicts, **combined_kwargs)
+            answer = await self.llm.async_client.chat(
+                messages=message_dicts, **combined_kwargs
+            )
             return self._create_chat_result(answer)
         elif _is_huggingface_endpoint(self.llm):
             if should_stream:
@@ -700,12 +701,10 @@ class ChatHuggingFace(BaseChatModel):
             raise NotImplementedError(
                 "async generation is not supported with HuggingFacePipeline"
             )
-        else: # HuggingFaceHub
+        else:  # HuggingFaceHub
             llm_input = self._to_chat_prompt(messages, **combined_kwargs)
             llm_specific_kwargs = {
-                k: v
-                for k, v in combined_kwargs.items()
-                if k in self.llm.__dict__
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
             }
             llm_result = await self.llm._agenerate(
                 prompts=[llm_input],
@@ -755,12 +754,10 @@ class ChatHuggingFace(BaseChatModel):
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 yield generation_chunk
-        else: # HuggingFaceHub or HuggingFacePipeline
+        else:  # HuggingFaceHub or HuggingFacePipeline
             llm_input = self._to_chat_prompt(messages, **combined_kwargs)
             llm_specific_kwargs = {
-                k: v
-                for k, v in combined_kwargs.items()
-                if k in self.llm.__dict__
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
             }
             stream_iter = self.llm._stream(
                 llm_input,
@@ -831,7 +828,7 @@ class ChatHuggingFace(BaseChatModel):
 
         # Filter out kwargs that are not valid for apply_chat_template if possible
         # For now, pass all of them as per requirement
-        template_kwargs = kwargs # Potentially filter here in future
+        template_kwargs = kwargs  # Potentially filter here in future
 
         return self.tokenizer.apply_chat_template(
             messages_dicts,
