@@ -116,8 +116,6 @@ logger = logging.getLogger(__name__)
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
-_FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
-
 WellKnownTools = (
     "file_search",
     "web_search_preview",
@@ -797,22 +795,30 @@ class BaseChatOpenAI(BaseChatModel):
 
         with context_manager as response:
             is_first_chunk = True
-            has_reasoning = False
+            current_index = -1
+            current_output_index = -1
+            current_sub_index = -1
             for chunk in response:
                 metadata = headers if is_first_chunk else {}
-                if generation_chunk := _convert_responses_chunk_to_generation_chunk(
+                (
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    generation_chunk,
+                ) = _convert_responses_chunk_to_generation_chunk(
                     chunk,
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
-                    has_reasoning=has_reasoning,
-                ):
+                )
+                if generation_chunk:
                     if run_manager:
                         run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
-                    if "reasoning" in generation_chunk.message.additional_kwargs:
-                        has_reasoning = True
                     yield generation_chunk
 
     async def _astream_responses(
@@ -839,22 +845,30 @@ class BaseChatOpenAI(BaseChatModel):
 
         async with context_manager as response:
             is_first_chunk = True
-            has_reasoning = False
+            current_index = -1
+            current_output_index = -1
+            current_sub_index = -1
             async for chunk in response:
                 metadata = headers if is_first_chunk else {}
-                if generation_chunk := _convert_responses_chunk_to_generation_chunk(
+                (
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    generation_chunk,
+                ) = _convert_responses_chunk_to_generation_chunk(
                     chunk,
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
-                    has_reasoning=has_reasoning,
-                ):
+                )
+                if generation_chunk:
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
-                    if "reasoning" in generation_chunk.message.additional_kwargs:
-                        has_reasoning = True
                     yield generation_chunk
 
     def _should_stream_usage(
@@ -3131,21 +3145,18 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
-def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
-    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+def _pop_index_and_sub_index(block: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate
     text blocks. OpenAI API does not support this key, so we need to remove it.
-
-    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
-    back in.
     """
-    new_reasoning = reasoning.copy()
-    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+    new_block = {k: v for k, v in block.items() if k != "index"}
+    if "summary" in new_block and isinstance(new_block["summary"], list):
         new_summary = []
-        for block in reasoning["summary"]:
-            new_block = {k: v for k, v in block.items() if k != "index"}
-            new_summary.append(new_block)
-        new_reasoning["summary"] = new_summary
-    return new_reasoning
+        for sub_block in new_block["summary"]:
+            new_sub_block = {k: v for k, v in sub_block.items() if k != "index"}
+            new_summary.append(new_sub_block)
+        new_block["summary"] = new_summary
+    return new_block
 
 
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
@@ -3173,31 +3184,27 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
-            # Reasoning items
-            reasoning_items = []
-            if reasoning := lc_msg.additional_kwargs.get("reasoning"):
-                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
-            input_.extend(reasoning_items)
-            # Function calls
-            function_calls = []
+            for block in msg.get("content") or []:
+                if isinstance(block, dict) and (block_type := block.get("type")):
+                    if block_type in ("reasoning", "function_call"):
+                        input_.append(_pop_index_and_sub_index(block))
+
+            # Add function calls from tool calls if not already present
             if tool_calls := msg.pop("tool_calls", None):
-                # TODO: should you be able to preserve the function call object id on
-                #  the langchain tool calls themselves?
-                function_call_ids = lc_msg.additional_kwargs.get(
-                    _FUNCTION_CALL_IDS_MAP_KEY
-                )
+                content_call_ids = {
+                    block["call_id"]
+                    for block in input_
+                    if block.get("type") == "function_call" and "call_id" in block
+                }
                 for tool_call in tool_calls:
-                    function_call = {
-                        "type": "function_call",
-                        "name": tool_call["function"]["name"],
-                        "arguments": tool_call["function"]["arguments"],
-                        "call_id": tool_call["id"],
-                    }
-                    if function_call_ids is not None and (
-                        _id := function_call_ids.get(tool_call["id"])
-                    ):
-                        function_call["id"] = _id
-                    function_calls.append(function_call)
+                    if tool_call["id"] not in content_call_ids:
+                        function_call = {
+                            "type": "function_call",
+                            "name": tool_call["function"]["name"],
+                            "arguments": tool_call["function"]["arguments"],
+                            "call_id": tool_call["id"],
+                        }
+                        input_.append(function_call)
             # Built-in tool calls
             computer_calls = []
             code_interpreter_calls = []
@@ -3262,7 +3269,6 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 if lc_msg.id and lc_msg.id.startswith("msg_"):
                     msg["id"] = lc_msg.id
                 input_.append(msg)
-            input_.extend(function_calls)
             input_.extend(computer_calls)
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
@@ -3361,6 +3367,7 @@ def _construct_lc_result_from_responses_api(
                     additional_kwargs["refusal"] = content.refusal
             msg_id = output.id
         elif output.type == "function_call":
+            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -3384,19 +3391,14 @@ def _construct_lc_result_from_responses_api(
                     "error": error,
                 }
                 invalid_tool_calls.append(tool_call)
-            if _FUNCTION_CALL_IDS_MAP_KEY not in additional_kwargs:
-                additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {}
-            additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][output.call_id] = output.id
-        elif output.type == "reasoning":
-            additional_kwargs["reasoning"] = output.model_dump(
-                exclude_none=True, mode="json"
-            )
-        else:
-            tool_output = output.model_dump(exclude_none=True, mode="json")
-            if "tool_outputs" in additional_kwargs:
-                additional_kwargs["tool_outputs"].append(tool_output)
-            else:
-                additional_kwargs["tool_outputs"] = [tool_output]
+        elif output.type in (
+            "reasoning",
+            "file_search_call",
+            "web_search_call",
+            "computer_call",
+        ):
+            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
     #    from pydantic import BaseModel
@@ -3444,10 +3446,12 @@ def _construct_lc_result_from_responses_api(
 
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
+    current_index: int,
+    current_output_index: int,
+    current_sub_index: int,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    has_reasoning: bool = False,
-) -> Optional[ChatGenerationChunk]:
+) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     content = []
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
@@ -3458,16 +3462,26 @@ def _convert_responses_chunk_to_generation_chunk(
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
-        content.append(
-            {"type": "text", "text": chunk.delta, "index": chunk.content_index}
-        )
+        if (current_output_index != chunk.output_index) or (
+            current_sub_index != chunk.content_index
+        ):
+            current_index += 1
+        current_output_index = chunk.output_index
+        current_sub_index = chunk.content_index
+        content.append({"type": "text", "text": chunk.delta, "index": current_index})
     elif chunk.type == "response.output_text.annotation.added":
+        if (current_output_index != chunk.output_index) or (
+            current_sub_index != chunk.content_index
+        ):
+            current_index += 1
+        current_output_index = chunk.output_index
+        current_sub_index = chunk.content_index
         content.append(
             {
                 "annotations": [
                     chunk.annotation.model_dump(exclude_none=True, mode="json")
                 ],
-                "index": chunk.content_index,
+                "index": current_index,
             }
         )
     elif chunk.type == "response.created":
@@ -3493,18 +3507,28 @@ def _convert_responses_chunk_to_generation_chunk(
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
     ):
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
                 "name": chunk.item.name,
                 "args": chunk.item.arguments,
                 "id": chunk.item.call_id,
-                "index": chunk.output_index,
+                "index": current_index,
             }
         )
-        additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {
-            chunk.item.call_id: chunk.item.id
-        }
+        content.append(
+            {
+                "type": "function_call",
+                "name": chunk.item.name,
+                "arguments": chunk.item.arguments,
+                "call_id": chunk.item.call_id,
+                "id": chunk.item.id,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "web_search_call",
         "file_search_call",
@@ -3519,51 +3543,71 @@ def _convert_responses_chunk_to_generation_chunk(
             chunk.item.model_dump(exclude_none=True, mode="json")
         ]
     elif chunk.type == "response.function_call_arguments.delta":
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
         tool_call_chunks.append(
-            {
-                "type": "tool_call_chunk",
-                "args": chunk.delta,
-                "index": chunk.output_index,
-            }
+            {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
+        )
+        content.append(
+            {"type": "function_call", "arguments": chunk.delta, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
         additional_kwargs["refusal"] = chunk.refusal
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
-        if not has_reasoning:
-            # Hack until breaking release: store first reasoning item ID.
-            additional_kwargs["reasoning"] = chunk.item.model_dump(
-                exclude_none=True, mode="json"
-            )
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
+        reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+        reasoning["index"] = current_output_index
+        content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        additional_kwargs["reasoning"] = {
-            # langchain-core uses the `index` key to aggregate text blocks.
-            "summary": [
-                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
-            ]
-        }
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
+        content.append(
+            {
+                # langchain-core uses the `index` key to aggregate text blocks.
+                "summary": [
+                    {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+                ],
+                "index": current_output_index,
+            }
+        )
     elif chunk.type == "response.image_generation_call.partial_image":
         # Partial images are not supported yet.
         pass
     elif chunk.type == "response.reasoning_summary_text.delta":
-        additional_kwargs["reasoning"] = {
-            "summary": [
-                {
-                    "index": chunk.summary_index,
-                    "type": "summary_text",
-                    "text": chunk.delta,
-                }
-            ]
-        }
-    else:
-        return None
-
-    return ChatGenerationChunk(
-        message=AIMessageChunk(
-            content=content,  # type: ignore[arg-type]
-            tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,
-            response_metadata=response_metadata,
-            additional_kwargs=additional_kwargs,
-            id=id,
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
+        content.append(
+            {
+                "summary": [
+                    {
+                        "index": chunk.summary_index,
+                        "type": "summary_text",
+                        "text": chunk.delta,
+                    }
+                ],
+                "index": current_output_index,
+            }
         )
+    else:
+        return current_index, current_output_index, current_sub_index, None
+
+    return (
+        current_index,
+        current_output_index,
+        current_sub_index,
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=content,  # type: ignore[arg-type]
+                tool_call_chunks=tool_call_chunks,
+                usage_metadata=usage_metadata,
+                response_metadata=response_metadata,
+                additional_kwargs=additional_kwargs,
+                id=id,
+            )
+        ),
     )

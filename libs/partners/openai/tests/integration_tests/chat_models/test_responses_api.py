@@ -292,7 +292,7 @@ def test_reasoning() -> None:
     llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
+    assert any(block.get("type") == "reasoning" for block in response.content)
 
     # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
@@ -301,7 +301,7 @@ def test_reasoning() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
-    assert full.additional_kwargs["reasoning"]
+    assert any(block.get("type") == "reasoning" for block in full.content)
 
 
 def test_stateful_api() -> None:
@@ -365,8 +365,11 @@ def test_stream_reasoning_summary() -> None:
         assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
-    reasoning = response_1.additional_kwargs["reasoning"]
-    assert set(reasoning.keys()) == {"id", "type", "summary"}
+    reasoning = next(
+        block for block in response_1.content if block.get("type") == "reasoning"
+    )
+    assert isinstance(reasoning, dict)
+    assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
     summary = reasoning["summary"]
     assert isinstance(summary, list)
     for block in summary:

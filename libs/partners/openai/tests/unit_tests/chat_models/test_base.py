@@ -45,7 +45,6 @@ from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
-    _FUNCTION_CALL_IDS_MAP_KEY,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -1276,13 +1275,11 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     assert msg.tool_calls[0]["name"] == "get_weather"
     assert msg.tool_calls[0]["id"] == "call_123"
     assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
-    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
-    assert (
-        result.generations[0].message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][
-            "call_123"
-        ]
-        == "func_123"
+    tool_call_block = next(
+        block for block in msg.content if block["type"] == "function_call"
     )
+    assert tool_call_block["call_id"] == "call_123"
+    assert tool_call_block["id"] == "func_123"
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
@@ -1319,7 +1316,11 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
         == '{"location": "New York", "unit": "celsius"'
     )
     assert "error" in msg.invalid_tool_calls[0]
-    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+    tool_call_block = next(
+        block for block in msg.content if block["type"] == "function_call"
+    )
+    assert tool_call_block["call_id"] == "call_123"
+    assert tool_call_block["id"] == "func_123"
 
 
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
@@ -1368,7 +1369,14 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
             "type": "text",
             "text": "Here's the information you requested:",
             "annotations": [],
-        }
+        },
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "New York"}',
+            "call_id": "call_123",
+            "id": "func_123",
+        },
     ]
 
     # Check tool calls
@@ -1666,13 +1674,17 @@ def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
         }
     ]
 
-    # Create a mapping from tool call IDs to function call IDs
-    function_call_ids = {"call_123": "func_456"}
-
     ai_message = AIMessage(
-        content="",
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
         tool_calls=tool_calls,
-        additional_kwargs={_FUNCTION_CALL_IDS_MAP_KEY: function_call_ids},
     )
 
     result = _construct_responses_api_input([ai_message])
@@ -1682,7 +1694,19 @@ def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     assert result[0]["name"] == "get_weather"
     assert result[0]["arguments"] == '{"location": "San Francisco"}'
     assert result[0]["call_id"] == "call_123"
-    assert result[0]["id"] == "func_456"
+    assert result[0]["id"] == "fc_456"
+
+    # Message with only tool calls attribute provided
+    ai_message = AIMessage(content="", tool_calls=tool_calls)
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call"
+    assert result[0]["name"] == "get_weather"
+    assert result[0]["arguments"] == '{"location": "San Francisco"}'
+    assert result[0]["call_id"] == "call_123"
+    assert "id" not in result[0]
 
 
 def test__construct_responses_api_input_ai_message_with_tool_calls_and_content() -> (
@@ -1698,29 +1722,52 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
         }
     ]
 
-    # Create a mapping from tool call IDs to function call IDs
-    function_call_ids = {"call_123": "func_456"}
-
+    # Content blocks
+    # String content
     ai_message = AIMessage(
-        content="I'll check the weather for you.",
+        content=[
+            {"type": "text", "text": "I'll check the weather for you."},
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            },
+        ],
         tool_calls=tool_calls,
-        additional_kwargs={_FUNCTION_CALL_IDS_MAP_KEY: function_call_ids},
     )
 
     result = _construct_responses_api_input([ai_message])
 
     assert len(result) == 2
 
-    # Check content
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == "I'll check the weather for you."
 
-    # Check function call
     assert result[1]["type"] == "function_call"
     assert result[1]["name"] == "get_weather"
     assert result[1]["arguments"] == '{"location": "San Francisco"}'
     assert result[1]["call_id"] == "call_123"
-    assert result[1]["id"] == "func_456"
+    assert result[1]["id"] == "fc_456"
+
+    # String content
+    ai_message = AIMessage(
+        content="I'll check the weather for you.", tool_calls=tool_calls
+    )
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 2
+
+    assert result[0]["role"] == "assistant"
+    assert result[0]["content"] == "I'll check the weather for you."
+
+    assert result[1]["type"] == "function_call"
+    assert result[1]["name"] == "get_weather"
+    assert result[1]["arguments"] == '{"location": "San Francisco"}'
+    assert result[1]["call_id"] == "call_123"
+    assert "id" not in result[1]
 
 
 def test__construct_responses_api_input_tool_message_conversion() -> None:
