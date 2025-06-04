@@ -22,16 +22,16 @@ You can use it as part of a Self Ask chain:
 
 ```python
 from langchain_community.utilities import GoogleSerperAPIWrapper
-from langchain_openai import OpenAI
-from langchain.agents import initialize_agent, Tool
-from langchain.agents import AgentType
+from langchain_core.tools import Tool
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
 
 import os
 
 os.environ["SERPER_API_KEY"] = ""
 os.environ['OPENAI_API_KEY'] = ""
 
-llm = OpenAI(temperature=0)
+llm = ChatOpenAI(temperature=0)
 search = GoogleSerperAPIWrapper()
 tools = [
     Tool(
@@ -41,8 +41,13 @@ tools = [
     )
 ]
 
-self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True)
-self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
+agent = create_react_agent(llm, tools)
+
+result = agent.invoke({
+    "messages": [("human", "What is the hometown of the reigning men's U.S. Open champion?")]
+})
+
+print(result)
 ```
 
 #### Output
