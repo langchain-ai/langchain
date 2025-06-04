@@ -338,6 +338,12 @@ class ChatHuggingFace(BaseChatModel):
         tags: Optional[list[str]]
             Tags to add to the run trace.
         tokenizer: Any
+            The tokenizer to use. If not provided, one will be loaded
+            automatically based on the llm's model ID.
+        chat_template: Optional[str]
+            A Jinja template string to use for formatting chat messages.
+            If not provided, the tokenizer's default chat template will be used.
+            This allows for customizing the prompt structure for the chat model.
         verbose: bool
             Whether to print out response text.
 
@@ -347,18 +353,50 @@ class ChatHuggingFace(BaseChatModel):
     Instantiate:
         .. code-block:: python
 
-            from langchain_huggingface import HuggingFaceEndpoint,
-            ChatHuggingFace
+            from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+            from langchain_core.messages import HumanMessage, SystemMessage
 
+            # Basic instantiation with an endpoint
             llm = HuggingFaceEndpoint(
                 repo_id="microsoft/Phi-3-mini-4k-instruct",
                 task="text-generation",
                 max_new_tokens=512,
                 do_sample=False,
-                repetition_penalty=1.03,
             )
+            chat_model = ChatHuggingFace(llm=llm)
 
-            chat = ChatHuggingFace(llm=llm, verbose=True)
+            # Example of using a custom chat template
+            custom_template = (
+                "{% for message in messages %}"
+                "{{'<|' + message.role + '|>\\n' + message.content + '<|end|>\\n'}}"
+                "{% endfor %}"
+                "{% if add_generation_prompt %}{{ '<|assistant|>' }}{% endif %}"
+            )
+            chat_model_custom_template = ChatHuggingFace(llm=llm, chat_template=custom_template)
+
+            # Example of passing kwargs for dynamic template variables
+            # (Assumes your template or the model's default template uses these variables)
+            # messages_with_vars = [
+            #     SystemMessage(content="You are a helpful assistant named {{ agent_name }}."),
+            #     HumanMessage(content="What's your name?")
+            # ]
+            # result = chat_model.invoke(messages_with_vars, agent_name="HAL")
+            # # The above example for passing kwargs is illustrative.
+            # # The actual variables depend on the chat_template being used.
+            # # If using a custom template, ensure it handles the passed kwargs.
+            # # If using the default template from a model, it might not support arbitrary kwargs
+            # # without being designed for it.
+            # # The primary use of kwargs in invoke/stream for templating is when the
+            # # HuggingFace tokenizer's apply_chat_template method itself supports additional
+            # # parameters beyond the messages list (e.g. specific model instruction tokens).
+
+            # Standard invocation
+            messages = [
+                SystemMessage(content="You are a helpful AI bot."),
+                HumanMessage(content="What is the capital of France?"),
+            ]
+            # result = chat_model.invoke(messages)
+            # print(result.content)
 
     Invoke:
         .. code-block:: python
@@ -452,14 +490,29 @@ class ChatHuggingFace(BaseChatModel):
     Response metadata
         .. code-block:: python
 
-            ai_msg = chat.invoke(messages)
-            ai_msg.response_metadata
+            # ai_msg = chat_model.invoke(messages)
+            # print(ai_msg.response_metadata)
 
         .. code-block:: python
-            {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
-            prompt_tokens=8, total_tokens=108),
-             'model': '',
-             'finish_reason': 'length'}
+            # {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
+            # prompt_tokens=8, total_tokens=108),
+            #  'model': '',
+            #  'finish_reason': 'length'}
+
+    Passing `kwargs` to `invoke`, `stream`, etc.:
+        You can pass additional keyword arguments to methods like `invoke`, `stream`,
+        `ainvoke`, and `astream`. These arguments are passed down to the tokenizer's
+        `apply_chat_template` method. This is useful if your chat template (either
+        custom or the model's default) supports additional variables or parameters.
+        For example, some templates might accept specific system prompt variables or
+        tool usage flags. Refer to the Hugging Face documentation for
+        `apply_chat_template` and specific model template capabilities.
+
+        .. code-block:: python
+
+            # Example: (Requires a template that uses 'system_instruction')
+            # messages = [HumanMessage(content="Tell me a joke.")]
+            # result = chat_model.invoke(messages, system_instruction="Be very sarcastic.")
 
     """  # noqa: E501
 
@@ -496,6 +549,10 @@ class ChatHuggingFace(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    chat_template: Optional[str] = None
+    """A Jinja template string that will be used to format lists of chat messages.
+    See https://huggingface.co/docs/transformers/chat_templating for a full
+    description."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
@@ -553,15 +610,18 @@ class ChatHuggingFace(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
+        # Combine model_kwargs with call-specific kwargs, prioritizing call-specific
+        combined_kwargs = {**self.model_kwargs, **kwargs}
 
         if _is_huggingface_textgen_inference(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
-            answer = self.llm.client.chat(messages=message_dicts, **kwargs)
+            # TGI/Endpoint kwargs are passed directly to the client
+            answer = self.llm.client.chat(messages=message_dicts, **combined_kwargs)
             return self._create_chat_result(answer)
         elif _is_huggingface_endpoint(self.llm):
             if should_stream:
                 stream_iter = self._stream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages, stop=stop, run_manager=run_manager, **combined_kwargs
                 )
                 return generate_from_stream(stream_iter)
             message_dicts, params = self._create_message_dicts(messages, stop)
@@ -569,20 +629,29 @@ class ChatHuggingFace(BaseChatModel):
                 "stop": stop,
                 **params,
                 **({"stream": stream} if stream is not None else {}),
-                **kwargs,
+                **combined_kwargs,
             }
             answer = self.llm.client.chat_completion(messages=message_dicts, **params)
             return self._create_chat_result(answer)
         else:
-            llm_input = self._to_chat_prompt(messages)
+            # For pipeline and hub, kwargs might contain chat_template args
+            llm_input = self._to_chat_prompt(messages, **combined_kwargs)
+
+            # Filter out kwargs that are not part of llm._stream or llm._generate
+            # This is a bit of a simplification; ideally, we'd inspect signatures
+            # or have a more robust way to distinguish.
+            # For now, assume llm specific kwargs are handled by llm and others were for template
+            llm_specific_kwargs = {
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+            } # A basic heuristic
 
             if should_stream:
                 stream_iter = self.llm._stream(
-                    llm_input, stop=stop, run_manager=run_manager, **kwargs
+                    llm_input, stop=stop, run_manager=run_manager, **llm_specific_kwargs
                 )
                 return generate_from_stream(stream_iter)
             llm_result = self.llm._generate(
-                prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+                prompts=[llm_input], stop=stop, run_manager=run_manager, **llm_specific_kwargs
             )
             return self._to_chat_result(llm_result)
 
@@ -594,22 +663,24 @@ class ChatHuggingFace(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        combined_kwargs = {**self.model_kwargs, **kwargs}
+
         if _is_huggingface_textgen_inference(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
-            answer = await self.llm.async_client.chat(messages=message_dicts, **kwargs)
+            answer = await self.llm.async_client.chat(messages=message_dicts, **combined_kwargs)
             return self._create_chat_result(answer)
         elif _is_huggingface_endpoint(self.llm):
-            should_stream = stream if stream is not None else self.streaming
             if should_stream:
                 stream_iter = self._astream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
+                    messages, stop=stop, run_manager=run_manager, **combined_kwargs
                 )
                 return await agenerate_from_stream(stream_iter)
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {
                 **params,
                 **({"stream": stream} if stream is not None else {}),
-                **kwargs,
+                **combined_kwargs,
             }
 
             answer = await self.llm.async_client.chat_completion(
@@ -621,10 +692,13 @@ class ChatHuggingFace(BaseChatModel):
             raise NotImplementedError(
                 "async generation is not supported with HuggingFacePipeline"
             )
-        else:
-            llm_input = self._to_chat_prompt(messages)
+        else: # HuggingFaceHub
+            llm_input = self._to_chat_prompt(messages, **combined_kwargs)
+            llm_specific_kwargs = {
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+            }
             llm_result = await self.llm._agenerate(
-                prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+                prompts=[llm_input], stop=stop, run_manager=run_manager, **llm_specific_kwargs
             )
             return self._to_chat_result(llm_result)
 
@@ -635,9 +709,11 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        combined_kwargs = {**self.model_kwargs, **kwargs}
+
         if _is_huggingface_endpoint(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
-            params = {**params, **kwargs, "stream": True}
+            params = {**params, **combined_kwargs, "stream": True}
 
             default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
             for chunk in self.llm.client.chat_completion(
@@ -665,10 +741,13 @@ class ChatHuggingFace(BaseChatModel):
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 yield generation_chunk
-        else:
-            llm_input = self._to_chat_prompt(messages)
+        else: # HuggingFaceHub or HuggingFacePipeline
+            llm_input = self._to_chat_prompt(messages, **combined_kwargs)
+            llm_specific_kwargs = {
+                k: v for k, v in combined_kwargs.items() if k in self.llm.__dict__
+            }
             stream_iter = self.llm._stream(
-                llm_input, stop=stop, run_manager=run_manager, **kwargs
+                llm_input, stop=stop, run_manager=run_manager, **llm_specific_kwargs
             )
             for chunk in stream_iter:  # chunk is a GenerationChunk
                 chat_chunk = ChatGenerationChunk(
@@ -684,8 +763,9 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        combined_kwargs = {**self.model_kwargs, **kwargs}
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        params = {**params, **combined_kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
 
@@ -718,6 +798,7 @@ class ChatHuggingFace(BaseChatModel):
     def _to_chat_prompt(
         self,
         messages: list[BaseMessage],
+        **kwargs: Any,
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
@@ -728,8 +809,15 @@ class ChatHuggingFace(BaseChatModel):
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
+        # Filter out kwargs that are not valid for apply_chat_template if possible
+        # For now, pass all of them as per requirement
+        template_kwargs = kwargs # Potentially filter here in future
+
         return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
+            messages_dicts,
+            tokenize=False,
+            add_generation_prompt=True,
+            **template_kwargs,
         )
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:
@@ -781,6 +869,8 @@ class ChatHuggingFace(BaseChatModel):
                 if self.tokenizer is None
                 else self.tokenizer
             )
+            if self.chat_template:
+                self.tokenizer.chat_template = self.chat_template
             return
         elif _is_huggingface_endpoint(self.llm):
             self.model_id = self.llm.repo_id or self.llm.model
