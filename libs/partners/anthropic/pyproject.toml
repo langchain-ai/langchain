@@ -43,6 +43,7 @@ dev = ["langchain-core"]
 test_integration = ["requests<3.0.0,>=2.32.3", "langchain-core"]
 typing = [
     "mypy<2.0,>=1.10",
+    "types-requests>=2.31.0",
     "langchain-core",
 ]
 
