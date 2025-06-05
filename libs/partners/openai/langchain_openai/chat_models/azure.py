@@ -67,7 +67,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Key init args — client params:
         api_version: str
-            Azure OpenAI API version to use. See more on the different versions here:
+            Azure OpenAI REST API version to use (distinct from the version of the
+            underlying model). See more on the different versions here:
             https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
