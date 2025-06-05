@@ -7,7 +7,7 @@ from typing import Optional, cast
 
 import httpx
 import pytest
-import requests  # type: ignore[import-untyped]
+import requests
 from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
