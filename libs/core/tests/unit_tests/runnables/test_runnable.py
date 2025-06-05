@@ -671,7 +671,7 @@ def test_with_types_with_type_generics() -> None:
 
 def test_schema_with_itemgetter() -> None:
     """Test runnable with itemgetter."""
-    foo = RunnableLambda(itemgetter("hello"))
+    foo: Runnable = RunnableLambda(itemgetter("hello"))
     assert _schema(foo.input_schema) == {
         "properties": {"hello": {"title": "Hello"}},
         "required": ["hello"],
@@ -4001,7 +4001,7 @@ def test_runnable_lambda_stream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    output = list(RunnableLambda(lambda _: llm).stream(""))
+    output = list(RunnableLambda[str, str](lambda _: llm).stream(""))
     assert output == list(llm_res)
 
 
@@ -4014,9 +4014,9 @@ def test_runnable_lambda_stream_with_callbacks() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
     config: RunnableConfig = {"callbacks": [tracer]}
 
-    assert list(RunnableLambda(lambda _: llm).stream("", config=config)) == list(
-        llm_res
-    )
+    assert list(
+        RunnableLambda[str, str](lambda _: llm).stream("", config=config)
+    ) == list(llm_res)
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
@@ -4075,10 +4075,7 @@ async def test_runnable_lambda_astream() -> None:
     assert output == list(llm_res)
 
     output = [
-        chunk
-        async for chunk in cast(
-            "AsyncIterator[str]", RunnableLambda(lambda _: llm).astream("")
-        )
+        chunk async for chunk in RunnableLambda[str, str](lambda _: llm).astream("")
     ]
     assert output == list(llm_res)
 
@@ -4093,7 +4090,10 @@ async def test_runnable_lambda_astream_with_callbacks() -> None:
     config: RunnableConfig = {"callbacks": [tracer]}
 
     assert [
-        _ async for _ in RunnableLambda(lambda _: llm).astream("", config=config)
+        _
+        async for _ in RunnableLambda[str, str](lambda _: llm).astream(
+            "", config=config
+        )
     ] == list(llm_res)
 
     assert len(tracer.runs) == 1
@@ -5300,7 +5300,7 @@ async def test_ainvoke_on_returned_runnable() -> None:
     def func(_input: dict, /) -> Runnable:
         return idchain
 
-    assert await RunnableLambda(func).ainvoke({})
+    assert await RunnableLambda[dict, bool](func).ainvoke({})
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:

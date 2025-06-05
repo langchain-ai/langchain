@@ -74,7 +74,6 @@ report_deprecated_as_note = "True"
 # TODO: activate for 'strict' checking
 disallow_any_generics = "False"
 warn_return_any = "False"
-strict_equality = "False"
 
 
 [tool.ruff]
