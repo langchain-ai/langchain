@@ -499,7 +499,7 @@ test-integration = [
 typing = [
     { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
-    { name = "types-requests", specifier = ">=2.30.0,<3.0.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0" },
 ]
 
 [[package]]
