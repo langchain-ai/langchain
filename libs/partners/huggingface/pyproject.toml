@@ -12,7 +12,7 @@ dependencies = [
     "huggingface-hub>=0.30.2",
 ]
 name = "langchain-huggingface"
-version = "0.2.0"
+version = "0.3.0"
 description = "An integration package connecting Hugging Face and LangChain."
 readme = "README.md"
 
