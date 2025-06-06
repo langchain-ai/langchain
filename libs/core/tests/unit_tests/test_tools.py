@@ -2711,3 +2711,24 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
     }
+
+
+def test_tool_args_schema_with_annotated_type() -> None:
+    @tool
+    def test_tool(
+        query_fragments: Annotated[
+            list[str],
+            "A list of query fragments",
+        ],
+    ) -> list[str]:
+        """Search the Internet and retrieve relevant result items."""
+        return []
+
+    assert test_tool.args == {
+        "query_fragments": {
+            "description": "A list of query fragments",
+            "items": {"type": "string"},
+            "title": "Query Fragments",
+            "type": "array",
+        }
+    }
