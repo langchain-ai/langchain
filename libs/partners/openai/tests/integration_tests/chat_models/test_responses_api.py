@@ -457,6 +457,10 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
+    # Zero-data retention (e.g., as below) requires change in output format.
+    # _ = llm_with_tools.invoke(
+    #     [input_message, response, approval_message]
+    # )
 
 
 @pytest.mark.vcr()
