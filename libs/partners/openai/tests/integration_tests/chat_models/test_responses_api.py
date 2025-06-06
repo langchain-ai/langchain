@@ -381,7 +381,7 @@ def test_stream_reasoning_summary() -> None:
     assert isinstance(response_2, AIMessage)
 
 
-# TODO: VCR some of these
+@pytest.mark.vcr
 def test_code_interpreter() -> None:
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     llm_with_tools = llm.bind_tools(
