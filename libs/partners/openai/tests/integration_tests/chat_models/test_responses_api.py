@@ -466,6 +466,7 @@ def test_image_generation_streaming() -> None:
         "output_format": "jpeg",
         "output_compression": 100,
         "size": "1024x1024",
+        "partial_images": 2,
     }
 
     # Example tool output for an image
@@ -497,9 +498,12 @@ def test_image_generation_streaming() -> None:
     }
 
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
-        assert isinstance(chunk, AIMessageChunk)
-        full = chunk if full is None else full + chunk
+    with pytest.warns(match="Partial image generation is not yet supported"):
+        for chunk in llm.stream(
+            "Draw a random short word in green font.", tools=[tool]
+        ):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
     complete_ai_message = cast(AIMessageChunk, full)
     # At the moment, the streaming API does not pick up annotations fully.
     # So the following check is commented out.

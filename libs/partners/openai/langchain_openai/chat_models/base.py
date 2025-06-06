@@ -3119,10 +3119,9 @@ def _construct_responses_api_payload(
                 new_tools.append(tool)
 
             if tool["type"] == "image_generation" and "partial_images" in tool:
-                raise NotImplementedError(
+                warnings.warn(
                     "Partial image generation is not yet supported "
-                    "via the LangChain ChatOpenAI client. Please "
-                    "drop the 'partial_images' key from the image_generation tool."
+                    "via the LangChain ChatOpenAI client."
                 )
         payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
