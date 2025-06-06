@@ -420,8 +420,8 @@ def test_code_interpreter() -> None:
     _ = llm_with_tools.invoke([input_message, full, next_message])
 
 
+@pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    pytest.skip()  # TODO: set up VCR
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
 
     llm_with_tools = llm.bind_tools(
@@ -434,10 +434,14 @@ def test_mcp_builtin() -> None:
             }
         ]
     )
-    response = llm_with_tools.invoke(
-        "What transport protocols does the 2025-03-26 version of the MCP spec "
-        "(modelcontextprotocol/modelcontextprotocol) support?"
-    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    response = llm_with_tools.invoke([input_message])
 
     approval_message = HumanMessage(
         [
