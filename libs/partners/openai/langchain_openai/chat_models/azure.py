@@ -854,7 +854,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                             "parsed": None,
                         }
 
-                kwargs: Additional keyword args are passed through to the model.
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
