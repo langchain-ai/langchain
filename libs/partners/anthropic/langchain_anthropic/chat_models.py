@@ -1291,6 +1291,26 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+
+        # If cache_control is provided in kwargs, add it to last message
+        # and content block.
+        if "cache_control" in kwargs and formatted_messages:
+            if isinstance(formatted_messages[-1]["content"], list):
+                formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
+                    "cache_control"
+                )
+            elif isinstance(formatted_messages[-1]["content"], str):
+                formatted_messages[-1]["content"] = [
+                    {
+                        "type": "text",
+                        "text": formatted_messages[-1]["content"],
+                        "cache_control": kwargs.pop("cache_control"),
+                    }
+                ]
+            else:
+                pass
+        _ = kwargs.pop("cache_control", None)
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
