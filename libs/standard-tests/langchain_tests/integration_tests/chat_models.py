@@ -2593,7 +2593,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "required": ["fav_color"],
             },
             "description": "Input your fav color and get a random fact about it.",
-            "cache_control": {"type": "ephemeral"}
+            "cache_control": {"type": "ephemeral"},
         }
 
         human_content: List[dict] = [
