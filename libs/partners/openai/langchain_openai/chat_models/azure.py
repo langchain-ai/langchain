@@ -854,7 +854,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                             "parsed": None,
                         }
 
-            kwargs: Additional keyword args aren't supported.
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -879,6 +879,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. versionchanged:: 0.3.0
 
             ``method`` default changed from "function_calling" to "json_schema".
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
