@@ -1,0 +1,10 @@
+{
+    "dependencies": [
+        "."
+    ],
+    "graphs": {
+        "simple_agent": "./simple_agent.py:agent",
+        "lean_canvas_agent": "./lean_canvas_agent.py:agent"
+    },
+    "env": ".env"
+}
