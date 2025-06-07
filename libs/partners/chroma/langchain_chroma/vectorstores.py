@@ -50,17 +50,33 @@ def _results_to_docs_and_scores(results: Any) -> list[tuple[Document, float]]:
             results["ids"][0],
             results["distances"][0],
         )
+        if result[0] is not None
     ]
 
 
 def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarray]]:
+    """Convert ChromaDB results to documents and vectors, filtering out None content."""
     return [
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[3]),
+            result[2],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
             results["embeddings"][0],
+            results["ids"][0],
         )
+        if result[0] is not None
+    ]
+
+
+def safe_results_to_docs_and_scores(results: Any) -> list[Document]:
+    """Convert results to documents and scores, filtering out None page_content."""
+    return [
+        Document(page_content=result[0], metadata=result[1] or {}, id=result[2])
+        for result in results
+        if result[0] is not None
     ]
 
 
@@ -1064,6 +1080,7 @@ class Chroma(VectorStore):
             for doc, meta, doc_id in zip(
                 results["documents"], results["metadatas"], results["ids"]
             )
+            if doc is not None  # Filter out documents with None page_content
         ]
 
     def update_document(self, document_id: str, document: Document) -> None:
