@@ -3,20 +3,13 @@ from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, FunctionMessage,
+                                     HumanMessage, SystemMessage)
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
-    ChatHuggingFace,
-    _convert_dict_to_message,
-)
+    ChatHuggingFace, _convert_dict_to_message)
 from langchain_huggingface.llms import HuggingFaceEndpoint, HuggingFacePipeline
 
 
@@ -418,6 +411,7 @@ def test_convert_dict_to_message(
 ) -> None:
     result = _convert_dict_to_message(msg_dict)
     assert isinstance(result, expected_type)
+    assert isinstance(result, BaseMessage)  # Explicit assert for Mypy
     assert result.content == expected_content
 
 

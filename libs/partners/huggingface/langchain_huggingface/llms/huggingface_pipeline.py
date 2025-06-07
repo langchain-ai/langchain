@@ -10,13 +10,10 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
-from ..utils.import_utils import (
-    IMPORT_ERROR,
-    is_ipex_available,
-    is_openvino_available,
-    is_optimum_intel_available,
-    is_optimum_intel_version,
-)
+from ..utils.import_utils import (IMPORT_ERROR, is_ipex_available,
+                                  is_openvino_available,
+                                  is_optimum_intel_available,
+                                  is_optimum_intel_version)
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -108,11 +105,9 @@ class HuggingFacePipeline(BaseLLM):
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (  # type: ignore[import]
-                AutoModelForCausalLM,
-                AutoModelForSeq2SeqLM,
-                AutoTokenizer,
-            )
-            from transformers import pipeline as hf_pipeline  # type: ignore[import]
+                AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer)
+            from transformers import \
+                pipeline as hf_pipeline  # type: ignore[import]
 
         except ImportError:
             raise ValueError(
@@ -167,9 +162,7 @@ class HuggingFacePipeline(BaseLLM):
                     raise ImportError(err_msg)
 
                 from optimum.intel import (  # type: ignore[import]
-                    OVModelForCausalLM,
-                    OVModelForSeq2SeqLM,
-                )
+                    OVModelForCausalLM, OVModelForSeq2SeqLM)
 
                 model_cls = (
                     OVModelForCausalLM
@@ -181,15 +174,13 @@ class HuggingFacePipeline(BaseLLM):
                     raise ImportError(err_msg)
 
                 if task == "text-generation":
-                    from optimum.intel import (
-                        IPEXModelForCausalLM,  # type: ignore[import]
-                    )
+                    from optimum.intel import \
+                        IPEXModelForCausalLM  # type: ignore[import]
 
                     model_cls = IPEXModelForCausalLM
                 else:
-                    from optimum.intel import (
-                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
-                    )
+                    from optimum.intel import \
+                        IPEXModelForSeq2SeqLM  # type: ignore[import]
 
                     model_cls = IPEXModelForSeq2SeqLM
 
@@ -355,11 +346,8 @@ class HuggingFacePipeline(BaseLLM):
         from threading import Thread
 
         import torch
-        from transformers import (
-            StoppingCriteria,
-            StoppingCriteriaList,
-            TextIteratorStreamer,
-        )
+        from transformers import (StoppingCriteria, StoppingCriteriaList,
+                                  TextIteratorStreamer)
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", True)

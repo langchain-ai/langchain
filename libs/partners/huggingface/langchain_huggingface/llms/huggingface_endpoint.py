@@ -4,10 +4,8 @@ import os
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import from_env, get_pydantic_field_names
@@ -206,10 +204,9 @@ class HuggingFaceEndpoint(LLM):
             "HF_TOKEN"
         )
 
-        from huggingface_hub import (
-            AsyncInferenceClient,  # type: ignore[import]
-            InferenceClient,  # type: ignore[import]; type: ignore[import]
-        )
+        from huggingface_hub import \
+            AsyncInferenceClient  # type: ignore[import]
+        from huggingface_hub import InferenceClient  # type: ignore[import]
 
         # Instantiate clients with supported kwargs
         sync_supported_kwargs = set(inspect.signature(InferenceClient).parameters)
@@ -217,7 +214,7 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             api_key=huggingfacehub_api_token,
-            provider=self.provider,  # type: ignore[arg-type]
+            provider=self.provider,
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
@@ -230,7 +227,7 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             api_key=huggingfacehub_api_token,
-            provider=self.provider,  # type: ignore[arg-type]
+            provider=self.provider,
             **{
                 key: value
                 for key, value in self.server_kwargs.items()

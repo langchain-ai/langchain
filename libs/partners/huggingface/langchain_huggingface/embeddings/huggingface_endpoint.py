@@ -62,9 +62,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         try:
             from huggingface_hub import (  # type: ignore[import]
-                AsyncInferenceClient,
-                InferenceClient,
-            )
+                AsyncInferenceClient, InferenceClient)
 
             if self.model:
                 self.repo_id = self.model

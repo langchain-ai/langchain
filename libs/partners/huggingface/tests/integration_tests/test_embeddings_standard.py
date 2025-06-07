@@ -2,10 +2,8 @@
 
 from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
-from langchain_huggingface.embeddings import (
-    HuggingFaceEmbeddings,
-    HuggingFaceEndpointEmbeddings,
-)
+from langchain_huggingface.embeddings import (HuggingFaceEmbeddings,
+                                              HuggingFaceEndpointEmbeddings)
 
 
 class TestHuggingFaceEmbeddings(EmbeddingsIntegrationTests):
