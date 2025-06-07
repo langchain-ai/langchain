@@ -1645,7 +1645,7 @@ class BaseChatOpenAI(BaseChatModel):
                             "parsed": None,
                         }
 
-            kwargs: Additional keyword args aren't supported.
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1669,9 +1669,10 @@ class BaseChatOpenAI(BaseChatModel):
 
         .. versionchanged:: 0.3.12
             Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
         """  # noqa: E501
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
         if strict is not None and method == "json_mode":
             raise ValueError(
                 "Argument `strict` is not supported with `method`='json_mode'"
@@ -1714,13 +1715,18 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
-                ls_structured_output_format={
-                    "kwargs": {"method": method, "strict": strict},
-                    "schema": schema,
-                },
+                **{
+                    **dict(
+                        tool_choice=tool_name,
+                        parallel_tool_calls=False,
+                        strict=strict,
+                        ls_structured_output_format={
+                            "kwargs": {"method": method, "strict": strict},
+                            "schema": schema,
+                        },
+                    ),
+                    **kwargs,
+                }
             )
 
             llm = self.bind_tools([schema], **bind_kwargs)
@@ -1735,11 +1741,16 @@ class BaseChatOpenAI(BaseChatModel):
                 )
         elif method == "json_mode":
             llm = self.bind(
-                response_format={"type": "json_object"},
-                ls_structured_output_format={
-                    "kwargs": {"method": method},
-                    "schema": schema,
-                },
+                **{
+                    **dict(
+                        response_format={"type": "json_object"},
+                        ls_structured_output_format={
+                            "kwargs": {"method": method},
+                            "schema": schema,
+                        },
+                    ),
+                    **kwargs,
+                }
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
@@ -1753,13 +1764,16 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            bind_kwargs = dict(
-                response_format=response_format,
-                ls_structured_output_format={
-                    "kwargs": {"method": method, "strict": strict},
-                    "schema": convert_to_openai_tool(schema),
-                },
-            )
+            bind_kwargs = {
+                **dict(
+                    response_format=response_format,
+                    ls_structured_output_format={
+                        "kwargs": {"method": method, "strict": strict},
+                        "schema": convert_to_openai_tool(schema),
+                    },
+                    **kwargs,
+                )
+            }
             if tools:
                 bind_kwargs["tools"] = [
                     convert_to_openai_tool(t, strict=strict) for t in tools
@@ -2566,8 +2580,52 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 Note: ``strict`` can only be non-null if ``method`` is
                 ``"json_schema"`` or ``"function_calling"``.
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that:
 
-            kwargs: Additional keyword args aren't supported.
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": None,
+                            "parsed": None,
+                        }
+
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -2592,6 +2650,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. versionchanged:: 0.3.0
 
             ``method`` default changed from "function_calling" to "json_schema".
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
