@@ -169,6 +169,12 @@ const config = {
             label: "Integrations",
           },
           {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "examples",
+            label: "Examples",
+          },
+          {
             label: "API Reference",
             to: "https://python.langchain.com/api_reference/",
           },
