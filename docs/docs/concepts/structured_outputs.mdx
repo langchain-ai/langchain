@@ -11,8 +11,8 @@ This need motivates the concept of structured output, where models can be instru
 
 ## Key concepts 
 
-**(1) Schema definition:** The output structure is represented as a schema, which can be defined in several ways. 
-**(2) Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
+1. **Schema definition:** The output structure is represented as a schema, which can be defined in several ways.<br/>
+2. **Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
 
 ## Recommended usage
 
@@ -109,11 +109,11 @@ ai_msg
 
 There are a few challenges when producing structured output with the above methods: 
 
-(1) When tool calling is used, tool call arguments needs to be parsed from a dictionary back to the original schema.  
+1. When tool calling is used, tool call arguments needs to be parsed from a dictionary back to the original schema.<br/>  
 
-(2) In addition, the model needs to be instructed to *always* use the tool when we want to enforce structured output, which is a provider specific setting. 
+2. In addition, the model needs to be instructed to *always* use the tool when we want to enforce structured output, which is a provider specific setting.<br/> 
 
-(3) When JSON mode is used, the output needs to be parsed into a JSON object. 
+3. When JSON mode is used, the output needs to be parsed into a JSON object. 
 
 With these challenges in mind, LangChain provides a helper function (`with_structured_output()`) to streamline the process.
 
