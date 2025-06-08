@@ -51,7 +51,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
     # Check for NaN
     if np.any(np.isnan(x)) or np.any(np.isnan(y)):
         warnings.warn(
-            "NaN found in input arrays, unexpected return might follow", 
+            "NaN found in input arrays, unexpected return might follow",
             category=RuntimeWarning,
             stacklevel=2)
 
