@@ -53,7 +53,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         warnings.warn(
             "NaN found in input arrays, unexpected return might follow",
             category=RuntimeWarning,
-            stacklevel=2
+            stacklevel=2,
         )
 
     # Check for Inf
@@ -61,7 +61,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         warnings.warn(
             "Inf found in input arrays, unexpected return might follow",
             category=RuntimeWarning,
-            stacklevel=2
+            stacklevel=2,
         )
 
     if x.shape[1] != y.shape[1]:
