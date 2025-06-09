@@ -50,13 +50,9 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["service_tier"]
-    for tool_output in response.additional_kwargs["tool_outputs"]:
-        assert tool_output["id"]
-        assert tool_output["status"]
-        assert tool_output["type"]
 
 
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.vcr
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -335,7 +331,8 @@ def test_computer_calls() -> None:
     }
     llm_with_tools = llm.bind_tools([tool], tool_choice="any")
     response = llm_with_tools.invoke("Please open the browser.")
-    assert response.additional_kwargs["tool_outputs"]
+    assert all(isinstance(block, dict) for block in response.content)
+    assert any(block["type"] == "computer_call" for block in response.content)  # type: ignore[index]
 
 
 def test_file_search() -> None:
@@ -450,25 +447,20 @@ def test_mcp_builtin() -> None:
         ),
     }
     response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
 
     approval_message = HumanMessage(
         [
             {
                 "type": "mcp_approval_response",
                 "approve": True,
-                "approval_request_id": output["id"],
+                "approval_request_id": block["id"],  # type: ignore[index]
             }
-            for output in response.additional_kwargs["tool_outputs"]
-            if output["type"] == "mcp_approval_request"
+            for block in response.content
+            if block["type"] == "mcp_approval_request"  # type: ignore[index]
         ]
     )
-    _ = llm_with_tools.invoke(
-        [approval_message], previous_response_id=response.response_metadata["id"]
-    )
-    # Zero-data retention (e.g., as below) requires change in output format.
-    # _ = llm_with_tools.invoke(
-    #     [input_message, response, approval_message]
-    # )
+    _ = llm_with_tools.invoke([input_message, response, approval_message])
 
 
 @pytest.mark.vcr()

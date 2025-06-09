@@ -3282,8 +3282,24 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                         "id": msg_id,
                                     }
                                 )
-                        elif block_type in ("reasoning", "function_call"):
+                        elif block_type in (
+                            "reasoning",
+                            "web_search_call",
+                            "file_search_call",
+                            "function_call",
+                            "computer_call",
+                            "code_interpreter_call",
+                            "image_generation_call",
+                            "mcp_call",
+                            "mcp_list_tools",
+                            "mcp_approval_request",
+                        ):
                             input_.append(_pop_index_and_sub_index(block))
+                        elif block_type == "image_generation_call":
+                            # A previous image generation call can be referenced by ID
+                            input_.append(
+                                {"type": "image_generation_call", "id": block["id"]}
+                            )
                         else:
                             pass
             elif isinstance(msg.get("content"), str):
@@ -3311,36 +3327,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "call_id": tool_call["id"],
                         }
                         input_.append(function_call)
-            # Built-in tool calls
-            computer_calls = []
-            code_interpreter_calls = []
-            mcp_calls = []
-            image_generation_calls = []
-            tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
-            for tool_output in tool_outputs:
-                if tool_output.get("type") == "computer_call":
-                    computer_calls.append(tool_output)
-                elif tool_output.get("type") == "code_interpreter_call":
-                    code_interpreter_calls.append(tool_output)
-                elif tool_output.get("type") == "mcp_call":
-                    mcp_calls.append(tool_output)
-                elif tool_output.get("type") == "image_generation_call":
-                    image_generation_calls.append(tool_output)
-                else:
-                    pass
-            input_.extend(code_interpreter_calls)
-            input_.extend(mcp_calls)
 
-            # A previous image generation call can be referenced by ID
-
-            input_.extend(
-                [
-                    {"type": "image_generation_call", "id": image_generation_call["id"]}
-                    for image_generation_call in image_generation_calls
-                ]
-            )
-
-            input_.extend(computer_calls)
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
@@ -3467,9 +3454,14 @@ def _construct_lc_result_from_responses_api(
                 invalid_tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
-            "file_search_call",
             "web_search_call",
+            "file_search_call",
             "computer_call",
+            "code_interpreter_call",
+            "mcp_call",
+            "mcp_list_tools",
+            "mcp_approval_request",
+            "image_generation_call",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -3615,9 +3607,12 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_approval_request",
         "image_generation_call",
     ):
-        additional_kwargs["tool_outputs"] = [
-            chunk.item.model_dump(exclude_none=True, mode="json")
-        ]
+        if current_output_index != chunk.output_index:
+            current_index += 1
+        current_output_index = chunk.output_index
+        tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
+        tool_output["index"] = current_output_index
+        content.append(tool_output)
     elif chunk.type == "response.function_call_arguments.delta":
         if current_output_index != chunk.output_index:
             current_index += 1
@@ -3629,7 +3624,7 @@ def _convert_responses_chunk_to_generation_chunk(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
-        additional_kwargs["refusal"] = chunk.refusal
+        content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
         if current_output_index != chunk.output_index:
             current_index += 1

@@ -1427,6 +1427,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
             "type": "text",
             "text": "Here's the information you requested:",
             "annotations": [],
+            "id": "msg_123",
         },
         {
             "type": "function_call",
@@ -1509,20 +1510,16 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    assert "tool_outputs" in result.generations[0].message.additional_kwargs
-    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
-        == "web_search_call"
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
-        == "websearch_123"
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
-        == "completed"
-    )
+    tool_output_blocks = [
+        block
+        for block in result.generations[0].message.content
+        if isinstance(block, dict) and block["type"] == "web_search_call"
+    ]
+    assert len(tool_output_blocks) == 1
+    tool_output_block = tool_output_blocks[0]
+    assert tool_output_block["type"] == "web_search_call"
+    assert tool_output_block["id"] == "websearch_123"
+    assert tool_output_block["status"] == "completed"
 
 
 def test__construct_lc_result_from_responses_api_file_search_response() -> None:
@@ -1556,43 +1553,19 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    assert "tool_outputs" in result.generations[0].message.additional_kwargs
-    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
-        == "file_search_call"
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
-        == "filesearch_123"
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
-        == "completed"
-    )
-    assert result.generations[0].message.additional_kwargs["tool_outputs"][0][
-        "queries"
-    ] == ["python code", "langchain"]
-    assert (
-        len(
-            result.generations[0].message.additional_kwargs["tool_outputs"][0][
-                "results"
-            ]
-        )
-        == 1
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
-            0
-        ]["file_id"]
-        == "file_123"
-    )
-    assert (
-        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
-            0
-        ]["score"]
-        == 0.95
-    )
+    tool_output_blocks = [
+        block
+        for block in result.generations[0].message.content
+        if isinstance(block, dict) and block["type"] == "file_search_call"
+    ]
+    assert len(tool_output_blocks) == 1
+    tool_output_block = tool_output_blocks[0]
+    assert tool_output_block["id"] == "filesearch_123"
+    assert tool_output_block["status"] == "completed"
+    assert tool_output_block["queries"] == ["python code", "langchain"]
+    assert len(tool_output_block["results"]) == 1
+    assert tool_output_block["results"][0]["file_id"] == "file_123"
+    assert tool_output_block["results"][0]["score"] == 0.95
 
 
 def test__construct_lc_result_from_responses_api_mixed_search_responses() -> None:
@@ -1642,31 +1615,28 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
 
     # Check message content
     assert result.generations[0].message.content == [
-        {"type": "text", "text": "Here's what I found:", "annotations": []}
+        {
+            "type": "text",
+            "text": "Here's what I found:",
+            "annotations": [],
+            "id": "msg_123",
+        },
+        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+        {
+            "type": "file_search_call",
+            "id": "filesearch_123",
+            "status": "completed",
+            "queries": ["python code"],
+            "results": [
+                {
+                    "file_id": "file_123",
+                    "filename": "example.py",
+                    "score": 0.95,
+                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
+                }
+            ],
+        },
     ]
-
-    # Check tool outputs
-    assert "tool_outputs" in result.generations[0].message.additional_kwargs
-    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 2
-
-    # Check web search output
-    web_search = next(
-        output
-        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
-        if output["type"] == "web_search_call"
-    )
-    assert web_search["id"] == "websearch_123"
-    assert web_search["status"] == "completed"
-
-    # Check file search output
-    file_search = next(
-        output
-        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
-        if output["type"] == "file_search_call"
-    )
-    assert file_search["id"] == "filesearch_123"
-    assert file_search["queries"] == ["python code"]
-    assert file_search["results"][0]["filename"] == "example.py"
 
 
 def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
