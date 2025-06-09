@@ -1454,7 +1454,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             PydanticToolsParser,
         )
 
-        if self.bind_tools is BaseChatModel.bind_tools:
+        if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 
