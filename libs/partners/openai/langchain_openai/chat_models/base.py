@@ -102,6 +102,11 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
+
 if TYPE_CHECKING:
     from openai.types.responses import Response
 
@@ -112,6 +117,15 @@ logger = logging.getLogger(__name__)
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
+
+WellKnownTools = (
+    "file_search",
+    "web_search_preview",
+    "computer_use_preview",
+    "code_interpreter",
+    "mcp",
+    "image_generation",
+)
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -621,7 +635,10 @@ class BaseChatOpenAI(BaseChatModel):
                 self.http_client = httpx.Client(
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
-            sync_specific = {"http_client": self.http_client}
+            sync_specific = {
+                "http_client": self.http_client
+                or _get_default_httpx_client(self.openai_api_base, self.request_timeout)
+            }
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
@@ -636,7 +653,12 @@ class BaseChatOpenAI(BaseChatModel):
                 self.http_async_client = httpx.AsyncClient(
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
-            async_specific = {"http_client": self.http_async_client}
+            async_specific = {
+                "http_client": self.http_async_client
+                or _get_default_async_httpx_client(
+                    self.openai_api_base, self.request_timeout
+                )
+            }
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,  # type: ignore[arg-type]
@@ -1474,13 +1496,7 @@ class BaseChatOpenAI(BaseChatModel):
                         "type": "function",
                         "function": {"name": tool_choice},
                     }
-                elif tool_choice in (
-                    "file_search",
-                    "web_search_preview",
-                    "computer_use_preview",
-                    "code_interpreter",
-                    "mcp",
-                ):
+                elif tool_choice in WellKnownTools:
                     tool_choice = {"type": tool_choice}
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
@@ -1615,7 +1631,7 @@ class BaseChatOpenAI(BaseChatModel):
                             "parsed": None,
                         }
 
-            kwargs: Additional keyword args aren't supported.
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1639,9 +1655,10 @@ class BaseChatOpenAI(BaseChatModel):
 
         .. versionchanged:: 0.3.12
             Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
         """  # noqa: E501
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
         if strict is not None and method == "json_mode":
             raise ValueError(
                 "Argument `strict` is not supported with `method`='json_mode'"
@@ -1684,13 +1701,18 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
-                ls_structured_output_format={
-                    "kwargs": {"method": method, "strict": strict},
-                    "schema": schema,
-                },
+                **{
+                    **dict(
+                        tool_choice=tool_name,
+                        parallel_tool_calls=False,
+                        strict=strict,
+                        ls_structured_output_format={
+                            "kwargs": {"method": method, "strict": strict},
+                            "schema": schema,
+                        },
+                    ),
+                    **kwargs,
+                }
             )
 
             llm = self.bind_tools([schema], **bind_kwargs)
@@ -1705,11 +1727,16 @@ class BaseChatOpenAI(BaseChatModel):
                 )
         elif method == "json_mode":
             llm = self.bind(
-                response_format={"type": "json_object"},
-                ls_structured_output_format={
-                    "kwargs": {"method": method},
-                    "schema": schema,
-                },
+                **{
+                    **dict(
+                        response_format={"type": "json_object"},
+                        ls_structured_output_format={
+                            "kwargs": {"method": method},
+                            "schema": schema,
+                        },
+                    ),
+                    **kwargs,
+                }
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
@@ -1723,13 +1750,16 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            bind_kwargs = dict(
-                response_format=response_format,
-                ls_structured_output_format={
-                    "kwargs": {"method": method, "strict": strict},
-                    "schema": convert_to_openai_tool(schema),
-                },
-            )
+            bind_kwargs = {
+                **dict(
+                    response_format=response_format,
+                    ls_structured_output_format={
+                        "kwargs": {"method": method, "strict": strict},
+                        "schema": convert_to_openai_tool(schema),
+                    },
+                    **kwargs,
+                )
+            }
             if tools:
                 bind_kwargs["tools"] = [
                     convert_to_openai_tool(t, strict=strict) for t in tools
@@ -2536,8 +2566,52 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 Note: ``strict`` can only be non-null if ``method`` is
                 ``"json_schema"`` or ``"function_calling"``.
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that:
 
-            kwargs: Additional keyword args aren't supported.
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": None,
+                            "parsed": None,
+                        }
+
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -2562,6 +2636,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. versionchanged:: 0.3.0
 
             ``method`` default changed from "function_calling" to "json_schema".
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
@@ -3037,6 +3117,13 @@ def _construct_responses_api_payload(
                 new_tools.append({"type": "function", **tool["function"]})
             else:
                 new_tools.append(tool)
+
+            if tool["type"] == "image_generation" and "partial_images" in tool:
+                raise NotImplementedError(
+                    "Partial image generation is not yet supported "
+                    "via the LangChain ChatOpenAI client. Please "
+                    "drop the 'partial_images' key from the image_generation tool."
+                )
         payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
@@ -3126,6 +3213,7 @@ def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
 
 
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
+    """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
@@ -3178,6 +3266,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             computer_calls = []
             code_interpreter_calls = []
             mcp_calls = []
+            image_generation_calls = []
             tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
             for tool_output in tool_outputs:
                 if tool_output.get("type") == "computer_call":
@@ -3186,10 +3275,22 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     code_interpreter_calls.append(tool_output)
                 elif tool_output.get("type") == "mcp_call":
                     mcp_calls.append(tool_output)
+                elif tool_output.get("type") == "image_generation_call":
+                    image_generation_calls.append(tool_output)
                 else:
                     pass
             input_.extend(code_interpreter_calls)
             input_.extend(mcp_calls)
+
+            # A previous image generation call can be referenced by ID
+
+            input_.extend(
+                [
+                    {"type": "image_generation_call", "id": image_generation_call["id"]}
+                    for image_generation_call in image_generation_calls
+                ]
+            )
+
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
@@ -3476,6 +3577,7 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_call",
         "mcp_list_tools",
         "mcp_approval_request",
+        "image_generation_call",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
@@ -3503,6 +3605,9 @@ def _convert_responses_chunk_to_generation_chunk(
                 {"index": chunk.summary_index, "type": "summary_text", "text": ""}
             ]
         }
+    elif chunk.type == "response.image_generation_call.partial_image":
+        # Partial images are not supported yet.
+        pass
     elif chunk.type == "response.reasoning_summary_text.delta":
         additional_kwargs["reasoning"] = {
             "summary": [

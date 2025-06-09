@@ -506,6 +506,20 @@ def convert_to_openai_function(
     return oai_function
 
 
+# List of well known tools supported by OpenAI's chat models or responses API.
+# These tools are not expected to be supported by other chat model providers
+# that conform to the OpenAI function-calling API.
+_WellKnownOpenAITools = (
+    "function",
+    "file_search",
+    "computer_use_preview",
+    "code_interpreter",
+    "mcp",
+    "image_generation",
+    "web_search_preview",
+)
+
+
 def convert_to_openai_tool(
     tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
     *,
@@ -558,15 +572,13 @@ def convert_to_openai_tool(
     .. versionchanged:: 0.3.61
 
         Added support for OpenAI's built-in code interpreter and remote MCP tools.
+
+    .. versionchanged:: 0.3.63
+
+        Added support for OpenAI's image generation built-in tool.
     """
     if isinstance(tool, dict):
-        if tool.get("type") in (
-            "function",
-            "file_search",
-            "computer_use_preview",
-            "code_interpreter",
-            "mcp",
-        ):
+        if tool.get("type") in _WellKnownOpenAITools:
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):

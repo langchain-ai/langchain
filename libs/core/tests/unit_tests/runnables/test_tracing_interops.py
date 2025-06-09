@@ -130,7 +130,7 @@ def test_config_traceable_handoff() -> None:
     parent_run_id = None
     for name in ordered_names:
         id_ = name_to_body[name]["id"]
-        parent_run_id_ = name_to_body[name]["parent_run_id"]
+        parent_run_id_ = name_to_body[name].get("parent_run_id")
         if parent_run_id_ is not None:
             assert parent_run_id == parent_run_id_
         assert name in name_to_body
@@ -199,7 +199,7 @@ async def test_config_traceable_async_handoff() -> None:
     parent_run_id = None
     for name in ordered_names:
         id_ = name_to_body[name]["id"]
-        parent_run_id_ = name_to_body[name]["parent_run_id"]
+        parent_run_id_ = name_to_body[name].get("parent_run_id")
         if parent_run_id_ is not None:
             assert parent_run_id == parent_run_id_
         assert name in name_to_body
