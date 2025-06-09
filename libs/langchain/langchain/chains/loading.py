@@ -380,7 +380,9 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         "SQLDatabaseChain is not available through LangChain anymore. "
         "The relevant code can be found in langchain_experimental, "
         "but it is not appropriate for production usage due to security "
-        "concerns. Please refer to langchain-experimental repository for more details."
+        "concerns. Please refer to langchain-experimental repository for more details, "
+        "or refer to this tutorial for best practices: "
+        "https://python.langchain.com/docs/tutorials/sql_qa/"
     )
 
 
