@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
@@ -114,12 +114,26 @@ def test__is_field_useful() -> None:
         )
 
     foo = Foo(x=ArrayObj(), y=NonBoolObj(), z=ArrayObj())
-    assert _is_field_useful(foo, "x", foo.x)
-    assert _is_field_useful(foo, "y", foo.y)
+    assert _is_field_useful(Foo, "x", foo.x)
+    assert _is_field_useful(Foo, "y", foo.y)
 
     foo = Foo(x=default_x, y=default_y, z=ArrayObj())
-    assert not _is_field_useful(foo, "x", foo.x)
-    assert not _is_field_useful(foo, "y", foo.y)
+    assert not _is_field_useful(Foo, "x", foo.x)
+    assert not _is_field_useful(Foo, "y", foo.y)
+
+    class Bar(Serializable):
+        x: int
+        y: int
+
+        @computed_field
+        @property
+        def z(self) -> int:
+            return self.x + self.y
+
+    bar = Bar(x=1, y=2)
+    assert _is_field_useful(Bar, "x", bar.x)
+    assert _is_field_useful(Bar, "y", bar.y)
+    assert _is_field_useful(Bar, "z", bar.z)
 
 
 class Foo(Serializable):
