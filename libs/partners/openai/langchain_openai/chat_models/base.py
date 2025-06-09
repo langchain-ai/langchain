@@ -3116,14 +3116,24 @@ def _construct_responses_api_payload(
             if tool["type"] == "function" and "function" in tool:
                 new_tools.append({"type": "function", **tool["function"]})
             else:
+                if tool["type"] == "image_generation":
+                    # Handle partial images (not yet supported)
+                    if "partial_images" in tool:
+                        raise NotImplementedError(
+                            "Partial image generation is not yet supported "
+                            "via the LangChain ChatOpenAI client. Please "
+                            "drop the 'partial_images' key from the image_generation "
+                            "tool."
+                        )
+                    elif payload.get("stream") and "partial_images" not in tool:
+                        # OpenAI requires this parameter be set; we ignore it during
+                        # streaming.
+                        tool["partial_images"] = 1
+                    else:
+                        pass
+
                 new_tools.append(tool)
 
-            if tool["type"] == "image_generation" and "partial_images" in tool:
-                raise NotImplementedError(
-                    "Partial image generation is not yet supported "
-                    "via the LangChain ChatOpenAI client. Please "
-                    "drop the 'partial_images' key from the image_generation tool."
-                )
         payload["tools"] = new_tools
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
