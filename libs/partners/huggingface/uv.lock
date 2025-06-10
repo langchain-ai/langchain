@@ -924,7 +924,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.63"
+version = "0.3.65"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -939,7 +939,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33,<2.0" },
-    { name = "langsmith", specifier = ">=0.1.126,<0.4" },
+    { name = "langsmith", specifier = ">=0.3.45,<0.4" },
     { name = "packaging", specifier = ">=23.2,<25" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "pyyaml", specifier = ">=5.3" },
@@ -987,8 +987,12 @@ source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
     { name = "langchain-core" },
-    { name = "sentence-transformers" },
     { name = "tokenizers" },
+]
+
+[package.optional-dependencies]
+full = [
+    { name = "sentence-transformers" },
     { name = "transformers" },
 ]
 
@@ -1013,6 +1017,8 @@ test = [
     { name = "pytest-watcher" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.15.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "sentence-transformers" },
+    { name = "transformers" },
 ]
 typing = [
     { name = "langchain-core" },
@@ -1023,9 +1029,9 @@ typing = [
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.30.2" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "sentence-transformers", specifier = ">=2.6.0" },
+    { name = "sentence-transformers", marker = "extra == 'full'", specifier = ">=2.6.0" },
     { name = "tokenizers", specifier = ">=0.19.1" },
-    { name = "transformers", specifier = ">=4.39.0" },
+    { name = "transformers", marker = "extra == 'full'", specifier = ">=4.39.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1045,6 +1051,8 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "scipy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "scipy", marker = "python_full_version >= '3.12'", specifier = ">=1.7.0,<2.0.0" },
+    { name = "sentence-transformers", specifier = ">=2.6.0" },
+    { name = "transformers", specifier = ">=4.39.0" },
 ]
 test-integration = []
 typing = [
@@ -1111,7 +1119,7 @@ wheels = [
 
 [[package]]
 name = "langsmith"
-version = "0.3.37"
+version = "0.3.45"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1122,9 +1130,9 @@ dependencies = [
     { name = "requests-toolbelt" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/d0/98daffe57c57c2f44c5d363df5004d8e530b8c9b15751f451d273fd1d4c8/langsmith-0.3.37.tar.gz", hash = "sha256:d49d9a12d24d3984d5b3e2b5915b525b4a29a4706ea9cadde43c980fba43fab0", size = 344645 }
+sdist = { url = "https://files.pythonhosted.org/packages/be/86/b941012013260f95af2e90a3d9415af4a76a003a28412033fc4b09f35731/langsmith-0.3.45.tar.gz", hash = "sha256:1df3c6820c73ed210b2c7bc5cdb7bfa19ddc9126cd03fdf0da54e2e171e6094d", size = 348201 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/f2/5700dbeec7dca0aa57a6ed2f472fa3a323b46c85ab2bc446b2c7c8fb599e/langsmith-0.3.37-py3-none-any.whl", hash = "sha256:bdecca4eb48ba1799e821a33dbdca318ab202faa71a5bfa7d2358be6c3fd7eeb", size = 359308 },
+    { url = "https://files.pythonhosted.org/packages/6a/f4/c206c0888f8a506404cb4f16ad89593bdc2f70cf00de26a1a0a7a76ad7a3/langsmith-0.3.45-py3-none-any.whl", hash = "sha256:5b55f0518601fa65f3bb6b1a3100379a96aa7b3ed5e9380581615ba9c65ed8ed", size = 363002 },
 ]
 
 [[package]]
