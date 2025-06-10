@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_core.load import Serializable, dumpd, load, dumps
+from langchain_core.load import Serializable, dumpd, dumps, load
 from langchain_core.load.serializable import _is_field_useful
 from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration
+from langchain_core.outputs import ChatGeneration, Generation
 
 
 class NonBoolObj:
@@ -224,9 +224,7 @@ def test_serialization_with_pydantic() -> None:
     assert deser.message.content
     assert deser.message.additional_kwargs["parsed"] == my_model.model_dump()
 
-from langchain_core.load.dump import dumps
-from langchain_core.outputs import Generation
 
 def test_serialization_with_generation() -> None:
     generation = Generation(text="hello-world")
-    assert dumps(generation)['kwargs'] == {'text': 'hello-world', 'type': 'Generation'}
+    assert dumps(generation)["kwargs"] == {"text": "hello-world", "type": "Generation"}
