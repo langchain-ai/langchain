@@ -1017,6 +1017,8 @@ test = [
     { name = "pytest-watcher" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.15.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "sentence-transformers" },
+    { name = "transformers" },
 ]
 typing = [
     { name = "langchain-core" },
@@ -1049,6 +1051,8 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "scipy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "scipy", marker = "python_full_version >= '3.12'", specifier = ">=1.7.0,<2.0.0" },
+    { name = "sentence-transformers", specifier = ">=2.6.0" },
+    { name = "transformers", specifier = ">=4.39.0" },
 ]
 test-integration = []
 typing = [
