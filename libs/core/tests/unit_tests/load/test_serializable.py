@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_core.load import Serializable, dumpd, dumps, load
+from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -227,4 +227,4 @@ def test_serialization_with_pydantic() -> None:
 
 def test_serialization_with_generation() -> None:
     generation = Generation(text="hello-world")
-    assert dumps(generation)["kwargs"] == {"text": "hello-world", "type": "Generation"}
+    assert dumpd(generation)["kwargs"] == {"text": "hello-world", "type": "Generation"}
