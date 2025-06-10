@@ -1259,8 +1259,12 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            model = "cl100k_base"
-            encoding = tiktoken.get_encoding(model)
+            encoder = "cl100k_base"
+            if self.model_name.startswith("gpt-4o") or self.model_name.startswith(
+                "gpt-4.1"
+            ):
+                encoder = "o200k_base"
+            encoding = tiktoken.get_encoding(encoder)
         return model, encoding
 
     def get_token_ids(self, text: str) -> list[int]:
