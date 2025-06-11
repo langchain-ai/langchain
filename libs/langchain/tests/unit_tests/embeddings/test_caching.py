@@ -200,7 +200,7 @@ def test_sha512_encoder() -> None:
     assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
 
 
-def test_sha1_warning_emitted_once(monkeypatch) -> None:
+def test_sha1_warning_emitted_once() -> None:
     """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
     module = importlib.import_module(CacheBackedEmbeddings.__module__)
 

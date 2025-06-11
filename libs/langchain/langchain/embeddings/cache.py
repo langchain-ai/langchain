@@ -40,9 +40,7 @@ def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
     return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
 
-def _make_default_key_encoder(
-    namespace: str, algorithm: Literal["sha1", "blake2b", "sha256", "sha512"]
-) -> Callable[[str], str]:
+def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str], str]:
     """Create a default key encoder function.
 
     Args:
@@ -322,9 +320,9 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             An instance of CacheBackedEmbeddings that uses the provided cache.
         """
-        if key_encoder in {"blake2b", "sha1", "sha256", "sha512"}:
+        if isinstance(key_encoder, str):
             key_encoder = _make_default_key_encoder(namespace, key_encoder)
-        elif isinstance(key_encoder, Callable):
+        elif callable(key_encoder):
             # If a custom key encoder is provided, it should not be used with a
             # namespace.
             # A user can handle namespacing in directly their custom key encoder.
