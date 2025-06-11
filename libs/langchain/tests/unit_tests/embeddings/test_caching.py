@@ -170,20 +170,25 @@ def test_blake2b_encoder() -> None:
 
 def test_sha1_warning_emitted_once(monkeypatch) -> None:
     """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
-    mod = importlib.import_module(CacheBackedEmbeddings.__module__)
-    monkeypatch.setattr(mod, "_warned_about_sha1", False, raising=False)
+    module = importlib.import_module(CacheBackedEmbeddings.__module__)
 
-    store = InMemoryStore()
-    emb = MockEmbeddings()
+    # Create a *temporary* MonkeyPatch object whose effects disappear
+    # automatically when the with‑block exits.
+    with pytest.MonkeyPatch.context() as mp:
+        # We're monkey patching the module to reset the `_warned_about_sha1` flag
+        # which may have been set while testing other parts of the codebase.
+        mp.setattr(module, "_warned_about_sha1", False, raising=False)
 
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        CacheBackedEmbeddings.from_bytes_store(emb, store)  # default SHA‑1
-        CacheBackedEmbeddings.from_bytes_store(emb, store)  # again
-    # exactly one warning and it mentions SHA‑1
-    sha1_warnings = [msg for msg in w if "SHA‑1" in str(msg.message)]
+        store = InMemoryStore()
+        emb = MockEmbeddings()
 
-    assert len(sha1_warnings) == 1
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            CacheBackedEmbeddings.from_bytes_store(emb, store)  # triggers warning
+            CacheBackedEmbeddings.from_bytes_store(emb, store)  # silent
+
+        sha1_msgs = [w for w in caught if "SHA‑1" in str(w.message)]
+        assert len(sha1_msgs) == 1
 
 
 def test_custom_encoder() -> None:
