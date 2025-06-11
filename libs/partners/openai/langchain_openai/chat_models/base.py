@@ -107,6 +107,11 @@ from langchain_openai.chat_models._client_utils import (
     _get_default_httpx_client,
 )
 
+# from langchain_openai.chat_models._compat import (
+#     _convert_from_v03_ai_message,
+#     _convert_to_v03_ai_message,
+# )
+
 if TYPE_CHECKING:
     from openai.types.responses import Response
 
@@ -3241,6 +3246,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
+        # if isinstance(lc_msg, AIMessage):
+        #     lc_msg = _convert_from_v03_ai_message(lc_msg)
         msg = _convert_message_to_dict(lc_msg)
         # "name" parameter unsupported
         if "name" in msg:
@@ -3521,6 +3528,7 @@ def _construct_lc_result_from_responses_api(
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
     )
+    # message = _convert_to_v03_ai_message(message)
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -3681,18 +3689,18 @@ def _convert_responses_chunk_to_generation_chunk(
     else:
         return current_index, current_output_index, current_sub_index, None
 
+    message = AIMessageChunk(
+        content=content,  # type: ignore[arg-type]
+        tool_call_chunks=tool_call_chunks,
+        usage_metadata=usage_metadata,
+        response_metadata=response_metadata,
+        additional_kwargs=additional_kwargs,
+        id=id,
+    )
+    # message = _convert_to_v03_ai_message(message)
     return (
         current_index,
         current_output_index,
         current_sub_index,
-        ChatGenerationChunk(
-            message=AIMessageChunk(
-                content=content,  # type: ignore[arg-type]
-                tool_call_chunks=tool_call_chunks,
-                usage_metadata=usage_metadata,
-                response_metadata=response_metadata,
-                additional_kwargs=additional_kwargs,
-                id=id,
-            )
-        ),
+        ChatGenerationChunk(message=message),
     )

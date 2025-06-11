@@ -45,6 +45,10 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models._compat import (
+    _convert_from_v03_ai_message,
+    _convert_to_v03_ai_message,
+)
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
@@ -2045,3 +2049,63 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
+
+
+def test_compat() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
+        ],
+        additional_kwargs={
+            "reasoning": {
+                "type": "reasoning",
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+            },
+            "tool_outputs": [
+                {
+                    "type": "web_search_call",
+                    "id": "websearch_123",
+                    "status": "completed",
+                }
+            ],
+            "refusal": "I cannot assist with that.",
+        },
+        response_metadata={"id": "resp_123"},
+        id="msg_123",
+    )
+
+    message_v04 = _convert_from_v03_ai_message(message)
+    expected = AIMessage(
+        content=[
+            {
+                "type": "reasoning",
+                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+                "id": "rs_123",
+            },
+            {
+                "type": "text",
+                "text": "Hello, world!",
+                "annotations": [{"type": "foo"}],
+                "id": "msg_123",
+            },
+            {"type": "refusal", "refusal": "I cannot assist with that."},
+            {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+        ],
+        response_metadata={"id": "resp_123"},
+        id="resp_123",
+    )
+    assert message_v04 == expected
+
+    # Check no mutation
+    assert message_v04 != message
+    assert len(message.content) == 1
+    assert all(
+        item in message.additional_kwargs
+        for item in ["reasoning", "tool_outputs", "refusal"]
+    )
+
+    # Convert back
+    message_v03 = _convert_to_v03_ai_message(message_v04)
+    assert message_v03 == message
+    assert message_v03 is not message
