@@ -1,5 +1,8 @@
 """Embeddings tests."""
 
+import hashlib
+import warnings
+
 import pytest
 from langchain_core.embeddings import Embeddings
 
@@ -146,3 +149,49 @@ async def test_aembed_query_cached(
     keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())  # type: ignore[union-attr]
     assert len(keys) == 1
     assert keys[0] == "test_namespace89ec3dae-a4d9-5636-a62e-ff3b56cdfa15"
+
+
+def test_blake2b_encoder() -> None:
+    """Test that the blake2b encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="blake2b"
+    )
+
+    text = "blake"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.blake2b(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
+def test_sha1_warning_emitted_once() -> None:
+    """Test that a warning is emitted when using SHA‑1 as the default key encoder,"""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        CacheBackedEmbeddings.from_bytes_store(emb, store)  # default SHA‑1
+        CacheBackedEmbeddings.from_bytes_store(emb, store)  # again
+    # exactly one warning and it mentions SHA‑1
+    sha1_warnings = [msg for msg in w if "SHA‑1" in str(msg.message)]
+
+    assert len(sha1_warnings) == 1
+
+
+def test_custom_encoder() -> None:
+    """Test that a custom encoder can be used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+
+    def custom_upper(text: str) -> str:  # very simple demo encoder
+        return "CUSTOM_" + text.upper()
+
+    cbe = CacheBackedEmbeddings.from_bytes_store(emb, store, key_encoder=custom_upper)
+    txt = "x"
+    cbe.embed_documents([txt])
+
+    assert list(cbe.document_embedding_store.yield_keys()) == ["CUSTOM_X"]
