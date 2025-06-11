@@ -35,18 +35,13 @@ def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
     but new applications should swap this out for a stronger hash function like
     xxHash, BLAKE2 or SHA‑256, which are collision-resistant.
     """
-    sha1_hex = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
+    sha1_hex = hashlib.sha1(text.encode("utf-8")).hexdigest()
     # Embed the hex string in `uuid5` to obtain a valid UUID.
     return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
 
-def _blake2b_hash(text: str) -> str:
-    """Return a hash derived from *text* using BLAKE2b (deterministic)."""
-    return hashlib.blake2b(text.encode("utf-8"), usedforsecurity=False).hexdigest()
-
-
 def _make_default_key_encoder(
-    namespace: str, algorithm: Literal["sha1", "blake2b"]
+    namespace: str, algorithm: Literal["sha1", "blake2b", "sha256", "sha512"]
 ) -> Callable[[str], str]:
     """Create a default key encoder function.
 
@@ -54,7 +49,9 @@ def _make_default_key_encoder(
        namespace: Prefix that segregates keys from different embedding models.
        algorithm:
            * `sha1` - fast but not collision‑resistant
-           * `blake2b` - cryptographically strong, still fast
+           * `blake2b` - cryptographically strong, faster than SHA‑1
+           * `sha256` - cryptographically strong, slower than SHA‑1
+           * `sha512` - cryptographically strong, slower than SHA‑1
 
     Returns:
         A function that encodes a key using the specified algorithm.
@@ -67,7 +64,11 @@ def _make_default_key_encoder(
         if algorithm == "sha1":
             return f"{namespace}{_sha1_hash_to_uuid(key)}"
         if algorithm == "blake2b":
-            return f"{namespace}{_blake2b_hash(key)}"
+            return f"{namespace}{hashlib.blake2b(key.encode('utf-8')).hexdigest()}"
+        if algorithm == "sha256":
+            return f"{namespace}{hashlib.sha256(key.encode('utf-8')).hexdigest()}"
+        if algorithm == "sha512":
+            return f"{namespace}{hashlib.sha512(key.encode('utf-8')).hexdigest()}"
         raise ValueError(f"Unsupported algorithm: {algorithm}")
 
     return _key_encoder
@@ -288,7 +289,9 @@ class CacheBackedEmbeddings(Embeddings):
         namespace: str = "",
         batch_size: Optional[int] = None,
         query_embedding_cache: Union[bool, ByteStore] = False,
-        key_encoder: Union[Callable[[str], str], Literal["blake2b", "sha1"]] = "sha1",
+        key_encoder: Union[
+            Callable[[str], str], Literal["sha1", "blake2b", "sha256", "sha512"]
+        ] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
@@ -315,17 +318,13 @@ class CacheBackedEmbeddings(Embeddings):
                 just creating a new cache, to avoid (the potential for)
                 collisions with existing keys or having duplicate keys
                 for the same text in the cache.
+
         Returns:
             An instance of CacheBackedEmbeddings that uses the provided cache.
         """
-        if isinstance(key_encoder, str):
-            if key_encoder not in {"blake2b", "sha1"}:
-                raise ValueError(
-                    "key_encoder must be either 'blake2b' or 'sha1' "
-                    "or a callable that encodes keys."
-                )
+        if key_encoder in {"blake2b", "sha1", "sha256", "sha512"}:
             key_encoder = _make_default_key_encoder(namespace, key_encoder)
-        else:
+        elif isinstance(key_encoder, Callable):
             # If a custom key encoder is provided, it should not be used with a
             # namespace.
             # A user can handle namespacing in directly their custom key encoder.
@@ -334,6 +333,11 @@ class CacheBackedEmbeddings(Embeddings):
                     "Do not supply `namespace` when using a custom key_encoder; "
                     "add any prefixing inside the encoder itself."
                 )
+        else:
+            raise ValueError(
+                "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
+                "or a callable that encodes keys."
+            )
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

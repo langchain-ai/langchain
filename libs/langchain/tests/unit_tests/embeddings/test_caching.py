@@ -168,6 +168,38 @@ def test_blake2b_encoder() -> None:
     assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
 
 
+def test_sha256_encoder() -> None:
+    """Test that the sha256 encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="sha256"
+    )
+
+    text = "foo"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.sha256(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
+def test_sha512_encoder() -> None:
+    """Test that the sha512 encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="sha512"
+    )
+
+    text = "foo"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.sha512(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
 def test_sha1_warning_emitted_once(monkeypatch) -> None:
     """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
     module = importlib.import_module(CacheBackedEmbeddings.__module__)
