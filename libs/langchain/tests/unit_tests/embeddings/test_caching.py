@@ -168,7 +168,7 @@ def test_blake2b_encoder() -> None:
 
 
 def test_sha1_warning_emitted_once() -> None:
-    """Test that a warning is emitted when using SHA‑1 as the default key encoder,"""
+    """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
     store = InMemoryStore()
     emb = MockEmbeddings()
 
