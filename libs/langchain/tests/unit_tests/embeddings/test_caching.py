@@ -1,6 +1,7 @@
 """Embeddings tests."""
 
 import hashlib
+import importlib
 import warnings
 
 import pytest
@@ -167,8 +168,11 @@ def test_blake2b_encoder() -> None:
     assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
 
 
-def test_sha1_warning_emitted_once() -> None:
+def test_sha1_warning_emitted_once(monkeypatch) -> None:
     """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
+    mod = importlib.import_module(CacheBackedEmbeddings.__module__)
+    monkeypatch.setattr(mod, "_warned_about_sha1", False, raising=False)
+
     store = InMemoryStore()
     emb = MockEmbeddings()
 
