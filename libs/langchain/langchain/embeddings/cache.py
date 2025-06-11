@@ -311,8 +311,8 @@ class CacheBackedEmbeddings(Embeddings):
                 collision-resistant, and a motivated attacker could craft two
                 different texts that hash to the same cache key.
 
-                New applications should use 'blake2b' or provide a custom
-                and strong key encoder function to avoid this risk.
+                New applications should use one of the alternative encoders
+                or provide a custom and strong key encoder function to avoid this risk.
 
                 If you change a key encoder in an existing cache, consider
                 just creating a new cache, to avoid (the potential for)
