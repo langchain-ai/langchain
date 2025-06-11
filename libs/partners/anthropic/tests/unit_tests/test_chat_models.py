@@ -1056,3 +1056,125 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"
+
+
+def test_chat_anthropic_include_response_headers_initialization() -> None:
+    """Test ChatAnthropic include_response_headers initialization."""
+    # Default should be False
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+    assert llm.include_response_headers is False
+
+    # Explicit setting should work
+    llm_with_headers = ChatAnthropic(
+        model="claude-3-sonnet-20240229", include_response_headers=True
+    )
+    assert llm_with_headers.include_response_headers is True
+
+
+def test_chat_anthropic_invoke_without_response_headers() -> None:
+    """Test that headers are not included when include_response_headers=False."""
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+
+    mock_response = Message(
+        id="msg_123",
+        content=[TextBlock(type="text", text="Hello")],
+        model="claude-3-sonnet-20240229",
+        role="assistant",
+        stop_reason="end_turn",
+        stop_sequence=None,
+        type="message",
+        usage=Usage(input_tokens=10, output_tokens=5),
+    )
+
+    with patch.object(llm, "_client") as mock_client:
+        mock_client.messages.create.return_value = mock_response
+
+        result = llm.invoke("Hello")
+
+        # headers should not be in response_metadata if include_response_headers not set
+        assert "headers" not in result.response_metadata
+
+        # Verify client was called without raw_response
+        assert mock_client.messages.create.called
+        assert not mock_client.messages.with_raw_response.create.called
+
+
+def test_chat_anthropic_invoke_with_response_headers() -> None:
+    """Test that headers are included when include_response_headers=True."""
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229", include_response_headers=True)
+
+    mock_response = Message(
+        id="msg_123",
+        content=[TextBlock(type="text", text="Hello")],
+        model="claude-3-sonnet-20240229",
+        role="assistant",
+        stop_reason="end_turn",
+        stop_sequence=None,
+        type="message",
+        usage=Usage(input_tokens=10, output_tokens=5),
+    )
+
+    # Mock raw response with headers
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = mock_response
+    mock_raw_response.headers = {
+        "content-type": "application/json",
+        "request-id": "req_123",
+    }
+
+    with patch.object(llm, "_client") as mock_client:
+        mock_client.messages.with_raw_response.create.return_value = mock_raw_response
+
+        result = llm.invoke("Hello")
+
+        # headers should be in response_metadata if include_response_headers is True
+        assert "headers" in result.response_metadata
+        headers = result.response_metadata["headers"]
+        assert headers["content-type"] == "application/json"
+        assert headers["request-id"] == "req_123"
+
+        # Verify client was called with raw_response
+        assert mock_client.messages.with_raw_response.create.called
+
+
+async def test_chat_anthropic_ainvoke_with_response_headers() -> None:
+    """Test headers included in async invoke when include_response_headers=True."""
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229", include_response_headers=True)
+
+    mock_response = Message(
+        id="msg_123",
+        content=[TextBlock(type="text", text="Hello")],
+        model="claude-3-sonnet-20240229",
+        role="assistant",
+        stop_reason="end_turn",
+        stop_sequence=None,
+        type="message",
+        usage=Usage(input_tokens=10, output_tokens=5),
+    )
+
+    # Mock raw response with headers
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = mock_response
+    mock_raw_response.headers = {
+        "content-type": "application/json",
+        "request-id": "req_456",
+    }
+
+    with patch.object(llm, "_async_client") as mock_client:
+        # Create an async mock for the return value
+        from unittest.mock import AsyncMock
+
+        mock_client.messages.with_raw_response.create = AsyncMock(
+            return_value=mock_raw_response
+        )
+
+        result = await llm.ainvoke("Hello")
+
+        # headers should be in response_metadata if include_response_headers is True
+        assert "headers" in result.response_metadata
+        headers = result.response_metadata["headers"]
+        assert headers["content-type"] == "application/json"
+        assert headers["request-id"] == "req_456"
+
+        # Verify async client was called with raw_response
+        assert mock_client.messages.with_raw_response.create.called
