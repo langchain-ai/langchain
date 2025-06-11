@@ -1453,8 +1453,11 @@ class ChatAnthropic(BaseChatModel):
         }
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
-        response_metadata = llm_output.copy()
+        
+        # Only include response_metadata when headers are present
+        response_metadata = {}
         if headers:
+            response_metadata = llm_output.copy()
             response_metadata["headers"] = headers
 
         if (
@@ -1462,18 +1465,20 @@ class ChatAnthropic(BaseChatModel):
             and content[0]["type"] == "text"
             and not content[0].get("citations")
         ):
-            msg = AIMessage(
-                content=content[0]["text"], response_metadata=response_metadata
-            )
+            msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
             msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
-                response_metadata=response_metadata,
             )
         else:
-            msg = AIMessage(content=content, response_metadata=response_metadata)
+            msg = AIMessage(content=content)
+        
+        # Set response metadata if headers are present
+        if response_metadata:
+            msg.response_metadata = response_metadata
+            
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
