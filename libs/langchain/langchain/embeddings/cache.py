@@ -12,9 +12,9 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+import warnings
 from collections.abc import Sequence
-from functools import partial
-from typing import Callable, Optional, Union, cast
+from typing import Callable, Literal, Optional, Union, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
@@ -25,20 +25,43 @@ from langchain.storage.encoder_backed import EncoderBackedStore
 NAMESPACE_UUID = uuid.UUID(int=1985)
 
 
-def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
-    """Hash a string and returns the corresponding UUID."""
-    hash_value = hashlib.sha1(input_string.encode("utf-8")).hexdigest()
-    return uuid.uuid5(NAMESPACE_UUID, hash_value)
+def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
+    """Return a UUID derived from *text* using SHA‑1 (deterministic).
+
+    Deterministic and fast, **but not collision‑resistant**.
+
+    A malicious attacker could try to create two different texts that hash to the same
+    UUID. This may not necessarily be an issue in the context of caching embeddings,
+    but new applications should swap this out for a stronger hash function like
+    xxHash, BLAKE2 or SHA‑256, which are collision-resistant.
+    """
+    sha1_hex = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
+    # Embed the hex string in `uuid5` to obtain a valid UUID.
+    return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
 
-def _key_encoder(key: str, namespace: str) -> str:
-    """Encode a key."""
-    return namespace + str(_hash_string_to_uuid(key))
+def _blake2b_hash_to_uuid(text: str) -> str:
+    """Return a UUID derived from *text* using BLAKE2b (deterministic)."""
+    return hashlib.blake2b(text.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
-def _create_key_encoder(namespace: str) -> Callable[[str], str]:
-    """Create an encoder for a key."""
-    return partial(_key_encoder, namespace=namespace)
+def _make_default_key_encoder(
+    namespace: str, algorithm: Literal["sha1", "blake2b"]
+) -> Callable[[str], str]:
+    """Create a default key encoder function."""
+    if algorithm == "sha1":
+        _warn_about_sha1_encoder()
+
+    def _key_encoder(key: str) -> str:
+        """Encode a key using the specified algorithm."""
+        if algorithm == "sha1":
+            return namespace + str(_sha1_hash_to_uuid(key))
+        elif algorithm == "blake2b":
+            return namespace + _blake2b_hash_to_uuid(key)
+        else:
+            raise ValueError(f"Unsupported algorithm: {algorithm}")
+
+    return _key_encoder
 
 
 def _value_serializer(value: Sequence[float]) -> bytes:
@@ -49,6 +72,28 @@ def _value_serializer(value: Sequence[float]) -> bytes:
 def _value_deserializer(serialized_value: bytes) -> list[float]:
     """Deserialize a value."""
     return cast(list[float], json.loads(serialized_value.decode()))
+
+
+# The warning is global; track emission, so it appears only once.
+_warned_about_sha1: bool = False
+
+
+def _warn_about_sha1_encoder() -> None:
+    """Emit a one‑time warning about SHA‑1 collision weaknesses."""
+    global _warned_about_sha1
+    if not _warned_about_sha1:
+        warnings.warn(
+            "Using default key encoder: SHA‑1 is *not* collision‑resistant. "
+            "While acceptable for most cache scenarios, a motivated attacker "
+            "can craft two different payloads that map to the same cache key. "
+            "If that risk matters in your environment, supply a stronger "
+            "encoder (e.g. SHA‑256 or BLAKE2) via the `key_encoder` argument. "
+            "If you change the key encoder, consider also creating a new cache, "
+            "to avoid (the potential for) collisions with existing keys.",
+            category=UserWarning,
+            stacklevel=2,
+        )
+        _warned_about_sha1 = True
 
 
 class CacheBackedEmbeddings(Embeddings):
@@ -234,6 +279,7 @@ class CacheBackedEmbeddings(Embeddings):
         namespace: str = "",
         batch_size: Optional[int] = None,
         query_embedding_cache: Union[bool, ByteStore] = False,
+        key_encoder: Union[Callable[[str], str], Literal["blake2b", "sha1"]] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
@@ -248,9 +294,28 @@ class CacheBackedEmbeddings(Embeddings):
             query_embedding_cache: The cache to use for storing query embeddings.
                 True to use the same cache as document embeddings.
                 False to not cache query embeddings.
+            key_encoder: Optional callable to encode keys. If not provided,
+                a default encoder using SHA‑1 will be used. SHA-1 is not
+                collision-resistant, and a motivated attacker could craft two
+                different texts that hash to the same cache key.
+
+                New applications should use 'blake2b' or provide a custom
+                and strong key encoder function to avoid this risk.
+        Returns:
+            An instance of CacheBackedEmbeddings that uses the provided cache.
         """
-        namespace = namespace
-        key_encoder = _create_key_encoder(namespace)
+        if isinstance(key_encoder, str):
+            key_encoder = _make_default_key_encoder(namespace, "sha1")
+        else:
+            # If a custom key encoder is provided, it should not be used with a
+            # namespace.
+            # A user can handle namespacing in directly their custom key encoder.
+            if namespace:
+                raise ValueError(
+                    "If you provide a custom key encoder (a function), you should not "
+                    "also provide a namespace. "
+                )
+
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,
             key_encoder,
