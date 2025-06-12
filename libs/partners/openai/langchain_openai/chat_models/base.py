@@ -3633,7 +3633,7 @@ def _convert_responses_chunk_to_generation_chunk(
             current_index += 1
         current_output_index = chunk.output_index
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
-        tool_output["index"] = current_output_index
+        tool_output["index"] = current_index
         content.append(tool_output)
     elif chunk.type == "response.function_call_arguments.delta":
         if current_output_index != chunk.output_index:
@@ -3652,7 +3652,7 @@ def _convert_responses_chunk_to_generation_chunk(
             current_index += 1
         current_output_index = chunk.output_index
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
-        reasoning["index"] = current_output_index
+        reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
         if current_output_index != chunk.output_index:
@@ -3664,7 +3664,7 @@ def _convert_responses_chunk_to_generation_chunk(
                 "summary": [
                     {"index": chunk.summary_index, "type": "summary_text", "text": ""}
                 ],
-                "index": current_output_index,
+                "index": current_index,
             }
         )
     elif chunk.type == "response.image_generation_call.partial_image":
@@ -3683,7 +3683,7 @@ def _convert_responses_chunk_to_generation_chunk(
                         "text": chunk.delta,
                     }
                 ],
-                "index": current_output_index,
+                "index": current_index,
             }
         )
     else:
