@@ -13,7 +13,9 @@ from langchain_core.outputs import LLMResult
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
     """A simple progress bar for the console."""
 
-    def __init__(self, total: int, ncols: int = 50, end_with: str = "\n", **kwargs: Any):
+    def __init__(
+        self, total: int, ncols: int = 50, end_with: str = "\n", **kwargs: Any
+    ):
         """Initialize the progress bar.
 
         Args:
