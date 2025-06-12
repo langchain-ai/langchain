@@ -239,7 +239,8 @@ def draw_mermaid(
 
 def _escape_node_label(node_label: str) -> str:
     """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
+    mermaid_special_chars = r"[\(\)\[\]\{\}<>\"'`;:&|,=#`~^%?@$/+\-\*!\.\\]"
+    return re.sub(mermaid_special_chars, "_", node_label)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
