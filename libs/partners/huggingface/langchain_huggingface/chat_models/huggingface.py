@@ -684,36 +684,50 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        if _is_huggingface_endpoint(self.llm):
+            message_dicts, params = self._create_message_dicts(messages, stop)
+            params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+            default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
 
-        async for chunk in await self.llm.async_client.chat_completion(
-            messages=message_dicts, **params
-        ):
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
-            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_id
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = message_chunk.__class__
-            generation_chunk = ChatGenerationChunk(
-                message=message_chunk, generation_info=generation_info or None
-            )
-            if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=generation_chunk.text,
-                    chunk=generation_chunk,
-                    logprobs=logprobs,
+            async for chunk in await self.llm.async_client.chat_completion(
+                messages=message_dicts, **params
+            ):
+                if len(chunk["choices"]) == 0:
+                    continue
+                choice = chunk["choices"][0]
+                message_chunk = _convert_chunk_to_message_chunk(
+                    chunk, default_chunk_class
                 )
-            yield generation_chunk
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    generation_info["model_name"] = self.model_id
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = message_chunk.__class__
+                generation_chunk = ChatGenerationChunk(
+                    message=message_chunk, generation_info=generation_info or None
+                )
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
+                    )
+                yield generation_chunk
+        else:
+            llm_input = self._to_chat_prompt(messages)
+            stream_iter = self.llm._astream(
+                llm_input, stop=stop, run_manager=run_manager, **kwargs
+            )
+            async for chunk in stream_iter:  # chunk is a GenerationChunk
+                chat_chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=chunk.text),
+                    generation_info=chunk.generation_info,
+                )
+                yield chat_chunk
 
     def _to_chat_prompt(
         self,

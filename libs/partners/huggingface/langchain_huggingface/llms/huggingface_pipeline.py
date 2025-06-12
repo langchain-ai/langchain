@@ -2,10 +2,13 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from collections.abc import Iterator, Mapping
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Optional
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
@@ -401,5 +404,64 @@ class HuggingFacePipeline(BaseLLM):
             chunk = GenerationChunk(text=char)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+            yield chunk
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        from threading import Thread
+
+        import torch
+        from transformers import (
+            AsyncTextIteratorStreamer,
+            StoppingCriteria,
+            StoppingCriteriaList,
+        )
+
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", True)
+
+        if stop is not None:
+            stop = self.pipeline.tokenizer.convert_tokens_to_ids(stop)
+        stopping_ids_list = stop or []
+
+        class StopOnTokens(StoppingCriteria):
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
+            ) -> bool:
+                for stop_id in stopping_ids_list:
+                    if input_ids[0][-1] == stop_id:
+                        return True
+                return False
+
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+
+        async_streamer = AsyncTextIteratorStreamer(
+            self.pipeline.tokenizer,
+            timeout=60.0,
+            skip_prompt=skip_prompt,
+            skip_special_tokens=True,
+        )
+        generation_kwargs = dict(
+            text_inputs=prompt,
+            streamer=async_streamer,
+            stopping_criteria=stopping_criteria,
+            **pipeline_kwargs,
+        )
+        t1 = Thread(target=self.pipeline, kwargs=generation_kwargs)
+        t1.start()
+
+        async for char in async_streamer:
+            chunk = GenerationChunk(text=char)
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
             yield chunk
