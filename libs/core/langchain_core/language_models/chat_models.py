@@ -129,6 +129,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     isinstance(block, dict)
                     and block.get("type") == "image"
                     and is_data_content_block(block)
+                    and block.get("source_type") != "id"
                 ):
                     if message_to_trace is message:
                         message_to_trace = message.model_copy()
@@ -1453,7 +1454,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             PydanticToolsParser,
         )
 
-        if self.bind_tools is BaseChatModel.bind_tools:
+        if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 
