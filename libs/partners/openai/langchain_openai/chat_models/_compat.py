@@ -90,11 +90,10 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         "refusal",
         "function_call",
         "computer_call",
-        ### Check if these were actually passed back in on v0.3
-        "web_search_call",
-        "file_search_call",
         "mcp_list_tools",
         "mcp_approval_request",
+        # N. B. "web_search_call" and "file_search_call" were not passed back in
+        # in v0.3
     ]
 
     # Build a bucket for every known block type
