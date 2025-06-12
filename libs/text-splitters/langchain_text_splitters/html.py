@@ -10,13 +10,13 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
     TypedDict,
-    cast,
     Union,
-    Literal,
+    cast,
 )
 
 import requests
@@ -637,7 +637,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             )
         else:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
-                keep_separator=keep_separator, chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
+                keep_separator=keep_separator,
+                chunk_size=max_chunk_size,
+                chunk_overlap=chunk_overlap,
             )
 
         if self._stopword_removal:
