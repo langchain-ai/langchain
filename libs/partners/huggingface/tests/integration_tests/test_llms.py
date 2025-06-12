@@ -1,7 +1,5 @@
 from collections.abc import AsyncGenerator, Generator
 
-import pytest
-
 from langchain_huggingface.llms import HuggingFacePipeline
 
 
@@ -22,7 +20,6 @@ def test_huggingface_pipeline_streaming() -> None:
     assert len(stream_results_string.strip()) > 0
 
 
-@pytest.mark.asyncio
 async def test_huggingface_pipeline_astreaming() -> None:
     """Test streaming tokens from huggingface_pipeline using astream."""
     llm = HuggingFacePipeline.from_model_id(
