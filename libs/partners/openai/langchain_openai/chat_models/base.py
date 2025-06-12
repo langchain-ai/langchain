@@ -3534,9 +3534,9 @@ def _construct_lc_result_from_responses_api(
 
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
-    current_index: int,
-    current_output_index: int,
-    current_sub_index: int,
+    current_index: int,  # index in content
+    current_output_index: int,  # index in Response output
+    current_sub_index: int,  # index of content block in output item
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
