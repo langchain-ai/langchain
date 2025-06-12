@@ -139,7 +139,7 @@ const config = {
       },
       announcementBar: {
         content:
-          '<strong>LangChain Availability Impacted: Please follow our <a href="https://status.smith.langchain.com/"></a>status page</a> for more information.</strong>',
+          '<strong>LangChain Availability Impacted: Please follow our <a href="https://status.smith.langchain.com/">status page</a> for more information.</strong>',
           backgroundColor: '#d0c9fe'
       },
       prism: {
