@@ -3540,14 +3540,12 @@ def _convert_responses_chunk_to_generation_chunk(
             {"type": "text", "text": chunk.delta, "index": chunk.content_index}
         )
     elif chunk.type == "response.output_text.annotation.added":
-        content.append(
-            {
-                "annotations": [
-                    chunk.annotation.model_dump(exclude_none=True, mode="json")
-                ],
-                "index": chunk.content_index,
-            }
-        )
+        if isinstance(chunk.annotation, dict):
+            # Appears to be a breaking change in openai==1.82.0
+            annotation = chunk.annotation
+        else:
+            annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
+        content.append({"annotations": [annotation], "index": chunk.content_index})
     elif chunk.type == "response.created":
         response_metadata["id"] = chunk.response.id
     elif chunk.type == "response.completed":
