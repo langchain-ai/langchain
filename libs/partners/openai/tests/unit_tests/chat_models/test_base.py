@@ -46,6 +46,7 @@ from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
+    _FUNCTION_CALL_IDS_MAP_KEY,
     _convert_from_v03_ai_message,
     _convert_to_v03_ai_message,
 )
@@ -1171,9 +1172,9 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert isinstance(result.generations[0], ChatGeneration)
     assert isinstance(result.generations[0].message, AIMessage)
     assert result.generations[0].message.content == [
-        {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
+        {"type": "text", "text": "Hello, world!", "annotations": []}
     ]
-    assert result.generations[0].message.id == "resp_123"
+    assert result.generations[0].message.id == "msg_123"
     assert result.generations[0].message.usage_metadata
     assert result.generations[0].message.usage_metadata["input_tokens"] == 10
     assert result.generations[0].message.usage_metadata["output_tokens"] == 3
@@ -1214,8 +1215,8 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
 
     assert len(result.generations[0].message.content) == 2
     assert result.generations[0].message.content == [
-        {"type": "text", "text": "First part", "annotations": [], "id": "msg_123"},
-        {"type": "text", "text": "Second part", "annotations": [], "id": "msg_123"},
+        {"type": "text", "text": "First part", "annotations": []},
+        {"type": "text", "text": "Second part", "annotations": []},
     ]
 
 
@@ -1259,14 +1260,16 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
-        {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
-        {
+        {"type": "text", "text": "foo", "annotations": []},
+        {"type": "text", "text": "bar", "annotations": []},
+    ]
+    assert result.generations[0].message.additional_kwargs == {
+        "reasoning": {
             "type": "reasoning",
             "summary": [{"type": "summary_text", "text": "reasoning foo"}],
             "id": "rs_123",
-        },
-        {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
-    ]
+        }
+    }
 
 
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:
@@ -1296,13 +1299,9 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    assert result.generations[0].message.content == [
-        {
-            "type": "refusal",
-            "refusal": "I cannot assist with that request.",
-            "id": "msg_123",
-        }
-    ]
+    assert result.generations[0].message.additional_kwargs["refusal"] == (
+        "I cannot assist with that request."
+    )
 
 
 def test__construct_lc_result_from_responses_api_function_call_valid_json() -> None:
@@ -1334,13 +1333,13 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     assert msg.tool_calls[0]["name"] == "get_weather"
     assert msg.tool_calls[0]["id"] == "call_123"
     assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
-    tool_call_block = next(
-        block
-        for block in msg.content
-        if isinstance(block, dict) and block["type"] == "function_call"
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+    assert (
+        result.generations[0].message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][
+            "call_123"
+        ]
+        == "func_123"
     )
-    assert tool_call_block["call_id"] == "call_123"
-    assert tool_call_block["id"] == "func_123"
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
@@ -1377,12 +1376,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
         == '{"location": "New York", "unit": "celsius"'
     )
     assert "error" in msg.invalid_tool_calls[0]
-    tool_call_block = next(
-        block
-        for block in msg.content
-        if isinstance(block, dict) and block["type"] == "function_call"
-    )
-    assert tool_call_block["call_id"] == "call_123"
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
@@ -1431,15 +1425,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
             "type": "text",
             "text": "Here's the information you requested:",
             "annotations": [],
-            "id": "msg_123",
-        },
-        {
-            "type": "function_call",
-            "name": "get_weather",
-            "arguments": '{"location": "New York"}',
-            "call_id": "call_123",
-            "id": "func_123",
-        },
+        }
     ]
 
     # Check tool calls
@@ -1514,16 +1500,20 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    tool_output_blocks = [
-        block
-        for block in result.generations[0].message.content
-        if isinstance(block, dict) and block["type"] == "web_search_call"
-    ]
-    assert len(tool_output_blocks) == 1
-    tool_output_block = tool_output_blocks[0]
-    assert tool_output_block["type"] == "web_search_call"
-    assert tool_output_block["id"] == "websearch_123"
-    assert tool_output_block["status"] == "completed"
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "web_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "websearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
 
 
 def test__construct_lc_result_from_responses_api_file_search_response() -> None:
@@ -1557,19 +1547,43 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
 
     result = _construct_lc_result_from_responses_api(response)
 
-    tool_output_blocks = [
-        block
-        for block in result.generations[0].message.content
-        if isinstance(block, dict) and block["type"] == "file_search_call"
-    ]
-    assert len(tool_output_blocks) == 1
-    tool_output_block = tool_output_blocks[0]
-    assert tool_output_block["id"] == "filesearch_123"
-    assert tool_output_block["status"] == "completed"
-    assert tool_output_block["queries"] == ["python code", "langchain"]
-    assert len(tool_output_block["results"]) == 1
-    assert tool_output_block["results"][0]["file_id"] == "file_123"
-    assert tool_output_block["results"][0]["score"] == 0.95
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "file_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "filesearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
+    assert result.generations[0].message.additional_kwargs["tool_outputs"][0][
+        "queries"
+    ] == ["python code", "langchain"]
+    assert (
+        len(
+            result.generations[0].message.additional_kwargs["tool_outputs"][0][
+                "results"
+            ]
+        )
+        == 1
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["file_id"]
+        == "file_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["score"]
+        == 0.95
+    )
 
 
 def test__construct_lc_result_from_responses_api_mixed_search_responses() -> None:
@@ -1619,28 +1633,31 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
 
     # Check message content
     assert result.generations[0].message.content == [
-        {
-            "type": "text",
-            "text": "Here's what I found:",
-            "annotations": [],
-            "id": "msg_123",
-        },
-        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
-        {
-            "type": "file_search_call",
-            "id": "filesearch_123",
-            "status": "completed",
-            "queries": ["python code"],
-            "results": [
-                {
-                    "file_id": "file_123",
-                    "filename": "example.py",
-                    "score": 0.95,
-                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
-                }
-            ],
-        },
+        {"type": "text", "text": "Here's what I found:", "annotations": []}
     ]
+
+    # Check tool outputs
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 2
+
+    # Check web search output
+    web_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "web_search_call"
+    )
+    assert web_search["id"] == "websearch_123"
+    assert web_search["status"] == "completed"
+
+    # Check file search output
+    file_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "file_search_call"
+    )
+    assert file_search["id"] == "filesearch_123"
+    assert file_search["queries"] == ["python code"]
+    assert file_search["results"][0]["filename"] == "example.py"
 
 
 def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
@@ -2052,7 +2069,8 @@ def test_mcp_tracing() -> None:
 
 
 def test_compat() -> None:
-    message = AIMessage(
+    # Check compatibility with v0.3 message format
+    message_v03 = AIMessage(
         content=[
             {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
         ],
@@ -2075,7 +2093,7 @@ def test_compat() -> None:
         id="msg_123",
     )
 
-    message_v04 = _convert_from_v03_ai_message(message)
+    message = _convert_from_v03_ai_message(message_v03)
     expected = AIMessage(
         content=[
             {
@@ -2095,17 +2113,17 @@ def test_compat() -> None:
         response_metadata={"id": "resp_123"},
         id="resp_123",
     )
-    assert message_v04 == expected
+    assert message == expected
 
-    # Check no mutation
-    assert message_v04 != message
-    assert len(message.content) == 1
+    ## Check no mutation
+    assert message != message_v03
+    assert len(message_v03.content) == 1
     assert all(
-        item in message.additional_kwargs
+        item in message_v03.additional_kwargs
         for item in ["reasoning", "tool_outputs", "refusal"]
     )
 
     # Convert back
-    message_v03 = _convert_to_v03_ai_message(message_v04)
-    assert message_v03 == message
-    assert message_v03 is not message
+    message_v03_output = _convert_to_v03_ai_message(message)
+    assert message_v03_output == message_v03
+    assert message_v03_output is not message_v03

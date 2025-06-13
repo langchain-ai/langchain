@@ -106,7 +106,6 @@ from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
-
 from langchain_openai.chat_models._compat import (
     _convert_from_v03_ai_message,
     _convert_to_v03_ai_message,
@@ -803,6 +802,7 @@ class BaseChatOpenAI(BaseChatModel):
             current_index = -1
             current_output_index = -1
             current_sub_index = -1
+            has_reasoning = False
             for chunk in response:
                 metadata = headers if is_first_chunk else {}
                 (
@@ -817,6 +817,7 @@ class BaseChatOpenAI(BaseChatModel):
                     current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
+                    has_reasoning=has_reasoning,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -824,6 +825,8 @@ class BaseChatOpenAI(BaseChatModel):
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
+                    if "reasoning" in generation_chunk.message.additional_kwargs:
+                        has_reasoning = True
                     yield generation_chunk
 
     async def _astream_responses(
@@ -853,6 +856,7 @@ class BaseChatOpenAI(BaseChatModel):
             current_index = -1
             current_output_index = -1
             current_sub_index = -1
+            has_reasoning = False
             async for chunk in response:
                 metadata = headers if is_first_chunk else {}
                 (
@@ -867,6 +871,7 @@ class BaseChatOpenAI(BaseChatModel):
                     current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
+                    has_reasoning=has_reasoning,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -874,6 +879,8 @@ class BaseChatOpenAI(BaseChatModel):
                             generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
+                    if "reasoning" in generation_chunk.message.additional_kwargs:
+                        has_reasoning = True
                     yield generation_chunk
 
     def _should_stream_usage(
@@ -3539,6 +3546,7 @@ def _convert_responses_chunk_to_generation_chunk(
     current_sub_index: int,  # index of content block in output item
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
+    has_reasoning: bool = False,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     content = []
     tool_call_chunks: list = []
@@ -3697,7 +3705,9 @@ def _convert_responses_chunk_to_generation_chunk(
         additional_kwargs=additional_kwargs,
         id=id,
     )
-    message = _convert_to_v03_ai_message(message)
+    message = cast(
+        AIMessageChunk, _convert_to_v03_ai_message(message, has_reasoning=has_reasoning)
+    )
     return (
         current_index,
         current_output_index,

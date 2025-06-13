@@ -1,3 +1,4 @@
+import json
 from typing import Union
 
 from langchain_core.messages import AIMessage
@@ -5,15 +6,21 @@ from langchain_core.messages import AIMessage
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
-def _convert_to_v03_ai_message(message: AIMessage) -> AIMessage:
+def _convert_to_v03_ai_message(
+    message: AIMessage, has_reasoning: bool = False
+) -> AIMessage:
     """Mutate an AIMessage to the old-style v0.3 format."""
     if isinstance(message.content, list):
         new_content: list[Union[dict, str]] = []
         for block in message.content:
             if isinstance(block, dict):
-                if block.get("type") == "reasoning":
+                if block.get("type") == "reasoning" or "summary" in block:
                     # Store a reasoning item in additional_kwargs (overwriting as in
                     # v0.3)
+                    _ = block.pop("index", None)
+                    if has_reasoning:
+                        _ = block.pop("id", None)
+                        _ = block.pop("type", None)
                     message.additional_kwargs["reasoning"] = block
                 elif block.get("type") in (
                     "web_search_call",
@@ -29,14 +36,14 @@ def _convert_to_v03_ai_message(message: AIMessage) -> AIMessage:
                     if "tool_outputs" not in message.additional_kwargs:
                         message.additional_kwargs["tool_outputs"] = []
                     message.additional_kwargs["tool_outputs"].append(block)
-                elif block.get("type") == "function_call" and (
-                    call_id := block.get("call_id")
-                    and (function_call_id := block.get("id"))
-                ):
+                elif block.get("type") == "function_call":
                     # Store function call item IDs in additional_kwargs, otherwise
                     # discard function call items.
                     if _FUNCTION_CALL_IDS_MAP_KEY not in message.additional_kwargs:
                         message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {}
+                    if (call_id := block.get("call_id")) and (
+                        function_call_id := block.get("id")
+                    ):
                         message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][
                             call_id
                         ] = function_call_id
@@ -52,7 +59,7 @@ def _convert_to_v03_ai_message(message: AIMessage) -> AIMessage:
                         message.id = block["id"]
                     new_content.append({k: v for k, v in block.items() if k != "id"})
                 elif (
-                    set(block.keys()).issubset({"id", "index"})
+                    set(block.keys()) == {"id", "index"}
                     and isinstance(block["id"], str)
                     and block["id"].startswith("msg_")
                 ):
@@ -112,10 +119,26 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     for block in message.content:
         if isinstance(block, dict) and block.get("type") == "text":
             block_copy = block.copy()
-            block_copy["id"] = message.id
+            if isinstance(message.id, str) and message.id.startswith("msg_"):
+                block_copy["id"] = message.id
             buckets["text"].append(block_copy)
         else:
             unknown_blocks.append(block)
+
+    # Function calls
+    function_call_ids = message.additional_kwargs.get(_FUNCTION_CALL_IDS_MAP_KEY)
+    for tool_call in message.tool_calls:
+        function_call = {
+            "type": "function_call",
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+            "call_id": tool_call["id"],
+        }
+        if function_call_ids is not None and (
+            _id := function_call_ids.get(tool_call["id"])
+        ):
+            function_call["id"] = _id
+        buckets["function_call"].append(function_call)
 
     # Tool outputs
     tool_outputs = message.additional_kwargs.get("tool_outputs", [])

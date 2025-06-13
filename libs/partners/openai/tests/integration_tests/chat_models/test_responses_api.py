@@ -50,6 +50,10 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["service_tier"]
+    for tool_output in response.additional_kwargs["tool_outputs"]:
+        assert tool_output["id"]
+        assert tool_output["status"]
+        assert tool_output["type"]
 
 
 @pytest.mark.vcr
@@ -288,10 +292,7 @@ def test_reasoning() -> None:
     llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
-    assert any(
-        isinstance(block, dict) and block.get("type") == "reasoning"
-        for block in response.content
-    )
+    assert response.additional_kwargs["reasoning"]
 
     # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
@@ -300,7 +301,7 @@ def test_reasoning() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
-    assert any(block.get("type") == "reasoning" for block in full.content)
+    assert full.additional_kwargs["reasoning"]
 
 
 def test_stateful_api() -> None:
@@ -331,8 +332,7 @@ def test_computer_calls() -> None:
     }
     llm_with_tools = llm.bind_tools([tool], tool_choice="any")
     response = llm_with_tools.invoke("Please open the browser.")
-    assert all(isinstance(block, dict) for block in response.content)
-    assert any(block["type"] == "computer_call" for block in response.content)  # type: ignore[index]
+    assert response.additional_kwargs["tool_outputs"]
 
 
 def test_file_search() -> None:
@@ -365,13 +365,8 @@ def test_stream_reasoning_summary() -> None:
         assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
-    reasoning = next(
-        block
-        for block in response_1.content
-        if isinstance(block, dict) and block.get("type") == "reasoning"
-    )
-    assert isinstance(reasoning, dict)
-    assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
+    reasoning = response_1.additional_kwargs["reasoning"]
+    assert set(reasoning.keys()) == {"id", "type", "summary"}
     summary = reasoning["summary"]
     assert isinstance(summary, list)
     for block in summary:
@@ -454,13 +449,19 @@ def test_mcp_builtin() -> None:
             {
                 "type": "mcp_approval_response",
                 "approve": True,
-                "approval_request_id": block["id"],  # type: ignore[index]
+                "approval_request_id": output["id"],
             }
-            for block in response.content
-            if block["type"] == "mcp_approval_request"  # type: ignore[index]
+            for output in response.additional_kwargs["tool_outputs"]
+            if output["type"] == "mcp_approval_request"
         ]
     )
-    _ = llm_with_tools.invoke([input_message, response, approval_message])
+    _ = llm_with_tools.invoke(
+        [approval_message], previous_response_id=response.response_metadata["id"]
+    )
+    # Zero-data retention (e.g., as below) requires change in output format.
+    # _ = llm_with_tools.invoke(
+    #     [input_message, response, approval_message]
+    # )
 
 
 @pytest.mark.vcr()
