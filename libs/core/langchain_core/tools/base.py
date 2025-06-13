@@ -540,10 +540,13 @@ class ChildTool(BaseTool):
                     )
                     raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
-                if hasattr(input_args, "model_validate"):
+                if issubclass(input_args, BaseModel):
                     input_args.model_validate({key_: tool_input})
-                else:
+                elif issubclass(input_args, BaseModelV1):
                     input_args.parse_obj({key_: tool_input})
+                else:
+                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+                    raise TypeError(msg)
             return tool_input
         if input_args is not None:
             if isinstance(input_args, dict):
