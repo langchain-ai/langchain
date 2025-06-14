@@ -13,10 +13,7 @@ from langchain.memory.buffer import ConversationBufferMemory
 
 @deprecated(
     since="0.2.7",
-    alternative=(
-        "RunnableWithMessageHistory: "
-        "https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
-    ),
+    alternative="langchain_core.runnables.history.RunnableWithMessageHistory",
     removal="1.0",
 )
 class ConversationChain(LLMChain):

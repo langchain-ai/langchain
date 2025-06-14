@@ -40,7 +40,7 @@ def _stream_response_to_generation_chunk(
     if not stream_response["choices"]:
         return GenerationChunk(text="")
     return GenerationChunk(
-        text=stream_response["choices"][0]["text"],
+        text=stream_response["choices"][0]["text"] or "",
         generation_info=dict(
             finish_reason=stream_response["choices"][0].get("finish_reason", None),
             logprobs=stream_response["choices"][0].get("logprobs", None),

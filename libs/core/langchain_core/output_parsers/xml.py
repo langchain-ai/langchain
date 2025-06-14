@@ -51,7 +51,9 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                import defusedxml  # type: ignore[import-untyped]
+                from defusedxml.ElementTree import (  # type: ignore[import-untyped]
+                    XMLParser,
+                )
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -59,7 +61,7 @@ class _StreamingParser:
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg) from e
-            _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
+            _parser = XMLParser(target=TreeBuilder())
         else:
             _parser = None
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
@@ -207,7 +209,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree
+                from defusedxml import ElementTree  # type: ignore[import-untyped]
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
