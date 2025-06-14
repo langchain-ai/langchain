@@ -73,8 +73,9 @@ class _HashedDocument(Document):
         """Root validator to calculate content and metadata hash."""
         content = values.get("page_content", "")
         metadata = values.get("metadata", {})
+        collection_name = values.get("collection_name", "")
 
-        forbidden_keys = ("hash_", "content_hash", "metadata_hash")
+        forbidden_keys = ("hash_", "content_hash", "metadata_hash", "collection_name")
 
         for key in forbidden_keys:
             if key in metadata:
@@ -95,9 +96,13 @@ class _HashedDocument(Document):
             )
             raise ValueError(msg) from e
 
+        collection_hash = str(_hash_string_to_uuid(collection_name)) if collection_name else ""
+
         values["content_hash"] = content_hash
         values["metadata_hash"] = metadata_hash
-        values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
+        values["collection_hash"] = collection_hash
+        combined_hash_input = content_hash + metadata_hash + collection_hash
+        values["hash_"] = str(_hash_string_to_uuid(combined_hash_input))
 
         _uid = values.get("uid")
 
@@ -115,13 +120,14 @@ class _HashedDocument(Document):
 
     @classmethod
     def from_document(
-        cls, document: Document, *, uid: Optional[str] = None
+        cls, document: Document, *, uid: Optional[str] = None, collection_name: str = ""
     ) -> _HashedDocument:
         """Create a HashedDocument from a Document."""
         return cls(  # type: ignore[call-arg]
             uid=uid,  # type: ignore[arg-type]
             page_content=document.page_content,
             metadata=document.metadata,
+            collection_name=collection_name,
         )
 
 
@@ -372,10 +378,13 @@ def index(
     num_deleted = 0
     scoped_full_cleanup_source_ids: set[str] = set()
 
+    # collection specific hash suffix so that documents are unique per collection
+    collection_name = getattr(vector_store, "collection_name", None)
+
     for doc_batch in _batch(batch_size, doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc) for doc in doc_batch]
+                [_HashedDocument.from_document(doc, collection_name=collection_name or "") for doc in doc_batch]
             )
         )
 
@@ -688,10 +697,13 @@ async def aindex(
     num_deleted = 0
     scoped_full_cleanup_source_ids: set[str] = set()
 
+    # collection specific hash suffix so that documents are unique per collection
+    collection_name = getattr(vector_store, "collection_name", None)
+
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc) for doc in doc_batch]
+                [_HashedDocument.from_document(doc, collection_name=collection_name or "") for doc in doc_batch]
             )
         )
 

@@ -48,3 +48,57 @@ def test_from_document() -> None:
     # hash should be deterministic
     assert hashed_document.hash_ == "fd1dc827-051b-537d-a1fe-1fa043e8b276"
     assert hashed_document.uid == hashed_document.hash_
+
+
+def test_collection_hash_isolation():
+    """
+    Test that identical documents in different collections get different hashes.
+    """
+    # Same document content
+    doc = Document(
+        page_content="test content",
+        metadata={"key": "value", "id": "123"},
+    )
+
+    # Create hashed documents for different collections
+    hashed_doc_a = _HashedDocument.from_document(
+        doc, collection_name="collection_a"
+    )
+    hashed_doc_b = _HashedDocument.from_document(
+        doc, collection_name="collection_b"
+    )
+
+    # Assert they have different hashes and UIDs
+    assert hashed_doc_a.hash_ != hashed_doc_b.hash_
+    assert hashed_doc_a.uid != hashed_doc_b.uid
+
+    # But same content and metadata
+    assert hashed_doc_a.page_content == hashed_doc_b.page_content
+    assert hashed_doc_a.metadata == hashed_doc_b.metadata
+
+
+def test_collection_hash_same_collection():
+    """Test that identical documents in the same collection get same hashes."""
+    doc1 = Document(page_content="test", metadata={"id": "1"})
+    doc2 = Document(page_content="test", metadata={"id": "1"})
+
+    hashed_doc1 = _HashedDocument.from_document(doc1, collection_name="same_collection")
+    hashed_doc2 = _HashedDocument.from_document(doc2, collection_name="same_collection")
+
+    # Should have identical hashes (deduplication within same collection)
+    assert hashed_doc1.hash_ == hashed_doc2.hash_
+    assert hashed_doc1.uid == hashed_doc2.uid
+
+
+def test_collection_hash_backward_compatibility():
+    """Test that collection name defaults to empty string for backward compatibility."""
+    doc = Document(page_content="test", metadata={"key": "value"})
+
+    # Without collection name (old behavior)
+    hashed_doc_old = _HashedDocument.from_document(doc)
+
+    # With empty collection name (should be equivalent)
+    hashed_doc_new = _HashedDocument.from_document(doc, collection_name="")
+
+    assert hashed_doc_old.hash_ == hashed_doc_new.hash_
+    assert hashed_doc_old.uid == hashed_doc_new.uid
