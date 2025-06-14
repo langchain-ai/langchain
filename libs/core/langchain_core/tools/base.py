@@ -34,6 +34,7 @@ from pydantic import (
     model_validator,
     validate_arguments,
 )
+from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
@@ -150,7 +151,10 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        if isinstance(fn, ModelMetaclass):
+            description = fn.__doc__ or ""
+        else:
+            description = inspect.getdoc(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
