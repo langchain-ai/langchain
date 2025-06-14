@@ -50,7 +50,7 @@ def test_from_document() -> None:
     assert hashed_document.uid == hashed_document.hash_
 
 
-def test_collection_hash_isolation():
+def test_collection_hash_isolation() -> None:
     """
     Test that identical documents in different collections get different hashes.
     """
@@ -61,12 +61,8 @@ def test_collection_hash_isolation():
     )
 
     # Create hashed documents for different collections
-    hashed_doc_a = _HashedDocument.from_document(
-        doc, collection_name="collection_a"
-    )
-    hashed_doc_b = _HashedDocument.from_document(
-        doc, collection_name="collection_b"
-    )
+    hashed_doc_a = _HashedDocument.from_document(doc, collection_name="collection_a")
+    hashed_doc_b = _HashedDocument.from_document(doc, collection_name="collection_b")
 
     # Assert they have different hashes and UIDs
     assert hashed_doc_a.hash_ != hashed_doc_b.hash_
@@ -77,7 +73,7 @@ def test_collection_hash_isolation():
     assert hashed_doc_a.metadata == hashed_doc_b.metadata
 
 
-def test_collection_hash_same_collection():
+def test_collection_hash_same_collection() -> None:
     """Test that identical documents in the same collection get same hashes."""
     doc1 = Document(page_content="test", metadata={"id": "1"})
     doc2 = Document(page_content="test", metadata={"id": "1"})
@@ -90,7 +86,7 @@ def test_collection_hash_same_collection():
     assert hashed_doc1.uid == hashed_doc2.uid
 
 
-def test_collection_hash_backward_compatibility():
+def test_collection_hash_backward_compatibility() -> None:
     """Test that collection name defaults to empty string for backward compatibility."""
     doc = Document(page_content="test", metadata={"key": "value"})
 

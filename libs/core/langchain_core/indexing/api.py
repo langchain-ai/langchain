@@ -96,7 +96,9 @@ class _HashedDocument(Document):
             )
             raise ValueError(msg) from e
 
-        collection_hash = str(_hash_string_to_uuid(collection_name)) if collection_name else ""
+        collection_hash = (
+            str(_hash_string_to_uuid(collection_name)) if collection_name else ""
+        )
 
         values["content_hash"] = content_hash
         values["metadata_hash"] = metadata_hash
@@ -384,7 +386,12 @@ def index(
     for doc_batch in _batch(batch_size, doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc, collection_name=collection_name or "") for doc in doc_batch]
+                [
+                    _HashedDocument.from_document(
+                        doc, collection_name=collection_name or ""
+                    )
+                    for doc in doc_batch
+                ]
             )
         )
 
@@ -703,7 +710,12 @@ async def aindex(
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc, collection_name=collection_name or "") for doc in doc_batch]
+                [
+                    _HashedDocument.from_document(
+                        doc, collection_name=collection_name or ""
+                    )
+                    for doc in doc_batch
+                ]
             )
         )
 
