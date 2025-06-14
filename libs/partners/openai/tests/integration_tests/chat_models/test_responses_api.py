@@ -495,6 +495,7 @@ def test_image_generation_streaming() -> None:
 
     expected_keys = {
         "id",
+        "index",
         "background",
         "output_format",
         "quality",

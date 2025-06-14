@@ -3305,8 +3305,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 input_.append(
                                     {
                                         "type": "message",
-                                        "role": "assistant",
                                         "content": [new_block],
+                                        "role": "assistant",
                                         "id": msg_id,
                                     }
                                 )
@@ -3317,7 +3317,6 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "function_call",
                             "computer_call",
                             "code_interpreter_call",
-                            "image_generation_call",
                             "mcp_call",
                             "mcp_list_tools",
                             "mcp_approval_request",
