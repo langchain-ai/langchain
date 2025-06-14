@@ -56,7 +56,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         assert tool_output["type"]
 
 
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.vcr
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -442,6 +442,7 @@ def test_mcp_builtin() -> None:
         ),
     }
     response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
 
     approval_message = HumanMessage(
         [
@@ -494,6 +495,7 @@ def test_image_generation_streaming() -> None:
 
     expected_keys = {
         "id",
+        "index",
         "background",
         "output_format",
         "quality",
