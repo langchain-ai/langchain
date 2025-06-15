@@ -592,7 +592,7 @@ class ChatMistralAI(BaseChatModel):
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model,
-            "model": self.model,  # Backwards compatability
+            "model": self.model,  # Backwards compatibility
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
