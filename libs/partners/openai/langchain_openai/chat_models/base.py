@@ -1039,7 +1039,7 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response_dict.get("usage")
 
         if "choices" not in response_dict:
-            raise ValueError(
+            raise KeyError(
                 "Response does not contain 'choices' key:"
                 "{response_dict!r}"
             )
