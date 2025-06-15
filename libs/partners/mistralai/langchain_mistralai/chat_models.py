@@ -83,7 +83,7 @@ logger = logging.getLogger(__name__)
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -592,7 +592,7 @@ class ChatMistralAI(BaseChatModel):
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model,
-            "model": self.model,  # Backwards compatability
+            "model": self.model,  # Backwards compatibility
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
