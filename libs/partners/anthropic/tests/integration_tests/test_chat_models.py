@@ -1082,3 +1082,67 @@ def test_files_api_pdf(block_format: str) -> None:
         ],
     }
     _ = llm.invoke([input_message])
+
+
+def test_anthropic_response_headers() -> None:
+    """Test ChatAnthropic response headers."""
+    chat_anthropic = ChatAnthropic(model=MODEL_NAME, include_response_headers=True)
+    query = "I'm Pickle Rick"
+    result = chat_anthropic.invoke(query)
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    # Check for common HTTP headers
+    assert any(
+        key.lower() in ["content-type", "request-id", "x-request-id"]
+        for key in headers.keys()
+    )
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in chat_anthropic.stream(query):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert any(
+        key.lower() in ["content-type", "request-id", "x-request-id"]
+        for key in headers.keys()
+    )
+
+
+async def test_anthropic_response_headers_async() -> None:
+    """Test ChatAnthropic response headers for async methods."""
+    chat_anthropic = ChatAnthropic(model=MODEL_NAME, include_response_headers=True)
+    query = "I'm Pickle Rick"
+    result = await chat_anthropic.ainvoke(query)
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert any(
+        key.lower() in ["content-type", "request-id", "x-request-id"]
+        for key in headers.keys()
+    )
+
+    # Stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in chat_anthropic.astream(query):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    headers = full.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert any(
+        key.lower() in ["content-type", "request-id", "x-request-id"]
+        for key in headers.keys()
+    )
+
+
+def test_anthropic_no_response_headers_by_default() -> None:
+    """Test that headers are not included by default."""
+    chat_anthropic = ChatAnthropic(model=MODEL_NAME)
+    query = "I'm Pickle Rick"
+    result = chat_anthropic.invoke(query)
+    # assert no response headers if include_response_headers is not set
+    assert "headers" not in result.response_metadata
