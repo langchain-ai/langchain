@@ -381,7 +381,7 @@ def test_stream_reasoning_summary() -> None:
     assert isinstance(response_2, AIMessage)
 
 
-# TODO: VCR some of these
+@pytest.mark.vcr
 def test_code_interpreter() -> None:
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     llm_with_tools = llm.bind_tools(
@@ -420,8 +420,8 @@ def test_code_interpreter() -> None:
     _ = llm_with_tools.invoke([input_message, full, next_message])
 
 
+@pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    pytest.skip()  # TODO: set up VCR
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
 
     llm_with_tools = llm.bind_tools(
@@ -434,10 +434,14 @@ def test_mcp_builtin() -> None:
             }
         ]
     )
-    response = llm_with_tools.invoke(
-        "What transport protocols does the 2025-03-26 version of the MCP spec "
-        "(modelcontextprotocol/modelcontextprotocol) support?"
-    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    response = llm_with_tools.invoke([input_message])
 
     approval_message = HumanMessage(
         [
@@ -453,6 +457,10 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
+    # Zero-data retention (e.g., as below) requires change in output format.
+    # _ = llm_with_tools.invoke(
+    #     [input_message, response, approval_message]
+    # )
 
 
 @pytest.mark.vcr()

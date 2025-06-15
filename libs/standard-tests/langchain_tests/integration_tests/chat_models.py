@@ -2582,15 +2582,25 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_anthropic_inputs:
             pytest.skip("Model does not explicitly support Anthropic inputs.")
 
-        class color_picker(BaseModelV1):
-            """Input your fav color and get a random fact about it."""
-
-            fav_color: str
+        # Anthropic-format tool
+        color_picker = {
+            "name": "color_picker",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "fav_color": {"type": "string"},
+                },
+                "required": ["fav_color"],
+            },
+            "description": "Input your fav color and get a random fact about it.",
+            "cache_control": {"type": "ephemeral"},
+        }
 
         human_content: List[dict] = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",
+                "cache_control": {"type": "ephemeral"},
             },
         ]
         if self.supports_image_inputs:

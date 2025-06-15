@@ -3375,6 +3375,148 @@ def test_html_splitter_with_media_preservation() -> None:
     assert documents == expected
 
 
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_true() -> None:
+    """Test HTML splitting with keep_separator=True"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=True,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_false() -> None:
+    """Test HTML splitting with keep_separator=False"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=False,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_start() -> None:
+    """Test HTML splitting with keep_separator="start" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="start",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_end() -> None:
+    """Test HTML splitting with keep_separator="end" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="end",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_default() -> None:
+    """Test HTML splitting with keep_separator not set"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=10, separators=[". "]
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     """Test that regex lookahead separator is not re-inserted when merging."""
     text = "SCE191 First chunk. SCE103 Second chunk."
