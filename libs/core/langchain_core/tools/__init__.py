@@ -51,6 +51,11 @@ if TYPE_CHECKING:
     )
     from langchain_core.tools.simple import Tool
     from langchain_core.tools.structured import StructuredTool
+    from langchain_core.tools.sanitize import (
+        validate_input,
+        sanitize_input,
+        normalize_escaped_delimiters,
+    )
 
 __all__ = (
     "FILTERED_ARGS",
@@ -72,6 +77,9 @@ __all__ = (
     "render_text_description",
     "render_text_description_and_args",
     "tool",
+    "sanitize_input",
+    "validate_input",
+    "normalize_escaped_delimiters",
 )
 
 _dynamic_imports = {
@@ -94,6 +102,9 @@ _dynamic_imports = {
     "create_retriever_tool": "retriever",
     "Tool": "simple",
     "StructuredTool": "structured",
+    "sanitize_input": "sanitize",
+    "validate_input": "sanitize",
+    "normalize_escaped_delimiters": "sanitize",
 }
 
 
