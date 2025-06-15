@@ -1037,6 +1037,12 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(response_dict.get("error"))
 
         token_usage = response_dict.get("usage")
+
+        if "choices" not in response_dict:
+            raise ValueError(
+                "Response does not contain 'choices' key:"
+                "{response_dict!r}"
+            )
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
