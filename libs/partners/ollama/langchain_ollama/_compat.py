@@ -16,7 +16,7 @@ def _convert_from_v1_to_ollama(
         model_provider: The model provider name that generated the v1 content.
 
     Returns:
-        TODO
+        List of content blocks in Ollama format.
     """
     new_content: list = []
     for block in content:
