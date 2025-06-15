@@ -64,3 +64,36 @@ def test_arbitrary_roles_accepted_in_chatmessages(
     ]
 
     llm.invoke(messages)
+
+
+def test_custom_headers_are_sent(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_headers: dict[str, str] = {}
+
+    # Mock the Client.stream method to capture headers
+    @contextmanager
+    def mock_stream(
+        self: Client, method: str, url: str, *args: Any, **kwargs: Any
+    ) -> Generator[Response, None, None]:
+        nonlocal captured_headers
+        if hasattr(self, "headers"):
+            captured_headers = dict(getattr(self, "headers"))
+        else:
+            captured_headers = {}
+        with _mock_httpx_client_stream() as response:
+            yield response
+
+    monkeypatch.setattr(Client, "stream", mock_stream)
+
+    headers = {"Authorization": "Bearer test-token", "X-Custom-Header": "LangChainTest"}
+
+    llm = ChatOllama(
+        base_url="http://whocares:11434",
+        model="granite3.2",
+        headers=headers,
+    )
+
+    messages = [ChatMessage(role="user", content="Hello world")]
+    llm.invoke(messages)
+
+    assert captured_headers.get("Authorization".lower()) == "Bearer test-token"
+    assert captured_headers.get("X-Custom-Header".lower()) == "LangChainTest"
