@@ -4331,8 +4331,9 @@ class RunnableLambda(Runnable[Input, Output]):
         self,
         func: Union[
             Union[
-                Callable[[Input], Output],
                 Callable[[Input], Iterator[Output]],
+                Callable[[Input], Runnable[Input, Output]],
+                Callable[[Input], Output],
                 Callable[[Input, RunnableConfig], Output],
                 Callable[[Input, CallbackManagerForChainRun], Output],
                 Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],

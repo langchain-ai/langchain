@@ -210,7 +210,7 @@ def test_decorator_with_specified_schema() -> None:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
-    assert tool_func_v1.args_schema == _MockSchemaV1
+    assert tool_func_v1.args_schema == cast("ArgsSchema", _MockSchemaV1)
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -2710,4 +2710,25 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "args": {"foo": 2},
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
+    }
+
+
+def test_tool_args_schema_with_annotated_type() -> None:
+    @tool
+    def test_tool(
+        query_fragments: Annotated[
+            list[str],
+            "A list of query fragments",
+        ],
+    ) -> list[str]:
+        """Search the Internet and retrieve relevant result items."""
+        return []
+
+    assert test_tool.args == {
+        "query_fragments": {
+            "description": "A list of query fragments",
+            "items": {"type": "string"},
+            "title": "Query Fragments",
+            "type": "array",
+        }
     }

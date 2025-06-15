@@ -139,7 +139,7 @@ class LangChainProjectNameTest(unittest.TestCase):
                 projects = []
 
                 def mock_create_run(**kwargs: Any) -> Any:
-                    projects.append(kwargs.get("project_name"))  # noqa: B023
+                    projects.append(kwargs.get("session_name"))  # noqa: B023
                     return unittest.mock.MagicMock()
 
                 client.create_run = mock_create_run
