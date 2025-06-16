@@ -376,10 +376,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def _resolve_header_stack(self, header_depth: int, header_text: str) -> None:
         for i, (depth, _) in enumerate(self.current_header_stack):
-            if depth == header_depth:
-                self.current_header_stack[i] = (header_depth, header_text)
-                self.current_header_stack = self.current_header_stack[: i + 1]
-                return
+            if depth >= header_depth:
+                # Truncate everything from this level onward
+                self.current_header_stack = self.current_header_stack[:i]
+                break
         self.current_header_stack.append((header_depth, header_text))
 
     def _resolve_code_chunk(self, current_line: str, raw_lines: List[str]) -> str:
@@ -393,6 +393,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
+
         # Discard any empty documents
         if chunk_content and not chunk_content.isspace():
             # Apply the header stack as metadata
