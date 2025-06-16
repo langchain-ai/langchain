@@ -3547,6 +3547,50 @@ def _convert_responses_chunk_to_generation_chunk(
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
+    def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
+        """Advance indexes tracked during streaming.
+
+        Example: we stream a response item of the form:
+
+        .. code-block:: python
+
+            {
+                "type": "message",  # output_index 0
+                "role": "assistant",
+                "id": "msg_123",
+                "content": [
+                    {"type": "output_text", "text": "foo"},  # sub_index 0
+                    {"type": "output_text", "text": "bar"},  # sub_index 1
+                ],
+            }
+
+        This is a single item with a shared ``output_index`` and two sub-indexes, one
+        for each content block.
+
+        This will be processed into an AIMessage with two text blocks:
+
+        .. code-block:: python
+
+            AIMessage(
+                [
+                    {"type": "text", "text": "foo", "id": "msg_123"},  # index 0
+                    {"type": "text", "text": "bar", "id": "msg_123"},  # index 1
+                ]
+            )
+
+        This function just identifies updates in output or sub-indexes and increments
+        the current index accordingly.
+        """
+        nonlocal current_index, current_output_index, current_sub_index
+        if sub_idx is None:
+            if current_output_index != output_idx:
+                current_index += 1
+        else:
+            if (current_output_index != output_idx) or (current_sub_index != sub_idx):
+                current_index += 1
+            current_sub_index = sub_idx
+        current_output_index = output_idx
+
     content = []
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
@@ -3557,20 +3601,10 @@ def _convert_responses_chunk_to_generation_chunk(
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
-        if (current_output_index != chunk.output_index) or (
-            current_sub_index != chunk.content_index
-        ):
-            current_index += 1
-        current_output_index = chunk.output_index
-        current_sub_index = chunk.content_index
+        _advance(chunk.output_index, chunk.content_index)
         content.append({"type": "text", "text": chunk.delta, "index": current_index})
     elif chunk.type == "response.output_text.annotation.added":
-        if (current_output_index != chunk.output_index) or (
-            current_sub_index != chunk.content_index
-        ):
-            current_index += 1
-        current_output_index = chunk.output_index
-        current_sub_index = chunk.content_index
+        _advance(chunk.output_index, chunk.content_index)
         if isinstance(chunk.annotation, dict):
             # Appears to be a breaking change in openai==1.82.0
             annotation = chunk.annotation
@@ -3602,9 +3636,7 @@ def _convert_responses_chunk_to_generation_chunk(
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
     ):
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -3634,16 +3666,12 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_approval_request",
         "image_generation_call",
     ):
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
         tool_output["index"] = current_index
         content.append(tool_output)
     elif chunk.type == "response.function_call_arguments.delta":
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         tool_call_chunks.append(
             {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
         )
@@ -3653,16 +3681,12 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         content.append(
             {
                 # langchain-core uses the `index` key to aggregate text blocks.
@@ -3676,9 +3700,7 @@ def _convert_responses_chunk_to_generation_chunk(
         # Partial images are not supported yet.
         pass
     elif chunk.type == "response.reasoning_summary_text.delta":
-        if current_output_index != chunk.output_index:
-            current_index += 1
-        current_output_index = chunk.output_index
+        _advance(chunk.output_index)
         content.append(
             {
                 "summary": [
