@@ -1806,7 +1806,6 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     ]
 
     # Content blocks
-    # String content
     ai_message = AIMessage(
         content=[
             {"type": "text", "text": "I'll check the weather for you."},
