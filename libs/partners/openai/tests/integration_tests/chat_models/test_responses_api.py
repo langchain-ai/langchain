@@ -458,10 +458,53 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
-    # Zero-data retention (e.g., as below) requires change in output format.
-    # _ = llm_with_tools.invoke(
-    #     [input_message, response, approval_message]
-    # )
+
+
+@pytest.mark.skip
+def test_mcp_builtin_zdr() -> None:
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        model_kwargs={"store": False, "include": ["reasoning.encrypted_content"]},
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert all(isinstance(block, dict) for block in full.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": block["id"],  # type: ignore[index]
+            }
+            for block in full.content
+            if block["type"] == "mcp_approval_request"  # type: ignore[index]
+        ]
+    )
+    _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
 @pytest.mark.vcr()
