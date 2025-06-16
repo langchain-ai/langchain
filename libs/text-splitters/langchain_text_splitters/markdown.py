@@ -393,7 +393,6 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
-
         # Discard any empty documents
         if chunk_content and not chunk_content.isspace():
             # Apply the header stack as metadata
