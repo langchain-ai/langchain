@@ -511,15 +511,6 @@ class BaseChatOpenAI(BaseChatModel):
     
     .. versionadded:: 0.2.14
     """
-    reasoning_summary: Optional[str] = None
-    """Generate a summary of the reasoning performed by the model (Responses API).
-
-    Reasoning models only, like OpenAI o1 and o3-mini.
-
-    Currently supported values are ``"concise"`` or ``"detailed"``.
-
-    .. versionadded:: 0.3.9
-    """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -574,13 +565,6 @@ class BaseChatOpenAI(BaseChatModel):
     """Whether to use the Responses API instead of the Chat API.
 
     If not specified then will be inferred based on invocation params.
-
-    .. versionadded:: 0.3.9
-    """
-    truncation: Optional[str] = None
-    """Truncation strategy (Responses API). Can be ``"auto"`` or ``"disabled"``
-    (default). If ``"auto"``, model may drop input items from the middle of the
-    message sequence to fit the context window.
 
     .. versionadded:: 0.3.9
     """
@@ -3150,13 +3134,8 @@ def _construct_responses_api_payload(
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
         if legacy_token_param in payload:
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
-    if "reasoning_effort" in payload or "reasoning_summary" in payload:
-        reasoning = {}
-        if "reasoning_effort" in payload:
-            reasoning["effort"] = payload.pop("reasoning_effort")
-        if "reasoning_summary" in payload:
-            reasoning["generate_summary"] = payload.pop("reasoning_summary")
-        payload["reasoning"] = reasoning
+    if "reasoning_effort" in payload:
+        payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):
@@ -3512,6 +3491,7 @@ def _construct_lc_result_from_responses_api(
             "image_generation_call",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
     #    from pydantic import BaseModel
