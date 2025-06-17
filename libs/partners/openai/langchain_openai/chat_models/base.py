@@ -573,18 +573,16 @@ class BaseChatOpenAI(BaseChatModel):
     invocation. 
     """
 
-    include: Optional[
-        list[
-            Literal[
-                "file_search_call.results",
-                "message.input_image.image_url",
-                "computer_call_output.output.image_url",
-                "reasoning.encrypted_content",
-                "code_interpreter_call.outputs",
-            ]
-        ]
-    ] = None
+    include: Optional[list[str]] = None
     """Additional fields to include in generations from Responses API.
+
+    Supported values:
+
+    - ``"file_search_call.results"``
+    - ``"message.input_image.image_url"``
+    - ``"computer_call_output.output.image_url"``
+    - ``"reasoning.encrypted_content"``
+    - ``"code_interpreter_call.outputs"``
 
     .. versionadded:: 0.3.24
     """
