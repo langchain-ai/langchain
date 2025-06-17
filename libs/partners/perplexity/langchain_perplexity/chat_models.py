@@ -434,7 +434,9 @@ class ChatPerplexity(BaseChatModel):
                 with keys "raw", "parsed", and "parsing_error".
 
             strict:
-                Whether to enable strict schema adherence when generating the output.
+                Unsupported: whether to enable strict schema adherence when generating
+                the output. This parameter is included for compatibility with other
+                chat models, but is currently ignored.
 
             kwargs: Additional keyword args aren't supported.
 
