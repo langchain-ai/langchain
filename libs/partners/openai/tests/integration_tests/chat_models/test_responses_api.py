@@ -323,7 +323,7 @@ def test_route_from_model_kwargs() -> None:
 
 @pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
-    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(model="computer-use-preview", truncation="auto")
     tool = {
         "type": "computer_use_preview",
         "display_width": 1024,
@@ -354,10 +354,10 @@ def test_file_search() -> None:
 
 
 def test_stream_reasoning_summary() -> None:
-    reasoning = {"effort": "medium", "summary": "auto"}
-
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+        model="o4-mini",
+        use_responses_api=True,
+        reasoning={"effort": "medium", "summary": "auto"},
     )
     message_1 = {"role": "user", "content": "What is 3^3?"}
     response_1: Optional[BaseMessageChunk] = None
@@ -465,7 +465,8 @@ def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
         use_responses_api=True,
-        model_kwargs={"store": False, "include": ["reasoning.encrypted_content"]},
+        store=False,
+        include=["reasoning.encrypted_content"],
     )
 
     llm_with_tools = llm.bind_tools(
