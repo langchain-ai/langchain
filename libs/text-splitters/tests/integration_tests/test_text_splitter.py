@@ -144,7 +144,7 @@ def test_text_splitter_from_tiktoken_start_index() -> None:
 
 
 def test_text_splitter_from_huggingface_start_index() -> None:
-    from transformers import AutoTokenizer
+    from transformers import AutoTokenizer # type: ignore
 
     text = """
     The Foo function is used to create Foo objects
