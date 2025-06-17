@@ -593,8 +593,8 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     store: Optional[bool] = None
-    """If True, the Responses API may store response data for future use. Defaults to
-    True.
+    """If True, OpenAI may store response data for future use. Defaults to True
+    for the Responses API and False for the Chat Completions API.
 
     .. versionadded:: 0.3.24
     """
@@ -1074,6 +1074,12 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif self.include is not None:
+            return True
+        elif self.reasoning is not None:
+            return True
+        elif self.truncation is not None:
+            return True
         else:
             return _use_responses_api(payload)
 
@@ -3173,7 +3179,13 @@ def _use_responses_api(payload: dict) -> bool:
     uses_builtin_tools = "tools" in payload and any(
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
-    responses_only_args = {"previous_response_id", "text", "truncation", "include"}
+    responses_only_args = {
+        "include",
+        "previous_response_id",
+        "reasoning",
+        "text",
+        "truncation",
+    }
     return bool(uses_builtin_tools or responses_only_args.intersection(payload))
 
 

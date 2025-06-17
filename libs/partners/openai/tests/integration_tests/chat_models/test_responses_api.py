@@ -317,7 +317,9 @@ def test_stateful_api() -> None:
 
 
 def test_route_from_model_kwargs() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(
+        model=MODEL_NAME, model_kwargs={"text": {"format": {"type": "text"}}}
+    )
     _ = next(llm.stream("Hello"))
 
 
@@ -356,7 +358,7 @@ def test_file_search() -> None:
 def test_stream_reasoning_summary() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        use_responses_api=True,
+        # Routes to Responses API if `reasoning` is set.
         reasoning={"effort": "medium", "summary": "auto"},
     )
     message_1 = {"role": "user", "content": "What is 3^3?"}
