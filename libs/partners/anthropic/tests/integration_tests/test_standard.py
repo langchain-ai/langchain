@@ -1,10 +1,10 @@
 """Standard LangChain interface tests"""
 
 from pathlib import Path
-from typing import Dict, List, Literal, Type, cast
+from typing import Literal, cast
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, BaseMessageChunk
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_anthropic import ChatAnthropic
@@ -14,7 +14,7 @@ REPO_ROOT_DIR = Path(__file__).parents[5]
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic
 
     @property
@@ -26,6 +26,14 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
     def supports_image_tool_message(self) -> bool:
         return True
 
@@ -34,11 +42,15 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
+    @property
     def supported_usage_metadata_details(
         self,
-    ) -> Dict[
+    ) -> dict[
         Literal["invoke", "stream"],
-        List[
+        list[
             Literal[
                 "audio_input",
                 "audio_output",
@@ -58,7 +70,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
             model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
             extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+        with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -87,7 +99,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
             model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
             extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+        with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -134,7 +146,10 @@ def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            full = full + chunk if full else chunk  # type: ignore[operator]
+            if full is None:
+                full = cast(BaseMessageChunk, chunk)
+            else:
+                full = full + chunk
         return cast(AIMessage, full)
     else:
         return cast(AIMessage, llm.invoke(input_))

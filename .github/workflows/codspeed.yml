@@ -1,0 +1,62 @@
+name: CodSpeed
+
+on:
+  push:
+    branches:
+        - master
+  pull_request:
+  workflow_dispatch:
+
+env:
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: foo
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo
+  DEEPSEEK_API_KEY: foo
+  FIREWORKS_API_KEY: foo
+
+jobs:
+  codspeed:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - working-directory: libs/core
+            mode: walltime
+          - working-directory: libs/partners/openai
+          - working-directory: libs/partners/anthropic
+          - working-directory: libs/partners/deepseek
+          - working-directory: libs/partners/fireworks
+          - working-directory: libs/partners/xai
+          - working-directory: libs/partners/mistralai
+          - working-directory: libs/partners/groq
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # We have to use 3.12 as 3.13 is not yet supported
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --group test
+        working-directory: ${{ matrix.working-directory }}
+
+      - name: Run benchmarks ${{ matrix.working-directory }}
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd ${{ matrix.working-directory }}
+            if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
+          mode: ${{ matrix.mode || 'instrumentation' }}

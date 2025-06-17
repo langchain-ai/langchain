@@ -1,12 +1,13 @@
+"""Base for Tools."""
+
 from __future__ import annotations
 
-import asyncio
 import functools
 import inspect
 import json
+import typing
 import warnings
 from abc import ABC, abstractmethod
-from contextvars import copy_context
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -36,6 +37,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -52,8 +54,8 @@ from langchain_core.runnables import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.config import _set_config_context
-from langchain_core.runnables.utils import asyncio_accepts_context
+from langchain_core.runnables.config import set_config_context
+from langchain_core.runnables.utils import coro_with_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -79,7 +81,7 @@ class SchemaAnnotationError(TypeError):
 
 
 def _is_annotated_type(typ: type[Any]) -> bool:
-    return get_origin(typ) is Annotated
+    return get_origin(typ) is typing.Annotated
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
@@ -111,7 +113,7 @@ def _get_filtered_args(
 
 
 def _parse_python_function_docstring(
-    function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
+    function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
 ) -> tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
@@ -142,11 +144,7 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if hasattr(inspect, "get_annotations"):
-        # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)  # type: ignore
-    else:
-        annotations = getattr(fn, "__annotations__", {})
+    annotations = typing.get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
@@ -241,7 +239,7 @@ def create_schema_from_function(
     sig = inspect.signature(func)
 
     if _function_annotations_are_pydantic_v1(sig, func):
-        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore
+        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
     else:
         # https://docs.pydantic.dev/latest/usage/validation_decorator/
         with warnings.catch_warnings():
@@ -249,7 +247,7 @@ def create_schema_from_function(
             # This code should be re-written to simply construct a pydantic model
             # using inspect.signature and create_model.
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
     # If qualified name has a ".", then it likely belongs in a class namespace
@@ -264,7 +262,7 @@ def create_schema_from_function(
         elif param.kind == param.VAR_KEYWORD:
             has_kwargs = True
 
-    inferred_model = validated.model  # type: ignore
+    inferred_model = validated.model
 
     if filter_args:
         filter_args_ = filter_args
@@ -272,7 +270,7 @@ def create_schema_from_function(
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
-            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+            filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
 
@@ -452,6 +450,7 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
+        """The arguments of the tool."""
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
         else:
@@ -461,6 +460,7 @@ class ChildTool(BaseTool):
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
+        """The schema for a tool call."""
         if isinstance(self.args_schema, dict):
             if self.description:
                 return {
@@ -481,6 +481,7 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -496,9 +497,9 @@ class ChildTool(BaseTool):
             if isinstance(self.args_schema, dict):
                 return super().get_input_schema(config)
             return self.args_schema
-        else:
-            return create_schema_from_function(self.name, self._run)
+        return create_schema_from_function(self.name, self._run)
 
+    @override
     def invoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -508,6 +509,7 @@ class ChildTool(BaseTool):
         tool_input, kwargs = _prep_run_args(input, config, **kwargs)
         return self.run(tool_input, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -526,6 +528,7 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
+            tool_call_id: The id of the tool call.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -542,58 +545,54 @@ class ChildTool(BaseTool):
                 else:
                     input_args.parse_obj({key_: tool_input})
             return tool_input
-        else:
-            if input_args is not None:
-                if isinstance(input_args, dict):
-                    return tool_input
-                elif issubclass(input_args, BaseModel):
-                    for k, v in get_all_basemodel_annotations(input_args).items():
-                        if (
-                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                            and k not in tool_input
-                        ):
-                            if tool_call_id is None:
-                                msg = (
-                                    "When tool includes an InjectedToolCallId "
-                                    "argument, tool must always be invoked with a full "
-                                    "model ToolCall of the form: {'args': {...}, "
-                                    "'name': '...', 'type': 'tool_call', "
-                                    "'tool_call_id': '...'}"
-                                )
-                                raise ValueError(msg)
-                            tool_input[k] = tool_call_id
-                    result = input_args.model_validate(tool_input)
-                    result_dict = result.model_dump()
-                elif issubclass(input_args, BaseModelV1):
-                    for k, v in get_all_basemodel_annotations(input_args).items():
-                        if (
-                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                            and k not in tool_input
-                        ):
-                            if tool_call_id is None:
-                                msg = (
-                                    "When tool includes an InjectedToolCallId "
-                                    "argument, tool must always be invoked with a full "
-                                    "model ToolCall of the form: {'args': {...}, "
-                                    "'name': '...', 'type': 'tool_call', "
-                                    "'tool_call_id': '...'}"
-                                )
-                                raise ValueError(msg)
-                            tool_input[k] = tool_call_id
-                    result = input_args.parse_obj(tool_input)
-                    result_dict = result.dict()
-                else:
-                    msg = (
-                        "args_schema must be a Pydantic BaseModel, "
-                        f"got {self.args_schema}"
-                    )
-                    raise NotImplementedError(msg)
-                return {
-                    k: getattr(result, k)
-                    for k, v in result_dict.items()
-                    if k in tool_input
-                }
-            return tool_input
+        if input_args is not None:
+            if isinstance(input_args, dict):
+                return tool_input
+            if issubclass(input_args, BaseModel):
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if (
+                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                        and k not in tool_input
+                    ):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result = input_args.model_validate(tool_input)
+                result_dict = result.model_dump()
+            elif issubclass(input_args, BaseModelV1):
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if (
+                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                        and k not in tool_input
+                    ):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result = input_args.parse_obj(tool_input)
+                result_dict = result.dict()
+            else:
+                msg = (
+                    f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
+                )
+                raise NotImplementedError(msg)
+            return {
+                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
+            }
+        return tool_input
 
     @model_validator(mode="before")
     @classmethod
@@ -651,8 +650,16 @@ class ChildTool(BaseTool):
         # pass as a positional argument.
         if isinstance(tool_input, str):
             return (tool_input,), {}
-        else:
-            return (), tool_input
+        if isinstance(tool_input, dict):
+            # Make a shallow copy of the input to allow downstream code
+            # to modify the root level of the input without affecting the
+            # original input.
+            # This is used by the tool to inject run time information like
+            # the callback manager.
+            return (), tool_input.copy()
+        # This code path is not expected to be reachable.
+        msg = f"Invalid tool input type: {type(tool_input)}"
+        raise TypeError(msg)
 
     def run(
         self,
@@ -722,14 +729,15 @@ class ChildTool(BaseTool):
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
-            if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs = tool_kwargs | {"run_manager": run_manager}
-            if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs = tool_kwargs | {config_param: config}
-            response = context.run(self._run, *tool_args, **tool_kwargs)
+            with set_config_context(child_config) as context:
+                tool_args, tool_kwargs = self._to_args_and_kwargs(
+                    tool_input, tool_call_id
+                )
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs = tool_kwargs | {"run_manager": run_manager}
+                if config_param := _get_runnable_config_param(self._run):
+                    tool_kwargs = tool_kwargs | {config_param: config}
+                response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -832,21 +840,17 @@ class ChildTool(BaseTool):
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            func_to_check = (
-                self._run if self.__class__._arun is BaseTool._arun else self._arun
-            )
-            if signature(func_to_check).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-            if config_param := _get_runnable_config_param(func_to_check):
-                tool_kwargs[config_param] = config
+            with set_config_context(child_config) as context:
+                func_to_check = (
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                )
+                if signature(func_to_check).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                if config_param := _get_runnable_config_param(func_to_check):
+                    tool_kwargs[config_param] = config
 
-            coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if asyncio_accepts_context():
-                response = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                response = await coro
+                coro = self._arun(*tool_args, **tool_kwargs)
+                response = await coro_with_context(coro, context)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -936,17 +940,17 @@ def _handle_tool_error(
 
 
 def _prep_run_args(
-    input: Union[str, dict, ToolCall],
+    value: Union[str, dict, ToolCall],
     config: Optional[RunnableConfig],
     **kwargs: Any,
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
-    if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
+    if _is_tool_call(value):
+        tool_call_id: Optional[str] = cast("ToolCall", value)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", value)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast(Union[str, dict], input)
+        tool_input = cast("Union[str, dict]", value)
     return (
         tool_input,
         dict(
@@ -984,10 +988,8 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    return (
-        isinstance(obj, str)
-        or isinstance(obj, list)
-        and all(_is_message_content_block(e) for e in obj)
+    return isinstance(obj, str) or (
+        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
     )
 
 
@@ -995,10 +997,9 @@ def _is_message_content_block(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content blocks."""
     if isinstance(obj, str):
         return True
-    elif isinstance(obj, dict):
+    if isinstance(obj, dict):
         return obj.get("type", None) in ("text", "image_url", "image", "json")
-    else:
-        return False
+    return False
 
 
 def _stringify(content: Any) -> str:
@@ -1032,7 +1033,7 @@ class InjectedToolArg:
 
 
 class InjectedToolCallId(InjectedToolArg):
-    r'''Annotation for injecting the tool_call_id.
+    """Annotation for injecting the tool_call_id.
 
     Example:
         ..code-block:: python
@@ -1044,9 +1045,9 @@ class InjectedToolCallId(InjectedToolArg):
 
             @tool
             def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
-                """Return x."""
+                \"\"\"Return x.\"\"\"
                 return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
-    '''  # noqa: E501
+    """  # noqa: E501
 
 
 def _is_injected_arg_type(
@@ -1063,18 +1064,26 @@ def _is_injected_arg_type(
 def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> dict[str, type]:
+    """Get all annotations from a Pydantic BaseModel and its parents.
+
+    Args:
+        cls: The Pydantic BaseModel class.
+        default_to_bound: Whether to default to the bound of a TypeVar if it exists.
+    """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
+        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
+        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+
         annotations: dict[str, type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if (
-                fields := getattr(cls, "model_fields", {})  # pydantic v2+
-                or getattr(cls, "__fields__", {})  # pydantic v1
-            ) and name not in fields:
+            if fields and name not in fields and name not in alias_map:
                 continue
-            annotations[name] = param.annotation
+            field_name = alias_map.get(name, name)
+            annotations[field_name] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
@@ -1111,7 +1120,7 @@ def get_all_basemodel_annotations(
             generic_map = dict(zip(generic_type_vars, get_args(parent)))
             for field in getattr(parent_origin, "__annotations__", {}):
                 annotations[field] = _replace_type_vars(
-                    annotations[field], generic_map, default_to_bound
+                    annotations[field], generic_map, default_to_bound=default_to_bound
                 )
 
     return {
@@ -1123,23 +1132,23 @@ def get_all_basemodel_annotations(
 def _replace_type_vars(
     type_: type,
     generic_map: Optional[dict[TypeVar, type]] = None,
+    *,
     default_to_bound: bool = True,
 ) -> type:
     generic_map = generic_map or {}
     if isinstance(type_, TypeVar):
         if type_ in generic_map:
             return generic_map[type_]
-        elif default_to_bound:
+        if default_to_bound:
             return type_.__bound__ or Any
-        else:
-            return type_
-    elif (origin := get_origin(type_)) and (args := get_args(type_)):
+        return type_
+    if (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(
-            _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
+            _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
+            for arg in args
         )
         return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
-    else:
-        return type_
+    return type_
 
 
 class BaseToolkit(BaseModel, ABC):

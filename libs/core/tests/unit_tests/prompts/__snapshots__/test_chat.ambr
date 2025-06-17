@@ -3137,6 +3137,27 @@
               }),
               dict({
                 'id': list([
+                  'langchain_core',
+                  'prompts',
+                  'dict',
+                  'DictPromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'template': dict({
+                    'cache_control': dict({
+                      'type': '{foo}',
+                    }),
+                    'text': "What's in this image?",
+                    'type': 'text',
+                  }),
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'DictPromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
                   'langchain',
                   'prompts',
                   'image',

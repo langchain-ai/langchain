@@ -1,8 +1,7 @@
 import functools
 from importlib import util
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
-from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
@@ -25,7 +24,7 @@ def _get_provider_list() -> str:
     )
 
 
-def _parse_model_string(model_name: str) -> Tuple[str, str]:
+def _parse_model_string(model_name: str) -> tuple[str, str]:
     """Parse a model string into provider and model name components.
 
     The model string should be in the format 'provider:model-name', where provider
@@ -78,7 +77,7 @@ def _parse_model_string(model_name: str) -> Tuple[str, str]:
 
 def _infer_model_and_provider(
     model: str, *, provider: Optional[str] = None
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     if not model.strip():
         raise ValueError("Model name cannot be empty")
     if provider is None and ":" in model:
@@ -116,13 +115,12 @@ def _check_pkg(pkg: str) -> None:
         )
 
 
-@beta()
 def init_embeddings(
     model: str,
     *,
     provider: Optional[str] = None,
     **kwargs: Any,
-) -> Union[Embeddings, Runnable[Any, List[float]]]:
+) -> Union[Embeddings, Runnable[Any, list[float]]]:
     """Initialize an embeddings model from a model name and optional provider.
 
     **Note:** Must have the integration package corresponding to the model provider

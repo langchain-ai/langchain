@@ -16,9 +16,10 @@ from langchain_core._api.deprecation import deprecated
     ),
 )
 def try_load_from_hub(
-    *args: Any,
-    **kwargs: Any,
+    *args: Any,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
 ) -> Any:
+    """[DEPRECATED] Try to load from the old Hub."""
     warnings.warn(
         "Loading from the deprecated github-based Hub is no longer supported. "
         "Please use the new LangChain Hub at https://smith.langchain.com/hub instead.",

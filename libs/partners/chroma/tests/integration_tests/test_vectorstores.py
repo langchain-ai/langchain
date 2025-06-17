@@ -3,8 +3,8 @@
 import os.path
 import tempfile
 import uuid
+from collections.abc import Generator
 from typing import (
-    Generator,
     cast,
 )
 
@@ -12,7 +12,7 @@ import chromadb
 import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
-from chromadb.api.segment import SegmentAPI
+from chromadb.api.rust import RustBindingsAPI
 from chromadb.api.types import Embeddable
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
@@ -222,7 +222,7 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
 def test_chroma_search_filter() -> None:
     """Test end to end construction and search with metadata filtering."""
     texts = ["far", "bar", "baz"]
-    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
+    metadatas = [{"first_letter": f"{text[0]}"} for text in texts]
     ids = [f"id_{i}" for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
@@ -245,7 +245,7 @@ def test_chroma_search_filter() -> None:
 def test_chroma_search_filter_with_scores() -> None:
     """Test end to end construction and scored search with metadata filtering."""
     texts = ["far", "bar", "baz"]
-    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
+    metadatas = [{"first_letter": f"{text[0]}"} for text in texts]
     ids = [f"id_{i}" for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
@@ -311,9 +311,8 @@ def test_chroma_with_persistence() -> None:
             # to be able to delete the files after testing
             client = docsearch._client
             assert isinstance(client, chromadb.ClientCreator)
-            assert isinstance(client._server, SegmentAPI)
-            client._server._sysdb.stop()
-            client._server._manager.stop()
+            assert isinstance(client._server, RustBindingsAPI)
+            client._server.stop()
 
 
 def test_chroma_with_persistence_with_client_settings() -> None:
@@ -358,9 +357,8 @@ def test_chroma_with_persistence_with_client_settings() -> None:
             # to be able to delete the files after testing
             client = docsearch._client
             assert isinstance(client, chromadb.ClientCreator)
-            assert isinstance(client._server, SegmentAPI)
-            client._server._sysdb.stop()
-            client._server._manager.stop()
+            assert isinstance(client._server, RustBindingsAPI)
+            client._server.stop()
 
 
 def test_chroma_mmr() -> None:

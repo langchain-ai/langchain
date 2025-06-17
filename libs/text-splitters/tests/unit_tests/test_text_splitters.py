@@ -23,6 +23,7 @@ from langchain_text_splitters.html import (
     HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
@@ -411,6 +412,144 @@ def test_python_text_splitter() -> None:
     split_3 = """def bar():"""
     expected_splits = [split_0, split_1, split_2, split_3]
     assert splits == expected_splits
+
+
+FAKE_JSX_TEXT = """
+import React from 'react';
+import OtherComponent from './OtherComponent';
+
+function MyComponent() {
+  const [count, setCount] = React.useState(0);
+
+  const handleClick = () => {
+    setCount(count + 1);
+  };
+
+  return (
+    <div>
+      <h1>Counter: {count}</h1>
+      <button onClick={handleClick}>
+        Increment
+      </button>
+      <OtherComponent />
+    </div>
+  );
+}
+
+export default MyComponent;
+"""
+
+
+def test_jsx_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_JSX_TEXT)
+
+    expected_splits = [
+        "\nimport React from 'react';\n"
+        "import OtherComponent from './OtherComponent';\n",
+        "\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);",
+        "\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };",
+        "return (",
+        "<div>",
+        "<h1>Counter: {count}</h1>\n      ",
+        "<button onClick={handleClick}>\n        Increment\n      </button>\n      ",
+        "<OtherComponent />\n    </div>\n  );\n}\n",
+        "export default MyComponent;",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+FAKE_VUE_TEXT = """
+<template>
+  <div>
+    <h1>{{ title }}</h1>
+    <button @click="increment">
+      Count is: {{ count }}
+    </button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      title: 'Counter App',
+      count: 0
+    }
+  },
+  methods: {
+    increment() {
+      this.count++
+    }
+  }
+}
+</script>
+
+<style>
+button {
+  color: blue;
+}
+</style>
+"""
+
+
+def test_vue_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_VUE_TEXT)
+
+    expected_splits = [
+        "<template>",
+        "<div>",
+        "<h1>{{ title }}</h1>",
+        '<button @click="increment">\n      Count is: {{ count }}\n'
+        "    </button>\n  </div>\n</template>",
+        "<script>",
+        "export",
+        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
+        "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
+        "this.count++\n    }\n  }\n}\n</script>",
+        "<style>\nbutton {\n  color: blue;\n}\n</style>",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+FAKE_SVELTE_TEXT = """
+<script>
+  let count = 0
+
+  function increment() {
+    count += 1
+  }
+</script>
+
+<main>
+  <h1>Counter App</h1>
+  <button on:click={increment}>
+    Count is: {count}
+  </button>
+</main>
+
+<style>
+  button {
+    color: blue;
+  }
+</style>
+"""
+
+
+def test_svelte_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_SVELTE_TEXT)
+
+    expected_splits = [
+        "<script>\n  let count = 0",
+        "\n\n  function increment() {\n    count += 1\n  }\n</script>",
+        "<main>",
+        "<h1>Counter App</h1>",
+        "<button on:click={increment}>\n    Count is: {count}\n  </button>\n</main>",
+        "<style>\n  button {\n    color: blue;\n  }\n</style>",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
 
 
 CHUNK_SIZE = 16
@@ -3234,3 +3373,193 @@ def test_html_splitter_with_media_preservation() -> None:
     ]
 
     assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_true() -> None:
+    """Test HTML splitting with keep_separator=True"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=True,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_false() -> None:
+    """Test HTML splitting with keep_separator=False"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=False,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_start() -> None:
+    """Test HTML splitting with keep_separator="start" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="start",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_end() -> None:
+    """Test HTML splitting with keep_separator="end" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="end",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_default() -> None:
+    """Test HTML splitting with keep_separator not set"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=10, separators=[". "]
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
+    """Test that regex lookahead separator is not re-inserted when merging."""
+    text = "SCE191 First chunk. SCE103 Second chunk."
+    splitter = CharacterTextSplitter(
+        separator=r"(?=SCE\d{3})",
+        is_separator_regex=True,
+        chunk_size=200,
+        chunk_overlap=0,
+        keep_separator=False,
+    )
+    output = splitter.split_text(text)
+    assert output == ["SCE191 First chunk. SCE103 Second chunk."]
+
+
+@pytest.mark.parametrize(
+    "separator,is_regex,text,chunk_size,expected",
+    [
+        # 1) regex lookaround & split happens
+        #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
+        (r"(?<=mid)", True, "abcmiddef", 5, ["abcmid", "def"]),
+        # 2) regex lookaround & no split
+        #   chunk_size=100 merges back into ["abcmiddef"]
+        (r"(?<=mid)", True, "abcmiddef", 100, ["abcmiddef"]),
+        # 3) literal separator & split happens
+        #   split on "mid" → ["abc","def"], chunk_size=3 keeps both
+        ("mid", False, "abcmiddef", 3, ["abc", "def"]),
+        # 4) literal separator & no split
+        #   chunk_size=100 merges back into ["abcmiddef"]
+        ("mid", False, "abcmiddef", 100, ["abcmiddef"]),
+    ],
+)
+def test_character_text_splitter_chunk_size_effect(
+    separator: str,
+    is_regex: bool,
+    text: str,
+    chunk_size: int,
+    expected: List[str],
+) -> None:
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        is_separator_regex=is_regex,
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        keep_separator=False,
+    )
+    assert splitter.split_text(text) == expected

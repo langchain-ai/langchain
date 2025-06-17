@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
@@ -27,7 +27,7 @@ class SQLInputWithTables(TypedDict):
     """Input for a SQL Chain."""
 
     question: str
-    table_names_to_use: List[str]
+    table_names_to_use: list[str]
 
 
 def create_sql_query_chain(
@@ -35,7 +35,9 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
-) -> Runnable[Union[SQLInput, SQLInputWithTables, Dict[str, Any]], str]:
+    *,
+    get_col_comments: Optional[bool] = None,
+) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
     """Create a chain that generates SQL queries.
 
     *Security Note*: This chain generates SQL queries for the given database.
@@ -59,6 +61,8 @@ def create_sql_query_chain(
         prompt: The prompt to use. If none is provided, will choose one
             based on dialect. Defaults to None. See Prompt section below for more.
         k: The number of results per select statement to return. Defaults to 5.
+        get_col_comments: Whether to retrieve column comments along with table info.
+            Defaults to False.
 
     Returns:
         A chain that takes in a question and generates a SQL query that answers
@@ -127,14 +131,26 @@ def create_sql_query_chain(
     if "dialect" in prompt_to_use.input_variables:
         prompt_to_use = prompt_to_use.partial(dialect=db.dialect)
 
+    table_info_kwargs = {}
+    if get_col_comments:
+        if db.dialect not in ("postgresql", "mysql", "oracle"):
+            raise ValueError(
+                f"get_col_comments=True is only supported for dialects "
+                f"'postgresql', 'mysql', and 'oracle'. Received dialect: "
+                f"{db.dialect}"
+            )
+        else:
+            table_info_kwargs["get_col_comments"] = True
+
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",
         "table_info": lambda x: db.get_table_info(
-            table_names=x.get("table_names_to_use")
+            table_names=x.get("table_names_to_use"),
+            **table_info_kwargs,
         ),
     }
     return (
-        RunnablePassthrough.assign(**inputs)  # type: ignore
+        RunnablePassthrough.assign(**inputs)  # type: ignore[return-value]
         | (
             lambda x: {
                 k: v

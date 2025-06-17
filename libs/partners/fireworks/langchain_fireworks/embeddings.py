@@ -1,5 +1,3 @@
-from typing import List
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import secret_from_env
 from openai import OpenAI
@@ -96,13 +94,13 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         )
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         return [
             i.embedding
             for i in self.client.embeddings.create(input=texts, model=self.model).data
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]

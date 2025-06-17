@@ -1,6 +1,8 @@
 """Embeddings tests."""
 
-from typing import List
+import hashlib
+import importlib
+import warnings
 
 import pytest
 from langchain_core.embeddings import Embeddings
@@ -10,16 +12,16 @@ from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         # Simulate embedding documents
-        embeddings: List[List[float]] = []
+        embeddings: list[list[float]] = []
         for text in texts:
             if text == "RAISE_EXCEPTION":
                 raise ValueError("Simulated embedding failure")
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
 
@@ -61,7 +63,7 @@ def cache_embeddings_with_query() -> CacheBackedEmbeddings:
 def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
     texts = ["1", "22", "a", "333"]
     vectors = cache_embeddings.embed_documents(texts)
-    expected_vectors: List[List[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
+    expected_vectors: list[list[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
     assert vectors == expected_vectors
     keys = list(cache_embeddings.document_embedding_store.yield_keys())
     assert len(keys) == 4
@@ -104,7 +106,7 @@ def test_embed_cached_query(cache_embeddings_with_query: CacheBackedEmbeddings) 
 async def test_aembed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
     texts = ["1", "22", "a", "333"]
     vectors = await cache_embeddings.aembed_documents(texts)
-    expected_vectors: List[List[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
+    expected_vectors: list[list[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
     assert vectors == expected_vectors
     keys = [
         key async for key in cache_embeddings.document_embedding_store.ayield_keys()
@@ -148,3 +150,89 @@ async def test_aembed_query_cached(
     keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())  # type: ignore[union-attr]
     assert len(keys) == 1
     assert keys[0] == "test_namespace89ec3dae-a4d9-5636-a62e-ff3b56cdfa15"
+
+
+def test_blake2b_encoder() -> None:
+    """Test that the blake2b encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="blake2b"
+    )
+
+    text = "blake"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.blake2b(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
+def test_sha256_encoder() -> None:
+    """Test that the sha256 encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="sha256"
+    )
+
+    text = "foo"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.sha256(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
+def test_sha512_encoder() -> None:
+    """Test that the sha512 encoder is used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+    cbe = CacheBackedEmbeddings.from_bytes_store(
+        emb, store, namespace="ns_", key_encoder="sha512"
+    )
+
+    text = "foo"
+    cbe.embed_documents([text])
+
+    # rebuild the key exactly as the library does
+    expected_key = "ns_" + hashlib.sha512(text.encode()).hexdigest()
+    assert list(cbe.document_embedding_store.yield_keys()) == [expected_key]
+
+
+def test_sha1_warning_emitted_once() -> None:
+    """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
+    module = importlib.import_module(CacheBackedEmbeddings.__module__)
+
+    # Create a *temporary* MonkeyPatch object whose effects disappear
+    # automatically when the with‑block exits.
+    with pytest.MonkeyPatch.context() as mp:
+        # We're monkey patching the module to reset the `_warned_about_sha1` flag
+        # which may have been set while testing other parts of the codebase.
+        mp.setattr(module, "_warned_about_sha1", False, raising=False)
+
+        store = InMemoryStore()
+        emb = MockEmbeddings()
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            CacheBackedEmbeddings.from_bytes_store(emb, store)  # triggers warning
+            CacheBackedEmbeddings.from_bytes_store(emb, store)  # silent
+
+        sha1_msgs = [w for w in caught if "SHA‑1" in str(w.message)]
+        assert len(sha1_msgs) == 1
+
+
+def test_custom_encoder() -> None:
+    """Test that a custom encoder can be used to encode keys in the cache store."""
+    store = InMemoryStore()
+    emb = MockEmbeddings()
+
+    def custom_upper(text: str) -> str:  # very simple demo encoder
+        return "CUSTOM_" + text.upper()
+
+    cbe = CacheBackedEmbeddings.from_bytes_store(emb, store, key_encoder=custom_upper)
+    txt = "x"
+    cbe.embed_documents([txt])
+
+    assert list(cbe.document_embedding_store.yield_keys()) == ["CUSTOM_X"]

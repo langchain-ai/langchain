@@ -44,10 +44,11 @@ T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
-    pending: bool,
     removal: str,
     alternative: str,
     alternative_import: str,
+    *,
+    pending: bool,
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
@@ -109,6 +110,8 @@ def deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -121,6 +124,8 @@ def deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
 
     Examples:
 
@@ -130,7 +135,9 @@ def deprecated(
             def the_function_to_deprecate():
                 pass
     """
-    _validate_deprecation_params(pending, removal, alternative, alternative_import)
+    _validate_deprecation_params(
+        removal, alternative, alternative_import, pending=pending
+    )
 
     def deprecate(
         obj: T,
@@ -145,7 +152,10 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
+        from langchain_core.utils.pydantic import (  # type: ignore[attr-defined]
+            FieldInfoV1,
+            FieldInfoV2,
+        )
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -193,11 +203,11 @@ def deprecated(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -216,7 +226,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast(T, obj)
+                return cast("T", obj)
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -227,9 +237,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
-                    T,
+                    "T",
                     FieldInfoV1(
                         default=obj.default,
                         default_factory=obj.default_factory,
@@ -248,9 +258,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
-                    T,
+                    "T",
                     FieldInfoV2(
                         default=obj.default,
                         default_factory=obj.default_factory,
@@ -264,7 +274,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast(Union[type, Callable], obj.fget).__qualname__
+            _name = _name or cast("Union[type, Callable]", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -308,17 +318,17 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the property."""
                 return cast(
-                    T,
+                    "T",
                     _DeprecatedProperty(
                         fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                     ),
                 )
 
         else:
-            _name = _name or cast(Union[type, Callable], obj).__qualname__
+            _name = _name or cast("Union[type, Callable]", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -338,7 +348,7 @@ def deprecated(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return cast(T, wrapper)
+                return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -388,10 +398,8 @@ def deprecated(
 """
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast(T, finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 
@@ -434,6 +442,8 @@ def warn_deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -446,6 +456,8 @@ def warn_deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
     """
     if not pending:
         if not removal:
@@ -455,8 +467,7 @@ def warn_deprecated(
                 f"{removal}"
             )
             raise NotImplementedError(msg)
-        else:
-            removal = f"in {removal}"
+        removal = f"in {removal}"
 
     if not message:
         message = ""

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict, model_validator
-
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 
 @deprecated(
@@ -37,7 +36,7 @@ class CohereRerank(BaseDocumentCompressor):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
             try:
@@ -62,7 +61,7 @@ class CohereRerank(BaseDocumentCompressor):
         model: Optional[str] = None,
         top_n: Optional[int] = -1,
         max_chunks_per_doc: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
         Args:

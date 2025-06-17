@@ -1,6 +1,7 @@
 """Load question answering chains."""
 
-from typing import Any, Mapping, Optional, Protocol
+from collections.abc import Mapping
+from typing import Any, Optional, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
@@ -155,7 +156,7 @@ def _load_map_reduce_chain(
             verbose=verbose,  # type: ignore[arg-type]
             callback_manager=callback_manager,
         )
-    reduce_documents_chain = ReduceDocumentsChain(  # type: ignore[misc]
+    reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,

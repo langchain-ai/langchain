@@ -1,3 +1,5 @@
+"""Utilities for environment variables."""
+
 from __future__ import annotations
 
 import os
@@ -40,8 +42,8 @@ def get_from_dict_or_env(
     """
     if isinstance(key, (list, tuple)):
         for k in key:
-            if k in data and data[k]:
-                return data[k]
+            if value := data.get(k):
+                return value
 
     if isinstance(key, str) and key in data and data[key]:
         return data[key]
@@ -68,14 +70,13 @@ def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
         ValueError: If the key is not in the dictionary and no default value is
             provided or if the environment variable is not set.
     """
-    if env_key in os.environ and os.environ[env_key]:
-        return os.environ[env_key]
-    elif default is not None:
+    if env_value := os.getenv(env_key):
+        return env_value
+    if default is not None:
         return default
-    else:
-        msg = (
-            f"Did not find {key}, please add an environment variable"
-            f" `{env_key}` which contains it, or pass"
-            f" `{key}` as a named parameter."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Did not find {key}, please add an environment variable"
+        f" `{env_key}` which contains it, or pass"
+        f" `{key}` as a named parameter."
+    )
+    raise ValueError(msg)

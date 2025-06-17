@@ -39,16 +39,14 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
+    def load_llm(*args: Any, **kwargs: Any) -> None:
         raise ImportError(
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
             "You can install it with `pip install langchain_community`"
         )
 
-    def load_llm_from_config(  # type: ignore
-        *args: Any, **kwargs: Any
-    ) -> None:
+    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
         raise ImportError(
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "
@@ -95,9 +93,9 @@ def _load_hyde_chain(config: dict, **kwargs: Any) -> HypotheticalDocumentEmbedde
     else:
         raise ValueError("`embeddings` must be present.")
     return HypotheticalDocumentEmbedder(
-        llm_chain=llm_chain,  # type: ignore[arg-type]
+        llm_chain=llm_chain,
         base_embeddings=embeddings,
-        **config,  # type: ignore[arg-type]
+        **config,
     )
 
 
@@ -160,7 +158,7 @@ def _load_map_reduce_documents_chain(
     )
 
 
-def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:  # type: ignore[valid-type]
+def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:
     combine_documents_chain = None
     collapse_documents_chain = None
 
@@ -213,7 +211,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             config.pop("collapse_document_chain_path"), **kwargs
         )
 
-    return ReduceDocumentsChain(  # type: ignore[misc]
+    return ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_documents_chain,
         **config,
@@ -221,33 +219,13 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
 
 
 def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
-    from langchain_experimental.llm_bash.base import LLMBashChain
-
-    llm_chain = None
-    if "llm_chain" in config:
-        llm_chain_config = config.pop("llm_chain")
-        llm_chain = load_chain_from_config(llm_chain_config, **kwargs)
-    elif "llm_chain_path" in config:
-        llm_chain = load_chain(config.pop("llm_chain_path"), **kwargs)
-    # llm attribute is deprecated in favor of llm_chain, here to support old configs
-    elif "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config, **kwargs)
-    # llm_path attribute is deprecated in favor of llm_chain_path,
-    # its to support old configs
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"), **kwargs)
-    else:
-        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
-    if "prompt" in config:
-        prompt_config = config.pop("prompt")
-        prompt = load_prompt_from_config(prompt_config)
-    elif "prompt_path" in config:
-        prompt = load_prompt(config.pop("prompt_path"))
-    if llm_chain:
-        return LLMBashChain(llm_chain=llm_chain, prompt=prompt, **config)  # type: ignore[arg-type]
-    else:
-        return LLMBashChain(llm=llm, prompt=prompt, **config)
+    """Load LLM Bash chain from config dict"""
+    raise NotImplementedError(
+        "LLMBash Chain is not available through LangChain anymore. "
+        "The relevant code can be found in langchain_experimental, "
+        "but it is not appropriate for production usage due to security "
+        "concerns. Please refer to langchain-experimental repository for more details."
+    )
 
 
 def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
@@ -338,16 +316,12 @@ def _load_map_rerank_documents_chain(
 
 
 def _load_pal_chain(config: dict, **kwargs: Any) -> Any:
-    from langchain_experimental.pal_chain import PALChain
-
-    if "llm_chain" in config:
-        llm_chain_config = config.pop("llm_chain")
-        llm_chain = load_chain_from_config(llm_chain_config, **kwargs)
-    elif "llm_chain_path" in config:
-        llm_chain = load_chain(config.pop("llm_chain_path"), **kwargs)
-    else:
-        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
-    return PALChain(llm_chain=llm_chain, **config)  # type: ignore[arg-type]
+    raise NotImplementedError(
+        "PALChain is not available through LangChain anymore. "
+        "The relevant code can be found in langchain_experimental, "
+        "but it is not appropriate for production usage due to security "
+        "concerns. Please refer to langchain-experimental repository for more details."
+    )
 
 
 def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocumentsChain:
@@ -401,30 +375,15 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
 
 
 def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
-    from langchain_experimental.sql import SQLDatabaseChain
-
-    if "database" in kwargs:
-        database = kwargs.pop("database")
-    else:
-        raise ValueError("`database` must be present.")
-    if "llm_chain" in config:
-        llm_chain_config = config.pop("llm_chain")
-        chain = load_chain_from_config(llm_chain_config, **kwargs)
-        return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
-    if "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config, **kwargs)
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"), **kwargs)
-    else:
-        raise ValueError("One of `llm` or `llm_path` must be present.")
-    if "prompt" in config:
-        prompt_config = config.pop("prompt")
-        prompt = load_prompt_from_config(prompt_config)
-    else:
-        prompt = None
-
-    return SQLDatabaseChain.from_llm(llm, database, prompt=prompt, **config)
+    """Load SQL Database chain from config dict."""
+    raise NotImplementedError(
+        "SQLDatabaseChain is not available through LangChain anymore. "
+        "The relevant code can be found in langchain_experimental, "
+        "but it is not appropriate for production usage due to security "
+        "concerns. Please refer to langchain-experimental repository for more details, "
+        "or refer to this tutorial for best practices: "
+        "https://python.langchain.com/docs/tutorials/sql_qa/"
+    )
 
 
 def _load_vector_db_qa_with_sources_chain(
@@ -563,8 +522,8 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
         )
     return GraphCypherQAChain(
         graph=graph,
-        cypher_generation_chain=cypher_generation_chain,  # type: ignore[arg-type]
-        qa_chain=qa_chain,  # type: ignore[arg-type]
+        cypher_generation_chain=cypher_generation_chain,
+        qa_chain=qa_chain,
         **config,
     )
 
@@ -702,7 +661,7 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
         with open(file_path) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError("File type must be json or yaml")

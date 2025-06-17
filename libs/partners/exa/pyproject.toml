@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.15", "exa-py<2.0.0,>=1.0.8"]
+requires-python = ">=3.9"
+dependencies = ["langchain-core<1.0.0,>=0.3.60", "exa-py<2.0.0,>=1.0.8"]
 name = "langchain-exa"
-version = "0.2.1"
+version = "0.3.0"
 description = "An integration package connecting Exa and LangChain"
 readme = "README.md"
 
@@ -45,8 +45,12 @@ langchain-core = { path = "../../core", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "T201", "UP"]
+ignore = [ "UP007", ]
 
 [tool.coverage.run]
 omit = ["tests/*"]

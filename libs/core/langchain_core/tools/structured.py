@@ -1,3 +1,5 @@
+"""Structured tool."""
+
 from __future__ import annotations
 
 import textwrap
@@ -14,6 +16,7 @@ from typing import (
 )
 
 from pydantic import Field, SkipValidation
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -49,6 +52,7 @@ class StructuredTool(BaseTool):
     # --- Runnable ---
 
     # TODO: Is this needed?
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -118,9 +122,9 @@ class StructuredTool(BaseTool):
         coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        return_direct: bool = False,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
         args_schema: Optional[ArgsSchema] = None,
-        infer_schema: bool = True,
+        infer_schema: bool = True,  # noqa: FBT001,FBT002
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,

@@ -1,3 +1,5 @@
+"""LLMResult class."""
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -29,8 +31,8 @@ class LLMResult(BaseModel):
     The second dimension of the list represents different candidate generations
     for a given prompt.
 
-    When returned from an LLM the type is List[List[Generation]].
-    When returned from a chat model the type is List[List[ChatGeneration]].
+    When returned from an LLM the type is list[list[Generation]].
+    When returned from a chat model the type is list[list[ChatGeneration]].
 
     ChatGeneration is a subclass of Generation that has a field for a structured
     chat message.
@@ -48,13 +50,13 @@ class LLMResult(BaseModel):
     run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input."""
 
-    type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
+    type: Literal["LLMResult"] = "LLMResult"
     """Type is used exclusively for serialization purposes."""
 
     def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
-        Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
+        Unpack list[list[Generation]] -> list[LLMResult] where each returned LLMResult
         contains only a single Generation. If token usage information is available,
         it is kept only for the LLMResult corresponding to the top-choice
         Generation, to avoid over-counting of token usage downstream.

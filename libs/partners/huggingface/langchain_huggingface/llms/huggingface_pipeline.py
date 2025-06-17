@@ -2,7 +2,8 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from collections.abc import Iterator, Mapping
+from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
@@ -22,6 +23,7 @@ DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
     "text2text-generation",
     "text-generation",
+    "image-text-to-text",
     "summarization",
     "translation",
 )
@@ -37,8 +39,8 @@ class HuggingFacePipeline(BaseLLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation`, `summarization` and
-    `translation`  for now.
+    Only supports `text-generation`, `text2text-generation`, `image-text-to-text`,
+    `summarization` and `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -82,7 +84,7 @@ class HuggingFacePipeline(BaseLLM):
 
     @model_validator(mode="before")
     @classmethod
-    def pre_init_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def pre_init_validator(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Ensure model_id is set either by pipeline or user input."""
         if "model_id" not in values:
             if "pipeline" in values and values["pipeline"]:
@@ -297,13 +299,13 @@ class HuggingFacePipeline(BaseLLM):
 
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
         # List to hold all results
-        text_generations: List[str] = []
+        text_generations: list[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", False)
 
@@ -326,6 +328,8 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
                     text = response["generated_text"]
+                elif self.pipeline.task == "image-text-to-text":
+                    text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
                 elif self.pipeline.task in "translation":
@@ -347,7 +351,7 @@ class HuggingFacePipeline(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:

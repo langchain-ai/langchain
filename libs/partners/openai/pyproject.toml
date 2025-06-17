@@ -5,14 +5,14 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.45",
-    "openai<2.0.0,>=1.66.3",
+    "langchain-core<1.0.0,>=0.3.64",
+    "openai<2.0.0,>=1.86.0",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.9"
+version = "0.3.23"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -30,10 +30,12 @@ test = [
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
     "pytest-cov<5.0.0,>=4.1.0",
+    "pytest-retry<1.8.0,>=1.7.0",
     "pytest-socket<1.0.0,>=0.6.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+    "vcrpy>=7.0",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-core",
     "langchain-tests",
 ]
@@ -43,8 +45,8 @@ dev = ["langchain-core"]
 test_integration = [
     "httpx<1.0.0,>=0.27.0",
     "pillow<11.0.0,>=10.3.0",
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version < '3.13'",
+    "numpy>=2.1.0; python_version >= '3.13'",
 ]
 typing = ["mypy<2.0,>=1.10", "types-tqdm<5.0.0.0,>=4.66.0.5", "langchain-core"]
 
@@ -58,8 +60,12 @@ disallow_untyped_defs = "True"
 module = "transformers"
 ignore_missing_imports = true
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "T201", "UP"]
+ignore = [ "UP007", ]
 
 [tool.ruff.format]
 docstring-code-format = true

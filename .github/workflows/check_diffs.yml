@@ -29,7 +29,7 @@ jobs:
         with:
           python-version: '3.11'
       - id: files
-        uses: Ana06/get-changed-files@v2.2.0
+        uses: Ana06/get-changed-files@v2.3.0
       - id: set-matrix
         run: |
           python -m pip install packaging requests
@@ -152,6 +152,7 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+
   ci_success:
     name: "CI Success"
     needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]

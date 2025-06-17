@@ -1,3 +1,5 @@
+"""Tool that takes in function or coroutine directly."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable
@@ -9,6 +11,8 @@ from typing import (
     Optional,
     Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -37,6 +41,7 @@ class Tool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -127,9 +132,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super().__init__(  # type: ignore[call-arg]
-            name=name, func=func, description=description, **kwargs
-        )
+        super().__init__(name=name, func=func, description=description, **kwargs)
 
     @classmethod
     def from_function(
@@ -137,7 +140,7 @@ class Tool(BaseTool):
         func: Optional[Callable],
         name: str,  # We keep these required to support backwards compatibility
         description: str,
-        return_direct: bool = False,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
         args_schema: Optional[ArgsSchema] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
@@ -173,6 +176,3 @@ class Tool(BaseTool):
             args_schema=args_schema,
             **kwargs,
         )
-
-
-Tool.model_rebuild()

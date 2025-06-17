@@ -237,6 +237,17 @@ const FEATURE_TABLES = {
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
             },
+            {
+                "name": "ChatPerplexity",
+                "package": "langchain-perplexity",
+                "link": "perplexity",
+                "structured_output": true,
+                "tool_calling": false,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/perplexity/chat_models/langchain_perplexity.chat_models.ChatPerplexity.html"
+            }
         ],
     },
     llms: {
@@ -356,6 +367,12 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/openai/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html"
             },
             {
+                name: "Google Gemini",
+                link: "google-generative-ai",
+                package: "langchain-google-genai",
+                apiLink: "https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html"
+            },
+            {
                 name: "Together",
                 link: "together",
                 package: "langchain-together",
@@ -443,14 +460,6 @@ const FEATURE_TABLES = {
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/elasticsearch/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html",
                 package: "langchain_elasticsearch"
-            },
-            {
-                name: "MilvusCollectionHybridSearchRetriever",
-                link: "milvus_hybrid_search",
-                selfHost: true,
-                cloudOffering: false,
-                apiLink: "https://python.langchain.com/api_reference/milvus/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html",
-                package: "langchain_milvus"
             },
             {
                 name: "VertexAISearchRetriever",
@@ -1098,13 +1107,13 @@ const FEATURE_TABLES = {
                 link: "milvus",
                 deleteById: true,
                 filtering: true,
-                searchByVector: false,
+                searchByVector: true,
                 searchWithScore: true,
                 async: true,
-                passesStandardTests: false,
-                multiTenancy: false,
+                passesStandardTests: true,
+                multiTenancy: true,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "MongoDBAtlasVectorSearch",
@@ -1118,6 +1127,19 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: false,
+            },
+            {
+                name: "openGauss",
+                link: "openGauss",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: true,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
             },
             {
                 name: "PGVector",

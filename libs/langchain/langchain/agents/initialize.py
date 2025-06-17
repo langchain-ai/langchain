@@ -1,6 +1,7 @@
 """Load agent."""
 
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -10,7 +11,8 @@ from langchain_core.tools import BaseTool
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
-from langchain.agents.loading import AGENT_TO_CLASS, load_agent
+from langchain.agents.loading import load_agent
+from langchain.agents.types import AGENT_TO_CLASS
 
 
 @deprecated(

@@ -1,9 +1,11 @@
 """Test few shot prompt template."""
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -24,7 +26,7 @@ EXAMPLE_PROMPT = PromptTemplate(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 @pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
@@ -74,7 +76,10 @@ def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     # Test when missing in suffix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=template,
@@ -91,7 +96,10 @@ def test_prompt_missing_input_variables() -> None:
 
     # Test when missing in prefix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix="foo",
@@ -376,6 +384,7 @@ class AsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
+    @override
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
@@ -474,6 +483,7 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         raise NotImplementedError
 
+    @override
     async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 

@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.34"]
+requires-python = ">=3.9"
+dependencies = ["langchain-core<1.0.0,>=0.3.51"]
 name = "langchain-text-splitters"
-version = "0.3.6"
+version = "0.3.8"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
@@ -20,7 +20,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<1.0.0,>=0.9.2", "langchain-core"]
 typing = [
-    "mypy<2.0,>=1.10",
+    "mypy<2.0,>=1.15",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.8.0",
@@ -40,7 +40,7 @@ test_integration = [
     "spacy<3.8.4,>=3.0.0; python_version < \"3.10.0\"",
     "spacy<4.0.0,>=3.0.0; python_version < \"3.13.0\"",
     "nltk<4.0.0,>=3.9.1",
-    "transformers<5.0.0,>=4.47.0",
+    "transformers<5.0.0,>=4.51.3",
     "sentence-transformers>=2.6.0; python_version < \"3.13\"",
 ]
 
@@ -48,29 +48,20 @@ test_integration = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+strict = "True"
+strict_bytes = "True"
+enable_error_code = "deprecated"
+report_deprecated_as_note = "True"
+
 [[tool.mypy.overrides]]
-module = [
-    "transformers",
-    "sentence_transformers",
-    "nltk.tokenize",
-    "konlpy.tag",
-    "bs4",
-    "pytest",
-    "spacy",
-    "spacy.lang.en",
-    "numpy",
-    "nltk",
-    "spacy.cli",
-    "torch",
-]
+module = ["konlpy", "nltk", "sentence_transformers", "spacy",]
 ignore_missing_imports = "True"
 
 [tool.ruff]
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "D"]
+select = ["E", "F", "I", "PGH003", "T201", "D"]
 ignore = ["D100"]
 
 [tool.coverage.run]

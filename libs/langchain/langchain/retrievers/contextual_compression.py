@@ -1,16 +1,12 @@
-from typing import Any, List
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from pydantic import ConfigDict
-
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
 
 
 class ContextualCompressionRetriever(BaseRetriever):
@@ -32,7 +28,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents relevant for a query.
 
         Args:
@@ -58,7 +54,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents relevant for a query.
 
         Args:
