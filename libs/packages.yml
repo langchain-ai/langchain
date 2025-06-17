@@ -668,3 +668,6 @@ packages:
 - name: langchain-nebius
   path: libs/nebius
   repo: nebius/langchain-nebius
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi
