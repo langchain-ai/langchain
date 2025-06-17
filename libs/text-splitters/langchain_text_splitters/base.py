@@ -73,7 +73,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
-
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
@@ -166,10 +165,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-        return cls(
-            length_function=_huggingface_tokenizer_length,
-            **kwargs,
-        )
+        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
@@ -213,10 +209,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             }
             kwargs = {**kwargs, **extra_kwargs}
 
-        return cls(
-            length_function=_tiktoken_encoder,
-            **kwargs,
-        )
+        return cls(length_function=_tiktoken_encoder, **kwargs)
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
