@@ -409,7 +409,7 @@ class ChatPerplexity(BaseChatModel):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
-        Currently, Preplexity only supports "json_schema" method for structured output
+        Currently, Perplexity only supports "json_schema" method for structured output
         as per their official documentation: https://docs.perplexity.ai/guides/structured-outputs
 
         Args:
@@ -432,6 +432,9 @@ class ChatPerplexity(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+
+            strict:
+                Whether to enable strict schema adherence when generating the output.
 
             kwargs: Additional keyword args aren't supported.
 
