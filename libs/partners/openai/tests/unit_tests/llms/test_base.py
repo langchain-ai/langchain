@@ -1,8 +1,10 @@
 import os
 
 import pytest
+from langchain_core.outputs import GenerationChunk
 
 from langchain_openai import OpenAI
+from langchain_openai.llms.base import _stream_response_to_generation_chunk
 
 os.environ["OPENAI_API_KEY"] = "foo"
 
@@ -69,3 +71,38 @@ def test_custom_token_counting() -> None:
 
     llm = OpenAI(custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_stream_response_to_generation_chunk() -> None:
+    completion = {
+        "id": "cmpl-abc123",
+        "choices": [
+            {"finish_reason": None, "index": 0, "logprobs": None, "text": "foo"}
+        ],
+        "created": 1749214401,
+        "model": "my-model",
+        "object": "text_completion",
+        "system_fingerprint": None,
+        "usage": None,
+    }
+    chunk = _stream_response_to_generation_chunk(completion)
+    assert chunk == GenerationChunk(
+        text="foo", generation_info={"finish_reason": None, "logprobs": None}
+    )
+
+    # Pathological completion with None text (e.g., from other providers)
+    completion = {
+        "id": "cmpl-abc123",
+        "choices": [
+            {"finish_reason": None, "index": 0, "logprobs": None, "text": None}
+        ],
+        "created": 1749214401,
+        "model": "my-model",
+        "object": "text_completion",
+        "system_fingerprint": None,
+        "usage": None,
+    }
+    chunk = _stream_response_to_generation_chunk(completion)
+    assert chunk == GenerationChunk(
+        text="", generation_info={"finish_reason": None, "logprobs": None}
+    )

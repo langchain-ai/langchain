@@ -53,6 +53,8 @@ def test_lazy_load() -> None:
         }
         expected.append(
             Document(example.inputs["first"]["second"].upper(), metadata=metadata)
+            if example.inputs
+            else None
         )
     actual = list(loader.lazy_load())
     assert expected == actual

@@ -9,7 +9,7 @@ requires-python = ">=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.58",
     "langchain-text-splitters<1.0.0,>=0.3.8",
-    "langsmith<0.4,>=0.1.17",
+    "langsmith<0.5,>=0.1.17",
     "pydantic<3.0.0,>=2.7.4",
     "SQLAlchemy<3,>=1.4",
     "requests<3,>=2",
@@ -76,7 +76,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
-    "pytest-vcr<2.0.0,>=1.0.2",
+    "vcrpy>=7.0",
     "urllib3<2; python_version < \"3.10\"",
     "wrapt<2.0.0,>=1.15.0",
     "python-dotenv<2.0.0,>=1.0.0",

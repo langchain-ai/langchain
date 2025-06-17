@@ -4,9 +4,15 @@ keywords: [azure]
 
 # Microsoft
 
-All functionality related to `Microsoft Azure` and other `Microsoft` products.
+All functionality related to [Microsoft Azure](https://portal.azure.com) and other [Microsoft](https://www.microsoft.com) products.
 
-## Chat Models
+## Chat Models 
+
+Microsoft offers three main options for accessing chat models through Azure:
+
+1. [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/) - Provides access to OpenAI's powerful models like o3, 4.1, and other models through Microsoft Azure's secure enterprise platform.
+2. [Azure AI](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models) - Offers access to a variety of models from different providers including Anthropic, DeepSeek, Cohere, Phi and Mistral through a unified API.
+3. [Azure ML](https://learn.microsoft.com/en-us/azure/machine-learning/) - Allows deployment and management of your own custom models or fine-tuned open-source models with Azure Machine Learning.
 
 ### Azure OpenAI
 
@@ -29,10 +35,35 @@ os.environ["AZURE_OPENAI_API_KEY"] = "your AzureOpenAI key"
 
 See a [usage example](/docs/integrations/chat/azure_chat_openai)
 
-
 ```python
 from langchain_openai import AzureChatOpenAI
 ```
+
+### Azure AI
+
+>[Azure AI Foundry](https://learn.microsoft.com/en-us/azure/developer/python/get-started) provides access to a wide range of models from various providers including Azure OpenAI, DeepSeek R1, Cohere, Phi and Mistral through the `AzureAIChatCompletionsModel` class.
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+llm = AzureAIChatCompletionsModel(
+    model_name="gpt-4o",
+    api_version="2024-05-01-preview",
+)
+```
+
+See a [usage example](/docs/integrations/chat/azure_ai)
 
 ### Azure ML Chat Online Endpoint
 
@@ -59,12 +90,36 @@ from langchain_openai import AzureOpenAI
 ```
 
 ## Embedding Models
+
+Microsoft offers two main options for accessing embedding models through Azure:
+
 ### Azure OpenAI
 
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
 from langchain_openai import AzureOpenAIEmbeddings
+```
+
+### Azure AI
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.embeddings import AzureAIEmbeddingsModel
+
+embed_model = AzureAIEmbeddingsModel(
+    model_name="text-embedding-ada-002"
+)
 ```
 
 ## Document loaders

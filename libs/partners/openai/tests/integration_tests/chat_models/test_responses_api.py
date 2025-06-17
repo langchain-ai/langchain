@@ -56,7 +56,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         assert tool_output["type"]
 
 
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.vcr
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -381,7 +381,7 @@ def test_stream_reasoning_summary() -> None:
     assert isinstance(response_2, AIMessage)
 
 
-# TODO: VCR some of these
+@pytest.mark.vcr
 def test_code_interpreter() -> None:
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     llm_with_tools = llm.bind_tools(
@@ -420,8 +420,8 @@ def test_code_interpreter() -> None:
     _ = llm_with_tools.invoke([input_message, full, next_message])
 
 
+@pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    pytest.skip()  # TODO: set up VCR
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
 
     llm_with_tools = llm.bind_tools(
@@ -434,10 +434,15 @@ def test_mcp_builtin() -> None:
             }
         ]
     )
-    response = llm_with_tools.invoke(
-        "What transport protocols does the 2025-03-26 version of the MCP spec "
-        "(modelcontextprotocol/modelcontextprotocol) support?"
-    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
 
     approval_message = HumanMessage(
         [
@@ -453,6 +458,53 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
+
+
+@pytest.mark.skip
+def test_mcp_builtin_zdr() -> None:
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        model_kwargs={"store": False, "include": ["reasoning.encrypted_content"]},
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert all(isinstance(block, dict) for block in full.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": block["id"],  # type: ignore[index]
+            }
+            for block in full.content
+            if block["type"] == "mcp_approval_request"  # type: ignore[index]
+        ]
+    )
+    _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
 @pytest.mark.vcr()
@@ -486,6 +538,7 @@ def test_image_generation_streaming() -> None:
 
     expected_keys = {
         "id",
+        "index",
         "background",
         "output_format",
         "quality",

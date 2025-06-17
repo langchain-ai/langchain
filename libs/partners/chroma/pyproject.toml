@@ -46,7 +46,7 @@ lint = [
 dev = ["langchain-core"]
 typing = [
     "mypy<2.0,>=1.10",
-    "types-requests<3.0.0.0,>=2.31.0.20240406",
+    "types-requests>=2.31.0",
     "langchain-core",
 ]
 

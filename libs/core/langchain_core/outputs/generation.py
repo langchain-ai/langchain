@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from pydantic import computed_field
-
 from langchain_core.load import Serializable
 from langchain_core.utils._merge import merge_dicts
 
@@ -26,30 +24,14 @@ class Generation(Serializable):
     for more information.
     """
 
-    def __init__(
-        self,
-        text: str = "",
-        generation_info: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
-    ):
-        """Initialize a Generation."""
-        super().__init__(generation_info=generation_info, **kwargs)
-        self._text = text
-
-    # workaround for ChatGeneration so that we can use a computed field to populate
-    # the text field from the message content (parent class needs to have a property)
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def text(self) -> str:
-        """The text contents of the output."""
-        return self._text
+    text: str
+    """Generated text output."""
 
     generation_info: Optional[dict[str, Any]] = None
     """Raw response from the provider.
 
     May include things like the reason for finishing or token log probabilities.
     """
-
     type: Literal["Generation"] = "Generation"
     """Type is used exclusively for serialization purposes.
     Set to "Generation" for this class."""
@@ -70,16 +52,6 @@ class Generation(Serializable):
 
 class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
-
-    def __init__(
-        self,
-        text: str = "",
-        generation_info: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
-    ):
-        """Initialize a GenerationChunk."""
-        super().__init__(text=text, generation_info=generation_info, **kwargs)
-        self._text = text
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         """Concatenate two GenerationChunks."""

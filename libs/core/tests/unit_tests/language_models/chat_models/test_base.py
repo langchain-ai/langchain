@@ -163,10 +163,15 @@ async def test_astream_fallback_to_ainvoke() -> None:
 
     model = ModelWithGenerate()
     chunks = list(model.stream("anything"))
-    assert chunks == [_any_id_ai_message(content="hello")]
+    # BaseChatModel.stream is typed to return Iterator[BaseMessageChunk].
+    # When streaming is disabled, it returns Iterator[BaseMessage], so the type hint
+    # is not strictly correct.
+    # LangChain documents a pattern of adding BaseMessageChunks to accumulate a stream.
+    # This may be better done with `reduce(operator.add, chunks)`.
+    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_any_id_ai_message(content="hello")]
+    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:

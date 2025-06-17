@@ -23,6 +23,7 @@ DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
     "text2text-generation",
     "text-generation",
+    "image-text-to-text",
     "summarization",
     "translation",
 )
@@ -38,8 +39,8 @@ class HuggingFacePipeline(BaseLLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation`, `summarization` and
-    `translation`  for now.
+    Only supports `text-generation`, `text2text-generation`, `image-text-to-text`,
+    `summarization` and `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -326,6 +327,8 @@ class HuggingFacePipeline(BaseLLM):
                 if self.pipeline.task == "text-generation":
                     text = response["generated_text"]
                 elif self.pipeline.task == "text2text-generation":
+                    text = response["generated_text"]
+                elif self.pipeline.task == "image-text-to-text":
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]

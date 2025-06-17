@@ -10,10 +10,12 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
     TypedDict,
+    Union,
     cast,
 )
 
@@ -535,6 +537,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         preserve_parent_metadata (bool): Whether to pass through parent document
             metadata to split documents when calling
             ``transform_documents/atransform_documents()``.
+        keep_separator (Union[bool, Literal["start", "end"]]): Whether separators
+            should be at the beginning of a chunk, at the end, or not at all.
 
     Example:
         .. code-block:: python
@@ -584,6 +588,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         allowlist_tags: Optional[List[str]] = None,
         denylist_tags: Optional[List[str]] = None,
         preserve_parent_metadata: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
     ):
         """Initialize splitter."""
         try:
@@ -611,6 +616,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._external_metadata = external_metadata or {}
         self._allowlist_tags = allowlist_tags
         self._preserve_parent_metadata = preserve_parent_metadata
+        self._keep_separator = keep_separator
         if allowlist_tags:
             self._allowlist_tags = list(
                 set(allowlist_tags + [header[0] for header in headers_to_split_on])
@@ -625,12 +631,15 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if separators:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
+                keep_separator=keep_separator,
                 chunk_size=max_chunk_size,
                 chunk_overlap=chunk_overlap,
             )
         else:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
+                keep_separator=keep_separator,
+                chunk_size=max_chunk_size,
+                chunk_overlap=chunk_overlap,
             )
 
         if self._stopword_removal:

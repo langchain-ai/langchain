@@ -7,7 +7,7 @@ authors = []
 license = {text = "MIT"}
 requires-python = ">=3.9"
 dependencies = [
-    "langsmith<0.4,>=0.1.126",
+    "langsmith<0.5,>=0.3.45",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.63"
+version = "0.3.65"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
