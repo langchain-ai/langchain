@@ -76,7 +76,6 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     module = importlib.import_module(module_path)
-    module_short_name = module_path.split(".")[-1]
 
     if ":private:" in (module.__doc__ or ""):
         return ModuleMembers(classes_=[], functions=[])
@@ -87,8 +86,6 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
         if type_.__module__ != module_path:
             continue
         if ":private:" in (type_.__doc__ or ""):
-            continue
-        if name == module_short_name:
             continue
 
         if inspect.isclass(type_):
@@ -338,7 +335,7 @@ def _construct_doc(
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
-    :toctree: {module}
+    :toctree: {module}/api
 """
             index_autosummary += """
 **Classes**
@@ -379,7 +376,7 @@ def _construct_doc(
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
-    :toctree: {module}
+    :toctree: {module}/api
     :template: function.rst
 
     {fstring}
@@ -400,7 +397,7 @@ def _construct_doc(
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
-    :toctree: {module}
+    :toctree: {module}/api
 """
 
             index_autosummary += """
@@ -442,7 +439,7 @@ def _construct_doc(
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
-    :toctree: {module}
+    :toctree: {module}/api
     :template: function.rst
 
     {fstring}
