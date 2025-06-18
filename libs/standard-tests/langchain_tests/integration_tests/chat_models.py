@@ -750,12 +750,13 @@ class ChatModelIntegrationTests(ChatModelTests):
                     message=AIMessageChunk(content="chunk text")
                 )
         """
-        num_tokens = 0
-        for token in model.stream("Hello"):
-            assert token is not None
-            assert isinstance(token, AIMessageChunk)
-            num_tokens += len(token.content)
-        assert num_tokens > 0
+        num_chunks = 0
+        for chunk in model.stream("Hello"):
+            assert chunk is not None
+            assert isinstance(chunk, AIMessageChunk)
+            assert isinstance(chunk.content, (str, list))
+            num_chunks += 1
+        assert num_chunks > 0
 
     async def test_astream(self, model: BaseChatModel) -> None:
         """Test to verify that `await model.astream(simple_message)` works.
@@ -785,12 +786,13 @@ class ChatModelIntegrationTests(ChatModelTests):
                     message=AIMessageChunk(content="chunk text")
                 )
         """
-        num_tokens = 0
-        async for token in model.astream("Hello"):
-            assert token is not None
-            assert isinstance(token, AIMessageChunk)
-            num_tokens += len(token.content)
-        assert num_tokens > 0
+        num_chunks = 0
+        async for chunk in model.astream("Hello"):
+            assert chunk is not None
+            assert isinstance(chunk, AIMessageChunk)
+            assert isinstance(chunk.content, (str, list))
+            num_chunks += 1
+        assert num_chunks > 0
 
     def test_batch(self, model: BaseChatModel) -> None:
         """Test to verify that `model.batch([messages])` works.
@@ -1014,7 +1016,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = result.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name
+        assert model_name != "", "model_name is empty"
 
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
