@@ -1153,6 +1153,8 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1196,6 +1198,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "assistant":
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
