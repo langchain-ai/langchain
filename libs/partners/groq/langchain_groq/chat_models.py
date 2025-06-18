@@ -109,7 +109,8 @@ class ChatGroq(BaseChatModel):
             Max number of tokens to generate.
         reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
             The format for reasoning output.
-                parsed: Separates reasoning into a dedicated field while keeping the response concise.
+                parsed: Separates reasoning into a dedicated field while keeping the
+                response concise.
                 raw: Includes reasoning within think tags in the content.
                 hidden: Returns only the final answer.
         model_kwargs: Dict[str, Any]
