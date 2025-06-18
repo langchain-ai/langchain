@@ -107,6 +107,8 @@ class ChatGroq(BaseChatModel):
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
+            The format for reasoning output.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -302,6 +304,8 @@ class ChatGroq(BaseChatModel):
     """What sampling temperature to use."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = None
+    """The format for reasoning output."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
@@ -606,6 +610,7 @@ class ChatGroq(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "stop": self.stop,
+            "reasoning_format": self.reasoning_format,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
