@@ -109,10 +109,10 @@ class ChatGroq(BaseChatModel):
             Max number of tokens to generate.
         reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
             The format for reasoning output.
-                parsed: Separates reasoning into a dedicated field while keeping the
-                response concise.
-                raw: Includes reasoning within think tags in the content.
-                hidden: Returns only the final answer.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -298,7 +298,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """
+    """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -309,7 +309,12 @@ class ChatGroq(BaseChatModel):
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = None
-    """The format for reasoning output."""
+    """The format for reasoning output.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
+    """  # noqa: E501
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
