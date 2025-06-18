@@ -339,7 +339,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             method: The method for steering model generation, one of:
 
                 - "function_calling":
-                    Uses DeekSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
+                    Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
                 - "json_mode":
                     Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
 
@@ -354,6 +354,11 @@ class ChatDeepSeek(BaseChatOpenAI):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+                
+            strict:
+                Unsupported: whether to enable strict schema adherence when generating
+                the output. This parameter is included for compatibility with other
+                chat models, but is currently ignored.
 
             kwargs: Additional keyword args aren't supported.
 
