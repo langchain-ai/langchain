@@ -3756,6 +3756,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     {"index": chunk.summary_index, "type": "summary_text", "text": ""}
                 ],
                 "index": current_index,
+                "type": "reasoning",
             }
         )
     elif chunk.type == "response.image_generation_call.partial_image":
@@ -3773,6 +3774,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     }
                 ],
                 "index": current_index,
+                "type": "reasoning",
             }
         )
     else:
