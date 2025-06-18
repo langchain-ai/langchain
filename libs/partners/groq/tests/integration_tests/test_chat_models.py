@@ -215,7 +215,6 @@ async def test_agenerate_streaming() -> None:
 #
 # Test reasoning output
 #
-@pytest.mark.scheduled
 def test_reasoning_output_invoke() -> None:
     """Test reasoning output from ChatGroq with invoke."""
     chat = ChatGroq(
@@ -235,7 +234,6 @@ def test_reasoning_output_invoke() -> None:
     assert len(response.additional_kwargs["reasoning_content"]) > 0
 
 
-@pytest.mark.scheduled
 def test_reasoning_output_stream() -> None:
     """Test reasoning output from ChatGroq with stream."""
     chat = ChatGroq(
