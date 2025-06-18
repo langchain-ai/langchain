@@ -69,6 +69,10 @@ from pydantic import (
 )
 from typing_extensions import NotRequired, TypedDict
 
+from langchain_anthropic._client_utils import (
+    _get_cached_async_client,
+    _get_cached_client,
+)
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -1276,11 +1280,23 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
-        return anthropic.Client(**self._client_params)
+        client_params = self._client_params
+        if client_params["default_headers"] is None:
+            return _get_cached_client(
+                **{k: v for k, v in client_params.items() if k != "default_headers"}
+            )
+        else:
+            return anthropic.Client(**self._client_params)
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
-        return anthropic.AsyncClient(**self._client_params)
+        client_params = self._client_params
+        if client_params["default_headers"] is None:
+            return _get_cached_async_client(
+                **{k: v for k, v in client_params.items() if k != "default_headers"}
+            )
+        else:
+            return anthropic.AsyncClient(**self._client_params)
 
     def _get_request_payload(
         self,
