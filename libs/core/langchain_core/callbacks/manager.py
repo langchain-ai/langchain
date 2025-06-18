@@ -274,17 +274,30 @@ def handle_event(
                         coros.append(event)
             except NotImplementedError as e:
                 if event_name == "on_chat_model_start":
-                    if message_strings is None:
-                        message_strings = [get_buffer_string(m) for m in args[1]]
-                    handle_event(
-                        [handler],
-                        "on_llm_start",
-                        "ignore_llm",
-                        args[0],
-                        message_strings,
-                        *args[2:],
-                        **kwargs,
-                    )
+                    try:
+                        if len(args) > 1 and isinstance(args[1], list):
+                            message_strings = [get_buffer_string(m) for m in args[1]]
+                            handle_event(
+                                [handler],
+                                "on_llm_start",
+                                "ignore_llm",
+                                args[0],
+                                message_strings,
+                                *args[2:],
+                                **kwargs,
+                            )
+                        else:
+                            logger.warning(
+                                "Cannot fallback from %s: args[1] missing",
+                                event_name,
+                            )
+                    except NotImplementedError as e:
+                        logger.warning(
+                            "NotImplementedError in fallback %s.%s callback: %s",
+                            handler.__class__.__name__,
+                            event_name,
+                            repr(e),
+                        )
                 else:
                     handler_name = handler.__class__.__name__
                     logger.warning(
@@ -293,7 +306,7 @@ def handle_event(
                         event_name,
                         repr(e),
                     )
-            except Exception as e:
+            except NotImplementedError as e:
                 logger.warning(
                     "Error in %s.%s callback: %s",
                     handler.__class__.__name__,
