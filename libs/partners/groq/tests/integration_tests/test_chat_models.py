@@ -219,7 +219,7 @@ def test_reasoning_output_invoke() -> None:
     """Test reasoning output from ChatGroq with invoke."""
     chat = ChatGroq(
         model="deepseek-r1-distill-llama-70b",
-        model_kwargs={"reasoning_format": "parsed"},
+        reasoning_format="parsed",
     )
     message = [
         SystemMessage(
@@ -238,7 +238,7 @@ def test_reasoning_output_stream() -> None:
     """Test reasoning output from ChatGroq with stream."""
     chat = ChatGroq(
         model="deepseek-r1-distill-llama-70b",
-        model_kwargs={"reasoning_format": "parsed"},
+        reasoning_format="parsed",
     )
     message = [
         SystemMessage(
