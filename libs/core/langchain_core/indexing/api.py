@@ -320,7 +320,7 @@ def index(
         key_encoder: Hashing algorithm to use for hashing the document content and
             metadata. Default is "sha1".
             Other options include "blake2b", "sha256", and "sha512".
-            .. versionadded:: 0.3.??
+            .. versionadded:: 0.3.66
         key_encoder: Hashing algorithm to use for hashing the document.
             If not provided, a default encoder using SHA-1 will be used.
             SHA-1 is not collision-resistant, and a motivated attacker
