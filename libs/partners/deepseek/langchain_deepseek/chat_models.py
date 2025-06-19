@@ -356,9 +356,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 with keys "raw", "parsed", and "parsing_error".
 
             strict:
-                Unsupported: whether to enable strict schema adherence when generating
-                the output. This parameter is included for compatibility with other
-                chat models, but is currently ignored.
+                Whether to enable strict schema adherence when generating the function call.
 
             kwargs: Additional keyword args aren't supported.
 
