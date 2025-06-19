@@ -72,7 +72,7 @@ def _convert_to_v03_ai_message(
         new_content: list[Union[dict, str]] = []
         for block in message.content:
             if isinstance(block, dict):
-                if block.get("type") == "reasoning" or "summary" in block:
+                if block.get("type") == "reasoning":
                     # Store a reasoning item in additional_kwargs (overwriting as in
                     # v0.3)
                     _ = block.pop("index", None)
