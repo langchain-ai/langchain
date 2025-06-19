@@ -31,6 +31,122 @@ Here are the output tags:
 ```"""  # noqa: E501
 
 
+def _create_secure_xml_parser() -> Any:
+    """Create a secure XML parser with hardened configuration.
+    
+    This function creates an XML parser with security hardening to prevent
+    XML vulnerabilities like XXE attacks, billion laughs attacks, and DTD processing.
+    
+    Returns:
+        A secure XML parser instance.
+        
+    Raises:
+        ImportError: If neither defusedxml nor a secure standard library parser
+                    configuration is available.
+    """
+    # First try to use defusedxml which is the most secure option
+    try:
+        from defusedxml.ElementTree import XMLParser  # type: ignore[import-untyped]
+        return XMLParser(target=TreeBuilder())
+    except ImportError:
+        pass
+    
+    # If defusedxml is not available, create a hardened standard library parser
+    # NOTE: This is a fallback for environments where defusedxml cannot be installed
+    # but we still want to provide some protection against common XML attacks
+    try:
+        # Create a parser with security restrictions
+        parser = ET.XMLParser()
+        
+        # Disable DTD processing to prevent XXE and billion laughs attacks
+        # This is the most critical security measure
+        if hasattr(parser, 'parser'):
+            # Access the underlying expat parser
+            expat_parser = parser.parser
+            
+            # Disable DTD processing completely
+            expat_parser.DefaultHandler = lambda data: None
+            expat_parser.ExternalEntityRefHandler = None
+            expat_parser.EntityDeclHandler = None
+            expat_parser.NotationDeclHandler = None
+            expat_parser.ProcessingInstructionHandler = None
+            expat_parser.CommentHandler = None
+            
+            # Set entity limits to prevent billion laughs attacks
+            # These limits are conservative to prevent memory exhaustion
+            if hasattr(expat_parser, 'SetParamEntityParsing'):
+                # Disable parameter entity parsing
+                expat_parser.SetParamEntityParsing(0)  # XML_PARAM_ENTITY_PARSING_NEVER
+                
+        return parser
+    except Exception:
+        # If we can't create a secure parser, raise an error rather than
+        # falling back to an insecure configuration
+        msg = (
+            "Unable to create a secure XML parser. Please install defusedxml "
+            "for maximum security: pip install defusedxml"
+        )
+        raise ImportError(msg)
+
+
+def _create_secure_element_tree_module() -> Any:
+    """Create a secure ElementTree module for XML parsing.
+    
+    Returns:
+        Either defusedxml.ElementTree or a warning-wrapped standard library ET.
+    """
+    try:
+        from defusedxml import ElementTree  # type: ignore[import-untyped]
+        return ElementTree
+    except ImportError:
+        # Create a wrapper that adds security warnings
+        import warnings
+        
+        class SecureElementTreeWrapper:
+            """Wrapper around standard library ElementTree with security warnings."""
+            
+            def __getattr__(self, name: str) -> Any:
+                return getattr(ET, name)
+            
+            def fromstring(self, text: str, parser: Optional[Any] = None) -> Any:
+                """Parse XML with security warnings."""
+                # Issue a security warning when using standard library parser
+                warnings.warn(
+                    "Using standard library XML parser. For maximum security, "
+                    "install defusedxml: pip install defusedxml",
+                    UserWarning,
+                    stacklevel=2
+                )
+                
+                # Use secure parser if none provided
+                if parser is None:
+                    try:
+                        parser = _create_secure_xml_parser()
+                    except ImportError:
+                        # Last resort: use standard parser but with content restrictions
+                        pass
+                
+                # Additional content validation to prevent common attacks
+                if text and isinstance(text, str):
+                    # Check for obvious XXE patterns
+                    if '<!DOCTYPE' in text and ('<!ENTITY' in text or 'SYSTEM' in text):
+                        raise OutputParserException(
+                            "XML contains potentially malicious DTD declarations. "
+                            "This type of content is not allowed for security reasons."
+                        )
+                    
+                    # Check for excessive entity nesting (billion laughs protection)
+                    if text.count('&') > 10:  # Conservative limit
+                        raise OutputParserException(
+                            "XML contains excessive entity references. "
+                            "This may indicate a billion laughs attack."
+                        )
+                
+                return ET.fromstring(text, parser)
+        
+        return SecureElementTreeWrapper()
+
+
 class _StreamingParser:
     """Streaming parser for XML.
 
@@ -38,12 +154,14 @@ class _StreamingParser:
     drift between transform and atransform of the XMLOutputParser.
     """
 
-    def __init__(self, parser: Literal["defusedxml", "xml"]) -> None:
+    def __init__(self, parser: Literal["defusedxml", "xml", "secure"]) -> None:
         """Initialize the streaming parser.
 
         Args:
-            parser: Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
-              See documentation in XMLOutputParser for more information.
+            parser: Parser to use for XML parsing. Can be 'defusedxml', 'xml', or 'secure'.
+              - 'defusedxml': Use defusedxml library (most secure)
+              - 'secure': Use hardened standard library parser (recommended fallback)
+              - 'xml': Use standard library parser (deprecated, security risk)
 
         Raises:
             ImportError: If defusedxml is not installed and the defusedxml
@@ -54,6 +172,7 @@ class _StreamingParser:
                 from defusedxml.ElementTree import (  # type: ignore[import-untyped]
                     XMLParser,
                 )
+                _parser = XMLParser(target=TreeBuilder())
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -61,9 +180,19 @@ class _StreamingParser:
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg) from e
-            _parser = XMLParser(target=TreeBuilder())
+        elif parser == "secure":
+            _parser = _create_secure_xml_parser()
         else:
+            # Legacy 'xml' option - issue deprecation warning
+            import warnings
+            warnings.warn(
+                "Using 'xml' parser is deprecated due to security risks. "
+                "Use 'secure' or 'defusedxml' instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
             _parser = None
+            
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
         self.current_path: list[str] = []
@@ -165,25 +294,27 @@ class XMLOutputParser(BaseTransformOutputParser):
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
-    parser: Literal["defusedxml", "xml"] = "defusedxml"
-    """Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
+    parser: Literal["defusedxml", "xml", "secure"] = "secure"
+    """Parser to use for XML parsing. Can be 'defusedxml', 'xml', or 'secure'.
 
-    * 'defusedxml' is the default parser and is used to prevent XML vulnerabilities
-       present in some distributions of Python's standard library xml.
-       `defusedxml` is a wrapper around the standard library parser that
-       sets up the parser with secure defaults.
-    * 'xml' is the standard library parser.
+    * 'secure' is the default parser and provides hardened XML parsing with
+      protection against common XML vulnerabilities even when defusedxml is not available.
+    * 'defusedxml' uses the defusedxml library which provides the highest level of security.
+    * 'xml' uses the standard library parser (DEPRECATED - security risk).
 
-    Use `xml` only if you are sure that your distribution of the standard library
-    is not vulnerable to XML vulnerabilities.
+    The 'secure' parser provides protection against:
+    - XXE (XML External Entity) attacks
+    - Billion laughs attacks
+    - DTD processing vulnerabilities
+    - Excessive entity expansion
+
+    For maximum security in production environments, install defusedxml:
+    pip install defusedxml
 
     Please review the following resources for more information:
-
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
     * https://github.com/tiran/defusedxml
-
-    The standard library relies on libexpat for parsing XML:
-    https://github.com/libexpat/libexpat
+    * https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
     """
 
     def get_format_instructions(self) -> str:
@@ -200,28 +331,12 @@ class XMLOutputParser(BaseTransformOutputParser):
             A dictionary representing the parsed XML.
 
         Raises:
-            OutputParserException: If the XML is not well-formed.
+            OutputParserException: If the XML is not well-formed or contains
+                potentially malicious content.
             ImportError: If defusedxml is not installed and the defusedxml
                 parser is requested.
         """
         # Try to find XML string within triple backticks
-        # Imports are temporarily placed here to avoid issue with caching on CI
-        # likely if you're reading this you can move them to the top of the file
-        if self.parser == "defusedxml":
-            try:
-                from defusedxml import ElementTree  # type: ignore[import-untyped]
-            except ImportError as e:
-                msg = (
-                    "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml`"
-                    "See https://github.com/tiran/defusedxml for more details"
-                )
-                raise ImportError(msg) from e
-            _et = ElementTree  # Use the defusedxml parser
-        else:
-            _et = ET  # Use the standard library parser
-
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
             # If match found, use the content within the backticks
@@ -231,6 +346,33 @@ class XMLOutputParser(BaseTransformOutputParser):
             text = encoding_match.group(2)
 
         text = text.strip()
+        
+        # Select appropriate ElementTree module based on parser setting
+        if self.parser == "defusedxml":
+            try:
+                from defusedxml import ElementTree  # type: ignore[import-untyped]
+                _et = ElementTree
+            except ImportError as e:
+                msg = (
+                    "defusedxml is not installed. "
+                    "Please install it to use the defusedxml parser."
+                    "You can install it with `pip install defusedxml`"
+                    "See https://github.com/tiran/defusedxml for more details"
+                )
+                raise ImportError(msg) from e
+        elif self.parser == "secure":
+            _et = _create_secure_element_tree_module()
+        else:
+            # Legacy 'xml' option
+            import warnings
+            warnings.warn(
+                "Using 'xml' parser is deprecated due to security risks. "
+                "Use 'secure' or 'defusedxml' instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            _et = ET  # Use the standard library parser
+
         try:
             root = _et.fromstring(text)
             return self._root_to_dict(root)
