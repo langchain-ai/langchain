@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from packaging import version
 from pydantic import BaseModel
@@ -220,7 +220,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     str_parser = StrOutputParser()
     xml_parser = XMLOutputParser()
 
-    def conditional_str_parser(value: str) -> Runnable:
+    def conditional_str_parser(value: str) -> Union[StrOutputParser, XMLOutputParser]:
         if value == "a":
             return str_parser
         return xml_parser
@@ -526,7 +526,7 @@ def test_graph_mermaid_escape_node_label() -> None:
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["foo", "bar"])
-    sequence: Runnable = (
+    sequence = (
         PromptTemplate.from_template("Hello, {input}")
         | {
             "llm1": fake_llm,

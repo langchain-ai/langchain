@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     Optional,
@@ -50,9 +50,6 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -771,7 +768,7 @@ MessageLikeRepresentation = Union[
     MessageLike,
     tuple[
         Union[str, type],
-        Union[str, list[dict], list[object]],
+        Union[str, Sequence[dict], Sequence[object]],
     ],
     str,
     dict[str, Any],
@@ -1434,14 +1431,16 @@ def _convert_to_message_template(
                     f" Got: {message}"
                 )
                 raise ValueError(msg)
-            message = (message["role"], message["content"])
-        if len(message) != 2:
-            msg = f"Expected 2-tuple of (role, template), got {message}"
-            raise ValueError(msg)
-        message_type_str, template = message
+            message_type_str = message["role"]
+            template = message["content"]
+        else:
+            if len(message) != 2:
+                msg = f"Expected 2-tuple of (role, template), got {message}"
+                raise ValueError(msg)
+            message_type_str, template = message
         if isinstance(message_type_str, str):
             _message = _create_template_from_message_type(
-                message_type_str, template, template_format=template_format
+                message_type_str, list(template), template_format=template_format
             )
         else:
             _message = message_type_str(
