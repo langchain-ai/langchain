@@ -11,13 +11,13 @@
 ### Пример вызова суммаризатора:
 
 ```python
-from langchain_community.chat_models import GigaChat
+from langchain_gigachat import GigaChat
 from langchain.prompts import load_prompt
 from langchain.chains.summarize import load_summarize_chain
 
 giga = GigaChat(credentials="...")
-map_prompt = load_prompt('lc://prompts/summarize/map_reduce/map.yaml')
-combine_prompt = load_prompt('lc://prompts/summarize/map_reduce/combine.yaml')
+map_prompt = load_prompt('map.yaml')
+combine_prompt = load_prompt('combine.yaml')
 
 chain = load_summarize_chain(giga, chain_type="map_reduce", map_prompt=map_prompt,
             combine_prompt=combine_prompt)
