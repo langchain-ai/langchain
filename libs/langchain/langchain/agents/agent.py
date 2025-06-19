@@ -1598,19 +1598,15 @@ class AgentExecutor(Chain):
             )
         return AgentStep(action=agent_action, observation=observation)
 
-    def _call(
+    def _iter_agent_loop(
         self,
+        name_to_tool_map: dict[str, BaseTool],
+        color_mapping: dict[str, str],
         inputs: dict[str, str],
+        intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> dict[str, Any]:
-        """Run text through and get agent response."""
-        # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # We construct a mapping from each tool to a color, used for logging.
-        color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
-        )
-        intermediate_steps: list[tuple[AgentAction, str]] = []
+    ) -> Iterator[Union[AgentFinish, list[tuple[AgentAction, str]]]]:
+        """Iterate through the agent loop."""
         # Let's start tracking the number of iterations and time elapsed
         iterations = 0
         time_elapsed = 0.0
@@ -1625,25 +1621,90 @@ class AgentExecutor(Chain):
                 run_manager=run_manager,
             )
             if isinstance(next_step_output, AgentFinish):
-                return self._return(
-                    next_step_output, intermediate_steps, run_manager=run_manager
-                )
+                yield next_step_output
+                return
 
-            intermediate_steps.extend(next_step_output)
+            yield next_step_output  # Yields list[tuple[AgentAction, str]]
+
             if len(next_step_output) == 1:
                 next_step_action = next_step_output[0]
                 # See if tool should return directly
                 tool_return = self._get_tool_return(next_step_action)
                 if tool_return is not None:
-                    return self._return(
-                        tool_return, intermediate_steps, run_manager=run_manager
-                    )
+                    yield tool_return
+                    return
             iterations += 1
             time_elapsed = time.time() - start_time
+
+    def _call(
+        self,
+        inputs: dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> dict[str, Any]:
+        """Run text through and get agent response."""
+        # Construct a mapping of tool name to tool for easy lookup
+        name_to_tool_map = {tool.name: tool for tool in self.tools}
+        # We construct a mapping from each tool to a color, used for logging.
+        color_mapping = get_color_mapping(
+            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
+        )
+        intermediate_steps: list[tuple[AgentAction, str]] = []
+
+        for step_output in self._iter_agent_loop(
+            name_to_tool_map,
+            color_mapping,
+            inputs,
+            intermediate_steps,
+            run_manager=run_manager,
+        ):
+            if isinstance(step_output, AgentFinish):
+                return self._return(
+                    step_output, intermediate_steps, run_manager=run_manager
+                )
+            intermediate_steps.extend(step_output)
+            # The tool_return logic is now handled within _iter_agent_loop,
+            # if it yields an AgentFinish, it will be caught above.
+
+        # If the loop finishes without returning, it means we've stopped due to max_iterations or max_execution_time
         output = self._action_agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return self._return(output, intermediate_steps, run_manager=run_manager)
+
+    async def _aiter_agent_loop(
+        self,
+        name_to_tool_map: dict[str, BaseTool],
+        color_mapping: dict[str, str],
+        inputs: dict[str, str],
+        intermediate_steps: list[tuple[AgentAction, str]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> AsyncIterator[Union[AgentFinish, list[tuple[AgentAction, str]]]]:
+        """Async iterate through the agent loop."""
+        iterations = 0
+        time_elapsed = 0.0
+        start_time = time.time()
+        while self._should_continue(iterations, time_elapsed):
+            next_step_output = await self._atake_next_step(
+                name_to_tool_map,
+                color_mapping,
+                inputs,
+                intermediate_steps,
+                run_manager=run_manager,
+            )
+            if isinstance(next_step_output, AgentFinish):
+                yield next_step_output
+                return
+
+            yield next_step_output  # Yields list[tuple[AgentAction, str]]
+
+            if len(next_step_output) == 1:
+                next_step_action = next_step_output[0]
+                tool_return = self._get_tool_return(next_step_action)
+                if tool_return is not None:
+                    yield tool_return
+                    return
+            iterations += 1
+            time_elapsed = time.time() - start_time
 
     async def _acall(
         self,
@@ -1651,47 +1712,31 @@ class AgentExecutor(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> dict[str, str]:
         """Async run text through and get agent response."""
-        # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         intermediate_steps: list[tuple[AgentAction, str]] = []
-        # Let's start tracking the number of iterations and time elapsed
-        iterations = 0
-        time_elapsed = 0.0
-        start_time = time.time()
-        # We now enter the agent loop (until it returns something).
+
         try:
             async with asyncio_timeout(self.max_execution_time):
-                while self._should_continue(iterations, time_elapsed):
-                    next_step_output = await self._atake_next_step(
-                        name_to_tool_map,
-                        color_mapping,
-                        inputs,
-                        intermediate_steps,
-                        run_manager=run_manager,
-                    )
-                    if isinstance(next_step_output, AgentFinish):
+                async for step_output in self._aiter_agent_loop(
+                    name_to_tool_map,
+                    color_mapping,
+                    inputs,
+                    intermediate_steps,
+                    run_manager=run_manager,
+                ):
+                    if isinstance(step_output, AgentFinish):
                         return await self._areturn(
-                            next_step_output,
+                            step_output,
                             intermediate_steps,
                             run_manager=run_manager,
                         )
+                    intermediate_steps.extend(step_output)
+                    # Tool return logic is handled within _aiter_agent_loop
 
-                    intermediate_steps.extend(next_step_output)
-                    if len(next_step_output) == 1:
-                        next_step_action = next_step_output[0]
-                        # See if tool should return directly
-                        tool_return = self._get_tool_return(next_step_action)
-                        if tool_return is not None:
-                            return await self._areturn(
-                                tool_return, intermediate_steps, run_manager=run_manager
-                            )
-
-                    iterations += 1
-                    time_elapsed = time.time() - start_time
+                # Loop finished without AgentFinish, meaning stop due to limits
                 output = self._action_agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
@@ -1699,7 +1744,6 @@ class AgentExecutor(Chain):
                     output, intermediate_steps, run_manager=run_manager
                 )
         except (TimeoutError, asyncio.TimeoutError):
-            # stop early when interrupted by the async timeout
             output = self._action_agent.return_stopped_response(
                 self.early_stopping_method, intermediate_steps, **inputs
             )
