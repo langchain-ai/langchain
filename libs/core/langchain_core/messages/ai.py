@@ -36,6 +36,9 @@ from langchain_core.utils.usage import _dict_int_op
 logger = logging.getLogger(__name__)
 
 
+_LC_ID_PREFIX = "run-"
+
+
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
 
@@ -191,6 +194,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
+    # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
     @classmethod
     def _backwards_compat_tool_calls(cls, values: dict) -> Any:
@@ -417,11 +421,20 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    id = None
-    for id_ in [left.id] + [o.id for o in others]:
-        if id_:
-            id = id_
+    chunk_id = None
+    candidates = [left.id] + [o.id for o in others]
+    # first pass: pick the first non-run-* id
+    for id_ in candidates:
+        if id_ and not id_.startswith(_LC_ID_PREFIX):
+            chunk_id = id_
             break
+    else:
+        # second pass: no provider-assigned id found, just take the first non-null
+        for id_ in candidates:
+            if id_:
+                chunk_id = id_
+                break
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -429,7 +442,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
-        id=id,
+        id=chunk_id,
     )
 
 

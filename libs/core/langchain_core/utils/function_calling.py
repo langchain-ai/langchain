@@ -506,6 +506,20 @@ def convert_to_openai_function(
     return oai_function
 
 
+# List of well known tools supported by OpenAI's chat models or responses API.
+# These tools are not expected to be supported by other chat model providers
+# that conform to the OpenAI function-calling API.
+_WellKnownOpenAITools = (
+    "function",
+    "file_search",
+    "computer_use_preview",
+    "code_interpreter",
+    "mcp",
+    "image_generation",
+    "web_search_preview",
+)
+
+
 def convert_to_openai_tool(
     tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
     *,
@@ -554,9 +568,17 @@ def convert_to_openai_tool(
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with "type" in "file_search", "function", "computer_use_preview",
         "web_search_preview".
+
+    .. versionchanged:: 0.3.61
+
+        Added support for OpenAI's built-in code interpreter and remote MCP tools.
+
+    .. versionchanged:: 0.3.63
+
+        Added support for OpenAI's image generation built-in tool.
     """
     if isinstance(tool, dict):
-        if tool.get("type") in ("function", "file_search", "computer_use_preview"):
+        if tool.get("type") in _WellKnownOpenAITools:
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
@@ -596,7 +618,7 @@ def convert_to_json_schema(
 
 @beta()
 def tool_example_to_messages(
-    input: str,
+    input: str,  # noqa: A002
     tool_calls: list[BaseModel],
     tool_outputs: Optional[list[str]] = None,
     *,
@@ -788,9 +810,12 @@ def _recursive_set_additional_properties_false(
             schema["additionalProperties"] = False
 
         # Recursively check 'properties' and 'items' if they exist
+        if "anyOf" in schema:
+            for sub_schema in schema["anyOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
         if "properties" in schema:
-            for value in schema["properties"].values():
-                _recursive_set_additional_properties_false(value)
+            for sub_schema in schema["properties"].values():
+                _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
 

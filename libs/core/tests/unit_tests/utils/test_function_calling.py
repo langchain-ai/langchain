@@ -497,6 +497,61 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
+    class NestedA(BaseModel):
+        foo: str
+
+    class NestedB(BaseModel):
+        bar: int
+
+    class NestedC(BaseModel):
+        baz: bool
+
+    def my_function(my_arg: Union[NestedA, NestedB, NestedC]) -> None:
+        """Dummy function."""
+
+    expected = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "properties": {
+                "my_arg": {
+                    "anyOf": [
+                        {
+                            "properties": {"foo": {"title": "Foo", "type": "string"}},
+                            "required": ["foo"],
+                            "title": "NestedA",
+                            "type": "object",
+                            "additionalProperties": False,
+                        },
+                        {
+                            "properties": {"bar": {"title": "Bar", "type": "integer"}},
+                            "required": ["bar"],
+                            "title": "NestedB",
+                            "type": "object",
+                            "additionalProperties": False,
+                        },
+                        {
+                            "properties": {"baz": {"title": "Baz", "type": "boolean"}},
+                            "required": ["baz"],
+                            "title": "NestedC",
+                            "type": "object",
+                            "additionalProperties": False,
+                        },
+                    ]
+                }
+            },
+            "required": ["my_arg"],
+            "type": "object",
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
 json_schema_no_description_no_params = {
     "title": "dummy_function",
 }

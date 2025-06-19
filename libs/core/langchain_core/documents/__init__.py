@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .compressor import BaseDocumentCompressor
     from .transformers import BaseDocumentTransformer
 
-__all__ = ("Document", "BaseDocumentTransformer", "BaseDocumentCompressor")
+__all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Document")
 
 _dynamic_imports = {
     "Document": "base",

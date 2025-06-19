@@ -155,6 +155,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return PineconeTranslator()
 
         try:
+            from langchain_milvus import Milvus
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Milvus):
+                return MilvusTranslator()
+
+        try:
             from langchain_mongodb import MongoDBAtlasVectorSearch
         except ImportError:
             pass

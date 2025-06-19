@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import typing
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -80,7 +81,7 @@ class SchemaAnnotationError(TypeError):
 
 
 def _is_annotated_type(typ: type[Any]) -> bool:
-    return get_origin(typ) is Annotated
+    return get_origin(typ) is typing.Annotated
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
@@ -143,11 +144,7 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if hasattr(inspect, "get_annotations"):
-        # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)
-    else:
-        annotations = getattr(fn, "__annotations__", {})
+    annotations = typing.get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
@@ -273,7 +270,7 @@ def create_schema_from_function(
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
-            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+            filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
 
@@ -845,7 +842,7 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
@@ -943,17 +940,17 @@ def _handle_tool_error(
 
 
 def _prep_run_args(
-    input: Union[str, dict, ToolCall],
+    value: Union[str, dict, ToolCall],
     config: Optional[RunnableConfig],
     **kwargs: Any,
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
-    if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast("ToolCall", input)["id"]
-        tool_input: Union[str, dict] = cast("ToolCall", input)["args"].copy()
+    if _is_tool_call(value):
+        tool_call_id: Optional[str] = cast("ToolCall", value)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", value)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast("Union[str, dict]", input)
+        tool_input = cast("Union[str, dict]", value)
     return (
         tool_input,
         dict(
@@ -991,10 +988,8 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content."""
-    return (
-        isinstance(obj, str)
-        or isinstance(obj, list)
-        and all(_is_message_content_block(e) for e in obj)
+    return isinstance(obj, str) or (
+        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
     )
 
 
@@ -1077,16 +1072,18 @@ def get_all_basemodel_annotations(
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
+        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
+        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+
         annotations: dict[str, type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if (
-                fields := getattr(cls, "model_fields", {})  # pydantic v2+
-                or getattr(cls, "__fields__", {})  # pydantic v1
-            ) and name not in fields:
+            if fields and name not in fields and name not in alias_map:
                 continue
-            annotations[name] = param.annotation
+            field_name = alias_map.get(name, name)
+            annotations[field_name] = param.annotation
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:

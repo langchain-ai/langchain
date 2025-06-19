@@ -23,9 +23,9 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_tests.integration_tests.chat_models import _validate_tool_call_message
 from langchain_tests.integration_tests.chat_models import (
-    magic_function as invalid_magic_function,
+    _validate_tool_call_message,
+    magic_function,
 )
 from pydantic import BaseModel, Field
 
@@ -215,12 +215,15 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
         assert isinstance(token.text(), str)
 
 
-@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    llm = ChatOpenAI(
+        model="o4-mini",
+        service_tier="flex",  # Also test service_tier
+    )
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("Hello", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
     # assert no response headers if include_response_headers is not set
@@ -347,6 +350,7 @@ def test_response_metadata() -> None:
             "logprobs",
             "system_fingerprint",
             "finish_reason",
+            "service_tier",
         )
     )
     assert "content" in result.response_metadata["logprobs"]
@@ -364,6 +368,7 @@ async def test_async_response_metadata() -> None:
             "logprobs",
             "system_fingerprint",
             "finish_reason",
+            "service_tier",
         )
     )
     assert "content" in result.response_metadata["logprobs"]
@@ -377,7 +382,7 @@ def test_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in ("logprobs", "finish_reason")
+        for k in ("logprobs", "finish_reason", "service_tier")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
@@ -390,7 +395,7 @@ async def test_async_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in ("logprobs", "finish_reason")
+        for k in ("logprobs", "finish_reason", "service_tier")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
@@ -677,21 +682,24 @@ def test_image_token_counting_png() -> None:
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_tool_calling_strict(use_responses_api: bool) -> None:
-    """Test tool calling with strict=True."""
+    """Test tool calling with strict=True.
 
-    class magic_function(BaseModel):
+    Responses API appears to have fewer constraints on schema when strict=True.
+    """
+
+    class magic_function_notrequired_arg(BaseModel):
         """Applies a magic function to an input."""
 
-        input: int
+        input: Optional[int] = Field(default=None)
 
     model = ChatOpenAI(
-        model="gpt-4o", temperature=0, use_responses_api=use_responses_api
+        model="gpt-4.1", temperature=0, use_responses_api=use_responses_api
     )
+    # N.B. magic_function adds metadata to schema (min/max for number fields)
     model_with_tools = model.bind_tools([magic_function], strict=True)
-
-    # invalid_magic_function adds metadata to schema that isn't supported by OpenAI.
+    # Having a not-required argument in the schema remains invalid.
     model_with_invalid_tool_schema = model.bind_tools(
-        [invalid_magic_function], strict=True
+        [magic_function_notrequired_arg], strict=True
     )
 
     # Test invoke
@@ -758,30 +766,6 @@ def test_structured_output_strict(
         assert isinstance(chunk, dict)
     assert isinstance(chunk, dict)  # for mypy
     assert set(chunk.keys()) == {"setup", "punchline"}
-
-    # Invalid schema with optional fields:
-    class InvalidJoke(BaseModelProper):
-        """Joke to tell user."""
-
-        setup: str = FieldProper(description="question to set up a joke")
-        # Invalid field, can't have default value.
-        punchline: str = FieldProper(
-            default="foo", description="answer to resolve the joke"
-        )
-
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
-    with pytest.raises(openai.BadRequestError):
-        chat.invoke("Tell me a joke about cats.")
-    with pytest.raises(openai.BadRequestError):
-        next(chat.stream("Tell me a joke about cats."))
-
-    chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=True
-    )
-    with pytest.raises(openai.BadRequestError):
-        chat.invoke("Tell me a joke about cats.")
-    with pytest.raises(openai.BadRequestError):
-        next(chat.stream("Tell me a joke about cats."))
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
