@@ -114,12 +114,12 @@ result = llm_with_tools.invoke("What is 2 multiplied by 3?")
 ```
 
 As before, the output `result` will be an `AIMessage`. 
-But, if the tool was called, `result` will have a `tool_calls` attribute.
+But, if the tool was called, `result` will have a `tool_calls` [attribute](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.AIMessage.html#langchain_core.messages.ai.AIMessage.tool_calls).
 This attribute includes everything needed to execute the tool, including the tool name and input arguments:
 
 ```
 result.tool_calls
-{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}
+[{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}]
 ```
 
 For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
