@@ -14,6 +14,7 @@ from typing import (
 
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -21,6 +22,8 @@ from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializa
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
+
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
@@ -329,7 +332,12 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    @deprecated("1.0.2", alternative="asdict", removal="2.0")
+    @override
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        return self.asdict()
+
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):

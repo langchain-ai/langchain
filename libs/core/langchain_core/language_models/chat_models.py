@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -358,11 +359,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     )
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
         # guaranteed to be a dict since dumps uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -734,7 +735,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
+    def _combine_llm_outputs(
+        self, _llm_outputs: list[builtins.dict | None], /
+    ) -> builtins.dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -780,8 +783,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> dict:
-        params = self.dict()
+    ) -> builtins.dict:
+        params = self.asdict()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -846,7 +849,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -969,7 +972,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -1511,8 +1514,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
-    @override
-    def dict(self, **kwargs: Any) -> dict:
+    @deprecated("1.0.2", alternative="asdict", removal="2.0")
+    def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary of the LLM.
+        """
+        return self.asdict()
+
+    def asdict(self) -> builtins.dict[str, Any]:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
