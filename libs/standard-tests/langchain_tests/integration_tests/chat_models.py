@@ -316,7 +316,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         Example:
 
@@ -342,7 +342,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "url": "https://...",
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         Example:
 
@@ -369,7 +369,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "application/pdf",
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         Example:
 
@@ -396,7 +396,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         Example:
 
@@ -2302,7 +2302,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         .. dropdown:: Configuration
 
@@ -2387,7 +2387,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
             ]
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See: https://python.langchain.com/docs/concepts/multimodality/
 
         If the property ``supports_image_urls`` is set to True, the test will also
         check that we can process content blocks of the form:
