@@ -1200,7 +1200,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = full.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name
+        assert model_name != "", "model_name is empty"
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
