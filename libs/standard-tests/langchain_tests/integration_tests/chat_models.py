@@ -1798,6 +1798,71 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["args"].get("answer_style")
         assert tool_call["type"] == "tool_call"
 
+    def test_tool_message_error_status(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        """Test that ToolMessage with ``status="error"`` can be handled.
+
+        These messages may take the form:
+
+        .. code-block:: python
+
+            ToolMessage(
+                "Error: Missing required argument 'b'.",
+                name="my_adder_tool",
+                tool_call_id="abc123",
+                status="error",
+            )
+
+        If possible, the ``status`` field should be parsed and passed appropriately
+        to the model.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the ``status`` field on ``ToolMessage``
+            objects is either ignored or passed to the model appropriately.
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        messages = [
+            HumanMessage("What is 1 + 2"),
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                "Error: Missing required argument 'b'.",
+                name="my_adder_tool",
+                tool_call_id="abc123",
+                status="error",
+            ),
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
+
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
@@ -2684,71 +2749,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         response = model.invoke(messages)
         assert isinstance(response, AIMessage)
-
-    def test_tool_message_error_status(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        """Test that ToolMessage with ``status="error"`` can be handled.
-
-        These messages may take the form:
-
-        .. code-block:: python
-
-            ToolMessage(
-                "Error: Missing required argument 'b'.",
-                name="my_adder_tool",
-                tool_call_id="abc123",
-                status="error",
-            )
-
-        If possible, the ``status`` field should be parsed and passed appropriately
-        to the model.
-
-        This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
-
-        .. dropdown:: Configuration
-
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
-
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that the ``status`` field on ``ToolMessage``
-            objects is either ignored or passed to the model appropriately.
-        """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool])
-        messages = [
-            HumanMessage("What is 1 + 2"),
-            AIMessage(
-                "",
-                tool_calls=[
-                    {
-                        "name": "my_adder_tool",
-                        "args": {"a": 1},
-                        "id": "abc123",
-                        "type": "tool_call",
-                    },
-                ],
-            ),
-            ToolMessage(
-                "Error: Missing required argument 'b'.",
-                name="my_adder_tool",
-                tool_call_id="abc123",
-                status="error",
-            ),
-        ]
-        result = model_with_tools.invoke(messages)
-        assert isinstance(result, AIMessage)
 
     def test_message_with_name(self, model: BaseChatModel) -> None:
         """Test that HumanMessage with values for the ``name`` field can be handled.
