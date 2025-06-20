@@ -1018,8 +1018,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(model_name, str)
         assert model_name != "", "model_name is empty"
 
+        # `input_tokens` is the total, possibly including other unclassified or
+        # system-level tokens.
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
-            msg = self.invoke_with_audio_input()
+            # Checks if the specific chat model integration being tested has declared
+            # that it supports reporting token counts specifically for `audio_input`
+            msg = self.invoke_with_audio_input()  # To be implemented in test subclass
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["input_token_details"] is not None
             assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)
@@ -1175,7 +1179,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, AIMessageChunk)
             # only one chunk is allowed to set usage_metadata.input_tokens
             # if multiple do, it's likely a bug that will result in overcounting
-            # input tokens
+            # input tokens (since the total number of input tokens applies to the full
+            # generation, not individual chunks)
             if full and full.usage_metadata and full.usage_metadata["input_tokens"]:
                 assert (
                     not chunk.usage_metadata or not chunk.usage_metadata["input_tokens"]
