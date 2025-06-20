@@ -1438,6 +1438,7 @@ def test_get_buffer_string_with_function_call() -> None:
             },
         ),
     ]
+    # TODO: consider changing this
     expected = (
         "Human: Hello\n"
         "AI: Hi{'name': 'test_function', 'arguments': '{\"arg\": \"value\"}'}"
