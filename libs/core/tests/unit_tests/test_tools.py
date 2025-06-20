@@ -52,6 +52,7 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.tools.base import (
+    ArgsSchema,
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
