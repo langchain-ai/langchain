@@ -1665,7 +1665,8 @@ class AgentExecutor(Chain):
             # The tool_return logic is now handled within _iter_agent_loop,
             # if it yields an AgentFinish, it will be caught above.
 
-        # If the loop finishes without returning, it means we've stopped due to max_iterations or max_execution_time
+        # If the loop finishes without returning, it means we've stopped,
+        # due to max_iterations or max_execution_time
         output = self._action_agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
