@@ -615,6 +615,22 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
+    output_version: Literal["v0", "v1.responses"] = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    Supported values:
+
+    - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
+    - ``"v1.responses"``: Formats Responses API output
+      items into AIMessage content blocks.
+
+      .. versionadded:: 0.3.25
+
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -868,6 +884,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
+                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -922,6 +939,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
+                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1061,7 +1079,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = self.root_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
@@ -1074,6 +1095,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif self.output_version == "v1.responses":
+            return True
         elif self.include is not None:
             return True
         elif self.reasoning is not None:
@@ -1271,7 +1294,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = await self.root_async_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
@@ -3460,6 +3486,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
+    output_version: Literal["v0", "v1.responses"] = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3596,7 +3623,10 @@ def _construct_lc_result_from_responses_api(
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
     )
-    message = _convert_to_v03_ai_message(message)
+    if output_version == "v0":
+        message = _convert_to_v03_ai_message(message)
+    else:
+        pass
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -3608,6 +3638,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
+    output_version: Literal["v0", "v1.responses"] = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -3681,7 +3712,9 @@ def _convert_responses_chunk_to_generation_chunk(
         msg = cast(
             AIMessage,
             (
-                _construct_lc_result_from_responses_api(chunk.response, schema=schema)
+                _construct_lc_result_from_responses_api(
+                    chunk.response, schema=schema, output_version=output_version
+                )
                 .generations[0]
                 .message
             ),
@@ -3788,9 +3821,13 @@ def _convert_responses_chunk_to_generation_chunk(
         additional_kwargs=additional_kwargs,
         id=id,
     )
-    message = cast(
-        AIMessageChunk, _convert_to_v03_ai_message(message, has_reasoning=has_reasoning)
-    )
+    if output_version == "v0":
+        message = cast(
+            AIMessageChunk,
+            _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
+        )
+    else:
+        pass
     return (
         current_index,
         current_output_index,

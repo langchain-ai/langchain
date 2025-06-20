@@ -1257,6 +1257,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
@@ -1270,6 +1271,23 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
             "id": "rs_123",
         }
     }
+    assert result.generations[0].message.id == "msg_234"
+
+    # v1.responses
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="v1.responses"
+    )
+
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "reasoning foo"}],
+            "id": "rs_123",
+        },
+        {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
+    ]
+    assert result.generations[0].message.id == "resp_123"
 
 
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:

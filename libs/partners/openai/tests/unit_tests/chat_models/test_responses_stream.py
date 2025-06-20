@@ -1,7 +1,6 @@
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from openai.types.responses import (
     ResponseCompletedEvent,
@@ -601,9 +600,8 @@ responses_stream = [
 ]
 
 
-@pytest.mark.xfail(reason="Will be fixed with output format flags.")
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model="o4-mini", output_version="v1.responses")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
