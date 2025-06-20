@@ -271,7 +271,8 @@ def _convert_chunk_to_message_chunk(
         if _choice.get("finish_reason") is not None and isinstance(
             chunk.get("model"), str
         ):
-            response_metadata["model_name"] = chunk.get("model")
+            response_metadata["model_name"] = chunk["model"]
+            response_metadata["finish_reason"] = _choice["finish_reason"]
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
