@@ -1570,7 +1570,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         - ``AIMessage`` with the ``tool_calls`` attribute populated;
         - ``ToolMessage`` with string content;
         - ``AIMessage`` with string content (an answer);
-        - ``HuamnMessage`` with string content (a follow-up question).
+        - ``HumanMessage`` with string content (a follow-up question).
 
         This test should be skipped if the model does not support tool calling
         (see Configuration below).
