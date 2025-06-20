@@ -665,6 +665,9 @@ packages:
 - name: langchain-featherless-ai
   repo: featherlessai/langchain-featherless-ai
   path: .
+- name: langchain-zenrows
+  repo: ZenRows-Hub/langchain-zenrows
+  path: .
 - name: langchain-nebius
   path: libs/nebius
   repo: nebius/langchain-nebius
