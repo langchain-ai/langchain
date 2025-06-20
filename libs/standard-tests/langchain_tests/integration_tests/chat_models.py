@@ -1796,7 +1796,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert result.tool_calls
         tool_call = result.tool_calls[0]
         assert tool_call["args"].get("answer_style")
-        assert tool_call["type"] == "tool_call"
+        assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
 
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool
