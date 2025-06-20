@@ -52,7 +52,6 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.tools.base import (
-    ArgsSchema,
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
@@ -2712,11 +2711,7 @@ def test_args_schema_without_injected_arguments() -> None:
         "type": "tool_call",
     }
 
-    result = broken_tool.invoke(tool_call)
-    assert isinstance(result, ToolMessage)
-    assert result.content == "Processed 'test data' (call_id: test_123)"
-
-    # But the full input schema should include tool_call_id for validation
+    # The full input schema should include tool_call_id for validation
     schema = _schema(broken_tool.get_input_schema())
     assert schema == {
         "description": "Tool with injected arguments.",
@@ -2736,10 +2731,16 @@ def test_args_schema_without_injected_arguments() -> None:
             "text",
             "tool_call_id",
         ],
-        "title": "broken_tool",
+        "title": "CustomSchema",
         "type": "object",
     }
 
+    result = broken_tool.invoke(tool_call)
+    assert isinstance(result, ToolMessage)
+    assert result.content == "Processed 'test data' (call_id: test_123)"
+
+    # The tool schema does not include injectable arguments that are hidden from the
+    # LLM.
     tool_call_schema = _schema(broken_tool.tool_call_schema)
     assert tool_call_schema == {
         "description": "Tool that should work with automatic injection",
