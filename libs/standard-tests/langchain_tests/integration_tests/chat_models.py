@@ -1399,6 +1399,71 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        """Test that the model generates tool calls for tools that are derived from
+        LangChain runnables. This test is skipped if the ``has_tool_calling`` property
+        on the test class is set to False.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that ``bind_tools`` is implemented to correctly
+            translate LangChain tool objects into the appropriate schema for your
+            chat model.
+
+            This test may fail if the chat model does not support a ``tool_choice``
+            parameter. This parameter can be used to force a tool call. If
+            ``tool_choice`` is not supported and the model consistently fails this
+            test, you can ``xfail`` the test:
+
+            .. code-block:: python
+
+                @pytest.mark.xfail(reason=("Does not support tool_choice."))
+                def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+                    super().test_bind_runnables_as_tools(model)
+
+            Otherwise, ensure that the ``tool_choice_value`` property is correctly
+            specified on the test class.
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        prompt = ChatPromptTemplate.from_messages(
+            [("human", "Hello. Please respond in the style of {answer_style}.")]
+        )
+        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
+        chain = prompt | llm | StrOutputParser()
+        tool_ = chain.as_tool(
+            name="greeting_generator",
+            description="Generate a greeting in a particular style of speaking.",
+        )
+        if self.has_tool_choice:
+            tool_choice: Optional[str] = "any"
+        else:
+            tool_choice = None
+        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
+        query = "Using the tool, generate a Pirate greeting."
+        result = model_with_tools.invoke(query)
+        assert isinstance(result, AIMessage)
+        assert result.tool_calls
+        tool_call = result.tool_calls[0]
+        assert tool_call["args"].get("answer_style")
+        assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
+
     def test_tool_message_histories_string_content(
         self, model: BaseChatModel, my_adder_tool: BaseTool
     ) -> None:
@@ -1669,71 +1734,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
-
-    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
-        """Test that the model generates tool calls for tools that are derived from
-        LangChain runnables. This test is skipped if the ``has_tool_calling`` property
-        on the test class is set to False.
-
-        This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
-
-        .. dropdown:: Configuration
-
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
-
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
-            translate LangChain tool objects into the appropriate schema for your
-            chat model.
-
-            This test may fail if the chat model does not support a ``tool_choice``
-            parameter. This parameter can be used to force a tool call. If
-            ``tool_choice`` is not supported and the model consistently fails this
-            test, you can ``xfail`` the test:
-
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
-                    super().test_bind_runnables_as_tools(model)
-
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
-        """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
-
-        prompt = ChatPromptTemplate.from_messages(
-            [("human", "Hello. Please respond in the style of {answer_style}.")]
-        )
-        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
-        chain = prompt | llm | StrOutputParser()
-        tool_ = chain.as_tool(
-            name="greeting_generator",
-            description="Generate a greeting in a particular style of speaking.",
-        )
-        if self.has_tool_choice:
-            tool_choice: Optional[str] = "any"
-        else:
-            tool_choice = None
-        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
-        query = "Using the tool, generate a Pirate greeting."
-        result = model_with_tools.invoke(query)
-        assert isinstance(result, AIMessage)
-        assert result.tool_calls
-        tool_call = result.tool_calls[0]
-        assert tool_call["args"].get("answer_style")
-        assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
 
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool
