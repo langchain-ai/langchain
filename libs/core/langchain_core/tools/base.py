@@ -82,10 +82,10 @@ class SchemaAnnotationError(TypeError):
 
 def _is_annotated_type(typ: type[Any]) -> bool:
     """Check if a type is an Annotated type.
-    
+
     Args:
         typ: The type to check.
-        
+
     Returns:
         True if the type is an Annotated type, False otherwise.
     """
@@ -94,10 +94,10 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 
 def _get_annotation_description(arg_type: type) -> str | None:
     """Extract description from an Annotated type.
-    
+
     Args:
         arg_type: The type to extract description from.
-        
+
     Returns:
         The description string if found, None otherwise.
     """
@@ -117,13 +117,13 @@ def _get_filtered_args(
     include_injected: bool = True,
 ) -> dict:
     """Get filtered arguments from a function's signature.
-    
+
     Args:
         inferred_model: The Pydantic model inferred from the function.
         func: The function to extract arguments from.
         filter_args: Arguments to exclude from the result.
         include_injected: Whether to include injected arguments.
-        
+
     Returns:
         Dictionary of filtered arguments with their schema definitions.
     """
@@ -144,12 +144,12 @@ def _parse_python_function_docstring(
     """Parse function and argument descriptions from a docstring.
 
     Assumes the function docstring follows Google Python style guide.
-    
+
     Args:
         function: The function to parse the docstring from.
         annotations: Type annotations for the function parameters.
         error_on_invalid_docstring: Whether to raise an error on invalid docstring.
-        
+
     Returns:
         A tuple containing the function description and argument descriptions.
     """
@@ -165,11 +165,11 @@ def _validate_docstring_args_against_annotations(
     arg_descriptions: dict, annotations: dict
 ) -> None:
     """Validate that docstring arguments match function annotations.
-    
+
     Args:
         arg_descriptions: Arguments described in the docstring.
         annotations: Type annotations from the function signature.
-        
+
     Raises:
         ValueError: If a docstring argument is not found in function signature.
     """
@@ -186,12 +186,12 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> tuple[str, dict]:
     """Infer argument descriptions from function docstring and annotations.
-    
+
     Args:
         fn: The function to infer descriptions from.
         parse_docstring: Whether to parse the docstring for descriptions.
         error_on_invalid_docstring: Whether to raise error on invalid docstring.
-        
+
     Returns:
         A tuple containing the function description and argument descriptions.
     """
@@ -215,11 +215,11 @@ def _infer_arg_descriptions(
 
 def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
     """Check if a type annotation is a Pydantic model.
-    
+
     Args:
         annotation: The type annotation to check.
         pydantic_version: The Pydantic version to check against ("v1" or "v2").
-        
+
     Returns:
         True if the annotation is a Pydantic model, False otherwise.
     """
@@ -234,14 +234,14 @@ def _function_annotations_are_pydantic_v1(
     signature: inspect.Signature, func: Callable
 ) -> bool:
     """Check if all Pydantic annotations in a function are from V1.
-    
+
     Args:
         signature: The function signature to check.
         func: The function being checked.
-        
+
     Returns:
         True if all Pydantic annotations are from V1, False otherwise.
-        
+
     Raises:
         NotImplementedError: If the function contains mixed V1 and V2 annotations.
     """
@@ -388,17 +388,17 @@ ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Base class for all LangChain tools.
-    
+
     This abstract class defines the interface that all LangChain tools must implement.
     Tools are components that can be called by agents to perform specific actions.
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Validate the tool class definition during subclass creation.
-        
+
         Args:
             **kwargs: Additional keyword arguments passed to the parent class.
-            
+
         Raises:
             SchemaAnnotationError: If args_schema has incorrect type annotation.
         """
@@ -521,7 +521,7 @@ class ChildTool(BaseTool):
     @property
     def is_single_input(self) -> bool:
         """Check if the tool accepts only a single input argument.
-        
+
         Returns:
             True if the tool has only one input argument, False otherwise.
         """
@@ -531,7 +531,7 @@ class ChildTool(BaseTool):
     @property
     def args(self) -> dict:
         """Get the tool's input arguments schema.
-        
+
         Returns:
             Dictionary containing the tool's argument properties.
         """
@@ -545,7 +545,7 @@ class ChildTool(BaseTool):
     @property
     def tool_call_schema(self) -> ArgsSchema:
         """Get the schema for tool calls, excluding injected arguments.
-        
+
         Returns:
             The schema that should be used for tool calls from language models.
         """
@@ -617,10 +617,10 @@ class ChildTool(BaseTool):
         Args:
             tool_input: The raw input to the tool.
             tool_call_id: The ID of the tool call, if available.
-            
+
         Returns:
             The parsed and validated input.
-            
+
         Raises:
             ValueError: If string input is provided with JSON schema or if
                 InjectedToolCallId is required but not provided.
@@ -734,14 +734,14 @@ class ChildTool(BaseTool):
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
         """Convert tool input to positional and keyword arguments.
-        
+
         Args:
             tool_input: The input to the tool.
             tool_call_id: The ID of the tool call, if available.
-            
+
         Returns:
             A tuple of (positional_args, keyword_args) for the tool.
-            
+
         Raises:
             TypeError: If the tool input type is invalid.
         """
@@ -998,11 +998,11 @@ class ChildTool(BaseTool):
     @deprecated("0.1.47", alternative="invoke", removal="1.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable (deprecated).
-        
+
         Args:
             tool_input: The input to the tool.
             callbacks: Callbacks to use during execution.
-            
+
         Returns:
             The tool's output.
         """
@@ -1011,10 +1011,10 @@ class ChildTool(BaseTool):
 
 def _is_tool_call(x: Any) -> bool:
     """Check if the input is a tool call dictionary.
-    
+
     Args:
         x: The input to check.
-        
+
     Returns:
         True if the input is a tool call, False otherwise.
     """
@@ -1029,14 +1029,14 @@ def _handle_validation_error(
     ],
 ) -> str:
     """Handle validation errors based on the configured flag.
-    
+
     Args:
         e: The validation error that occurred.
         flag: How to handle the error (bool, string, or callable).
-        
+
     Returns:
         The error message to return.
-        
+
     Raises:
         ValueError: If the flag type is unexpected.
     """
@@ -1061,14 +1061,14 @@ def _handle_tool_error(
     flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     """Handle tool execution errors based on the configured flag.
-    
+
     Args:
         e: The tool exception that occurred.
         flag: How to handle the error (bool, string, or callable).
-        
+
     Returns:
         The error message to return.
-        
+
     Raises:
         ValueError: If the flag type is unexpected.
     """
@@ -1093,12 +1093,12 @@ def _prep_run_args(
     **kwargs: Any,
 ) -> tuple[Union[str, dict], dict]:
     """Prepare arguments for tool execution.
-    
+
     Args:
         value: The input value (string, dict, or ToolCall).
         config: The runnable configuration.
         **kwargs: Additional keyword arguments.
-        
+
     Returns:
         A tuple of (tool_input, run_kwargs).
     """
@@ -1132,14 +1132,14 @@ def _format_output(
     status: str,
 ) -> Union[ToolOutputMixin, Any]:
     """Format tool output as a ToolMessage if appropriate.
-    
+
     Args:
         content: The main content of the tool output.
         artifact: Any artifact data from the tool.
         tool_call_id: The ID of the tool call.
         name: The name of the tool.
         status: The execution status.
-        
+
     Returns:
         The formatted output, either as a ToolMessage or the original content.
     """
@@ -1158,12 +1158,12 @@ def _format_output(
 
 def _is_message_content_type(obj: Any) -> bool:
     """Check if object is valid message content format.
-    
+
     Validates content for OpenAI or Anthropic format tool messages.
-    
+
     Args:
         obj: The object to check.
-        
+
     Returns:
         True if the object is valid message content, False otherwise.
     """
@@ -1174,12 +1174,12 @@ def _is_message_content_type(obj: Any) -> bool:
 
 def _is_message_content_block(obj: Any) -> bool:
     """Check if object is a valid message content block.
-    
+
     Validates content blocks for OpenAI or Anthropic format.
-    
+
     Args:
         obj: The object to check.
-        
+
     Returns:
         True if the object is a valid content block, False otherwise.
     """
@@ -1192,10 +1192,10 @@ def _is_message_content_block(obj: Any) -> bool:
 
 def _stringify(content: Any) -> str:
     """Convert content to string, preferring JSON format.
-    
+
     Args:
         content: The content to stringify.
-        
+
     Returns:
         String representation of the content.
     """
@@ -1207,10 +1207,10 @@ def _stringify(content: Any) -> str:
 
 def _get_type_hints(func: Callable) -> Optional[dict[str, type]]:
     """Get type hints from a function, handling partial functions.
-    
+
     Args:
         func: The function to get type hints from.
-        
+
     Returns:
         Dictionary of type hints, or None if extraction fails.
     """
@@ -1224,10 +1224,10 @@ def _get_type_hints(func: Callable) -> Optional[dict[str, type]]:
 
 def _get_runnable_config_param(func: Callable) -> Optional[str]:
     """Find the parameter name for RunnableConfig in a function.
-    
+
     Args:
         func: The function to check.
-        
+
     Returns:
         The parameter name for RunnableConfig, or None if not found.
     """
@@ -1242,7 +1242,7 @@ def _get_runnable_config_param(func: Callable) -> Optional[str]:
 
 class InjectedToolArg:
     """Annotation for tool arguments that are injected at runtime.
-    
+
     Tool arguments annotated with this class are not included in the tool
     schema sent to language models and are instead injected during execution.
     """
@@ -1261,9 +1261,16 @@ class InjectedToolCallId(InjectedToolArg):
         from langchain_core.tools import tool, InjectedToolCallId
 
         @tool
-        def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
-            """Return x."""
-            return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
+        def foo(
+            x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+        ) -> ToolMessage:
+            \"\"\"Return x.\"\"\"
+            return ToolMessage(
+                str(x),
+                artifact=x,
+                name="foo",
+                tool_call_id=tool_call_id
+            )
         ```
     """
 
@@ -1272,11 +1279,11 @@ def _is_injected_arg_type(
     type_: type, injected_type: Optional[type[InjectedToolArg]] = None
 ) -> bool:
     """Check if a type annotation indicates an injected argument.
-    
+
     Args:
         type_: The type annotation to check.
         injected_type: The specific injected type to check for.
-        
+
     Returns:
         True if the type is an injected argument, False otherwise.
     """
@@ -1363,12 +1370,12 @@ def _replace_type_vars(
     default_to_bound: bool = True,
 ) -> type:
     """Replace TypeVars in a type annotation with concrete types.
-    
+
     Args:
         type_: The type annotation to process.
         generic_map: Mapping of TypeVars to concrete types.
         default_to_bound: Whether to use TypeVar bounds as defaults.
-        
+
     Returns:
         The type with TypeVars replaced.
     """
@@ -1390,7 +1397,7 @@ def _replace_type_vars(
 
 class BaseToolkit(BaseModel, ABC):
     """Base class for toolkits containing related tools.
-    
+
     A toolkit is a collection of related tools that can be used together
     to accomplish a specific task or work with a particular system.
     """
@@ -1398,7 +1405,7 @@ class BaseToolkit(BaseModel, ABC):
     @abstractmethod
     def get_tools(self) -> list[BaseTool]:
         """Get all tools in the toolkit.
-        
+
         Returns:
             List of tools contained in this toolkit.
         """
