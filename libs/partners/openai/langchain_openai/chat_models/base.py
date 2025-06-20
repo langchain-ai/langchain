@@ -615,7 +615,7 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Literal["v0", "v1.responses"] = "v0"
+    output_version: Literal["v0", "responses/v1"] = "v0"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -624,7 +624,7 @@ class BaseChatOpenAI(BaseChatModel):
     Supported values:
 
     - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
-    - ``"v1.responses"``: Formats Responses API output
+    - ``"responses/v1"``: Formats Responses API output
       items into AIMessage content blocks.
 
       .. versionadded:: 0.3.25
@@ -1095,7 +1095,7 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
-        elif self.output_version == "v1.responses":
+        elif self.output_version == "responses/v1":
             return True
         elif self.include is not None:
             return True
@@ -3486,7 +3486,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: Literal["v0", "v1.responses"] = "v0",
+    output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3638,7 +3638,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: Literal["v0", "v1.responses"] = "v0",
+    output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.

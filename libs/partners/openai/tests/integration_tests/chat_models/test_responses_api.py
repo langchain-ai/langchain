@@ -54,7 +54,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 
 @pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, output_version="v1.responses")
+    llm = ChatOpenAI(model=MODEL_NAME, output_version="responses/v1")
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -297,8 +297,8 @@ def test_function_calling_and_structured_output() -> None:
 
 @pytest.mark.default_cassette("test_reasoning.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "v1.responses"])
-def test_reasoning(output_version: Literal["v0", "v1.responses"]) -> None:
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
@@ -376,9 +376,9 @@ def test_file_search() -> None:
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "v1.responses"])
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
 def test_stream_reasoning_summary(
-    output_version: Literal["v0", "v1.responses"],
+    output_version: Literal["v0", "responses/v1"],
 ) -> None:
     llm = ChatOpenAI(
         model="o4-mini",
@@ -502,7 +502,7 @@ def test_mcp_builtin() -> None:
 def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        output_version="v1.responses",
+        output_version="responses/v1",
         store=False,
         include=["reasoning.encrypted_content"],
     )

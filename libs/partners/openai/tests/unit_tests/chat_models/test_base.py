@@ -1273,9 +1273,9 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     }
     assert result.generations[0].message.id == "msg_234"
 
-    # v1.responses
+    # responses/v1
     result = _construct_lc_result_from_responses_api(
-        response, output_version="v1.responses"
+        response, output_version="responses/v1"
     )
 
     assert result.generations[0].message.content == [

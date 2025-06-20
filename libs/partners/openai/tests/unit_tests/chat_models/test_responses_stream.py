@@ -601,7 +601,7 @@ responses_stream = [
 
 
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="v1.responses")
+    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
