@@ -98,9 +98,9 @@ class _MagicFunctionSchema(BaseModel):
 
 
 @tool(args_schema=_MagicFunctionSchema)
-def magic_function(input: int) -> int:
+def magic_function(_input: int) -> int:
     """Applies a magic function to an input."""
-    return input + 2
+    return _input + 2
 
 
 @tool
