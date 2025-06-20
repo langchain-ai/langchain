@@ -7,6 +7,7 @@ import functools
 import inspect
 import json
 import logging
+import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -304,7 +305,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def raise_deprecation(cls, values: typing.Dict[str, Any]) -> Any:  # noqa: UP006
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             warnings.warn(
@@ -316,7 +317,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return values
 
     @functools.cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
         return dumpd(self)
 
     # --- Runnable methods ---
@@ -530,7 +531,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         else:
             prompt = self._convert_input(input).to_string()
             config = ensure_config(config)
-            params = self.dict()
+            params = self.asdict()
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
@@ -600,7 +601,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         prompt = self._convert_input(input).to_string()
         config = ensure_config(config)
-        params = self.dict()
+        params = self.asdict()
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
@@ -819,7 +820,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         *,
         tags: Optional[Union[list[str], list[list[str]]]] = None,
-        metadata: Optional[Union[dict[str, Any], list[dict[str, Any]]]] = None,
+        metadata: Optional[
+            Union[typing.Dict[str, Any], list[typing.Dict[str, Any]]]  # noqa: UP006
+        ] = None,
         run_name: Optional[Union[str, list[str]]] = None,
         run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
@@ -943,7 +946,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
+        params = self.asdict()
         params["stop"] = stop
         options = {"stop": stop}
         (
@@ -1081,7 +1084,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         *,
         tags: Optional[Union[list[str], list[list[str]]]] = None,
-        metadata: Optional[Union[dict[str, Any], list[dict[str, Any]]]] = None,
+        metadata: Optional[
+            Union[typing.Dict[str, Any], list[typing.Dict[str, Any]]]  # noqa: UP006
+        ] = None,
         run_name: Optional[Union[str, list[str]]] = None,
         run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
@@ -1195,7 +1200,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
+        params = self.asdict()
         params["stop"] = stop
         options = {"stop": stop}
         (
@@ -1284,7 +1289,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input.
@@ -1333,7 +1338,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -1401,8 +1406,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
+    @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+        return self.asdict()
+
+    def asdict(self) -> typing.Dict[str, Any]:  # noqa: UP006
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1429,7 +1438,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self.dict()
+        prompt_dict = self.asdict()
 
         if save_path.suffix == ".json":
             with save_path.open("w") as f:
