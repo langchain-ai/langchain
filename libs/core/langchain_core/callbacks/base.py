@@ -1069,8 +1069,10 @@ class BaseCallbackManager(CallbackManagerMixin):
             tags (list[str]): The tags to remove.
         """
         for tag in tags:
-            self.tags.remove(tag)
-            self.inheritable_tags.remove(tag)
+            if tag in self.tags:
+                self.tags.remove(tag)
+            if tag in self.inheritable_tags:
+                self.inheritable_tags.remove(tag)
 
     def add_metadata(
         self,
@@ -1094,8 +1096,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             keys (list[str]): The keys to remove.
         """
         for key in keys:
-            self.metadata.pop(key)
-            self.inheritable_metadata.pop(key)
+            self.metadata.pop(key, None)
+            self.inheritable_metadata.pop(key, None)
 
 
 Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]
