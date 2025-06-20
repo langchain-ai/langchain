@@ -51,6 +51,7 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     convert_to_messages,
     convert_to_openai_image_block,
@@ -445,10 +446,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessage]:
+    ) -> Iterator[BaseMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
-            yield self.invoke(input, config=config, stop=stop, **kwargs)
+            yield cast(
+                "BaseMessageChunk",
+                self.invoke(input, config=config, stop=stop, **kwargs),
+            )
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
@@ -533,10 +537,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessage]:
+    ) -> AsyncIterator[BaseMessageChunk]:
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
-            yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
+            yield cast(
+                "BaseMessageChunk",
+                await self.ainvoke(input, config=config, stop=stop, **kwargs),
+            )
             return
 
         config = ensure_config(config)

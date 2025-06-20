@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, BaseMessageChunk
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_anthropic import ChatAnthropic
@@ -146,7 +146,10 @@ def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            full = full + chunk if full else chunk  # type: ignore[operator]
+            if full is None:
+                full = cast(BaseMessageChunk, chunk)
+            else:
+                full = full + chunk
         return cast(AIMessage, full)
     else:
         return cast(AIMessage, llm.invoke(input_))
