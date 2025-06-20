@@ -373,7 +373,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def raise_deprecation(cls, values: typing.Dict) -> Any:  # noqa: UP006
         """Emit deprecation warning if ``callback_manager`` is used.
 
         Args:
@@ -397,7 +397,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     )
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
         return dumpd(self)
 
     # --- Runnable methods ---
@@ -745,7 +745,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(
+        self,
+        llm_outputs: list[Optional[typing.Dict]],  # noqa: ARG002, UP006
+    ) -> typing.Dict:  # noqa: UP006
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -791,8 +794,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> dict:
-        params = self.dict()
+    ) -> typing.Dict:  # noqa: UP006
+        params = self.asdict()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -855,7 +858,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -971,7 +974,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -1591,8 +1594,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
+    @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+        return self.asdict()
+
+    def asdict(self) -> typing.Dict[str, Any]:  # noqa: UP006
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
