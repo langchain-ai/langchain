@@ -2682,26 +2682,11 @@ def test_tool_args_schema_with_annotated_type() -> None:
     }
 
 
-def test_injected_args_exclusion_from_schema_bug() -> None:
-    """Test that demonstrates the bug where injected args must be in args_schema.
+def test_args_schema_without_injected_arguments() -> None:
+    """Test that injected args work correctly in tool schemas."""
 
-    ISSUE: InjectedToolCallId parameters must be explicitly included in the
-    tool's args_schema for injection to work, even though they should be
-    automatically excluded from the LLM schema.
-
-    EXPECTED BEHAVIOR:
-    - InjectedToolCallId should work without being in args_schema
-    - These parameters should be automatically injected by the tool framework
-    - The LLM should never see these parameters in the tool schema
-
-    ACTUAL BEHAVIOR:
-    - InjectedToolCallId must be included in args_schema
-    - Without them in args_schema, injection fails with missing parameter error
-    """
-
-    # Test case 1: Tool with injected arg NOT in args_schema (should work but currently fails)
-    class BrokenToolSchema(BaseModel):
-        """This should work but currently doesn't - injection fails."""
+    class CustomSchema(BaseModel):
+        """Schema for LLM inputs."""
 
         text: str = Field(description="Text to process")
         # InjectedToolCallId should NOT need to be here
@@ -2709,13 +2694,14 @@ def test_injected_args_exclusion_from_schema_bug() -> None:
     @tool(
         "broken_tool",
         description="Tool that should work with automatic injection",
-        args_schema=BrokenToolSchema,
+        parse_docstring=True,
+        args_schema=CustomSchema,
     )
     def broken_tool(
         text: str,
         tool_call_id: Annotated[str, InjectedToolCallId],
     ) -> str:
-        """This tool should work but currently fails because injected params aren't in args_schema."""
+        """Tool with injected arguments."""
         return f"Processed '{text}' (call_id: {tool_call_id})"
 
     # Test tool call structure
@@ -2726,31 +2712,45 @@ def test_injected_args_exclusion_from_schema_bug() -> None:
         "type": "tool_call",
     }
 
-    # The broken tool should work but currently fails
-    with pytest.raises(ValidationError, match="1 validation error"):
-        # This should work: the tool_call_id should be automatically injected
-        # from the tool call structure, but currently fails because tool_call_id
-        # is not in the args_schema
-        broken_tool.invoke(tool_call)
-
-    # Verify that tool_call_schema correctly excludes injected args for both tools
-    broken_schema = _get_tool_call_json_schema(broken_tool)
-
-    # Both should have the same tool call schema (excluding injected args)
-    expected_schema_properties = {
-        "text": {"description": "Text to process", "title": "Text", "type": "string"}
-    }
-    assert broken_schema["properties"] == expected_schema_properties
-
-    # Neither schema should include tool_call_id in the tool call schema
-    assert "tool_call_id" not in broken_schema["properties"]
+    result = broken_tool.invoke(tool_call)
+    assert isinstance(result, ToolMessage)
+    assert result.content == "Processed 'test data' (call_id: test_123)"
 
     # But the full input schema should include tool_call_id for validation
-    broken_input_schema = _schema(broken_tool.get_input_schema())
+    schema = _schema(broken_tool.get_input_schema())
+    assert schema == {
+        "description": "Tool with injected arguments.",
+        "properties": {
+            "text": {
+                "title": "Text",
+                "type": "string",
+                "description": "Text to process",
+            },
+            # Tool call ID **is** required in this case.
+            "tool_call_id": {
+                "title": "Tool Call Id",
+                "type": "string",
+            },
+        },
+        "required": [
+            "text",
+            "tool_call_id",
+        ],
+        "title": "broken_tool",
+        "type": "object",
+    }
 
-    # The broken tool's input schema should also include tool_call_id for validation,
-    # but this is where the bug manifests - it's missing
-    # This assertion documents the current buggy behavior:
-    assert (
-        "tool_call_id" not in broken_input_schema["properties"]
-    )  # BUG: should be present
+    tool_call_schema = _schema(broken_tool.tool_call_schema)
+    assert tool_call_schema == {
+        "description": "Tool that should work with automatic injection",
+        "properties": {
+            "text": {
+                "description": "Text to process",
+                "title": "Text",
+                "type": "string",
+            }
+        },
+        "required": ["text"],
+        "title": "broken_tool",
+        "type": "object",
+    }

@@ -384,6 +384,10 @@ class ToolException(Exception):  # noqa: N818
 
 
 ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+"""Used to define the schema for tool arguments.
+
+This schema should not include injected arguments like `InjectedToolCallId`.
+"""
 
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
@@ -575,11 +579,17 @@ class ChildTool(BaseTool):
     ) -> type[BaseModel]:
         """The tool's input schema.
 
+        All required arguments will be included as part of this schema, including
+        any injected arguments like `InjectedToolCallId`.
+
+        A schema without injected arguments can be obtained using the
+        `tool_call_schema` property instead.
+
         Args:
             config: The configuration for the tool.
 
         Returns:
-            The input schema for the tool.
+            The full input schema for the tool, including injected arguments.
         """
         if self.args_schema is not None:
             if isinstance(self.args_schema, dict):
@@ -626,31 +636,29 @@ class ChildTool(BaseTool):
                 InjectedToolCallId is required but not provided.
             NotImplementedError: If args_schema is not a supported type.
         """
-        input_args = self.args_schema
+        args_schema = self.args_schema
         if isinstance(tool_input, str):
-            if input_args is not None:
-                if isinstance(input_args, dict):
+            if args_schema is not None:
+                if isinstance(args_schema, dict):
                     msg = (
                         "String tool inputs are not allowed when "
                         "using tools with JSON schema args_schema."
                     )
                     raise ValueError(msg)
-                key_ = next(iter(get_fields(input_args).keys()))
-                if issubclass(input_args, BaseModel):
-                    input_args.model_validate({key_: tool_input})
-                elif issubclass(input_args, BaseModelV1):
-                    input_args.parse_obj({key_: tool_input})
+                key_ = next(iter(get_fields(args_schema).keys()))
+                if issubclass(args_schema, BaseModel):
+                    args_schema.model_validate({key_: tool_input})
+                elif issubclass(args_schema, BaseModelV1):
+                    args_schema.parse_obj({key_: tool_input})
                 else:
-                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+                    msg = f"args_schema must be a Pydantic BaseModel, got {args_schema}"
                     raise TypeError(msg)
             return tool_input
-        if input_args is not None:
-            if isinstance(input_args, dict):
+        if args_schema is not None:
+            if isinstance(args_schema, dict):
                 return tool_input
-            if issubclass(input_args, BaseModel):
-                # Check args_schema for injected arguments
-                schema_annotations = get_all_basemodel_annotations(input_args)
-                for k, v in schema_annotations.items():
+            if issubclass(args_schema, BaseModel):
+                for k, v in get_all_basemodel_annotations(args_schema).items():
                     if (
                         _is_injected_arg_type(v, injected_type=InjectedToolCallId)
                         and k not in tool_input
@@ -665,58 +673,10 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                
-                # Also check function signature for injected arguments not in schema
-                func_to_check = None
-                if hasattr(self, 'func') and self.func is not None:
-                    # For StructuredTool, check the original function
-                    func_to_check = self.func
-                elif hasattr(self, 'coroutine') and self.coroutine is not None:
-                    # For async StructuredTool, check the original coroutine
-                    func_to_check = self.coroutine
-                else:
-                    # For other tools, check the _run method
-                    func_to_check = self._run
-                    
-                if func_to_check:
-                    try:
-                        func_annotations = get_type_hints(func_to_check, include_extras=True)
-                        for param_name, param_type in func_annotations.items():
-                            # Check for InjectedToolCallId specifically
-                            if (
-                                _is_injected_arg_type(param_type, injected_type=InjectedToolCallId)
-                                and param_name not in schema_annotations
-                                and param_name not in tool_input
-                            ):
-                                if tool_call_id is None:
-                                    msg = (
-                                        "When tool includes an InjectedToolCallId "
-                                        "argument, tool must always be invoked with a full "
-                                        "model ToolCall of the form: {'args': {...}, "
-                                        "'name': '...', 'type': 'tool_call', "
-                                        "'tool_call_id': '...'}"
-                                    )
-                                    raise ValueError(msg)
-                                tool_input[param_name] = tool_call_id
-                            # Check for any other injected arguments (for extensibility)
-                            elif (
-                                _is_injected_arg_type(param_type)
-                                and param_name not in schema_annotations
-                                and param_name not in tool_input
-                            ):
-                                # For other injected types, we don't inject values automatically
-                                # but we allow them to be missing from validation
-                                pass
-                    except (TypeError, AttributeError):
-                        # Handle cases where get_type_hints fails
-                        pass
-
-                result = input_args.model_validate(tool_input)
+                result = args_schema.model_validate(tool_input)
                 result_dict = result.model_dump()
-            elif issubclass(input_args, BaseModelV1):
-                # Check args_schema for injected arguments
-                schema_annotations = get_all_basemodel_annotations(input_args)
-                for k, v in schema_annotations.items():
+            elif issubclass(args_schema, BaseModelV1):
+                for k, v in get_all_basemodel_annotations(args_schema).items():
                     if (
                         _is_injected_arg_type(v, injected_type=InjectedToolCallId)
                         and k not in tool_input
@@ -731,53 +691,7 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                
-                # Also check function signature for injected arguments not in schema
-                func_to_check = None
-                if hasattr(self, 'func') and self.func is not None:
-                    # For StructuredTool, check the original function
-                    func_to_check = self.func
-                elif hasattr(self, 'coroutine') and self.coroutine is not None:
-                    # For async StructuredTool, check the original coroutine
-                    func_to_check = self.coroutine
-                else:
-                    # For other tools, check the _run method
-                    func_to_check = self._run
-                    
-                if func_to_check:
-                    try:
-                        func_annotations = get_type_hints(func_to_check, include_extras=True)
-                        for param_name, param_type in func_annotations.items():
-                            # Check for InjectedToolCallId specifically
-                            if (
-                                _is_injected_arg_type(param_type, injected_type=InjectedToolCallId)
-                                and param_name not in schema_annotations
-                                and param_name not in tool_input
-                            ):
-                                if tool_call_id is None:
-                                    msg = (
-                                        "When tool includes an InjectedToolCallId "
-                                        "argument, tool must always be invoked with a full "
-                                        "model ToolCall of the form: {'args': {...}, "
-                                        "'name': '...', 'type': 'tool_call', "
-                                        "'tool_call_id': '...'}"
-                                    )
-                                    raise ValueError(msg)
-                                tool_input[param_name] = tool_call_id
-                            # Check for any other injected arguments (for extensibility)
-                            elif (
-                                _is_injected_arg_type(param_type)
-                                and param_name not in schema_annotations
-                                and param_name not in tool_input
-                            ):
-                                # For other injected types, we don't inject values automatically
-                                # but we allow them to be missing from validation
-                                pass
-                    except (TypeError, AttributeError):
-                        # Handle cases where get_type_hints fails
-                        pass
-
-                result = input_args.parse_obj(tool_input)
+                result = args_schema.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
                 msg = (
