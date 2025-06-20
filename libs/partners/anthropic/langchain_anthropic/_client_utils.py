@@ -1,3 +1,13 @@
+"""Helpers for creating Anthropic API clients.
+
+This module allows for the caching of httpx clients to avoid creating new instances
+for each instance of ChatAnthropic.
+
+Logic is largely replicated from anthropic._base_client.
+"""
+
+import asyncio
+import os
 from functools import lru_cache
 from typing import Any, Optional
 
@@ -6,39 +16,60 @@ import anthropic
 _NOT_GIVEN: Any = object()
 
 
+class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
+    """Borrowed from anthropic._base_client"""
+
+    def __del__(self) -> None:
+        if self.is_closed:
+            return
+
+        try:
+            self.close()
+        except Exception:
+            pass
+
+
+class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
+    """Borrowed from anthropic._base_client"""
+
+    def __del__(self) -> None:
+        if self.is_closed:
+            return
+
+        try:
+            # TODO(someday): support non asyncio runtimes here
+            asyncio.get_running_loop().create_task(self.aclose())
+        except Exception:
+            pass
+
+
 @lru_cache
-def _get_cached_client(
+def _get_default_httpx_client(
     *,
-    api_key: Optional[str],
     base_url: Optional[str],
-    max_retries: int,
     timeout: Any = _NOT_GIVEN,
-) -> anthropic.Client:
+) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
-        "api_key": api_key,
-        "base_url": base_url,
-        "max_retries": max_retries,
+        "base_url": base_url
+        or os.environ.get("ANTHROPIC_BASE_URL")
+        or "https://api.anthropic.com",
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
-
-    return anthropic.Client(**kwargs)
+    return _SyncHttpxClientWrapper(**kwargs)
 
 
 @lru_cache
-def _get_cached_async_client(
+def _get_default_async_httpx_client(
     *,
-    api_key: Optional[str],
     base_url: Optional[str],
-    max_retries: int,
     timeout: Any = _NOT_GIVEN,
-) -> anthropic.AsyncClient:
+) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
-        "api_key": api_key,
-        "base_url": base_url,
-        "max_retries": max_retries,
+        "base_url": base_url
+        or os.environ.get("ANTHROPIC_BASE_URL")
+        or "https://api.anthropic.com",
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
-
-    return anthropic.AsyncClient(**kwargs)
+    return _AsyncHttpxClientWrapper(**kwargs)

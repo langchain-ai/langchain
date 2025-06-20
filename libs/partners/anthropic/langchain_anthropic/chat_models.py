@@ -70,8 +70,8 @@ from pydantic import (
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic._client_utils import (
-    _get_cached_async_client,
-    _get_cached_client,
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
 )
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -1281,22 +1281,28 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        if client_params["default_headers"] is None:
-            return _get_cached_client(
-                **{k: v for k, v in client_params.items() if k != "default_headers"}
-            )
-        else:
-            return anthropic.Client(**self._client_params)
+        http_client_params = {
+            k: v for k, v in client_params.items() if k in ("base_url", "timeout")
+        }
+        http_client = _get_default_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.Client(**params)
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        if client_params["default_headers"] is None:
-            return _get_cached_async_client(
-                **{k: v for k, v in client_params.items() if k != "default_headers"}
-            )
-        else:
-            return anthropic.AsyncClient(**self._client_params)
+        http_client_params = {
+            k: v for k, v in client_params.items() if k in ("base_url", "timeout")
+        }
+        http_client = _get_default_async_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.AsyncClient(**params)
 
     def _get_request_payload(
         self,
