@@ -668,7 +668,7 @@ def tool_example_to_messages(
                     ..., description="The color of the person's hair if known"
                 )
                 height_in_meters: Optional[str] = Field(
-                    ..., description="Height in METERs"
+                    ..., description="Height in METERS"
                 )
 
             examples = [
