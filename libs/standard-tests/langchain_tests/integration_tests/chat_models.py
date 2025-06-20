@@ -1559,69 +1559,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         result_list_content = model_with_tools.invoke(messages_list_content)
         assert isinstance(result_list_content, AIMessage)
 
-    def test_structured_few_shot_examples(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        """Test that the model can process few-shot examples with tool calls.
-
-        These are represented as a sequence of messages of the following form:
-
-        - ``HumanMessage`` with string content;
-        - ``AIMessage`` with the ``tool_calls`` attribute populated;
-        - ``ToolMessage`` with string content;
-        - ``AIMessage`` with string content (an answer);
-        - ``HumanMessage`` with string content (a follow-up question).
-
-        This test should be skipped if the model does not support tool calling
-        (see Configuration below).
-
-        .. dropdown:: Configuration
-
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
-
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
-
-            This test uses a utility function in ``langchain_core`` to generate a
-            sequence of messages representing "few-shot" examples: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html
-
-            If this test fails, check that the model can correctly handle this
-            sequence of messages.
-
-            You can ``xfail`` the test if tool calling is implemented but this format
-            is not supported.
-
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Not implemented."))
-                def test_structured_few_shot_examples(self, *args: Any) -> None:
-                    super().test_structured_few_shot_examples(*args)
-        """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
-        function_result = json.dumps({"result": 3})
-
-        tool_schema = my_adder_tool.args_schema
-        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
-        few_shot_messages = tool_example_to_messages(
-            "What is 1 + 2",
-            [tool_schema(a=1, b=2)],
-            tool_outputs=[function_result],
-            ai_response=function_result,
-        )
-
-        messages = few_shot_messages + [HumanMessage("What is 3 + 4")]
-        result = model_with_tools.invoke(messages)
-        assert isinstance(result, AIMessage)
-
     def test_tool_choice(self, model: BaseChatModel) -> None:
         """Test that the model can force tool calling via the ``tool_choice``
         parameter. This test is skipped if the ``has_tool_choice`` property on the
@@ -1860,6 +1797,69 @@ class ChatModelIntegrationTests(ChatModelTests):
                 status="error",
             ),
         ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
+
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        """Test that the model can process few-shot examples with tool calls.
+
+        These are represented as a sequence of messages of the following form:
+
+        - ``HumanMessage`` with string content;
+        - ``AIMessage`` with the ``tool_calls`` attribute populated;
+        - ``ToolMessage`` with string content;
+        - ``AIMessage`` with string content (an answer);
+        - ``HumanMessage`` with string content (a follow-up question).
+
+        This test should be skipped if the model does not support tool calling
+        (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            This test uses a utility function in ``langchain_core`` to generate a
+            sequence of messages representing "few-shot" examples: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html
+
+            If this test fails, check that the model can correctly handle this
+            sequence of messages.
+
+            You can ``xfail`` the test if tool calling is implemented but this format
+            is not supported.
+
+            .. code-block:: python
+
+                @pytest.mark.xfail(reason=("Not implemented."))
+                def test_structured_few_shot_examples(self, *args: Any) -> None:
+                    super().test_structured_few_shot_examples(*args)
+        """  # noqa: E501
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
+        function_result = json.dumps({"result": 3})
+
+        tool_schema = my_adder_tool.args_schema
+        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
+        few_shot_messages = tool_example_to_messages(
+            "What is 1 + 2",
+            [tool_schema(a=1, b=2)],
+            tool_outputs=[function_result],
+            ai_response=function_result,
+        )
+
+        messages = few_shot_messages + [HumanMessage("What is 3 + 4")]
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
