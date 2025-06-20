@@ -69,7 +69,6 @@ langchain-text-splitters = { path = "../text-splitters" }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = "False"
