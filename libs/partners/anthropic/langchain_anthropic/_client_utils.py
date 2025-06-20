@@ -1,7 +1,9 @@
 from functools import lru_cache
-from typing import Optional
+from typing import Any, Optional
 
 import anthropic
+
+_NOT_GIVEN: Any = object()
 
 
 @lru_cache
@@ -10,14 +12,17 @@ def _get_cached_client(
     api_key: Optional[str],
     base_url: Optional[str],
     max_retries: int,
-    timeout: Optional[float] = None,
+    timeout: Any = _NOT_GIVEN,
 ) -> anthropic.Client:
-    return anthropic.Client(
-        api_key=api_key,
-        base_url=base_url,
-        max_retries=max_retries,
-        timeout=timeout,
-    )
+    kwargs: dict[str, Any] = {
+        "api_key": api_key,
+        "base_url": base_url,
+        "max_retries": max_retries,
+    }
+    if timeout is not _NOT_GIVEN:
+        kwargs["timeout"] = timeout
+
+    return anthropic.Client(**kwargs)
 
 
 @lru_cache
@@ -26,11 +31,14 @@ def _get_cached_async_client(
     api_key: Optional[str],
     base_url: Optional[str],
     max_retries: int,
-    timeout: Optional[float] = None,
+    timeout: Any = _NOT_GIVEN,
 ) -> anthropic.AsyncClient:
-    return anthropic.AsyncClient(
-        api_key=api_key,
-        base_url=base_url,
-        max_retries=max_retries,
-        timeout=timeout,
-    )
+    kwargs: dict[str, Any] = {
+        "api_key": api_key,
+        "base_url": base_url,
+        "max_retries": max_retries,
+    }
+    if timeout is not _NOT_GIVEN:
+        kwargs["timeout"] = timeout
+
+    return anthropic.AsyncClient(**kwargs)
