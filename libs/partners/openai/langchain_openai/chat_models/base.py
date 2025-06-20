@@ -1111,21 +1111,25 @@ class BaseChatOpenAI(BaseChatModel):
         response_dict = (
             response if isinstance(response, dict) else response.model_dump()
         )
-        # Sometimes the AI Model calling will get error, we should raise it.
-        # Otherwise, the next code 'choices.extend(response["choices"])'
-        # will throw a "TypeError: 'NoneType' object is not iterable" error
-        # to mask the true error. Because 'response["choices"]' is None.
+        # Sometimes the AI Model calling will get error, we should raise it (this is
+        # typically followed by a null value for `choices`, which we raise for
+        # separately below).
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
-        token_usage = response_dict.get("usage")
+        # Raise informative error messages for non-OpenAI chat completions APIs
+        # that return malformed responses.
+        try:
+            choices = response_dict["choices"]
+        except KeyError as e:
+            raise KeyError(f"Response missing 'choices' key: {response_dict}") from e
 
-        if "choices" not in response_dict:
-            raise KeyError(f"Response does not contain 'choices' key: {response_dict}")
-        if response_dict["choices"] is None:
+        if choices is None:
             raise ValueError(f"Response 'choices' is None: {response_dict}")
 
-        for res in response_dict["choices"]:
+        token_usage = response_dict.get("usage")
+
+        for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
