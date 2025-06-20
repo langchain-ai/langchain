@@ -502,14 +502,30 @@ class BaseChatOpenAI(BaseChatModel):
     max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
     reasoning_effort: Optional[str] = None
-    """Constrains effort on reasoning for reasoning models. 
-    
-    Reasoning models only, like OpenAI o1 and o3-mini.
+    """Constrains effort on reasoning for reasoning models. For use with the Chat
+    Completions API.
+
+    Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
     Currently supported values are low, medium, and high. Reducing reasoning effort 
     can result in faster responses and fewer tokens used on reasoning in a response.
-    
+
     .. versionadded:: 0.2.14
+    """
+    reasoning: Optional[dict[str, Any]] = None
+    """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
+    o4-mini, etc.). For use with the Responses API.
+
+    Example:
+
+    .. code-block:: python
+
+        reasoning={
+            "effort": "medium",  # can be "low", "medium", or "high"
+            "summary": "auto",  # can be "auto", "concise", or "detailed"
+        }
+
+    .. versionadded:: 0.3.24
     """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -556,9 +572,39 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+
+    include: Optional[list[str]] = None
+    """Additional fields to include in generations from Responses API.
+
+    Supported values:
+
+    - ``"file_search_call.results"``
+    - ``"message.input_image.image_url"``
+    - ``"computer_call_output.output.image_url"``
+    - ``"reasoning.encrypted_content"``
+    - ``"code_interpreter_call.outputs"``
+
+    .. versionadded:: 0.3.24
+    """
+
     service_tier: Optional[str] = None
     """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
     for users of OpenAI's scale tier service.
+    """
+
+    store: Optional[bool] = None
+    """If True, OpenAI may store response data for future use. Defaults to True
+    for the Responses API and False for the Chat Completions API.
+
+    .. versionadded:: 0.3.24
+    """
+
+    truncation: Optional[str] = None
+    """Truncation strategy (Responses API). Can be ``"auto"`` or ``"disabled"``
+    (default). If ``"auto"``, model may drop input items from the middle of the
+    message sequence to fit the context window.
+
+    .. versionadded:: 0.3.24
     """
 
     use_responses_api: Optional[bool] = None
@@ -685,7 +731,11 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "reasoning": self.reasoning,
+            "include": self.include,
             "service_tier": self.service_tier,
+            "truncation": self.truncation,
+            "store": self.store,
         }
 
         params = {
@@ -1024,6 +1074,12 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif self.include is not None:
+            return True
+        elif self.reasoning is not None:
+            return True
+        elif self.truncation is not None:
+            return True
         else:
             return _use_responses_api(payload)
 
@@ -3123,7 +3179,13 @@ def _use_responses_api(payload: dict) -> bool:
     uses_builtin_tools = "tools" in payload and any(
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
-    responses_only_args = {"previous_response_id", "text", "truncation", "include"}
+    responses_only_args = {
+        "include",
+        "previous_response_id",
+        "reasoning",
+        "text",
+        "truncation",
+    }
     return bool(uses_builtin_tools or responses_only_args.intersection(payload))
 
 
@@ -3134,7 +3196,7 @@ def _construct_responses_api_payload(
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
         if legacy_token_param in payload:
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
-    if "reasoning_effort" in payload:
+    if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     payload["input"] = _construct_responses_api_input(messages)
@@ -3694,6 +3756,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     {"index": chunk.summary_index, "type": "summary_text", "text": ""}
                 ],
                 "index": current_index,
+                "type": "reasoning",
             }
         )
     elif chunk.type == "response.image_generation_call.partial_image":
@@ -3711,6 +3774,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     }
                 ],
                 "index": current_index,
+                "type": "reasoning",
             }
         )
     else:
