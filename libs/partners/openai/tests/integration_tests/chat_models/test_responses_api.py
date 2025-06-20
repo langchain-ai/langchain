@@ -56,7 +56,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         assert tool_output["type"]
 
 
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.vcr
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -317,13 +317,15 @@ def test_stateful_api() -> None:
 
 
 def test_route_from_model_kwargs() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(
+        model=MODEL_NAME, model_kwargs={"text": {"format": {"type": "text"}}}
+    )
     _ = next(llm.stream("Hello"))
 
 
 @pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
-    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(model="computer-use-preview", truncation="auto")
     tool = {
         "type": "computer_use_preview",
         "display_width": 1024,
@@ -354,10 +356,10 @@ def test_file_search() -> None:
 
 
 def test_stream_reasoning_summary() -> None:
-    reasoning = {"effort": "medium", "summary": "auto"}
-
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+        model="o4-mini",
+        # Routes to Responses API if `reasoning` is set.
+        reasoning={"effort": "medium", "summary": "auto"},
     )
     message_1 = {"role": "user", "content": "What is 3^3?"}
     response_1: Optional[BaseMessageChunk] = None
@@ -442,6 +444,7 @@ def test_mcp_builtin() -> None:
         ),
     }
     response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
 
     approval_message = HumanMessage(
         [
@@ -457,10 +460,54 @@ def test_mcp_builtin() -> None:
     _ = llm_with_tools.invoke(
         [approval_message], previous_response_id=response.response_metadata["id"]
     )
-    # Zero-data retention (e.g., as below) requires change in output format.
-    # _ = llm_with_tools.invoke(
-    #     [input_message, response, approval_message]
-    # )
+
+
+@pytest.mark.skip
+def test_mcp_builtin_zdr() -> None:
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        store=False,
+        include=["reasoning.encrypted_content"],
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert all(isinstance(block, dict) for block in full.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": block["id"],  # type: ignore[index]
+            }
+            for block in full.content
+            if block["type"] == "mcp_approval_request"  # type: ignore[index]
+        ]
+    )
+    _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
 @pytest.mark.vcr()
@@ -494,6 +541,7 @@ def test_image_generation_streaming() -> None:
 
     expected_keys = {
         "id",
+        "index",
         "background",
         "output_format",
         "quality",
