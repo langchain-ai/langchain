@@ -162,8 +162,9 @@ def _calculate_hash(
 def _get_document_with_hash(
     document: Document,
     *,
-    key_encoder: Callable[[Document], str]
-    | Literal["sha1", "sha256", "sha512", "blake2b"],
+    key_encoder: Union[
+        Callable[[Document], str], Literal["sha1", "sha256", "sha512", "blake2b"]
+    ],
 ) -> Document:
     """Calculate a hash of the document, and assign it to the uid.
 
@@ -195,7 +196,14 @@ def _get_document_with_hash(
     else:
         # The hashes are calculated separate for the content and the metadata.
         content_hash = _calculate_hash(document.page_content, algorithm=key_encoder)
-        serialized_meta = json.dumps(metadata, sort_keys=True)
+        try:
+            serialized_meta = json.dumps(metadata, sort_keys=True)
+        except Exception as e:
+            msg = (
+                f"Failed to hash metadata: {e}. "
+                f"Please use a dict that can be serialized using json."
+            )
+            raise ValueError(msg) from e
         metadata_hash = _calculate_hash(serialized_meta, algorithm=key_encoder)
         hash_ = _calculate_hash(content_hash + metadata_hash, algorithm=key_encoder)
 
@@ -269,8 +277,9 @@ def index(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
-    | Callable[[Document], str] = "sha1",
+    key_encoder: Union[
+        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
+    ] = "sha1",
     upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
@@ -604,8 +613,9 @@ async def aindex(
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
-    | Callable[[Document], str] = "sha1",
+    key_encoder: Union[
+        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
+    ] = "sha1",
     upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
