@@ -116,7 +116,7 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
     assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"
+    assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
 
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
@@ -126,7 +126,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function_no_args"
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"
+    assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
 
 
 class ChatModelIntegrationTests(ChatModelTests):
