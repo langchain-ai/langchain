@@ -11,10 +11,10 @@ import pytest_asyncio
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing import aindex, index
 from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
 
+from langchain.indexes import aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
 
 

@@ -207,6 +207,20 @@ def _get_document_with_hash(
     )
 
 
+# This internal abstraction was imported by the langchain package internally, so
+# we keep it here for backwards compatibility.
+class _HashedDocument:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an error if this class is instantiated."""
+        msg = (
+            "_HashedDocument is an internal abstraction that was deprecated in "
+            " langchain-core 0.3.63. This abstraction is marked as private and "
+            " should not have been used directly. If you are seeing this error, please "
+            " update your code appropriately."
+        )
+        raise NotImplementedError(msg)
+
+
 def _delete(
     vector_store: Union[VectorStore, DocumentIndex],
     ids: list[str],
