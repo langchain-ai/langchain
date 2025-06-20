@@ -498,11 +498,11 @@ def test_mcp_builtin() -> None:
     )
 
 
-@pytest.mark.skip
+@pytest.mark.vcr
 def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        use_responses_api=True,
+        output_version="v1.responses",
         store=False,
         include=["reasoning.encrypted_content"],
     )
