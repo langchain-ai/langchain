@@ -1025,56 +1025,56 @@ class ChatModelIntegrationTests(ChatModelTests):
             # that it supports reporting token counts specifically for `audio_input`
             msg = self.invoke_with_audio_input()  # To be implemented in test subclass
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None
+            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
             assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
             assert msg.usage_metadata["input_tokens"] >= sum(
                 (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()
+                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
             )
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["output_token_details"] is not None
+            assert msg.usage_metadata["output_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
             assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
             assert int(msg.usage_metadata["output_tokens"]) >= sum(
                 (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["output_token_details"].values()
+                for v in msg.usage_metadata["output_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
             )
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["output_token_details"] is not None
+            assert msg.usage_metadata["output_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
             assert isinstance(
                 msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["output_tokens"] >= sum(
                 (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["output_token_details"].values()
+                for v in msg.usage_metadata["output_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
             )
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None
+            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
             assert isinstance(
                 msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["input_tokens"] >= sum(
                 (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()
+                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
             )
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None
+            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
             assert isinstance(
                 msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["input_tokens"] >= sum(
                 (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()
+                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
             )
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
@@ -1659,7 +1659,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool choice.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # pylint: disable=unused-argument
             """Get weather at a location."""
             return "It's sunny."
 
@@ -2816,7 +2816,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # pylint: disable=unused-argument
             """Call to surf the web."""
             return "It's sunny."
 
