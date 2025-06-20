@@ -1026,7 +1026,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             msg = self.invoke_with_audio_input()  # To be implemented in test subclass
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["input_token_details"] is not None
-            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)
+            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
             assert msg.usage_metadata["input_tokens"] >= sum(
                 (v or 0)  # type: ignore[misc]
                 for v in msg.usage_metadata["input_token_details"].values()
@@ -1035,7 +1035,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             msg = self.invoke_with_audio_output()
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["output_token_details"] is not None
-            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)
+            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
             assert int(msg.usage_metadata["output_tokens"]) >= sum(
                 (v or 0)  # type: ignore[misc]
                 for v in msg.usage_metadata["output_token_details"].values()
@@ -1045,7 +1045,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["output_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["output_token_details"]["reasoning"],
+                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["output_tokens"] >= sum(
@@ -1057,7 +1057,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["input_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_read"],
+                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["input_tokens"] >= sum(
@@ -1069,7 +1069,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert msg.usage_metadata is not None
             assert msg.usage_metadata["input_token_details"] is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_creation"],
+                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
                 int,
             )
             assert msg.usage_metadata["input_tokens"] >= sum(
