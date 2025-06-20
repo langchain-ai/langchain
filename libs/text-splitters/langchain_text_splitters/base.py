@@ -79,10 +79,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    offset = index + previous_chunk_len - self._chunk_overlap
+                    offset = index + max(0, previous_chunk_len - self._chunk_overlap)
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
-                    previous_chunk_len = len(chunk)
+                    previous_chunk_len = self._length_function(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
@@ -247,6 +247,11 @@ class TokenTextSplitter(TextSplitter):
         self._tokenizer = enc
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
+
+        def _length_function(text: str) -> int:
+            return len(self._tokenizer.encode(text))
+
+        self._length_function = _length_function
 
     def split_text(self, text: str) -> List[str]:
         """Splits the input text into smaller chunks based on tokenization.
