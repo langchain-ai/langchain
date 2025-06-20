@@ -107,6 +107,12 @@ class ChatGroq(BaseChatModel):
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
+            The format for reasoning output.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -292,7 +298,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """
+    """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -302,6 +308,13 @@ class ChatGroq(BaseChatModel):
     """What sampling temperature to use."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = None
+    """The format for reasoning output.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
+    """  # noqa: E501
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
@@ -606,6 +619,7 @@ class ChatGroq(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "stop": self.stop,
+            "reasoning_format": self.reasoning_format,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -1153,6 +1167,8 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1196,6 +1212,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "assistant":
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
