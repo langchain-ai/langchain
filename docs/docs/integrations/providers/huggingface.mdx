@@ -1,168 +1,203 @@
-# Hugging Face
 
-All functionality related to the [Hugging Face Platform](https://huggingface.co/).
+---
+title: Hugging Face Integration
+description: Learn how to use Hugging Face models, embeddings, and tools with LangChain.
+---
 
-## Installation
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Most of the Hugging Face integrations are available in the `langchain-huggingface` package.
+# 🚀 Hugging Face Integration in LangChain
+
+All functionality related to the [Hugging Face Platform](https://huggingface.co/) is available through the `langchain-huggingface` and `langchain-community` packages.
+
+---
+
+## 📦 Installation
+
+Install the Hugging Face integration packages:
 
 ```bash
 pip install langchain-huggingface
+````
+
+To use tools, embeddings, and TTS (Text-to-Speech), install:
+
+```bash
+pip install transformers datasets huggingface_hub pillow
 ```
 
-## Chat models
+---
 
-### ChatHuggingFace
+## 🤖 Chat Models
 
-We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
+### `ChatHuggingFace`
 
-See a [usage example](/docs/integrations/chat/huggingface).
+Use chat models via Hugging Face’s hosted models or APIs.
 
 ```python
 from langchain_huggingface import ChatHuggingFace
 ```
 
-## LLMs
+📄 [Usage Example](https://docs.langchain.com/docs/integrations/chat/huggingface)
 
-### HuggingFaceEndpoint
+---
 
+## 💬 LLMs (Text Generation)
 
-See a [usage example](/docs/integrations/llms/huggingface_endpoint).
+### `HuggingFaceEndpoint`
+
+Use models directly from Hugging Face Hub (via endpoint):
 
 ```python
 from langchain_huggingface import HuggingFaceEndpoint
+
+llm = HuggingFaceEndpoint(
+    repo_id="tiiuae/falcon-7b-instruct",
+    task="text-generation"
+)
 ```
 
-### HuggingFacePipeline
+📄 [Usage Example](https://docs.langchain.com/docs/integrations/llms/huggingface_endpoint)
 
-Hugging Face models can be run locally through the `HuggingFacePipeline` class.
+---
 
-See a [usage example](/docs/integrations/llms/huggingface_pipelines).
+### `HuggingFacePipeline`
+
+Run models locally via Hugging Face’s `transformers.Pipeline`:
 
 ```python
 from langchain_huggingface import HuggingFacePipeline
 ```
 
-## Embedding Models
+📄 [Usage Example](https://docs.langchain.com/docs/integrations/llms/huggingface_pipelines)
 
-### HuggingFaceEmbeddings
+---
 
-See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+## 🧠 Embedding Models
+
+<Tabs>
+<TabItem value="Basic">
+
+### `HuggingFaceEmbeddings`
 
 ```python
 from langchain_huggingface import HuggingFaceEmbeddings
 ```
 
-### HuggingFaceEndpointEmbeddings
+</TabItem>
+<TabItem value="Endpoint">
 
-See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+### `HuggingFaceEndpointEmbeddings`
 
 ```python
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 ```
 
-### HuggingFaceInferenceAPIEmbeddings
+</TabItem>
+<TabItem value="Inference API">
 
-See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
+### `HuggingFaceInferenceAPIEmbeddings`
 
 ```python
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 ```
 
-### HuggingFaceInstructEmbeddings
+</TabItem>
+<TabItem value="Instruct">
 
-See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
+### `HuggingFaceInstructEmbeddings`
 
 ```python
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 ```
 
-### HuggingFaceBgeEmbeddings
+</TabItem>
+<TabItem value="BGE">
 
->[BGE models on the HuggingFace](https://huggingface.co/BAAI/bge-large-en-v1.5) are one of [the best open-source embedding models](https://huggingface.co/spaces/mteb/leaderboard).
->BGE model is created by the [Beijing Academy of Artificial Intelligence (BAAI)](https://en.wikipedia.org/wiki/Beijing_Academy_of_Artificial_Intelligence). `BAAI` is a private non-profit organization engaged in AI research and development.
-
-See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
+### `HuggingFaceBgeEmbeddings`
 
 ```python
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 ```
 
-## Document Loaders
+📄 [BGE model](https://huggingface.co/BAAI/bge-large-en-v1.5)
+📄 [LangChain integration](https://docs.langchain.com/docs/integrations/text_embedding/bge_huggingface)
 
-### Hugging Face dataset
+</TabItem>
+</Tabs>
 
->[Hugging Face Hub](https://huggingface.co/docs/hub/index) is home to over 75,000
-> [datasets](https://huggingface.co/docs/hub/index#datasets) in more than 100 languages
-> that can be used for a broad range of tasks across NLP, Computer Vision, and Audio.
-> They used for a diverse range of tasks such as translation, automatic speech
-> recognition, and image classification.
+---
 
-We need to install `datasets` python package.
+## 📂 Document Loaders
 
-```bash
-pip install datasets
-```
+### `HuggingFaceDatasetLoader`
 
-See a [usage example](/docs/integrations/document_loaders/hugging_face_dataset).
+Load public datasets from Hugging Face Hub.
 
 ```python
 from langchain_community.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
 ```
 
-### Hugging Face model loader
+📄 [Usage Example](https://docs.langchain.com/docs/integrations/document_loaders/hugging_face_dataset)
 
->Load model information from `Hugging Face Hub`, including README content.
->
->This loader interfaces with the `Hugging Face Models API` to fetch 
-> and load model metadata and README files. 
-> The API allows you to search and filter models based on 
-> specific criteria such as model tags, authors, and more.
+---
+
+### `HuggingFaceModelLoader`
+
+Load model metadata and README from Hugging Face Hub.
 
 ```python
 from langchain_community.document_loaders import HuggingFaceModelLoader
 ```
 
-### Image captions
+---
 
-It uses the Hugging Face models to generate image captions.
+### `ImageCaptionLoader`
 
-We need to install several python packages.
-
-```bash
-pip install transformers pillow
-```
-
-See a [usage example](/docs/integrations/document_loaders/image_captions).
+Use Hugging Face vision models to generate image captions.
 
 ```python
 from langchain_community.document_loaders import ImageCaptionLoader
 ```
 
-## Tools
+📦 Requires:
+
+```bash
+pip install transformers pillow
+```
+
+---
+
+## 🛠️ Tools
 
 ### Hugging Face Hub Tools
 
->[Hugging Face Tools](https://huggingface.co/docs/transformers/v4.29.0/en/custom_tools)
-> support text I/O and are loaded using the `load_huggingface_tool` function.
-
-We need to install several python packages.
-
-```bash
-pip install transformers huggingface_hub
-```
-
-See a [usage example](/docs/integrations/tools/huggingface_tools).
+Interact with Hugging Face tools directly using:
 
 ```python
 from langchain_community.agent_toolkits.load_tools import load_huggingface_tool
 ```
 
-### Hugging Face Text-to-Speech Model Inference.
+📦 Requires:
 
-> It is a wrapper around `OpenAI Text-to-Speech API`.
+```bash
+pip install transformers huggingface_hub
+```
+
+📄 [Usage Example](https://docs.langchain.com/docs/integrations/tools/huggingface_tools)
+
+---
+
+### `HuggingFaceTextToSpeechModelInference`
+
+Wrapper around text-to-speech model using Hugging Face API:
 
 ```python
 from langchain_community.tools.audio import HuggingFaceTextToSpeechModelInference
 ```
+
+---
+
+*💡 For more examples and updates, refer to the official [LangChain Hugging Face docs](https://docs.langchain.com/docs/integrations/llms/huggingface_endpoint).*
 
