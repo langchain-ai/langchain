@@ -1122,10 +1122,12 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             choices = response_dict["choices"]
         except KeyError as e:
-            raise KeyError(f"Response missing 'choices' key: {response_dict}") from e
+            raise KeyError(
+                f"Response missing `choices` key: {response_dict.keys()}"
+            ) from e
 
         if choices is None:
-            raise ValueError(f"Response 'choices' is None: {response_dict}")
+            raise TypeError("Received response with null value for `choices`.")
 
         token_usage = response_dict.get("usage")
 
