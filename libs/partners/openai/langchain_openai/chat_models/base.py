@@ -793,7 +793,8 @@ class BaseChatOpenAI(BaseChatModel):
         if len(choices) == 0:
             # logprobs is implicitly None
             generation_chunk = ChatGenerationChunk(
-                message=default_chunk_class(content="", usage_metadata=usage_metadata)
+                message=default_chunk_class(content="", usage_metadata=usage_metadata),
+                generation_info=base_generation_info,
             )
             return generation_chunk
 
