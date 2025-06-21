@@ -284,6 +284,37 @@ def _format_data_content_block(block: dict) -> dict:
     return formatted_block
 
 
+def _insert_human_message_if_missing(
+    messages: list[BaseMessage],
+) -> list[BaseMessage]:
+    """
+    If the message list does not contain a HumanMessage, inserts a default HumanMessage
+    ("You are a helpful assistant.") after the SystemMessage if present,
+    or at the beginning otherwise.
+
+    Args:
+        messages (list[BaseMessage]): Original list of messages
+
+    Returns:
+        list[BaseMessage]: Modified list of messages with at least one HumanMessage
+    """
+    if any(isinstance(m, HumanMessage) for m in messages):
+        return messages
+
+    # Find index of SystemMessage, if any
+    system_index = next(
+        (i for i, m in enumerate(messages) if isinstance(m, SystemMessage)),
+        -1,
+    )
+    insert_at = system_index + 1 if system_index >= 0 else 0
+
+    return (
+        messages[:insert_at]
+        + [HumanMessage(content="You are a helpful assistant.")]
+        + messages[insert_at:]
+    )
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[Union[str, list[dict], None], list[dict]]:
@@ -1290,6 +1321,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: dict,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
+        messages = _insert_human_message_if_missing(messages)
         system, formatted_messages = _format_messages(messages)
         payload = {
             "model": self.model,
