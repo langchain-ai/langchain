@@ -11,10 +11,10 @@ import pytest_asyncio
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
 
 from langchain.indexes import aindex, index
-from langchain.indexes._api import _abatch, _HashedDocument
 from langchain.indexes._sql_record_manager import SQLRecordManager
 
 
@@ -1374,11 +1374,17 @@ def test_indexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     with patch.object(vector_store, "add_documents") as mock_add_documents:
-        index(docs, record_manager, vector_store, batch_size=batch_size)
+        index(
+            docs,
+            record_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         docs_with_id = [
             Document(
@@ -1402,11 +1408,17 @@ async def test_aindexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     with patch.object(vector_store, "aadd_documents") as mock_add_documents:
-        await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+        await aindex(
+            docs,
+            arecord_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         docs_with_id = [
             Document(
