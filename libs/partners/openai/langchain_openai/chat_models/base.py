@@ -683,10 +683,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.http_client = httpx.Client(
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
-            sync_specific = {
-                "http_client": self.http_client
-                or _get_default_httpx_client(self.openai_api_base, self.request_timeout)
-            }
+            if self.http_client:
+                sync_specific = {"http_client": self.http_client}
+            elif isinstance(self.request_timeout, openai.Timeout):
+                # Not hashable, so we cannot use it in lru_cache
+                sync_specific = {}
+            else:
+                sync_specific = {
+                    "http_client": _get_default_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    )
+                }
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
@@ -701,12 +708,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.http_async_client = httpx.AsyncClient(
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
-            async_specific = {
-                "http_client": self.http_async_client
-                or _get_default_async_httpx_client(
-                    self.openai_api_base, self.request_timeout
-                )
-            }
+            if self.http_async_client:
+                async_specific = {"http_client": self.http_async_client}
+            elif isinstance(self.request_timeout, openai.Timeout):
+                # Not hashable, so we cannot use it in lru_cache
+                async_specific = {}
+            else:
+                async_specific = {
+                    "http_client": _get_default_async_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    )
+                }
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,  # type: ignore[arg-type]
