@@ -35,7 +35,7 @@ def test_interfaces() -> None:
 
 def _get_get_session_history(
     *,
-    store: Optional[dict[str, Any]] = None,
+    store: Optional[dict[str, InMemoryChatMessageHistory]] = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -54,7 +54,7 @@ def test_input_messages() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: dict = {}
+    store: dict[str, InMemoryChatMessageHistory] = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {"configurable": {"session_id": "1"}}
@@ -83,7 +83,7 @@ async def test_input_messages_async() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: dict = {}
+    store: dict[str, InMemoryChatMessageHistory] = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config = {"session_id": "1_async"}
@@ -489,7 +489,7 @@ def test_get_output_schema() -> None:
     )
     output_type = with_history.get_output_schema()
 
-    expected_schema: dict = {
+    expected_schema: dict[str, Any] = {
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
@@ -842,8 +842,7 @@ def test_get_output_messages_no_value_error() -> None:
         lambda messages: "you said: "
         + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
     )
-    store: dict = {}
-    get_session_history = _get_get_session_history(store=store)
+    get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {
         "configurable": {"session_id": "1", "message_history": get_session_history("1")}
@@ -859,8 +858,7 @@ def test_get_output_messages_no_value_error() -> None:
 def test_get_output_messages_with_value_error() -> None:
     illegal_bool_message = False
     runnable = _RunnableLambdaWithRaiseError(lambda _: illegal_bool_message)
-    store: dict = {}
-    get_session_history = _get_get_session_history(store=store)
+    get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {
         "configurable": {"session_id": "1", "message_history": get_session_history("1")}
