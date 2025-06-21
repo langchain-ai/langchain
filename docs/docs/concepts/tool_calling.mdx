@@ -137,6 +137,16 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 :::
 
+## Forcing tool use
+
+By default, the model has the freedom to choose which tool to use based on the user's input. However, in certain scenarios, you might want to influence the model's decision-making process. LangChain allows you to enforce tool choice (using `tool_choice`), ensuring the model uses either a particular tool or *any* tool from a given list. This is useful for structuring the model's behavior and guiding it towards a desired outcome.
+
+:::info[Further reading]
+
+* See our [how-to guide](/docs/how_to/tool_choice) on forcing tool use.
+
+:::
+
 ## Best practices
 
 When designing [tools](/docs/concepts/tools/) to be used by a model, it is important to keep in mind that:
