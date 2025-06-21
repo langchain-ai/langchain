@@ -753,6 +753,16 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_vectors(results)
 
+    @staticmethod
+    def _euclidean_relevance_score_fn(distance: float) -> float:
+        """Normalize Euclidean (L2) distance to a [0, 1] relevance score.
+
+        Uses the transformation ``1 / (1 + distance)`` so that:
+        * distance == 0  -> score == 1 (most relevant)
+        * distance -> ∞  -> score -> 0 (least relevant)
+        """
+        return 1.0 / (1.0 + float(distance))
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Select the relevance score function based on collections distance metric.
 
