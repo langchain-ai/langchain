@@ -241,7 +241,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self,
         runnable: Union[
             Runnable[
-                Union[MessagesOrDictWithMessages],
+                list[BaseMessage],
+                Union[str, BaseMessage, MessagesOrDictWithMessages],
+            ],
+            Runnable[
+                dict[str, Any],
                 Union[str, BaseMessage, MessagesOrDictWithMessages],
             ],
             LanguageModelLike,
@@ -258,7 +262,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         Args:
             runnable: The base Runnable to be wrapped. Must take as input one of:
-                1. A sequence of BaseMessages
+                1. A list of BaseMessages
                 2. A dict with one key for all messages
                 3. A dict with one key for the current input string/message(s) and
                     a separate key for historical messages. If the input key points
