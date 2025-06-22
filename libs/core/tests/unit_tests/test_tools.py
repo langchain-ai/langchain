@@ -2680,3 +2680,79 @@ def test_tool_args_schema_with_annotated_type() -> None:
             "type": "array",
         }
     }
+
+
+def test_args_schema_without_injected_arguments() -> None:
+    """Test that injected args work correctly in tool schemas."""
+
+    class CustomSchema(BaseModel):
+        """Schema for LLM inputs."""
+
+        text: str = Field(description="Text to process")
+        # InjectedToolCallId should NOT need to be here
+
+    @tool(
+        "broken_tool",
+        description="Tool that should work with automatic injection",
+        parse_docstring=True,
+        args_schema=CustomSchema,
+    )
+    def broken_tool(
+        text: str,
+        tool_call_id: Annotated[str, InjectedToolCallId],
+    ) -> str:
+        """Tool with injected arguments."""
+        return f"Processed '{text}' (call_id: {tool_call_id})"
+
+    # Test tool call structure
+    tool_call = {
+        "name": "test_tool",
+        "args": {"text": "test data"},
+        "id": "test_123",
+        "type": "tool_call",
+    }
+
+    # The full input schema should include tool_call_id for validation
+    schema = _schema(broken_tool.get_input_schema())
+    assert schema == {
+        "description": "Tool with injected arguments.",
+        "properties": {
+            "text": {
+                "title": "Text",
+                "type": "string",
+                "description": "Text to process",
+            },
+            # Tool call ID **is** required in this case.
+            "tool_call_id": {
+                "title": "Tool Call Id",
+                "type": "string",
+            },
+        },
+        "required": [
+            "text",
+            "tool_call_id",
+        ],
+        "title": "CustomSchema",
+        "type": "object",
+    }
+
+    result = broken_tool.invoke(tool_call)
+    assert isinstance(result, ToolMessage)
+    assert result.content == "Processed 'test data' (call_id: test_123)"
+
+    # The tool schema does not include injectable arguments that are hidden from the
+    # LLM.
+    tool_call_schema = _schema(broken_tool.tool_call_schema)
+    assert tool_call_schema == {
+        "description": "Tool that should work with automatic injection",
+        "properties": {
+            "text": {
+                "description": "Text to process",
+                "title": "Text",
+                "type": "string",
+            }
+        },
+        "required": ["text"],
+        "title": "broken_tool",
+        "type": "object",
+    }
