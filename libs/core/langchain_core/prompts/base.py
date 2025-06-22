@@ -23,6 +23,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -118,7 +119,7 @@ class BasePromptTemplate(
     )
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
         return dumpd(self)
 
     @property
@@ -151,7 +152,7 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> dict:
+    def _validate_input(self, inner_input: Any) -> typing.Dict:  # noqa: UP006
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -185,19 +186,26 @@ class BasePromptTemplate(
             )
         return inner_input
 
-    def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
+    def _format_prompt_with_error_handling(
+        self,
+        inner_input: typing.Dict,  # noqa: UP006
+    ) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
         return self.format_prompt(**_inner_input)
 
     async def _aformat_prompt_with_error_handling(
-        self, inner_input: dict
+        self,
+        inner_input: typing.Dict,  # noqa: UP006
     ) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
         return await self.aformat_prompt(**_inner_input)
 
     @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: typing.Dict,  # noqa: UP006
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -223,7 +231,10 @@ class BasePromptTemplate(
 
     @override
     async def ainvoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: typing.Dict,  # noqa: UP006
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -285,7 +296,7 @@ class BasePromptTemplate(
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
         # Get partial params:
         partial_kwargs = {
             k: v if not callable(v) else v() for k, v in self.partial_variables.items()
@@ -331,14 +342,19 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    def dict(self, **kwargs: Any) -> dict:
+    @deprecated("0.3.61", alternative="asdict", removal="1.0")
+    @override
+    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+        return self.asdict(**kwargs)
+
+    def asdict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
         """Return dictionary representation of prompt.
 
         Args:
-            kwargs: Any additional arguments to pass to the dictionary.
+            **kwargs: Any additional arguments to pass to the dictionary.
 
         Returns:
-            Dict: Dictionary representation of the prompt.
+            Dictionary representation of the prompt.
 
         Raises:
             NotImplementedError: If the prompt type is not implemented.
@@ -369,7 +385,7 @@ class BasePromptTemplate(
             raise ValueError(msg)
 
         # Fetch dictionary to save
-        prompt_dict = self.dict()
+        prompt_dict = self.asdict()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)
