@@ -8,7 +8,7 @@ This package contains the LangChain integration with Ollama
 pip install -U langchain-ollama
 ```
 
-You will also need to run the Ollama server locally. 
+You will also need to run the Ollama server locally.
 You can download it [here](https://ollama.com/download).
 
 ## Chat Models
@@ -34,6 +34,7 @@ embeddings.embed_query("What is the meaning of life?")
 ```
 
 ## LLMs
+
 `OllamaLLM` class exposes LLMs from Ollama.
 
 ```python
