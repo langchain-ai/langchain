@@ -33,7 +33,10 @@ test = [
 codespell = ["codespell<3.0.0,>=2.2.6"]
 test_integration = []
 lint = ["ruff<1.0.0,>=0.1.8"]
-dev = ["langchain-core"]
+dev = [
+    "langchain-core",
+    "pytest>=7.4.4",
+]
 typing = ["mypy<2.0.0,>=1.7.1", "langchain-core"]
 
 [tool.uv.sources]
