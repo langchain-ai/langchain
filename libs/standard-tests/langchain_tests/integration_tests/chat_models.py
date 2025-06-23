@@ -116,7 +116,7 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
     assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
+    assert tool_call.get("type") == "tool_call"
 
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
@@ -126,7 +126,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function_no_args"
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
+    assert tool_call.get("type") == "tool_call"
 
 
 class ChatModelIntegrationTests(ChatModelTests):
@@ -1023,95 +1023,64 @@ class ChatModelIntegrationTests(ChatModelTests):
             # Checks if the specific chat model integration being tested has declared
             # that it supports reporting token counts specifically for `audio_input`
             msg = self.invoke_with_audio_input()  # To be implemented in test subclass
-            assert msg.usage_metadata is not None
-            assert msg.usage_metadata.get("input_token_details") is not None
-            assert isinstance(
-                msg.usage_metadata.get("input_token_details", {}).get("audio"), int
-            )
+            assert (usage_metadata := msg.usage_metadata) is not None
+            assert (
+                input_token_details := usage_metadata.get("input_token_details")
+            ) is not None
+            assert isinstance(input_token_details.get("audio"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
-                input_token_details = msg.usage_metadata.get("input_token_details")
-                if input_token_details:
-                    total_detailed_tokens = sum(
-                        v for v in input_token_details.values() if isinstance(v, int)
-                    )
-                    assert (
-                        msg.usage_metadata.get("input_tokens", 0)
-                        >= total_detailed_tokens
-                    )
+            total_detailed_tokens = sum(
+                v for v in input_token_details.values() if isinstance(v, int)
+            )
+            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
-            assert msg.usage_metadata is not None
-            assert msg.usage_metadata.get("output_token_details") is not None
-            assert isinstance(
-                msg.usage_metadata.get("output_token_details", {}).get("audio"), int
-            )
+            assert (usage_metadata := msg.usage_metadata) is not None
+            assert (
+                output_token_details := usage_metadata.get("output_token_details")
+            ) is not None
+            assert isinstance(output_token_details.get("audio"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            if msg.usage_metadata and "output_token_details" in msg.usage_metadata:
-                output_token_details = msg.usage_metadata.get("output_token_details")
-                if output_token_details:
-                    total_detailed_output_tokens = sum(
-                        v for v in output_token_details.values() if isinstance(v, int)
-                    )
-                    assert (
-                        msg.usage_metadata.get("output_tokens", 0)
-                        >= total_detailed_output_tokens
-                    )
+            total_detailed_tokens = sum(
+                v for v in output_token_details.values() if isinstance(v, int)
+            )
+            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
-            assert msg.usage_metadata is not None
-            assert msg.usage_metadata.get("output_token_details") is not None
-            assert isinstance(
-                msg.usage_metadata.get("output_token_details", {}).get("reasoning"), int
-            )
+            assert (usage_metadata := msg.usage_metadata) is not None
+            assert (
+                output_token_details := usage_metadata.get("output_token_details")
+            ) is not None
+            assert isinstance(output_token_details.get("reasoning"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            if msg.usage_metadata and "output_token_details" in msg.usage_metadata:
-                output_token_details = msg.usage_metadata.get("output_token_details")
-                if output_token_details:
-                    total_detailed_output_tokens = sum(
-                        v for v in output_token_details.values() if isinstance(v, int)
-                    )
-                    assert (
-                        msg.usage_metadata.get("output_tokens", 0)
-                        >= total_detailed_output_tokens
-                    )
+            total_detailed_tokens = sum(
+                v for v in output_token_details.values() if isinstance(v, int)
+            )
+            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
-            assert msg.usage_metadata is not None
-            assert msg.usage_metadata.get("input_token_details") is not None
-            assert isinstance(
-                msg.usage_metadata.get("input_token_details", {}).get("cache_read"), int
-            )
+            assert (usage_metadata := msg.usage_metadata) is not None
+            assert (
+                input_token_details := usage_metadata.get("input_token_details")
+            ) is not None
+            assert isinstance(input_token_details.get("cache_read"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
-                input_token_details = msg.usage_metadata.get("input_token_details")
-                if input_token_details:
-                    total_detailed_tokens = sum(
-                        v for v in input_token_details.values() if isinstance(v, int)
-                    )
-                    assert (
-                        msg.usage_metadata.get("input_tokens", 0)
-                        >= total_detailed_tokens
-                    )
+            total_detailed_tokens = sum(
+                v for v in input_token_details.values() if isinstance(v, int)
+            )
+            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
-            assert msg.usage_metadata is not None
-            assert msg.usage_metadata.get("input_token_details") is not None
-            assert isinstance(
-                msg.usage_metadata.get("input_token_details", {}).get("cache_creation"),
-                int,
-            )
+            assert (usage_metadata := msg.usage_metadata) is not None
+            assert (
+                input_token_details := usage_metadata.get("input_token_details")
+            ) is not None
+            assert isinstance(input_token_details.get("cache_creation"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
-                input_token_details = msg.usage_metadata.get("input_token_details")
-                if input_token_details:
-                    total_detailed_tokens = sum(
-                        v for v in input_token_details.values() if isinstance(v, int)
-                    )
-                    assert (
-                        msg.usage_metadata.get("input_tokens", 0)
-                        >= total_detailed_tokens
-                    )
+            total_detailed_tokens = sum(
+                v for v in input_token_details.values() if isinstance(v, int)
+            )
+            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """
@@ -1505,7 +1474,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert result.tool_calls
         tool_call = result.tool_calls[0]
         assert tool_call["args"].get("answer_style")
-        assert tool_call["type"] == "tool_call"  # type: ignore[reportTypedDictNotRequiredAccess]
+        assert tool_call.get("type") == "tool_call"
 
     def test_tool_message_histories_string_content(
         self, model: BaseChatModel, my_adder_tool: BaseTool
@@ -1536,7 +1505,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             1. The model can correctly handle message histories that include AIMessage objects with ``""`` content.
             2. The ``tool_calls`` attribute on AIMessage objects is correctly handled and passed to the model in an appropriate format.
             3. The model can correctly handle ToolMessage objects with string content and arbitrary string values for ``tool_call_id``.
-
+        assert tool_call.get("type") == "tool_call"
             You can ``xfail`` the test if tool calling is implemented but this format
             is not supported.
 
