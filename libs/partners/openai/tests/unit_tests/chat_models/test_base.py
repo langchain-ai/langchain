@@ -6,6 +6,7 @@ from types import TracebackType
 from typing import Any, Literal, Optional, Union, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
@@ -72,6 +73,30 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
+
+
+def test_openai_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatOpenAI(model="gpt-4.1-mini")
+    llm2 = ChatOpenAI(model="gpt-4.1-mini")
+    assert llm1.root_client._client is llm2.root_client._client
+
+    llm3 = ChatOpenAI(model="gpt-4.1-mini", base_url="foo")
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    assert llm1.root_client._client is llm4.root_client._client
+
+    llm5 = ChatOpenAI(model="gpt-4.1-mini", timeout=3)
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    llm6 = ChatOpenAI(
+        model="gpt-4.1-mini", timeout=httpx.Timeout(timeout=60.0, connect=5.0)
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
+
+    llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
+    assert llm1.root_client._client is not llm7.root_client._client
 
 
 def test_openai_o1_temperature() -> None:
