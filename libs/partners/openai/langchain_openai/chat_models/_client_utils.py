@@ -80,6 +80,10 @@ def _cached_async_httpx_client(
 def _get_default_httpx_client(
     base_url: Optional[str], timeout: Any
 ) -> _SyncHttpxClientWrapper:
+    """Get default httpx client.
+
+    Uses cached client unless timeout is ``httpx.Timeout``, which is not hashable.
+    """
     try:
         hash(timeout)
     except TypeError:
@@ -91,6 +95,10 @@ def _get_default_httpx_client(
 def _get_default_async_httpx_client(
     base_url: Optional[str], timeout: Any
 ) -> _AsyncHttpxClientWrapper:
+    """Get default httpx client.
+
+    Uses cached client unless timeout is ``httpx.Timeout``, which is not hashable.
+    """
     try:
         hash(timeout)
     except TypeError:
