@@ -177,16 +177,17 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
-    def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+    def __init__(self, content: Union[str, list[Union[str, dict]]], reasoning_content: Union[str, list[Union[str, dict]]] = "", **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 
         Args:
             content: The content of the message.
+            reasoning_content (optional): The reasoning content of the message.
             kwargs: Additional arguments to pass to the parent class.
         """
         super().__init__(content=content, **kwargs)
+        self.reasoning_content = reasoning_content
 
     @property
     def lc_attributes(self) -> dict:
@@ -392,6 +393,7 @@ def add_ai_message_chunks(
         raise ValueError(msg)
 
     content = merge_content(left.content, *(o.content for o in others))
+    reasoning_content = merge_content(left.reasoning_content, *(o.reasoning_content for o in others))
     additional_kwargs = merge_dicts(
         left.additional_kwargs, *(o.additional_kwargs for o in others)
     )
@@ -440,6 +442,7 @@ def add_ai_message_chunks(
     return left.__class__(
         example=left.example,
         content=content,
+        reasoning_content=reasoning_content,
         additional_kwargs=additional_kwargs,
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,

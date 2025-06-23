@@ -880,6 +880,7 @@ async def test_openai_agent_with_streaming() -> None:
                                 }
                             },
                             "content": "",
+                            "reasoning_content": "",
                             "name": None,
                             "response_metadata": {},
                             "type": "AIMessageChunk",
@@ -899,6 +900,7 @@ async def test_openai_agent_with_streaming() -> None:
                         }
                     },
                     "content": "",
+                    "reasoning_content": "",
                     "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
@@ -937,6 +939,7 @@ async def test_openai_agent_with_streaming() -> None:
                 {
                     "additional_kwargs": {},
                     "content": "The cat is spying from under the bed.",
+                    "reasoning_content": "",
                     "example": False,
                     "invalid_tool_calls": [],
                     "name": None,

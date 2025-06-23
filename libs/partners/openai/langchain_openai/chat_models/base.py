@@ -148,6 +148,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
+        reasoning_content = _dict.get("reasoning_content", "") or ""
         additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
@@ -166,6 +167,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
+            reasoning_content=reasoning_content,
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,
@@ -324,6 +326,8 @@ def _convert_delta_to_message_chunk(
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
+    reasoning_content = cast(str, _dict.get("reasoning_content") or "")
+    additional_kwargs: dict = {}
     additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
@@ -351,6 +355,7 @@ def _convert_delta_to_message_chunk(
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
             content=content,
+            reasoning_content=reasoning_content,
             additional_kwargs=additional_kwargs,
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]

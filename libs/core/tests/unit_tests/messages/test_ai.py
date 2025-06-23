@@ -16,6 +16,7 @@ from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chu
 def test_serdes_message() -> None:
     msg = AIMessage(
         content=[{"text": "blah", "type": "text"}],
+        reasoning_content=[{"text": "bleh", "type": "text"}],
         tool_calls=[create_tool_call(name="foo", args={"bar": 1}, id="baz")],
         invalid_tool_calls=[
             create_invalid_tool_call(name="foobad", args="blah", id="booz", error="bad")
@@ -28,6 +29,7 @@ def test_serdes_message() -> None:
         "kwargs": {
             "type": "ai",
             "content": [{"text": "blah", "type": "text"}],
+            "reasoning_content": [{"text": "bleh", "type": "text"}],
             "tool_calls": [
                 {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
             ],
@@ -50,6 +52,7 @@ def test_serdes_message() -> None:
 def test_serdes_message_chunk() -> None:
     chunk = AIMessageChunk(
         content=[{"text": "blah", "type": "text"}],
+        reasoning_content=[{"text": "bleh", "type": "text"}],
         tool_call_chunks=[
             create_tool_call_chunk(name="foo", args='{"bar": 1}', id="baz", index=0),
             create_tool_call_chunk(
@@ -67,6 +70,7 @@ def test_serdes_message_chunk() -> None:
         "kwargs": {
             "type": "AIMessageChunk",
             "content": [{"text": "blah", "type": "text"}],
+            "reasoning_content": [{"text": "bleh", "type": "text"}],
             "tool_calls": [
                 {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
             ],
