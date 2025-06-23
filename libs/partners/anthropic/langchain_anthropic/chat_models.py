@@ -1281,9 +1281,9 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {
-            k: v for k, v in client_params.items() if k in ("base_url", "timeout")
-        }
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1294,9 +1294,9 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {
-            k: v for k, v in client_params.items() if k in ("base_url", "timeout")
-        }
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
