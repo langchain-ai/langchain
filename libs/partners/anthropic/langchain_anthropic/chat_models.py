@@ -955,6 +955,8 @@ class ChatAnthropic(BaseChatModel):
 
         .. dropdown:: Extended caching
 
+            .. versionadded:: 0.3.15
+
             The cache lifetime is 5 minutes by default. If this is too short, you can
             apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
             beta header:
@@ -967,6 +969,28 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            Details of cached token counts will be included on the ``InputTokenDetails``
+            of response's ``usage_metadata``:
+
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.usage_metadata
+
+            .. code-block:: python
+
+                {
+                    "input_tokens": 1500,
+                    "output_tokens": 200,
+                    "total_tokens": 1700,
+                    "input_token_details": {
+                        "cache_read": 0,
+                        "cache_creation": 1000,
+                        "ephemeral_1h_input_tokens": 750,
+                        "ephemeral_5m_input_tokens": 250,
+                    }
+                }
 
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`_
             for detail.

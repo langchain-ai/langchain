@@ -55,6 +55,8 @@ class InputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
+    May also hold extra provider-specific keys.
     """
 
     audio: int
