@@ -168,6 +168,9 @@ class ChatGroq(BaseChatModel):
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
     Stream:
+
+        Streaming `text` for each content chunk received:
+
         .. code-block:: python
 
             for chunk in llm.stream(messages):
@@ -185,6 +188,8 @@ class ChatGroq(BaseChatModel):
             content='' response_metadata={'finish_reason': 'stop'}
             id='run-4e9f926b-73f5-483b-8ef5-09533d925853
 
+        Reconstructing a full response:
+
         .. code-block:: python
 
             stream = llm.stream(messages)
@@ -196,16 +201,15 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             AIMessageChunk(content='The English sentence "I love programming"
-            can be translated to French as "J\'aime programmer".
-            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the
-            French equivalent of "I love"\n* "programmer" is the French
-            infinitive for "to program"\n\nSo, the literal translation
-            is "I love to program". However, in English we often omit the
-            "to" when talking about activities we love, and the same applies
-            to French. Therefore, "J\'aime programmer" is the correct and
-            natural way to express "I love programming" in French.',
-            response_metadata={'finish_reason': 'stop'},
-            id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+            can be translated to French as "J\'aime programmer". Here\'s the
+            breakdown of the sentence: "J\'aime" is the French equivalent of "
+            I love", and "programmer" is the French infinitive for "to program".
+            So, the literal translation is "I love to program". However, in
+            English we often omit the "to" when talking about activities we
+            love, and the same applies to French. Therefore, "J\'aime
+            programmer" is the correct and natural way to express "I love
+            programming" in French.', response_metadata={'finish_reason':
+            'stop'}, id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
 
     Async:
         .. code-block:: python
