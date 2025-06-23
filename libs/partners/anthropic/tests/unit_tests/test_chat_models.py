@@ -44,6 +44,22 @@ def test_initialization() -> None:
         assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
+def test_anthropic_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm2 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    assert llm1._client._client is llm2._client._client
+
+    llm3 = ChatAnthropic(model="claude-3-5-sonnet-latest", base_url="foo")
+    assert llm1._client._client is not llm3._client._client
+
+    llm4 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=None)
+    assert llm1._client._client is llm4._client._client
+
+    llm5 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=3)
+    assert llm1._client._client is not llm5._client._client
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
