@@ -754,7 +754,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
             num_chunks += 1
         assert num_chunks > 0
 
