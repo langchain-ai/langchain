@@ -1025,57 +1025,94 @@ class ChatModelIntegrationTests(ChatModelTests):
             # that it supports reporting token counts specifically for `audio_input`
             msg = self.invoke_with_audio_input()  # To be implemented in test subclass
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
-            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
-            assert msg.usage_metadata["input_tokens"] >= sum(
-                (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
+            assert msg.usage_metadata.get("input_token_details") is not None
+            assert isinstance(
+                msg.usage_metadata.get("input_token_details", {}).get("audio"), int
             )
+            # Asserts that total input tokens are at least the sum of the token counts
+            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
+                input_token_details = msg.usage_metadata.get("input_token_details")
+                if input_token_details:
+                    total_detailed_tokens = sum(
+                        v for v in input_token_details.values() if isinstance(v, int)
+                    )
+                    assert (
+                        msg.usage_metadata.get("input_tokens", 0)
+                        >= total_detailed_tokens
+                    )
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["output_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
-            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
-            assert int(msg.usage_metadata["output_tokens"]) >= sum(
-                (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["output_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
+            assert msg.usage_metadata.get("output_token_details") is not None
+            assert isinstance(
+                msg.usage_metadata.get("output_token_details", {}).get("audio"), int
             )
+            # Asserts that total output tokens are at least the sum of the token counts
+            if msg.usage_metadata and "output_token_details" in msg.usage_metadata:
+                output_token_details = msg.usage_metadata.get("output_token_details")
+                if output_token_details:
+                    total_detailed_output_tokens = sum(
+                        v for v in output_token_details.values() if isinstance(v, int)
+                    )
+                    assert (
+                        msg.usage_metadata.get("output_tokens", 0)
+                        >= total_detailed_output_tokens
+                    )
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["output_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
+            assert msg.usage_metadata.get("output_token_details") is not None
             assert isinstance(
-                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
-                int,
+                msg.usage_metadata.get("output_token_details", {}).get("reasoning"), int
             )
-            assert msg.usage_metadata["output_tokens"] >= sum(
-                (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["output_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
-            )
+            # Asserts that total output tokens are at least the sum of the token counts
+            if msg.usage_metadata and "output_token_details" in msg.usage_metadata:
+                output_token_details = msg.usage_metadata.get("output_token_details")
+                if output_token_details:
+                    total_detailed_output_tokens = sum(
+                        v for v in output_token_details.values() if isinstance(v, int)
+                    )
+                    assert (
+                        msg.usage_metadata.get("output_tokens", 0)
+                        >= total_detailed_output_tokens
+                    )
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
+            assert msg.usage_metadata.get("input_token_details") is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
-                int,
+                msg.usage_metadata.get("input_token_details", {}).get("cache_read"), int
             )
-            assert msg.usage_metadata["input_tokens"] >= sum(
-                (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
-            )
+            # Asserts that total input tokens are at least the sum of the token counts
+            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
+                input_token_details = msg.usage_metadata.get("input_token_details")
+                if input_token_details:
+                    total_detailed_tokens = sum(
+                        v for v in input_token_details.values() if isinstance(v, int)
+                    )
+                    assert (
+                        msg.usage_metadata.get("input_tokens", 0)
+                        >= total_detailed_tokens
+                    )
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
             assert msg.usage_metadata is not None
-            assert msg.usage_metadata["input_token_details"] is not None  # type: ignore[reportTypedDictNotRequiredAccess]
+            assert msg.usage_metadata.get("input_token_details") is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                msg.usage_metadata.get("input_token_details", {}).get("cache_creation"),
                 int,
             )
-            assert msg.usage_metadata["input_tokens"] >= sum(
-                (v or 0)  # type: ignore[misc]
-                for v in msg.usage_metadata["input_token_details"].values()  # type: ignore[reportTypedDictNotRequiredAccess]
-            )
+            # Asserts that total input tokens are at least the sum of the token counts
+            if msg.usage_metadata and "input_token_details" in msg.usage_metadata:
+                input_token_details = msg.usage_metadata.get("input_token_details")
+                if input_token_details:
+                    total_detailed_tokens = sum(
+                        v for v in input_token_details.values() if isinstance(v, int)
+                    )
+                    assert (
+                        msg.usage_metadata.get("input_tokens", 0)
+                        >= total_detailed_tokens
+                    )
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """
@@ -1204,26 +1241,33 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
-            assert isinstance(msg.usage_metadata["input_token_details"]["audio"], int)  # type: ignore[index]
+            assert msg.usage_metadata is not None
+            assert isinstance(
+                msg.usage_metadata.get("input_token_details", {}).get("audio"), int
+            )
         if "audio_output" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_output(stream=True)
-            assert isinstance(msg.usage_metadata["output_token_details"]["audio"], int)  # type: ignore[index]
+            assert msg.usage_metadata is not None
+            assert isinstance(
+                msg.usage_metadata.get("output_token_details", {}).get("audio"), int
+            )
         if "reasoning_output" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_reasoning_output(stream=True)
+            assert msg.usage_metadata is not None
             assert isinstance(
-                msg.usage_metadata["output_token_details"]["reasoning"],  # type: ignore[index]
-                int,
+                msg.usage_metadata.get("output_token_details", {}).get("reasoning"), int
             )
         if "cache_read_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_cache_read_input(stream=True)
+            assert msg.usage_metadata is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_read"],  # type: ignore[index]
-                int,
+                msg.usage_metadata.get("input_token_details", {}).get("cache_read"), int
             )
         if "cache_creation_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_cache_creation_input(stream=True)
+            assert msg.usage_metadata is not None
             assert isinstance(
-                msg.usage_metadata["input_token_details"]["cache_creation"],  # type: ignore[index]
+                msg.usage_metadata.get("input_token_details", {}).get("cache_creation"),
                 int,
             )
 
