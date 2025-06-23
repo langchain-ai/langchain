@@ -1,7 +1,7 @@
 """Test ChatGroq chat model."""
 
 import json
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import pytest
 from langchain_core.messages import (
@@ -210,6 +210,58 @@ async def test_agenerate_streaming() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+#
+# Test reasoning output
+#
+def test_reasoning_output_invoke() -> None:
+    """Test reasoning output from ChatGroq with invoke."""
+    chat = ChatGroq(
+        model="deepseek-r1-distill-llama-70b",
+        reasoning_format="parsed",
+    )
+    message = [
+        SystemMessage(
+            content="You are a helpful assistant that translates English to French."
+        ),
+        HumanMessage(content="I love programming."),
+    ]
+    response = chat.invoke(message)
+    assert isinstance(response, AIMessage)
+    assert "reasoning_content" in response.additional_kwargs
+    assert isinstance(response.additional_kwargs["reasoning_content"], str)
+    assert len(response.additional_kwargs["reasoning_content"]) > 0
+
+
+def test_reasoning_output_stream() -> None:
+    """Test reasoning output from ChatGroq with stream."""
+    chat = ChatGroq(
+        model="deepseek-r1-distill-llama-70b",
+        reasoning_format="parsed",
+    )
+    message = [
+        SystemMessage(
+            content="You are a helpful assistant that translates English to French."
+        ),
+        HumanMessage(content="I love programming."),
+    ]
+
+    full_response: Optional[AIMessageChunk] = None
+    for token in chat.stream(message):
+        assert isinstance(token, AIMessageChunk)
+
+        if full_response is None:
+            full_response = token
+        else:
+            # Casting since adding results in a type error
+            full_response = cast(AIMessageChunk, full_response + token)
+
+    assert full_response is not None
+    assert isinstance(full_response, AIMessageChunk)
+    assert "reasoning_content" in full_response.additional_kwargs
+    assert isinstance(full_response.additional_kwargs["reasoning_content"], str)
+    assert len(full_response.additional_kwargs["reasoning_content"]) > 0
 
 
 #
