@@ -1890,7 +1890,7 @@ async def test_runnable_with_message_history() -> None:
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    chain: Runnable = prompt | model
+    chain = prompt | model
     with_message_history = RunnableWithMessageHistory(
         chain,
         get_session_history=get_by_session_id,
