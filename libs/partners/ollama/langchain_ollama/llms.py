@@ -109,6 +109,9 @@ class OllamaLLM(BaseLLM):
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
 
+    think: Optional[bool] = None
+    """Enable/disable thinking in supported models"""
+
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
@@ -180,6 +183,7 @@ class OllamaLLM(BaseLLM):
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            "think": kwargs.pop("think", self.think),
             **kwargs,
         }
 
