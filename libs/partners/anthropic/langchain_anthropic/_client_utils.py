@@ -10,7 +10,6 @@ import asyncio
 import os
 from functools import lru_cache
 from typing import Any, Optional
-from weakref import WeakKeyDictionary
 
 import anthropic
 
@@ -62,13 +61,22 @@ def _get_default_httpx_client(
 
 
 # Cache async client - must store caches per event loop
-_client_caches: WeakKeyDictionary = WeakKeyDictionary()
+_LOOP_NOT_GIVEN = object()
 
 
-def _create_async_httpx_client(
+def _loop_key() -> int:
+    try:
+        return id(asyncio.get_running_loop())
+    except RuntimeError:
+        return id(_LOOP_NOT_GIVEN)
+
+
+@lru_cache
+def _get_default_async_httpx_client(
     *,
     base_url: Optional[str],
     timeout: Any = _NOT_GIVEN,
+    _loop_id: Optional[int] = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -78,26 +86,3 @@ def _create_async_httpx_client(
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
     return _AsyncHttpxClientWrapper(**kwargs)
-
-
-def _get_default_async_httpx_client(
-    *,
-    base_url: Optional[str],
-    timeout: Any = _NOT_GIVEN,
-) -> _AsyncHttpxClientWrapper:
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # If no event loop is running, don't cache
-        return _create_async_httpx_client(base_url=base_url, timeout=timeout)
-
-    # Get or create cache for this event loop
-    if loop not in _client_caches:
-        _client_caches[loop] = {}
-    cache_key = (base_url, timeout)
-    if cache_key not in _client_caches[loop]:
-        _client_caches[loop][cache_key] = _create_async_httpx_client(
-            base_url=base_url, timeout=timeout
-        )
-
-    return _client_caches[loop][cache_key]
