@@ -5,12 +5,7 @@ from collections.abc import Generator, Iterable, Sequence
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -811,7 +806,7 @@ class QdrantVectorStore(VectorStore):
                     )
                 )
 
-            search_filter = Filter(must=filter_conditions)
+            search_filter = Filter(must=cast(Any, filter_conditions))
 
             search_result = self.client.scroll(
                 collection_name=self.collection_name,
