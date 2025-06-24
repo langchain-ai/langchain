@@ -344,7 +344,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Ollama",
-                link: "ollama",
+                link: "/docs/integrations/ollama",
                 package: "langchain-ollama",
                 apiLink: "https://python.langchain.com/api_reference/ollama/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html"
             },
