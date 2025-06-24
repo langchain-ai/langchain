@@ -338,91 +338,91 @@ const FEATURE_TABLES = {
         items:[
             {
                 name: "AzureOpenAI",
-                link: "azureopenai",
+                link: "/docs/integrations/text_embedding/azureopenai",
                 package: "langchain-openai",
                 apiLink: "https://python.langchain.com/api_reference/openai/embeddings/langchain_openai.embeddings.azure.AzureOpenAIEmbeddings.html"
             },
             {
                 name: "Ollama",
-                link: "ollama",
+                link: "/docs/integrations/text_embedding/ollama",
                 package: "langchain-ollama",
                 apiLink: "https://python.langchain.com/api_reference/ollama/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html"
             },
             {
                 name: "AI21",
-                link: "ai21",
+                link: "/docs/integrations/text_embedding/ai21",
                 package: "langchain-ai21",
                 apiLink: "https://python.langchain.com/api_reference/ai21/embeddings/langchain_ai21.embeddings.AI21Embeddings.html"
             },
             {
                 name: "Fake",
-                link: "fake",
+                link: "/docs/integrations/text_embedding/fake",
                 package: "langchain-core",
                 apiLink: "https://python.langchain.com/api_reference/core/embeddings/langchain_core.embeddings.fake.FakeEmbeddings.html"
             },
             {
                 name: "OpenAI",
-                link: "openai",
+                link: "/docs/integrations/text_embedding/openai",
                 package: "langchain-openai",
                 apiLink: "https://python.langchain.com/api_reference/openai/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html"
             },
             {
                 name: "Google Gemini",
-                link: "google-generative-ai",
+                link: "/docs/integrations/text_embedding/google-generative-ai",
                 package: "langchain-google-genai",
                 apiLink: "https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html"
             },
             {
                 name: "Together",
-                link: "together",
+                link: "/docs/integrations/text_embedding/together",
                 package: "langchain-together",
                 apiLink: "https://python.langchain.com/api_reference/together/embeddings/langchain_together.embeddings.TogetherEmbeddings.html"
             },
             {
                 name: "Fireworks",
-                link: "fireworks",
+                link: "/docs/integrations/text_embedding/fireworks",
                 package: "langchain-fireworks",
                 apiLink: "https://python.langchain.com/api_reference/fireworks/embeddings/langchain_fireworks.embeddings.FireworksEmbeddings.html"
             },
             {
                 name: "MistralAI",
-                link: "mistralai",
+                link: "/docs/integrations/text_embedding/mistralai",
                 package: "langchain-mistralai",
                 apiLink: "https://python.langchain.com/api_reference/mistralai/embeddings/langchain_mistralai.embeddings.MistralAIEmbeddings.html"
             },
             {
                 name: "Cohere",
-                link: "cohere",
+                link: "/docs/integrations/text_embedding/cohere",
                 package: "langchain-cohere",
                 apiLink: "https://python.langchain.com/api_reference/cohere/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html"
             },
             {
                 name: "Nomic",
-                link: "nomic",
+                link: "/docs/integrations/text_embedding/nomic",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
             },
             {
                 name: "Databricks",
-                link: "databricks",
+                link: "/docs/integrations/text_embedding/databricks",
                 package: "databricks-langchain",
                 apiLink: "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.DatabricksEmbeddings"
             },
             {
                 name: "VoyageAI",
-                link: "voyageai",
+                link: "/docs/integrations/text_embedding/voyageai",
                 package: "langchain-voyageai",
                 apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
             },
             {
                 name: "IBM",
-                link: "ibm_watsonx",
+                link: "/docs/integrations/text_embedding/ibm_watsonx",
                 package: "langchain-ibm",
                 apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
             },
             {
                 name: "NVIDIA",
-                link: "nvidia_ai_endpoints",
+                link: "/docs/integrations/text_embedding/nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
