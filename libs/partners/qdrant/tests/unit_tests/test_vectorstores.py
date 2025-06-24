@@ -9,7 +9,7 @@ from langchain_qdrant import QdrantVectorStore
 
 
 class TestQdrantDeleteIntegration(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures with in-memory Qdrant client."""
         self.client = QdrantClient(":memory:")
         self.collection_name = "demo_collection"
@@ -33,7 +33,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
             metadatas=[{"type": "image"}, {"type": "text"}, {"owner": "admin"}],
         )
 
-    def test_delete_by_ids(self):
+    def test_delete_by_ids(self) -> None:
         """Test deletion by document IDs."""
         result = self.vector_store.delete(ids=[self.uuids[0]])
         self.assertTrue(result)
@@ -42,7 +42,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         remaining_ids = [str(point.id) for point in res[0]]
         self.assertNotIn(self.uuids[0], remaining_ids)
 
-    def test_delete_by_metadata(self):
+    def test_delete_by_metadata(self) -> None:
         """Test deletion by metadata filters."""
         result = self.vector_store.delete(owner="admin")
         self.assertTrue(result)
@@ -51,7 +51,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         remaining_ids = [str(point.id) for point in res[0]]
         self.assertNotIn(self.uuids[2], remaining_ids)
 
-    def test_delete_failure_invalid_filter(self):
+    def test_delete_failure_invalid_filter(self) -> None:
         """Test deletion with metadata filter that matches no documents."""
         # Get initial count
         initial_res = self.client.scroll(self.collection_name)
@@ -66,7 +66,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         self.assertEqual(len(remaining_ids), initial_count)
         self.assertCountEqual(remaining_ids, self.uuids)
 
-    def test_delete_no_parameters(self):
+    def test_delete_no_parameters(self) -> None:
         """Test that delete raises error when no data is provided."""
         with self.assertRaises(ValueError):
             self.vector_store.delete()
