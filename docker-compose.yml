@@ -1,0 +1,23 @@
+version: "3"
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PERSIST_DIR=/data/db
+    volumes:
+      - ./chroma_db:/data/db
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+  weaviate:
+    image: semitechnologies/weaviate:1.24.10
+    environment:
+      - QUERY_DEFAULTS_LIMIT=25
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+    ports:
+      - "8080:8080"

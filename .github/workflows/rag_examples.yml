@@ -1,0 +1,24 @@
+name: RAG Example Tests
+on:
+  push:
+    paths:
+      - 'examples/rag_webapp/**'
+      - 'tests/**'
+      - '.github/workflows/rag_examples.yml'
+  pull_request:
+    paths:
+      - 'examples/rag_webapp/**'
+      - 'tests/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fastapi uvicorn[standard] langchain ollama agent-zero
+      - run: pip install -e .
+      - run: make format
+      - run: pytest tests/test_rag_webapp.py -q
