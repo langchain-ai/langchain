@@ -17,9 +17,13 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
-from qdrant_client.models import UpdateResult, UpdateStatus
-from qdrant_client.models import Filter, FieldCondition, MatchValue
-
+from qdrant_client.models import (
+    FieldCondition,
+    Filter,
+    MatchValue,
+    UpdateResult,
+    UpdateStatus,
+)
 
 from langchain_qdrant._utils import maximal_marginal_relevance
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings
@@ -798,42 +802,38 @@ class QdrantVectorStore(VectorStore):
                 points_selector=ids,
             )
         elif kwargs:
-            
             filter_conditions = []
             for key, value in kwargs.items():
                 filter_conditions.append(
                     FieldCondition(
                         key=f"{self.metadata_payload_key}.{key}",
-                        match=MatchValue(value=value)
+                        match=MatchValue(value=value),
                     )
                 )
-            
+
             search_filter = Filter(must=filter_conditions)
-            
+
             search_result = self.client.scroll(
                 collection_name=self.collection_name,
                 scroll_filter=search_filter,
-                limit=10000,  
-                with_payload=False, 
-                with_vectors=False
+                limit=10000,
+                with_payload=False,
+                with_vectors=False,
             )
-            
+
             matching_ids = [str(point.id) for point in search_result[0]]
-            
+
             if matching_ids:
                 result = self.client.delete(
                     collection_name=self.collection_name,
                     points_selector=matching_ids,
                 )
             else:
-                result = UpdateResult(
-                    operation_id=0,
-                    status=UpdateStatus.COMPLETED
-                )
+                result = UpdateResult(operation_id=0, status=UpdateStatus.COMPLETED)
         else:
             # No IDs or filters provided
             raise ValueError("Either 'ids' or metadata filters must be provided")
-        
+
         return result.status == models.UpdateStatus.COMPLETED
 
     def get_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:

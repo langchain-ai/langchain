@@ -1,9 +1,11 @@
 import unittest
 import uuid
-from langchain_qdrant import QdrantVectorStore
+
 from langchain_community.embeddings import FakeEmbeddings
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams, Filter
+from qdrant_client.http.models import Distance, VectorParams
+
+from langchain_qdrant import QdrantVectorStore
 
 
 class TestQdrantDeleteIntegration(unittest.TestCase):
@@ -47,24 +49,16 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         self.assertNotIn(self.uuids[2], remaining_ids)
 
     def test_delete_failure_invalid_filter(self):
-        
         # Get initial count
         initial_res = self.client.scroll(self.collection_name)
         initial_count = len(initial_res[0])
-        
+
         result = self.vector_store.delete(owner="nonexistent")
-        self.assertTrue(result)  
+        self.assertTrue(result)
 
         # Verify no documents were actually deleted
         res = self.client.scroll(self.collection_name)
         remaining_ids = [str(point.id) for point in res[0]]
-        self.assertEqual(len(remaining_ids), initial_count) 
-        self.assertCountEqual(remaining_ids, self.uuids)  
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-
+        self.assertEqual(len(remaining_ids), initial_count)
+        self.assertCountEqual(remaining_ids, self.uuids)
 
