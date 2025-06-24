@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -944,7 +943,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.65"
+version = "0.3.66"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
