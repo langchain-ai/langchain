@@ -669,5 +669,5 @@ packages:
   path: libs/nebius
   repo: nebius/langchain-nebius
 - name: langchain-db2
-  path: .
+  path: libs/langchain-db2
   repo: langchain-ai/langchain-ibm
