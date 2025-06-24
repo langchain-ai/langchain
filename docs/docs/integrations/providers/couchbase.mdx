@@ -60,7 +60,7 @@ query = "What is Couchbase?"
 docs = vectorstore.similarity_search(query)
 ```
 
-API Reference: https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.vectorstores.search_vector_store
+API Reference: [CouchbaseSearchVectorStore](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.vectorstores.search_vector_store)
 
 ## Document loader
 
@@ -93,8 +93,6 @@ docs = loader.load()
 
 ```
 
-API Reference: https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.couchbase.CouchbaseLoader.html#couchbaseloader
-
 ## LLM Caches
 
 ### CouchbaseCache
@@ -123,7 +121,7 @@ set_llm_cache(
 )
 ```
 
-API Reference: https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseCache
+API Reference: [CouchbaseCache](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseCache)
 
 ### CouchbaseSemanticCache
 Semantic caching allows users to retrieve cached prompts based on the semantic similarity between the user input and previously cached inputs. Under the hood it uses Couchbase as both a cache and a vectorstore.
@@ -158,7 +156,7 @@ set_llm_cache(
 )
 ```
 
-API Reference: https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseSemanticCache
+API Reference: [CouchbaseSemanticCache](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseSemanticCache)
 
 ## Chat Message History
 Use Couchbase as the storage for your chat messages.
@@ -180,4 +178,4 @@ message_history = CouchbaseChatMessageHistory(
 message_history.add_user_message("hi!")
 ```
 
-API Reference: https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.chat_message_histories
+API Reference: [CouchbaseChatMessageHistory](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.chat_message_histories)
