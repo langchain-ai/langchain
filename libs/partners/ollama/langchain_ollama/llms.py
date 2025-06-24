@@ -28,7 +28,7 @@ class OllamaLLM(BaseLLM):
             from langchain_ollama import OllamaLLM
 
             model = OllamaLLM(model="llama3")
-            model.invoke("Come up with 10 names for a song about parrots")
+            print(model.invoke("Come up with 10 names for a song about parrots"))
     """
 
     model: str
