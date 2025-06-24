@@ -790,8 +790,8 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Key-value pairs representing metadata fields to match. If provided, a metadata filter is constructed
-                      and used for deletion.
+            **kwargs: Key-value pairs representing metadata fields to match. 
+                If provided, a metadata filter is constructed and used for deletion.
 
         Returns:
             True if deletion is successful, False otherwise.
@@ -829,10 +829,15 @@ class QdrantVectorStore(VectorStore):
                     points_selector=matching_ids,
                 )
             else:
-                result = UpdateResult(operation_id=0, status=UpdateStatus.COMPLETED)
+                result = UpdateResult(
+                    operation_id=0, 
+                    status=UpdateStatus.COMPLETED
+                )
         else:
             # No IDs or filters provided
-            raise ValueError("Either 'ids' or metadata filters must be provided")
+            raise ValueError(
+                "Either 'ids' or metadata filters must be provided"
+            )
 
         return result.status == models.UpdateStatus.COMPLETED
 
