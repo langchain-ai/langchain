@@ -1,7 +1,7 @@
 import unittest
 import uuid
 
-from langchain_community.embeddings import FakeEmbeddings
+from langchain_core.embeddings import FakeEmbeddings
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 
@@ -10,6 +10,7 @@ from langchain_qdrant import QdrantVectorStore
 
 class TestQdrantDeleteIntegration(unittest.TestCase):
     def setUp(self):
+        """Set up test fixtures with in-memory Qdrant client."""
         self.client = QdrantClient(":memory:")
         self.collection_name = "demo_collection"
 
@@ -33,6 +34,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         )
 
     def test_delete_by_ids(self):
+        """Test deletion by document IDs."""
         result = self.vector_store.delete(ids=[self.uuids[0]])
         self.assertTrue(result)
 
@@ -41,6 +43,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         self.assertNotIn(self.uuids[0], remaining_ids)
 
     def test_delete_by_metadata(self):
+        """Test deletion by metadata filters."""
         result = self.vector_store.delete(owner="admin")
         self.assertTrue(result)
 
@@ -49,6 +52,7 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         self.assertNotIn(self.uuids[2], remaining_ids)
 
     def test_delete_failure_invalid_filter(self):
+        """Test deletion with metadata filter that matches no documents."""
         # Get initial count
         initial_res = self.client.scroll(self.collection_name)
         initial_count = len(initial_res[0])
@@ -61,4 +65,13 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         remaining_ids = [str(point.id) for point in res[0]]
         self.assertEqual(len(remaining_ids), initial_count)
         self.assertCountEqual(remaining_ids, self.uuids)
+
+    def test_delete_no_parameters(self):
+        """Test that delete raises error when no IDs or metadata provided."""
+        with self.assertRaises(ValueError):
+            self.vector_store.delete()
+
+
+if __name__ == "__main__":
+    unittest.main()
 
