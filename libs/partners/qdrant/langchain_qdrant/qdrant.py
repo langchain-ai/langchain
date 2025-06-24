@@ -802,7 +802,7 @@ class QdrantVectorStore(VectorStore):
                 points_selector=ids,
             )
         elif kwargs:
-            filter_conditions = []
+            filter_conditions: list[FieldCondition] = []
             for key, value in kwargs.items():
                 filter_conditions.append(
                     FieldCondition(
@@ -831,7 +831,6 @@ class QdrantVectorStore(VectorStore):
             else:
                 result = UpdateResult(operation_id=0, status=UpdateStatus.COMPLETED)
         else:
-            # No IDs or filters provided
             raise ValueError("Either 'ids' or metadata filters must be provided")
 
         return result.status == models.UpdateStatus.COMPLETED

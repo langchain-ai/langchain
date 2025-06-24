@@ -67,11 +67,6 @@ class TestQdrantDeleteIntegration(unittest.TestCase):
         self.assertCountEqual(remaining_ids, self.uuids)
 
     def test_delete_no_parameters(self):
-        """Test that delete raises error when no IDs or metadata provided."""
+        """Test that delete raises error when no data is provided."""
         with self.assertRaises(ValueError):
             self.vector_store.delete()
-
-
-if __name__ == "__main__":
-    unittest.main()
-
