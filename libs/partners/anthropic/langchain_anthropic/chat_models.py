@@ -72,7 +72,6 @@ from typing_extensions import NotRequired, TypedDict
 from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
-    _loop_key,
 )
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -1298,7 +1297,6 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
-        http_client_params["_loop_id"] = _loop_key()
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,

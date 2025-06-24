@@ -43,7 +43,6 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
             pass
 
 
-# Cache sync client
 @lru_cache
 def _get_default_httpx_client(
     *,
@@ -60,23 +59,11 @@ def _get_default_httpx_client(
     return _SyncHttpxClientWrapper(**kwargs)
 
 
-# Cache async client - must store caches per event loop
-_LOOP_NOT_GIVEN = object()
-
-
-def _loop_key() -> int:
-    try:
-        return id(asyncio.get_running_loop())
-    except RuntimeError:
-        return id(_LOOP_NOT_GIVEN)
-
-
 @lru_cache
 def _get_default_async_httpx_client(
     *,
     base_url: Optional[str],
     timeout: Any = _NOT_GIVEN,
-    _loop_id: Optional[int] = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
