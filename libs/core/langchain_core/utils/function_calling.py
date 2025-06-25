@@ -634,7 +634,7 @@ def tool_example_to_messages(
     1) HumanMessage: contains the content from which content should be extracted.
     2) AIMessage: contains the extracted information from the model
     3) ToolMessage: contains confirmation to the model that the model requested a tool
-        correctly.
+       correctly.
 
     If `ai_response` is specified, there will be a final AIMessage with that response.
 
@@ -668,7 +668,7 @@ def tool_example_to_messages(
                     ..., description="The color of the person's hair if known"
                 )
                 height_in_meters: Optional[str] = Field(
-                    ..., description="Height in METERs"
+                    ..., description="Height in METERS"
                 )
 
             examples = [

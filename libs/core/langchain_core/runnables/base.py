@@ -1505,7 +1505,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOllama
+            from langchain_ollama import ChatOllama
             from langchain_core.output_parsers import StrOutputParser
 
             llm = ChatOllama(model='llama2')

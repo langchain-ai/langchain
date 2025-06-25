@@ -6,11 +6,13 @@ from types import TracebackType
 from typing import Any, Literal, Optional, Union, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -58,6 +60,7 @@ from langchain_openai.chat_models.base import (
     _convert_to_openai_response_format,
     _create_usage_metadata,
     _format_message_content,
+    _get_last_messages,
     _oai_structured_outputs_parser,
 )
 
@@ -72,6 +75,30 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
+
+
+def test_openai_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatOpenAI(model="gpt-4.1-mini")
+    llm2 = ChatOpenAI(model="gpt-4.1-mini")
+    assert llm1.root_client._client is llm2.root_client._client
+
+    llm3 = ChatOpenAI(model="gpt-4.1-mini", base_url="foo")
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    assert llm1.root_client._client is llm4.root_client._client
+
+    llm5 = ChatOpenAI(model="gpt-4.1-mini", timeout=3)
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    llm6 = ChatOpenAI(
+        model="gpt-4.1-mini", timeout=httpx.Timeout(timeout=60.0, connect=5.0)
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
+
+    llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
+    assert llm1.root_client._client is not llm7.root_client._client
 
 
 def test_openai_o1_temperature() -> None:
@@ -2144,3 +2171,102 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+def test_get_last_messages() -> None:
+    messages: list[BaseMessage] = [HumanMessage("Hello")]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Hello")]
+    assert previous_response_id is None
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("How are you?")]
+    assert previous_response_id == "resp_123"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("Well thanks.", response_metadata={"id": "resp_456"}),
+        HumanMessage("Great."),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Great.")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("What's the weather?"),
+        AIMessage(
+            "",
+            response_metadata={"id": "resp_456"},
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "get_weather",
+                    "id": "call_123",
+                    "args": {"location": "San Francisco"},
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="call_123"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [ToolMessage("It's sunny.", tool_call_id="call_123")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("Well thanks.", response_metadata={"id": "resp_456"}),
+        HumanMessage("Good."),
+        HumanMessage("Great."),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Good."), HumanMessage("Great.")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+    ]
+    last_messages, response_id = _get_last_messages(messages)
+    assert last_messages == []
+    assert response_id == "resp_123"
+
+
+def test_get_request_payload_use_previous_response_id() -> None:
+    # Default - don't use previous_response ID
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+    payload = llm._get_request_payload(messages)
+    assert "previous_response_id" not in payload
+    assert len(payload["input"]) == 3
+
+    # Use previous response ID
+    llm = ChatOpenAI(
+        model="o4-mini",
+        # Specifying use_previous_response_id automatically engages Responses API
+        use_previous_response_id=True,
+    )
+    payload = llm._get_request_payload(messages)
+    assert payload["previous_response_id"] == "resp_123"
+    assert len(payload["input"]) == 1
+
+    # Check single message
+    messages = [HumanMessage("Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "previous_response_id" not in payload
+    assert len(payload["input"]) == 1

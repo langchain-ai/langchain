@@ -34,7 +34,8 @@ class BaseMessage(Serializable):
     """
 
     response_metadata: dict = Field(default_factory=dict)
-    """Response metadata. For example: response headers, logprobs, token counts."""
+    """Response metadata. For example: response headers, logprobs, token counts, model
+    name."""
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.

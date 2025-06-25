@@ -1464,6 +1464,10 @@ EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "Content for header 1\n"
     "## Header 2\n"
     "Content for header 2\n"
+    "### Header 3\n"
+    "Content for header 3\n"
+    "## Header 2 Again\n"
+    "This should be tagged with Header 1 and Header 2 Again\n"
     "```python\n"
     "def func_definition():\n"
     "   print('Keep the whitespace consistent')\n"
@@ -1492,6 +1496,18 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="Content for header 3\n",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content="This should be tagged with Header 1 and Header 2 Again\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content=(
                 "```python\ndef func_definition():\n   "
                 "print('Keep the whitespace consistent')\n```\n"
@@ -1499,7 +1515,7 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1530,7 +1546,15 @@ def test_experimental_markdown_syntax_text_splitter_header_configuration() -> No
 
     expected_output = [
         Document(
-            page_content="Content for header 1\n## Header 2\nContent for header 2\n",
+            page_content=(
+                "Content for header 1\n"
+                "## Header 2\n"
+                "Content for header 2\n"
+                "### Header 3\n"
+                "Content for header 3\n"
+                "## Header 2 Again\n"
+                "This should be tagged with Header 1 and Header 2 Again\n"
+            ),
             metadata={"Encabezamiento 1": "My Header 1"},
         ),
         Document(
@@ -1572,6 +1596,21 @@ def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="### Header 3\nContent for header 3\n",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content=(
+                "## Header 2 Again\n"
+                "This should be tagged with Header 1 and Header 2 Again\n"
+            ),
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content=(
                 "```python\ndef func_definition():\n   "
                 "print('Keep the whitespace consistent')\n```\n"
@@ -1579,7 +1618,7 @@ def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1615,11 +1654,23 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="Content for header 3",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content="This should be tagged with Header 1 and Header 2 Again",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content="```python",
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1627,7 +1678,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1635,7 +1686,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1643,7 +1694,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(

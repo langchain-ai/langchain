@@ -607,6 +607,40 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.24
     """
 
+    use_previous_response_id: bool = False
+    """If True, always pass ``previous_response_id`` using the ID of the most recent
+    response. Responses API only.
+
+    Input messages up to the most recent response will be dropped from request
+    payloads.
+
+    For example, the following two are equivalent:
+
+    .. code-block:: python
+
+        llm = ChatOpenAI(
+            model="o4-mini",
+            use_previous_response_id=True,
+        )
+        llm.invoke(
+            [
+                HumanMessage("Hello"),
+                AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+                HumanMessage("How are you?"),
+            ]
+        )
+
+    .. code-block:: python
+
+        llm = ChatOpenAI(
+            model="o4-mini",
+            use_responses_api=True,
+        )
+        llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
+
+    .. versionadded:: 0.3.26
+    """
+
     use_responses_api: Optional[bool] = None
     """Whether to use the Responses API instead of the Chat API.
 
@@ -809,7 +843,8 @@ class BaseChatOpenAI(BaseChatModel):
         if len(choices) == 0:
             # logprobs is implicitly None
             generation_chunk = ChatGenerationChunk(
-                message=default_chunk_class(content="", usage_metadata=usage_metadata)
+                message=default_chunk_class(content="", usage_metadata=usage_metadata),
+                generation_info=base_generation_info,
             )
             return generation_chunk
 
@@ -1103,6 +1138,8 @@ class BaseChatOpenAI(BaseChatModel):
             return True
         elif self.truncation is not None:
             return True
+        elif self.use_previous_response_id:
+            return True
         else:
             return _use_responses_api(payload)
 
@@ -1119,7 +1156,14 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
         if self._use_responses_api(payload):
-            payload = _construct_responses_api_payload(messages, payload)
+            if self.use_previous_response_id:
+                last_messages, previous_response_id = _get_last_messages(messages)
+                payload_to_use = last_messages if previous_response_id else messages
+                if previous_response_id:
+                    payload["previous_response_id"] = previous_response_id
+                payload = _construct_responses_api_payload(payload_to_use, payload)
+            else:
+                payload = _construct_responses_api_payload(messages, payload)
         else:
             payload["messages"] = [_convert_message_to_dict(m) for m in messages]
         return payload
@@ -1134,15 +1178,27 @@ class BaseChatOpenAI(BaseChatModel):
         response_dict = (
             response if isinstance(response, dict) else response.model_dump()
         )
-        # Sometimes the AI Model calling will get error, we should raise it.
-        # Otherwise, the next code 'choices.extend(response["choices"])'
-        # will throw a "TypeError: 'NoneType' object is not iterable" error
-        # to mask the true error. Because 'response["choices"]' is None.
+        # Sometimes the AI Model calling will get error, we should raise it (this is
+        # typically followed by a null value for `choices`, which we raise for
+        # separately below).
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
+        # Raise informative error messages for non-OpenAI chat completions APIs
+        # that return malformed responses.
+        try:
+            choices = response_dict["choices"]
+        except KeyError as e:
+            raise KeyError(
+                f"Response missing `choices` key: {response_dict.keys()}"
+            ) from e
+
+        if choices is None:
+            raise TypeError("Received response with null value for `choices`.")
+
         token_usage = response_dict.get("usage")
-        for res in response_dict["choices"]:
+
+        for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
@@ -3213,6 +3269,30 @@ def _use_responses_api(payload: dict) -> bool:
         "truncation",
     }
     return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+
+
+def _get_last_messages(
+    messages: Sequence[BaseMessage],
+) -> tuple[Sequence[BaseMessage], Optional[str]]:
+    """
+    Return
+        1. Every message after the most-recent AIMessage that has a non-empty
+           ``response_metadata["id"]`` (may be an empty list),
+        2. That id.
+
+    If the most-recent AIMessage does not have an id (or there is no
+    AIMessage at all) the entire conversation is returned together with ``None``.
+    """
+    for i in range(len(messages) - 1, -1, -1):
+        msg = messages[i]
+        if isinstance(msg, AIMessage):
+            response_id = msg.response_metadata.get("id")
+            if response_id:
+                return messages[i + 1 :], response_id
+            else:
+                return messages, None
+
+    return messages, None
 
 
 def _construct_responses_api_payload(
