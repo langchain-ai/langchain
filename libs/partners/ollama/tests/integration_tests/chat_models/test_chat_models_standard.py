@@ -6,7 +6,7 @@ from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_ollama.chat_models import ChatOllama
 
-MODEL_NAME = "llama3.1"
+DEFAULT_MODEL_NAME = "llama3.1"
 
 
 class TestChatOllama(ChatModelIntegrationTests):
@@ -16,7 +16,7 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": MODEL_NAME}
+        return {"model": DEFAULT_MODEL_NAME}
 
     @property
     def supports_json_mode(self) -> bool:
