@@ -376,6 +376,7 @@ codespell = [
 ]
 dev = [
     { name = "langchain-core" },
+    { name = "pytest" },
 ]
 lint = [
     { name = "ruff" },
@@ -402,7 +403,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.6,<3.0.0" }]
-dev = [{ name = "langchain-core", editable = "../../core" }]
+dev = [
+    { name = "langchain-core", editable = "../../core" },
+    { name = "pytest", specifier = ">=7.4.4" },
+]
 lint = [{ name = "ruff", specifier = ">=0.1.8,<1.0.0" }]
 test = [
     { name = "langchain-core", editable = "../../core" },
