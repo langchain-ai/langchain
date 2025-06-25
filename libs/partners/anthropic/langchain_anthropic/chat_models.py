@@ -69,6 +69,10 @@ from pydantic import (
 )
 from typing_extensions import NotRequired, TypedDict
 
+from langchain_anthropic._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -1300,11 +1304,29 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
-        return anthropic.Client(**self._client_params)
+        client_params = self._client_params
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
+        http_client = _get_default_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.Client(**params)
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
-        return anthropic.AsyncClient(**self._client_params)
+        client_params = self._client_params
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
+        http_client = _get_default_async_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.AsyncClient(**params)
 
     def _get_request_payload(
         self,
