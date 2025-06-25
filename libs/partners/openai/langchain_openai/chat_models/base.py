@@ -3262,10 +3262,10 @@ def _get_last_messages(
         if isinstance(msg, AIMessage):
             response_id = msg.response_metadata.get("id")
             if response_id:
-                return messages[i + 1:], response_id
+                return messages[i + 1 :], response_id
             else:
                 return messages, None
-    
+
     return messages, None
 
 
