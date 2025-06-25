@@ -678,3 +678,8 @@ packages:
   repo: nebius/langchain-nebius
   downloads: 96
   downloads_updated_at: '2025-06-25T19:52:06.942587+00:00'
+- name: langchain-surrealdb
+  path: .
+  repo: surrealdb/langchain-surrealdb
+  downloads: 291
+  downloads_updated_at: '2025-06-25T20:06:46.206625+00:00'
