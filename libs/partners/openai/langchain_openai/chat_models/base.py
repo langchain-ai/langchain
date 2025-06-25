@@ -3257,24 +3257,16 @@ def _get_last_messages(
     If the most-recent AIMessage does not have an id (or there is no
     AIMessage at all) the entire conversation is returned together with ``None``.
     """
-    last_ai_idx: Optional[int] = None
-
-    # Search backwards for the last AIMessage
     for i in range(len(messages) - 1, -1, -1):
-        if isinstance(messages[i], AIMessage):
-            last_ai_idx = i
-            break
-
-    # No AIMessage
-    if last_ai_idx is None:
-        return messages, None
-
-    last_ai_msg = messages[last_ai_idx]
-    response_id: Optional[str] = last_ai_msg.response_metadata.get("id")
-    if not response_id:
-        return messages, None
-
-    return messages[last_ai_idx + 1 :], response_id
+        msg = messages[i]
+        if isinstance(msg, AIMessage):
+            response_id = msg.response_metadata.get("id")
+            if response_id:
+                return messages[i + 1:], response_id
+            else:
+                return messages, None
+    
+    return messages, None
 
 
 def _construct_responses_api_payload(
