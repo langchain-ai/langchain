@@ -53,10 +53,29 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+    
+    # Extract additional Perplexity-specific usage metadata
+    additional_metadata = {}
+    
+    # Add reasoning tokens if available (for reasoning models)
+    if "reasoning_tokens" in token_usage:
+        additional_metadata["reasoning_tokens"] = token_usage["reasoning_tokens"]
+    
+    # Add search-related metadata
+    if "num_search_queries" in token_usage:
+        additional_metadata["num_search_queries"] = token_usage["num_search_queries"]
+    
+    if "citation_tokens" in token_usage:
+        additional_metadata["citation_tokens"] = token_usage["citation_tokens"]
+    
+    if "search_context_size" in token_usage:
+        additional_metadata["search_context_size"] = token_usage["search_context_size"]
+    
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        **additional_metadata
     )
 
 
