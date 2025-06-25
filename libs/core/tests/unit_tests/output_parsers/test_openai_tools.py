@@ -16,10 +16,6 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration
-from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
-)
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),
@@ -532,7 +528,6 @@ async def test_partial_pydantic_output_parser_async() -> None:
         assert actual == EXPECTED_STREAMED_PYDANTIC
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="This test is for pydantic 2")
 def test_parse_with_different_pydantic_2_v1() -> None:
     """Test with pydantic.v1.BaseModel from pydantic 2."""
     import pydantic
@@ -567,7 +562,6 @@ def test_parse_with_different_pydantic_2_v1() -> None:
     ]
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="This test is for pydantic 2")
 def test_parse_with_different_pydantic_2_proper() -> None:
     """Test with pydantic.BaseModel from pydantic 2."""
     import pydantic
@@ -602,44 +596,9 @@ def test_parse_with_different_pydantic_2_proper() -> None:
     ]
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="This test is for pydantic 1")
-def test_parse_with_different_pydantic_1_proper() -> None:
-    """Test with pydantic.BaseModel from pydantic 1."""
-    import pydantic
-
-    class Forecast(pydantic.BaseModel):
-        temperature: int
-        forecast: str
-
-    # Can't get pydantic to work here due to the odd typing of tryig to support
-    # both v1 and v2 in the same codebase.
-    parser = PydanticToolsParser(tools=[Forecast])
-    message = AIMessage(
-        content="",
-        tool_calls=[
-            {
-                "id": "call_OwL7f5PE",
-                "name": "Forecast",
-                "args": {"temperature": 20, "forecast": "Sunny"},
-            }
-        ],
-    )
-
-    generation = ChatGeneration(
-        message=message,
-    )
-
-    assert parser.parse_result([generation]) == [
-        Forecast(
-            temperature=20,
-            forecast="Sunny",
-        )
-    ]
-
-
 def test_max_tokens_error(caplog: Any) -> None:
     parser = PydanticToolsParser(tools=[NameCollector], first_tool_only=True)
-    input = AIMessage(
+    message = AIMessage(
         content="",
         tool_calls=[
             {
@@ -651,7 +610,7 @@ def test_max_tokens_error(caplog: Any) -> None:
         response_metadata={"stop_reason": "max_tokens"},
     )
     with pytest.raises(ValidationError):
-        _ = parser.invoke(input)
+        _ = parser.invoke(message)
     assert any(
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
         for record, msg in zip(caplog.records, caplog.messages)

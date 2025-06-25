@@ -107,6 +107,12 @@ class ChatGroq(BaseChatModel):
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
+            The format for reasoning output.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -162,6 +168,9 @@ class ChatGroq(BaseChatModel):
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
     Stream:
+
+        Streaming `text` for each content chunk received:
+
         .. code-block:: python
 
             for chunk in llm.stream(messages):
@@ -179,6 +188,8 @@ class ChatGroq(BaseChatModel):
             content='' response_metadata={'finish_reason': 'stop'}
             id='run-4e9f926b-73f5-483b-8ef5-09533d925853
 
+        Reconstructing a full response:
+
         .. code-block:: python
 
             stream = llm.stream(messages)
@@ -190,16 +201,15 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             AIMessageChunk(content='The English sentence "I love programming"
-            can be translated to French as "J\'aime programmer".
-            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the
-            French equivalent of "I love"\n* "programmer" is the French
-            infinitive for "to program"\n\nSo, the literal translation
-            is "I love to program". However, in English we often omit the
-            "to" when talking about activities we love, and the same applies
-            to French. Therefore, "J\'aime programmer" is the correct and
-            natural way to express "I love programming" in French.',
-            response_metadata={'finish_reason': 'stop'},
-            id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+            can be translated to French as "J\'aime programmer". Here\'s the
+            breakdown of the sentence: "J\'aime" is the French equivalent of "
+            I love", and "programmer" is the French infinitive for "to program".
+            So, the literal translation is "I love to program". However, in
+            English we often omit the "to" when talking about activities we
+            love, and the same applies to French. Therefore, "J\'aime
+            programmer" is the correct and natural way to express "I love
+            programming" in French.', response_metadata={'finish_reason':
+            'stop'}, id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
 
     Async:
         .. code-block:: python
@@ -292,7 +302,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """
+    """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -302,6 +312,13 @@ class ChatGroq(BaseChatModel):
     """What sampling temperature to use."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = None
+    """The format for reasoning output.
+
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
+            - ``raw``: Includes reasoning within think tags in the content.
+            - ``hidden``: Returns only the final answer.
+    """  # noqa: E501
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
@@ -606,6 +623,7 @@ class ChatGroq(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "stop": self.stop,
+            "reasoning_format": self.reasoning_format,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -1153,6 +1171,8 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1196,6 +1216,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "assistant":
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []

@@ -2,6 +2,8 @@ from datetime import datetime as dt
 from typing import Any, Callable, Optional, TypeVar
 
 import pytest
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 
@@ -10,8 +12,6 @@ from langchain.output_parsers.datetime import DatetimeOutputParser
 from langchain.output_parsers.retry import (
     NAIVE_RETRY_PROMPT,
     NAIVE_RETRY_WITH_ERROR_PROMPT,
-    BaseOutputParser,
-    OutputParserException,
     RetryOutputParser,
     RetryWithErrorOutputParser,
 )

@@ -2,9 +2,10 @@ import pathlib
 from typing import Any, Optional
 
 import pytest
+from langchain_core.callbacks import CallbackManagerForChainRun
 
 from langchain.callbacks import FileCallbackHandler
-from langchain.chains.base import CallbackManagerForChainRun, Chain
+from langchain.chains.base import Chain
 
 
 class FakeChain(Chain):

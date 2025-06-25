@@ -39,7 +39,7 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
     @abstractmethod
     @pytest.fixture()
     def three_values(self) -> Tuple[V, V, V]:
-        """Thee example values that will be used in the tests."""
+        """Three example values that will be used in the tests."""
         pass
 
     def test_three_values(self, three_values: Tuple[V, V, V]) -> None:
@@ -170,7 +170,7 @@ class BaseStoreAsyncTests(BaseStandardTests):
     @abstractmethod
     @pytest.fixture()
     def three_values(self) -> Tuple[V, V, V]:
-        """Thee example values that will be used in the tests."""
+        """Three example values that will be used in the tests."""
         pass
 
     async def test_three_values(self, three_values: Tuple[V, V, V]) -> None:

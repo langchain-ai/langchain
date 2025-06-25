@@ -23,7 +23,7 @@ def _is_openai_data_block(block: dict) -> bool:
             if isinstance(file_data, str):
                 return True
 
-    elif block.get("type") == "input_audio":  # noqa: SIM102
+    elif block.get("type") == "input_audio":
         if (input_audio := block.get("input_audio")) and isinstance(input_audio, dict):
             audio_data = input_audio.get("data")
             audio_format = input_audio.get("format")
@@ -92,13 +92,13 @@ def _convert_openai_format_to_data_block(block: dict) -> dict:
 
     if block["type"] == "input_audio":
         data = block["input_audio"].get("data")
-        format = block["input_audio"].get("format")
-        if data and format:
+        audio_format = block["input_audio"].get("format")
+        if data and audio_format:
             return {
                 "type": "audio",
                 "source_type": "base64",
                 "data": data,
-                "mime_type": f"audio/{format}",
+                "mime_type": f"audio/{audio_format}",
             }
         return block
 
