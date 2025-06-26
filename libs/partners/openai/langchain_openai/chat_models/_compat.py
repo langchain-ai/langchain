@@ -142,7 +142,7 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         and all(isinstance(b, dict) for b in message.content)
     ) or not any(
         item in message.additional_kwargs
-        for item in ["reasoning", "tool_outputs", "refusal"]
+        for item in ["reasoning", "tool_outputs", "refusal", _FUNCTION_CALL_IDS_MAP_KEY]
     ):
         return message
 

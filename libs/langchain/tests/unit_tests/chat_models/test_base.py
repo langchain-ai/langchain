@@ -138,6 +138,7 @@ def test_configurable() -> None:
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_previous_response_id": False,
             "use_responses_api": None,
         },
         "kwargs": {
