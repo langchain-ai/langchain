@@ -111,12 +111,12 @@ class ChatGroq(BaseChatModel):
             The format for reasoning output. Groq will default to ``raw`` if left
             undefined.
 
-            - ``parsed``: Separates reasoning into a dedicated field while keeping the
+            - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
               response concise. Reasoning will be returned in the
               ``additional_kwargs.reasoning_content`` field of the response.
-            - ``raw``: Includes reasoning within think tags (e.g.
+            - ``'raw'``: Includes reasoning within think tags (e.g.
               ``<think>{reasoning_content}</think>``).
-            - ``hidden``: Returns only the final answer content. Note: this only
+            - ``'hidden'``: Returns only the final answer content. Note: this only
               supresses reasoning content in the response; the model will still perform
               reasoning unless overridden in ``reasoning_effort``.
 
@@ -322,12 +322,12 @@ class ChatGroq(BaseChatModel):
     reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
-    - ``parsed``: Separates reasoning into a dedicated field while keeping the response
+    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the response
       concise. Reasoning will be returned in the ``additional_kwargs.reasoning_content``
       field of the response.
-    - ``raw``: Includes reasoning within think tags (e.g.
+    - ``'raw'``: Includes reasoning within think tags (e.g.
       ``<think>{reasoning_content}</think>``).
-    - ``hidden``: Returns only the final answer content. Note: this only supresses
+    - ``'hidden'``: Returns only the final answer content. Note: this only supresses
       reasoning content in the response; the model will still perform reasoning unless
       overridden in ``reasoning_effort``.
 
@@ -339,9 +339,9 @@ class ChatGroq(BaseChatModel):
     enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
     not apply and ``reasoning_content`` will not be returned.
 
-    - ``none``: Disable reasoning. The model will not use any reasoning tokens when
+    - ``'none'``: Disable reasoning. The model will not use any reasoning tokens when
       generating a response.
-    - ``default``: Enable reasoning.
+    - ``'default'``: Enable reasoning.
 
     See the `Groq documentation
     <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
