@@ -322,29 +322,29 @@ class ChatGroq(BaseChatModel):
     reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
-    - ``parsed``: Separates reasoning into a dedicated field while keeping the response 
+    - ``parsed``: Separates reasoning into a dedicated field while keeping the response
       concise. Reasoning will be returned in the ``additional_kwargs.reasoning_content``
       field of the response.
-    - ``raw``: Includes reasoning within think tags (e.g. 
+    - ``raw``: Includes reasoning within think tags (e.g.
       ``<think>{reasoning_content}</think>``).
-    - ``hidden``: Returns only the final answer content. Note: this only supresses 
-      reasoning content in the response; the model will still perform reasoning unless 
+    - ``hidden``: Returns only the final answer content. Note: this only supresses
+      reasoning content in the response; the model will still perform reasoning unless
       overridden in ``reasoning_effort``.
 
-    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__ 
+    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
     for more details and a list of supported reasoning models.
     """
     reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
-    """The level of effort the model will put into reasoning. Groq will default to 
-    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will 
+    """The level of effort the model will put into reasoning. Groq will default to
+    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
     not apply and ``reasoning_content`` will not be returned.
 
-    - ``none``: Disable reasoning. The model will not use any reasoning tokens when 
+    - ``none``: Disable reasoning. The model will not use any reasoning tokens when
       generating a response.
     - ``default``: Enable reasoning.
 
-    See the `Groq documentation 
-    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more 
+    See the `Groq documentation
+    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
     details and a list of models that support setting a reasoning effort.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
