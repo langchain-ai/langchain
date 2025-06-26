@@ -352,9 +352,10 @@ class ChatOllama(BaseChatModel):
 
     extract_reasoning: Optional[Union[bool, tuple[str, str]]] = False
     """Whether to extract the reasoning tokens in think blocks.
-    Extracts `chunk.content` to `chunk.additional_kwargs.reasoning_content`.
+    Extracts ``chunk.content`` to ``chunk.additional_kwargs.reasoning_content``.
     If a tuple is supplied, they are assumed to be the (start, end) tokens.
-    If `extract_reasoning=True`, the tokens will default to (<think>, </think>).
+    If ``extract_reasoning=True``, the tokens will default to (``<think>``, 
+    ``</think>``).
     """
 
     mirostat: Optional[int] = None
