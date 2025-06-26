@@ -300,7 +300,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     defer to ``invoke()``/``ainvoke()``.
 
     - If True, will always bypass streaming case.
-    - If ``tool_calling``, will bypass streaming case only when the model is called
+    - If ``'tool_calling'``, will bypass streaming case only when the model is called
       with a ``tools`` keyword argument.
     - If False (default), will always use streaming case if available.
 
