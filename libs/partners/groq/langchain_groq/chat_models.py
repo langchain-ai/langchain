@@ -322,9 +322,9 @@ class ChatGroq(BaseChatModel):
     reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
-    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the response
-      concise. Reasoning will be returned in the ``additional_kwargs.reasoning_content``
-      field of the response.
+    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
+      response concise. Reasoning will be returned in the
+      ``additional_kwargs.reasoning_content`` field of the response.
     - ``'raw'``: Includes reasoning within think tags (e.g.
       ``<think>{reasoning_content}</think>``).
     - ``'hidden'``: Returns only the final answer content. Note: this only supresses
