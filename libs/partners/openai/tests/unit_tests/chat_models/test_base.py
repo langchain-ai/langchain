@@ -34,6 +34,7 @@ from openai.types.responses.response_file_search_tool_call import (
 )
 from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
 from openai.types.responses.response_function_web_search import (
+    ActionSearch,
     ResponseFunctionWebSearch,
 )
 from openai.types.responses.response_output_refusal import ResponseOutputRefusal
@@ -1602,7 +1603,10 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
         tool_choice="auto",
         output=[
             ResponseFunctionWebSearch(
-                id="websearch_123", type="web_search_call", status="completed"
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
             )
         ],
     )
@@ -1630,7 +1634,12 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
         response, output_version="responses/v1"
     )
     assert result.generations[0].message.content == [
-        {"type": "web_search_call", "id": "websearch_123", "status": "completed"}
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"query": "search query", "type": "search"},
+        }
     ]
 
 
@@ -1751,7 +1760,10 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
                 status="completed",
             ),
             ResponseFunctionWebSearch(
-                id="websearch_123", type="web_search_call", status="completed"
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
             ),
             ResponseFileSearchToolCall(
                 id="filesearch_123",
@@ -1812,7 +1824,12 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
             "annotations": [],
             "id": "msg_123",
         },
-        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"type": "search", "query": "search query"},
+        },
         {
             "type": "file_search_call",
             "id": "filesearch_123",
