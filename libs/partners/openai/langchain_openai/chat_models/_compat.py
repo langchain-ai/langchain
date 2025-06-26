@@ -128,6 +128,8 @@ def _convert_to_v03_ai_message(
             else:
                 new_content.append(block)
         message.content = new_content
+        if isinstance(message.id, str) and message.id.startswith("resp_"):
+            message.id = None
     else:
         pass
 
@@ -137,13 +139,29 @@ def _convert_to_v03_ai_message(
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert an old-style v0.3 AIMessage into the new content-block format."""
     # Only update ChatOpenAI v0.3 AIMessages
-    if not (
+    # TODO: structure provenance into AIMessage
+    is_chatopenai_v03 = (
         isinstance(message.content, list)
         and all(isinstance(b, dict) for b in message.content)
-    ) or not any(
-        item in message.additional_kwargs
-        for item in ["reasoning", "tool_outputs", "refusal"]
-    ):
+    ) and (
+        any(
+            item in message.additional_kwargs
+            for item in [
+                "reasoning",
+                "tool_outputs",
+                "refusal",
+                _FUNCTION_CALL_IDS_MAP_KEY,
+            ]
+        )
+        or (
+            isinstance(message.id, str)
+            and message.id.startswith("msg_")
+            and (response_id := message.response_metadata.get("id"))
+            and isinstance(response_id, str)
+            and response_id.startswith("resp_")
+        )
+    )
+    if not is_chatopenai_v03:
         return message
 
     content_order = [

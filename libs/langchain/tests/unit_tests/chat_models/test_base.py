@@ -113,6 +113,7 @@ def test_configurable() -> None:
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
+            "output_version": "v0",
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
@@ -138,6 +139,7 @@ def test_configurable() -> None:
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_previous_response_id": False,
             "use_responses_api": None,
         },
         "kwargs": {
