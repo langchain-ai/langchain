@@ -1,8 +1,12 @@
 """Test chat model integration using standard integration tests."""
 
+import pytest
+from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_ollama.chat_models import ChatOllama
+
+DEFAULT_MODEL_NAME = "llama3.1"
 
 
 class TestChatOllama(ChatModelIntegrationTests):
@@ -12,7 +16,7 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama3.1"}
+        return {"model": DEFAULT_MODEL_NAME}
 
     @property
     def supports_json_mode(self) -> bool:
@@ -20,23 +24,26 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @property
     def has_tool_choice(self) -> bool:
-        return False
+        return False  # TODO: update after Ollama implements
 
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
 
-def test_image_model() -> None:
-    class ImageModelTests(ChatModelIntegrationTests):
-        @property
-        def chat_model_class(self) -> type[ChatOllama]:
-            return ChatOllama
+    @pytest.mark.xfail(
+        reason=(
+            "Will sometime encounter AssertionErrors where tool responses are "
+            "`'3'` instead of `3`"
+        )
+    )
+    def test_tool_calling(self, model: BaseChatModel) -> None:
+        super().test_tool_calling(model)
 
-        @property
-        def chat_model_params(self) -> dict:
-            return {"model": "gemma3:4b"}
-
-        @property
-        def supports_image_inputs(self) -> bool:
-            return True
-
-    test_instance = ImageModelTests()
-    model = test_instance.chat_model_class(**test_instance.chat_model_params)
-    ImageModelTests().test_image_inputs(model)
+    @pytest.mark.xfail(
+        reason=(
+            "Will sometime encounter AssertionErrors where tool responses are "
+            "`'3'` instead of `3`"
+        )
+    )
+    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+        await super().test_tool_calling_async(model)

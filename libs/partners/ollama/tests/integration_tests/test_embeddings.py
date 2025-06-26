@@ -4,6 +4,8 @@ from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
 from langchain_ollama.embeddings import OllamaEmbeddings
 
+MODEL_NAME = "llama3.1"
+
 
 class TestOllamaEmbeddings(EmbeddingsIntegrationTests):
     @property
@@ -12,4 +14,4 @@ class TestOllamaEmbeddings(EmbeddingsIntegrationTests):
 
     @property
     def embedding_model_params(self) -> dict:
-        return {"model": "llama3:latest"}
+        return {"model": MODEL_NAME}
