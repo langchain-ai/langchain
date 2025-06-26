@@ -3790,7 +3790,8 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_text.done":
         content.append({"id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
-        response_metadata["id"] = chunk.response.id
+        id = chunk.response.id
+        response_metadata["id"] = chunk.response.id  # Backwards compatibility
     elif chunk.type == "response.completed":
         msg = cast(
             AIMessage,
@@ -3809,7 +3810,10 @@ def _convert_responses_chunk_to_generation_chunk(
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
-        id = chunk.item.id
+        if output_version == "v0":
+            id = chunk.item.id
+        else:
+            pass
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
