@@ -1,5 +1,6 @@
 """Test ChatAnthropic chat model."""
 
+import asyncio
 import json
 import os
 from base64 import b64encode
@@ -1082,3 +1083,10 @@ def test_files_api_pdf(block_format: str) -> None:
         ],
     }
     _ = llm.invoke([input_message])
+
+
+def test_async_shared_client() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm._async_client  # Instantiates lazily
+    _ = asyncio.run(llm.ainvoke("Hello"))
+    _ = asyncio.run(llm.ainvoke("Hello"))
