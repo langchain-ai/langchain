@@ -327,7 +327,7 @@ class ChatGroq(BaseChatModel):
     details and a list of supported reasoning models.
     """  # noqa: E501
     reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
-    """The level of effort the model will put into reasoning. Groq will default to enabling reasoning 
+    """The level of effort the model will put into reasoning. Groq will default to enabling reasoning
     if left undefined. If set to ``none``, ``reasoning_format`` will not apply and ``reasoning_content`` will
     not be returned.
 
