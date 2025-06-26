@@ -661,7 +661,10 @@ class BaseChatOpenAI(BaseChatModel):
     - ``"responses/v1"``: Formats Responses API output
       items into AIMessage content blocks.
 
-      .. versionadded:: 0.3.25
+    Currently only impacts the Responses API. ``output_version="responses/v1"`` is
+    recommended.
+
+    .. versionadded:: 0.3.25
 
     """
 
