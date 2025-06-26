@@ -108,15 +108,20 @@ class ChatGroq(BaseChatModel):
         max_tokens: Optional[int]
             Max number of tokens to generate.
         reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
-            The format for reasoning output. Groq will default to raw if left undefined.
+            The format for reasoning output. Groq will default to ``raw`` if left
+            undefined.
 
-            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
-                Reasoning will be returned in the ``additional_kwargs.reasoning_content`` field of the response.
-            - ``raw``: Includes reasoning within think tags (e.g. ``<think>{reasoning_content}</think>``).
-            - ``hidden``: Returns only the final answer content. Note: this only supresses reasoning content
-                in the response; the model will still perform reasoning unless overridden in ``reasoning_effort``.
+            - ``parsed``: Separates reasoning into a dedicated field while keeping the
+              response concise. Reasoning will be returned in the
+              ``additional_kwargs.reasoning_content`` field of the response.
+            - ``raw``: Includes reasoning within think tags (e.g.
+              ``<think>{reasoning_content}</think>``).
+            - ``hidden``: Returns only the final answer content. Note: this only
+              supresses reasoning content in the response; the model will still perform
+              reasoning unless overridden in ``reasoning_effort``.
 
-            See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__ for more
+            See the `Groq documentation
+            <https://console.groq.com/docs/reasoning#reasoning>`__ for more
             details and a list of supported reasoning models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
@@ -304,7 +309,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """  # noqa: E501
+    """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -317,26 +322,31 @@ class ChatGroq(BaseChatModel):
     reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
-    - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
-        Reasoning will be returned in the ``additional_kwargs.reasoning_content`` field of the response.
-    - ``raw``: Includes reasoning within think tags (e.g. ``<think>{reasoning_content}</think>``).
-    - ``hidden``: Returns only the final answer content. Note: this only supresses reasoning content
-        in the response; the model will still perform reasoning unless overridden in ``reasoning_effort``.
+    - ``parsed``: Separates reasoning into a dedicated field while keeping the response 
+      concise. Reasoning will be returned in the ``additional_kwargs.reasoning_content``
+      field of the response.
+    - ``raw``: Includes reasoning within think tags (e.g. 
+      ``<think>{reasoning_content}</think>``).
+    - ``hidden``: Returns only the final answer content. Note: this only supresses 
+      reasoning content in the response; the model will still perform reasoning unless 
+      overridden in ``reasoning_effort``.
 
-    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__ for more
-    details and a list of supported reasoning models.
-    """  # noqa: E501
+    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__ 
+    for more details and a list of supported reasoning models.
+    """
     reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
-    """The level of effort the model will put into reasoning. Groq will default to enabling reasoning
-    if left undefined. If set to ``none``, ``reasoning_format`` will not apply and ``reasoning_content`` will
-    not be returned.
+    """The level of effort the model will put into reasoning. Groq will default to 
+    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will 
+    not apply and ``reasoning_content`` will not be returned.
 
-    - ``none``: Disable reasoning. The model will not use any reasoning tokens when generating a response.
+    - ``none``: Disable reasoning. The model will not use any reasoning tokens when 
+      generating a response.
     - ``default``: Enable reasoning.
 
-    See the `Groq documentation <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__
-    for more details and a list of models that support setting a reasoning effort.
-    """  # noqa: E501
+    See the `Groq documentation 
+    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more 
+    details and a list of models that support setting a reasoning effort.
+    """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
