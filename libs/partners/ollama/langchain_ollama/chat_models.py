@@ -346,7 +346,7 @@ class ChatOllama(BaseChatModel):
             'args': {'a': 45, 'b': 67},
             'id': '420c3f3b-df10-4188-945f-eb3abdb40622',
             'type': 'tool_call'}]
-    """  # noqa: E501
+    """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
     """Model name to use."""
