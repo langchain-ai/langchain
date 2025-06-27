@@ -134,12 +134,12 @@ class OllamaLLM(BaseLLM):
     For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
     """
 
-    _client: Client = PrivateAttr(default=None)  # type: ignore
+    _client: Optional[Client] = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
+    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
@@ -152,7 +152,7 @@ class OllamaLLM(BaseLLM):
     ) -> dict[str, Any]:
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
+        if self.stop is not None:
             stop = self.stop
 
         options_dict = kwargs.pop(
@@ -225,10 +225,11 @@ class OllamaLLM(BaseLLM):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        async for part in await self._async_client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        ):  # type: ignore
-            yield part  # type: ignore
+        if self._async_client:
+            async for part in await self._async_client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
+            ):
+                yield part
 
     def _create_generate_stream(
         self,
@@ -236,9 +237,10 @@ class OllamaLLM(BaseLLM):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        yield from self._client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        )  # type: ignore
+        if self._client:
+            yield from self._client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
+            )
 
     async def _astream_with_aggregation(
         self,
