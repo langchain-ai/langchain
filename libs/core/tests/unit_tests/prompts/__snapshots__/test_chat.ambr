@@ -702,6 +702,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -2132,6 +2134,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -3133,6 +3137,27 @@
                 }),
                 'lc': 1,
                 'name': 'PromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain_core',
+                  'prompts',
+                  'dict',
+                  'DictPromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'template': dict({
+                    'cache_control': dict({
+                      'type': '{foo}',
+                    }),
+                    'text': "What's in this image?",
+                    'type': 'text',
+                  }),
+                  'template_format': 'f-string',
+                }),
+                'lc': 1,
+                'name': 'DictPromptTemplate',
                 'type': 'constructor',
               }),
               dict({

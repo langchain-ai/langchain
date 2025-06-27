@@ -580,7 +580,7 @@ def _get_standardized_outputs(
 @overload
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -593,7 +593,7 @@ def _astream_log_implementation(
 @overload
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -605,7 +605,7 @@ def _astream_log_implementation(
 
 async def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -632,7 +632,7 @@ async def _astream_log_implementation(
     if callbacks is None:
         config["callbacks"] = [stream]
     elif isinstance(callbacks, list):
-        config["callbacks"] = callbacks + [stream]
+        config["callbacks"] = [*callbacks, stream]
     elif isinstance(callbacks, BaseCallbackManager):
         callbacks = callbacks.copy()
         callbacks.add_handler(stream, inherit=True)
@@ -651,7 +651,7 @@ async def _astream_log_implementation(
             prev_final_output: Optional[Output] = None
             final_output: Optional[Output] = None
 
-            async for chunk in runnable.astream(input, config, **kwargs):
+            async for chunk in runnable.astream(value, config, **kwargs):
                 prev_final_output = final_output
                 if final_output is None:
                     final_output = chunk

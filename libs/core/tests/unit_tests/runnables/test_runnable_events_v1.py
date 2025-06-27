@@ -26,7 +26,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
-    Runnable,
     RunnableConfig,
     RunnableLambda,
 )
@@ -543,10 +542,10 @@ async def test_astream_events_from_model() -> None:
     )
 
     @RunnableLambda
-    def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
+    def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
-            return model.invoke(input)
-        return model.invoke(input, config)
+            return model.invoke(value)
+        return model.invoke(value, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -667,10 +666,10 @@ async def test_astream_events_from_model() -> None:
     )
 
     @RunnableLambda
-    async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
+    async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
-            return await model.ainvoke(input)
-        return await model.ainvoke(input, config)
+            return await model.ainvoke(value)
+        return await model.ainvoke(value, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -1935,7 +1934,7 @@ async def test_runnable_with_message_history() -> None:
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    chain: Runnable = prompt | model
+    chain = prompt | model
     with_message_history = RunnableWithMessageHistory(
         chain,
         get_session_history=get_by_session_id,

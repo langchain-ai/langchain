@@ -1,18 +1,23 @@
 """Test chat model integration."""
 
 import os
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable, Literal, Optional, cast
+from unittest.mock import MagicMock, patch
 
+import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _create_usage_metadata,
     _format_image,
     _format_messages,
     _merge_messages,
@@ -37,6 +42,22 @@ def test_initialization() -> None:
         assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+def test_anthropic_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm2 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    assert llm1._client._client is llm2._client._client
+
+    llm3 = ChatAnthropic(model="claude-3-5-sonnet-latest", base_url="foo")
+    assert llm1._client._client is not llm3._client._client
+
+    llm4 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=None)
+    assert llm1._client._client is llm4._client._client
+
+    llm5 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=3)
+    assert llm1._client._client is not llm5._client._client
 
 
 @pytest.mark.requires("anthropic")
@@ -940,3 +961,114 @@ def test_optional_description() -> None:
         sample_field: str
 
     _ = llm.with_structured_output(SampleModel.model_json_schema())
+
+
+def test_get_num_tokens_from_messages_passes_kwargs() -> None:
+    """Test that get_num_tokens_from_messages passes kwargs to the model."""
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    with patch.object(anthropic, "Client") as _Client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
+
+    assert (
+        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    )
+
+
+def test_usage_metadata_standardization() -> None:
+    class UsageModel(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+        cache_read_input_tokens: int = 3
+        cache_creation_input_tokens: int = 2
+
+    # Happy path
+    usage = UsageModel()
+    result = _create_usage_metadata(usage)
+    assert result["input_tokens"] == 15  # 10 + 3 + 2
+    assert result["output_tokens"] == 5
+    assert result["total_tokens"] == 20
+    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+
+    # Null input and output tokens
+    class UsageModelNulls(BaseModel):
+        input_tokens: Optional[int] = None
+        output_tokens: Optional[int] = None
+        cache_read_input_tokens: Optional[int] = None
+        cache_creation_input_tokens: Optional[int] = None
+
+    usage_nulls = UsageModelNulls()
+    result = _create_usage_metadata(usage_nulls)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+
+    # Test missing fields
+    class UsageModelMissing(BaseModel):
+        pass
+
+    usage_missing = UsageModelMissing()
+    result = _create_usage_metadata(usage_missing)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.chat_model_start_inputs: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+        pass
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+def test_mcp_tracing() -> None:
+    # Test we exclude sensitive information from traces
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.deepwiki.com/mcp",
+            "name": "deepwiki",
+            "authorization_token": "PLACEHOLDER",
+        }
+    ]
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["mcp-client-2025-04-04"],
+        mcp_servers=mcp_servers,
+    )
+
+    tracer = FakeTracer()
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Message:
+        return Message(
+            id="foo",
+            content=[TextBlock(type="text", text="bar")],
+            model="baz",
+            role="assistant",
+            stop_reason=None,
+            stop_sequence=None,
+            usage=Usage(input_tokens=2, output_tokens=1),
+            type="message",
+        )
+
+    mock_client.messages.create = mock_create
+    input_message = HumanMessage("Test query")
+    with patch.object(llm, "_client", mock_client):
+        _ = llm.invoke([input_message], config={"callbacks": [tracer]})
+
+    # Test headers are not traced
+    assert len(tracer.chat_model_start_inputs) == 1
+    assert "PLACEHOLDER" not in str(tracer.chat_model_start_inputs)
+
+    # Test headers are correctly propagated to request
+    payload = llm._get_request_payload([input_message])
+    assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"

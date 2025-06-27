@@ -5,14 +5,14 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.53",
-    "openai<2.0.0,>=1.68.2",
+    "langchain-core<1.0.0,>=0.3.66",
+    "openai<2.0.0,>=1.86.0",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.14"
+version = "0.3.26"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -33,6 +33,7 @@ test = [
     "pytest-retry<1.8.0,>=1.7.0",
     "pytest-socket<1.0.0,>=0.6.0",
     "pytest-xdist<4.0.0,>=3.6.1",
+    "vcrpy>=7.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
     "langchain-core",

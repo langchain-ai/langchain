@@ -3,10 +3,10 @@
 from enum import Enum
 from typing import Any, Callable, Optional
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
-    Callbacks,
 )
 from langchain_core.utils import pre_init
 from pydantic import Field

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 # the `from langchain_core.load.load import load` absolute import should also work.
 from langchain_core.load.load import load
 
-__all__ = ("dumpd", "dumps", "load", "loads", "Serializable")
+__all__ = ("Serializable", "dumpd", "dumps", "load", "loads")
 
 _dynamic_imports = {
     "dumpd": "dump",

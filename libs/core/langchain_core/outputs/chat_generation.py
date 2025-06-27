@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Union
+from typing import Literal, Union
 
 from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.utils._merge import merge_dicts
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 
 class ChatGeneration(Generation):
@@ -49,26 +47,22 @@ class ChatGeneration(Generation):
         Raises:
             ValueError: If the message is not a string or a list.
         """
-        try:
-            text = ""
-            if isinstance(self.message.content, str):
-                text = self.message.content
-            # Assumes text in content blocks in OpenAI format.
-            # Uses first text block.
-            elif isinstance(self.message.content, list):
-                for block in self.message.content:
-                    if isinstance(block, str):
-                        text = block
-                        break
-                    if isinstance(block, dict) and "text" in block:
-                        text = block["text"]
-                        break
-            else:
-                pass
-            self.text = text
-        except (KeyError, AttributeError) as e:
-            msg = "Error while initializing ChatGeneration"
-            raise ValueError(msg) from e
+        text = ""
+        if isinstance(self.message.content, str):
+            text = self.message.content
+        # Assumes text in content blocks in OpenAI format.
+        # Uses first text block.
+        elif isinstance(self.message.content, list):
+            for block in self.message.content:
+                if isinstance(block, str):
+                    text = block
+                    break
+                if isinstance(block, dict) and "text" in block:
+                    text = block["text"]
+                    break
+        else:
+            pass
+        self.text = text
         return self
 
 
@@ -115,3 +109,16 @@ class ChatGenerationChunk(ChatGeneration):
             )
         msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
         raise TypeError(msg)
+
+
+def merge_chat_generation_chunks(
+    chunks: list[ChatGenerationChunk],
+) -> Union[ChatGenerationChunk, None]:
+    """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk."""
+    if not chunks:
+        return None
+
+    if len(chunks) == 1:
+        return chunks[0]
+
+    return chunks[0] + chunks[1:]

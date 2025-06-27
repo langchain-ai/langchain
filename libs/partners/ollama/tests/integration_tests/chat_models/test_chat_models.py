@@ -8,6 +8,8 @@ from typing_extensions import TypedDict
 
 from langchain_ollama import ChatOllama
 
+DEFAULT_MODEL_NAME = "llama3.1"
+
 
 @pytest.mark.parametrize(("method"), [("function_calling"), ("json_schema")])
 def test_structured_output(method: str) -> None:
@@ -19,7 +21,7 @@ def test_structured_output(method: str) -> None:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    llm = ChatOllama(model="llama3.1", temperature=0)
+    llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0)
     query = "Tell me a joke about cats."
 
     # Pydantic
@@ -38,7 +40,7 @@ def test_structured_output(method: str) -> None:
 
     for chunk in structured_llm.stream(query):
         assert isinstance(chunk, dict)
-    assert isinstance(chunk, dict)  # for mypy
+    assert isinstance(chunk, dict)
     assert set(chunk.keys()) == {"setup", "punchline"}
 
     # Typed Dict
@@ -55,11 +57,11 @@ def test_structured_output(method: str) -> None:
 
     for chunk in structured_llm.stream(query):
         assert isinstance(chunk, dict)
-    assert isinstance(chunk, dict)  # for mypy
+    assert isinstance(chunk, dict)
     assert set(chunk.keys()) == {"setup", "punchline"}
 
 
-@pytest.mark.parametrize(("model"), [("llama3.1")])
+@pytest.mark.parametrize(("model"), [(DEFAULT_MODEL_NAME)])
 def test_structured_output_deeply_nested(model: str) -> None:
     """Test to verify structured output with a nested objects."""
     llm = ChatOllama(model=model, temperature=0)
@@ -80,7 +82,7 @@ def test_structured_output_deeply_nested(model: str) -> None:
 
         people: list[Person]
 
-    chat = llm.with_structured_output(Data)  # type: ignore[arg-type]
+    chat = llm.with_structured_output(Data)
     text = (
         "Alan Smith is 6 feet tall and has blond hair."
         "Alan Poe is 3 feet tall and has grey hair."

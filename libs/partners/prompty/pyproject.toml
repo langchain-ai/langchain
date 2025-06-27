@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = ["langchain-core<1.0.0,>=0.3.15", "pyyaml<7.0.0,>=6.0.1"]
 name = "langchain-prompty"
 version = "0.1.1"

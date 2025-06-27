@@ -1,8 +1,10 @@
 """Test OllamaLLM llm."""
 
+from langchain_core.runnables import RunnableConfig
+
 from langchain_ollama.llms import OllamaLLM
 
-MODEL_NAME = "llama3"
+MODEL_NAME = "llama3.1"
 
 
 def test_stream() -> None:
@@ -54,13 +56,12 @@ async def test_ainvoke() -> None:
     """Test invoke tokens from OllamaLLM."""
     llm = OllamaLLM(model=MODEL_NAME)
 
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
+    result = await llm.ainvoke("I'm Pickle Rick", config=RunnableConfig(tags=["foo"]))
     assert isinstance(result, str)
 
 
 def test_invoke() -> None:
     """Test invoke tokens from OllamaLLM."""
     llm = OllamaLLM(model=MODEL_NAME)
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config=RunnableConfig(tags=["foo"]))
     assert isinstance(result, str)
