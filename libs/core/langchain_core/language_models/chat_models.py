@@ -301,25 +301,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     - If True, will always bypass streaming case.
     - If ``'tool_calling'``, will bypass streaming case only when the model is called
-      with a ``tools`` keyword argument.
+      with a ``tools`` keyword argument. In other words, LangChain will automatically
+      switch to non-streaming behavior (``invoke()``) only when the tools argument is
+      provided. This offers the best of both worlds.
     - If False (default), will always use streaming case if available.
 
-    Useful when integrating with systems or models that are not designed to handle
-    streaming data. For instance, in situations where a model's feature, such as tool
-    calling, does not support a token-by-token stream of the final answer. By setting
-    ``disable_streaming``, the ``stream()`` method can still be called, but it will
-    behave like ``invoke()``, returning the full response in a single chunk. This
-    prevents errors and allows for a uniform method call regardless of the underlying
-    model's capabilities.
-
-    Second, if an LLM decides to use a tool but doesn't support streaming tool calls, it
-    will generate a complete tool call request within a single chunk. If you are using
-    the ``stream()`` method, this can lead to unexpected behavior or errors if the
-    application is expecting a continuous stream of text.
-
-    By setting ``disable_streaming='tool_calling'``, you instruct LangChain to
-    automatically switch to a non-streaming (``invoke()``) behavior only when the tools
-    argument is provided. This offers the best of both worlds.
+    The main reason for this flag is that code might be written using ``.stream()`` and
+    a user may want to swap out a given model for another model whose the implementation
+    does not properly support streaming.
     """
 
     @model_validator(mode="before")
