@@ -3271,19 +3271,23 @@ def _create_usage_metadata_responses(oai_token_usage: dict) -> UsageMetadata:
     input_tokens = oai_token_usage.get("input_tokens", 0)
     output_tokens = oai_token_usage.get("output_tokens", 0)
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
-
     output_token_details: dict = {
-        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
-            "audio_tokens"
-        ),
-        "reasoning": (oai_token_usage.get("output_token_details") or {}).get(
+        "reasoning": (oai_token_usage.get("output_tokens_details") or {}).get(
             "reasoning_tokens"
-        ),
+        )
+    }
+    input_token_details: dict = {
+        "cache_read": (oai_token_usage.get("input_tokens_details") or {}).get(
+            "cached_tokens"
+        )
     }
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
         output_token_details=OutputTokenDetails(
             **{k: v for k, v in output_token_details.items() if v is not None}
         ),
