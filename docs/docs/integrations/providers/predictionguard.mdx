@@ -21,6 +21,7 @@ pip install langchain-predictionguard
 |Chat|Build Chat Bots|[Chat](https://docs.predictionguard.com/api-reference/api-reference/chat-completions)| `from langchain_predictionguard import ChatPredictionGuard` | [ChatPredictionGuard.ipynb](/docs/integrations/chat/predictionguard)             |
 |Completions|Generate Text|[Completions](https://docs.predictionguard.com/api-reference/api-reference/completions)| `from langchain_predictionguard import PredictionGuard` | [PredictionGuard.ipynb](/docs/integrations/llms/predictionguard)                     |
 |Text Embedding|Embed String to Vectores|[Embeddings](https://docs.predictionguard.com/api-reference/api-reference/embeddings)| `from langchain_predictionguard import PredictionGuardEmbeddings` | [PredictionGuardEmbeddings.ipynb](/docs/integrations/text_embedding/predictionguard) |
+|Rerank Retriever|Rank strings based on relevance|[rerank](https://docs.predictionguard.com/api-reference/api-reference/rerank)|`from langchain.retrievers.document_compressors import PredictionGuardRerank`|[PredictionGuardRerank.ipynb](/docs/integrations/retrievers/PredictionGuardRerank)|
 
 ## Getting Started
 
@@ -41,6 +42,53 @@ from langchain_predictionguard import ChatPredictionGuard
 chat = ChatPredictionGuard(model="Hermes-3-Llama-3.1-8B")
 
 chat.invoke("Tell me a joke")
+```
+
+### Tool Calling
+
+```python
+from langchain_predictionguard import ChatPredictionGuard
+from langchain_core.messages import (
+    HumanMessage,
+    ToolMessage,
+)
+from langchain_core.tools import tool
+
+@tool
+def magic_function(number: int) -> int:
+    """Applies a magic operation to an integer
+
+    Args:
+        number: Number to have magic operation performed on
+    """
+    return number + 10
+
+def invoke_tools(tool_calls, messages):
+    for tool_call in tool_calls:
+        selected_tool = {"magic_function":magic_function}[
+            tool_call["name"].lower()
+        ]
+        tool_output = selected_tool.invoke(tool_call["args"])
+        messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+    return messages
+
+tools = [magic_function]
+
+llm = ChatPredictionGuard()
+llm_with_tools = llm.bind_tools(tools=tools)
+messages = [
+    HumanMessage(
+        content="What is the value of magic_function(2)?"
+    )
+]
+
+res = llm_with_tools.invoke(messages)
+while res.tool_calls:
+    messages.append(res)
+    messages = invoke_tools(res.tool_calls, messages)
+    res = llm_with_tools.invoke(messages)
+
+print(res.content)
 ```
 
 ## Embedding Models
@@ -79,3 +127,7 @@ llm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 
 llm.invoke("Tell me a joke about bears")
 ```
+
+### Reranker
+
+Usage examples for the Prediction Guard reranker are [here](/docs/integrations/retrievers/PredictionGuardReranker)
