@@ -312,11 +312,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     prevents errors and allows for a uniform method call regardless of the underlying
     model's capabilities.
 
-    Second, when a LLM decides to use a tool, it doesn't stream the thought process of
-    the tool call token by token in the final answer. Instead, it generates a complete
-    tool call request. If you are using the ``stream()`` method, this can lead to
-    unexpected behavior or errors if the application is expecting a continuous stream of
-    text.
+    Second, if an LLM decides to use a tool but doesn't support streaming tool calls, it
+    will generate a complete tool call request within a single chunk. If you are using
+    the ``stream()`` method, this can lead to unexpected behavior or errors if the
+    application is expecting a continuous stream of text.
 
     By setting ``disable_streaming='tool_calling'``, you instruct LangChain to
     automatically switch to a non-streaming (``invoke()``) behavior only when the tools
