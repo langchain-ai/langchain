@@ -58,16 +58,13 @@ def _create_usage_metadata(token_usage: dict) -> tuple[UsageMetadata, dict[str, 
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
     
-    # Build output token details for token-related metrics
     output_token_details = {}
     if "reasoning_tokens" in token_usage:
         output_token_details["reasoning"] = token_usage["reasoning_tokens"]
     
-    # Note: citation_tokens represents tokens used for citations, which are part of output
     if "citation_tokens" in token_usage:
         output_token_details["citation"] = token_usage["citation_tokens"]
     
-    # Build usage metadata
     usage_metadata_dict = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
@@ -338,7 +335,9 @@ class ChatPerplexity(BaseChatModel):
                 chunk = chunk.model_dump()
             # Collect standard usage metadata (transform from aggregate to delta)
             if total_usage := chunk.get("usage"):
-                lc_total_usage, usage_response_metadata = _create_usage_metadata(total_usage)
+                lc_total_usage, usage_response_metadata = _create_usage_metadata(
+                    total_usage
+                )
                 if prev_total_usage:
                     usage_metadata: Optional[UsageMetadata] = subtract_usage(
                         lc_total_usage, prev_total_usage
@@ -406,7 +405,9 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(messages=message_dicts, **params)
         if usage := getattr(response, "usage", None):
-            usage_metadata, usage_response_metadata = _create_usage_metadata(usage.model_dump())
+            usage_metadata, usage_response_metadata = _create_usage_metadata(
+                usage.model_dump()
+            )
         else:
             usage_metadata = None
             usage_response_metadata = {}
