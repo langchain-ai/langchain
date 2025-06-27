@@ -164,13 +164,13 @@ def _get_tool_calls_from_response(
     return tool_calls
 
 
-def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+def _lc_tool_call_to_openai_tool_call(_tool_call: ToolCall) -> dict:
     return {
         "type": "function",
-        "id": tool_call["id"],
+        "id": _tool_call["id"],
         "function": {
-            "name": tool_call["name"],
-            "arguments": tool_call["args"],
+            "name": _tool_call["name"],
+            "arguments": _tool_call["args"],
         },
     }
 
