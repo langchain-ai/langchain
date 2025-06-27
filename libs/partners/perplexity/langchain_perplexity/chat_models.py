@@ -49,34 +49,45 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
-def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+def _create_usage_metadata(token_usage: dict) -> tuple[UsageMetadata, dict[str, Any]]:
+    """Create usage metadata and non-token metadata from token usage data.
+    
+    Returns a tuple of (UsageMetadata, response_metadata_dict).
+    """
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
     
-    # Extract additional Perplexity-specific usage metadata
-    additional_metadata = {}
-    
-    # Add reasoning tokens if available (for reasoning models)
+    # Build output token details for token-related metrics
+    output_token_details = {}
     if "reasoning_tokens" in token_usage:
-        additional_metadata["reasoning_tokens"] = token_usage["reasoning_tokens"]
+        output_token_details["reasoning"] = token_usage["reasoning_tokens"]
     
-    # Add search-related metadata
-    if "num_search_queries" in token_usage:
-        additional_metadata["num_search_queries"] = token_usage["num_search_queries"]
-    
+    # Note: citation_tokens represents tokens used for citations, which are part of output
     if "citation_tokens" in token_usage:
-        additional_metadata["citation_tokens"] = token_usage["citation_tokens"]
+        output_token_details["citation"] = token_usage["citation_tokens"]
+    
+    # Build usage metadata
+    usage_metadata_dict = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+    
+    if output_token_details:
+        usage_metadata_dict["output_token_details"] = output_token_details
+    
+    usage_metadata = UsageMetadata(**usage_metadata_dict)
+    
+    # Build non-token response metadata
+    response_metadata = {}
+    if "num_search_queries" in token_usage:
+        response_metadata["num_search_queries"] = token_usage["num_search_queries"]
     
     if "search_context_size" in token_usage:
-        additional_metadata["search_context_size"] = token_usage["search_context_size"]
+        response_metadata["search_context_size"] = token_usage["search_context_size"]
     
-    return UsageMetadata(
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        total_tokens=total_tokens,
-        **additional_metadata
-    )
+    return usage_metadata, response_metadata
 
 
 class ChatPerplexity(BaseChatModel):
@@ -327,7 +338,7 @@ class ChatPerplexity(BaseChatModel):
                 chunk = chunk.model_dump()
             # Collect standard usage metadata (transform from aggregate to delta)
             if total_usage := chunk.get("usage"):
-                lc_total_usage = _create_usage_metadata(total_usage)
+                lc_total_usage, usage_response_metadata = _create_usage_metadata(total_usage)
                 if prev_total_usage:
                     usage_metadata: Optional[UsageMetadata] = subtract_usage(
                         lc_total_usage, prev_total_usage
@@ -337,6 +348,7 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
+                usage_response_metadata = {}
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -352,6 +364,10 @@ class ChatPerplexity(BaseChatModel):
             if (model_name := chunk.get("model")) and not added_model_name:
                 generation_info["model_name"] = model_name
                 added_model_name = True
+            
+            # Add usage response metadata to generation info
+            if usage_response_metadata:
+                generation_info.update(usage_response_metadata)
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
@@ -390,20 +406,25 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(messages=message_dicts, **params)
         if usage := getattr(response, "usage", None):
-            usage_metadata = _create_usage_metadata(usage.model_dump())
+            usage_metadata, usage_response_metadata = _create_usage_metadata(usage.model_dump())
         else:
             usage_metadata = None
+            usage_response_metadata = {}
 
         additional_kwargs = {}
         for attr in ["citations", "images", "related_questions"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
+        # Build response metadata with model name and usage metadata
+        response_metadata = {"model_name": getattr(response, "model", self.model)}
+        response_metadata.update(usage_response_metadata)
+
         message = AIMessage(
             content=response.choices[0].message.content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
-            response_metadata={"model_name": getattr(response, "model", self.model)},
+            response_metadata=response_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
