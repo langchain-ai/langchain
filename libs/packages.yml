@@ -683,3 +683,6 @@ packages:
   repo: surrealdb/langchain-surrealdb
   downloads: 291
   downloads_updated_at: '2025-06-25T20:06:46.206625+00:00'
+- name: langchain-zenrows
+  path: .
+  repo: ZenRows-Hub/langchain-zenrows
