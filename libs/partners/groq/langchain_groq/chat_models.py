@@ -83,7 +83,7 @@ from langchain_groq.version import __version__
 
 
 class ChatGroq(BaseChatModel):
-    """`Groq` Chat large language models API.
+    """Groq Chat large language models API.
 
     To use, you should have the
     environment variable ``GROQ_API_KEY`` set with your API key.
@@ -102,17 +102,27 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
+            Name of Groq model to use, e.g. ``llama-3.1-8b-instant``.
         temperature: float
-            Sampling temperature. Ranges from 0.0 to 1.0.
+            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         max_tokens: Optional[int]
             Max number of tokens to generate.
         reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
-            The format for reasoning output.
+            The format for reasoning output. Groq will default to ``raw`` if left
+            undefined.
 
-            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
-            - ``raw``: Includes reasoning within think tags in the content.
-            - ``hidden``: Returns only the final answer.
+            - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
+              response concise. Reasoning will be returned in the
+              ``additional_kwargs.reasoning_content`` field of the response.
+            - ``'raw'``: Includes reasoning within think tags (e.g.
+              ``<think>{reasoning_content}</think>``).
+            - ``'hidden'``: Returns only the final answer content. Note: this only
+              supresses reasoning content in the response; the model will still perform
+              reasoning unless overridden in ``reasoning_effort``.
+
+            See the `Groq documentation
+            <https://console.groq.com/docs/reasoning#reasoning>`__ for more
+            details and a list of supported reasoning models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -123,7 +133,7 @@ class ChatGroq(BaseChatModel):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            Groq API key. If not passed in will be read from env var GROQ_API_KEY.
+            Groq API key. If not passed in will be read from env var ``GROQ_API_KEY``.
         base_url: Optional[str]
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
@@ -168,11 +178,9 @@ class ChatGroq(BaseChatModel):
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
     Stream:
-
-        Streaming `text` for each content chunk received:
-
         .. code-block:: python
 
+            # Streaming `text` for each content chunk received
             for chunk in llm.stream(messages):
                 print(chunk.text(), end="")
 
@@ -188,10 +196,9 @@ class ChatGroq(BaseChatModel):
             content='' response_metadata={'finish_reason': 'stop'}
             id='run-4e9f926b-73f5-483b-8ef5-09533d925853
 
-        Reconstructing a full response:
-
         .. code-block:: python
 
+            # Reconstructing a full response
             stream = llm.stream(messages)
             full = next(stream)
             for chunk in stream:
@@ -283,7 +290,7 @@ class ChatGroq(BaseChatModel):
 
         See ``ChatGroq.with_structured_output()`` for more.
 
-    Response metadata
+    Response metadata:
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)
@@ -302,7 +309,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """  # noqa: E501
+    """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -312,23 +319,44 @@ class ChatGroq(BaseChatModel):
     """What sampling temperature to use."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = None
-    """The format for reasoning output.
+    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
+    """The format for reasoning output. Groq will default to raw if left undefined.
 
-            - ``parsed``: Separates reasoning into a dedicated field while keeping the response concise.
-            - ``raw``: Includes reasoning within think tags in the content.
-            - ``hidden``: Returns only the final answer.
-    """  # noqa: E501
+    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
+      response concise. Reasoning will be returned in the
+      ``additional_kwargs.reasoning_content`` field of the response.
+    - ``'raw'``: Includes reasoning within think tags (e.g.
+      ``<think>{reasoning_content}</think>``).
+    - ``'hidden'``: Returns only the final answer content. Note: this only supresses
+      reasoning content in the response; the model will still perform reasoning unless
+      overridden in ``reasoning_effort``.
+
+    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
+    for more details and a list of supported reasoning models.
+    """
+    reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
+    """The level of effort the model will put into reasoning. Groq will default to
+    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
+    not apply and ``reasoning_content`` will not be returned.
+
+    - ``'none'``: Disable reasoning. The model will not use any reasoning tokens when
+      generating a response.
+    - ``'default'``: Enable reasoning.
+
+    See the `Groq documentation
+    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
+    details and a list of models that support setting a reasoning effort.
+    """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
     )
-    """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
+    """Automatically inferred from env var ``GROQ_API_KEY`` if not provided."""
     groq_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service
+    """Base URL path for API requests. Leave blank if not using a proxy or service
         emulator."""
     # to support explicit proxy for Groq
     groq_proxy: Optional[str] = Field(
@@ -426,11 +454,11 @@ class ChatGroq(BaseChatModel):
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "Could not import groq python package. "
                 "Please install it with `pip install groq`."
-            )
+            ) from exc
         return self
 
     #
@@ -624,6 +652,7 @@ class ChatGroq(BaseChatModel):
             "temperature": self.temperature,
             "stop": self.stop,
             "reasoning_format": self.reasoning_format,
+            "reasoning_effort": self.reasoning_effort,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -1227,7 +1256,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )

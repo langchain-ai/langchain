@@ -60,6 +60,7 @@ from langchain_openai.chat_models.base import (
     _convert_message_to_dict,
     _convert_to_openai_response_format,
     _create_usage_metadata,
+    _create_usage_metadata_responses,
     _format_message_content,
     _get_last_messages,
     _oai_structured_outputs_parser,
@@ -945,6 +946,25 @@ def test__create_usage_metadata() -> None:
         total_tokens=26,
         input_token_details={},
         output_token_details={},
+    )
+
+
+def test__create_usage_metadata_responses() -> None:
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50},
+        output_token_details={"reasoning": 10},
     )
 
 
