@@ -145,12 +145,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
     """
 
-    _client: Client = PrivateAttr(default=None)  # type: ignore
+    _client: Optional[Client] = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
+    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
@@ -262,6 +262,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
+        if not self._client:
+            raise ValueError(
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
+            )
         embedded_docs = self._client.embed(
             self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
@@ -273,6 +278,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
+        if not self._async_client:
+            raise ValueError(
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
+            )
         embedded_docs = (
             await self._async_client.embed(
                 self.model, texts, keep_alive=self.keep_alive
