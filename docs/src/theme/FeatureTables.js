@@ -1045,7 +1045,7 @@ const FEATURE_TABLES = {
                 searchByVector: true,
                 searchWithScore: true,
                 async: true,
-                passesStandardTests: true,
+                passesStandardTests: false,
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
