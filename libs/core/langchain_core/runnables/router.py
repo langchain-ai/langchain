@@ -148,22 +148,22 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         if not inputs:
             return []
 
-        keys = [input["key"] for input in inputs]
-        actual_inputs = [input["input"] for input in inputs]
+        keys = [input_["key"] for input_ in inputs]
+        actual_inputs = [input_["input"] for input_ in inputs]
         if any(key not in self.runnables for key in keys):
             msg = "One or more keys do not have a corresponding runnable"
             raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable, input: Input, config: RunnableConfig
+            runnable: Runnable, input_: Input, config: RunnableConfig
         ) -> Union[Output, Exception]:
             if return_exceptions:
                 try:
-                    return runnable.invoke(input, config, **kwargs)
+                    return runnable.invoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return runnable.invoke(input, config, **kwargs)
+                return runnable.invoke(input_, config, **kwargs)
 
         runnables = [self.runnables[key] for key in keys]
         configs = get_config_list(config, len(inputs))
@@ -185,22 +185,22 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         if not inputs:
             return []
 
-        keys = [input["key"] for input in inputs]
-        actual_inputs = [input["input"] for input in inputs]
+        keys = [input_["key"] for input_ in inputs]
+        actual_inputs = [input_["input"] for input_ in inputs]
         if any(key not in self.runnables for key in keys):
             msg = "One or more keys do not have a corresponding runnable"
             raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable, input: Input, config: RunnableConfig
+            runnable: Runnable, input_: Input, config: RunnableConfig
         ) -> Union[Output, Exception]:
             if return_exceptions:
                 try:
-                    return await runnable.ainvoke(input, config, **kwargs)
+                    return await runnable.ainvoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return await runnable.ainvoke(input, config, **kwargs)
+                return await runnable.ainvoke(input_, config, **kwargs)
 
         runnables = [self.runnables[key] for key in keys]
         configs = get_config_list(config, len(inputs))

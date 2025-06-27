@@ -5,19 +5,18 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = [
-    "langsmith<0.4,>=0.1.125",
+    "langsmith>=0.3.45",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
     "packaging<25,>=23.2",
     "typing-extensions>=4.7",
-    "pydantic<3.0.0,>=2.5.2; python_full_version < \"3.12.4\"",
-    "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
+    "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.55"
+version = "0.3.66"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -70,12 +69,10 @@ langchain-text-splitters = { path = "../text-splitters" }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = "False"
 warn_return_any = "False"
-strict_equality = "False"
 
 
 [tool.ruff]
@@ -92,6 +89,7 @@ ignore = [
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09", # Too many something (arg, statements, etc)
+    "RUF012", # Doesn't play well with Pydantic
     "TC001", # Doesn't play well with Pydantic
     "TC002", # Doesn't play well with Pydantic
     "TC003", # Doesn't play well with Pydantic
@@ -100,13 +98,10 @@ ignore = [
     "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
-    "A",
     "ANN401",
     "BLE",
     "ERA",
     "PLR2004",
-    "RUF",
-    "SLF",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
@@ -133,5 +128,5 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D", "S",]
+"tests/**" = [ "D", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]

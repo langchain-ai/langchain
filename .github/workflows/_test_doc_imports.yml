@@ -30,7 +30,7 @@ jobs:
 
       - name: Install langchain editable
         run: |
-          VIRTUAL_ENV=.venv uv pip install langchain-experimental -e libs/core libs/langchain libs/community
+          VIRTUAL_ENV=.venv uv pip install langchain-experimental langchain-community -e libs/core libs/langchain
 
       - name: Check doc imports
         shell: bash

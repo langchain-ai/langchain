@@ -10,10 +10,12 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
     TypedDict,
+    Union,
     cast,
 )
 
@@ -353,8 +355,8 @@ class HTMLSectionSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> List[Document]:
+        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+    ) -> list[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -389,10 +391,8 @@ class HTMLSectionSplitter:
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
         try:
-            from bs4 import (
-                BeautifulSoup,  # type: ignore[import-untyped]
-                PageElement,
-            )
+            from bs4 import BeautifulSoup
+            from bs4.element import PageElement
         except ImportError as e:
             raise ImportError(
                 "Unable to import BeautifulSoup/PageElement, \
@@ -411,13 +411,13 @@ class HTMLSectionSplitter:
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
-                section_content: List = []
+                section_content: list[str] = []
             else:
                 current_header = header_element.text.strip()
                 current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
-                if i + 1 < len(headers) and element == headers[i + 1]:
+                if i + 1 < len(headers) and element == headers[i + 1]:  # type: ignore[comparison-overlap]
                     break
                 if isinstance(element, str):
                     section_content.append(element)
@@ -537,6 +537,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         preserve_parent_metadata (bool): Whether to pass through parent document
             metadata to split documents when calling
             ``transform_documents/atransform_documents()``.
+        keep_separator (Union[bool, Literal["start", "end"]]): Whether separators
+            should be at the beginning of a chunk, at the end, or not at all.
 
     Example:
         .. code-block:: python
@@ -586,6 +588,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         allowlist_tags: Optional[List[str]] = None,
         denylist_tags: Optional[List[str]] = None,
         preserve_parent_metadata: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
     ):
         """Initialize splitter."""
         try:
@@ -613,6 +616,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._external_metadata = external_metadata or {}
         self._allowlist_tags = allowlist_tags
         self._preserve_parent_metadata = preserve_parent_metadata
+        self._keep_separator = keep_separator
         if allowlist_tags:
             self._allowlist_tags = list(
                 set(allowlist_tags + [header[0] for header in headers_to_split_on])
@@ -627,21 +631,23 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if separators:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
+                keep_separator=keep_separator,
                 chunk_size=max_chunk_size,
                 chunk_overlap=chunk_overlap,
             )
         else:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
+                keep_separator=keep_separator,
+                chunk_size=max_chunk_size,
+                chunk_overlap=chunk_overlap,
             )
 
         if self._stopword_removal:
             try:
-                import nltk  # type: ignore
-                from nltk.corpus import stopwords  # type: ignore
+                import nltk
 
                 nltk.download("stopwords")
-                self._stopwords = set(stopwords.words(self._stopword_lang))
+                self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
             except ImportError:
                 raise ImportError(
                     "Could not import nltk. Please install it with 'pip install nltk'."
@@ -902,7 +908,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return documents
 
     def _create_documents(
-        self, headers: dict, content: str, preserved_elements: dict
+        self, headers: dict[str, str], content: str, preserved_elements: dict[str, str]
     ) -> List[Document]:
         """Creates Document objects from the provided headers, content, and elements.
 
@@ -928,7 +934,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
-        self, content: str, metadata: dict, preserved_elements: dict
+        self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]
     ) -> List[Document]:
         """Further splits the content into smaller chunks.
 
@@ -959,7 +965,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return result
 
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict
+        self, content: str, preserved_elements: dict[str, str]
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 

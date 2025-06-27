@@ -57,6 +57,10 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     ]:
         return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
+    @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
@@ -98,6 +102,21 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                     "mime_type": "application/pdf",
                     "data": pdf_data,
                     "filename": "my-pdf",  # OpenAI requires a filename
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
                 },
             ]
         )

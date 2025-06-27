@@ -376,10 +376,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def _resolve_header_stack(self, header_depth: int, header_text: str) -> None:
         for i, (depth, _) in enumerate(self.current_header_stack):
-            if depth == header_depth:
-                self.current_header_stack[i] = (header_depth, header_text)
-                self.current_header_stack = self.current_header_stack[: i + 1]
-                return
+            if depth >= header_depth:
+                # Truncate everything from this level onward
+                self.current_header_stack = self.current_header_stack[:i]
+                break
         self.current_header_stack.append((header_depth, header_text))
 
     def _resolve_code_chunk(self, current_line: str, raw_lines: List[str]) -> str:
@@ -404,18 +404,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line: str) -> Union[re.Match, None]:
+    def _match_header(self, line: str) -> Union[re.Match[str], None]:
         match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
         return None
 
-    def _match_code(self, line: str) -> Union[re.Match, None]:
+    def _match_code(self, line: str) -> Union[re.Match[str], None]:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> Union[re.Match, None]:
+    def _match_horz(self, line: str) -> Union[re.Match[str], None]:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]
