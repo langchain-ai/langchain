@@ -612,7 +612,7 @@ class ChatOllama(BaseChatModel):
                 "images": images,
             }
             if tool_calls:
-                msg["tool_calls"] = tool_calls  # type: ignore
+                msg["tool_calls"] = tool_calls
             if tool_call_id:
                 msg["tool_call_id"] = tool_call_id
             ollama_messages.append(msg)
