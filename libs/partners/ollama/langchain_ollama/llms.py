@@ -109,6 +109,9 @@ class OllamaLLM(BaseLLM):
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
 
+    think: Optional[bool] = None
+    """Enable/disable thinking in [supported models](https://ollama.com/search?c=thinking)."""
+
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 

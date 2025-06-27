@@ -165,6 +165,7 @@ def _get_tool_calls_from_response(
 
 
 def _lc_tool_call_to_openai_tool_call(_tool_call: ToolCall) -> dict:
+    """Convert a LangChain tool call to an OpenAI tool call format."""
     return {
         "type": "function",
         "id": _tool_call["id"],
