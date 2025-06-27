@@ -28,7 +28,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata, subtract_usage
+from langchain_core.messages.ai import OutputTokenDetails, UsageMetadata, subtract_usage
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -58,7 +58,7 @@ def _create_usage_metadata(token_usage: dict) -> tuple[UsageMetadata, dict[str, 
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
     
-    output_token_details = {}
+    output_token_details: OutputTokenDetails = {}
     if "reasoning_tokens" in token_usage:
         output_token_details["reasoning"] = token_usage["reasoning_tokens"]
     
@@ -76,7 +76,6 @@ def _create_usage_metadata(token_usage: dict) -> tuple[UsageMetadata, dict[str, 
     
     usage_metadata = UsageMetadata(**usage_metadata_dict)
     
-    # Build non-token response metadata
     response_metadata = {}
     if "num_search_queries" in token_usage:
         response_metadata["num_search_queries"] = token_usage["num_search_queries"]
