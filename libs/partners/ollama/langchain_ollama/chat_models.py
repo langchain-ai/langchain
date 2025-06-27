@@ -650,10 +650,12 @@ class ChatOllama(BaseChatModel):
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            async for part in await self._async_client.chat(**chat_params):
-                yield part
+            if self._async_client:
+                async for part in await self._async_client.chat(**chat_params):
+                    yield part
         else:
-            yield await self._async_client.chat(**chat_params)
+            if self._async_client:
+                yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
@@ -664,9 +666,11 @@ class ChatOllama(BaseChatModel):
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            yield from self._client.chat(**chat_params)
+            if self._client:
+                yield from self._client.chat(**chat_params)
         else:
-            yield self._client.chat(**chat_params)
+            if self._client:
+                yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
