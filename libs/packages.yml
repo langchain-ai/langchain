@@ -686,3 +686,4 @@ packages:
 - name: langchain-db2
   path: libs/langchain-db2
   repo: langchain-ai/langchain-ibm
+  provider_page: ibm
