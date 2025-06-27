@@ -456,12 +456,12 @@ class ChatOllama(BaseChatModel):
     For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
     """
 
-    _client: Client = PrivateAttr(default=None)  # type: ignore
+    _client: Optional[Client] = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
+    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
@@ -476,7 +476,7 @@ class ChatOllama(BaseChatModel):
 
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
+        if self.stop is not None:
             stop = self.stop
 
         options_dict = kwargs.pop(
