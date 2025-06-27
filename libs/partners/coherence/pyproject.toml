@@ -1,0 +1,72 @@
+[project]
+name = "langchain-coherence"
+version = "0.0.1"
+description = "LangChain integration for Oracle Coherence as a vector store."
+authors = [{ name = "Your Name", email = "you@example.com" }]
+license = {text = "MIT"}
+readme = "README.md"
+dependencies = [
+    "langchain-core>=0.1.20",
+    "coherence-client>=2.0.3"
+]
+requires-python = ">=3.9"
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/coherence"
+repository = "https://github.com/langchain-ai/langchain"
+
+[project.optional-dependencies]
+lint = [
+    "ruff<0.12.0,>=0.11.2",
+]
+typing = [
+    "mypy<1.16,>=1.15",
+]
+test = [
+    "pytest<9,>=8",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "langchain_huggingface",
+    "sentence_transformers"
+]
+
+[tool.mypy]
+strict = "True"
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [ "ALL",]
+ignore = [
+    "C90", # McCabe complexity
+    "COM812", # Messes with the formatter
+    "FA100", # Can't activate since we exclude UP007 for now
+    "FIX002", # Line contains TODO
+    "ISC001", # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09", # Too many something (arg, statements, etc)
+    "RUF012", # Doesn't play well with Pydantic
+    "TC001", # Doesn't play well with Pydantic
+    "TC002", # Doesn't play well with Pydantic
+    "TC003", # Doesn't play well with Pydantic
+    "TD002", # Missing author in TODO
+    "TD003", # Missing issue link in TODO
+    "UP007", # Doesn't play well with Pydantic in Python 3.9
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+    "ERA",
+    "PLR2004",
+]
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+pydocstyle.convention = "google"
+pydocstyle.ignore-var-parameters = true
+
+[tool.pytest.ini_options]
+syncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::UserWarning:pkg_resources"
+]
