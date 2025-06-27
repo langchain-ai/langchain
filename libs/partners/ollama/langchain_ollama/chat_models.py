@@ -443,15 +443,16 @@ class ChatOllama(BaseChatModel):
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
-    passing to the httpx AsyncClient.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#asyncclient)
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX
+    AsyncClient.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
-    passing to the httpx Client.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
+    """Additional kwargs to merge with client_kwargs before passing to the httpx Client.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
     _client: Client = PrivateAttr(default=None)  # type: ignore
