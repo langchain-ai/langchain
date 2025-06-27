@@ -2278,11 +2278,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
         detail.
 
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini")
+            llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
             tool = {"type": "web_search_preview"}
             llm_with_tools = llm.bind_tools([tool])
@@ -2323,7 +2335,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 
@@ -2342,10 +2354,33 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
+        .. versionadded:: 0.3.26
+
+        You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
+        Input messages up to the most recent response will then be dropped from request
+        payloads, and ``previous_response_id`` will be set using the ID of the most
+        recent response.
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
+
     .. dropdown:: Reasoning output
 
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
+
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
 
         .. code-block:: python
 
@@ -2357,24 +2392,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             }
 
             llm = ChatOpenAI(
-                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+                model="o4-mini", reasoning=reasoning, output_version="responses/v1"
             )
             response = llm.invoke("What is 3^3?")
 
+            # Response text
             print(f"Output: {response.text()}")
-            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+            # Reasoning summaries
+            for block in response.content:
+                if block["type"] == "reasoning":
+                    for summary in block["summary"]:
+                        print(summary["text"])
 
         .. code-block:: none
 
-            Output: 3^3 = 27.
-
-            Reasoning: {
-                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
-                'summary': [
-                    {'text': 'The user wants to know...', 'type': 'summary_text'}
-                ],
-                'type': 'reasoning'
-            }
+            Output: 3³ = 27
+            Reasoning: The user wants to know...
 
     .. dropdown:: Structured output
 
