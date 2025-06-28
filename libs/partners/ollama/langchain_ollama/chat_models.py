@@ -1,6 +1,7 @@
 """Ollama chat models."""
 
 import json
+import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -15,6 +16,7 @@ from typing import (
 from uuid import uuid4
 
 from httpx import ConnectError
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -51,7 +53,7 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options, ResponseError
-from pydantic import BaseModel, PrivateAttr, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
@@ -353,18 +355,26 @@ class ChatOllama(BaseChatModel):
     """Model name to use."""
 
     validate_model_on_init: bool = True
-    """Whether to validate the model exists in ollama locally on initialization."""
+    """Whether to validate the model exists in Ollama locally on initialization."""
 
-    extract_reasoning: Optional[Union[bool, tuple[str, str]]] = False
+    extract_reasoning: Optional[Union[bool, tuple[str, str]]] = deprecated(
+        name="callback_manager", since="0.3.4", alternative="reason"
+    )(
+        Field(
+            default=False,
+        )
+    )
     """Whether to extract the reasoning tokens in think blocks.
     Extracts ``chunk.content`` to ``chunk.additional_kwargs.reasoning_content``.
     If a tuple is supplied, they are assumed to be the (start, end) tokens.
     If ``extract_reasoning=True``, the tokens will default to (``<think>``, 
     ``</think>``).
+
+    NOTE: This is now performed automatically by Ollama when `reason` is set to `True`.
     """
 
-    reason: Optional[bool] = True
-    """Enable/disable reasoning (thinking) mode in 
+    reason: Optional[bool] = False
+    """Enable/disable reasoning (thinking) mode in
     [supported models](https://ollama.com/search?c=thinking)."""
 
     mirostat: Optional[int] = None
@@ -527,6 +537,17 @@ class ChatOllama(BaseChatModel):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
+        if self.extract_reasoning or not self.extract_reasoning:
+            warnings.warn(
+                (
+                    "The parameter `extract_reasoning` is deprecated and will be "
+                    "removed in a future version. Please use the `reason` parameter "
+                    "instead."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         client_kwargs = self.client_kwargs or {}
 
         sync_client_kwargs = client_kwargs
@@ -661,28 +682,6 @@ class ChatOllama(BaseChatModel):
 
         return ollama_messages
 
-    def _extract_reasoning(
-        self, message_chunk: BaseMessageChunk, is_thinking: bool
-    ) -> tuple[BaseMessageChunk, bool]:
-        """Mutate a message chunk to extract reasoning content."""
-        if not self.extract_reasoning:
-            return message_chunk, is_thinking
-        if self.extract_reasoning is True:
-            start_token = DEFAULT_THINK_TOKEN_START
-            end_token = DEFAULT_THINK_TOKEN_END
-        else:
-            start_token, end_token = cast(tuple, self.extract_reasoning)
-        if start_token in message_chunk.content:
-            is_thinking = True
-        content = message_chunk.content
-        if is_thinking:
-            message_chunk.additional_kwargs["reasoning_content"] = content
-            message_chunk.content = ""
-        if end_token in content:
-            is_thinking = False
-
-        return message_chunk, is_thinking
-
     async def _acreate_chat_stream(
         self,
         messages: list[BaseMessage],
@@ -807,7 +806,6 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -815,14 +813,26 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
+
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # We append `thinking` content to `additional_kwargs` regardless of
+                # whether `reason` is set to True or not. It should only be present
+                # when set to True in the model, though.
+                additional_kwargs = {}
+                if "message" in stream_resp and (
+                    thinking_content := stream_resp["message"].get("thinking")
+                ):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
+                        content=content,
+                        additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
@@ -830,15 +840,7 @@ class ChatOllama(BaseChatModel):
                     ),
                     generation_info=generation_info,
                 )
-                if chunk.generation_info and (
-                    model := chunk.generation_info.get("model")
-                ):
-                    chunk.generation_info["model_name"] = model  # backwards compat
-                if self.extract_reasoning:
-                    message, is_thinking = self._extract_reasoning(
-                        chunk.message, is_thinking
-                    )
-                    chunk.message = message
+
                 yield chunk
 
     def _stream(
@@ -862,7 +864,6 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -870,14 +871,26 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
+
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # We append `thinking` content to `additional_kwargs` regardless of
+                # whether `reason` is set to True or not. It should only be present
+                # when set to True in the model, though.
+                additional_kwargs = {}
+                if "message" in stream_resp and (
+                    thinking_content := stream_resp["message"].get("thinking")
+                ):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
+                        content=content,
+                        additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
@@ -885,15 +898,7 @@ class ChatOllama(BaseChatModel):
                     ),
                     generation_info=generation_info,
                 )
-                if chunk.generation_info and (
-                    model := chunk.generation_info.get("model")
-                ):
-                    chunk.generation_info["model_name"] = model  # backwards compat
-                if self.extract_reasoning:
-                    message, is_thinking = self._extract_reasoning(
-                        chunk.message, is_thinking
-                    )
-                    chunk.message = message
+
                 yield chunk
 
     async def _astream(
