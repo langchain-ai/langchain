@@ -211,6 +211,11 @@ class ChatOllama(BaseChatModel):
     Key init args — completion params:
         model: str
             Name of Ollama model to use.
+        reason: Optional[bool]
+            Enable/disable reasoning (thinking) mode for
+            `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
+            is returned as ``reasoning_content`` in ``additional_kwargs`` of the
+            returned message.
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         num_predict: Optional[int]
@@ -365,12 +370,15 @@ class ChatOllama(BaseChatModel):
     If ``extract_reasoning=True``, the tokens will default to (``<think>``, 
     ``</think>``).
 
-    NOTE: This is now performed automatically by Ollama when `reason` is set to `True`.
+    **Note:** This is now performed automatically by Ollama when `reason` is set to 
+    `True`.
     """
 
     reason: Optional[bool] = False
-    """Enable/disable reasoning (thinking) mode in
-    [supported models](https://ollama.com/search?c=thinking)."""
+    """Enable/disable reasoning (thinking) mode for
+    `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
+    is returned as ``reasoning_content`` in ``additional_kwargs`` of the
+    returned message."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -460,13 +468,13 @@ class ChatOllama(BaseChatModel):
     async_client_kwargs: Optional[dict] = {}
     """Additional kwargs to merge with client_kwargs before
     passing to the httpx AsyncClient.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#asyncclient)
+    `Full list of params. <https://www.python-httpx.org/api/#asyncclient>`__
     """
 
     sync_client_kwargs: Optional[dict] = {}
     """Additional kwargs to merge with client_kwargs before
     passing to the httpx Client.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
+    `Full list of params. <https://www.python-httpx.org/api/#client>`__
     """
 
     _client: Optional[Client] = PrivateAttr(default=None)
@@ -961,7 +969,7 @@ class ChatOllama(BaseChatModel):
             method: The method for steering model generation, one of:
 
                 - "json_schema":
-                    Uses Ollama's structured output API: https://ollama.com/blog/structured-outputs
+                    Uses Ollama's `structured output API <https://ollama.com/blog/structured-outputs>`__
                 - "function_calling":
                     Uses Ollama's tool-calling API
                 - "json_mode":
