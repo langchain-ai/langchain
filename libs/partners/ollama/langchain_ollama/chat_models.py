@@ -363,6 +363,10 @@ class ChatOllama(BaseChatModel):
     ``</think>``).
     """
 
+    reason: Optional[bool] = True
+    """Enable/disable reasoning (thinking) mode in 
+    [supported models](https://ollama.com/search?c=thinking)."""
+
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
     (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
@@ -511,6 +515,7 @@ class ChatOllama(BaseChatModel):
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            "think": kwargs.pop("reason", self.reason),
             **kwargs,
         }
 
