@@ -810,6 +810,8 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
+                    if "model" in generation_info:
+                        generation_info["model_name"] = generation_info["model"]
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
@@ -868,6 +870,8 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
+                    if "model" in generation_info:
+                        generation_info["model_name"] = generation_info["model"]
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
