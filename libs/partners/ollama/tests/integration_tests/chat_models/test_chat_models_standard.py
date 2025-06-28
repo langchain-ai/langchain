@@ -1,6 +1,9 @@
 """Test chat model integration using standard integration tests."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
+from httpx import ConnectError
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
@@ -47,3 +50,12 @@ class TestChatOllama(ChatModelIntegrationTests):
     )
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         await super().test_tool_calling_async(model)
+
+    @patch("langchain_ollama.chat_models.Client.list")
+    def test_init_connection_error(self, mock_list: MagicMock) -> None:
+        """Test that a ValueError wrapping ConnectError is raised on connect failure."""
+        mock_list.side_effect = ConnectError("Test connection error")
+        with pytest.raises(ValueError) as excinfo:
+            ChatOllama(model="any-model")
+        assert "Connection to Ollama failed" in str(excinfo.value)
+        assert "Test connection error" in str(excinfo.value)
