@@ -1,13 +1,17 @@
 """Test Ollama Chat API wrapper."""
 
+import pytest
+
 from langchain_ollama import OllamaLLM
 
 
+@pytest.mark.enable_socket
 def test_initialization() -> None:
     """Test integration initialization."""
     OllamaLLM(model="llama3")
 
 
+@pytest.mark.enable_socket
 def test_model_params() -> None:
     # Test standard tracing params
     llm = OllamaLLM(model="llama3")

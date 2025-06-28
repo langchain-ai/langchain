@@ -13,6 +13,7 @@ from langchain_tests.unit_tests import ChatModelUnitTests
 from langchain_ollama.chat_models import ChatOllama, _parse_arguments_from_tool_call
 
 
+@pytest.mark.enable_socket
 class TestChatOllama(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> type[ChatOllama]:
@@ -42,6 +43,7 @@ def _mock_httpx_client_stream(
     )
 
 
+@pytest.mark.enable_socket
 def test_arbitrary_roles_accepted_in_chatmessages(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
