@@ -17,7 +17,7 @@ def test_model_params() -> None:
     assert ls_params == {
         "ls_provider": "ollama",
         "ls_model_type": "llm",
-        "ls_model_name": "llama3",
+        "ls_model_name": MODEL_NAME,
     }
 
     llm = OllamaLLM(model=MODEL_NAME, num_predict=3)
