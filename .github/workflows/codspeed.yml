@@ -55,8 +55,8 @@ jobs:
           run: |
             cd ${{ matrix.working-directory }}
             if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
-              uv run --no-sync pytest ./tests/benchmarks --codspeed
+              uv run --no-sync pytest ./tests/benchmarks --codspeed --codspeed-max-time=5
             else
-              uv run --no-sync pytest ./tests/ --codspeed
+              uv run --no-sync pytest ./tests/ --codspeed --codspeed-max-time=5
             fi
           mode: ${{ matrix.mode || 'instrumentation' }}
