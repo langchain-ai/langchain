@@ -33,6 +33,7 @@ test = [
     "langchain-google-genai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/genai",
     "langchain-groq",
     "langchain-mistralai",
+    "langchain-tavily",
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
     "langgraph",
