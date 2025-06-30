@@ -23,6 +23,8 @@ from typing import (
     cast,
 )
 
+from pydantic.fields import FieldInfo
+from pydantic.v1.fields import FieldInfo as FieldInfoV1
 from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
@@ -152,10 +154,6 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import (  # type: ignore[attr-defined]
-            FieldInfoV1,
-            FieldInfoV2,
-        )
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -249,7 +247,7 @@ def deprecated(
                     ),
                 )
 
-        elif isinstance(obj, FieldInfoV2):
+        elif isinstance(obj, FieldInfo):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -261,7 +259,7 @@ def deprecated(
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
-                    FieldInfoV2(
+                    FieldInfo(
                         default=obj.default,
                         default_factory=obj.default_factory,
                         description=new_doc,

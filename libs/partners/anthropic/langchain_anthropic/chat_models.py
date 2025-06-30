@@ -69,6 +69,10 @@ from pydantic import (
 )
 from typing_extensions import NotRequired, TypedDict
 
+from langchain_anthropic._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -955,6 +959,8 @@ class ChatAnthropic(BaseChatModel):
 
         .. dropdown:: Extended caching
 
+            .. versionadded:: 0.3.15
+
             The cache lifetime is 5 minutes by default. If this is too short, you can
             apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
             beta header:
@@ -967,6 +973,28 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            Details of cached token counts will be included on the ``InputTokenDetails``
+            of response's ``usage_metadata``:
+
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.usage_metadata
+
+            .. code-block:: python
+
+                {
+                    "input_tokens": 1500,
+                    "output_tokens": 200,
+                    "total_tokens": 1700,
+                    "input_token_details": {
+                        "cache_read": 0,
+                        "cache_creation": 1000,
+                        "ephemeral_1h_input_tokens": 750,
+                        "ephemeral_5m_input_tokens": 250,
+                    }
+                }
 
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`_
             for detail.
@@ -1276,11 +1304,29 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
-        return anthropic.Client(**self._client_params)
+        client_params = self._client_params
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
+        http_client = _get_default_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.Client(**params)
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
-        return anthropic.AsyncClient(**self._client_params)
+        client_params = self._client_params
+        http_client_params = {"base_url": client_params["base_url"]}
+        if "timeout" in client_params:
+            http_client_params["timeout"] = client_params["timeout"]
+        http_client = _get_default_async_httpx_client(**http_client_params)
+        params = {
+            **client_params,
+            "http_client": http_client,
+        }
+        return anthropic.AsyncClient(**params)
 
     def _get_request_payload(
         self,
