@@ -34,6 +34,12 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
+    reason: Optional[bool] = False
+    """Enable/disable reasoning (thinking) mode for
+    `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
+    is returned as ``reasoning_content`` in ``additional_kwargs`` of the
+    returned message."""
+
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
     (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
@@ -180,6 +186,7 @@ class OllamaLLM(BaseLLM):
             "prompt": prompt,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
+            "think": kwargs.pop("reason", self.reason),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
@@ -353,11 +360,19 @@ class OllamaLLM(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                additional_kwargs = {}
+                if thinking_content := stream_resp.get("thinking"):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+                    generation_info={
+                        "finish_reason": self.stop,
+                        **additional_kwargs,
+                        **(
+                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                        ),
+                    },
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -375,11 +390,19 @@ class OllamaLLM(BaseLLM):
     ) -> AsyncIterator[GenerationChunk]:
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                additional_kwargs = {}
+                if thinking_content := stream_resp.get("thinking"):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+                    generation_info={
+                        "finish_reason": self.stop,
+                        **additional_kwargs,
+                        **(
+                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                        ),
+                    },
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(

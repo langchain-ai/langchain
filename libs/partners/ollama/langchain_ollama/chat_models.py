@@ -525,10 +525,10 @@ class ChatOllama(BaseChatModel):
             "messages": ollama_messages,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
+            "think": kwargs.pop("reason", self.reason),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
-            "think": kwargs.pop("reason", self.reason),
             **kwargs,
         }
 
