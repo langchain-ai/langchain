@@ -24,7 +24,7 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception as exc:
+        except Exception:
             logging.exception("Exception occurred in __del__")
             pass
 
@@ -39,7 +39,7 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception as exc:
+        except Exception:
             logging.exception("Exception occurred in __del__")
 
 
