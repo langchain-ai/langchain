@@ -34,11 +34,14 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
-    reason: Optional[bool] = False
+    reasoning: Optional[bool] = False
     """Enable/disable reasoning (thinking) mode for
     `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
     is returned as ``reasoning_content`` in ``additional_kwargs`` of the
-    returned message."""
+    returned message. If set to ``None``, Ollama will default to having the
+    model use reasoning, however ``<think>`` tags will be present in the
+    response content as opposed to being parsed out. If set to ``False``,
+    reasoning will be disabled and no reasoning will occur."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -115,9 +118,6 @@ class OllamaLLM(BaseLLM):
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
 
-    think: Optional[bool] = None
-    """Enable/disable thinking in [supported models](https://ollama.com/search?c=thinking)."""
-
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
@@ -186,7 +186,7 @@ class OllamaLLM(BaseLLM):
             "prompt": prompt,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
-            "think": kwargs.pop("reason", self.reason),
+            "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
