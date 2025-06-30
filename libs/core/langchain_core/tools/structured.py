@@ -16,7 +16,6 @@ from typing import (
 )
 
 from pydantic import Field, SkipValidation
-from pydantic._internal._model_construction import ModelMetaclass
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -198,10 +197,11 @@ class StructuredTool(BaseTool):
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                if isinstance(source_function, ModelMetaclass):
-                    description_ = args_schema.__doc__
-                else:
-                    description_ = args_schema.__doc__ or None
+                description_ = args_schema.__doc__
+                if "A base class for creating Pydantic models" in description_:
+                    description_ = ""
+                elif not description_:
+                    description_ = None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:
