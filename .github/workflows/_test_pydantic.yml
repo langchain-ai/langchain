@@ -43,6 +43,8 @@ jobs:
 
       - name: Overwrite pydantic version
         shell: bash
+      env:
+        GITHUB_VAR: ${{ github.event.pull_request.head.sha || github.sha }}
         run: VIRTUAL_ENV=.venv uv pip install pydantic~=${{ inputs.pydantic-version }}
 
       - name: Run core tests
