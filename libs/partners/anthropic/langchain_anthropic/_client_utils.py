@@ -7,6 +7,7 @@ Logic is largely replicated from anthropic._base_client.
 """
 
 import asyncio
+import logging
 import os
 from functools import lru_cache
 from typing import Any, Optional
@@ -26,6 +27,7 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
         try:
             self.close()
         except Exception:
+            logging.exception("Exception occurred while closing the httpx client")
             pass
 
 
@@ -40,6 +42,7 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
         except Exception:
+            logging.exception("Exception occurred while closing the httpx client")
             pass
 
 
