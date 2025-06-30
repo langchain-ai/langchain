@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
+TOOL_MESSAGE_BLOCK_TYPES = ("text", "image_url", "image", "json")
 
 
 class SchemaAnnotationError(TypeError):
@@ -1189,7 +1190,7 @@ def _is_message_content_block(obj: Any) -> bool:
     if isinstance(obj, str):
         return True
     if isinstance(obj, dict):
-        return obj.get("type", None) in ("text", "image_url", "image", "json")
+        return obj.get("type", None) in TOOL_MESSAGE_BLOCK_TYPES
     return False
 
 
