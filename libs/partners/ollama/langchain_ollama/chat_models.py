@@ -1,7 +1,6 @@
 """Ollama chat models."""
 
 import json
-import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -15,7 +14,6 @@ from typing import (
 )
 from uuid import uuid4
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -51,13 +49,10 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
-
-DEFAULT_THINK_TOKEN_START: Final[str] = "<think>"
-DEFAULT_THINK_TOKEN_END: Final[str] = "</think>"
 
 
 def _get_usage_metadata_from_generation_info(
@@ -215,7 +210,10 @@ class ChatOllama(BaseChatModel):
             Enable/disable reasoning (thinking) mode for
             `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
             is returned as ``reasoning_content`` in ``additional_kwargs`` of the
-            returned message.
+            returned message. If set to ``None``, Ollama will default to having the
+            model use reasoning, however ``<think>`` tags will be present in the
+            response content as opposed to being parsed out. If set to ``False``,
+            reasoning will be disabled and no reasoning will occur.
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         num_predict: Optional[int]
@@ -357,28 +355,14 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
-    extract_reasoning: Optional[Union[bool, tuple[str, str]]] = deprecated(
-        name="callback_manager", since="0.3.4", alternative="reason"
-    )(
-        Field(
-            default=False,
-        )
-    )
-    """Whether to extract the reasoning tokens in think blocks.
-    Extracts ``chunk.content`` to ``chunk.additional_kwargs.reasoning_content``.
-    If a tuple is supplied, they are assumed to be the (start, end) tokens.
-    If ``extract_reasoning=True``, the tokens will default to (``<think>``, 
-    ``</think>``).
-
-    **Note:** This is now performed automatically by Ollama when `reason` is set to 
-    `True`.
-    """
-
-    reason: Optional[bool] = False
+    reasoning: Optional[bool] = True
     """Enable/disable reasoning (thinking) mode for
     `supported models <https://ollama.com/search?c=thinking>`__. Model reasoning
     is returned as ``reasoning_content`` in ``additional_kwargs`` of the
-    returned message."""
+    returned message. If set to ``None``, Ollama will default to having the model use 
+    reasoning, however ``<think>`` tags will be present in the response content as
+    opposed to being parsed out. If set to ``False``, reasoning will be disabled and no
+    reasoning will occur."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -525,7 +509,7 @@ class ChatOllama(BaseChatModel):
             "messages": ollama_messages,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
-            "think": kwargs.pop("reason", self.reason),
+            "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
@@ -540,17 +524,6 @@ class ChatOllama(BaseChatModel):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        if self.extract_reasoning or not self.extract_reasoning:
-            warnings.warn(
-                (
-                    "The parameter `extract_reasoning` is deprecated and will be "
-                    "removed in a future version. Please use the `reason` parameter "
-                    "instead."
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         client_kwargs = self.client_kwargs or {}
 
         sync_client_kwargs = client_kwargs
