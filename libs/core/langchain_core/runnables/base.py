@@ -736,8 +736,8 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: A config to use when invoking the Runnable.
-               The config supports standard keys like 'tags', 'metadata' for tracing
-               purposes, 'max_concurrency' for controlling how much work to do
+               The config supports standard keys like ``tags``, ``metadata`` for tracing
+               purposes, ``max_concurrency`` for controlling how much work to do
                in parallel, and other keys. Please refer to the RunnableConfig
                for more details.
 
@@ -751,10 +751,10 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Output:
-        """Default implementation of ainvoke, calls invoke from a thread.
+        """Default implementation of ``ainvoke()``, calls ``invoke()`` from a thread.
 
         The default implementation allows usage of async code even if
-        the Runnable did not implement a native async version of invoke.
+        the Runnable did not implement a native async version of ``invoke()``.
 
         Subclasses should override this method if they can run asynchronously.
         """
@@ -768,13 +768,14 @@ class Runnable(Generic[Input, Output], ABC):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        """Default implementation runs invoke in parallel using a thread pool executor.
+        """Default implementation runs ``invoke()`` in parallel using a thread pool
+        executor.
 
         The default implementation of batch works well for IO bound runnables.
 
         Subclasses should override this method if they can batch more efficiently;
         e.g., if the underlying Runnable uses an API which supports a batch mode.
-        """
+        """  # noqa: D205
         if not inputs:
             return []
 
@@ -824,7 +825,7 @@ class Runnable(Generic[Input, Output], ABC):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> Iterator[tuple[int, Union[Output, Exception]]]:
-        """Run invoke in parallel on a list of inputs.
+        """Run ``invoke()`` in parallel on a list of inputs.
 
         Yields results as they complete.
         """
@@ -875,7 +876,8 @@ class Runnable(Generic[Input, Output], ABC):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        """Default implementation runs ainvoke in parallel using asyncio.gather.
+        """Default implementation runs ``ainvoke()`` in parallel using
+        ``asyncio.gather``.
 
         The default implementation of batch works well for IO bound runnables.
 
@@ -885,17 +887,17 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-                The config supports standard keys like 'tags', 'metadata' for tracing
-                purposes, 'max_concurrency' for controlling how much work to do
-                in parallel, and other keys. Please refer to the RunnableConfig
-                for more details. Defaults to None.
+                The config supports standard keys like ``tags``, ``metadata`` for
+                tracing purposes, ``max_concurrency`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to ``None``.
             return_exceptions: Whether to return exceptions instead of raising them.
-                Defaults to False.
+                Defaults to ``False``.
             kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             A list of outputs from the Runnable.
-        """
+        """  # noqa: D205
         if not inputs:
             return []
 
@@ -943,19 +945,19 @@ class Runnable(Generic[Input, Output], ABC):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]:
-        """Run ainvoke in parallel on a list of inputs.
+        """Run ``ainvoke()`` in parallel on a list of inputs.
 
         Yields results as they complete.
 
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-                The config supports standard keys like 'tags', 'metadata' for tracing
-                purposes, 'max_concurrency' for controlling how much work to do
-                in parallel, and other keys. Please refer to the RunnableConfig
-                for more details. Defaults to None. Defaults to None.
+                The config supports standard keys like ``tags``, ``metadata`` for
+                tracing purposes, ``max_concurrency`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to ``None``.
             return_exceptions: Whether to return exceptions instead of raising them.
-                Defaults to False.
+                Defaults to ``False``.
             kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
@@ -1019,13 +1021,13 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """Default implementation of astream, which calls ainvoke.
+        """Default implementation of ``astream()``, which calls ``ainvoke()``.
 
         Subclasses should override this method if they support streaming output.
 
         Args:
             input: The input to the Runnable.
-            config: The config to use for the Runnable. Defaults to None.
+            config: The config to use for the Runnable. Defaults to ``None``.
             kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
@@ -1221,7 +1223,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         In addition to the standard events, users can also dispatch custom events (see example below).
 
-        Custom events will be only be surfaced with in the `v2` version of the API!
+        .. NOTE:: Custom events will be only be surfaced with in the `v2` version of the API.
 
         A custom event has following format:
 
@@ -1235,7 +1237,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         Here are declarations associated with the standard events shown above:
 
-        `format_docs`:
+        ``format_docs``:
 
         .. code-block:: python
 
@@ -1245,7 +1247,7 @@ class Runnable(Generic[Input, Output], ABC):
 
             format_docs = RunnableLambda(format_docs)
 
-        `some_tool`:
+        ``some_tool``:
 
         .. code-block:: python
 
@@ -1254,7 +1256,7 @@ class Runnable(Generic[Input, Output], ABC):
                 '''Some_tool.'''
                 return {"x": x, "y": y}
 
-        `prompt`:
+        ``prompt``:
 
         .. code-block:: python
 
@@ -1354,8 +1356,8 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_types: Exclude events from runnables with matching types.
             exclude_tags: Exclude events from runnables with matching tags.
             kwargs: Additional keyword arguments to pass to the Runnable.
-                These will be passed to astream_log as this implementation
-                of astream_events is built on top of astream_log.
+                These will be passed to ``astream_log`` as this implementation
+                of astream_events is built on top of ``astream_log``.
 
         Yields:
             An async stream of StreamEvents.
@@ -2551,9 +2553,9 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             which: The ConfigurableField instance that will be used to select the
                 alternative.
             default_key: The default key to use if no alternative is selected.
-                Defaults to "default".
+                Defaults to ``'default'``.
             prefix_keys: Whether to prefix the keys with the ConfigurableField id.
-                Defaults to False.
+                Defaults to ``False``.
             **kwargs: A dictionary of keys to Runnable instances or callables that
                 return Runnable instances.
 
