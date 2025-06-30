@@ -686,3 +686,7 @@ packages:
 - name: langchain-zenrows
   path: .
   repo: ZenRows-Hub/langchain-zenrows
+- name: langchain-db2
+  path: libs/langchain-db2
+  repo: langchain-ai/langchain-ibm
+  provider_page: ibm

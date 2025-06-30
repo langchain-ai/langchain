@@ -34,6 +34,7 @@ from openai.types.responses.response_file_search_tool_call import (
 )
 from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
 from openai.types.responses.response_function_web_search import (
+    ActionSearch,
     ResponseFunctionWebSearch,
 )
 from openai.types.responses.response_output_refusal import ResponseOutputRefusal
@@ -59,6 +60,7 @@ from langchain_openai.chat_models.base import (
     _convert_message_to_dict,
     _convert_to_openai_response_format,
     _create_usage_metadata,
+    _create_usage_metadata_responses,
     _format_message_content,
     _get_last_messages,
     _oai_structured_outputs_parser,
@@ -947,6 +949,25 @@ def test__create_usage_metadata() -> None:
     )
 
 
+def test__create_usage_metadata_responses() -> None:
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50},
+        output_token_details={"reasoning": 10},
+    )
+
+
 def test__convert_to_openai_response_format() -> None:
     # Test response formats that aren't tool-like.
     response_format: dict = {
@@ -1192,6 +1213,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
         ),
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert isinstance(result, ChatResult)
@@ -1208,6 +1230,16 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.usage_metadata["total_tokens"] == 13
     assert result.generations[0].message.response_metadata["id"] == "resp_123"
     assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
+    ]
+    assert result.generations[0].message.id == "resp_123"
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
 
 
 def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
@@ -1284,6 +1316,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
@@ -1297,6 +1330,23 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
             "id": "rs_123",
         }
     }
+    assert result.generations[0].message.id == "msg_234"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "reasoning foo"}],
+            "id": "rs_123",
+        },
+        {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
+    ]
+    assert result.generations[0].message.id == "resp_123"
 
 
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:
@@ -1324,11 +1374,24 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.additional_kwargs["refusal"] == (
         "I cannot assist with that request."
     )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    assert result.generations[0].message.content == [
+        {
+            "type": "refusal",
+            "refusal": "I cannot assist with that request.",
+            "id": "msg_123",
+        }
+    ]
 
 
 def test__construct_lc_result_from_responses_api_function_call_valid_json() -> None:
@@ -1352,6 +1415,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
@@ -1367,6 +1431,22 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
         ]
         == "func_123"
     )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.tool_calls
+    assert msg.content == [
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York", "unit": "celsius"}',
+            "call_id": "call_123",
+        }
+    ]
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
@@ -1444,6 +1524,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
         user="user_123",
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     # Check message content
@@ -1471,6 +1552,28 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     }
     assert result.generations[0].message.response_metadata["status"] == "completed"
     assert result.generations[0].message.response_metadata["user"] == "user_123"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.response_metadata["metadata"] == {"key1": "value1", "key2": "value2"}
+    assert msg.content == [
+        {
+            "type": "text",
+            "text": "Here's the information you requested:",
+            "annotations": [],
+            "id": "msg_123",
+        },
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "call_id": "call_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York"}',
+        },
+    ]
 
 
 def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
@@ -1520,11 +1623,15 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
         tool_choice="auto",
         output=[
             ResponseFunctionWebSearch(
-                id="websearch_123", type="web_search_call", status="completed"
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
             )
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
@@ -1541,6 +1648,19 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
         result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
         == "completed"
     )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    assert result.generations[0].message.content == [
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"query": "search query", "type": "search"},
+        }
+    ]
 
 
 def test__construct_lc_result_from_responses_api_file_search_response() -> None:
@@ -1572,6 +1692,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
@@ -1612,6 +1733,28 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
         == 0.95
     )
 
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    assert result.generations[0].message.content == [
+        {
+            "type": "file_search_call",
+            "id": "filesearch_123",
+            "status": "completed",
+            "queries": ["python code", "langchain"],
+            "results": [
+                {
+                    "file_id": "file_123",
+                    "filename": "example.py",
+                    "score": 0.95,
+                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
+                    "attributes": {"language": "python", "size": 42},
+                }
+            ],
+        }
+    ]
+
 
 def test__construct_lc_result_from_responses_api_mixed_search_responses() -> None:
     """Test a response with both web search and file search outputs."""
@@ -1637,7 +1780,10 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
                 status="completed",
             ),
             ResponseFunctionWebSearch(
-                id="websearch_123", type="web_search_call", status="completed"
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
             ),
             ResponseFileSearchToolCall(
                 id="filesearch_123",
@@ -1656,6 +1802,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
         ],
     )
 
+    # v0
     result = _construct_lc_result_from_responses_api(response)
 
     # Check message content
@@ -1686,6 +1833,39 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     assert file_search["queries"] == ["python code"]
     assert file_search["results"][0]["filename"] == "example.py"
 
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(
+        response, output_version="responses/v1"
+    )
+    assert result.generations[0].message.content == [
+        {
+            "type": "text",
+            "text": "Here's what I found:",
+            "annotations": [],
+            "id": "msg_123",
+        },
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"type": "search", "query": "search query"},
+        },
+        {
+            "type": "file_search_call",
+            "id": "filesearch_123",
+            "queries": ["python code"],
+            "results": [
+                {
+                    "file_id": "file_123",
+                    "filename": "example.py",
+                    "score": 0.95,
+                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
+                }
+            ],
+            "status": "completed",
+        },
+    ]
+
 
 def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
     None
@@ -1706,7 +1886,29 @@ def test__construct_responses_api_input_human_message_with_text_blocks_conversio
 
 def test__construct_responses_api_input_multiple_message_components() -> None:
     """Test that human messages with text blocks are properly converted."""
-    messages: list = [
+    # v0
+    messages = [
+        AIMessage(
+            content=[{"type": "text", "text": "foo"}, {"type": "text", "text": "bar"}],
+            id="msg_123",
+            response_metadata={"id": "resp_123"},
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+    assert result == [
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {"type": "output_text", "text": "foo", "annotations": []},
+                {"type": "output_text", "text": "bar", "annotations": []},
+            ],
+            "id": "msg_123",
+        }
+    ]
+
+    # responses/v1
+    messages = [
         AIMessage(
             content=[
                 {"type": "text", "text": "foo", "id": "msg_123"},
