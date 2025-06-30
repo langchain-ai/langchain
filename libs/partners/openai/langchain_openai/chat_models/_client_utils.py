@@ -7,6 +7,7 @@ Logic is largely replicated from openai._base_client.
 """
 
 import asyncio
+import logging
 import os
 from functools import lru_cache
 from typing import Any, Optional
@@ -23,7 +24,8 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception:
+        except Exception as exc:
+            logging.exception("Exception occurred in __del__")
             pass
 
 
@@ -37,8 +39,8 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.exception("Exception occurred in __del__")
 
 
 def _build_sync_httpx_client(
