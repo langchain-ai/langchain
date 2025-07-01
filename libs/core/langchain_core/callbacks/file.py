@@ -112,12 +112,19 @@ class FileCallbackHandler(BaseCallbackHandler):
         if hasattr(self, "file") and self.file and not self.file.closed:
             self.file.close()
 
-    def _write(self, *args: Any, **kwargs: Any) -> None:
+    def _write(
+        self,
+        text: str,
+        color: Optional[str] = None,
+        end: str = "",
+    ) -> None:
         """Write text to the file with deprecation warning if needed.
 
         Args:
-            *args: Arguments to pass to print_text.
-            **kwargs: Keyword arguments to pass to print_text.
+            text: The text to write to the file.
+            color: Optional color for the text. Defaults to self.color.
+            end: String appended after the text. Defaults to "".
+            file: Optional file to write to. Defaults to self.file.
 
         Raises:
             RuntimeError: If the file is closed or not available.
@@ -138,7 +145,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             msg = "File is not open. Use FileCallbackHandler as a context manager."
             raise RuntimeError(msg)
 
-        print_text(*args, file=self.file, **kwargs)
+        print_text(text, file=self.file, color=color, end=end)
 
     @override
     def on_chain_start(
