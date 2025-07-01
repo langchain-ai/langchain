@@ -50,7 +50,7 @@ select = [
     "I",    # isort
     "T201", # print
     "UP",   # pyupgrade
-    "S",    # security
+    "S",    # flake8-bandit
 ]
 ignore = [ "UP007", ]
 
