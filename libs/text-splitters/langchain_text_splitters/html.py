@@ -456,7 +456,9 @@ class HTMLSectionSplitter:
         )
 
         # Apply XSLT access control to prevent file/network access
-        ac = etree.XSLTAccessControl.DENY_ALL
+        # DENY_ALL is a predefined access control that blocks all file/network access
+        # Type ignore needed due to incomplete lxml type stubs
+        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
 
         tree = etree.parse(StringIO(html_content), html_parser)
         xslt_tree = etree.parse(self.xslt_path, xslt_parser)
