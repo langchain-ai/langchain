@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from itertools import islice
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -19,6 +19,9 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
+
+if TYPE_CHECKING:
+    import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -326,7 +329,7 @@ class SQLiteEntityStore(BaseEntityStore):
     def full_table_name(self) -> str:
         return f"{self.table_name}_{self.session_id}"
 
-    def _execute_query(self, query: str, params: tuple = ()):
+    def _execute_query(self, query: str, params: tuple = ()) -> "sqlite3.Cursor":
         """Executes a query with proper connection handling."""
         with self.conn:
             return self.conn.execute(query, params)
