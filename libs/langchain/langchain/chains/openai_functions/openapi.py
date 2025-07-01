@@ -173,6 +173,7 @@ def openapi_spec_to_openai_fn(
         fn_args: dict,
         headers: Optional[dict] = None,
         params: Optional[dict] = None,
+        timeout: Optional[int] = 30,
         **kwargs: Any,
     ) -> Any:
         method = _name_to_call_map[name]["method"]
@@ -192,7 +193,7 @@ def openapi_spec_to_openai_fn(
                 _kwargs["params"].update(params)
             else:
                 _kwargs["params"] = params
-        return requests.request(method, url, **_kwargs)
+        return requests.request(method, url, **_kwargs, timeout=timeout)
 
     return functions, default_call_api
 
