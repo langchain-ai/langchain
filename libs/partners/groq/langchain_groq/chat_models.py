@@ -375,6 +375,22 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    service_tier: Optional[Literal["on_demand", "flex", "auto"]] = Field(default=None)
+    """The level of effort the model will put into reasoning. Groq will default to
+    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
+    not apply and ``reasoning_content`` will not be returned.
+
+    - ``'on_demand'``: Default.
+    - ``'flex'``: On-demand processing when capacity is available, with rapid timeouts
+      if resources are constrained. Provides balance between performance and reliability
+      for workloads that don't require guaranteed processing.
+    - ``'auto'``: Uses on-demand rate limits, then falls back to ``'flex'`` if those
+      limits are exceeded
+
+    See the `Groq documentation
+    <https://console.groq.com/docs/flex-processing>`__ for more details and a list of
+    service tiers and descriptions.
+    """
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -653,6 +669,7 @@ class ChatGroq(BaseChatModel):
             "stop": self.stop,
             "reasoning_format": self.reasoning_format,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
