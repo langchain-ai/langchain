@@ -53,8 +53,7 @@ class Fireworks(LLM):
     Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
     model: str
-    """Model name. `(Available models) <https://readme.fireworks.ai/>`__
-    """
+    """Model name. `(Available models) <https://readme.fireworks.ai/>`__"""
     temperature: Optional[float] = None
     """Model temperature."""
     top_p: Optional[float] = None
@@ -76,8 +75,8 @@ class Fireworks(LLM):
     max_tokens: Optional[int] = None
     """The maximum number of tokens to generate."""
     repetition_penalty: Optional[float] = None
-    """A number that controls the diversity of generated text by reducing the 
-    likelihood of repeated sequences. Higher values decrease repetition.
+    """A number that controls the diversity of generated text by reducing the likelihood
+    of repeated sequences. Higher values decrease repetition.
     """
     logprobs: Optional[int] = None
     """An integer that specifies how many top token log probabilities are included in 
