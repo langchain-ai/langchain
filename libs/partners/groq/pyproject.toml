@@ -44,7 +44,7 @@ disallow_untyped_defs = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "UP"]
+select = ["E", "F", "I", "W", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.coverage.run]
@@ -57,3 +57,9 @@ markers = [
     "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
