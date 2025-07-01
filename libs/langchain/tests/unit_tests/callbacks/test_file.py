@@ -1,9 +1,10 @@
 import pathlib
 from typing import Optional
 
+from langchain_core.callbacks import CallbackManagerForChainRun
+
 from langchain.callbacks import FileCallbackHandler
 from langchain.chains.base import Chain
-from langchain_core.callbacks import CallbackManagerForChainRun
 
 
 class FakeChain(Chain):
