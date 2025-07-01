@@ -1,9 +1,6 @@
 """Security tests for HTML splitters to prevent XXE attacks."""
 
 import pytest
-from pathlib import Path
-import tempfile
-import os
 
 from langchain_text_splitters.html import HTMLSectionSplitter
 
@@ -14,22 +11,6 @@ class TestHTMLSectionSplitterSecurity:
 
     def test_xxe_entity_attack_blocked(self):
         """Test that external entity attacks are blocked."""
-        # Create a malicious XSLT file that attempts to read /etc/passwd
-        malicious_xslt = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE xsl:stylesheet [
-  <!ENTITY passwd SYSTEM "file:///etc/passwd">
-]>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:template match="/">
-    <html>
-      <body>
-        <h1>XXE Attack Result</h1>
-        <pre>&passwd;</pre>
-      </body>
-    </html>
-  </xsl:template>
-</xsl:stylesheet>"""
-
         # Create HTML content to process
         html_content = """<html><body><p>Test content</p></body></html>"""
 
@@ -65,9 +46,6 @@ class TestHTMLSectionSplitterSecurity:
 
     def test_secure_parser_configuration(self):
         """Test that parsers are configured with security settings."""
-        from lxml import etree
-        from io import StringIO
-
         # This test verifies our security hardening is in place
         html_content = """<html><body><h1>Test</h1></body></html>"""
 
