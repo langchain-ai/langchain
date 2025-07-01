@@ -683,3 +683,7 @@ packages:
   repo: surrealdb/langchain-surrealdb
   downloads: 291
   downloads_updated_at: '2025-06-25T20:06:46.206625+00:00'
+- name: langchain-db2
+  path: libs/langchain-db2
+  repo: langchain-ai/langchain-ibm
+  provider_page: ibm
