@@ -1039,9 +1039,10 @@ class QdrantVectorStore(VectorStore):
             dense_embeddings = self.embeddings.embed_documents(list(texts))
             sparse_embeddings = self.sparse_embeddings.embed_documents(list(texts))
 
-            assert len(dense_embeddings) == len(
-                sparse_embeddings
-            ), "Mismatched length between dense and sparse embeddings."
+            if len(dense_embeddings) != len(sparse_embeddings):
+                raise ValueError(
+                    "Mismatched length between dense and sparse embeddings."
+                )
 
             return [
                 {
@@ -1128,7 +1129,8 @@ class QdrantVectorStore(VectorStore):
                     "set `force_recreate` to `True`."
                 )
 
-        assert vector_config is not None, "VectorParams is None"
+        if vector_config is None:
+            raise ValueError("VectorParams is None")
 
         if isinstance(dense_embeddings, Embeddings):
             vector_size = len(dense_embeddings.embed_documents(["dummy_text"])[0])

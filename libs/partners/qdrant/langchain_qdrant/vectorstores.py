@@ -1669,10 +1669,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
                 raise QdrantException(
@@ -1829,11 +1830,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
 
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
