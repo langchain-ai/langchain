@@ -368,7 +368,7 @@ def get_openapi_chain(
                 break
             except ImportError as e:
                 raise e
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")
