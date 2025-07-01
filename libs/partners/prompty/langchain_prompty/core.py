@@ -319,7 +319,7 @@ class Frontmatter:
             fmatter = result.group(1)
             body = result.group(2)
         return {
-            "attributes": yaml.load(fmatter, Loader=yaml.FullLoader),
+            "attributes": yaml.safe_load(fmatter),
             "body": body,
             "frontmatter": fmatter,
         }
