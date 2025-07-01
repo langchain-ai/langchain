@@ -1307,7 +1307,10 @@ class AgentExecutor(Chain):
         self, values: NextStepOutput
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         if isinstance(values[-1], AgentFinish):
-            assert len(values) == 1
+            if len(values) != 1:
+                raise ValueError(
+                    "Expected a single AgentFinish output, but got multiple values."
+                )
             return values[-1]
         else:
             return [
