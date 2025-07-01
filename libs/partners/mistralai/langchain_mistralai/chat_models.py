@@ -399,7 +399,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: Optional[int] = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-       probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
+    probability sum is at least ``top_p``. Must be in the closed interval
+    ``[0.0, 1.0]``."""
     random_seed: Optional[int] = None
     safe_mode: Optional[bool] = None
     streaming: bool = False
