@@ -148,7 +148,9 @@ class Fireworks(LLM):
 
         # filter None values to not pass them to the http payload
         payload = {k: v for k, v in payload.items() if v is not None}
-        response = requests.post(url=self.base_url, json=payload, headers=headers)
+        response = requests.post(
+            url=self.base_url, json=payload, headers=headers, timeout=5
+        )
 
         if response.status_code >= 500:
             raise Exception(f"Fireworks Server: Error {response.status_code}")
