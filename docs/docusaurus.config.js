@@ -254,6 +254,10 @@ const config = {
             title: "Community",
             items: [
               {
+                label: "LangChain Forum",
+                href: "https://forum.langchain.com/",
+              },
+              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },

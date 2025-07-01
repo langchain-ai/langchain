@@ -327,9 +327,10 @@ def _format_messages(
 
         if not isinstance(message.content, str):
             # parse as dict
-            assert isinstance(
-                message.content, list
-            ), "Anthropic message content must be str or list of dicts"
+            if not isinstance(message.content, list):
+                raise ValueError(
+                    "Anthropic message content must be str or list of dicts"
+                )
 
             # populate content
             content = []

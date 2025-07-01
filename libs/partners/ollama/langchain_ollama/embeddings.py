@@ -141,7 +141,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before passing to the httpx Client.
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
 
     For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
     """

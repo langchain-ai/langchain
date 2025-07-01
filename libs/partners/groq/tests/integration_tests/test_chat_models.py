@@ -264,6 +264,19 @@ def test_reasoning_output_stream() -> None:
     assert len(full_response.additional_kwargs["reasoning_content"]) > 0
 
 
+def test_reasoning_effort_none() -> None:
+    """Test that no reasoning output is returned if effort is set to none."""
+    chat = ChatGroq(
+        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort
+        reasoning_effort="none",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert "reasoning_content" not in response.additional_kwargs
+    assert "<think>" not in response.content and "<think/>" not in response.content
+
+
 #
 # Misc tests
 #

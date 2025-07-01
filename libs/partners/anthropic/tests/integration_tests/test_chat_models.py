@@ -651,7 +651,7 @@ def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
 
 def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-    data = b64encode(requests.get(url).content).decode()
+    data = b64encode(requests.get(url, timeout=10).content).decode()
 
     result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
         [

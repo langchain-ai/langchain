@@ -310,7 +310,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,
@@ -378,7 +379,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,

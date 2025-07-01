@@ -1176,9 +1176,9 @@ const FEATURE_TABLES = {
                 searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
-                multiTenancy: false,
+                multiTenancy: true,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "Redis",
