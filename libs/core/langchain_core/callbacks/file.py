@@ -133,6 +133,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         if not self._file_opened_in_context and not _GLOBAL_DEPRECATION_WARNED:
             warn_deprecated(
                 since="0.3.67",
+                pending=True,
                 message=(
                     "Using FileCallbackHandler without a context manager is "
                     "deprecated. Use 'with FileCallbackHandler(...) as "
