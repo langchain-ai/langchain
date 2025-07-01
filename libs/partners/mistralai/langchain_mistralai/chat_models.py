@@ -139,7 +139,8 @@ def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
     role = _message["role"]
-    assert role == "assistant", f"Expected role to be 'assistant', got {role}"
+    if role != "assistant":
+        raise ValueError(f"Expected role to be 'assistant', got {role}")
     content = cast(str, _message["content"])
 
     additional_kwargs: dict = {}
