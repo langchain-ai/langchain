@@ -556,7 +556,7 @@ def test_setting_service_tier_request() -> None:
         [message],
         service_tier=None,
     )
-    assert response.response_metadata.get("service_tier") == "on_demand"
+    assert response.response_metadata.get("service_tier") == "auto"
 
 
 def test_setting_service_tier_streaming() -> None:

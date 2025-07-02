@@ -597,7 +597,7 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
-                service_tier = params.get("service_tier") or "on_demand"
+                service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
@@ -640,7 +640,7 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
-                service_tier = params.get("service_tier") or "on_demand"
+                service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
@@ -711,8 +711,7 @@ class ChatGroq(BaseChatModel):
             "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
-        service_tier = params.get("service_tier") or "on_demand"
-        llm_output["service_tier"] = service_tier
+        llm_output["service_tier"] = params.get("service_tier") or self.service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
