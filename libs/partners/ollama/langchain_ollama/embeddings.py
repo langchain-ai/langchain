@@ -2,9 +2,8 @@
 
 from typing import Any, Optional
 
-from httpx import ConnectError
 from langchain_core.embeddings import Embeddings
-from ollama import AsyncClient, Client, ResponseError
+from ollama import AsyncClient, Client
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -12,6 +11,8 @@ from pydantic import (
     model_validator,
 )
 from typing_extensions import Self
+
+from .utils import validate_model
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -124,7 +125,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     model: str
     """Model name to use."""
 
-    validate_model_on_init: bool = True
+    validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization."""
 
     base_url: Optional[str] = None
@@ -264,38 +265,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         self._client = Client(host=self.base_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
         if self.validate_model_on_init:
-            try:
-                response = self._client.list()
-                models = response.models
-                model_names = [m.model for m in models]
-                if not any(
-                    self.model == m
-                    or (isinstance(m, str) and m.startswith(f"{self.model}:"))
-                    for m in model_names
-                ):
-                    raise ValueError(
-                        f"Model `{self.model}` not found in Ollama. Please pull the "
-                        f"model (using `ollama pull {self.model}`) or specify a valid "
-                        f"model name. Available local models: "
-                        f"{', '.join(filter(None, model_names))}"
-                    )
-            except ConnectError as e:
-                raise ValueError(
-                    "Connection to Ollama failed. Please make sure Ollama is running "
-                    f"and accessible at {self._client._client.base_url}. "
-                    f"Original error: {e}"
-                ) from e
-            except ResponseError as e:
-                raise ValueError(
-                    f"Received an error from the Ollama API. "
-                    f"Please check your Ollama server logs. Original error: {e}"
-                ) from e
-            except KeyError:
-                raise ValueError(
-                    "Received an unexpected response from Ollama. The 'models' key "
-                    f"was not found. Please check your Ollama server version. "
-                    f"Full response: {response}"
-                )
+            validate_model(self._client, self.model)
         return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
