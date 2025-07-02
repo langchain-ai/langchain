@@ -119,6 +119,60 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     return new_kv
 
 
+def _get_schema_from_model(
+    model: type, *, field_description: Optional[str] = None
+) -> dict:
+    """Gets JSON schema for Pydantic models.
+
+    This function handles nested models and descriptions. It recursively generates
+    a JSON schema for a Pydantic model, ensuring that if a nested model does not
+    have its own docstring-based description, it falls back to using the description
+    from the parent model's field. It also resolves model definitions ('$defs' or
+    'definitions') for nested Pydantic models.
+
+    Args:
+        model: The Pydantic model class to generate a schema for.
+        field_description: An optional fallback description from a parent field.
+
+    Returns:
+        A dictionary representing the JSON schema of the model.
+    """
+    if hasattr(model, "model_json_schema"):
+        schema = model.model_json_schema()
+    elif hasattr(model, "schema"):
+        schema = model.schema()
+    else:
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
+
+    if not schema.get("description") and field_description:
+        schema["description"] = field_description
+
+    if "definitions" in schema:
+        defs = schema["definitions"]
+        for field_name, field in model.__fields__.items():
+            if field.type_.__name__ in defs:
+                schema["properties"][field_name] = _get_schema_from_model(
+                    field.type_, field_description=field.field_info.description
+                )
+        schema.pop("definitions")
+
+    if "$defs" in schema:
+        defs = schema["$defs"]
+        for field_name, field_info in model.model_fields.items():
+            if (
+                field_info.annotation
+                and hasattr(field_info.annotation, "__name__")
+                and field_info.annotation.__name__ in defs
+            ):
+                schema["properties"][field_name] = _get_schema_from_model(
+                    field_info.annotation, field_description=field_info.description
+                )
+        schema.pop("$defs")
+
+    return schema
+
+
 def _convert_json_schema_to_openai_function(
     schema: dict,
     *,
@@ -180,13 +234,8 @@ def _convert_pydantic_to_openai_function(
     Returns:
         The function description.
     """
-    if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
-    elif hasattr(model, "schema"):
-        schema = model.schema()  # Pydantic 1
-    else:
-        msg = "Model must be a Pydantic model."
-        raise TypeError(msg)
+    # Now calls the new helper function to get the corrected schema
+    schema = _get_schema_from_model(model)
     return _convert_json_schema_to_openai_function(
         schema, name=name, description=description, rm_titles=rm_titles
     )
