@@ -470,12 +470,12 @@ class ChatOllama(BaseChatModel):
     `Full list of params. <https://www.python-httpx.org/api/#client>`__
     """
 
-    _client: Optional[Client] = PrivateAttr(default=None)
+    _client: Client = PrivateAttr()
     """
     The client to use for making requests.
     """
 
-    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
+    _async_client: AsyncClient = PrivateAttr()
     """
     The async client to use for making requests.
     """
@@ -643,12 +643,10 @@ class ChatOllama(BaseChatModel):
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            if self._async_client:
-                async for part in await self._async_client.chat(**chat_params):
-                    yield part
+            async for part in await self._async_client.chat(**chat_params):
+                yield part
         else:
-            if self._async_client:
-                yield await self._async_client.chat(**chat_params)
+            yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
