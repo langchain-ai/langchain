@@ -27,28 +27,32 @@ class FileCallbackHandler(BaseCallbackHandler):
     Examples:
         Using as a context manager (recommended):
 
-        >>> with FileCallbackHandler("output.txt") as handler:
-        ...     # Use handler with your chain/agent
-        ...     chain.invoke(inputs, config={"callbacks": [handler]})
+        .. code-block:: python
+
+            with FileCallbackHandler("output.txt") as handler:
+                # Use handler with your chain/agent
+                chain.invoke(inputs, config={"callbacks": [handler]})
 
         Direct instantiation (deprecated):
 
-        >>> handler = FileCallbackHandler("output.txt")
-        >>> # File remains open until handler is garbage collected
-        >>> try:
-        >>>     chain.invoke(inputs, config={"callbacks": [handler]})
-        >>> finally:
-        >>>     handler.close()  # Explicit cleanup recommended
+        .. code-block:: python
+
+            handler = FileCallbackHandler("output.txt")
+            # File remains open until handler is garbage collected
+            try:
+                chain.invoke(inputs, config={"callbacks": [handler]})
+            finally:
+                handler.close()  # Explicit cleanup recommended
 
     Args:
         filename: The file path to write to.
-        mode: The file open mode. Defaults to "a" (append).
-        color: Default color for text output. Defaults to None.
+        mode: The file open mode. Defaults to ``'a'`` (append).
+        color: Default color for text output. Defaults to ``None``.
 
     Note:
         When not used as a context manager, a deprecation warning will be issued
-        on first use. The file will be opened immediately in __init__ and closed
-        in __del__ or when close() is called explicitly.
+        on first use. The file will be opened immediately in ``__init__`` and closed
+        in ``__del__`` or when ``close()`` is called explicitly.
     """
 
     def __init__(
@@ -58,8 +62,8 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             filename: Path to the output file.
-            mode: File open mode (e.g., 'w', 'a', 'x'). Defaults to 'a'.
-            color: Default text color for output. Defaults to None.
+            mode: File open mode (e.g., ``'w'``, ``'a'``, ``'x'``). Defaults to ``'a'``.
+            color: Default text color for output. Defaults to ``None``.
         """
         self.filename = filename
         self.mode = mode
@@ -78,7 +82,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             The FileCallbackHandler instance.
 
         Note:
-            The file is already opened in __init__, so this just marks that
+            The file is already opened in ``__init__``, so this just marks that
             the handler is being used as a context manager.
         """
         self._file_opened_in_context = True
@@ -122,9 +126,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             text: The text to write to the file.
-            color: Optional color for the text. Defaults to self.color.
-            end: String appended after the text. Defaults to "".
-            file: Optional file to write to. Defaults to self.file.
+            color: Optional color for the text. Defaults to ``self.color``.
+            end: String appended after the text. Defaults to ``""``.
+            file: Optional file to write to. Defaults to ``self.file``.
 
         Raises:
             RuntimeError: If the file is closed or not available.
@@ -157,7 +161,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             serialized: The serialized chain information.
             inputs: The inputs to the chain.
-            **kwargs: Additional keyword arguments that may contain 'name'.
+            **kwargs: Additional keyword arguments that may contain ``'name'``.
         """
         name = (
             kwargs.get("name")
@@ -184,7 +188,8 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             action: The agent action containing the log to write.
-            color: Color override for this specific output. If None, uses self.color.
+            color: Color override for this specific output. If ``None``, uses
+                ``self.color``.
             **kwargs: Additional keyword arguments.
         """
         self._write(action.log, color=color or self.color)
@@ -202,7 +207,8 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             output: The tool output to write.
-            color: Color override for this specific output. If None, uses self.color.
+            color: Color override for this specific output. If ``None``, uses
+                ``self.color``.
             observation_prefix: Optional prefix to write before the output.
             llm_prefix: Optional prefix to write after the output.
             **kwargs: Additional keyword arguments.
@@ -221,8 +227,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             text: The text to write.
-            color: Color override for this specific output. If None, uses self.color.
-            end: String appended after the text. Defaults to "".
+            color: Color override for this specific output. If ``None``, uses
+                ``self.color``.
+            end: String appended after the text. Defaults to ``""``.
             **kwargs: Additional keyword arguments.
         """
         self._write(text, color=color or self.color, end=end)
@@ -235,7 +242,8 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             finish: The agent finish object containing the log to write.
-            color: Color override for this specific output. If None, uses self.color.
+            color: Color override for this specific output. If ``None``, uses
+                ``self.color``.
             **kwargs: Additional keyword arguments.
         """
         self._write(finish.log, color=color or self.color, end="\n")
