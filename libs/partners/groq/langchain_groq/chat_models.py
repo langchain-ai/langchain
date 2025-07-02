@@ -375,10 +375,9 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    service_tier: Optional[Literal["on_demand", "flex", "auto"]] = Field(default=None)
-    """The level of effort the model will put into reasoning. Groq will default to
-    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
-    not apply and ``reasoning_content`` will not be returned.
+    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    """Optional parameter that you can include to specify the service tier you'd like to
+    use for requests.
 
     - ``'on_demand'``: Default.
     - ``'flex'``: On-demand processing when capacity is available, with rapid timeouts
@@ -550,7 +549,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = self.client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     async def _agenerate(
         self,
@@ -571,7 +570,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = await self.async_client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     def _stream(
         self,
@@ -598,6 +597,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or "on_demand"
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -639,6 +640,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or "on_demand"
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -676,7 +679,9 @@ class ChatGroq(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         return params
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, BaseModel], params: dict
+    ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -706,6 +711,8 @@ class ChatGroq(BaseChatModel):
             "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        service_tier = params.get("service_tier") or "on_demand"
+        llm_output["service_tier"] = service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -736,6 +743,8 @@ class ChatGroq(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
+        if self.service_tier:
+            combined["service_tier"] = self.service_tier
         return combined
 
     @deprecated(
