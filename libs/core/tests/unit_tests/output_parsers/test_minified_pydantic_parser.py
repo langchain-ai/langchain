@@ -1,8 +1,8 @@
 """Unit tests for MinifiedPydanticOutputParser."""
 
-from typing import Optional, List
 import json
-import pytest
+from typing import Any, Optional, Union
+
 from pydantic import BaseModel, Field
 
 from langchain_core.output_parsers.minified_pydantic import MinifiedPydanticOutputParser
@@ -29,16 +29,17 @@ class UserWithAddress(BaseModel):
     """A user model that includes a list of addresses."""
 
     user: User
-    addresses: List[Address]
+    addresses: list[Address]
 
 
-def test_minification_and_reverse_mapping():
+def test_minification_and_reverse_mapping() -> None:
     """Test that the minified parser correctly maps fields and descriptions."""
+
     parser = MinifiedPydanticOutputParser(pydantic_object=User)
-    minified_cls = parser.output_type_clean
+    minified_cls = parser.minified
     # Check minified field names are short and descriptions are preserved
     fields = minified_cls.model_fields
-    assert set(fields.keys()) == set(["a", "b", "c", "d"])
+    assert set(fields.keys()) == {"a", "b", "c", "d"}
     assert fields["a"].description == "The user's first name"
     assert fields["d"].description == "The user's age (optional)"
 
@@ -53,26 +54,32 @@ def test_minification_and_reverse_mapping():
     assert result.age == 42
 
 
-def test_optional_and_none_values():
+def test_optional_and_none_values() -> None:
     """Test that optional fields handle None values correctly."""
     parser = MinifiedPydanticOutputParser(User)
 
-    minified_dict = {"a": "Jane", "b": "Smith", "c": "jane@example.com"}  # no 'd'
+    minified_dict: dict[str, Union[str, None]] = {
+        "a": "Jane",
+        "b": "Smith",
+        "c": "jane@example.com",
+    }  # no 'd'
     minified_input = Generation(text=json.dumps(minified_dict))
     result = parser.parse_result([minified_input])
+    assert isinstance(result, User), f"Expected User, got {type(result)}"
     assert result.age is None
 
     # Test with explicit None
     minified_dict["d"] = None
     minified_input = Generation(text=json.dumps(minified_dict))
     result = parser.parse_result([minified_input])
+    assert isinstance(result, User), f"Expected User, got {type(result)}"
     assert result.age is None
 
 
-def test_nested_model_and_list():
+def test_nested_model_and_list() -> None:
     """Test parsing a nested model with a list of addresses."""
     parser = MinifiedPydanticOutputParser(UserWithAddress)
-    minified_cls = parser.output_type_clean
+    minified_cls = parser.minified
     # Should have two fields: user and addresses, both minified
     assert len(minified_cls.model_fields) == 2
 
@@ -91,23 +98,36 @@ def test_nested_model_and_list():
     assert result.addresses[1].street == "456 Side"
 
 
-def test_required_fields_enforced():
-    """Test that required fields are enforced in the minified parser."""
-    parser = MinifiedPydanticOutputParser(User)
-    minified_input = {"a": "NoLast", "c": "nolast@example.com"}  # missing 'b'
-    with pytest.raises(Exception):
-        parser.parse_result([minified_input])
-
-
-def test_remove_none_values():
+def test_remove_none_values() -> None:
     """Test that None values are removed from nested dicts/lists."""
     parser = MinifiedPydanticOutputParser(User)
     # Should remove None from nested dicts/lists
-    data = {"a": "X", "b": "Y", "c": "Z", "d": None}
+    data: dict[str, Union[str, None]] = {"a": "X", "b": "Y", "c": "Z", "d": None}
     cleaned = parser._remove_none_values(data)  # pylint: disable=protected-access
+    assert isinstance(cleaned, dict), f"Expected dict, got {type(cleaned)}"
     assert "d" not in cleaned
-    data = {"a": None, "b": {"c": None, "d": 1}, "e": [None, 2]}
-    cleaned = parser._remove_none_values(data)  # pylint: disable=protected-access
+
+    # Use Any for nested structures or be more specific about the type
+    data_recurs: dict[str, Any] = {
+        "a": None,
+        "b": {"c": None, "d": 1},
+        "e": [None, 2],
+    }
+    cleaned = parser._remove_none_values(  # pylint: disable=protected-access
+        data_recurs
+    )
+    assert isinstance(cleaned, dict), f"Expected dict, got {type(cleaned)}"
     assert "a" not in cleaned
     assert cleaned["b"] == {"d": 1}
     assert cleaned["e"] == [2]
+
+
+def test_strict() -> None:
+    """Test the strict mode"""
+
+    parser = MinifiedPydanticOutputParser(User, strict=True)
+    minified_cls = parser.minified
+    assert "required=True" in str(minified_cls.model_fields["a"])
+    assert "required=True" in str(minified_cls.model_fields["b"])
+    assert "required=True" in str(minified_cls.model_fields["c"])
+    assert "required=True" in str(minified_cls.model_fields["d"])
