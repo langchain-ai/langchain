@@ -54,21 +54,23 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             Name of MistralAI model to use.
 
     Key init args — client params:
-      api_key: Optional[SecretStr]
-        The API key for the MistralAI API. If not provided, it will be read from the
-        environment variable `MISTRAL_API_KEY`.
-      max_retries: int
-        The number of times to retry a request if it fails.
-      timeout: int
-        The number of seconds to wait for a response before timing out.
-      wait_time: int
-        The number of seconds to wait before retrying a request in case of 429 error.
-      max_concurrent_requests: int
-        The maximum number of concurrent requests to make to the Mistral API.
+        api_key: Optional[SecretStr]
+            The API key for the MistralAI API. If not provided, it will be read from the
+            environment variable ``MISTRAL_API_KEY``.
+        max_retries: int
+            The number of times to retry a request if it fails.
+        timeout: int
+            The number of seconds to wait for a response before timing out.
+        wait_time: int
+            The number of seconds to wait before retrying a request in case of 429
+            error.
+        max_concurrent_requests: int
+            The maximum number of concurrent requests to make to the Mistral API.
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
+
         .. code-block:: python
 
             from __module_name__ import MistralAIEmbeddings
@@ -80,6 +82,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             )
 
     Embed single text:
+
         .. code-block:: python
 
             input_text = "The meaning of life is 42"
@@ -91,9 +94,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
 
     Embed multiple text:
+
         .. code-block:: python
 
-             input_texts = ["Document 1...", "Document 2..."]
+            input_texts = ["Document 1...", "Document 2..."]
             vectors = embed.embed_documents(input_texts)
             print(len(vectors))
             # The first 3 coordinates for the first vector
@@ -105,10 +109,11 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
 
     Async:
+
         .. code-block:: python
 
             vector = await embed.aembed_query(input_text)
-           print(vector[:3])
+            print(vector[:3])
 
             # multiple:
             # await embed.aembed_documents(input_texts)
@@ -188,8 +193,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         return self
 
     def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
-        """Split a list of texts into batches of less than 16k tokens
-        for Mistral API."""
+        """Split a list of texts into batches of less than 16k tokens for Mistral
+        API."""
         batch: list[str] = []
         batch_tokens = 0
 
