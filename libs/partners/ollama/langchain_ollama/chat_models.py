@@ -1233,7 +1233,7 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)

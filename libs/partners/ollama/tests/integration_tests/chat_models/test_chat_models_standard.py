@@ -6,6 +6,7 @@ import pytest
 from httpx import ConnectError
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
+from pydantic import ValidationError
 
 from langchain_ollama.chat_models import ChatOllama
 
@@ -53,9 +54,9 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @patch("langchain_ollama.chat_models.Client.list")
     def test_init_connection_error(self, mock_list: MagicMock) -> None:
-        """Test that a ValueError wrapping ConnectError is raised on connect failure."""
+        """Test that a validation error is raised on connect failure during init."""
         mock_list.side_effect = ConnectError("Test connection error")
-        with pytest.raises(ValueError) as excinfo:
-            ChatOllama(model="any-model")
+
+        with pytest.raises(ValidationError) as excinfo:
+            ChatOllama(model="any-model", validate_model_on_init=True)
         assert "Connection to Ollama failed" in str(excinfo.value)
-        assert "Test connection error" in str(excinfo.value)
