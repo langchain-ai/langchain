@@ -35,10 +35,9 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @property
     def has_tool_choice(self) -> bool:
+        # TODO: update after Ollama implements
+        # https://github.com/ollama/ollama/blob/main/docs/openai.md
         return False
-
-    # TODO: update after Ollama implements
-    # https://github.com/ollama/ollama/blob/main/docs/openai.md
 
     @property
     def supports_image_inputs(self) -> bool:
