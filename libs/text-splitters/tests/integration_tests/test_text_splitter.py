@@ -149,7 +149,7 @@ def test_text_splitter_from_tiktoken_start_index() -> None:
 
 
 def test_text_splitter_from_huggingface_start_index() -> None:
-    from transformers import AutoTokenizer
+    from transformers import AutoTokenizer  # type: ignore[attr-defined]
 
     text = """
     The View3DAttributes function is used to create View3DAttributes objects

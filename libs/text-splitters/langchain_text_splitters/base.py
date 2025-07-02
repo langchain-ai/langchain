@@ -178,14 +178,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 if previous_chunk is None:
                     return 0
 
-                encoded_previous_chunk = tokenizer.encode(previous_chunk)
                 earliest_start = len(
-                    tokenizer.decode(
-                        encoded_previous_chunk[
-                            : max(0, len(encoded_previous_chunk) - chunk_overlap)
-                        ]
+                    tokenizer.convert_tokens_to_string(
+                        tokenizer.tokenize(previous_chunk)[: -(chunk_overlap + 1)]
                     )
                 )
+
                 return earliest_start
 
         except ImportError:
@@ -245,12 +243,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 disallowed_special=disallowed_special,
             )
             earliest_start = len(
-                enc.decode(
-                    encoded_previous_chunk[
-                        : max(0, len(encoded_previous_chunk) - chunk_overlap)
-                    ]
-                )
+                enc.decode(encoded_previous_chunk[: -(chunk_overlap + 1)])
             )
+
             return earliest_start
 
         if issubclass(cls, TokenTextSplitter):
@@ -323,9 +318,7 @@ class TokenTextSplitter(TextSplitter):
                 )
                 earliest_start = len(
                     self._tokenizer.decode(
-                        encoded_previous_chunk[
-                            : max(0, len(encoded_previous_chunk) - chunk_overlap)
-                        ]
+                        encoded_previous_chunk[: -(chunk_overlap + 1)]
                     )
                 )
 
