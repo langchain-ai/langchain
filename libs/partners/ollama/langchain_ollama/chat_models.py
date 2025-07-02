@@ -160,14 +160,14 @@ def _get_tool_calls_from_response(
     return tool_calls
 
 
-def _lc_tool_call_to_openai_tool_call(_tool_call: ToolCall) -> dict:
+def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
     """Convert a LangChain tool call to an OpenAI tool call format."""
     return {
         "type": "function",
-        "id": _tool_call["id"],
+        "id": tool_call_["id"],
         "function": {
-            "name": _tool_call["name"],
-            "arguments": _tool_call["args"],
+            "name": tool_call_["name"],
+            "arguments": tool_call_["args"],
         },
     }
 
