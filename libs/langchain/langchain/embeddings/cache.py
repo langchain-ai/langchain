@@ -35,7 +35,7 @@ def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
     but new applications should swap this out for a stronger hash function like
     xxHash, BLAKE2 or SHA-256, which are collision-resistant.
     """
-    sha1_hex = hashlib.sha1(text.encode("utf-8")).hexdigest()  # noqa: S324
+    sha1_hex = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
     # Embed the hex string in `uuid5` to obtain a valid UUID.
     return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
