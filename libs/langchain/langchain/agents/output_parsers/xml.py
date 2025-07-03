@@ -66,17 +66,35 @@ class XMLAgentOutputParser(AgentOutputParser):
     """
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if "</tool>" in text:
-            tool, tool_input = text.split("</tool>")
-            _tool = tool.split("<tool>")[1]
-            _tool_input = tool_input.split("<tool_input>")[1]
-            if "</tool_input>" in _tool_input:
-                _tool_input = _tool_input.split("</tool_input>")[0]
-            # Unescape custom delimiters in tool name and input
+        # Check for tool invocation first
+        tool_matches = re.findall(r"<tool>(.*?)</tool>", text, re.DOTALL)
+        if tool_matches:
+            if len(tool_matches) != 1:
+                raise ValueError(
+                    f"Malformed tool invocation: expected exactly one <tool> block, "
+                    f"but found {len(tool_matches)}."
+                )
+            _tool = tool_matches[0]
+
+            # Match optional tool input
+            input_matches = re.findall(
+                r"<tool_input>(.*?)</tool_input>", text, re.DOTALL
+            )
+            if len(input_matches) > 1:
+                raise ValueError(
+                    f"Malformed tool invocation: expected at most one <tool_input> "
+                    f"block, but found {len(input_matches)}."
+                )
+            _tool_input = input_matches[0] if input_matches else ""
+
+            # Unescape if minimal escape format is used
             if self.escape_format == "minimal":
                 _tool = _unescape(_tool)
                 _tool_input = _unescape(_tool_input)
+
             return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
+
+        # Check for final answer
         elif "<final_answer>" in text and "</final_answer>" in text:
             matches = re.findall(r"<final_answer>(.*?)</final_answer>", text, re.DOTALL)
             if len(matches) != 1:
@@ -86,6 +104,9 @@ class XMLAgentOutputParser(AgentOutputParser):
                 )
                 raise ValueError(msg)
             answer = matches[0]
+            # Unescape custom delimiters in final answer
+            if self.escape_format == "minimal":
+                answer = _unescape(answer)
             return AgentFinish(return_values={"output": answer}, log=text)
         else:
             msg = (
