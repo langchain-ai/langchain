@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from langchain_tests.integration_tests.base_store import (
     BaseStoreAsyncTests,
@@ -8,7 +10,7 @@ from langchain_core.stores import InMemoryStore
 
 
 # Check against standard tests
-class TestSyncInMemoryStore(BaseStoreSyncTests):
+class TestSyncInMemoryStore(BaseStoreSyncTests[Any]):
     @pytest.fixture
     def kv_store(self) -> InMemoryStore:
         return InMemoryStore()
