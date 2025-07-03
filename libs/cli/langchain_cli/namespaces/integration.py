@@ -6,10 +6,10 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, Optional, cast
+from typing import Annotated, Optional, cast
 
 import typer
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_cli.utils.find_replace import replace_file, replace_glob
 
@@ -123,7 +123,7 @@ def new(
         shutil.move(destination_dir / "integration_template", package_dir)
 
         # replacements in files
-        replace_glob(destination_dir, "**/*", cast(Dict[str, str], replacements))
+        replace_glob(destination_dir, "**/*", cast(dict[str, str], replacements))
 
         # poetry install
         subprocess.run(
@@ -167,7 +167,7 @@ def new(
 
         for src_path, dst_path in zip(src_paths, dst_paths):
             shutil.copy(src_path, dst_path)
-            replace_file(dst_path, cast(Dict[str, str], replacements))
+            replace_file(dst_path, cast(dict[str, str], replacements))
 
 
 TEMPLATE_MAP: dict[str, str] = {

@@ -1,8 +1,9 @@
 import hashlib
 import re
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, TypedDict
+from typing import Optional, TypedDict
 
 from git import Repo
 
@@ -18,7 +19,7 @@ class DependencySource(TypedDict):
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: Dict
+    event_metadata: dict
 
 
 # use poetry dependency string format
@@ -104,7 +105,7 @@ def parse_dependency_string(
         )
 
 
-def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional[str]]:
+def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional[str]]:
     if not arg:
         return [None] * num
     elif len(arg) == 1:
@@ -116,11 +117,11 @@ def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional
 
 
 def parse_dependencies(
-    dependencies: Optional[List[str]],
-    repo: List[str],
-    branch: List[str],
-    api_path: List[str],
-) -> List[DependencySource]:
+    dependencies: Optional[list[str]],
+    repo: list[str],
+    branch: list[str],
+    api_path: list[str],
+) -> list[DependencySource]:
     num_deps = max(
         len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
     )
@@ -150,7 +151,7 @@ def parse_dependencies(
 def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # only based on git for now
     ref_str = ref if ref is not None else ""
-    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode("utf-8")).hexdigest()[:8]
+    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
