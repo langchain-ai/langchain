@@ -203,4 +203,4 @@ def custom_openapi() -> dict[str, Any]:
 app.openapi = custom_openapi
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=PORT)  # noqa: S104
+    uvicorn.run(app, host="127.0.0.1", port=PORT)
