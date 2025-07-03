@@ -2,8 +2,6 @@
 
 from langchain_ollama import OllamaLLM
 
-SAMPLE = "What is 3^3?"
-
 MODEL_NAME = "llama3.1"
 
 
