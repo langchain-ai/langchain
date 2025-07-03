@@ -205,19 +205,20 @@ class ChatOllama(BaseChatModel):
     Key init args — completion params:
         model: str
             Name of Ollama model to use.
-        reason: Optional[bool]
+        reasoning: Optional[bool]
             Controls the reasoning/thinking mode for
             `supported models <https://ollama.com/search?c=thinking>`__.
 
             - ``True``: Enables reasoning mode. The model's reasoning process will be
-              captured and returned separately in the ``additional_kwargs`` of the
-              response message, under ``reasoning_content``. The main response
-              content will not include the reasoning tags.
+            captured and returned separately in the ``additional_kwargs`` of the
+            response message, under ``reasoning_content``. The main response
+            content will not include the reasoning tags.
             - ``False``: Disables reasoning mode. The model will not perform any reasoning,
-              and the response will not include any reasoning content.
-            - ``None`` (Default): The model will use its default reasoning behavior. If
-              the model performs reasoning, the ``<think>`` and ``</think>`` tags will
-              be present directly within the main response content.
+            and the response will not include any reasoning content.
+            - ``None`` (Default): The model will use its default reasoning behavior. Note
+            however, if the model's default behavior *is* to perform reasoning, think tags
+            ()``<think>`` and ``</think>``) will be present within the main response content
+            unless you set ``reasoning`` to ``True``.
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         num_predict: Optional[int]
@@ -359,7 +360,7 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = True
+    reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
@@ -369,9 +370,10 @@ class ChatOllama(BaseChatModel):
       content will not include the reasoning tags.
     - ``False``: Disables reasoning mode. The model will not perform any reasoning,
       and the response will not include any reasoning content.
-    - ``None`` (Default): The model will use its default reasoning behavior. If
-      the model performs reasoning, the ``<think>`` and ``</think>`` tags will
-      be present directly within the main response content."""
+    - ``None`` (Default): The model will use its default reasoning behavior. Note
+      however, if the model's default behavior *is* to perform reasoning, think tags
+      ()``<think>`` and ``</think>``) will be present within the main response content
+      unless you set ``reasoning`` to ``True``."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
