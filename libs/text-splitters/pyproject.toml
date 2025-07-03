@@ -61,8 +61,8 @@ ignore_missing_imports = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "PGH003", "T201", "D"]
-ignore = ["D100"]
+select = ["E", "F", "I", "UP", "PGH003", "T201", "D"]
+ignore = ["D100", "UP007"]
 
 [tool.coverage.run]
 omit = ["tests/*"]

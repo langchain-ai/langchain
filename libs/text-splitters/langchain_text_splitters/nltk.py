@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -35,7 +35,7 @@ class NLTKTextSplitter(TextSplitter):
                 "NLTK is not installed, please install it with `pip install nltk`."
             )
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         if self._use_span_tokenize:
