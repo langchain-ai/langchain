@@ -772,12 +772,11 @@ class ChatOllama(BaseChatModel):
                     else ""
                 )
 
-                # We append `thinking` content to `additional_kwargs` regardless of
-                # whether `reason` is set to True or not. It should only be present
-                # when set to True in the model, though.
                 additional_kwargs = {}
-                if "message" in stream_resp and (
-                    thinking_content := stream_resp["message"].get("thinking")
+                if (
+                    self.reasoning
+                    and "message" in stream_resp
+                    and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
                     additional_kwargs["reasoning_content"] = thinking_content
 
@@ -832,12 +831,11 @@ class ChatOllama(BaseChatModel):
                     else ""
                 )
 
-                # We append `thinking` content to `additional_kwargs` regardless of
-                # whether `reason` is set to True or not. It should only be present
-                # when set to True in the model, though.
                 additional_kwargs = {}
-                if "message" in stream_resp and (
-                    thinking_content := stream_resp["message"].get("thinking")
+                if (
+                    self.reasoning
+                    and "message" in stream_resp
+                    and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
                     additional_kwargs["reasoning_content"] = thinking_content
 
