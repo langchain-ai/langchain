@@ -122,13 +122,12 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 def _get_schema_from_model(
     model: type, *, field_description: Optional[str] = None
 ) -> dict:
-    """Gets JSON schema for Pydantic models.
+    """Gets the JSON schema for a Pydantic model, handling nested model descriptions.
 
-    This function handles nested models and descriptions. It recursively generates
-    a JSON schema for a Pydantic model, ensuring that if a nested model does not
-    have its own docstring-based description, it falls back to using the description
-    from the parent model's field. It also resolves model definitions ('$defs' or
-    'definitions') for nested Pydantic models.
+    This function recursively generates a JSON schema for a Pydantic model.
+    It ensures that if a nested model does not have its own docstring-based
+    description, it falls back to using the description from the parent model's
+    field.
 
     Args:
         model: The Pydantic model class to generate a schema for.
@@ -145,30 +144,40 @@ def _get_schema_from_model(
         msg = "Model must be a Pydantic model."
         raise TypeError(msg)
 
+    # If the schema has no description, but a parent field provided one, use it.
     if not schema.get("description") and field_description:
         schema["description"] = field_description
 
-    if "definitions" in schema:
-        defs = schema["definitions"]
+    # Recursively handle nested models to propagate descriptions.
+    # Check for Pydantic v1.
+    if (
+        is_basemodel_subclass(model)
+        and hasattr(model, "__fields__")
+        and "definitions" in schema
+    ):
         for field_name, field in model.__fields__.items():
-            if field.type_.__name__ in defs:
+            if field.type_.__name__ in schema["definitions"]:
+                # Recurse, passing the description from the parent field.
                 schema["properties"][field_name] = _get_schema_from_model(
                     field.type_, field_description=field.field_info.description
                 )
-        schema.pop("definitions")
 
-    if "$defs" in schema:
-        defs = schema["$defs"]
+    # Check for Pydantic v2.
+    if (
+        is_basemodel_subclass(model)
+        and hasattr(model, "model_fields")
+        and "$defs" in schema
+    ):
         for field_name, field_info in model.model_fields.items():
             if (
                 field_info.annotation
                 and hasattr(field_info.annotation, "__name__")
-                and field_info.annotation.__name__ in defs
+                and field_info.annotation.__name__ in schema["$defs"]
             ):
+                # Recurse, passing the description from the parent field.
                 schema["properties"][field_name] = _get_schema_from_model(
                     field_info.annotation, field_description=field_info.description
                 )
-        schema.pop("$defs")
 
     return schema
 
