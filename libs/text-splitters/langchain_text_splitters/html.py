@@ -309,7 +309,6 @@ class HTMLSectionSplitter:
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -318,20 +317,13 @@ class HTMLSectionSplitter:
             headers_to_split_on: list of tuples of headers we want to track mapped to
                 (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
                 h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2"].
-            xslt_path: path to xslt file for document transformation.
-            Uses a default if not passed.
-            Needed for html contents that using different format and layouts.
             **kwargs (Any): Additional optional arguments for customizations.
 
         """
         self.headers_to_split_on = dict(headers_to_split_on)
-
-        if xslt_path is None:
-            self.xslt_path = (
-                pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
-            ).absolute()
-        else:
-            self.xslt_path = pathlib.Path(xslt_path).absolute()
+        self.xslt_path = (
+            pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
+        ).absolute()
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
@@ -457,11 +449,20 @@ class HTMLSectionSplitter:
                 "Unable to import lxml, please install with `pip install lxml`."
             ) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
-        tree = etree.parse(StringIO(html_content), parser)
+        # Create secure parsers to prevent XXE attacks
+        html_parser = etree.HTMLParser(no_network=True)
+        xslt_parser = etree.XMLParser(
+            resolve_entities=False, no_network=True, load_dtd=False
+        )
 
-        xslt_tree = etree.parse(self.xslt_path)
-        transform = etree.XSLT(xslt_tree)
+        # Apply XSLT access control to prevent file/network access
+        # DENY_ALL is a predefined access control that blocks all file/network access
+        # Type ignore needed due to incomplete lxml type stubs
+        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
+
+        tree = etree.parse(StringIO(html_content), html_parser)
+        xslt_tree = etree.parse(self.xslt_path, xslt_parser)
+        transform = etree.XSLT(xslt_tree, access_control=ac)
         result = transform(tree)
         return str(result)
 
