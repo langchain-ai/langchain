@@ -687,3 +687,6 @@ packages:
   path: libs/langchain-db2
   repo: langchain-ai/langchain-ibm
   provider_page: ibm
+- name: langchain-greennode
+  path: libs/greennode
+  repo: greennode-ai/langchain-greennode
