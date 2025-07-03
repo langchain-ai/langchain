@@ -95,7 +95,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     Embed multiple texts:
         .. code-block:: python
 
-             input_texts = ["Document 1...", "Document 2..."]
+            input_texts = ["Document 1...", "Document 2..."]
             vectors = embed.embed_documents(input_texts)
             print(len(vectors))
             # The first 3 coordinates for the first vector
@@ -110,7 +110,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             vector = await embed.aembed_query(input_text)
-           print(vector[:3])
+            print(vector[:3])
 
             # multiple:
             # await embed.aembed_documents(input_texts)
