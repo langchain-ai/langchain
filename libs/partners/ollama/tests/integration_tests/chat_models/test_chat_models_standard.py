@@ -54,13 +54,21 @@ class TestChatOllama(ChatModelIntegrationTests):
         await super().test_tool_calling_async(model)
 
     @patch("langchain_ollama.chat_models.Client.list")
+    def test_init_model_not_found(self, mock_list: MagicMock) -> None:
+        """Test that a ValueError is raised when the model is not found."""
+        mock_list.side_effect = ValueError("Test model not found")
+        with pytest.raises(ValueError) as excinfo:
+            ChatOllama(model="non-existent-model", validate_model_on_init=True)
+        assert "Test model not found" in str(excinfo.value)
+
+    @patch("langchain_ollama.chat_models.Client.list")
     def test_init_connection_error(self, mock_list: MagicMock) -> None:
         """Test that a ValidationError is raised on connect failure during init."""
         mock_list.side_effect = ConnectError("Test connection error")
 
         with pytest.raises(ValidationError) as excinfo:
             ChatOllama(model="any-model", validate_model_on_init=True)
-        assert "Connection to Ollama failed" in str(excinfo.value)
+        assert "not found in Ollama" in str(excinfo.value)
 
     @patch("langchain_ollama.chat_models.Client.list")
     def test_init_response_error(self, mock_list: MagicMock) -> None:
