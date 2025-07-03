@@ -55,7 +55,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
-from .utils import validate_model
+from ._utils import validate_model
 
 DEFAULT_THINK_TOKEN_START: Final[str] = "<think>"
 DEFAULT_THINK_TOKEN_END: Final[str] = "</think>"

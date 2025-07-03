@@ -18,7 +18,7 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
-from .utils import validate_model
+from ._utils import validate_model
 
 
 class OllamaLLM(BaseLLM):
