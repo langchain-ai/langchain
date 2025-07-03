@@ -201,11 +201,11 @@ def test_sha512_encoder() -> None:
 
 
 def test_sha1_warning_emitted_once() -> None:
-    """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
+    """Test that a warning is emitted when using SHA-1 as the default key encoder."""
     module = importlib.import_module(CacheBackedEmbeddings.__module__)
 
     # Create a *temporary* MonkeyPatch object whose effects disappear
-    # automatically when the with‑block exits.
+    # automatically when the with-block exits.
     with pytest.MonkeyPatch.context() as mp:
         # We're monkey patching the module to reset the `_warned_about_sha1` flag
         # which may have been set while testing other parts of the codebase.
@@ -219,7 +219,7 @@ def test_sha1_warning_emitted_once() -> None:
             CacheBackedEmbeddings.from_bytes_store(emb, store)  # triggers warning
             CacheBackedEmbeddings.from_bytes_store(emb, store)  # silent
 
-        sha1_msgs = [w for w in caught if "SHA‑1" in str(w.message)]
+        sha1_msgs = [w for w in caught if "SHA-1" in str(w.message)]
         assert len(sha1_msgs) == 1
 
 
