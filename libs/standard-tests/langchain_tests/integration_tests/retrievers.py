@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Type
 
 import pytest
 from langchain_core.documents import Document
@@ -15,7 +14,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
     @property
     @abstractmethod
-    def retriever_constructor(self) -> Type[BaseRetriever]:
+    def retriever_constructor(self) -> type[BaseRetriever]:
         """
         A BaseRetriever subclass to be tested.
         """

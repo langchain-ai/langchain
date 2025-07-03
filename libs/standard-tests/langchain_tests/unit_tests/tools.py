@@ -1,6 +1,6 @@
 import os
 from abc import abstractmethod
-from typing import Tuple, Type, Union
+from typing import Union
 from unittest import mock
 
 import pytest
@@ -19,7 +19,7 @@ class ToolsTests(BaseStandardTests):
 
     @property
     @abstractmethod
-    def tool_constructor(self) -> Union[Type[BaseTool], BaseTool]:
+    def tool_constructor(self) -> Union[type[BaseTool], BaseTool]:
         """
         Returns a class or instance of a tool to be tested.
         """
@@ -64,7 +64,7 @@ class ToolsUnitTests(ToolsTests):
     """
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """Return env vars, init args, and expected instance attrs for initializing
         from env vars."""
         return {}, {}, {}
