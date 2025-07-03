@@ -147,6 +147,10 @@
       "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/singlestoredb/"
     },
     {
+      "source": "/docs/integrations/providers/dspy(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/providers/dspy/"
+    },
+    {
       "source": "/api_reference/mongodb/:path(.*/?)*",
       "destination": "https://langchain-mongodb.readthedocs.io/en/latest/langchain_mongodb/api_docs.html"
     },

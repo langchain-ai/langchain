@@ -55,6 +55,8 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
+from ._utils import validate_model
+
 DEFAULT_THINK_TOKEN_START: Final[str] = "<think>"
 DEFAULT_THINK_TOKEN_END: Final[str] = "</think>"
 
@@ -350,6 +352,9 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in Ollama locally on initialization."""
+
     extract_reasoning: Optional[Union[bool, tuple[str, str]]] = False
     """Whether to extract the reasoning tokens in think blocks.
     Extracts `chunk.content` to `chunk.additional_kwargs.reasoning_content`.
@@ -436,8 +441,23 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client.
-    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """Additional kwargs to pass to the httpx clients. 
+    These arguments are passed to both synchronous and async clients.
+    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+    to synchronous and asynchronous clients.
+    """
+
+    async_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX
+    AsyncClient.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    """
+
+    sync_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
     _client: Client = PrivateAttr(default=None)  # type: ignore
@@ -503,8 +523,19 @@ class ChatOllama(BaseChatModel):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
-        self._client = Client(host=self.base_url, **client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+
+        sync_client_kwargs = client_kwargs
+        if self.sync_client_kwargs:
+            sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
+
+        async_client_kwargs = client_kwargs
+        if self.async_client_kwargs:
+            async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+
+        self._client = Client(host=self.base_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     def _convert_messages_to_ollama_messages(
@@ -1202,7 +1233,7 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)

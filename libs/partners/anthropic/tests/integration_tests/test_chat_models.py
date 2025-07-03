@@ -1,8 +1,10 @@
 """Test ChatAnthropic chat model."""
 
+import asyncio
 import json
+import os
 from base64 import b64encode
-from typing import Optional
+from typing import Optional, cast
 
 import httpx
 import pytest
@@ -41,7 +43,10 @@ def test_stream() -> None:
     chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = token if full is None else full + token
+        if full is None:
+            full = cast(BaseMessageChunk, token)
+        else:
+            full = full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -80,7 +85,10 @@ async def test_astream() -> None:
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = token if full is None else full + token
+        if full is None:
+            full = cast(BaseMessageChunk, token)
+        else:
+            full = full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -643,7 +651,7 @@ def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
 
 def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-    data = b64encode(requests.get(url).content).decode()
+    data = b64encode(requests.get(url, timeout=10).content).decode()
 
     result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
         [
@@ -696,7 +704,10 @@ def test_citations() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(messages):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
@@ -721,7 +732,10 @@ def test_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("Hello"):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("thinking" in block for block in full.content)
@@ -755,7 +769,10 @@ def test_redacted_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(query):
-        full = chunk if full is None else full + chunk
+        if full is None:
+            full = cast(BaseMessageChunk, chunk)
+        else:
+            full = full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     stream_has_reasoning = False
@@ -863,3 +880,213 @@ def test_image_tool_calling() -> None:
     ]
     llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
     llm.bind_tools([color_picker]).invoke(messages)
+
+
+# TODO: set up VCR
+def test_web_search() -> None:
+    pytest.skip()
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+
+    tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "How do I update a web app to TypeScript 5.5?",
+            }
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please repeat the last search, but focus on sources from 2024.",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
+def test_code_execution() -> None:
+    pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["code-execution-2025-05-22"],
+    )
+
+    tool = {"type": "code_execution_20250522", "name": "code_execution"}
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": (
+                    "Calculate the mean and standard deviation of "
+                    "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                ),
+            }
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please add more comments to the code.",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
+def test_remote_mcp() -> None:
+    pytest.skip()
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.deepwiki.com/mcp",
+            "name": "deepwiki",
+            "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
+            "authorization_token": "PLACEHOLDER",
+        }
+    ]
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["mcp-client-2025-04-04"],
+        mcp_servers=mcp_servers,
+    )
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": (
+                    "What transport protocols does the 2025-03-26 version of the MCP "
+                    "spec (modelcontextprotocol/modelcontextprotocol) support?"
+                ),
+            }
+        ],
+    }
+    response = llm.invoke([input_message])
+    block_types = {block["type"] for block in response.content}
+    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}
+    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "Please query the same tool again, but add 'please' to your query.",
+    }
+    _ = llm.invoke(
+        [input_message, full, next_message],
+    )
+
+
+@pytest.mark.parametrize("block_format", ["anthropic", "standard"])
+def test_files_api_image(block_format: str) -> None:
+    image_file_id = os.getenv("ANTHROPIC_FILES_API_IMAGE_ID")
+    if not image_file_id:
+        pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["files-api-2025-04-14"],
+    )
+    if block_format == "anthropic":
+        block = {
+            "type": "image",
+            "source": {
+                "type": "file",
+                "file_id": image_file_id,
+            },
+        }
+    else:
+        # standard block format
+        block = {
+            "type": "image",
+            "source_type": "id",
+            "id": image_file_id,
+        }
+    input_message = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image."},
+            block,
+        ],
+    }
+    _ = llm.invoke([input_message])
+
+
+@pytest.mark.parametrize("block_format", ["anthropic", "standard"])
+def test_files_api_pdf(block_format: str) -> None:
+    pdf_file_id = os.getenv("ANTHROPIC_FILES_API_PDF_ID")
+    if not pdf_file_id:
+        pytest.skip()
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["files-api-2025-04-14"],
+    )
+    if block_format == "anthropic":
+        block = {"type": "document", "source": {"type": "file", "file_id": pdf_file_id}}
+    else:
+        # standard block format
+        block = {
+            "type": "file",
+            "source_type": "id",
+            "id": pdf_file_id,
+        }
+    input_message = {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this document."},
+            block,
+        ],
+    }
+    _ = llm.invoke([input_message])
+
+
+def test_async_shared_client() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm._async_client  # Instantiates lazily
+    _ = asyncio.run(llm.ainvoke("Hello"))
+    _ = asyncio.run(llm.ainvoke("Hello"))

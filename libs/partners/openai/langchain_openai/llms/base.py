@@ -40,7 +40,7 @@ def _stream_response_to_generation_chunk(
     if not stream_response["choices"]:
         return GenerationChunk(text="")
     return GenerationChunk(
-        text=stream_response["choices"][0]["text"],
+        text=stream_response["choices"][0]["text"] or "",
         generation_info=dict(
             finish_reason=stream_response["choices"][0].get("finish_reason", None),
             logprobs=stream_response["choices"][0].get("logprobs", None),
@@ -310,7 +310,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,
@@ -378,7 +379,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,

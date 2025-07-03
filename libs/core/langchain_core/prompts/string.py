@@ -125,20 +125,20 @@ def mustache_template_vars(
     Returns:
         The variables from the template.
     """
-    vars: set[str] = set()
+    variables: set[str] = set()
     section_depth = 0
-    for type, key in mustache.tokenize(template):
-        if type == "end":
+    for type_, key in mustache.tokenize(template):
+        if type_ == "end":
             section_depth -= 1
         elif (
-            type in ("variable", "section", "inverted section", "no escape")
+            type_ in ("variable", "section", "inverted section", "no escape")
             and key != "."
             and section_depth == 0
         ):
-            vars.add(key.split(".")[0])
-        if type in ("section", "inverted section"):
+            variables.add(key.split(".")[0])
+        if type_ in ("section", "inverted section"):
             section_depth += 1
-    return vars
+    return variables
 
 
 Defs = dict[str, "Defs"]
@@ -158,17 +158,17 @@ def mustache_schema(
     fields = {}
     prefix: tuple[str, ...] = ()
     section_stack: list[tuple[str, ...]] = []
-    for type, key in mustache.tokenize(template):
+    for type_, key in mustache.tokenize(template):
         if key == ".":
             continue
-        if type == "end":
+        if type_ == "end":
             if section_stack:
                 prefix = section_stack.pop()
-        elif type in ("section", "inverted section"):
+        elif type_ in ("section", "inverted section"):
             section_stack.append(prefix)
             prefix = prefix + tuple(key.split("."))
             fields[prefix] = False
-        elif type in ("variable", "no escape"):
+        elif type_ in ("variable", "no escape"):
             fields[prefix + tuple(key.split("."))] = True
     defs: Defs = {}  # None means leaf node
     while fields:

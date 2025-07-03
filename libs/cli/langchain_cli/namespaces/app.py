@@ -7,10 +7,9 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
@@ -44,7 +43,7 @@ def new(
     ] = None,
     *,
     package: Annotated[
-        Optional[List[str]],
+        Optional[list[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
     pip: Annotated[
@@ -132,19 +131,19 @@ def new(
 @app_cli.command()
 def add(
     dependencies: Annotated[
-        Optional[List[str]], typer.Argument(help="The dependency to add")
+        Optional[list[str]], typer.Argument(help="The dependency to add")
     ] = None,
     *,
-    api_path: Annotated[List[str], typer.Option(help="API paths to add")] = [],
+    api_path: Annotated[list[str], typer.Option(help="API paths to add")] = [],
     project_dir: Annotated[
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
     repo: Annotated[
-        List[str],
+        list[str],
         typer.Option(help="Install templates from a specific github repo instead"),
     ] = [],
     branch: Annotated[
-        List[str], typer.Option(help="Install templates from a specific branch")
+        list[str], typer.Option(help="Install templates from a specific branch")
     ] = [],
     pip: Annotated[
         bool,
@@ -181,16 +180,16 @@ def add(
     )
 
     # group by repo/ref
-    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = {}
+    grouped: dict[tuple[str, Optional[str]], list[DependencySource]] = {}
     for dep in parsed_deps:
         key_tup = (dep["git"], dep["ref"])
         lst = grouped.get(key_tup, [])
         lst.append(dep)
         grouped[key_tup] = lst
 
-    installed_destination_paths: List[Path] = []
-    installed_destination_names: List[str] = []
-    installed_exports: List[LangServeExport] = []
+    installed_destination_paths: list[Path] = []
+    installed_destination_names: list[str] = []
+    installed_exports: list[LangServeExport] = []
 
     for (git, ref), group_deps in grouped.items():
         if len(group_deps) == 1:
@@ -295,7 +294,7 @@ def add(
 
 @app_cli.command()
 def remove(
-    api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
+    api_paths: Annotated[list[str], typer.Argument(help="The API paths to remove")],
     *,
     project_dir: Annotated[
         Optional[Path], typer.Option(help="The project directory")
@@ -311,7 +310,7 @@ def remove(
 
     package_root = project_root / "packages"
 
-    remove_deps: List[str] = []
+    remove_deps: list[str] = []
 
     for api_path in api_paths:
         package_dir = package_root / api_path

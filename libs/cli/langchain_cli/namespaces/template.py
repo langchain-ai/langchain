@@ -6,10 +6,9 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 

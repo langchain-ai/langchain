@@ -4,6 +4,8 @@ import warnings
 from functools import cached_property
 from typing import Any, Literal, Optional
 
+from typing_extensions import override
+
 from langchain_core.load import dumpd
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -36,6 +38,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         """Format the prompt with the inputs."""
         return self.format(**kwargs)
 
+    @override
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> dict:

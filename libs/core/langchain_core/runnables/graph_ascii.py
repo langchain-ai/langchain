@@ -111,15 +111,15 @@ class AsciiCanvas:
             self.point(x0, y0, char)
         elif abs(dx) >= abs(dy):
             for x in range(x0, x1 + 1):
-                y = y0 if dx == 0 else y0 + int(round((x - x0) * dy / float(dx)))
+                y = y0 if dx == 0 else y0 + round((x - x0) * dy / float(dx))
                 self.point(x, y, char)
         elif y0 < y1:
             for y in range(y0, y1 + 1):
-                x = x0 if dy == 0 else x0 + int(round((y - y0) * dx / float(dy)))
+                x = x0 if dy == 0 else x0 + round((y - y0) * dx / float(dy))
                 self.point(x, y, char)
         else:
             for y in range(y1, y0 + 1):
-                x = x0 if dy == 0 else x1 + int(round((y - y1) * dx / float(dy)))
+                x = x0 if dy == 0 else x1 + round((y - y1) * dx / float(dy))
                 self.point(x, y, char)
 
     def text(self, x: int, y: int, text: str) -> None:
@@ -192,7 +192,7 @@ def _build_sugiyama_layout(
     # Y
     #
 
-    vertices_ = {id: Vertex(f" {data} ") for id, data in vertices.items()}
+    vertices_ = {id_: Vertex(f" {data} ") for id_, data in vertices.items()}
     edges_ = [Edge(vertices_[s], vertices_[e], data=cond) for s, e, _, cond in edges]
     vertices_list = vertices_.values()
     graph = Graph(vertices_list, edges_)
@@ -291,8 +291,8 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     maxx = max(xlist)
     maxy = max(ylist)
 
-    canvas_cols = int(math.ceil(math.ceil(maxx) - math.floor(minx))) + 1
-    canvas_lines = int(round(maxy - miny))
+    canvas_cols = math.ceil(math.ceil(maxx) - math.floor(minx)) + 1
+    canvas_lines = round(maxy - miny)
 
     canvas = AsciiCanvas(canvas_cols, canvas_lines)
 
@@ -305,10 +305,10 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
             start = edge.view.pts[index - 1]
             end = edge.view.pts[index]
 
-            start_x = int(round(start[0] - minx))
-            start_y = int(round(start[1] - miny))
-            end_x = int(round(end[0] - minx))
-            end_y = int(round(end[1] - miny))
+            start_x = round(start[0] - minx)
+            start_y = round(start[1] - miny)
+            end_x = round(end[0] - minx)
+            end_y = round(end[1] - miny)
 
             if start_x < 0 or start_y < 0 or end_x < 0 or end_y < 0:
                 msg = (
@@ -328,12 +328,12 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         y = vertex.view.xy[1]
 
         canvas.box(
-            int(round(x - minx)),
-            int(round(y - miny)),
+            round(x - minx),
+            round(y - miny),
             vertex.view.w,
             vertex.view.h,
         )
 
-        canvas.text(int(round(x - minx)) + 1, int(round(y - miny)) + 1, vertex.data)
+        canvas.text(round(x - minx) + 1, round(y - miny) + 1, vertex.data)
 
     return canvas.draw()

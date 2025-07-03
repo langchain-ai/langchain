@@ -67,7 +67,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     for pkg in reversed(order_by):
         if pkg in all_packages:
             all_packages.remove(pkg)
-            all_packages = [pkg] + list(all_packages)
+            all_packages = [pkg, *list(all_packages)]
 
     system_info = {
         "OS": platform.system(),

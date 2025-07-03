@@ -65,8 +65,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -79,9 +77,11 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict:
     if isinstance(tool_schema, dict):
         return tool_schema
 
-    if hasattr(tool_schema, "model_json_schema"):
+    if issubclass(tool_schema, BaseModel):
         return tool_schema.model_json_schema()
-    return tool_schema.schema()
+    if issubclass(tool_schema, BaseModelV1):
+        return tool_schema.schema()
+    return {}
 
 
 def test_unnamed_decorator() -> None:
@@ -210,7 +210,7 @@ def test_decorator_with_specified_schema() -> None:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
-    assert tool_func_v1.args_schema == _MockSchemaV1
+    assert tool_func_v1.args_schema == cast("ArgsSchema", _MockSchemaV1)
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -1853,11 +1853,14 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     )
 
     input_schema = tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
+
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1943,12 +1946,14 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast("BaseModel", foo_tool.args_schema)
-    args_json_schema = (
-        args_schema.model_json_schema()
-        if hasattr(args_schema, "model_json_schema")
-        else args_schema.schema()
-    )
+    args_schema = cast("type[BaseModel]", foo_tool.args_schema)
+    if issubclass(args_schema, BaseModel):
+        args_json_schema = args_schema.model_json_schema()
+    elif issubclass(args_schema, BaseModelV1):
+        args_json_schema = args_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1960,11 +1965,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2020,7 +2027,6 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
@@ -2038,63 +2044,6 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    class ModelB(ModelA[str]):
-        b: Annotated[ModelA[dict[str, Any]], "foo"]
-
-    class Mixin:
-        def foo(self) -> str:
-            return "foo"
-
-    class ModelC(Mixin, ModelB):
-        c: dict
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = get_all_basemodel_annotations(ModelC)
-    assert actual == expected
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = get_all_basemodel_annotations(ModelB)
-    assert actual == expected
-
-    expected = {"a": Any}
-    actual = get_all_basemodel_annotations(ModelA)
-    assert actual == expected
-
-    expected = {"a": int}
-    actual = get_all_basemodel_annotations(ModelA[int])
-    assert actual == expected
-
-    D = TypeVar("D", bound=Union[str, int])
-
-    class ModelD(ModelC, Generic[D]):
-        d: Optional[D]
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[str, int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD)
-    assert actual == expected
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD[int])
-    assert actual == expected
-
-
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
-def test__get_all_basemodel_annotations_v1() -> None:
-    A = TypeVar("A")
-
-    class ModelA(BaseModel, Generic[A], extra="allow"):
-        a: A
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[dict[str, Any]], "foo"]
@@ -2226,7 +2175,6 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
@@ -2312,7 +2260,7 @@ def test_injected_arg_with_complex_type() -> None:
             self.value = "bar"
 
     @tool
-    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:  # noqa: ARG001
+    def injected_tool(x: int, foo: Annotated[Foo, InjectedToolArg]) -> str:
         """Tool that has an injected tool arg."""
         return foo.value
 
@@ -2488,7 +2436,7 @@ def test_simple_tool_args_schema_dict() -> None:
 
 def test_empty_string_tool_call_id() -> None:
     @tool
-    def foo(x: int) -> str:  # noqa: ARG001
+    def foo(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2500,7 +2448,7 @@ def test_empty_string_tool_call_id() -> None:
 def test_tool_decorator_description() -> None:
     # test basic tool
     @tool
-    def foo(x: int) -> str:  # noqa: ARG001
+    def foo(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2512,7 +2460,7 @@ def test_tool_decorator_description() -> None:
 
     # test basic tool with description
     @tool(description="description")
-    def foo_description(x: int) -> str:  # noqa: ARG001
+    def foo_description(x: int) -> str:
         """Foo."""
         return "hi"
 
@@ -2531,7 +2479,7 @@ def test_tool_decorator_description() -> None:
         x: int
 
     @tool(args_schema=ArgsSchema)
-    def foo_args_schema(x: int) -> str:  # noqa: ARG001
+    def foo_args_schema(x: int) -> str:
         return "hi"
 
     assert foo_args_schema.description == "Bar."
@@ -2543,7 +2491,7 @@ def test_tool_decorator_description() -> None:
     )
 
     @tool(description="description", args_schema=ArgsSchema)
-    def foo_args_schema_description(x: int) -> str:  # noqa: ARG001
+    def foo_args_schema_description(x: int) -> str:
         return "hi"
 
     assert foo_args_schema_description.description == "description"
@@ -2565,11 +2513,11 @@ def test_tool_decorator_description() -> None:
     }
 
     @tool(args_schema=args_json_schema)
-    def foo_args_jsons_schema(x: int) -> str:  # noqa: ARG001
+    def foo_args_jsons_schema(x: int) -> str:
         return "hi"
 
     @tool(description="description", args_schema=args_json_schema)
-    def foo_args_jsons_schema_with_description(x: int) -> str:  # noqa: ARG001
+    def foo_args_jsons_schema_with_description(x: int) -> str:
         return "hi"
 
     assert foo_args_jsons_schema.description == "JSON Schema."
@@ -2629,10 +2577,10 @@ def test_title_property_preserved() -> None:
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool asynchronously."""
 
-    def sync_no_op(foo: int) -> str:  # noqa: ARG001
+    def sync_no_op(foo: int) -> str:
         return "good"
 
-    async def async_no_op(foo: int) -> str:  # noqa: ARG001
+    async def async_no_op(foo: int) -> str:
         return "good"
 
     tool = StructuredTool(
@@ -2677,10 +2625,10 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
 def test_tool_invoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool synchronously."""
 
-    def sync_no_op(foo: int) -> str:  # noqa: ARG001
+    def sync_no_op(foo: int) -> str:
         return "good"
 
-    async def async_no_op(foo: int) -> str:  # noqa: ARG001
+    async def async_no_op(foo: int) -> str:
         return "good"
 
     tool = StructuredTool(
@@ -2710,4 +2658,25 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "args": {"foo": 2},
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
+    }
+
+
+def test_tool_args_schema_with_annotated_type() -> None:
+    @tool
+    def test_tool(
+        query_fragments: Annotated[
+            list[str],
+            "A list of query fragments",
+        ],
+    ) -> list[str]:
+        """Search the Internet and retrieve relevant result items."""
+        return []
+
+    assert test_tool.args == {
+        "query_fragments": {
+            "description": "A list of query fragments",
+            "items": {"type": "string"},
+            "title": "Query Fragments",
+            "type": "array",
+        }
     }

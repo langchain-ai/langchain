@@ -1,13 +1,10 @@
-from typing import List, Tuple
-
-
-def split_package(package: str) -> Tuple[str, str]:
+def split_package(package: str) -> tuple[str, str]:
     """Split a package name into the containing package and the final name"""
     parts = package.split(".")
     return ".".join(parts[:-1]), parts[-1]
 
 
-def dump_migrations_as_grit(name: str, migration_pairs: List[Tuple[str, str]]):
+def dump_migrations_as_grit(name: str, migration_pairs: list[tuple[str, str]]):
     """Dump the migration pairs as a Grit file."""
     output = "language python"
     remapped = ",\n".join(

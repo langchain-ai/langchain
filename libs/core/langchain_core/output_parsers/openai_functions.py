@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import-untyped]
 from pydantic import BaseModel, model_validator
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
@@ -72,6 +73,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _type(self) -> str:
         return "json_functions"
 
+    @override
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
@@ -274,10 +276,13 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 pydantic_schema = self.pydantic_schema[fn_name]
             else:
                 pydantic_schema = self.pydantic_schema
-            if hasattr(pydantic_schema, "model_validate_json"):
+            if issubclass(pydantic_schema, BaseModel):
                 pydantic_args = pydantic_schema.model_validate_json(_args)
-            else:
+            elif issubclass(pydantic_schema, BaseModelV1):
                 pydantic_args = pydantic_schema.parse_raw(_args)
+            else:
+                msg = f"Unsupported pydantic schema: {pydantic_schema}"
+                raise ValueError(msg)
         return pydantic_args
 
 
