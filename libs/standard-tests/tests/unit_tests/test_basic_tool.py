@@ -1,4 +1,4 @@
-from typing import Literal, Type
+from typing import Literal
 
 from langchain_core.tools import BaseTool
 
@@ -29,7 +29,7 @@ class ParrotMultiplyArtifactTool(BaseTool):  # type: ignore
 
 class TestParrotMultiplyToolUnit(ToolsUnitTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
     @property
@@ -52,7 +52,7 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
 
 class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
     @property
@@ -75,7 +75,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
 
 class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyArtifactTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyArtifactTool]:
         return ParrotMultiplyArtifactTool
 
     @property
