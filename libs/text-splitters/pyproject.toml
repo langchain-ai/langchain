@@ -37,11 +37,11 @@ test = [
     "langchain-core",
 ]
 test_integration = [
-    "spacy<3.8.4,>=3.0.0; python_version < \"3.10.0\"",
-    "spacy<4.0.0,>=3.0.0; python_version < \"3.13.0\"",
+    "spacy<4.0.0,>=3.8.7",
+    "thinc<9.0.0,>=8.3.6",
     "nltk<4.0.0,>=3.9.1",
     "transformers<5.0.0,>=4.51.3",
-    "sentence-transformers>=2.6.0; python_version < \"3.13\"",
+    "sentence-transformers>=3.0.1",
 ]
 
 [tool.uv.sources]
@@ -54,7 +54,7 @@ enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
 
 [[tool.mypy.overrides]]
-module = ["konlpy", "nltk", "sentence_transformers", "spacy",]
+module = ["konlpy", "nltk",]
 ignore_missing_imports = "True"
 
 [tool.ruff]
