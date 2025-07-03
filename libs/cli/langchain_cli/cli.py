@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from langchain_cli._version import __version__
 from langchain_cli.namespaces import app as app_namespace

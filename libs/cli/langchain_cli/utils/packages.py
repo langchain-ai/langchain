@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, TypedDict
+from typing import Any, Optional, TypedDict
 
 from tomlkit import load
 
@@ -7,7 +7,7 @@ from tomlkit import load
 def get_package_root(cwd: Optional[Path] = None) -> Path:
     # traverse path for routes to host (any directory holding a pyproject.toml file)
     package_root = Path.cwd() if cwd is None else cwd
-    visited: Set[Path] = set()
+    visited: set[Path] = set()
     while package_root not in visited:
         visited.add(package_root)
 
@@ -35,7 +35,7 @@ class LangServeExport(TypedDict):
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
     with open(filepath) as f:
-        data: Dict[str, Any] = load(f)
+        data: dict[str, Any] = load(f)
     try:
         module = data["tool"]["langserve"]["export_module"]
         attr = data["tool"]["langserve"]["export_attr"]
