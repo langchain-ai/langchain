@@ -6,31 +6,16 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.exceptions import LangChainException, OutputParserException
 from langchain_core.memory import BaseMemory
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-    _message_from_dict,
-    get_buffer_string,
-    messages_from_dict,
-    messages_to_dict,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, ChatMessage,
+                                     FunctionMessage, HumanMessage,
+                                     SystemMessage, _message_from_dict,
+                                     get_buffer_string, messages_from_dict,
+                                     messages_to_dict)
 from langchain_core.messages.base import message_to_dict
-from langchain_core.output_parsers import (
-    BaseLLMOutputParser,
-    BaseOutputParser,
-    StrOutputParser,
-)
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-    Generation,
-    LLMResult,
-    RunInfo,
-)
+from langchain_core.output_parsers import (BaseLLMOutputParser,
+                                           BaseOutputParser, StrOutputParser)
+from langchain_core.outputs import (ChatGeneration, ChatResult, Generation,
+                                    LLMResult, RunInfo)
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.retrievers import BaseRetriever

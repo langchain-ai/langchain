@@ -7,28 +7,19 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union, cast
 
 from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
-from langchain_core.language_models import (
-    BaseLanguageModel,
-    LanguageModelInput,
-)
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      AsyncCallbackManagerForChainRun,
+                                      CallbackManager,
+                                      CallbackManagerForChainRun, Callbacks)
+from langchain_core.language_models import (BaseLanguageModel,
+                                            LanguageModelInput)
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.runnables import (
-    Runnable,
-    RunnableBinding,
-    RunnableBranch,
-    RunnableWithFallbacks,
-)
+from langchain_core.runnables import (Runnable, RunnableBinding,
+                                      RunnableBranch, RunnableWithFallbacks)
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 from pydantic import ConfigDict, Field

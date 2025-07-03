@@ -30,49 +30,34 @@
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
-from langchain.memory.buffer import (
-    ConversationBufferMemory,
-    ConversationStringBufferMemory,
-)
+from langchain.memory.buffer import (ConversationBufferMemory,
+                                     ConversationStringBufferMemory)
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
-from langchain.memory.entity import (
-    ConversationEntityMemory,
-    InMemoryEntityStore,
-    RedisEntityStore,
-    SQLiteEntityStore,
-    UpstashRedisEntityStore,
-)
+from langchain.memory.entity import (ConversationEntityMemory,
+                                     InMemoryEntityStore, RedisEntityStore,
+                                     SQLiteEntityStore,
+                                     UpstashRedisEntityStore)
 from langchain.memory.readonly import ReadOnlySharedMemory
 from langchain.memory.simple import SimpleMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
 from langchain.memory.token_buffer import ConversationTokenBufferMemory
 from langchain.memory.vectorstore import VectorStoreRetrieverMemory
-from langchain.memory.vectorstore_token_buffer_memory import (
-    ConversationVectorStoreTokenBufferMemory,  # avoid circular import
-)
+from langchain.memory.vectorstore_token_buffer_memory import \
+    ConversationVectorStoreTokenBufferMemory  # avoid circular import
 
 if TYPE_CHECKING:
     from langchain_community.chat_message_histories import (
-        AstraDBChatMessageHistory,
-        CassandraChatMessageHistory,
-        ChatMessageHistory,
-        CosmosDBChatMessageHistory,
-        DynamoDBChatMessageHistory,
-        ElasticsearchChatMessageHistory,
-        FileChatMessageHistory,
-        MomentoChatMessageHistory,
-        MongoDBChatMessageHistory,
-        PostgresChatMessageHistory,
-        RedisChatMessageHistory,
-        SingleStoreDBChatMessageHistory,
-        SQLChatMessageHistory,
-        StreamlitChatMessageHistory,
-        UpstashRedisChatMessageHistory,
-        XataChatMessageHistory,
-        ZepChatMessageHistory,
-    )
+        AstraDBChatMessageHistory, CassandraChatMessageHistory,
+        ChatMessageHistory, CosmosDBChatMessageHistory,
+        DynamoDBChatMessageHistory, ElasticsearchChatMessageHistory,
+        FileChatMessageHistory, MomentoChatMessageHistory,
+        MongoDBChatMessageHistory, PostgresChatMessageHistory,
+        RedisChatMessageHistory, SingleStoreDBChatMessageHistory,
+        SQLChatMessageHistory, StreamlitChatMessageHistory,
+        UpstashRedisChatMessageHistory, XataChatMessageHistory,
+        ZepChatMessageHistory)
     from langchain_community.memory.kg import ConversationKGMemory
     from langchain_community.memory.motorhead_memory import MotorheadMemory
     from langchain_community.memory.zep_memory import ZepMemory

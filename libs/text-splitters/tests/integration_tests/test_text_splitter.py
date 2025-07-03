@@ -3,14 +3,10 @@
 from typing import Any
 
 import pytest
-
-from langchain_text_splitters import (
-    TokenTextSplitter,
-)
+from langchain_text_splitters import TokenTextSplitter
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.sentence_transformers import (
-    SentenceTransformersTokenTextSplitter,
-)
+from langchain_text_splitters.sentence_transformers import \
+    SentenceTransformersTokenTextSplitter
 
 
 @pytest.fixture()

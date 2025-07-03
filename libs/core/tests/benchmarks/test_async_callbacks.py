@@ -4,13 +4,13 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from typing_extensions import override
-
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from pytest_benchmark.fixture import \
+    BenchmarkFixture  # type: ignore[import-untyped]
+from typing_extensions import override
 
 
 class MyCustomAsyncHandler(AsyncCallbackHandler):

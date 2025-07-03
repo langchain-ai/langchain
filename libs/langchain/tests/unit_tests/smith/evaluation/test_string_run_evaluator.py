@@ -2,12 +2,11 @@
 
 from unittest.mock import MagicMock
 
+from tests.unit_tests.llms import fake_llm
+
 from langchain.evaluation import criteria
 from langchain.smith.evaluation.string_run_evaluator import (
-    ChainStringRunMapper,
-    StringRunEvaluatorChain,
-)
-from tests.unit_tests.llms import fake_llm
+    ChainStringRunMapper, StringRunEvaluatorChain)
 
 
 def test_evaluate_run() -> None:

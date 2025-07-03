@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Union
 
-from langchain_core.retrievers import (
-    BaseRetriever,
-    RetrieverOutput,
-)
+from langchain_core.retrievers import BaseRetriever, RetrieverOutput
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 

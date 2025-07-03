@@ -1,5 +1,5 @@
-from collections import defaultdict
 import sys
+from collections import defaultdict
 from typing import Optional
 
 if sys.version_info >= (3, 11):
@@ -8,17 +8,13 @@ else:
     # for python 3.10 and below, which doesnt have stdlib tomllib
     import tomli as tomllib
 
-from packaging.requirements import Requirement
-from packaging.specifiers import SpecifierSet
-from packaging.version import Version
-
-
-import requests
-from packaging.version import parse
+import re
 from typing import List
 
-import re
-
+import requests
+from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version, parse
 
 MIN_VERSION_LIBS = [
     "langchain-core",

@@ -18,13 +18,9 @@ except ImportError:
     Transformer = object  # type: ignore[assignment,misc]
     Lark = object  # type: ignore[assignment,misc]
 
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    FilterDirective,
-    Operation,
-    Operator,
-)
+from langchain_core.structured_query import (Comparator, Comparison,
+                                             FilterDirective, Operation,
+                                             Operator)
 
 GRAMMAR = r"""
     ?program: func_call

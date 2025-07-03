@@ -6,18 +6,11 @@ import hashlib
 import json
 import uuid
 import warnings
-from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
+from collections.abc import (AsyncIterable, AsyncIterator, Iterable, Iterator,
+                             Sequence)
 from itertools import islice
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypedDict,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (Any, Callable, Literal, Optional, TypedDict, TypeVar,
+                    Union, cast)
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document

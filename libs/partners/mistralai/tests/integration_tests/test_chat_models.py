@@ -7,16 +7,11 @@ from typing import Any, Optional
 
 import pytest
 from httpx import ReadTimeout
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessageChunk,
-    HumanMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk,
+                                     BaseMessageChunk, HumanMessage)
+from langchain_mistralai.chat_models import ChatMistralAI
 from pydantic import BaseModel
 from typing_extensions import TypedDict
-
-from langchain_mistralai.chat_models import ChatMistralAI
 
 
 def test_stream() -> None:

@@ -4,11 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.powerbi.prompt import (
-        POWERBI_CHAT_PREFIX,
-        POWERBI_CHAT_SUFFIX,
-        POWERBI_PREFIX,
-        POWERBI_SUFFIX,
-    )
+        POWERBI_CHAT_PREFIX, POWERBI_CHAT_SUFFIX, POWERBI_PREFIX,
+        POWERBI_SUFFIX)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

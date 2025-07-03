@@ -5,9 +5,7 @@ import re
 from collections.abc import Sequence
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -17,11 +15,8 @@ from langchain_core.runnables import Runnable
 from pydantic import Field
 
 from langchain.chains.base import Chain
-from langchain.chains.flare.prompts import (
-    PROMPT,
-    QUESTION_GENERATOR_PROMPT,
-    FinishedOutputParser,
-)
+from langchain.chains.flare.prompts import (PROMPT, QUESTION_GENERATOR_PROMPT,
+                                            FinishedOutputParser)
 from langchain.chains.llm import LLMChain
 
 logger = logging.getLogger(__name__)

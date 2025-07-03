@@ -6,47 +6,28 @@ import asyncio
 import inspect
 import threading
 from collections.abc import Awaitable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
-from pydantic import BaseModel, RootModel
-from typing_extensions import override
-
-from langchain_core.runnables.base import (
-    Other,
-    Runnable,
-    RunnableParallel,
-    RunnableSerializable,
-)
-from langchain_core.runnables.config import (
-    RunnableConfig,
-    acall_func_with_variable_args,
-    call_func_with_variable_args,
-    ensure_config,
-    get_executor_for_config,
-    patch_config,
-)
-from langchain_core.runnables.utils import (
-    AddableDict,
-    ConfigurableFieldSpec,
-)
+from langchain_core.runnables.base import (Other, Runnable, RunnableParallel,
+                                           RunnableSerializable)
+from langchain_core.runnables.config import (RunnableConfig,
+                                             acall_func_with_variable_args,
+                                             call_func_with_variable_args,
+                                             ensure_config,
+                                             get_executor_for_config,
+                                             patch_config)
+from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
+from pydantic import BaseModel, RootModel
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Mapping
 
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForChainRun,
-        CallbackManagerForChainRun,
-    )
+        AsyncCallbackManagerForChainRun, CallbackManagerForChainRun)
     from langchain_core.runnables.graph import Graph
 
 

@@ -2,20 +2,12 @@ from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, FunctionMessage,
+                                     HumanMessage, SystemMessage)
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
-
 from langchain_huggingface.chat_models import (  # type: ignore[import]
-    ChatHuggingFace,
-    _convert_dict_to_message,
-)
+    ChatHuggingFace, _convert_dict_to_message)
 from langchain_huggingface.llms import HuggingFaceEndpoint
 
 

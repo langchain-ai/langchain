@@ -3,36 +3,25 @@ import uuid
 from typing import Optional, Union
 
 import pytest
-
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    RemoveMessage,
-    SystemMessage,
-    ToolMessage,
-    convert_to_messages,
-    convert_to_openai_image_block,
-    get_buffer_string,
-    is_data_content_block,
-    merge_content,
-    message_chunk_to_message,
-    message_to_dict,
-    messages_from_dict,
-    messages_to_dict,
-)
-from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessage,
+                                     FunctionMessageChunk, HumanMessage,
+                                     HumanMessageChunk, RemoveMessage,
+                                     SystemMessage, ToolMessage,
+                                     convert_to_messages,
+                                     convert_to_openai_image_block,
+                                     get_buffer_string, is_data_content_block,
+                                     merge_content, message_chunk_to_message,
+                                     message_to_dict, messages_from_dict,
+                                     messages_to_dict)
+from langchain_core.messages.tool import \
+    invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
-from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.messages.tool import \
+    tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
 
 
@@ -49,9 +38,9 @@ def test_message_init() -> None:
 def test_message_chunks() -> None:
     assert AIMessageChunk(content="I am", id="ai3") + AIMessageChunk(
         content=" indeed."
-    ) == AIMessageChunk(content="I am indeed.", id="ai3"), (
-        "MessageChunk + MessageChunk should be a MessageChunk"
-    )
+    ) == AIMessageChunk(
+        content="I am indeed.", id="ai3"
+    ), "MessageChunk + MessageChunk should be a MessageChunk"
 
     assert AIMessageChunk(content="I am", id="ai2") + HumanMessageChunk(
         content=" indeed.", id="human1"
@@ -198,9 +187,9 @@ def test_message_chunks() -> None:
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
-    ) == ChatMessageChunk(id="ai4", role="User", content="I am indeed."), (
-        "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
-    )
+    ) == ChatMessageChunk(
+        id="ai4", role="User", content="I am indeed."
+    ), "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
 
     with pytest.raises(
         ValueError, match="Cannot concatenate ChatMessageChunks with different roles."
@@ -227,15 +216,15 @@ def test_chat_message_chunks() -> None:
 def test_complex_ai_message_chunks() -> None:
     assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
         content=[" indeed."]
-    ) == AIMessageChunk(id="ai4", content=["I am", " indeed."]), (
-        "Content concatenation with arrays of strings should naively combine"
-    )
+    ) == AIMessageChunk(
+        id="ai4", content=["I am", " indeed."]
+    ), "Content concatenation with arrays of strings should naively combine"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=" indeed."
-    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, " indeed."]), (
-        "Concatenating mixed content arrays should naively combine them"
-    )
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, " indeed."]
+    ), "Concatenating mixed content arrays should naively combine them"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"index": 0, "text": " indeed."}]
@@ -246,9 +235,9 @@ def test_complex_ai_message_chunks() -> None:
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"text": " indeed."}]
-    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]), (
-        "Concatenating when one chunk is missing an index should not merge or throw"
-    )
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"index": 2, "text": " indeed."}]
@@ -322,9 +311,9 @@ def test_function_message_chunks() -> None:
 def test_ai_message_chunks() -> None:
     assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
         example=True, content=" indeed."
-    ) == AIMessageChunk(example=True, content="I am indeed."), (
-        "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
-    )
+    ) == AIMessageChunk(
+        example=True, content="I am indeed."
+    ), "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
 
     with pytest.raises(
         ValueError,

@@ -1,34 +1,18 @@
 """Runnable that retries a Runnable if it fails."""
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
-
-from tenacity import (
-    AsyncRetrying,
-    RetryCallState,
-    RetryError,
-    Retrying,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
-from typing_extensions import TypedDict, override
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
 from langchain_core.runnables.utils import Input, Output
+from tenacity import (AsyncRetrying, RetryCallState, RetryError, Retrying,
+                      retry_if_exception_type, stop_after_attempt,
+                      wait_exponential_jitter)
+from typing_extensions import TypedDict, override
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForChainRun,
-        CallbackManagerForChainRun,
-    )
+        AsyncCallbackManagerForChainRun, CallbackManagerForChainRun)
 
     T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
 U = TypeVar("U")

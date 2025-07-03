@@ -11,44 +11,30 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 from uuid import UUID
 
-from langsmith.run_helpers import get_tracing_context
-from typing_extensions import Self, override
-
-from langchain_core.callbacks.base import (
-    BaseCallbackHandler,
-    BaseCallbackManager,
-    Callbacks,
-    ChainManagerMixin,
-    LLMManagerMixin,
-    RetrieverManagerMixin,
-    RunManagerMixin,
-    ToolManagerMixin,
-)
+from langchain_core.callbacks.base import (BaseCallbackHandler,
+                                           BaseCallbackManager, Callbacks,
+                                           ChainManagerMixin, LLMManagerMixin,
+                                           RetrieverManagerMixin,
+                                           RunManagerMixin, ToolManagerMixin)
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
+from langsmith.run_helpers import get_tracing_context
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
 
-    from tenacity import RetryCallState
-
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.outputs import (ChatGenerationChunk, GenerationChunk,
+                                        LLMResult)
     from langchain_core.runnables.config import RunnableConfig
+    from tenacity import RetryCallState
 
 logger = logging.getLogger(__name__)
 
@@ -2327,12 +2313,10 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
-    from langchain_core.tracers.context import (
-        _configure_hooks,
-        _get_tracer_project,
-        _tracing_v2_is_enabled,
-        tracing_v2_callback_var,
-    )
+    from langchain_core.tracers.context import (_configure_hooks,
+                                                _get_tracer_project,
+                                                _tracing_v2_is_enabled,
+                                                tracing_v2_callback_var)
 
     tracing_context = get_tracing_context()
     tracing_metadata = tracing_context["metadata"]
@@ -2577,9 +2561,7 @@ async def adispatch_custom_event(
     .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
-        ensure_config,
-        get_async_callback_manager_for_config,
-    )
+        ensure_config, get_async_callback_manager_for_config)
 
     config = ensure_config(config)
     callback_manager = get_async_callback_manager_for_config(config)
@@ -2647,9 +2629,7 @@ def dispatch_custom_event(
     .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
-        ensure_config,
-        get_callback_manager_for_config,
-    )
+        ensure_config, get_callback_manager_for_config)
 
     config = ensure_config(config)
     callback_manager = get_callback_manager_for_config(config)

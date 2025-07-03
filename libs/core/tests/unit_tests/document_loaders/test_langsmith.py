@@ -2,10 +2,9 @@ import datetime
 import uuid
 from unittest.mock import MagicMock, patch
 
-from langsmith.schemas import Example
-
 from langchain_core.document_loaders import LangSmithLoader
 from langchain_core.documents import Document
+from langsmith.schemas import Example
 
 
 def test_init() -> None:

@@ -2,9 +2,8 @@ from typing import Any, Optional
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
-from pytest_mock import MockerFixture
-
 from langchain_perplexity import ChatPerplexity
+from pytest_mock import MockerFixture
 
 
 def test_perplexity_model_name_param() -> None:

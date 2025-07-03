@@ -4,26 +4,14 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator, Iterator
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
-from langchain_core.agents import (
-    AgentAction,
-    AgentFinish,
-    AgentStep,
-)
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
+from langchain_core.agents import AgentAction, AgentFinish, AgentStep
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      AsyncCallbackManagerForChainRun,
+                                      CallbackManager,
+                                      CallbackManagerForChainRun, Callbacks)
 from langchain_core.load.dump import dumpd
 from langchain_core.outputs import RunInfo
 from langchain_core.runnables.utils import AddableDict

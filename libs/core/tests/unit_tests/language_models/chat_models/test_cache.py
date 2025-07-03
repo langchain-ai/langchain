@@ -3,17 +3,15 @@
 from typing import Any, Optional
 
 import pytest
-from typing_extensions import override
-
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
-from langchain_core.language_models.chat_models import _cleanup_llm_representation
+from langchain_core.language_models.chat_models import \
+    _cleanup_llm_representation
 from langchain_core.language_models.fake_chat_models import (
-    FakeListChatModel,
-    GenericFakeChatModel,
-)
+    FakeListChatModel, GenericFakeChatModel)
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
+from typing_extensions import override
 
 
 class InMemoryCache(BaseCache):

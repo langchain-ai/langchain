@@ -1,10 +1,7 @@
 import pytest
 
 from langchain.evaluation.string_distance import (
-    PairwiseStringDistanceEvalChain,
-    StringDistance,
-    StringDistanceEvalChain,
-)
+    PairwiseStringDistanceEvalChain, StringDistance, StringDistanceEvalChain)
 
 
 @pytest.mark.requires("rapidfuzz")

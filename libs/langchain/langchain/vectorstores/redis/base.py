@@ -5,9 +5,7 @@ from langchain._api import create_importer
 if TYPE_CHECKING:
     from langchain_community.vectorstores import Redis
     from langchain_community.vectorstores.redis.base import (
-        RedisVectorStoreRetriever,
-        check_index_exists,
-    )
+        RedisVectorStoreRetriever, check_index_exists)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

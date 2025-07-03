@@ -3,18 +3,15 @@
 import importlib
 from typing import List, Tuple
 
-from langchain_core.documents import BaseDocumentCompressor, BaseDocumentTransformer
+from langchain_cli.namespaces.migrate.generate.utils import (
+    COMMUNITY_PKG, find_subclasses_in_module, list_classes_by_package,
+    list_init_imports_by_package)
+from langchain_core.documents import (BaseDocumentCompressor,
+                                      BaseDocumentTransformer)
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
-
-from langchain_cli.namespaces.migrate.generate.utils import (
-    COMMUNITY_PKG,
-    find_subclasses_in_module,
-    list_classes_by_package,
-    list_init_imports_by_package,
-)
 
 # PUBLIC API
 

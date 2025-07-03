@@ -6,16 +6,12 @@ import os
 import pkgutil
 
 import click
-
-from langchain_cli.namespaces.migrate.generate.generic import (
-    generate_simplified_migrations,
-)
-from langchain_cli.namespaces.migrate.generate.grit import (
-    dump_migrations_as_grit,
-)
-from langchain_cli.namespaces.migrate.generate.partner import (
-    get_migrations_for_partner_package,
-)
+from langchain_cli.namespaces.migrate.generate.generic import \
+    generate_simplified_migrations
+from langchain_cli.namespaces.migrate.generate.grit import \
+    dump_migrations_as_grit
+from langchain_cli.namespaces.migrate.generate.partner import \
+    get_migrations_for_partner_package
 
 
 @click.group()

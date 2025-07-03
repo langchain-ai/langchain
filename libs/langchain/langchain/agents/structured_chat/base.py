@@ -7,11 +7,9 @@ from langchain_core.agents import AgentAction
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate,
+                                         SystemMessagePromptTemplate)
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer
@@ -20,10 +18,10 @@ from pydantic import Field
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import JSONAgentOutputParser
-from langchain.agents.structured_chat.output_parser import (
-    StructuredChatOutputParserWithRetries,
-)
-from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.structured_chat.output_parser import \
+    StructuredChatOutputParserWithRetries
+from langchain.agents.structured_chat.prompt import (FORMAT_INSTRUCTIONS,
+                                                     PREFIX, SUFFIX)
 from langchain.chains.llm import LLMChain
 from langchain.tools.render import render_text_description_and_args
 

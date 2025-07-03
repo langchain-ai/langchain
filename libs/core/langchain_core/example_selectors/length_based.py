@@ -3,11 +3,10 @@
 import re
 from typing import Callable
 
-from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
-
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 
 def _get_length_based(text: str) -> int:

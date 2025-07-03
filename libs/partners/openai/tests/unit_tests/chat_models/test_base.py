@@ -9,62 +9,43 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 from langchain_core.load import dumps, loads
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    FunctionMessage,
-    HumanMessage,
-    InvalidToolCall,
-    SystemMessage,
-    ToolCall,
-    ToolMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     FunctionMessage, HumanMessage,
+                                     InvalidToolCall, SystemMessage, ToolCall,
+                                     ToolMessage)
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models._compat import (_FUNCTION_CALL_IDS_MAP_KEY,
+                                                  _convert_from_v03_ai_message,
+                                                  _convert_to_v03_ai_message)
+from langchain_openai.chat_models.base import (
+    _construct_lc_result_from_responses_api, _construct_responses_api_input,
+    _convert_dict_to_message, _convert_message_to_dict,
+    _convert_to_openai_response_format, _create_usage_metadata,
+    _create_usage_metadata_responses, _format_message_content,
+    _get_last_messages, _oai_structured_outputs_parser)
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import (IncompleteDetails, Response,
+                                             ResponseUsage)
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
-    ResponseFileSearchToolCall,
-    Result,
-)
-from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
+    ResponseFileSearchToolCall, Result)
+from openai.types.responses.response_function_tool_call import \
+    ResponseFunctionToolCall
 from openai.types.responses.response_function_web_search import (
-    ActionSearch,
-    ResponseFunctionWebSearch,
-)
-from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+    ActionSearch, ResponseFunctionWebSearch)
+from openai.types.responses.response_output_refusal import \
+    ResponseOutputRefusal
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
-from openai.types.responses.response_usage import (
-    InputTokensDetails,
-    OutputTokensDetails,
-)
+from openai.types.responses.response_usage import (InputTokensDetails,
+                                                   OutputTokensDetails)
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-
-from langchain_openai import ChatOpenAI
-from langchain_openai.chat_models._compat import (
-    _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
-    _convert_to_v03_ai_message,
-)
-from langchain_openai.chat_models.base import (
-    _construct_lc_result_from_responses_api,
-    _construct_responses_api_input,
-    _convert_dict_to_message,
-    _convert_message_to_dict,
-    _convert_to_openai_response_format,
-    _create_usage_metadata,
-    _create_usage_metadata_responses,
-    _format_message_content,
-    _get_last_messages,
-    _oai_structured_outputs_parser,
-)
 
 
 def test_openai_model_param() -> None:
@@ -1609,9 +1590,8 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
 
 def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     """Test a response with web search output."""
-    from openai.types.responses.response_function_web_search import (
-        ResponseFunctionWebSearch,
-    )
+    from openai.types.responses.response_function_web_search import \
+        ResponseFunctionWebSearch
 
     response = Response(
         id="resp_123",

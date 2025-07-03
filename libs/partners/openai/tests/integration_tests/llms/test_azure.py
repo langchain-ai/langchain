@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
-
 from langchain_openai import AzureOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 

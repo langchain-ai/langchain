@@ -8,17 +8,16 @@ from typing import TYPE_CHECKING, Any, Union
 
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.prompts.loading import (
-    _load_output_parser,
-    load_prompt,
-    load_prompt_from_config,
-)
+from langchain_core.prompts.loading import (_load_output_parser, load_prompt,
+                                            load_prompt_from_config)
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
-from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
-from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain.chains.combine_documents.map_reduce import \
+    MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import \
+    MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -26,8 +25,10 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
-from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
-from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import \
+    RetrievalQAWithSourcesChain
+from langchain.chains.qa_with_sources.vector_db import \
+    VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 
 if TYPE_CHECKING:
@@ -513,7 +514,8 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
         raise ValueError("`qa_chain` must be present.")
 
     try:
-        from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+        from langchain_community.chains.graph_qa.cypher import \
+            GraphCypherQAChain
     except ImportError:
         raise ImportError(
             "To use this GraphCypherQAChain functionality you must install the "

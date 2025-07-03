@@ -76,7 +76,8 @@ def _import_azureml_endpoint() -> Any:
 
 
 def _import_baidu_qianfan_endpoint() -> Any:
-    from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
+    from langchain_community.llms.baidu_qianfan_endpoint import \
+        QianfanLLMEndpoint
 
     return QianfanLLMEndpoint
 
@@ -226,7 +227,8 @@ def _import_gradient_ai() -> Any:
 
 
 def _import_huggingface_endpoint() -> Any:
-    from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+    from langchain_community.llms.huggingface_endpoint import \
+        HuggingFaceEndpoint
 
     return HuggingFaceEndpoint
 
@@ -238,15 +240,15 @@ def _import_huggingface_hub() -> Any:
 
 
 def _import_huggingface_pipeline() -> Any:
-    from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+    from langchain_community.llms.huggingface_pipeline import \
+        HuggingFacePipeline
 
     return HuggingFacePipeline
 
 
 def _import_huggingface_text_gen_inference() -> Any:
-    from langchain_community.llms.huggingface_text_gen_inference import (
-        HuggingFaceTextGenInference,
-    )
+    from langchain_community.llms.huggingface_text_gen_inference import \
+        HuggingFaceTextGenInference
 
     return HuggingFaceTextGenInference
 
@@ -408,7 +410,8 @@ def _import_promptlayer() -> Any:
 
 
 def _import_promptlayer_chat() -> Any:
-    from langchain_community.llms.promptlayer_openai import PromptLayerOpenAIChat
+    from langchain_community.llms.promptlayer_openai import \
+        PromptLayerOpenAIChat
 
     return PromptLayerOpenAIChat
 
@@ -438,9 +441,8 @@ def _import_self_hosted() -> Any:
 
 
 def _import_self_hosted_hugging_face() -> Any:
-    from langchain_community.llms.self_hosted_hugging_face import (
-        SelfHostedHuggingFaceLLM,
-    )
+    from langchain_community.llms.self_hosted_hugging_face import \
+        SelfHostedHuggingFaceLLM
 
     return SelfHostedHuggingFaceLLM
 

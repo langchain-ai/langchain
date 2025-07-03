@@ -3,15 +3,12 @@ from typing import Union
 
 import pytest
 from langchain_core.documents import Document
-from qdrant_client import models
-
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from langchain_qdrant.qdrant import QdrantVectorStoreError
-from tests.integration_tests.common import (
-    ConsistentFakeEmbeddings,
-    ConsistentFakeSparseEmbeddings,
-    assert_documents_equals,
-)
+from qdrant_client import models
+from tests.integration_tests.common import (ConsistentFakeEmbeddings,
+                                            ConsistentFakeSparseEmbeddings,
+                                            assert_documents_equals)
 from tests.integration_tests.fixtures import qdrant_locations, retrieval_modes
 
 

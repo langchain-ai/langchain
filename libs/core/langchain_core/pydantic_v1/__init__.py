@@ -2,9 +2,8 @@
 
 from importlib import metadata
 
-from pydantic.v1 import *  # noqa: F403
-
 from langchain_core._api.deprecation import warn_deprecated
+from pydantic.v1 import *  # noqa: F403
 
 try:
     _PYDANTIC_MAJOR_VERSION: int = int(metadata.version("pydantic").split(".")[0])

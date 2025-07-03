@@ -4,22 +4,14 @@ import json
 from typing import Any, Optional, cast
 
 import pytest
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     SystemMessage)
 from langchain_core.outputs import ChatGeneration, LLMResult
-from pydantic import BaseModel, Field
-
 from langchain_groq import ChatGroq
-from tests.unit_tests.fake.callbacks import (
-    FakeCallbackHandler,
-    FakeCallbackHandlerWithChatStart,
-)
+from pydantic import BaseModel, Field
+from tests.unit_tests.fake.callbacks import (FakeCallbackHandler,
+                                             FakeCallbackHandlerWithChatStart)
 
 MODEL_NAME = "llama-3.3-70b-versatile"
 

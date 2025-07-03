@@ -3,10 +3,8 @@
 from typing import Any, Optional
 
 import numpy as np
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForLLMRun,
+                                              CallbackManagerForLLMRun)
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult

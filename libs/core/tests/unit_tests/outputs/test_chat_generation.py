@@ -1,7 +1,6 @@
 from typing import Union
 
 import pytest
-
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
 

@@ -2,15 +2,13 @@ import glob
 import json
 import os
 import sys
-from collections import defaultdict
-from typing import Dict, List, Set
-from pathlib import Path
 import tomllib
-
-from packaging.requirements import Requirement
+from collections import defaultdict
+from pathlib import Path
+from typing import Dict, List, Set
 
 from get_min_versions import get_min_version_from_toml
-
+from packaging.requirements import Requirement
 
 LANGCHAIN_DIRS = [
     "libs/core",
@@ -37,7 +35,7 @@ IGNORED_PARTNERS = [
 ]
 
 PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma", # https://github.com/chroma-core/chroma/issues/4382
+    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
 ]
 
 
@@ -284,7 +282,7 @@ if __name__ == "__main__":
         elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
             dirs_to_run["test"].add("libs/cli")
-            
+
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -302,7 +300,10 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in ["pyproject.toml", "uv.lock"]: # docs or root uv files
+        elif file.startswith("docs/") or file in [
+            "pyproject.toml",
+            "uv.lock",
+        ]:  # docs or root uv files
             docs_edited = True
             dirs_to_run["lint"].add(".")
 

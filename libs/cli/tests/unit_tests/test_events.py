@@ -1,5 +1,4 @@
 import pytest
-
 from langchain_cli.utils.events import EventDict, create_events
 
 

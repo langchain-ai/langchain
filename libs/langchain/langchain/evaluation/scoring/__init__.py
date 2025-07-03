@@ -24,8 +24,6 @@ Example:
 """
 
 from langchain.evaluation.scoring.eval_chain import (
-    LabeledScoreStringEvalChain,
-    ScoreStringEvalChain,
-)
+    LabeledScoreStringEvalChain, ScoreStringEvalChain)
 
 __all__ = ["ScoreStringEvalChain", "LabeledScoreStringEvalChain"]

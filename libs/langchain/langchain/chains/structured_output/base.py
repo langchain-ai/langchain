@@ -3,27 +3,18 @@ from collections.abc import Sequence
 from typing import Any, Callable, Literal, Optional, Union
 
 from langchain_core._api import deprecated
-from langchain_core.output_parsers import (
-    BaseGenerationOutputParser,
-    BaseOutputParser,
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import (BaseGenerationOutputParser,
+                                           BaseOutputParser, JsonOutputParser,
+                                           PydanticOutputParser)
 from langchain_core.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-    PydanticAttrOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
-)
+    JsonOutputFunctionsParser, PydanticAttrOutputFunctionsParser,
+    PydanticOutputFunctionsParser)
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
+    JsonOutputKeyToolsParser, PydanticToolsParser)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import (
-    convert_to_openai_function,
-    convert_to_openai_tool,
-)
+from langchain_core.utils.function_calling import (convert_to_openai_function,
+                                                   convert_to_openai_tool)
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel
 

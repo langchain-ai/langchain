@@ -5,37 +5,23 @@ import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Union,
-)
-
-from pydantic import BaseModel, ConfigDict
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
-    RunnableConfig,
-    ensure_config,
-    get_async_callback_manager_for_config,
-    get_callback_manager_for_config,
-    get_config_list,
-    patch_config,
-    set_config_context,
-)
-from langchain_core.runnables.utils import (
-    ConfigurableFieldSpec,
-    Input,
-    Output,
-    coro_with_context,
-    get_unique_config_specs,
-)
+    RunnableConfig, ensure_config, get_async_callback_manager_for_config,
+    get_callback_manager_for_config, get_config_list, patch_config,
+    set_config_context)
+from langchain_core.runnables.utils import (ConfigurableFieldSpec, Input,
+                                            Output, coro_with_context,
+                                            get_unique_config_specs)
 from langchain_core.utils.aiter import py_anext
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 if TYPE_CHECKING:
-    from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
+    from langchain_core.callbacks.manager import \
+        AsyncCallbackManagerForChainRun
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):

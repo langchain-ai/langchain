@@ -6,9 +6,9 @@ from typing import cast
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-
 from langchain_openai import ChatOpenAI
-from tests.integration_tests.chat_models.test_base_standard import TestOpenAIStandard
+from tests.integration_tests.chat_models.test_base_standard import \
+    TestOpenAIStandard
 
 REPO_ROOT_DIR = Path(__file__).parents[6]
 

@@ -1,8 +1,7 @@
 """Pydantic v1 compatibility shim."""
 
-from pydantic.v1.main import *  # noqa: F403
-
 from langchain_core._api import warn_deprecated
+from pydantic.v1.main import *  # noqa: F403
 
 warn_deprecated(
     "0.3.0",

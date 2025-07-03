@@ -37,19 +37,13 @@ from langchain_core.tools import Tool
 from langchain_core.tools.convert import tool
 
 from langchain._api import create_importer
-from langchain.agents.agent import (
-    Agent,
-    AgentExecutor,
-    AgentOutputParser,
-    BaseMultiActionAgent,
-    BaseSingleActionAgent,
-    LLMSingleActionAgent,
-)
+from langchain.agents.agent import (Agent, AgentExecutor, AgentOutputParser,
+                                    BaseMultiActionAgent,
+                                    BaseSingleActionAgent,
+                                    LLMSingleActionAgent)
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_toolkits.vectorstore.base import (
-    create_vectorstore_agent,
-    create_vectorstore_router_agent,
-)
+    create_vectorstore_agent, create_vectorstore_router_agent)
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
@@ -58,37 +52,31 @@ from langchain.agents.json_chat.base import create_json_chat_agent
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import (
-    OpenAIFunctionsAgent,
-    create_openai_functions_agent,
-)
-from langchain.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
+    OpenAIFunctionsAgent, create_openai_functions_agent)
+from langchain.agents.openai_functions_multi_agent.base import \
+    OpenAIMultiFunctionsAgent
 from langchain.agents.openai_tools.base import create_openai_tools_agent
 from langchain.agents.react.agent import create_react_agent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import (
-    SelfAskWithSearchChain,
-    create_self_ask_with_search_agent,
-)
+    SelfAskWithSearchChain, create_self_ask_with_search_agent)
 from langchain.agents.structured_chat.base import (
-    StructuredChatAgent,
-    create_structured_chat_agent,
-)
+    StructuredChatAgent, create_structured_chat_agent)
 from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.json.base import create_json_agent
     from langchain_community.agent_toolkits.load_tools import (
-        get_all_tool_names,
-        load_huggingface_tool,
-        load_tools,
-    )
-    from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
-    from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
-    from langchain_community.agent_toolkits.powerbi.chat_base import (
-        create_pbi_chat_agent,
-    )
-    from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
+        get_all_tool_names, load_huggingface_tool, load_tools)
+    from langchain_community.agent_toolkits.openapi.base import \
+        create_openapi_agent
+    from langchain_community.agent_toolkits.powerbi.base import \
+        create_pbi_agent
+    from langchain_community.agent_toolkits.powerbi.chat_base import \
+        create_pbi_chat_agent
+    from langchain_community.agent_toolkits.spark_sql.base import \
+        create_spark_sql_agent
     from langchain_community.agent_toolkits.sql.base import create_sql_agent
 
 DEPRECATED_CODE = [

@@ -3,17 +3,13 @@
 from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
-from exa_py.api import (
-    HighlightsContentsOptions,  # type: ignore[untyped-import]
-    TextContentsOptions,  # type: ignore[untyped-import]
-)
-from langchain_core.callbacks import (
-    CallbackManagerForToolRun,
-)
+from exa_py.api import \
+    HighlightsContentsOptions  # type: ignore[untyped-import]
+from exa_py.api import TextContentsOptions  # type: ignore[untyped-import]
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import Field, SecretStr, model_validator
-
 from langchain_exa._utilities import initialize_client
+from pydantic import Field, SecretStr, model_validator
 
 
 class ExaSearchResults(BaseTool):  # type: ignore[override]

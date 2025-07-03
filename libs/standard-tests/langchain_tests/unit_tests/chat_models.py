@@ -13,21 +13,15 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel, Field, SecretStr
-from pydantic.v1 import (
-    BaseModel as BaseModelV1,
-)
-from pydantic.v1 import (
-    Field as FieldV1,
-)
-from pydantic.v1 import (
-    ValidationError as ValidationErrorV1,
-)
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from syrupy import SnapshotAssertion
-
 from langchain_tests.base import BaseStandardTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
+from pytest_benchmark.fixture import \
+    BenchmarkFixture  # type: ignore[import-untyped]
+from syrupy import SnapshotAssertion
 
 
 def generate_schema_pydantic_v1_from_2() -> Any:

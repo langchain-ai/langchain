@@ -4,21 +4,16 @@ from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from typing_extensions import override
-
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.language_models import (
-    FakeListChatModel,
-    GenericFakeChatModel,
-    ParrotFakeChatModel,
-)
+from langchain_core.language_models import (FakeListChatModel,
+                                            GenericFakeChatModel,
+                                            ParrotFakeChatModel)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from tests.unit_tests.stubs import (
-    _any_id_ai_message,
-    _any_id_ai_message_chunk,
-    _any_id_human_message,
-)
+from tests.unit_tests.stubs import (_any_id_ai_message,
+                                    _any_id_ai_message_chunk,
+                                    _any_id_human_message)
+from typing_extensions import override
 
 
 def test_generic_fake_chat_model_invoke() -> None:

@@ -4,10 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.labelstudio_callback import (
-        LabelStudioCallbackHandler,
-        LabelStudioMode,
-        get_default_label_configs,
-    )
+        LabelStudioCallbackHandler, LabelStudioMode, get_default_label_configs)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

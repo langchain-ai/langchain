@@ -4,30 +4,22 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 from uuid import UUID
-
-from langsmith import run_helpers as ls_rh
-from langsmith import utils as ls_utils
 
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langsmith import run_helpers as ls_rh
+from langsmith import utils as ls_utils
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from langsmith import Client as LangSmithClient
-
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
-    from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
+    from langchain_core.callbacks.manager import (AsyncCallbackManager,
+                                                  CallbackManager)
     from langchain_core.tracers.schemas import TracerSessionV1
+    from langsmith import Client as LangSmithClient
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None

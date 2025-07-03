@@ -1,8 +1,6 @@
 import pytest
-
-from langchain_cli.namespaces.migrate.generate.partner import (
-    get_migrations_for_partner_package,
-)
+from langchain_cli.namespaces.migrate.generate.partner import \
+    get_migrations_for_partner_package
 
 pytest.importorskip(modname="langchain_openai")
 

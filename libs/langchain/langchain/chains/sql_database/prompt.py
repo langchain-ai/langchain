@@ -2,7 +2,6 @@
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 
-
 PROMPT_SUFFIX = """Only use the following tables:
 {table_info}
 

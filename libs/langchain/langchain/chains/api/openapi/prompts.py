@@ -3,10 +3,8 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.chains.openapi.prompts import (
-        REQUEST_TEMPLATE,
-        RESPONSE_TEMPLATE,
-    )
+    from langchain_community.chains.openapi.prompts import (REQUEST_TEMPLATE,
+                                                            RESPONSE_TEMPLATE)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

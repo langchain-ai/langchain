@@ -8,10 +8,9 @@ from typing import Annotated, Any, Literal, Optional
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
+from langchain_fireworks import ChatFireworks
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-
-from langchain_fireworks import ChatFireworks
 
 _MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 

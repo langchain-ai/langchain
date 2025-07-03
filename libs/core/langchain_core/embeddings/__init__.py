@@ -6,10 +6,8 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.embeddings.embeddings import Embeddings
-    from langchain_core.embeddings.fake import (
-        DeterministicFakeEmbedding,
-        FakeEmbeddings,
-    )
+    from langchain_core.embeddings.fake import (DeterministicFakeEmbedding,
+                                                FakeEmbeddings)
 
 __all__ = ("DeterministicFakeEmbedding", "Embeddings", "FakeEmbeddings")
 

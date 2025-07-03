@@ -5,21 +5,15 @@ from collections.abc import Generator, Iterable, Sequence
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from qdrant_client import QdrantClient, models
-
 from langchain_qdrant._utils import maximal_marginal_relevance
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings
+from qdrant_client import QdrantClient, models
 
 
 class QdrantVectorStoreError(Exception):
@@ -170,7 +164,9 @@ class QdrantVectorStore(VectorStore):
 
     CONTENT_KEY: str = "page_content"
     METADATA_KEY: str = "metadata"
-    VECTOR_NAME: str = ""  # The default/unnamed vector - https://qdrant.tech/documentation/concepts/collections/#create-a-collection
+    VECTOR_NAME: str = (
+        ""  # The default/unnamed vector - https://qdrant.tech/documentation/concepts/collections/#create-a-collection
+    )
     SPARSE_VECTOR_NAME: str = "langchain-sparse"
 
     def __init__(
@@ -752,9 +748,11 @@ class QdrantVectorStore(VectorStore):
         ).points
 
         embeddings = [
-            result.vector
-            if isinstance(result.vector, list)
-            else result.vector.get(self.vector_name)  # type: ignore
+            (
+                result.vector
+                if isinstance(result.vector, list)
+                else result.vector.get(self.vector_name)
+            )  # type: ignore
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(

@@ -1,7 +1,6 @@
 from typing import Literal, Type
 
 from langchain_core.tools import BaseTool
-
 from langchain_tests.integration_tests import ToolsIntegrationTests
 from langchain_tests.unit_tests import ToolsUnitTests
 

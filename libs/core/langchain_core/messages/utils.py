@@ -16,37 +16,29 @@ import logging
 import math
 from collections.abc import Iterable, Sequence
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-    overload,
-)
-
-from pydantic import Discriminator, Field, Tag
+from typing import (TYPE_CHECKING, Annotated, Any, Callable, Literal, Optional,
+                    Union, cast, overload)
 
 from langchain_core.exceptions import ErrorCode, create_message
-from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
+from langchain_core.messages import (convert_to_openai_data_block,
+                                     is_data_content_block)
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
-from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
+from langchain_core.messages.function import (FunctionMessage,
+                                              FunctionMessageChunk)
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.messages.tool import (ToolCall, ToolMessage,
+                                          ToolMessageChunk)
+from pydantic import Discriminator, Field, Tag
 
 if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+    from langchain_text_splitters import TextSplitter
 
 logger = logging.getLogger(__name__)
 

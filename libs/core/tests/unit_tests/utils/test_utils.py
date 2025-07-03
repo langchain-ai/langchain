@@ -6,17 +6,12 @@ from typing import Any, Callable, Optional, Union
 from unittest.mock import patch
 
 import pytest
-from pydantic import SecretStr
-
 from langchain_core import utils
-from langchain_core.utils import (
-    check_package_version,
-    from_env,
-    get_pydantic_field_names,
-    guard_import,
-)
+from langchain_core.utils import (check_package_version, from_env,
+                                  get_pydantic_field_names, guard_import)
 from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.utils import secret_from_env
+from pydantic import SecretStr
 
 
 @pytest.mark.parametrize(

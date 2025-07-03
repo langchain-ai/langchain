@@ -10,10 +10,9 @@ from langchain_core.runnables import run_in_executor
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
 
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.documents import Document
     from langchain_core.documents.base import Blob
+    from langchain_text_splitters import TextSplitter
 
 
 class BaseLoader(ABC):  # noqa: B024
@@ -51,7 +50,8 @@ class BaseLoader(ABC):  # noqa: B024
         """
         if text_splitter is None:
             try:
-                from langchain_text_splitters import RecursiveCharacterTextSplitter
+                from langchain_text_splitters import \
+                    RecursiveCharacterTextSplitter
             except ImportError as e:
                 msg = (
                     "Unable to import from langchain_text_splitters. Please specify "

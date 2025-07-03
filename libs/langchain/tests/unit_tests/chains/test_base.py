@@ -7,10 +7,11 @@ import pytest
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.memory import BaseMemory
 from langchain_core.tracers.context import collect_runs
+from tests.unit_tests.callbacks.fake_callback_handler import \
+    FakeCallbackHandler
 
 from langchain.chains.base import Chain
 from langchain.schema import RUN_KEY
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 class FakeMemory(BaseMemory):

@@ -4,15 +4,14 @@ from enum import Enum
 from typing import Any, Callable, Optional
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForChainRun,
+                                              CallbackManagerForChainRun)
 from langchain_core.utils import pre_init
 from pydantic import Field
 
 from langchain.chains.base import Chain
-from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.evaluation.schema import (PairwiseStringEvaluator,
+                                         StringEvaluator)
 from langchain.schema import RUN_KEY
 
 

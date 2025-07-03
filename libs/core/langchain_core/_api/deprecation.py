@@ -15,19 +15,12 @@ import functools
 import inspect
 import warnings
 from collections.abc import Generator
-from typing import (
-    Any,
-    Callable,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, TypeVar, Union, cast
 
+from langchain_core._api.internal import is_caller_internal
 from pydantic.fields import FieldInfo
 from pydantic.v1.fields import FieldInfo as FieldInfoV1
 from typing_extensions import ParamSpec
-
-from langchain_core._api.internal import is_caller_internal
 
 
 class LangChainDeprecationWarning(DeprecationWarning):
@@ -205,7 +198,9 @@ def deprecated(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:  # noqa: ARG001
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -235,7 +230,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:  # noqa: ARG001
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -256,7 +253,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:  # noqa: ARG001
                 return cast(
                     "T",
                     FieldInfo(
@@ -316,7 +315,9 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(
+                wrapper: Callable[..., Any], new_doc: str
+            ) -> T:  # noqa: ARG001
                 """Finalize the property."""
                 return cast(
                     "T",

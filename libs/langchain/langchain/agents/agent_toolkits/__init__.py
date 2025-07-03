@@ -21,51 +21,52 @@ from langchain_core._api.path import as_import_path
 from langchain_core.tools.retriever import create_retriever_tool
 
 from langchain._api import create_importer
-from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
-    create_conversational_retrieval_agent,
-)
+from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import \
+    create_conversational_retrieval_agent
 from langchain.agents.agent_toolkits.vectorstore.base import (
-    create_vectorstore_agent,
-    create_vectorstore_router_agent,
-)
+    create_vectorstore_agent, create_vectorstore_router_agent)
 from langchain.agents.agent_toolkits.vectorstore.toolkit import (
-    VectorStoreInfo,
-    VectorStoreRouterToolkit,
-    VectorStoreToolkit,
-)
+    VectorStoreInfo, VectorStoreRouterToolkit, VectorStoreToolkit)
 
 if TYPE_CHECKING:
-    from langchain_community.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
-    from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
-    from langchain_community.agent_toolkits.azure_cognitive_services import (
-        AzureCognitiveServicesToolkit,
-    )
-    from langchain_community.agent_toolkits.file_management.toolkit import (
-        FileManagementToolkit,
-    )
+    from langchain_community.agent_toolkits.ainetwork.toolkit import \
+        AINetworkToolkit
+    from langchain_community.agent_toolkits.amadeus.toolkit import \
+        AmadeusToolkit
+    from langchain_community.agent_toolkits.azure_cognitive_services import \
+        AzureCognitiveServicesToolkit
+    from langchain_community.agent_toolkits.file_management.toolkit import \
+        FileManagementToolkit
     from langchain_community.agent_toolkits.gmail.toolkit import GmailToolkit
     from langchain_community.agent_toolkits.jira.toolkit import JiraToolkit
     from langchain_community.agent_toolkits.json.base import create_json_agent
     from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
-    from langchain_community.agent_toolkits.multion.toolkit import MultionToolkit
+    from langchain_community.agent_toolkits.multion.toolkit import \
+        MultionToolkit
     from langchain_community.agent_toolkits.nasa.toolkit import NasaToolkit
     from langchain_community.agent_toolkits.nla.toolkit import NLAToolkit
-    from langchain_community.agent_toolkits.office365.toolkit import O365Toolkit
-    from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
-    from langchain_community.agent_toolkits.openapi.toolkit import OpenAPIToolkit
-    from langchain_community.agent_toolkits.playwright.toolkit import (
-        PlayWrightBrowserToolkit,
-    )
-    from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
-    from langchain_community.agent_toolkits.powerbi.chat_base import (
-        create_pbi_chat_agent,
-    )
-    from langchain_community.agent_toolkits.powerbi.toolkit import PowerBIToolkit
+    from langchain_community.agent_toolkits.office365.toolkit import \
+        O365Toolkit
+    from langchain_community.agent_toolkits.openapi.base import \
+        create_openapi_agent
+    from langchain_community.agent_toolkits.openapi.toolkit import \
+        OpenAPIToolkit
+    from langchain_community.agent_toolkits.playwright.toolkit import \
+        PlayWrightBrowserToolkit
+    from langchain_community.agent_toolkits.powerbi.base import \
+        create_pbi_agent
+    from langchain_community.agent_toolkits.powerbi.chat_base import \
+        create_pbi_chat_agent
+    from langchain_community.agent_toolkits.powerbi.toolkit import \
+        PowerBIToolkit
     from langchain_community.agent_toolkits.slack.toolkit import SlackToolkit
-    from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
-    from langchain_community.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
+    from langchain_community.agent_toolkits.spark_sql.base import \
+        create_spark_sql_agent
+    from langchain_community.agent_toolkits.spark_sql.toolkit import \
+        SparkSQLToolkit
     from langchain_community.agent_toolkits.sql.base import create_sql_agent
-    from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+    from langchain_community.agent_toolkits.sql.toolkit import \
+        SQLDatabaseToolkit
     from langchain_community.agent_toolkits.steam.toolkit import SteamToolkit
     from langchain_community.agent_toolkits.zapier.toolkit import ZapierToolkit
 

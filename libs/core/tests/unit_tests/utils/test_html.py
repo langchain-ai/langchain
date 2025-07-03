@@ -1,9 +1,5 @@
-from langchain_core.utils.html import (
-    PREFIXES_TO_IGNORE,
-    SUFFIXES_TO_IGNORE,
-    extract_sub_links,
-    find_all_links,
-)
+from langchain_core.utils.html import (PREFIXES_TO_IGNORE, SUFFIXES_TO_IGNORE,
+                                       extract_sub_links, find_all_links)
 
 
 def test_find_all_links_none() -> None:

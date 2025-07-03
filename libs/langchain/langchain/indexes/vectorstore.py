@@ -7,10 +7,12 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.vectorstores import VectorStore
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+from langchain_text_splitters import (RecursiveCharacterTextSplitter,
+                                      TextSplitter)
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import \
+    RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
 
 
@@ -163,7 +165,8 @@ def _get_in_memory_vectorstore() -> type[VectorStore]:
     import warnings
 
     try:
-        from langchain_community.vectorstores.inmemory import InMemoryVectorStore
+        from langchain_community.vectorstores.inmemory import \
+            InMemoryVectorStore
     except ImportError:
         raise ImportError(
             "Please install langchain-community to use the InMemoryVectorStore."

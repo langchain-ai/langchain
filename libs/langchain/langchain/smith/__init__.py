@@ -89,11 +89,8 @@ or LangSmith's `RunEvaluator` classes.
 - :class:`RunEvalConfig <langchain.smith.evaluation.config.RunEvalConfig>`: Class representing the configuration for running evaluation. You can select evaluators by :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config, or you can pass in `custom_evaluators`
 """  # noqa: E501
 
-from langchain.smith.evaluation import (
-    RunEvalConfig,
-    arun_on_dataset,
-    run_on_dataset,
-)
+from langchain.smith.evaluation import (RunEvalConfig, arun_on_dataset,
+                                        run_on_dataset)
 
 __all__ = [
     "arun_on_dataset",

@@ -7,22 +7,19 @@ from unittest.mock import MagicMock, patch
 import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_anthropic import ChatAnthropic
+from langchain_anthropic.chat_models import (_create_usage_metadata,
+                                             _format_image, _format_messages,
+                                             _merge_messages,
+                                             convert_to_anthropic_tool)
+from langchain_core.messages import (AIMessage, HumanMessage, SystemMessage,
+                                     ToolMessage)
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr
 from pytest import CaptureFixture, MonkeyPatch
-
-from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import (
-    _create_usage_metadata,
-    _format_image,
-    _format_messages,
-    _merge_messages,
-    convert_to_anthropic_tool,
-)
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -1071,4 +1068,6 @@ def test_mcp_tracing() -> None:
 
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
-    assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+    assert (
+        payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"
+    )  # noqa: S105

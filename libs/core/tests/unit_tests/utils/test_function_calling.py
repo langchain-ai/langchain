@@ -2,14 +2,9 @@ import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Literal, Optional
 from typing import TypedDict as TypingTypedDict
+from typing import Union
 
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
@@ -22,17 +17,13 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
-from pydantic import BaseModel, Field
-
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
-    _convert_typed_dict_to_openai_function,
-    convert_to_json_schema,
-    convert_to_openai_function,
-    tool_example_to_messages,
-)
+    _convert_typed_dict_to_openai_function, convert_to_json_schema,
+    convert_to_openai_function, tool_example_to_messages)
+from pydantic import BaseModel, Field
 
 
 @pytest.fixture
@@ -178,7 +169,9 @@ def dummy_typing_typed_dict() -> type:
         """Dummy function."""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
+        arg2: TypingAnnotated[
+            Literal["bar", "baz"], ..., "one of 'bar', 'baz'"
+        ]  # noqa: F722
 
     return dummy_function
 

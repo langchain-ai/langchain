@@ -4,7 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.tools import SlackScheduleMessage
-    from langchain_community.tools.slack.schedule_message import ScheduleMessageSchema
+    from langchain_community.tools.slack.schedule_message import \
+        ScheduleMessageSchema
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

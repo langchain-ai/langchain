@@ -2,7 +2,8 @@ import subprocess
 import sys
 
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import \
+    BenchmarkFixture  # type: ignore[import-untyped]
 
 
 @pytest.mark.parametrize(

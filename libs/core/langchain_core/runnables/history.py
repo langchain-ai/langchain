@@ -5,27 +5,18 @@ from __future__ import annotations
 import inspect
 from collections.abc import Sequence
 from types import GenericAlias
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
-
-from pydantic import BaseModel
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
+from langchain_core.runnables.base import (Runnable, RunnableBindingBase,
+                                           RunnableLambda)
 from langchain_core.runnables.passthrough import RunnablePassthrough
-from langchain_core.runnables.utils import (
-    ConfigurableFieldSpec,
-    Output,
-    get_unique_config_specs,
-)
+from langchain_core.runnables.utils import (ConfigurableFieldSpec, Output,
+                                            get_unique_config_specs)
 from langchain_core.utils.pydantic import create_model_v2
+from pydantic import BaseModel
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike

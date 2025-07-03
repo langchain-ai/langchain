@@ -4,17 +4,13 @@ import re
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional, cast
 
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForLLMRun,
+                                              CallbackManagerForLLMRun)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        SimpleChatModel)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.runnables import run_in_executor
 
 

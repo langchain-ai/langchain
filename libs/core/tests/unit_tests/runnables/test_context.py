@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Callable, NamedTuple, Union
 
 import pytest
-
 from langchain_core.beta.runnables.context import Context
 from langchain_core.language_models import FakeListLLM, FakeStreamingListLLM
 from langchain_core.output_parsers.string import StrOutputParser

@@ -1,8 +1,7 @@
 from langchain_core.agents import AgentAction, AgentFinish
 
-from langchain.agents.output_parsers.react_json_single_input import (
-    ReActJsonSingleInputOutputParser,
-)
+from langchain.agents.output_parsers.react_json_single_input import \
+    ReActJsonSingleInputOutputParser
 
 
 def test_action() -> None:

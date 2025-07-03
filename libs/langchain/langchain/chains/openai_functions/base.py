@@ -1,34 +1,22 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 
 from collections.abc import Sequence
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import (
-    BaseLLMOutputParser,
-)
-from langchain_core.output_parsers.openai_functions import (
-    PydanticAttrOutputFunctionsParser,
-)
+from langchain_core.output_parsers import BaseLLMOutputParser
+from langchain_core.output_parsers.openai_functions import \
+    PydanticAttrOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.utils.function_calling import (
-    PYTHON_TO_JSON_TYPES,
-    convert_to_openai_function,
-)
+from langchain_core.utils.function_calling import (PYTHON_TO_JSON_TYPES,
+                                                   convert_to_openai_function)
 from pydantic import BaseModel
 
 from langchain.chains import LLMChain
 from langchain.chains.structured_output.base import (
-    create_openai_fn_runnable,
-    create_structured_output_runnable,
-    get_openai_output_parser,
-)
+    create_openai_fn_runnable, create_structured_output_runnable,
+    get_openai_output_parser)
 
 __all__ = [
     "get_openai_output_parser",

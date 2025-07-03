@@ -10,24 +10,16 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import typer
-from typing_extensions import Annotated
-
 from langchain_cli.utils.events import create_events
-from langchain_cli.utils.git import (
-    DependencySource,
-    copy_repo,
-    parse_dependencies,
-    update_repo,
-)
-from langchain_cli.utils.packages import (
-    LangServeExport,
-    get_langserve_export,
-    get_package_root,
-)
+from langchain_cli.utils.git import (DependencySource, copy_repo,
+                                     parse_dependencies, update_repo)
+from langchain_cli.utils.packages import (LangServeExport,
+                                          get_langserve_export,
+                                          get_package_root)
 from langchain_cli.utils.pyproject import (
     add_dependencies_to_pyproject_toml,
-    remove_dependencies_from_pyproject_toml,
-)
+    remove_dependencies_from_pyproject_toml)
+from typing_extensions import Annotated
 
 REPO_DIR = Path(typer.get_app_dir("langchain")) / "git_repos"
 

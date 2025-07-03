@@ -5,20 +5,8 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Collection,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import (AbstractSet, Any, Callable, Collection, Iterable, List,
+                    Literal, Optional, Sequence, Type, TypeVar, Union)
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 
@@ -150,7 +138,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
-            from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+            from transformers.tokenization_utils_base import \
+                PreTrainedTokenizerBase
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
                 raise ValueError(

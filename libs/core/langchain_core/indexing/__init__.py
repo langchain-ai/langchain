@@ -11,13 +11,9 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.indexing.api import IndexingResult, aindex, index
-    from langchain_core.indexing.base import (
-        DeleteResponse,
-        DocumentIndex,
-        InMemoryRecordManager,
-        RecordManager,
-        UpsertResponse,
-    )
+    from langchain_core.indexing.base import (DeleteResponse, DocumentIndex,
+                                              InMemoryRecordManager,
+                                              RecordManager, UpsertResponse)
 
 __all__ = (
     "DeleteResponse",

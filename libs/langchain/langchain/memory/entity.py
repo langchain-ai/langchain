@@ -14,10 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.memory.prompt import (
-    ENTITY_EXTRACTION_PROMPT,
-    ENTITY_SUMMARIZATION_PROMPT,
-)
+from langchain.memory.prompt import (ENTITY_EXTRACTION_PROMPT,
+                                     ENTITY_SUMMARIZATION_PROMPT)
 from langchain.memory.utils import get_prompt_input_key
 
 logger = logging.getLogger(__name__)

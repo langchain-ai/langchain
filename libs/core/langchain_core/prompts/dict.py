@@ -4,15 +4,12 @@ import warnings
 from functools import cached_property
 from typing import Any, Literal, Optional
 
-from typing_extensions import override
-
 from langchain_core.load import dumpd
-from langchain_core.prompts.string import (
-    DEFAULT_FORMATTER_MAPPING,
-    get_template_variables,
-)
+from langchain_core.prompts.string import (DEFAULT_FORMATTER_MAPPING,
+                                           get_template_variables)
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
+from typing_extensions import override
 
 
 class DictPromptTemplate(RunnableSerializable[dict, dict]):

@@ -1,16 +1,12 @@
 """Test the criteria eval chain."""
 
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.evaluation.criteria.eval_chain import (
-    _SUPPORTED_CRITERIA,
-    Criteria,
-    CriteriaEvalChain,
-    CriteriaResultOutputParser,
-    LabeledCriteriaEvalChain,
-)
+    _SUPPORTED_CRITERIA, Criteria, CriteriaEvalChain,
+    CriteriaResultOutputParser, LabeledCriteriaEvalChain)
 from langchain.evaluation.schema import StringEvaluator
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def test_resolve_criteria_str() -> None:

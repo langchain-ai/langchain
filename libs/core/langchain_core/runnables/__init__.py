@@ -22,42 +22,27 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.runnables.base import (
-        Runnable,
-        RunnableBinding,
-        RunnableGenerator,
-        RunnableLambda,
-        RunnableMap,
-        RunnableParallel,
-        RunnableSequence,
-        RunnableSerializable,
-        chain,
-    )
+    from langchain_core.runnables.base import (Runnable, RunnableBinding,
+                                               RunnableGenerator,
+                                               RunnableLambda, RunnableMap,
+                                               RunnableParallel,
+                                               RunnableSequence,
+                                               RunnableSerializable, chain)
     from langchain_core.runnables.branch import RunnableBranch
-    from langchain_core.runnables.config import (
-        RunnableConfig,
-        ensure_config,
-        get_config_list,
-        patch_config,
-        run_in_executor,
-    )
+    from langchain_core.runnables.config import (RunnableConfig, ensure_config,
+                                                 get_config_list, patch_config,
+                                                 run_in_executor)
     from langchain_core.runnables.fallbacks import RunnableWithFallbacks
     from langchain_core.runnables.history import RunnableWithMessageHistory
-    from langchain_core.runnables.passthrough import (
-        RunnableAssign,
-        RunnablePassthrough,
-        RunnablePick,
-    )
+    from langchain_core.runnables.passthrough import (RunnableAssign,
+                                                      RunnablePassthrough,
+                                                      RunnablePick)
     from langchain_core.runnables.router import RouterInput, RouterRunnable
-    from langchain_core.runnables.utils import (
-        AddableDict,
-        ConfigurableField,
-        ConfigurableFieldMultiOption,
-        ConfigurableFieldSingleOption,
-        ConfigurableFieldSpec,
-        aadd,
-        add,
-    )
+    from langchain_core.runnables.utils import (AddableDict, ConfigurableField,
+                                                ConfigurableFieldMultiOption,
+                                                ConfigurableFieldSingleOption,
+                                                ConfigurableFieldSpec, aadd,
+                                                add)
 
 __all__ = (
     "AddableDict",

@@ -2,23 +2,16 @@ from typing import Any, Union
 
 import pytest
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+    AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun)
 from langchain_core.documents import Document
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-    StructuredQuery,
-    Visitor,
-)
+from langchain_core.structured_query import (Comparator, Comparison, Operation,
+                                             Operator, StructuredQuery,
+                                             Visitor)
+from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
-from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 class FakeTranslator(Visitor):

@@ -4,7 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.tools import FileSearchTool
-    from langchain_community.tools.file_management.file_search import FileSearchInput
+    from langchain_community.tools.file_management.file_search import \
+        FileSearchInput
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

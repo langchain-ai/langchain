@@ -2,24 +2,14 @@
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Union,
-)
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    Generation,
-    GenerationChunk,
-)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    Generation, GenerationChunk)
 from langchain_core.runnables.config import run_in_executor
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator

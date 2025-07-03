@@ -6,54 +6,31 @@ from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any, Callable, Literal, Optional, Union, cast
 
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForLLMRun,
+                                              CallbackManagerForLLMRun)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    agenerate_from_stream,
-    generate_from_stream,
-)
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    InvalidToolCall,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolCall,
-    ToolMessage,
-    ToolMessageChunk,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        agenerate_from_stream,
+                                                        generate_from_stream)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessage,
+                                     FunctionMessageChunk, HumanMessage,
+                                     HumanMessageChunk, InvalidToolCall,
+                                     SystemMessage, SystemMessageChunk,
+                                     ToolCall, ToolMessage, ToolMessageChunk)
 from langchain_core.messages.tool import ToolCallChunk
-from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.messages.tool import \
+    tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    make_invalid_tool_call,
-    parse_tool_call,
-)
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-    LLMResult,
-)
+    JsonOutputKeyToolsParser, make_invalid_tool_call, parse_tool_call)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult, LLMResult)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import (
-    convert_to_json_schema,
-    convert_to_openai_tool,
-)
+from langchain_core.utils.function_calling import (convert_to_json_schema,
+                                                   convert_to_openai_tool)
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
@@ -214,9 +191,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 def _is_huggingface_hub(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_hub import (
-            HuggingFaceHub,  # type: ignore[import-not-found]
-        )
+        from langchain_community.llms.huggingface_hub import \
+            HuggingFaceHub  # type: ignore[import-not-found]
 
         return isinstance(llm, HuggingFaceHub)
     except ImportError:
@@ -285,9 +261,8 @@ def _convert_chunk_to_message_chunk(
 
 def _is_huggingface_textgen_inference(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_text_gen_inference import (
-            HuggingFaceTextGenInference,  # type: ignore[import-not-found]
-        )
+        from langchain_community.llms.huggingface_text_gen_inference import \
+            HuggingFaceTextGenInference  # type: ignore[import-not-found]
 
         return isinstance(llm, HuggingFaceTextGenInference)
     except ImportError:
@@ -763,7 +738,8 @@ class ChatHuggingFace(BaseChatModel):
     def _resolve_model_id(self) -> None:
         """Resolve the model_id from the LLM's inference_server_url"""
 
-        from huggingface_hub import list_inference_endpoints  # type: ignore[import]
+        from huggingface_hub import \
+            list_inference_endpoints  # type: ignore[import]
 
         if _is_huggingface_hub(self.llm) or (
             hasattr(self.llm, "repo_id") and self.llm.repo_id

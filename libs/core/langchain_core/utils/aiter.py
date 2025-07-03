@@ -6,25 +6,12 @@ MIT License.
 """
 
 from collections import deque
-from collections.abc import (
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Iterator,
-)
+from collections.abc import (AsyncGenerator, AsyncIterable, AsyncIterator,
+                             Awaitable, Iterator)
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import (Any, Callable, Generic, Optional, TypeVar, Union, cast,
+                    overload)
 
 from typing_extensions import override
 

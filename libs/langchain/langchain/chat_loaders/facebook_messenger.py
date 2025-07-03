@@ -5,8 +5,7 @@ from langchain._api.module_import import create_importer
 if TYPE_CHECKING:
     from langchain_community.chat_loaders.facebook_messenger import (
         FolderFacebookMessengerChatLoader,
-        SingleFileFacebookMessengerChatLoader,
-    )
+        SingleFileFacebookMessengerChatLoader)
 
 module_lookup = {
     "SingleFileFacebookMessengerChatLoader": (

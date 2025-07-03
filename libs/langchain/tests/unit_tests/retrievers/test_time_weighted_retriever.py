@@ -10,9 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 from langchain.retrievers.time_weighted_retriever import (
-    TimeWeightedVectorStoreRetriever,
-    _get_hours_passed,
-)
+    TimeWeightedVectorStoreRetriever, _get_hours_passed)
 
 
 def _get_example_memories(k: int = 4) -> list[Document]:

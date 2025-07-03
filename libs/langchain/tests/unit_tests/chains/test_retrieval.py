@@ -3,9 +3,9 @@
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeListLLM
 from langchain_core.prompts.prompt import PromptTemplate
+from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 
 from langchain.chains import create_retrieval_chain
-from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 
 
 def test_create() -> None:

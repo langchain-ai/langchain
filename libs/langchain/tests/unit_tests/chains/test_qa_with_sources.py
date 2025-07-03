@@ -1,7 +1,7 @@
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.mark.parametrize(

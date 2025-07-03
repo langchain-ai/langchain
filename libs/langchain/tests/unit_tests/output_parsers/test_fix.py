@@ -6,7 +6,8 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import (Runnable, RunnableLambda,
+                                      RunnablePassthrough)
 
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser

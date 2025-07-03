@@ -13,7 +13,8 @@ from langchain_core.prompts import PromptTemplate
 from pydantic import ConfigDict
 
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain.evaluation.qa.eval_prompt import (CONTEXT_PROMPT, COT_PROMPT,
+                                                 PROMPT)
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
 

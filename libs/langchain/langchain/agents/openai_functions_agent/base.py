@@ -7,16 +7,11 @@ from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import (
-    BaseMessage,
-    SystemMessage,
-)
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate,
+                                         MessagesPlaceholder)
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -25,12 +20,10 @@ from pydantic import model_validator
 from typing_extensions import Self
 
 from langchain.agents import BaseSingleActionAgent
-from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_function_messages,
-)
-from langchain.agents.output_parsers.openai_functions import (
-    OpenAIFunctionsAgentOutputParser,
-)
+from langchain.agents.format_scratchpad.openai_functions import \
+    format_to_openai_function_messages
+from langchain.agents.output_parsers.openai_functions import \
+    OpenAIFunctionsAgentOutputParser
 
 
 @deprecated("0.1.0", alternative="create_openai_functions_agent", removal="1.0")

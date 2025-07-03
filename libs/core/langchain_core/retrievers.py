@@ -26,25 +26,18 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict, override
-
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.runnables import (
-    Runnable,
-    RunnableConfig,
-    RunnableSerializable,
-    ensure_config,
-)
+from langchain_core.runnables import (Runnable, RunnableConfig,
+                                      RunnableSerializable, ensure_config)
 from langchain_core.runnables.config import run_in_executor
+from pydantic import ConfigDict
+from typing_extensions import Self, TypedDict, override
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForRetrieverRun,
-        CallbackManagerForRetrieverRun,
-    )
+        AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun)
 
 RetrieverInput = str
 RetrieverOutput = list[Document]

@@ -9,9 +9,8 @@ from pathlib import Path
 from typing import Dict, Optional, cast
 
 import typer
-from typing_extensions import Annotated, TypedDict
-
 from langchain_cli.utils.find_replace import replace_file, replace_glob
+from typing_extensions import Annotated, TypedDict
 
 integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -145,9 +144,11 @@ def new(
         else:
             dst_paths = [Path.cwd() / p for p in dst]
             dst_paths = [
-                p / f"{replacements['__package_name_short_snake__']}.ipynb"
-                if not p.suffix
-                else p
+                (
+                    p / f"{replacements['__package_name_short_snake__']}.ipynb"
+                    if not p.suffix
+                    else p
+                )
                 for p in dst_paths
             ]
 

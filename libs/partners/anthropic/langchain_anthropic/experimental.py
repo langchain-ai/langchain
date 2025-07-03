@@ -1,13 +1,9 @@
 import json
-from typing import (
-    Any,
-    Union,
-)
-
-from langchain_core._api import deprecated
-from pydantic import PrivateAttr
+from typing import Any, Union
 
 from langchain_anthropic.chat_models import ChatAnthropic
+from langchain_core._api import deprecated
+from pydantic import PrivateAttr
 
 SYSTEM_PROMPT_FORMAT = """In this environment you have access to a set of tools you can use to answer the user's question.
 

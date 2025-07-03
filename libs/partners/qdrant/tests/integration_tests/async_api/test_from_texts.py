@@ -4,16 +4,11 @@ from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
-
 from langchain_qdrant import Qdrant
 from langchain_qdrant.vectorstores import QdrantException
-from tests.integration_tests.common import (
-    ConsistentFakeEmbeddings,
-    assert_documents_equals,
-)
-from tests.integration_tests.fixtures import (
-    qdrant_locations,
-)
+from tests.integration_tests.common import (ConsistentFakeEmbeddings,
+                                            assert_documents_equals)
+from tests.integration_tests.fixtures import qdrant_locations
 
 
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())

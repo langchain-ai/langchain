@@ -4,13 +4,12 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.vectorstores import Redis
-    from langchain_community.vectorstores.redis.base import RedisVectorStoreRetriever
-    from langchain_community.vectorstores.redis.filters import (
-        RedisFilter,
-        RedisNum,
-        RedisTag,
-        RedisText,
-    )
+    from langchain_community.vectorstores.redis.base import \
+        RedisVectorStoreRetriever
+    from langchain_community.vectorstores.redis.filters import (RedisFilter,
+                                                                RedisNum,
+                                                                RedisTag,
+                                                                RedisText)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -15,10 +15,9 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Literal, Self
-
-from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
 

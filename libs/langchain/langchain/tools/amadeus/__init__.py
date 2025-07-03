@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.tools.amadeus.closest_airport import AmadeusClosestAirport
-    from langchain_community.tools.amadeus.flight_search import AmadeusFlightSearch
+    from langchain_community.tools.amadeus.closest_airport import \
+        AmadeusClosestAirport
+    from langchain_community.tools.amadeus.flight_search import \
+        AmadeusFlightSearch
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

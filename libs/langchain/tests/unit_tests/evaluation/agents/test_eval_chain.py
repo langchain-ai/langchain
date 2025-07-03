@@ -9,13 +9,10 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
+from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 from langchain.evaluation.agents.trajectory_eval_chain import (
-    TrajectoryEval,
-    TrajectoryEvalChain,
-    TrajectoryOutputParser,
-)
-from tests.unit_tests.llms.fake_chat_model import FakeChatModel
+    TrajectoryEval, TrajectoryEvalChain, TrajectoryOutputParser)
 
 
 @pytest.fixture

@@ -1,18 +1,10 @@
 """Wrapper around xAI's Chat Completions API."""
 
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Literal, Optional, TypeVar, Union
 
 import openai
-from langchain_core.language_models.chat_models import (
-    LangSmithParams,
-    LanguageModelInput,
-)
+from langchain_core.language_models.chat_models import (LangSmithParams,
+                                                        LanguageModelInput)
 from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
@@ -420,9 +412,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
         if hasattr(response, "citations"):
-            rtn.generations[0].message.additional_kwargs["citations"] = (
-                response.citations
-            )
+            rtn.generations[0].message.additional_kwargs[
+                "citations"
+            ] = response.citations
 
         return rtn
 

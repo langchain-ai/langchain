@@ -5,29 +5,24 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from typing_extensions import override
-
-from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain_core.callbacks.base import (AsyncCallbackHandler,
+                                           BaseCallbackHandler)
 from langchain_core.exceptions import TracerException  # noqa: F401
 from langchain_core.tracers.core import _TracerCore
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from uuid import UUID
 
-    from tenacity import RetryCallState
-
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
-    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.outputs import (ChatGenerationChunk, GenerationChunk,
+                                        LLMResult)
     from langchain_core.tracers.schemas import Run
+    from tenacity import RetryCallState
 
 logger = logging.getLogger(__name__)
 

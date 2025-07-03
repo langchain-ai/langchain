@@ -4,22 +4,9 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.github.toolkit import (
-        BranchName,
-        CommentOnIssue,
-        CreateFile,
-        CreatePR,
-        CreateReviewRequest,
-        DeleteFile,
-        DirectoryPath,
-        GetIssue,
-        GetPR,
-        GitHubToolkit,
-        NoInput,
-        ReadFile,
-        SearchCode,
-        SearchIssuesAndPRs,
-        UpdateFile,
-    )
+        BranchName, CommentOnIssue, CreateFile, CreatePR, CreateReviewRequest,
+        DeleteFile, DirectoryPath, GetIssue, GetPR, GitHubToolkit, NoInput,
+        ReadFile, SearchCode, SearchIssuesAndPRs, UpdateFile)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

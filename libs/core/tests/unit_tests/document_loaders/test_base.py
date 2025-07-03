@@ -3,11 +3,10 @@
 from collections.abc import Iterator
 
 import pytest
-from typing_extensions import override
-
 from langchain_core.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain_core.documents import Document
 from langchain_core.documents.base import Blob
+from typing_extensions import override
 
 
 def test_base_blob_parser() -> None:

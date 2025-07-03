@@ -46,25 +46,19 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.language_models.base import (
-        BaseLanguageModel,
-        LangSmithParams,
-        LanguageModelInput,
-        LanguageModelLike,
-        LanguageModelOutput,
-        get_tokenizer,
-    )
-    from langchain_core.language_models.chat_models import (
-        BaseChatModel,
-        SimpleChatModel,
-    )
-    from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
+    from langchain_core.language_models.base import (BaseLanguageModel,
+                                                     LangSmithParams,
+                                                     LanguageModelInput,
+                                                     LanguageModelLike,
+                                                     LanguageModelOutput,
+                                                     get_tokenizer)
+    from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                            SimpleChatModel)
+    from langchain_core.language_models.fake import (FakeListLLM,
+                                                     FakeStreamingListLLM)
     from langchain_core.language_models.fake_chat_models import (
-        FakeListChatModel,
-        FakeMessagesListChatModel,
-        GenericFakeChatModel,
-        ParrotFakeChatModel,
-    )
+        FakeListChatModel, FakeMessagesListChatModel, GenericFakeChatModel,
+        ParrotFakeChatModel)
     from langchain_core.language_models.llms import LLM, BaseLLM
 
 __all__ = (

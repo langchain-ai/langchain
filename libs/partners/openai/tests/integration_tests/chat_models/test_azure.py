@@ -6,16 +6,11 @@ from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import (
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-)
+from langchain_core.messages import (AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from pydantic import BaseModel
-
 from langchain_openai import AzureChatOpenAI
+from pydantic import BaseModel
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")

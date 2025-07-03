@@ -4,11 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chat_loaders.utils import (
-        map_ai_messages,
-        map_ai_messages_in_session,
-        merge_chat_runs,
-        merge_chat_runs_in_session,
-    )
+        map_ai_messages, map_ai_messages_in_session, merge_chat_runs,
+        merge_chat_runs_in_session)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

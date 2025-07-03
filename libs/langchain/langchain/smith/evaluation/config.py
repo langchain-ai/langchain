@@ -12,13 +12,11 @@ from langsmith.schemas import Example, Run
 from pydantic import BaseModel, ConfigDict, Field
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
-from langchain.evaluation.embedding_distance.base import (
-    EmbeddingDistance as EmbeddingDistanceEnum,
-)
+from langchain.evaluation.embedding_distance.base import \
+    EmbeddingDistance as EmbeddingDistanceEnum
 from langchain.evaluation.schema import EvaluatorType, StringEvaluator
-from langchain.evaluation.string_distance.base import (
-    StringDistance as StringDistanceEnum,
-)
+from langchain.evaluation.string_distance.base import \
+    StringDistance as StringDistanceEnum
 
 RUN_EVALUATOR_LIKE = Callable[
     [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]

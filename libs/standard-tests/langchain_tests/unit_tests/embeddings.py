@@ -5,9 +5,8 @@ from unittest import mock
 
 import pytest
 from langchain_core.embeddings import Embeddings
-from pydantic import SecretStr
-
 from langchain_tests.base import BaseStandardTests
+from pydantic import SecretStr
 
 
 class EmbeddingsTests(BaseStandardTests):

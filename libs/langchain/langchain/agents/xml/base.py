@@ -6,7 +6,8 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
+from langchain_core.prompts.chat import (AIMessagePromptTemplate,
+                                         ChatPromptTemplate)
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description

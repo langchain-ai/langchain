@@ -6,9 +6,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 
 from langchain.agents.agent import MultiActionAgentOutputParser
 from langchain.agents.output_parsers.tools import (
-    ToolAgentAction,
-    parse_ai_message_to_tool_action,
-)
+    ToolAgentAction, parse_ai_message_to_tool_action)
 
 OpenAIToolAgentAction = ToolAgentAction
 

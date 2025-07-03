@@ -10,27 +10,19 @@ from typing import Any, Literal, Optional, TypeVar, Union
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    generate_from_stream,
-)
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolMessageChunk,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        generate_from_stream)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessageChunk,
+                                     HumanMessage, HumanMessageChunk,
+                                     SystemMessage, SystemMessageChunk,
+                                     ToolMessageChunk)
 from langchain_core.messages.ai import UsageMetadata, subtract_usage
-from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.output_parsers import (JsonOutputParser,
+                                           PydanticOutputParser)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_json_schema
@@ -207,9 +199,9 @@ class ChatPerplexity(BaseChatModel):
         """Validate that api key and python package exists in environment."""
         try:
             self.client = openai.OpenAI(
-                api_key=self.pplx_api_key.get_secret_value()
-                if self.pplx_api_key
-                else None,
+                api_key=(
+                    self.pplx_api_key.get_secret_value() if self.pplx_api_key else None
+                ),
                 base_url="https://api.perplexity.ai",
             )
         except AttributeError:

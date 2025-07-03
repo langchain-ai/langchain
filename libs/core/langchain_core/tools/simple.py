@@ -4,27 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from inspect import signature
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-from typing_extensions import override
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForToolRun,
+                                      CallbackManagerForToolRun)
 from langchain_core.runnables import RunnableConfig, run_in_executor
-from langchain_core.tools.base import (
-    ArgsSchema,
-    BaseTool,
-    ToolException,
-    _get_runnable_config_param,
-)
+from langchain_core.tools.base import (ArgsSchema, BaseTool, ToolException,
+                                       _get_runnable_config_param)
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall

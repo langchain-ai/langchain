@@ -6,17 +6,14 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+from langchain_core.prompts.string import (DEFAULT_FORMATTER_MAPPING,
+                                           PromptTemplateFormat,
+                                           StringPromptTemplate,
+                                           check_valid_template,
+                                           get_template_variables,
+                                           mustache_schema)
 from pydantic import BaseModel, model_validator
 from typing_extensions import override
-
-from langchain_core.prompts.string import (
-    DEFAULT_FORMATTER_MAPPING,
-    PromptTemplateFormat,
-    StringPromptTemplate,
-    check_valid_template,
-    get_template_variables,
-    mustache_schema,
-)
 
 if TYPE_CHECKING:
     from langchain_core.runnables.config import RunnableConfig

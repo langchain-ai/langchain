@@ -1,9 +1,8 @@
 """Test Perplexity Chat API wrapper."""
 
 from langchain_core.language_models import BaseChatModel
-from langchain_tests.unit_tests import ChatModelUnitTests
-
 from langchain_perplexity import ChatPerplexity
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 
 class TestPerplexityStandard(ChatModelUnitTests):

@@ -4,7 +4,6 @@ from typing import Type
 import pytest
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-
 from langchain_tests.base import BaseStandardTests
 
 

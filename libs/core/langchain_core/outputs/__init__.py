@@ -26,10 +26,8 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.outputs.chat_generation import (
-        ChatGeneration,
-        ChatGenerationChunk,
-    )
+    from langchain_core.outputs.chat_generation import (ChatGeneration,
+                                                        ChatGenerationChunk)
     from langchain_core.outputs.chat_result import ChatResult
     from langchain_core.outputs.generation import Generation, GenerationChunk
     from langchain_core.outputs.llm_result import LLMResult

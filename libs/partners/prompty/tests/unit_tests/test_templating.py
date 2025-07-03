@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from langchain_prompty import create_chat_prompt
 
 PROMPT_DIR = Path(__file__).parent / "prompts"

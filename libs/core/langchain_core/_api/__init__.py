@@ -14,19 +14,13 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from .beta_decorator import (
-        LangChainBetaWarning,
-        beta,
-        suppress_langchain_beta_warning,
-        surface_langchain_beta_warnings,
-    )
-    from .deprecation import (
-        LangChainDeprecationWarning,
-        deprecated,
-        suppress_langchain_deprecation_warning,
-        surface_langchain_deprecation_warnings,
-        warn_deprecated,
-    )
+    from .beta_decorator import (LangChainBetaWarning, beta,
+                                 suppress_langchain_beta_warning,
+                                 surface_langchain_beta_warnings)
+    from .deprecation import (LangChainDeprecationWarning, deprecated,
+                              suppress_langchain_deprecation_warning,
+                              surface_langchain_deprecation_warnings,
+                              warn_deprecated)
     from .path import as_import_path, get_relative_path
 
 __all__ = (

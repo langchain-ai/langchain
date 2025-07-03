@@ -2,16 +2,9 @@ import traceback
 from pathlib import Path
 from typing import Any, Union
 
-from .core import (
-    Frontmatter,
-    InvokerFactory,
-    ModelSettings,
-    Prompty,
-    PropertySettings,
-    SimpleModel,
-    TemplateSettings,
-    param_hoisting,
-)
+from .core import (Frontmatter, InvokerFactory, ModelSettings, Prompty,
+                   PropertySettings, SimpleModel, TemplateSettings,
+                   param_hoisting)
 
 
 def load(prompt_path: str, configuration: str = "default") -> Prompty:

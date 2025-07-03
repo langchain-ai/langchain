@@ -8,24 +8,15 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    InvalidToolCall,
-    SystemMessage,
-    ToolCall,
-)
-from pydantic import SecretStr
-
+from langchain_core.messages import (AIMessage, BaseMessage, ChatMessage,
+                                     HumanMessage, InvalidToolCall,
+                                     SystemMessage, ToolCall)
 from langchain_mistralai.chat_models import (  # type: ignore[import]
-    ChatMistralAI,
-    _convert_message_to_mistral_chat_message,
+    ChatMistralAI, _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
-    _is_valid_mistral_tool_call_id,
-)
+    _is_valid_mistral_tool_call_id)
+from pydantic import SecretStr
 
 os.environ["MISTRAL_API_KEY"] = "foo"
 

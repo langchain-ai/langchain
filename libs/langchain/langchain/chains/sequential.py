@@ -2,10 +2,8 @@
 
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from langchain_core.utils.input import get_color_mapping
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self

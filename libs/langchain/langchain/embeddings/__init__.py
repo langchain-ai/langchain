@@ -20,59 +20,26 @@ from langchain.embeddings.cache import CacheBackedEmbeddings
 if TYPE_CHECKING:
     from langchain_community.embeddings import (
         AlephAlphaAsymmetricSemanticEmbedding,
-        AlephAlphaSymmetricSemanticEmbedding,
-        AwaEmbeddings,
-        AzureOpenAIEmbeddings,
-        BedrockEmbeddings,
-        BookendEmbeddings,
-        ClarifaiEmbeddings,
-        CohereEmbeddings,
-        DashScopeEmbeddings,
-        DatabricksEmbeddings,
-        DeepInfraEmbeddings,
-        DeterministicFakeEmbedding,
-        EdenAiEmbeddings,
-        ElasticsearchEmbeddings,
-        EmbaasEmbeddings,
-        ErnieEmbeddings,
-        FakeEmbeddings,
-        FastEmbedEmbeddings,
-        GooglePalmEmbeddings,
-        GPT4AllEmbeddings,
-        GradientEmbeddings,
-        HuggingFaceBgeEmbeddings,
-        HuggingFaceEmbeddings,
-        HuggingFaceHubEmbeddings,
-        HuggingFaceInferenceAPIEmbeddings,
-        HuggingFaceInstructEmbeddings,
-        InfinityEmbeddings,
-        JavelinAIGatewayEmbeddings,
-        JinaEmbeddings,
-        JohnSnowLabsEmbeddings,
-        LlamaCppEmbeddings,
-        LocalAIEmbeddings,
-        MiniMaxEmbeddings,
-        MlflowAIGatewayEmbeddings,
-        MlflowEmbeddings,
-        ModelScopeEmbeddings,
-        MosaicMLInstructorEmbeddings,
-        NLPCloudEmbeddings,
-        OctoAIEmbeddings,
-        OllamaEmbeddings,
-        OpenAIEmbeddings,
-        OpenVINOEmbeddings,
-        QianfanEmbeddingsEndpoint,
-        SagemakerEndpointEmbeddings,
-        SelfHostedEmbeddings,
-        SelfHostedHuggingFaceEmbeddings,
-        SelfHostedHuggingFaceInstructEmbeddings,
-        SentenceTransformerEmbeddings,
-        SpacyEmbeddings,
-        TensorflowHubEmbeddings,
-        VertexAIEmbeddings,
-        VoyageEmbeddings,
-        XinferenceEmbeddings,
-    )
+        AlephAlphaSymmetricSemanticEmbedding, AwaEmbeddings,
+        AzureOpenAIEmbeddings, BedrockEmbeddings, BookendEmbeddings,
+        ClarifaiEmbeddings, CohereEmbeddings, DashScopeEmbeddings,
+        DatabricksEmbeddings, DeepInfraEmbeddings, DeterministicFakeEmbedding,
+        EdenAiEmbeddings, ElasticsearchEmbeddings, EmbaasEmbeddings,
+        ErnieEmbeddings, FakeEmbeddings, FastEmbedEmbeddings,
+        GooglePalmEmbeddings, GPT4AllEmbeddings, GradientEmbeddings,
+        HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings,
+        HuggingFaceHubEmbeddings, HuggingFaceInferenceAPIEmbeddings,
+        HuggingFaceInstructEmbeddings, InfinityEmbeddings,
+        JavelinAIGatewayEmbeddings, JinaEmbeddings, JohnSnowLabsEmbeddings,
+        LlamaCppEmbeddings, LocalAIEmbeddings, MiniMaxEmbeddings,
+        MlflowAIGatewayEmbeddings, MlflowEmbeddings, ModelScopeEmbeddings,
+        MosaicMLInstructorEmbeddings, NLPCloudEmbeddings, OctoAIEmbeddings,
+        OllamaEmbeddings, OpenAIEmbeddings, OpenVINOEmbeddings,
+        QianfanEmbeddingsEndpoint, SagemakerEndpointEmbeddings,
+        SelfHostedEmbeddings, SelfHostedHuggingFaceEmbeddings,
+        SelfHostedHuggingFaceInstructEmbeddings, SentenceTransformerEmbeddings,
+        SpacyEmbeddings, TensorflowHubEmbeddings, VertexAIEmbeddings,
+        VoyageEmbeddings, XinferenceEmbeddings)
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +52,8 @@ class HypotheticalDocumentEmbedder:
             "Using a deprecated class. Please use "
             "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
-        from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
+        from langchain.chains.hyde.base import \
+            HypotheticalDocumentEmbedder as H
 
         return H(*args, **kwargs)  # type: ignore[return-value]
 
@@ -95,7 +63,8 @@ class HypotheticalDocumentEmbedder:
             "Using a deprecated class. Please use "
             "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
         )
-        from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
+        from langchain.chains.hyde.base import \
+            HypotheticalDocumentEmbedder as H
 
         return H.from_llm(*args, **kwargs)
 

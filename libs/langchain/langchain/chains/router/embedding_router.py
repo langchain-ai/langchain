@@ -3,10 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore

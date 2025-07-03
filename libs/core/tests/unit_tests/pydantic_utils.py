@@ -1,8 +1,7 @@
 from typing import Any, Union
 
-from pydantic import BaseModel
-
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 
 # Function to replace allOf with $ref

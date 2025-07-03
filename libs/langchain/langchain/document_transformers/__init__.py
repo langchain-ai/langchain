@@ -21,19 +21,11 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.document_transformers import (
-        BeautifulSoupTransformer,
-        DoctranPropertyExtractor,
-        DoctranQATransformer,
-        DoctranTextTranslator,
-        EmbeddingsClusteringFilter,
-        EmbeddingsRedundantFilter,
-        GoogleTranslateTransformer,
-        Html2TextTransformer,
-        LongContextReorder,
-        NucliaTextTransformer,
-        OpenAIMetadataTagger,
-        get_stateful_documents,
-    )
+        BeautifulSoupTransformer, DoctranPropertyExtractor,
+        DoctranQATransformer, DoctranTextTranslator,
+        EmbeddingsClusteringFilter, EmbeddingsRedundantFilter,
+        GoogleTranslateTransformer, Html2TextTransformer, LongContextReorder,
+        NucliaTextTransformer, OpenAIMetadataTagger, get_stateful_documents)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -57,9 +57,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         """Filter documents based on similarity of their embeddings to the query."""
         try:
             from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E501
-                _get_embeddings_from_stateful_docs,
-                get_stateful_documents,
-            )
+                _get_embeddings_from_stateful_docs, get_stateful_documents)
         except ImportError:
             raise ImportError(
                 "To use please install langchain-community "
@@ -99,9 +97,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         """Filter documents based on similarity of their embeddings to the query."""
         try:
             from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E501
-                _aget_embeddings_from_stateful_docs,
-                get_stateful_documents,
-            )
+                _aget_embeddings_from_stateful_docs, get_stateful_documents)
         except ImportError:
             raise ImportError(
                 "To use please install langchain-community "

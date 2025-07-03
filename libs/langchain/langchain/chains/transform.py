@@ -5,10 +5,8 @@ import logging
 from collections.abc import Awaitable
 from typing import Any, Callable, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from pydantic import Field
 
 from langchain.chains.base import Chain

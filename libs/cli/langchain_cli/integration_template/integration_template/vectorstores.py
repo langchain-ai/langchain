@@ -3,22 +3,14 @@
 from __future__ import annotations
 
 import uuid
-from typing import (
-    Any,
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import (Any, Callable, Iterator, List, Optional, Sequence, Tuple,
+                    Type, TypeVar)
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
+from langchain_core.vectorstores.utils import \
+    _cosine_similarity as cosine_similarity
 
 VST = TypeVar("VST", bound=VectorStore)
 

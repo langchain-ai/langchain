@@ -3,13 +3,9 @@ import warnings
 from typing import Any
 
 import pytest
+from langchain_core._api.deprecation import (deprecated, rename_parameter,
+                                             warn_deprecated)
 from pydantic import BaseModel
-
-from langchain_core._api.deprecation import (
-    deprecated,
-    rename_parameter,
-    warn_deprecated,
-)
 
 
 @pytest.mark.parametrize(

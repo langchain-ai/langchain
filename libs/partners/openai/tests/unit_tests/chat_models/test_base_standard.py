@@ -1,9 +1,8 @@
 """Standard LangChain interface tests"""
 
 from langchain_core.language_models import BaseChatModel
-from langchain_tests.unit_tests import ChatModelUnitTests
-
 from langchain_openai import ChatOpenAI
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 
 class TestOpenAIStandard(ChatModelUnitTests):

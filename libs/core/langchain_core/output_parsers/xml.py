@@ -8,12 +8,11 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder
 
-from typing_extensions import override
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
+from typing_extensions import override
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.
@@ -51,9 +50,8 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                from defusedxml.ElementTree import (  # type: ignore[import-untyped]
-                    XMLParser,
-                )
+                from defusedxml.ElementTree import \
+                    XMLParser  # type: ignore[import-untyped]
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -209,7 +207,8 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree  # type: ignore[import-untyped]
+                from defusedxml import \
+                    ElementTree  # type: ignore[import-untyped]
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "

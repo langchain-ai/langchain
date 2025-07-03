@@ -4,12 +4,11 @@ from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk
+from langchain_deepseek.chat_models import ChatDeepSeek
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
 from pydantic import SecretStr
-
-from langchain_deepseek.chat_models import ChatDeepSeek
 
 
 class MockOpenAIResponse(BaseModel):

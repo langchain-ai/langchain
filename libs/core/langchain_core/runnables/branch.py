@@ -1,36 +1,19 @@
 """Runnable that selects which branch to run based on a condition."""
 
-from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from collections.abc import (AsyncIterator, Awaitable, Iterator, Mapping,
+                             Sequence)
+from typing import Any, Callable, Optional, Union, cast
 
+from langchain_core.runnables.base import (Runnable, RunnableLike,
+                                           RunnableSerializable,
+                                           coerce_to_runnable)
+from langchain_core.runnables.config import (
+    RunnableConfig, ensure_config, get_async_callback_manager_for_config,
+    get_callback_manager_for_config, patch_config)
+from langchain_core.runnables.utils import (ConfigurableFieldSpec, Input,
+                                            Output, get_unique_config_specs)
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
-
-from langchain_core.runnables.base import (
-    Runnable,
-    RunnableLike,
-    RunnableSerializable,
-    coerce_to_runnable,
-)
-from langchain_core.runnables.config import (
-    RunnableConfig,
-    ensure_config,
-    get_async_callback_manager_for_config,
-    get_callback_manager_for_config,
-    patch_config,
-)
-from langchain_core.runnables.utils import (
-    ConfigurableFieldSpec,
-    Input,
-    Output,
-    get_unique_config_specs,
-)
 
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
@@ -174,9 +157,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            CONTEXT_CONFIG_SUFFIX_SET,
-        )
+            CONTEXT_CONFIG_PREFIX, CONTEXT_CONFIG_SUFFIX_SET)
 
         specs = get_unique_config_specs(
             spec

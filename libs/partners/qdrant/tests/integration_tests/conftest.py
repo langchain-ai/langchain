@@ -1,7 +1,6 @@
 import os
 
 from qdrant_client import QdrantClient
-
 from tests.integration_tests.fixtures import qdrant_locations
 
 

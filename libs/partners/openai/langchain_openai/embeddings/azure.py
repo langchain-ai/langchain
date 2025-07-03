@@ -7,10 +7,9 @@ from typing import Callable, Optional, Union, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
+from langchain_openai.embeddings.base import OpenAIEmbeddings
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
-
-from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]

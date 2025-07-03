@@ -2,10 +2,8 @@
 
 from typing import Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForToolRun,
+                                      CallbackManagerForToolRun)
 from langchain_core.tools import BaseTool, tool
 
 

@@ -5,9 +5,7 @@ from json import JSONDecodeError
 from typing import Any, Literal, Optional, TypeVar, Union
 
 import openai
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
@@ -235,9 +233,9 @@ class ChatDeepSeek(BaseChatOpenAI):
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
             ):
-                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                    reasoning
-                )
+                rtn.generations[0].message.additional_kwargs[
+                    "reasoning_content"
+                ] = reasoning
 
         return rtn
 

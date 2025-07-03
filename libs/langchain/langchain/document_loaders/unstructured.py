@@ -4,17 +4,11 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import (
-        UnstructuredAPIFileIOLoader,
-        UnstructuredAPIFileLoader,
-        UnstructuredFileIOLoader,
-        UnstructuredFileLoader,
-    )
+        UnstructuredAPIFileIOLoader, UnstructuredAPIFileLoader,
+        UnstructuredFileIOLoader, UnstructuredFileLoader)
     from langchain_community.document_loaders.unstructured import (
-        UnstructuredBaseLoader,
-        get_elements_from_api,
-        satisfies_min_unstructured_version,
-        validate_unstructured_version,
-    )
+        UnstructuredBaseLoader, get_elements_from_api,
+        satisfies_min_unstructured_version, validate_unstructured_version)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

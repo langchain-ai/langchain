@@ -3,15 +3,12 @@
 import re
 
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.evaluation.comparison.eval_chain import (
-    LabeledPairwiseStringEvalChain,
-    PairwiseStringEvalChain,
-    PairwiseStringResultOutputParser,
-    resolve_pairwise_criteria,
-)
+    LabeledPairwiseStringEvalChain, PairwiseStringEvalChain,
+    PairwiseStringResultOutputParser, resolve_pairwise_criteria)
 from langchain.evaluation.criteria.eval_chain import Criteria
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.mark.parametrize("criterion", list(Criteria))

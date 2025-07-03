@@ -5,9 +5,8 @@ from unittest import mock
 
 import pytest
 from langchain_core.messages import HumanMessage
-from typing_extensions import TypedDict
-
 from langchain_openai import AzureChatOpenAI
+from typing_extensions import TypedDict
 
 
 def test_initialize_azure_openai() -> None:

@@ -1,15 +1,12 @@
 """Module to test base parser implementations."""
 
-from typing_extensions import override
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
-from langchain_core.output_parsers import (
-    BaseGenerationOutputParser,
-    BaseTransformOutputParser,
-)
+from langchain_core.output_parsers import (BaseGenerationOutputParser,
+                                           BaseTransformOutputParser)
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 
 def test_base_generation_parser() -> None:

@@ -1,10 +1,10 @@
 from collections.abc import Generator
 
 import pytest
-from langchain_core.vectorstores import VectorStore
-from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
-
 from langchain_chroma import Chroma
+from langchain_core.vectorstores import VectorStore
+from langchain_tests.integration_tests.vectorstores import \
+    VectorStoreIntegrationTests
 
 
 class TestChromaStandard(VectorStoreIntegrationTests):

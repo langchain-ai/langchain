@@ -4,25 +4,12 @@ import copy
 import pathlib
 import re
 from io import StringIO
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import (Any, Callable, Dict, Iterable, List, Literal, Optional,
+                    Sequence, Tuple, TypedDict, Union, cast)
 
 import requests
 from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
-
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
 

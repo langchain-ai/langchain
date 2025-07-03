@@ -5,7 +5,8 @@ import warnings
 from importlib import metadata
 from typing import Any, Optional
 
-from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
+from langchain_core._api.deprecation import \
+    surface_langchain_deprecation_warnings
 
 try:
     __version__ = metadata.version(__package__)
@@ -223,7 +224,8 @@ def __getattr__(name: str) -> Any:
 
         return Writer
     elif name == "HuggingFacePipeline":
-        from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+        from langchain_community.llms.huggingface_pipeline import \
+            HuggingFacePipeline
 
         _warn_on_import(
             name,

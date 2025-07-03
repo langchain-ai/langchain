@@ -3,20 +3,18 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
+    from langchain_community.document_loaders.parsers.audio import \
+        OpenAIWhisperParser
     from langchain_community.document_loaders.parsers.docai import DocAIParser
-    from langchain_community.document_loaders.parsers.grobid import GrobidParser
-    from langchain_community.document_loaders.parsers.html.bs4 import BS4HTMLParser
-    from langchain_community.document_loaders.parsers.language.language_parser import (
-        LanguageParser,
-    )
+    from langchain_community.document_loaders.parsers.grobid import \
+        GrobidParser
+    from langchain_community.document_loaders.parsers.html.bs4 import \
+        BS4HTMLParser
+    from langchain_community.document_loaders.parsers.language.language_parser import \
+        LanguageParser
     from langchain_community.document_loaders.parsers.pdf import (
-        PDFMinerParser,
-        PDFPlumberParser,
-        PyMuPDFParser,
-        PyPDFium2Parser,
-        PyPDFParser,
-    )
+        PDFMinerParser, PDFPlumberParser, PyMuPDFParser, PyPDFium2Parser,
+        PyPDFParser)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

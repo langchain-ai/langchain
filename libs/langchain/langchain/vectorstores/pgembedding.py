@@ -4,11 +4,9 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.vectorstores import PGEmbedding
-    from langchain_community.vectorstores.pgembedding import (
-        CollectionStore,
-        EmbeddingStore,
-        QueryResult,
-    )
+    from langchain_community.vectorstores.pgembedding import (CollectionStore,
+                                                              EmbeddingStore,
+                                                              QueryResult)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.retrievers import GoogleDocumentAIWarehouseRetriever
+    from langchain_community.retrievers import \
+        GoogleDocumentAIWarehouseRetriever
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -5,10 +5,9 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import BaseModel, ConfigDict
-
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document

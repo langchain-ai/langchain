@@ -14,9 +14,8 @@ from pydantic import ConfigDict
 
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.retrievers.document_compressors.chain_filter_prompt import (
-    prompt_template,
-)
+from langchain.retrievers.document_compressors.chain_filter_prompt import \
+    prompt_template
 
 
 def _get_default_chain_prompt() -> PromptTemplate:

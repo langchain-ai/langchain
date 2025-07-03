@@ -6,95 +6,56 @@ import warnings
 from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
 from functools import partial
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun,
+    atrace_as_chain_group, trace_as_chain_group)
+from langchain_core.documents import Document
+from langchain_core.language_models import (FakeListChatModel, FakeListLLM,
+                                            FakeStreamingListLLM)
+from langchain_core.load import dumpd, dumps
+from langchain_core.load.load import loads
+from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
+from langchain_core.messages.base import BaseMessage
+from langchain_core.output_parsers import (BaseOutputParser,
+                                           CommaSeparatedListOutputParser,
+                                           StrOutputParser)
+from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
+from langchain_core.prompts import (ChatPromptTemplate,
+                                    HumanMessagePromptTemplate,
+                                    MessagesPlaceholder, PromptTemplate,
+                                    SystemMessagePromptTemplate)
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import (AddableDict, ConfigurableField,
+                                      ConfigurableFieldMultiOption,
+                                      ConfigurableFieldSingleOption,
+                                      RouterRunnable, Runnable, RunnableAssign,
+                                      RunnableBinding, RunnableBranch,
+                                      RunnableConfig, RunnableGenerator,
+                                      RunnableLambda, RunnableParallel,
+                                      RunnablePassthrough, RunnablePick,
+                                      RunnableSequence, add, chain)
+from langchain_core.runnables.base import RunnableMap, RunnableSerializable
+from langchain_core.runnables.utils import Input, Output
+from langchain_core.tools import BaseTool, tool
+from langchain_core.tracers import (BaseTracer, ConsoleCallbackHandler, Run,
+                                    RunLog, RunLogPatch)
+from langchain_core.tracers.context import collect_runs
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from packaging import version
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import TypedDict, override
-
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-    atrace_as_chain_group,
-    trace_as_chain_group,
-)
-from langchain_core.documents import Document
-from langchain_core.language_models import (
-    FakeListChatModel,
-    FakeListLLM,
-    FakeStreamingListLLM,
-)
-from langchain_core.load import dumpd, dumps
-from langchain_core.load.load import loads
-from langchain_core.messages import (
-    AIMessageChunk,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.messages.base import BaseMessage
-from langchain_core.output_parsers import (
-    BaseOutputParser,
-    CommaSeparatedListOutputParser,
-    StrOutputParser,
-)
-from langchain_core.outputs.chat_generation import ChatGeneration
-from langchain_core.outputs.llm_result import LLMResult
-from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    PromptTemplate,
-    SystemMessagePromptTemplate,
-)
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import (
-    AddableDict,
-    ConfigurableField,
-    ConfigurableFieldMultiOption,
-    ConfigurableFieldSingleOption,
-    RouterRunnable,
-    Runnable,
-    RunnableAssign,
-    RunnableBinding,
-    RunnableBranch,
-    RunnableConfig,
-    RunnableGenerator,
-    RunnableLambda,
-    RunnableParallel,
-    RunnablePassthrough,
-    RunnablePick,
-    RunnableSequence,
-    add,
-    chain,
-)
-from langchain_core.runnables.base import RunnableMap, RunnableSerializable
-from langchain_core.runnables.utils import Input, Output
-from langchain_core.tools import BaseTool, tool
-from langchain_core.tracers import (
-    BaseTracer,
-    ConsoleCallbackHandler,
-    Run,
-    RunLog,
-    RunLogPatch,
-)
-from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
-)
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
-from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+from tests.unit_tests.stubs import (AnyStr, _any_id_ai_message,
+                                    _any_id_ai_message_chunk)
+from typing_extensions import TypedDict, override
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
@@ -5571,7 +5532,8 @@ def test_closing_iterator_doesnt_raise_error() -> None:
     import time
 
     from langchain_core.callbacks import BaseCallbackHandler
-    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langchain_core.language_models.fake_chat_models import \
+        GenericFakeChatModel
     from langchain_core.output_parsers import StrOutputParser
 
     on_chain_error_triggered = False

@@ -3,11 +3,8 @@ from inspect import signature
 from typing import Optional, Union
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.documents import (
-    BaseDocumentCompressor,
-    BaseDocumentTransformer,
-    Document,
-)
+from langchain_core.documents import (BaseDocumentCompressor,
+                                      BaseDocumentTransformer, Document)
 from pydantic import ConfigDict
 
 

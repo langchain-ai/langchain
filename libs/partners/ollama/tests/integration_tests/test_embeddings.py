@@ -1,8 +1,7 @@
 """Test Ollama embeddings."""
 
-from langchain_tests.integration_tests import EmbeddingsIntegrationTests
-
 from langchain_ollama.embeddings import OllamaEmbeddings
+from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
 MODEL_NAME = "llama3.1"
 

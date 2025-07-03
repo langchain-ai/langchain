@@ -5,27 +5,16 @@ from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
 import pytest
-from typing_extensions import override
-
 from langchain_core.language_models.fake_chat_models import FakeChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolCall,
-    ToolMessage,
-)
-from langchain_core.messages.utils import (
-    convert_to_messages,
-    convert_to_openai_messages,
-    count_tokens_approximately,
-    filter_messages,
-    get_buffer_string,
-    merge_message_runs,
-    trim_messages,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
+                                     SystemMessage, ToolCall, ToolMessage)
+from langchain_core.messages.utils import (convert_to_messages,
+                                           convert_to_openai_messages,
+                                           count_tokens_approximately,
+                                           filter_messages, get_buffer_string,
+                                           merge_message_runs, trim_messages)
 from langchain_core.tools import BaseTool
+from typing_extensions import override
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])

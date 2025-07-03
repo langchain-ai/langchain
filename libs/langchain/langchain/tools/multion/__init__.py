@@ -5,9 +5,12 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.tools.multion.close_session import MultionCloseSession
-    from langchain_community.tools.multion.create_session import MultionCreateSession
-    from langchain_community.tools.multion.update_session import MultionUpdateSession
+    from langchain_community.tools.multion.close_session import \
+        MultionCloseSession
+    from langchain_community.tools.multion.create_session import \
+        MultionCreateSession
+    from langchain_community.tools.multion.update_session import \
+        MultionUpdateSession
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -3,11 +3,10 @@
 from pathlib import Path
 from typing import Literal, cast
 
+from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessageChunk
 from langchain_tests.integration_tests import ChatModelIntegrationTests
-
-from langchain_anthropic import ChatAnthropic
 
 REPO_ROOT_DIR = Path(__file__).parents[5]
 

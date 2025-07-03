@@ -3,23 +3,19 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.document_loaders import (
-        AmazonTextractPDFLoader,
-        MathpixPDFLoader,
-        OnlinePDFLoader,
-        PagedPDFSplitter,
-        PDFMinerLoader,
-        PDFMinerPDFasHTMLLoader,
-        PDFPlumberLoader,
-        PyMuPDFLoader,
-        PyPDFDirectoryLoader,
-        PyPDFium2Loader,
-        UnstructuredPDFLoader,
-    )
+    from langchain_community.document_loaders import (AmazonTextractPDFLoader,
+                                                      MathpixPDFLoader,
+                                                      OnlinePDFLoader,
+                                                      PagedPDFSplitter,
+                                                      PDFMinerLoader,
+                                                      PDFMinerPDFasHTMLLoader,
+                                                      PDFPlumberLoader,
+                                                      PyMuPDFLoader,
+                                                      PyPDFDirectoryLoader,
+                                                      PyPDFium2Loader,
+                                                      UnstructuredPDFLoader)
     from langchain_community.document_loaders.pdf import (
-        BasePDFLoader,
-        DocumentIntelligenceLoader,
-    )
+        BasePDFLoader, DocumentIntelligenceLoader)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

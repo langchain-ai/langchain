@@ -11,30 +11,17 @@ from typing import Any, Optional, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    BaseCallbackManager,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      AsyncCallbackManagerForChainRun,
+                                      BaseCallbackManager, CallbackManager,
+                                      CallbackManagerForChainRun, Callbacks)
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
-from langchain_core.runnables import (
-    RunnableConfig,
-    RunnableSerializable,
-    ensure_config,
-    run_in_executor,
-)
+from langchain_core.runnables import (RunnableConfig, RunnableSerializable,
+                                      ensure_config, run_in_executor)
 from langchain_core.utils.pydantic import create_model
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    field_validator,
-    model_validator,
-)
+from pydantic import (BaseModel, ConfigDict, Field, field_validator,
+                      model_validator)
 
 from langchain.schema import RUN_KEY
 

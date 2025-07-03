@@ -6,12 +6,10 @@ import os
 from typing import Any, Optional
 
 from langchain_core._api import beta
-from langchain_core.load.mapping import (
-    _JS_SERIALIZABLE_MAPPING,
-    _OG_SERIALIZABLE_MAPPING,
-    OLD_CORE_NAMESPACES_MAPPING,
-    SERIALIZABLE_MAPPING,
-)
+from langchain_core.load.mapping import (_JS_SERIALIZABLE_MAPPING,
+                                         _OG_SERIALIZABLE_MAPPING,
+                                         OLD_CORE_NAMESPACES_MAPPING,
+                                         SERIALIZABLE_MAPPING)
 from langchain_core.load.serializable import Serializable
 
 DEFAULT_NAMESPACES = [

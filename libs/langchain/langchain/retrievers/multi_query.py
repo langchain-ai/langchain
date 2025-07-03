@@ -3,10 +3,8 @@ import logging
 from collections.abc import Sequence
 from typing import Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForRetrieverRun,
+                                      CallbackManagerForRetrieverRun)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser

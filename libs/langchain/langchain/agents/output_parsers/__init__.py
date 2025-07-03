@@ -11,15 +11,12 @@ This also contains a `log` variable (which contains a log of the agent's thinkin
 """
 
 from langchain.agents.output_parsers.json import JSONAgentOutputParser
-from langchain.agents.output_parsers.openai_functions import (
-    OpenAIFunctionsAgentOutputParser,
-)
-from langchain.agents.output_parsers.react_json_single_input import (
-    ReActJsonSingleInputOutputParser,
-)
-from langchain.agents.output_parsers.react_single_input import (
-    ReActSingleInputOutputParser,
-)
+from langchain.agents.output_parsers.openai_functions import \
+    OpenAIFunctionsAgentOutputParser
+from langchain.agents.output_parsers.react_json_single_input import \
+    ReActJsonSingleInputOutputParser
+from langchain.agents.output_parsers.react_single_input import \
+    ReActSingleInputOutputParser
 from langchain.agents.output_parsers.self_ask import SelfAskOutputParser
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 from langchain.agents.output_parsers.xml import XMLAgentOutputParser

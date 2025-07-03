@@ -5,15 +5,12 @@ import time
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Optional
 
-from typing_extensions import override
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.runnables import RunnableConfig
+from typing_extensions import override
 
 
 class FakeListLLM(LLM):

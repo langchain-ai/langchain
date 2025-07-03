@@ -1,15 +1,15 @@
 """Ollama specific chat model integration tests for reasoning models."""
 
 import pytest
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk, HumanMessage
-from pydantic import ValidationError
-
+from langchain_core.messages import (AIMessageChunk, BaseMessageChunk,
+                                     HumanMessage)
 from langchain_ollama import ChatOllama
+from pydantic import ValidationError
 
 SAMPLE = "What is 3^3?"
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_stream_no_reasoning(model: str) -> None:
     """Test deepseek model without parsing."""
     llm = ChatOllama(model=model, num_ctx=2**12)
@@ -32,7 +32,7 @@ def test_deepseek_messages_stream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result.additional_kwargs
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_stream_bool(model: str) -> None:
     """Test deepseek model with reasoning bool=True"""
     llm = ChatOllama(model=model, num_ctx=2**12, extract_reasoning=True)
@@ -65,7 +65,7 @@ def test_deepseek_messages_stream_bool(model: str) -> None:
     assert len(clean_content) > 0
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_stream_tuple(model: str) -> None:
     """Test deepseek model with reasoning with tuple=..."""
     llm = ChatOllama(
@@ -100,7 +100,7 @@ def test_deepseek_messages_stream_tuple(model: str) -> None:
     assert len(clean_content) > 0
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_invoke_no_reasoning(model: str) -> None:
     """Test deepseek model without parsing using invoke."""
     llm = ChatOllama(model=model, num_ctx=2**12)
@@ -111,7 +111,7 @@ def test_deepseek_messages_invoke_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result.additional_kwargs
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_invoke_bool(model: str) -> None:
     """Test deepseek model with reasoning bool=True using invoke"""
     llm = ChatOllama(model=model, num_ctx=2**12, extract_reasoning=True)
@@ -132,7 +132,7 @@ def test_deepseek_messages_invoke_bool(model: str) -> None:
     assert len(clean_content) > 0
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_messages_invoke_tuple(model: str) -> None:
     """Test deepseek model with reasoning with tuple=... using invoke"""
     llm = ChatOllama(
@@ -155,7 +155,7 @@ def test_deepseek_messages_invoke_tuple(model: str) -> None:
     assert len(clean_content) > 0
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), ["deepseek-r1:1.5b"])
 def test_deepseek_invalid(model: str) -> None:
     """Test deepseek model with reasoning raises ValidationError"""
     with pytest.raises(ValidationError):

@@ -9,13 +9,7 @@ import base64
 import logging
 import uuid
 from collections.abc import Iterable, Sequence
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import chromadb
 import chromadb.config

@@ -4,25 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    model_validator,
-)
-from typing_extensions import override
-
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import BaseChatPromptTemplate
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.string import (
-    DEFAULT_FORMATTER_MAPPING,
-    StringPromptTemplate,
-    check_valid_template,
-    get_template_variables,
-)
+from langchain_core.prompts.string import (DEFAULT_FORMATTER_MAPPING,
+                                           StringPromptTemplate,
+                                           check_valid_template,
+                                           get_template_variables)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from pathlib import Path

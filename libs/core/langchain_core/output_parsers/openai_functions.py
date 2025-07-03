@@ -6,17 +6,14 @@ from types import GenericAlias
 from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import-untyped]
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import (BaseCumulativeTransformOutputParser,
+                                           BaseGenerationOutputParser)
+from langchain_core.output_parsers.json import parse_partial_json
+from langchain_core.outputs import ChatGeneration, Generation
 from pydantic import BaseModel, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import override
-
-from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import (
-    BaseCumulativeTransformOutputParser,
-    BaseGenerationOutputParser,
-)
-from langchain_core.output_parsers.json import parse_partial_json
-from langchain_core.outputs import ChatGeneration, Generation
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):

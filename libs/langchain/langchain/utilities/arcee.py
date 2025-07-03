@@ -4,14 +4,11 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.utilities import ArceeWrapper
-    from langchain_community.utilities.arcee import (
-        ArceeDocument,
-        ArceeDocumentAdapter,
-        ArceeDocumentSource,
-        ArceeRoute,
-        DALMFilter,
-        DALMFilterType,
-    )
+    from langchain_community.utilities.arcee import (ArceeDocument,
+                                                     ArceeDocumentAdapter,
+                                                     ArceeDocumentSource,
+                                                     ArceeRoute, DALMFilter,
+                                                     DALMFilterType)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

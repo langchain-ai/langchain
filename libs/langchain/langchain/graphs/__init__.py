@@ -5,18 +5,11 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.graphs import (
-        ArangoGraph,
-        FalkorDBGraph,
-        HugeGraph,
-        KuzuGraph,
-        MemgraphGraph,
-        NebulaGraph,
-        Neo4jGraph,
-        NeptuneGraph,
-        NetworkxEntityGraph,
-        RdfGraph,
-    )
+    from langchain_community.graphs import (ArangoGraph, FalkorDBGraph,
+                                            HugeGraph, KuzuGraph,
+                                            MemgraphGraph, NebulaGraph,
+                                            Neo4jGraph, NeptuneGraph,
+                                            NetworkxEntityGraph, RdfGraph)
 
 
 # Create a way to dynamically look up deprecated imports.

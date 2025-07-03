@@ -3,10 +3,11 @@ python scripts/release_branch.py anthropic bagatur
 """
 
 import glob
-import tomllib
-import toml
 import subprocess
 import sys
+import tomllib
+
+import toml
 
 
 def main(*args):

@@ -4,15 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.utils import (
-        BaseMetadataCallbackHandler,
-        _flatten_dict,
-        flatten_dict,
-        hash_string,
-        import_pandas,
-        import_spacy,
-        import_textstat,
-        load_json,
-    )
+        BaseMetadataCallbackHandler, _flatten_dict, flatten_dict, hash_string,
+        import_pandas, import_spacy, import_textstat, load_json)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

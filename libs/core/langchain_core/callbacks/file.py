@@ -5,11 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from typing_extensions import Self, override
-
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish

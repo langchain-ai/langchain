@@ -6,11 +6,8 @@ from abc import ABC
 from collections.abc import Mapping
 from typing import Any, NamedTuple, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun, Callbacks)
 from pydantic import ConfigDict
 
 from langchain.chains.base import Chain

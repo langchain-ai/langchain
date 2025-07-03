@@ -175,9 +175,12 @@ def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
     try:
-        from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import-untyped]
-        from grandalf.layouts import SugiyamaLayout  # type: ignore[import-untyped]
-        from grandalf.routing import route_with_lines  # type: ignore[import-untyped]
+        from grandalf.graphs import (Edge,  # type: ignore[import-untyped]
+                                     Graph, Vertex)
+        from grandalf.layouts import \
+            SugiyamaLayout  # type: ignore[import-untyped]
+        from grandalf.routing import \
+            route_with_lines  # type: ignore[import-untyped]
     except ImportError as exc:
         msg = "Install grandalf to draw graphs: `pip install grandalf`."
         raise ImportError(msg) from exc

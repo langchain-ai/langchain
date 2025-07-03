@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from pydantic import ConfigDict, Field
-
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
+from pydantic import ConfigDict, Field
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

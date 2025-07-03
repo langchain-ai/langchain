@@ -13,12 +13,10 @@ from pydantic import ConfigDict, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.llm_checker.prompt import (
-    CHECK_ASSERTIONS_PROMPT,
-    CREATE_DRAFT_ANSWER_PROMPT,
-    LIST_ASSERTIONS_PROMPT,
-    REVISED_ANSWER_PROMPT,
-)
+from langchain.chains.llm_checker.prompt import (CHECK_ASSERTIONS_PROMPT,
+                                                 CREATE_DRAFT_ANSWER_PROMPT,
+                                                 LIST_ASSERTIONS_PROMPT,
+                                                 REVISED_ANSWER_PROMPT)
 from langchain.chains.sequential import SequentialChain
 
 

@@ -7,7 +7,8 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
-from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import (Runnable, RunnableLambda,
+                                      RunnablePassthrough)
 from pydantic import BaseModel, ConfigDict, Field
 
 _default_system_tmpl = """{context}

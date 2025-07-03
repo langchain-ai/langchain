@@ -7,15 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import langchain_core.load as lc_load
 import pytest
-from langchain_core.messages import (
-    AIMessage,
-    FunctionMessage,
-    HumanMessage,
-    InvalidToolCall,
-    SystemMessage,
-    ToolCall,
-)
-
+from langchain_core.messages import (AIMessage, FunctionMessage, HumanMessage,
+                                     InvalidToolCall, SystemMessage, ToolCall)
 from langchain_groq.chat_models import ChatGroq, _convert_dict_to_message
 
 if "GROQ_API_KEY" not in os.environ:

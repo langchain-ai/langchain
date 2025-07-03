@@ -6,14 +6,13 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Optional
 
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForChainRun,
+                                              CallbackManagerForChainRun)
 from langchain_core.load.dump import dumpd
 from langchain_core.load.load import load
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import BaseMessage, get_buffer_string, messages_from_dict
+from langchain_core.messages import (BaseMessage, get_buffer_string,
+                                     messages_from_dict)
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
 
@@ -226,9 +225,13 @@ class StringExampleMapper(Serializable):
         else:
             output = example.outputs[self.reference_key]
         return {
-            "reference": self.serialize_chat_messages([output])
-            if isinstance(output, dict) and output.get("type") and output.get("data")
-            else output
+            "reference": (
+                self.serialize_chat_messages([output])
+                if isinstance(output, dict)
+                and output.get("type")
+                and output.get("data")
+                else output
+            )
         }
 
     def __call__(self, example: Example) -> dict[str, str]:

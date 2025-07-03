@@ -8,9 +8,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain.agents.format_scratchpad.tools import (
-    format_to_tool_messages,
-)
+from langchain.agents.format_scratchpad.tools import format_to_tool_messages
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
 MessageFormatter = Callable[[Sequence[tuple[AgentAction, str]]], list[BaseMessage]]

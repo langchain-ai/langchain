@@ -1,30 +1,18 @@
 """Structured prompt template for a language model."""
 
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
-
-from pydantic import BaseModel, Field
-from typing_extensions import override
+from typing import Any, Callable, Optional, Union
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    MessageLikeRepresentation,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         MessageLikeRepresentation)
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.runnables.base import (
-    Other,
-    Runnable,
-    RunnableSequence,
-    RunnableSerializable,
-)
+from langchain_core.runnables.base import (Other, Runnable, RunnableSequence,
+                                           RunnableSerializable)
 from langchain_core.utils import get_pydantic_field_names
+from pydantic import BaseModel, Field
+from typing_extensions import override
 
 
 @beta()

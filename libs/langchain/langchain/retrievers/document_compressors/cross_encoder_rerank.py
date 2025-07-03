@@ -8,7 +8,8 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from pydantic import ConfigDict
 
-from langchain.retrievers.document_compressors.cross_encoder import BaseCrossEncoder
+from langchain.retrievers.document_compressors.cross_encoder import \
+    BaseCrossEncoder
 
 
 class CrossEncoderReranker(BaseDocumentCompressor):

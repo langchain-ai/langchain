@@ -11,7 +11,6 @@ from abc import abstractmethod
 import pytest
 from langchain_core.caches import BaseCache
 from langchain_core.outputs import Generation
-
 from langchain_tests.base import BaseStandardTests
 
 

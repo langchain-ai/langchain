@@ -8,68 +8,37 @@ import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import (
-    Annotated,
-    Any,
-    Callable,
-    Generic,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (Annotated, Any, Callable, Generic, Literal, Optional,
+                    TypeVar, Union, cast)
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
-from typing_extensions import TypedDict
-
 from langchain_core import tools
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langchain_core.callbacks.manager import (
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForToolRun,
+                                      CallbackManagerForToolRun)
+from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import (
-    Runnable,
-    RunnableConfig,
-    RunnableLambda,
-    ensure_config,
-)
-from langchain_core.tools import (
-    BaseTool,
-    StructuredTool,
-    Tool,
-    ToolException,
-    tool,
-)
-from langchain_core.tools.base import (
-    ArgsSchema,
-    InjectedToolArg,
-    InjectedToolCallId,
-    SchemaAnnotationError,
-    _is_message_content_block,
-    _is_message_content_type,
-    get_all_basemodel_annotations,
-)
-from langchain_core.utils.function_calling import (
-    convert_to_openai_function,
-    convert_to_openai_tool,
-)
-from langchain_core.utils.pydantic import (
-    _create_subset_model,
-    create_model_v2,
-)
+from langchain_core.runnables import (Runnable, RunnableConfig, RunnableLambda,
+                                      ensure_config)
+from langchain_core.tools import (BaseTool, StructuredTool, Tool,
+                                  ToolException, tool)
+from langchain_core.tools.base import (ArgsSchema, InjectedToolArg,
+                                       InjectedToolCallId,
+                                       SchemaAnnotationError,
+                                       _is_message_content_block,
+                                       _is_message_content_type,
+                                       get_all_basemodel_annotations)
+from langchain_core.utils.function_calling import (convert_to_openai_function,
+                                                   convert_to_openai_tool)
+from langchain_core.utils.pydantic import _create_subset_model, create_model_v2
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
+from typing_extensions import TypedDict
 
 
 def _get_tool_call_json_schema(tool: BaseTool) -> dict:
@@ -2280,7 +2249,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore[arg-type]
 
     with pytest.raises(
         ValueError,
@@ -2301,7 +2272,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore[arg-type]
 
 
 def test_tool_uninjected_tool_call_id() -> None:
@@ -2320,7 +2293,9 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="zap"
+    )  # type: ignore[arg-type]
 
 
 def test_tool_return_output_mixin() -> None:

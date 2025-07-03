@@ -3,10 +3,10 @@ from typing import Any
 
 from langchain_core.documents import Document
 from langchain_text_splitters.character import CharacterTextSplitter
+from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
-from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):

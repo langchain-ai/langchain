@@ -3,9 +3,8 @@ import warnings
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
-
 from langchain_core._api.beta_decorator import beta, warn_beta
+from pydantic import BaseModel
 
 
 @pytest.mark.parametrize(

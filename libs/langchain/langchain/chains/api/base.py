@@ -7,10 +7,8 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import Field, model_validator

@@ -6,21 +6,12 @@ of the models (i.e., not necessarily from loading or dumping JSON).
 """
 
 import pytest
+from langchain_core.messages import (AIMessage, AIMessageChunk, AnyMessage,
+                                     ChatMessage, ChatMessageChunk,
+                                     FunctionMessage, FunctionMessageChunk,
+                                     HumanMessage, HumanMessageChunk,
+                                     SystemMessage, SystemMessageChunk)
 from pydantic import RootModel, ValidationError
-
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    AnyMessage,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-)
 
 
 def test_serde_any_message() -> None:

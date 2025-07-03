@@ -1,10 +1,10 @@
 """Test the initialize module."""
 
 from langchain_core.tools import tool
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.agents.agent_types import AgentType
 from langchain.agents.initialize import initialize_agent
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @tool

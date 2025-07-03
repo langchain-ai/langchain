@@ -4,20 +4,10 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.adapters.openai import (
-        Chat,
-        ChatCompletion,
-        ChatCompletionChunk,
-        ChatCompletions,
-        Choice,
-        ChoiceChunk,
-        Completions,
-        IndexableBaseModel,
-        chat,
-        convert_dict_to_message,
-        convert_message_to_dict,
-        convert_messages_for_finetuning,
-        convert_openai_messages,
-    )
+        Chat, ChatCompletion, ChatCompletionChunk, ChatCompletions, Choice,
+        ChoiceChunk, Completions, IndexableBaseModel, chat,
+        convert_dict_to_message, convert_message_to_dict,
+        convert_messages_for_finetuning, convert_openai_messages)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

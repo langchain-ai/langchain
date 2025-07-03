@@ -11,72 +11,41 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
-
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    model_validator,
-)
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForLLMRun,
-    BaseCallbackManager,
-    CallbackManager,
-    CallbackManagerForLLMRun,
-    Callbacks,
-)
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      AsyncCallbackManagerForLLMRun,
+                                      BaseCallbackManager, CallbackManager,
+                                      CallbackManagerForLLMRun, Callbacks)
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LangSmithParams,
-    LanguageModelInput,
-)
+from langchain_core.language_models.base import (BaseLanguageModel,
+                                                 LangSmithParams,
+                                                 LanguageModelInput)
 from langchain_core.load import dumpd, dumps
-from langchain_core.messages import (
-    AIMessage,
-    AnyMessage,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    convert_to_messages,
-    convert_to_openai_image_block,
-    is_data_content_block,
-    message_chunk_to_message,
-)
+from langchain_core.messages import (AIMessage, AnyMessage, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     convert_to_messages,
+                                     convert_to_openai_image_block,
+                                     is_data_content_block,
+                                     message_chunk_to_message)
 from langchain_core.messages.ai import _LC_ID_PREFIX
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-    LLMResult,
-    RunInfo,
-)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult, LLMResult, RunInfo)
 from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
-from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
+from langchain_core.prompt_values import (ChatPromptValue, PromptValue,
+                                          StringPromptValue)
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
-from langchain_core.utils.function_calling import (
-    convert_to_json_schema,
-    convert_to_openai_tool,
-)
+from langchain_core.utils.function_calling import (convert_to_json_schema,
+                                                   convert_to_openai_tool)
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import override
 
 if TYPE_CHECKING:
     import uuid
@@ -419,8 +388,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
-        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
+        sync_not_implemented = (
+            type(self)._stream == BaseChatModel._stream
+        )  # noqa: SLF001
+        async_not_implemented = (
+            type(self)._astream == BaseChatModel._astream
+        )  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -633,7 +606,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
+    def _combine_llm_outputs(
+        self, llm_outputs: list[Optional[dict]]
+    ) -> dict:  # noqa: ARG002
         return {}
 
     def _get_invocation_params(
@@ -1456,9 +1431,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             raise ValueError(msg)
 
         from langchain_core.output_parsers.openai_tools import (
-            JsonOutputKeyToolsParser,
-            PydanticToolsParser,
-        )
+            JsonOutputKeyToolsParser, PydanticToolsParser)
 
         if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."

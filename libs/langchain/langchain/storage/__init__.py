@@ -8,11 +8,8 @@ The primary goal of these storages is to support implementation of caching.
 
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.stores import (
-    InMemoryByteStore,
-    InMemoryStore,
-    InvalidKeyException,
-)
+from langchain_core.stores import (InMemoryByteStore, InMemoryStore,
+                                   InvalidKeyException)
 
 from langchain._api import create_importer
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
@@ -20,11 +17,8 @@ from langchain.storage.encoder_backed import EncoderBackedStore
 from langchain.storage.file_system import LocalFileStore
 
 if TYPE_CHECKING:
-    from langchain_community.storage import (
-        RedisStore,
-        UpstashRedisByteStore,
-        UpstashRedisStore,
-    )
+    from langchain_community.storage import (RedisStore, UpstashRedisByteStore,
+                                             UpstashRedisStore)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

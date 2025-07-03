@@ -1,11 +1,9 @@
 from collections.abc import AsyncIterator, Iterable
 from typing import TypeVar
 
-from langchain_core.output_parsers.list import (
-    CommaSeparatedListOutputParser,
-    MarkdownListOutputParser,
-    NumberedListOutputParser,
-)
+from langchain_core.output_parsers.list import (CommaSeparatedListOutputParser,
+                                                MarkdownListOutputParser,
+                                                NumberedListOutputParser)
 from langchain_core.runnables.utils import aadd, add
 
 

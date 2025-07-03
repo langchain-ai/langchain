@@ -1,9 +1,7 @@
 from typing import Type
 
 from __module_name__.retrievers import __ModuleName__Retriever
-from langchain_tests.integration_tests import (
-    RetrieversIntegrationTests,
-)
+from langchain_tests.integration_tests import RetrieversIntegrationTests
 
 
 class Test__ModuleName__Retriever(RetrieversIntegrationTests):

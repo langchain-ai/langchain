@@ -3,10 +3,9 @@
 from collections.abc import Generator
 
 import pytest
+from langchain_anthropic import Anthropic
 from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
-
-from langchain_anthropic import Anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
 

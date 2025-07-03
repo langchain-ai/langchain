@@ -1,7 +1,5 @@
-from langchain_core.documents import (
-    Document,  # type: ignore[import-not-found, import-not-found]
-)
-
+from langchain_core.documents import \
+    Document  # type: ignore[import-not-found, import-not-found]
 from langchain_exa import ExaSearchRetriever
 
 

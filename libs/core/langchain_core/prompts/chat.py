@@ -4,52 +4,27 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Optional,
-    TypedDict,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
-
-from pydantic import (
-    Field,
-    PositiveInt,
-    SkipValidation,
-    model_validator,
-)
-from typing_extensions import Self, override
+from typing import (TYPE_CHECKING, Annotated, Any, Optional, TypedDict,
+                    TypeVar, Union, cast, overload)
 
 from langchain_core._api import deprecated
-from langchain_core.messages import (
-    AIMessage,
-    AnyMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-    convert_to_messages,
-)
+from langchain_core.messages import (AIMessage, AnyMessage, BaseMessage,
+                                     ChatMessage, HumanMessage, SystemMessage,
+                                     convert_to_messages)
 from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.dict import DictPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
-from langchain_core.prompts.message import (
-    BaseMessagePromptTemplate,
-)
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.string import (
-    PromptTemplateFormat,
-    StringPromptTemplate,
-    get_template_variables,
-)
+from langchain_core.prompts.string import (PromptTemplateFormat,
+                                           StringPromptTemplate,
+                                           get_template_variables)
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+from pydantic import Field, PositiveInt, SkipValidation, model_validator
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

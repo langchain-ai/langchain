@@ -7,26 +7,16 @@ import asyncio
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator
 from itertools import chain
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, Optional, TypeVar, cast
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForRetrieverRun,
+                                      CallbackManagerForRetrieverRun)
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import ensure_config, patch_config
-from langchain_core.runnables.utils import (
-    ConfigurableFieldSpec,
-    get_unique_config_specs,
-)
+from langchain_core.runnables.utils import (ConfigurableFieldSpec,
+                                            get_unique_config_specs)
 from pydantic import model_validator
 
 T = TypeVar("T")

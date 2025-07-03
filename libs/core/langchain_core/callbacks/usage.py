@@ -6,12 +6,11 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional
 
-from typing_extensions import override
-
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from typing_extensions import override
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):

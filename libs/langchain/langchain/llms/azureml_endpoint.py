@@ -5,14 +5,9 @@ from langchain._api import create_importer
 if TYPE_CHECKING:
     from langchain_community.llms import AzureMLOnlineEndpoint
     from langchain_community.llms.azureml_endpoint import (
-        AzureMLEndpointClient,
-        ContentFormatterBase,
-        CustomOpenAIContentFormatter,
-        DollyContentFormatter,
-        GPT2ContentFormatter,
-        HFContentFormatter,
-        OSSContentFormatter,
-    )
+        AzureMLEndpointClient, ContentFormatterBase,
+        CustomOpenAIContentFormatter, DollyContentFormatter,
+        GPT2ContentFormatter, HFContentFormatter, OSSContentFormatter)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

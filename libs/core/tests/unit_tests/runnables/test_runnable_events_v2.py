@@ -7,53 +7,35 @@ import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import cycle
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    cast,
-)
+from typing import Any, Callable, Optional, cast
 
 import pytest
 from blockbuster import BlockBuster
-from pydantic import BaseModel
-from typing_extensions import override
-
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
-from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.language_models import (FakeStreamingListLLM,
+                                            GenericFakeChatModel)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     HumanMessage, SystemMessage)
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import (
-    ConfigurableField,
-    Runnable,
-    RunnableConfig,
-    RunnableGenerator,
-    RunnableLambda,
-    chain,
-    ensure_config,
-)
-from langchain_core.runnables.config import (
-    get_async_callback_manager_for_config,
-)
+from langchain_core.runnables import (ConfigurableField, Runnable,
+                                      RunnableConfig, RunnableGenerator,
+                                      RunnableLambda, chain, ensure_config)
+from langchain_core.runnables.config import \
+    get_async_callback_manager_for_config
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import tool
 from langchain_core.utils.aiter import aclosing
-from tests.unit_tests.runnables.test_runnable_events_v1 import (
-    _assert_events_equal_allow_superset_metadata,
-)
+from pydantic import BaseModel
+from tests.unit_tests.runnables.test_runnable_events_v1 import \
+    _assert_events_equal_allow_superset_metadata
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
+from typing_extensions import override
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
@@ -61,12 +43,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
-        assert isinstance(event["run_id"], str), (
-            f"Event {event} run_id is not a string."
-        )
-        assert isinstance(event["parent_ids"], list), (
-            f"Event {event} parent_ids is not a list."
-        )
+        assert isinstance(
+            event["run_id"], str
+        ), f"Event {event} run_id is not a string."
+        assert isinstance(
+            event["parent_ids"], list
+        ), f"Event {event} parent_ids is not a list."
 
     return cast(
         "list[StreamEvent]",
@@ -1054,7 +1036,9 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
+    def with_parameters_and_callbacks(
+        x: int, y: str, callbacks: Callbacks
+    ) -> dict:  # noqa: ARG001
         """A tool that does nothing."""
         return {"x": x, "y": y}
 

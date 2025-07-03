@@ -20,47 +20,34 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.messages.ai import (
-        AIMessage,
-        AIMessageChunk,
-    )
-    from langchain_core.messages.base import (
-        BaseMessage,
-        BaseMessageChunk,
-        merge_content,
-        message_to_dict,
-        messages_to_dict,
-    )
+    from langchain_core.messages.ai import AIMessage, AIMessageChunk
+    from langchain_core.messages.base import (BaseMessage, BaseMessageChunk,
+                                              merge_content, message_to_dict,
+                                              messages_to_dict)
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
     from langchain_core.messages.content_blocks import (
-        convert_to_openai_data_block,
-        convert_to_openai_image_block,
-        is_data_content_block,
-    )
-    from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
+        convert_to_openai_data_block, convert_to_openai_image_block,
+        is_data_content_block)
+    from langchain_core.messages.function import (FunctionMessage,
+                                                  FunctionMessageChunk)
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
     from langchain_core.messages.modifier import RemoveMessage
-    from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-    from langchain_core.messages.tool import (
-        InvalidToolCall,
-        ToolCall,
-        ToolCallChunk,
-        ToolMessage,
-        ToolMessageChunk,
-    )
-    from langchain_core.messages.utils import (
-        AnyMessage,
-        MessageLikeRepresentation,
-        _message_from_dict,
-        convert_to_messages,
-        convert_to_openai_messages,
-        filter_messages,
-        get_buffer_string,
-        merge_message_runs,
-        message_chunk_to_message,
-        messages_from_dict,
-        trim_messages,
-    )
+    from langchain_core.messages.system import (SystemMessage,
+                                                SystemMessageChunk)
+    from langchain_core.messages.tool import (InvalidToolCall, ToolCall,
+                                              ToolCallChunk, ToolMessage,
+                                              ToolMessageChunk)
+    from langchain_core.messages.utils import (AnyMessage,
+                                               MessageLikeRepresentation,
+                                               _message_from_dict,
+                                               convert_to_messages,
+                                               convert_to_openai_messages,
+                                               filter_messages,
+                                               get_buffer_string,
+                                               merge_message_runs,
+                                               message_chunk_to_message,
+                                               messages_from_dict,
+                                               trim_messages)
 
 __all__ = (
     "AIMessage",

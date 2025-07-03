@@ -8,7 +8,6 @@ You'll then need to set FIREWORKS_API_KEY environment variable to your api key.
 """
 
 import pytest as pytest
-
 from langchain_fireworks import Fireworks
 
 _MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"

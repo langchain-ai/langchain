@@ -10,8 +10,6 @@ from uuid import uuid4
 import langsmith
 import pytest
 from freezegun import freeze_time
-from langsmith import Client, traceable
-
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
@@ -19,6 +17,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langsmith import Client, traceable
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}

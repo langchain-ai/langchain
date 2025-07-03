@@ -4,7 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.tools import AIPluginTool
-    from langchain_community.tools.plugin import AIPlugin, AIPluginToolSchema, ApiConfig
+    from langchain_community.tools.plugin import (AIPlugin, AIPluginToolSchema,
+                                                  ApiConfig)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

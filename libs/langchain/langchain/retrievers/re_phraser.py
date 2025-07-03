@@ -1,9 +1,7 @@
 import logging
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForRetrieverRun,
+                                      CallbackManagerForRetrieverRun)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
 from langchain_core.output_parsers import StrOutputParser

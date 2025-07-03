@@ -7,20 +7,12 @@ chain (LLMChain) to generate the reasoning and scores.
 
 import re
 from collections.abc import Sequence
-from typing import (
-    Any,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Optional, TypedDict, Union, cast
 
 from langchain_core.agents import AgentAction
 from langchain_core.callbacks import Callbacks
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForChainRun,
+                                              CallbackManagerForChainRun)
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -30,9 +22,7 @@ from pydantic import ConfigDict, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
-    EVAL_CHAT_PROMPT,
-    TOOL_FREE_EVAL_CHAT_PROMPT,
-)
+    EVAL_CHAT_PROMPT, TOOL_FREE_EVAL_CHAT_PROMPT)
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 
 

@@ -4,10 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.langchain_v1 import LangChainTracerV1
-from langchain_core.tracers.stdout import (
-    ConsoleCallbackHandler,
-    FunctionCallbackHandler,
-)
+from langchain_core.tracers.stdout import (ConsoleCallbackHandler,
+                                           FunctionCallbackHandler)
 
 from langchain._api import create_importer
 from langchain.callbacks.tracers.logging import LoggingCallbackHandler

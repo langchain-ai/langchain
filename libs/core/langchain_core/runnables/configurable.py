@@ -5,44 +5,25 @@ from __future__ import annotations
 import enum
 import threading
 from abc import abstractmethod
-from collections.abc import (
-    AsyncIterator,
-    Iterator,
-    Sequence,
-)
+from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 from weakref import WeakValueDictionary
 
+from langchain_core.runnables.base import Runnable, RunnableSerializable
+from langchain_core.runnables.config import (RunnableConfig, ensure_config,
+                                             get_config_list,
+                                             get_executor_for_config,
+                                             merge_configs)
+from langchain_core.runnables.utils import (AnyConfigurableField,
+                                            ConfigurableField,
+                                            ConfigurableFieldMultiOption,
+                                            ConfigurableFieldSingleOption,
+                                            ConfigurableFieldSpec, Input,
+                                            Output, gather_with_concurrency,
+                                            get_unique_config_specs)
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
-
-from langchain_core.runnables.base import Runnable, RunnableSerializable
-from langchain_core.runnables.config import (
-    RunnableConfig,
-    ensure_config,
-    get_config_list,
-    get_executor_for_config,
-    merge_configs,
-)
-from langchain_core.runnables.utils import (
-    AnyConfigurableField,
-    ConfigurableField,
-    ConfigurableFieldMultiOption,
-    ConfigurableFieldSingleOption,
-    ConfigurableFieldSpec,
-    Input,
-    Output,
-    gather_with_concurrency,
-    get_unique_config_specs,
-)
 
 if TYPE_CHECKING:
     from langchain_core.runnables.graph import Graph
@@ -131,7 +112,9 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
+            runnable, config = runnable._prepare(
+                merge_configs(runnable.config, config)
+            )  # noqa: SLF001
         return runnable, cast("RunnableConfig", config)
 
     @abstractmethod

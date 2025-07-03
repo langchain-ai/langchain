@@ -1,13 +1,7 @@
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolMessage,
-    ToolMessageChunk,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, HumanMessage,
+                                     HumanMessageChunk, SystemMessage,
+                                     SystemMessageChunk, ToolMessage,
+                                     ToolMessageChunk)
 from langchain_core.prompt_values import ChatPromptValueConcrete
 
 

@@ -1,14 +1,10 @@
 import pytest
-from langchain_core.agents import (
-    AgentActionMessageLog,
-    AgentFinish,
-)
+from langchain_core.agents import AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, SystemMessage
 
-from langchain.agents.output_parsers.openai_functions import (
-    OpenAIFunctionsAgentOutputParser,
-)
+from langchain.agents.output_parsers.openai_functions import \
+    OpenAIFunctionsAgentOutputParser
 
 
 def test_not_an_ai() -> None:

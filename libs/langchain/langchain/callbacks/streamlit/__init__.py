@@ -67,9 +67,9 @@ def StreamlitCallbackHandler(
         )
     except ImportError:
         try:
-            from langchain_community.callbacks.streamlit.streamlit_callback_handler import (  # noqa: E501
-                StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
-            )
+            from langchain_community.callbacks.streamlit.streamlit_callback_handler import \
+                StreamlitCallbackHandler as \
+                _InternalStreamlitCallbackHandler  # noqa: E501
         except ImportError:
             raise ImportError(
                 "To use the StreamlitCallbackHandler, please install "

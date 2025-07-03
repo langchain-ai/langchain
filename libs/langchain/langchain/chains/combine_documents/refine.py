@@ -11,9 +11,7 @@ from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from pydantic import ConfigDict, Field, model_validator
 
-from langchain.chains.combine_documents.base import (
-    BaseCombineDocumentsChain,
-)
+from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 
 

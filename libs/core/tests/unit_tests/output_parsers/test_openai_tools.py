@@ -2,20 +2,12 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
-
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ToolCallChunk,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     ToolCallChunk)
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    JsonOutputToolsParser,
-    PydanticToolsParser,
-)
+    JsonOutputKeyToolsParser, JsonOutputToolsParser, PydanticToolsParser)
 from langchain_core.outputs import ChatGeneration
+from pydantic import BaseModel, Field, ValidationError
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),

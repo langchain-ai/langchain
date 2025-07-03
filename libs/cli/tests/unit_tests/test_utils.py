@@ -1,12 +1,8 @@
 from typing import Dict, Optional
 
 import pytest
-
-from langchain_cli.constants import (
-    DEFAULT_GIT_REF,
-    DEFAULT_GIT_REPO,
-    DEFAULT_GIT_SUBDIRECTORY,
-)
+from langchain_cli.constants import (DEFAULT_GIT_REF, DEFAULT_GIT_REPO,
+                                     DEFAULT_GIT_SUBDIRECTORY)
 from langchain_cli.utils.git import DependencySource, parse_dependency_string
 
 

@@ -29,12 +29,8 @@ from collections.abc import Sequence
 from typing import Any, Literal, Union
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    FunctionMessage,
-    HumanMessage,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, FunctionMessage,
+                                     HumanMessage)
 
 
 class AgentAction(Serializable):

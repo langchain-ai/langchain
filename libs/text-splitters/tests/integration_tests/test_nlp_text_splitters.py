@@ -5,7 +5,6 @@ from typing import Any
 import nltk
 import pytest
 from langchain_core.documents import Document
-
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.spacy import SpacyTextSplitter
 

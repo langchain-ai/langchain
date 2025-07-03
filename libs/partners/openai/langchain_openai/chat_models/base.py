@@ -16,100 +16,59 @@ from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypedDict,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Literal, Optional, TypedDict,
+                    TypeVar, Union, cast)
 from urllib.parse import urlparse
 
 import certifi
 import openai
 import tiktoken
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-    agenerate_from_stream,
-    generate_from_stream,
-)
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    InvalidToolCall,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolCall,
-    ToolMessage,
-    ToolMessageChunk,
-    convert_to_openai_data_block,
-    is_data_content_block,
-)
-from langchain_core.messages.ai import (
-    InputTokenDetails,
-    OutputTokenDetails,
-    UsageMetadata,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        LangSmithParams,
+                                                        agenerate_from_stream,
+                                                        generate_from_stream)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessage,
+                                     FunctionMessageChunk, HumanMessage,
+                                     HumanMessageChunk, InvalidToolCall,
+                                     SystemMessage, SystemMessageChunk,
+                                     ToolCall, ToolMessage, ToolMessageChunk,
+                                     convert_to_openai_data_block,
+                                     is_data_content_block)
+from langchain_core.messages.ai import (InputTokenDetails, OutputTokenDetails,
+                                        UsageMetadata)
 from langchain_core.messages.tool import tool_call_chunk
-from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
+from langchain_core.output_parsers import (JsonOutputParser,
+                                           PydanticOutputParser)
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-    make_invalid_tool_call,
-    parse_tool_call,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import (
-    Runnable,
-    RunnableLambda,
-    RunnableMap,
-    RunnablePassthrough,
-)
+    JsonOutputKeyToolsParser, PydanticToolsParser, make_invalid_tool_call,
+    parse_tool_call)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
+from langchain_core.runnables import (Runnable, RunnableLambda, RunnableMap,
+                                      RunnablePassthrough)
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils.function_calling import (
-    convert_to_openai_function,
-    convert_to_openai_tool,
-)
-from langchain_core.utils.pydantic import (
-    PydanticBaseModel,
-    TypeBaseModel,
-    is_basemodel_subclass,
-)
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.function_calling import (convert_to_openai_function,
+                                                   convert_to_openai_tool)
+from langchain_core.utils.pydantic import (PydanticBaseModel, TypeBaseModel,
+                                           is_basemodel_subclass)
+from langchain_core.utils.utils import (_build_model_kwargs, from_env,
+                                        secret_from_env)
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client, _get_default_httpx_client)
+from langchain_openai.chat_models._compat import (_convert_from_v03_ai_message,
+                                                  _convert_to_v03_ai_message)
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
-
-from langchain_openai.chat_models._client_utils import (
-    _get_default_async_httpx_client,
-    _get_default_httpx_client,
-)
-from langchain_openai.chat_models._compat import (
-    _convert_from_v03_ai_message,
-    _convert_to_v03_ai_message,
-)
 
 if TYPE_CHECKING:
     from openai.types.responses import Response
@@ -1386,9 +1345,11 @@ class BaseChatOpenAI(BaseChatModel):
         # Redact headers from built-in remote MCP tool invocations
         if (tools := params.get("tools")) and isinstance(tools, list):
             params["tools"] = [
-                ({**tool, "headers": "**REDACTED**"} if "headers" in tool else tool)
-                if isinstance(tool, dict) and tool.get("type") == "mcp"
-                else tool
+                (
+                    ({**tool, "headers": "**REDACTED**"} if "headers" in tool else tool)
+                    if isinstance(tool, dict) and tool.get("type") == "mcp"
+                    else tool
+                )
                 for tool in tools
             ]
 
@@ -1838,9 +1799,9 @@ class BaseChatOpenAI(BaseChatModel):
 
         if method == "json_schema":
             # Check for Pydantic BaseModel V1
-            if (
-                is_pydantic_schema and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
-            ):
+            if is_pydantic_schema and issubclass(
+                schema, BaseModelV1
+            ):  # type: ignore[arg-type]
                 warnings.warn(
                     "Received a Pydantic BaseModel V1 schema. This is not supported by "
                     'method="json_schema". Please use method="function_calling" '

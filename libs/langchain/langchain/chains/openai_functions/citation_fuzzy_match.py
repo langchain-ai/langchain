@@ -3,8 +3,10 @@ from collections.abc import Iterator
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseChatModel, BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.output_parsers.openai_functions import PydanticOutputFunctionsParser
-from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers.openai_functions import \
+    PydanticOutputFunctionsParser
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate)
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 

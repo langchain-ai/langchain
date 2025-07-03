@@ -2,10 +2,8 @@ import numpy as np
 import pytest
 
 from langchain.evaluation.embedding_distance import (
-    EmbeddingDistance,
-    EmbeddingDistanceEvalChain,
-    PairwiseEmbeddingDistanceEvalChain,
-)
+    EmbeddingDistance, EmbeddingDistanceEvalChain,
+    PairwiseEmbeddingDistanceEvalChain)
 
 
 @pytest.fixture

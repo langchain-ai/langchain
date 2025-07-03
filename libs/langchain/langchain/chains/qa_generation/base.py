@@ -7,7 +7,8 @@ from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+from langchain_text_splitters import (RecursiveCharacterTextSplitter,
+                                      TextSplitter)
 from pydantic import Field
 
 from langchain.chains.base import Chain

@@ -4,11 +4,8 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_core.tools import BaseTool
-from langchain_tests.integration_tests import (
-    ChatModelIntegrationTests,
-)
-
 from langchain_groq import ChatGroq
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 

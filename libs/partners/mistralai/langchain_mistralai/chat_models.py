@@ -10,71 +10,41 @@ import uuid
 from collections.abc import AsyncIterator, Iterator, Sequence
 from contextlib import AbstractAsyncContextManager
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast
 
 import certifi
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-    agenerate_from_stream,
-    generate_from_stream,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        LangSmithParams,
+                                                        agenerate_from_stream,
+                                                        generate_from_stream)
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    InvalidToolCall,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolCall,
-    ToolMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     ChatMessageChunk, HumanMessage,
+                                     HumanMessageChunk, InvalidToolCall,
+                                     SystemMessage, SystemMessageChunk,
+                                     ToolCall, ToolMessage)
 from langchain_core.messages.tool import tool_call_chunk
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import (JsonOutputParser,
+                                           PydanticOutputParser)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-    make_invalid_tool_call,
-    parse_tool_call,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+    JsonOutputKeyToolsParser, PydanticToolsParser, make_invalid_tool_call,
+    parse_tool_call)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)

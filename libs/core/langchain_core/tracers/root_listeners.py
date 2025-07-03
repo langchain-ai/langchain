@@ -3,11 +3,9 @@
 from collections.abc import Awaitable
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
-from langchain_core.runnables.config import (
-    RunnableConfig,
-    acall_func_with_variable_args,
-    call_func_with_variable_args,
-)
+from langchain_core.runnables.config import (RunnableConfig,
+                                             acall_func_with_variable_args,
+                                             call_func_with_variable_args)
 from langchain_core.tracers.base import AsyncBaseTracer, BaseTracer
 from langchain_core.tracers.schemas import Run
 

@@ -1,36 +1,22 @@
 from collections.abc import AsyncIterator, Iterator, Sequence
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 
 import pytest
-from pydantic import BaseModel
-from syrupy.assertion import SnapshotAssertion
-from typing_extensions import override
-
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import (
-    BaseChatModel,
-    FakeListLLM,
-    LanguageModelInput,
-)
+from langchain_core.language_models import (BaseChatModel, FakeListLLM,
+                                            LanguageModelInput)
 from langchain_core.load import dumps
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import (
-    Runnable,
-    RunnableBinding,
-    RunnableGenerator,
-    RunnableLambda,
-    RunnableParallel,
-    RunnablePassthrough,
-    RunnableWithFallbacks,
-)
+from langchain_core.runnables import (Runnable, RunnableBinding,
+                                      RunnableGenerator, RunnableLambda,
+                                      RunnableParallel, RunnablePassthrough,
+                                      RunnableWithFallbacks)
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import override
 
 
 @pytest.fixture

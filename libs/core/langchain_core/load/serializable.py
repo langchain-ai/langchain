@@ -3,14 +3,7 @@
 import contextlib
 import logging
 from abc import ABC
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Literal, Optional, TypedDict, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
@@ -270,9 +263,9 @@ class Serializable(BaseModel, ABC):
             "lc": 1,
             "type": "constructor",
             "id": self.lc_id(),
-            "kwargs": lc_kwargs
-            if not secrets
-            else _replace_secrets(lc_kwargs, secrets),
+            "kwargs": (
+                lc_kwargs if not secrets else _replace_secrets(lc_kwargs, secrets)
+            ),
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:

@@ -1,5 +1,4 @@
 from langchain_core.tools import BaseTool, tool
-
 from langchain_tests.integration_tests import ToolsIntegrationTests
 from langchain_tests.unit_tests import ToolsUnitTests
 

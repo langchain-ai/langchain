@@ -3,15 +3,12 @@
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import (DEFAULT_FORMATTER_MAPPING,
+                                           PromptTemplateFormat,
+                                           StringPromptTemplate)
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
-
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.string import (
-    DEFAULT_FORMATTER_MAPPING,
-    PromptTemplateFormat,
-    StringPromptTemplate,
-)
 
 
 class FewShotPromptWithTemplates(StringPromptTemplate):

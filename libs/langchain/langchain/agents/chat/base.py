@@ -6,23 +6,18 @@ from langchain_core.agents import AgentAction
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate,
+                                         SystemMessagePromptTemplate)
 from langchain_core.tools import BaseTool
 from pydantic import Field
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
-from langchain.agents.chat.prompt import (
-    FORMAT_INSTRUCTIONS,
-    HUMAN_MESSAGE,
-    SYSTEM_MESSAGE_PREFIX,
-    SYSTEM_MESSAGE_SUFFIX,
-)
+from langchain.agents.chat.prompt import (FORMAT_INSTRUCTIONS, HUMAN_MESSAGE,
+                                          SYSTEM_MESSAGE_PREFIX,
+                                          SYSTEM_MESSAGE_SUFFIX)
 from langchain.agents.utils import validate_tools_single_input
 from langchain.chains.llm import LLMChain
 

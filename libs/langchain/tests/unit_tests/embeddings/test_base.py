@@ -2,11 +2,9 @@
 
 import pytest
 
-from langchain.embeddings.base import (
-    _SUPPORTED_PROVIDERS,
-    _infer_model_and_provider,
-    _parse_model_string,
-)
+from langchain.embeddings.base import (_SUPPORTED_PROVIDERS,
+                                       _infer_model_and_provider,
+                                       _parse_model_string)
 
 
 def test_parse_model_string() -> None:

@@ -1,6 +1,7 @@
 # flake8: noqa
-from langchain.output_parsers.regex import RegexParser
 from langchain_core.prompts import PromptTemplate
+
+from langchain.output_parsers.regex import RegexParser
 
 output_parser = RegexParser(
     regex=r"(.*?)\nScore: (\d*)",

@@ -6,7 +6,6 @@ import pytest
 
 pytest.importorskip("numpy")
 import numpy as np
-
 from langchain_core.vectorstores.utils import _cosine_similarity
 
 

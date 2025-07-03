@@ -2,14 +2,10 @@
 
 from typing import Any, Literal
 
-from typing_extensions import override
-
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.messages.base import (BaseMessage, BaseMessageChunk,
+                                          merge_content)
 from langchain_core.utils._merge import merge_dicts
+from typing_extensions import override
 
 
 class ChatMessage(BaseMessage):

@@ -12,23 +12,15 @@ from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
+from langchain_core.runnables.utils import (Input, Output, accepts_config,
+                                            accepts_run_manager)
 from typing_extensions import ParamSpec, TypedDict
-
-from langchain_core.runnables.utils import (
-    Input,
-    Output,
-    accepts_config,
-    accepts_run_manager,
-)
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManager,
-        AsyncCallbackManagerForChainRun,
-        CallbackManager,
-        CallbackManagerForChainRun,
-    )
+        AsyncCallbackManager, AsyncCallbackManagerForChainRun, CallbackManager,
+        CallbackManagerForChainRun)
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
@@ -147,7 +139,8 @@ def _set_config_context(
         )
         and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+        from langsmith.run_helpers import (_set_tracing_context,
+                                           get_tracing_context)
 
         current_context = get_tracing_context()
         _set_tracing_context({"parent": run})

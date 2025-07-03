@@ -6,25 +6,16 @@ from collections import defaultdict
 from collections.abc import Awaitable, Mapping, Sequence
 from functools import partial
 from itertools import groupby
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-)
-
-from pydantic import ConfigDict
-from typing_extensions import override
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from langchain_core._api.beta_decorator import beta
-from langchain_core.runnables.base import (
-    Runnable,
-    RunnableSerializable,
-    coerce_to_runnable,
-)
-from langchain_core.runnables.config import RunnableConfig, ensure_config, patch_config
+from langchain_core.runnables.base import (Runnable, RunnableSerializable,
+                                           coerce_to_runnable)
+from langchain_core.runnables.config import (RunnableConfig, ensure_config,
+                                             patch_config)
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
+from pydantic import ConfigDict
+from typing_extensions import override
 
 T = TypeVar("T")
 Values = dict[Union[asyncio.Event, threading.Event], Any]

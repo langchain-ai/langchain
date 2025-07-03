@@ -11,7 +11,6 @@ from typing import AsyncGenerator, Generator, Generic, Tuple, TypeVar
 
 import pytest
 from langchain_core.stores import BaseStore
-
 from langchain_tests.base import BaseStandardTests
 
 V = TypeVar("V")

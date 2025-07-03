@@ -1,7 +1,8 @@
 from typing import Optional, Union
 
-from langchain.agents import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
+
+from langchain.agents import AgentOutputParser
 
 
 def extract_action_details(text: str) -> tuple[Optional[str], Optional[str]]:

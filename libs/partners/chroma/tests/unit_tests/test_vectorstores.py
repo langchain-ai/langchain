@@ -1,8 +1,5 @@
-from langchain_core.embeddings.fake import (
-    FakeEmbeddings,
-)
-
 from langchain_chroma.vectorstores import Chroma
+from langchain_core.embeddings.fake import FakeEmbeddings
 
 
 def test_initialization() -> None:

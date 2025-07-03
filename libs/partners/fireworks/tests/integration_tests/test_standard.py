@@ -3,11 +3,9 @@
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
-from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
-    ChatModelIntegrationTests,  # type: ignore[import-not-found]
-)
-
 from langchain_fireworks import ChatFireworks
+from langchain_tests.integration_tests import \
+    ChatModelIntegrationTests  # type: ignore[import-not-found]; type: ignore[import-not-found]
 
 
 class TestFireworksStandard(ChatModelIntegrationTests):

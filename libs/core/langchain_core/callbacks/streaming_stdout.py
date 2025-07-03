@@ -5,9 +5,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import override
-
 from langchain_core.callbacks.base import BaseCallbackHandler
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish

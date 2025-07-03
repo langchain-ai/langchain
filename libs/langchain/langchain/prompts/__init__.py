@@ -31,35 +31,27 @@ from multiple components. Prompt classes and functions make constructing
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.example_selectors import (
-    LengthBasedExampleSelector,
-    MaxMarginalRelevanceExampleSelector,
-    SemanticSimilarityExampleSelector,
-)
-from langchain_core.prompts import (
-    AIMessagePromptTemplate,
-    BaseChatPromptTemplate,
-    BasePromptTemplate,
-    ChatMessagePromptTemplate,
-    ChatPromptTemplate,
-    FewShotChatMessagePromptTemplate,
-    FewShotPromptTemplate,
-    FewShotPromptWithTemplates,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    PipelinePromptTemplate,
-    PromptTemplate,
-    StringPromptTemplate,
-    SystemMessagePromptTemplate,
-    load_prompt,
-)
+    LengthBasedExampleSelector, MaxMarginalRelevanceExampleSelector,
+    SemanticSimilarityExampleSelector)
+from langchain_core.prompts import (AIMessagePromptTemplate,
+                                    BaseChatPromptTemplate, BasePromptTemplate,
+                                    ChatMessagePromptTemplate,
+                                    ChatPromptTemplate,
+                                    FewShotChatMessagePromptTemplate,
+                                    FewShotPromptTemplate,
+                                    FewShotPromptWithTemplates,
+                                    HumanMessagePromptTemplate,
+                                    MessagesPlaceholder,
+                                    PipelinePromptTemplate, PromptTemplate,
+                                    StringPromptTemplate,
+                                    SystemMessagePromptTemplate, load_prompt)
 
 from langchain._api import create_importer
 from langchain.prompts.prompt import Prompt
 
 if TYPE_CHECKING:
-    from langchain_community.example_selectors.ngram_overlap import (
-        NGramOverlapExampleSelector,
-    )
+    from langchain_community.example_selectors.ngram_overlap import \
+        NGramOverlapExampleSelector
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

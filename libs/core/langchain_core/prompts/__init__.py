@@ -30,38 +30,28 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.prompts.base import (
-        BasePromptTemplate,
-        aformat_document,
-        format_document,
-    )
-    from langchain_core.prompts.chat import (
-        AIMessagePromptTemplate,
-        BaseChatPromptTemplate,
-        ChatMessagePromptTemplate,
-        ChatPromptTemplate,
-        HumanMessagePromptTemplate,
-        MessagesPlaceholder,
-        SystemMessagePromptTemplate,
-    )
+    from langchain_core.prompts.base import (BasePromptTemplate,
+                                             aformat_document, format_document)
+    from langchain_core.prompts.chat import (AIMessagePromptTemplate,
+                                             BaseChatPromptTemplate,
+                                             ChatMessagePromptTemplate,
+                                             ChatPromptTemplate,
+                                             HumanMessagePromptTemplate,
+                                             MessagesPlaceholder,
+                                             SystemMessagePromptTemplate)
     from langchain_core.prompts.dict import DictPromptTemplate
     from langchain_core.prompts.few_shot import (
-        FewShotChatMessagePromptTemplate,
-        FewShotPromptTemplate,
-    )
-    from langchain_core.prompts.few_shot_with_templates import (
-        FewShotPromptWithTemplates,
-    )
+        FewShotChatMessagePromptTemplate, FewShotPromptTemplate)
+    from langchain_core.prompts.few_shot_with_templates import \
+        FewShotPromptWithTemplates
     from langchain_core.prompts.loading import load_prompt
     from langchain_core.prompts.pipeline import PipelinePromptTemplate
     from langchain_core.prompts.prompt import PromptTemplate
-    from langchain_core.prompts.string import (
-        StringPromptTemplate,
-        check_valid_template,
-        get_template_variables,
-        jinja2_formatter,
-        validate_jinja2,
-    )
+    from langchain_core.prompts.string import (StringPromptTemplate,
+                                               check_valid_template,
+                                               get_template_variables,
+                                               jinja2_formatter,
+                                               validate_jinja2)
 
 __all__ = (
     "AIMessagePromptTemplate",

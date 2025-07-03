@@ -1,7 +1,6 @@
 import operator
 
 import pytest
-
 from langchain_core.utils.usage import _dict_int_op
 
 

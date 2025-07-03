@@ -10,14 +10,11 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.example_selectors.base import BaseExampleSelector
-    from langchain_core.example_selectors.length_based import (
-        LengthBasedExampleSelector,
-    )
+    from langchain_core.example_selectors.length_based import \
+        LengthBasedExampleSelector
     from langchain_core.example_selectors.semantic_similarity import (
-        MaxMarginalRelevanceExampleSelector,
-        SemanticSimilarityExampleSelector,
-        sorted_values,
-    )
+        MaxMarginalRelevanceExampleSelector, SemanticSimilarityExampleSelector,
+        sorted_values)
 
 __all__ = (
     "BaseExampleSelector",

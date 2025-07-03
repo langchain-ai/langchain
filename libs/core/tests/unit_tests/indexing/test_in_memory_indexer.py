@@ -3,16 +3,11 @@
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
-from langchain_tests.integration_tests.indexer import (
-    AsyncDocumentIndexTestSuite,
-    DocumentIndexerTestSuite,
-)
-
 from langchain_core.documents import Document
 from langchain_core.indexing.base import DocumentIndex
-from langchain_core.indexing.in_memory import (
-    InMemoryDocumentIndex,
-)
+from langchain_core.indexing.in_memory import InMemoryDocumentIndex
+from langchain_tests.integration_tests.indexer import (
+    AsyncDocumentIndexTestSuite, DocumentIndexerTestSuite)
 
 
 class TestDocumentIndexerTestSuite(DocumentIndexerTestSuite):

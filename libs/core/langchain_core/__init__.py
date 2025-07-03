@@ -8,10 +8,8 @@ No third-party integrations are defined here. The dependencies are kept purposef
 very lightweight.
 """
 
-from langchain_core._api import (
-    surface_langchain_beta_warnings,
-    surface_langchain_deprecation_warnings,
-)
+from langchain_core._api import (surface_langchain_beta_warnings,
+                                 surface_langchain_deprecation_warnings)
 from langchain_core.version import VERSION
 
 __version__ = VERSION

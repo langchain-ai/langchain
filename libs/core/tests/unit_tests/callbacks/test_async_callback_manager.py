@@ -10,13 +10,10 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 from uuid import UUID
 
+from langchain_core.callbacks import (AsyncCallbackHandler,
+                                      AsyncCallbackManager,
+                                      BaseCallbackHandler)
 from typing_extensions import override
-
-from langchain_core.callbacks import (
-    AsyncCallbackHandler,
-    AsyncCallbackManager,
-    BaseCallbackHandler,
-)
 
 
 async def test_inline_handlers_share_parent_context() -> None:

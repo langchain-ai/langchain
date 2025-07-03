@@ -4,9 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.tracers.comet import (
-        CometTracer,
-        import_comet_llm_api,
-    )
+        CometTracer, import_comet_llm_api)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

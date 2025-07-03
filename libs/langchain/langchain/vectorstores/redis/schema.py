@@ -4,17 +4,9 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.vectorstores.redis.schema import (
-        FlatVectorField,
-        HNSWVectorField,
-        NumericFieldSchema,
-        RedisDistanceMetric,
-        RedisField,
-        RedisModel,
-        RedisVectorField,
-        TagFieldSchema,
-        TextFieldSchema,
-        read_schema,
-    )
+        FlatVectorField, HNSWVectorField, NumericFieldSchema,
+        RedisDistanceMetric, RedisField, RedisModel, RedisVectorField,
+        TagFieldSchema, TextFieldSchema, read_schema)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

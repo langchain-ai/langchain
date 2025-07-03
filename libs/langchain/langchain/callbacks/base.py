@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from langchain_core.callbacks import (
-    AsyncCallbackHandler,
-    BaseCallbackHandler,
-    BaseCallbackManager,
-    CallbackManagerMixin,
-    Callbacks,
-    ChainManagerMixin,
-    LLMManagerMixin,
-    RetrieverManagerMixin,
-    RunManagerMixin,
-    ToolManagerMixin,
-)
+from langchain_core.callbacks import (AsyncCallbackHandler,
+                                      BaseCallbackHandler, BaseCallbackManager,
+                                      CallbackManagerMixin, Callbacks,
+                                      ChainManagerMixin, LLMManagerMixin,
+                                      RetrieverManagerMixin, RunManagerMixin,
+                                      ToolManagerMixin)
 
 __all__ = [
     "RetrieverManagerMixin",

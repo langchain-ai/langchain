@@ -12,22 +12,18 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate,
+                                         MessagesPlaceholder,
+                                         SystemMessagePromptTemplate)
 from langchain_core.tools import BaseTool
 from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
-from langchain.agents.conversational_chat.output_parser import ConvoOutputParser
+from langchain.agents.conversational_chat.output_parser import \
+    ConvoOutputParser
 from langchain.agents.conversational_chat.prompt import (
-    PREFIX,
-    SUFFIX,
-    TEMPLATE_TOOL_RESPONSE,
-)
+    PREFIX, SUFFIX, TEMPLATE_TOOL_RESPONSE)
 from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
 

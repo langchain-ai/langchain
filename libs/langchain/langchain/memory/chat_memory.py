@@ -3,10 +3,8 @@ from abc import ABC
 from typing import Any, Optional
 
 from langchain_core._api import deprecated
-from langchain_core.chat_history import (
-    BaseChatMessageHistory,
-    InMemoryChatMessageHistory,
-)
+from langchain_core.chat_history import (BaseChatMessageHistory,
+                                         InMemoryChatMessageHistory)
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field

@@ -1,10 +1,10 @@
 from typing import Any, Callable
 
 from langchain_core.documents import Document
+from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
 from langchain.storage import InMemoryStore
-from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):

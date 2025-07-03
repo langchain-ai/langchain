@@ -4,10 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.sql.prompt import (
-        SQL_FUNCTIONS_SUFFIX,
-        SQL_PREFIX,
-        SQL_SUFFIX,
-    )
+        SQL_FUNCTIONS_SUFFIX, SQL_PREFIX, SQL_SUFFIX)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

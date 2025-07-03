@@ -1,9 +1,6 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime
-from typing import (
-    Any,
-    Optional,
-)
+from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest

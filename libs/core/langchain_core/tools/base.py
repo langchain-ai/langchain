@@ -9,65 +9,32 @@ import typing
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import (TYPE_CHECKING, Annotated, Any, Callable, Literal, Optional,
+                    TypeVar, Union, cast, get_args, get_origin, get_type_hints)
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    PydanticDeprecationWarning,
-    SkipValidation,
-    ValidationError,
-    model_validator,
-    validate_arguments,
-)
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      BaseCallbackManager, CallbackManager,
+                                      Callbacks)
+from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
+from langchain_core.runnables import (RunnableConfig, RunnableSerializable,
+                                      ensure_config, patch_config,
+                                      run_in_executor)
+from langchain_core.runnables.config import set_config_context
+from langchain_core.runnables.utils import coro_with_context
+from langchain_core.utils.function_calling import (_parse_google_docstring,
+                                                   _py_38_safe_origin)
+from langchain_core.utils.pydantic import (TypeBaseModel, _create_subset_model,
+                                           get_fields, is_basemodel_subclass,
+                                           is_pydantic_v1_subclass,
+                                           is_pydantic_v2_subclass)
+from pydantic import (BaseModel, ConfigDict, Field, PydanticDeprecationWarning,
+                      SkipValidation, ValidationError, model_validator,
+                      validate_arguments)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
-
-from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    BaseCallbackManager,
-    CallbackManager,
-    Callbacks,
-)
-from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
-from langchain_core.runnables import (
-    RunnableConfig,
-    RunnableSerializable,
-    ensure_config,
-    patch_config,
-    run_in_executor,
-)
-from langchain_core.runnables.config import set_config_context
-from langchain_core.runnables.utils import coro_with_context
-from langchain_core.utils.function_calling import (
-    _parse_google_docstring,
-    _py_38_safe_origin,
-)
-from langchain_core.utils.pydantic import (
-    TypeBaseModel,
-    _create_subset_model,
-    get_fields,
-    is_basemodel_subclass,
-    is_pydantic_v1_subclass,
-    is_pydantic_v2_subclass,
-)
 
 if TYPE_CHECKING:
     import uuid
@@ -954,7 +921,9 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                    self._run
+                    if self.__class__._arun is BaseTool._arun
+                    else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager

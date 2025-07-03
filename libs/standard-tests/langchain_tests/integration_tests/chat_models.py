@@ -9,33 +9,23 @@ import pytest
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     SystemMessage, ToolMessage)
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
-from langchain_core.utils.function_calling import (
-    convert_to_json_schema,
-    tool_example_to_messages,
-)
+from langchain_core.utils.function_calling import (convert_to_json_schema,
+                                                   tool_example_to_messages)
+from langchain_tests.unit_tests.chat_models import ChatModelTests
+from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import \
+    BenchmarkFixture  # type: ignore[import-untyped]
 from typing_extensions import Annotated, TypedDict
 from vcr.cassette import Cassette
-
-from langchain_tests.unit_tests.chat_models import (
-    ChatModelTests,
-)
-from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 def _get_joke_class(
@@ -1921,9 +1911,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(invoke_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(invoke_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
             invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -1940,9 +1930,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(stream_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(stream_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
             stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -1997,9 +1987,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(ainvoke_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(ainvoke_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
             ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -2016,9 +2006,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(astream_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(astream_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
 
         assert isinstance(astream_callback.options[0], dict)
         assert isinstance(

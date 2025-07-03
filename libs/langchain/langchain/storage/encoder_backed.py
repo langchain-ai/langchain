@@ -1,11 +1,5 @@
 from collections.abc import AsyncIterator, Iterator, Sequence
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from langchain_core.stores import BaseStore
 

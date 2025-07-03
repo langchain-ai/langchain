@@ -4,9 +4,8 @@ import os
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_tests.integration_tests import ChatModelIntegrationTests
-
 from langchain_openai import AzureChatOpenAI
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "")
 OPENAI_API_BASE = os.environ.get("AZURE_OPENAI_API_BASE", "")

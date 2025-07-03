@@ -3,15 +3,11 @@
 """Test LLMSummarization functionality."""
 
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.chains.llm_summarization_checker.base import (
-    ARE_ALL_TRUE_PROMPT,
-    CHECK_ASSERTIONS_PROMPT,
-    CREATE_ASSERTIONS_PROMPT,
-    REVISED_SUMMARY_PROMPT,
-    LLMSummarizationCheckerChain,
-)
-from tests.unit_tests.llms.fake_llm import FakeLLM
+    ARE_ALL_TRUE_PROMPT, CHECK_ASSERTIONS_PROMPT, CREATE_ASSERTIONS_PROMPT,
+    REVISED_SUMMARY_PROMPT, LLMSummarizationCheckerChain)
 
 
 def test_input_variables() -> None:

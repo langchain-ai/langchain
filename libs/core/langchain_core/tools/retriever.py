@@ -5,15 +5,10 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
-
-from langchain_core.prompts import (
-    BasePromptTemplate,
-    PromptTemplate,
-    aformat_document,
-    format_document,
-)
+from langchain_core.prompts import (BasePromptTemplate, PromptTemplate,
+                                    aformat_document, format_document)
 from langchain_core.tools.simple import Tool
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from langchain_core.callbacks import Callbacks

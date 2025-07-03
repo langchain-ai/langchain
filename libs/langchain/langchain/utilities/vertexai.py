@@ -4,11 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.utilities.vertexai import (
-        create_retry_decorator,
-        get_client_info,
-        init_vertexai,
-        raise_vertex_import_error,
-    )
+        create_retry_decorator, get_client_info, init_vertexai,
+        raise_vertex_import_error)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

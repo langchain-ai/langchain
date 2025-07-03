@@ -1,18 +1,8 @@
 # flake8: noqa
 import time
 from sys import platform
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TypedDict,
-    Union,
-)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set,
+                    Tuple, TypedDict, Union)
 
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, CDPSession, Page, sync_playwright
@@ -313,9 +303,7 @@ class Crawler:
             ancestor_node_key = (
                 None
                 if not ancestor_exception
-                else str(anchor_id)
-                if is_ancestor_of_anchor
-                else str(button_id)
+                else str(anchor_id) if is_ancestor_of_anchor else str(button_id)
             )
             ancestor_node = (
                 None

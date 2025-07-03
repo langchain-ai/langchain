@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate

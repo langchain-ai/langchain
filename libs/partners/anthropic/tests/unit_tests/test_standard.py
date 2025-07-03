@@ -1,11 +1,11 @@
 """Standard LangChain interface tests"""
 
 import pytest
+from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-
-from langchain_anthropic import ChatAnthropic
+from pytest_benchmark.fixture import \
+    BenchmarkFixture  # type: ignore[import-untyped]
 
 
 class TestAnthropicStandard(ChatModelUnitTests):

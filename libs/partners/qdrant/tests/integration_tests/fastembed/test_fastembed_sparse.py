@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from langchain_qdrant import FastEmbedSparse
 
 pytest.importorskip("fastembed", reason="'fastembed' package is not installed")

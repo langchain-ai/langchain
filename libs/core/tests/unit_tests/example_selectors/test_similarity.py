@@ -1,15 +1,12 @@
 from collections.abc import Iterable
 from typing import Any, Optional
 
-from typing_extensions import override
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_core.example_selectors import (
-    MaxMarginalRelevanceExampleSelector,
-    SemanticSimilarityExampleSelector,
-)
+    MaxMarginalRelevanceExampleSelector, SemanticSimilarityExampleSelector)
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import override
 
 
 class DummyVectorStore(VectorStore):

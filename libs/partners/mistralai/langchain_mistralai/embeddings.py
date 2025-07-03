@@ -6,17 +6,10 @@ from collections.abc import Iterable
 import httpx
 from httpx import Response
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import (
-    secret_from_env,
-)
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from langchain_core.utils import secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_fixed)
 from tokenizers import Tokenizer  # type: ignore
 from typing_extensions import Self
 

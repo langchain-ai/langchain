@@ -2,7 +2,6 @@
 
 import numpy as np
 import openai
-
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 

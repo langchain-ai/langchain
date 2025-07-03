@@ -3,23 +3,18 @@
 from typing import Union
 
 import pytest
-from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.agents import (AgentAction, AgentActionMessageLog,
+                                   AgentFinish)
 from langchain_core.documents import Document
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    FunctionMessage,
-    FunctionMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolMessage,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
-from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
+from langchain_core.messages import (AIMessage, AIMessageChunk, ChatMessage,
+                                     ChatMessageChunk, FunctionMessage,
+                                     FunctionMessageChunk, HumanMessage,
+                                     HumanMessageChunk, SystemMessage,
+                                     SystemMessageChunk, ToolMessage)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    Generation)
+from langchain_core.prompt_values import (ChatPromptValueConcrete,
+                                          StringPromptValue)
 from pydantic import RootModel, ValidationError
 
 

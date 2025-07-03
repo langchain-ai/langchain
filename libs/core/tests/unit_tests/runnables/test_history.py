@@ -3,16 +3,11 @@ from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
 import pytest
-from packaging import version
-from pydantic import BaseModel
-from typing_extensions import override
-
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
+                                     SystemMessage)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.base import RunnableBinding, RunnableLambda
@@ -21,7 +16,10 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from packaging import version
+from pydantic import BaseModel
 from tests.unit_tests.pydantic_utils import _schema
+from typing_extensions import override
 
 
 def test_interfaces() -> None:
@@ -817,7 +815,8 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+        from langchain_core.tracers.root_listeners import \
+            AsyncRootListenersTracer
 
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = AsyncRootListenersTracer(

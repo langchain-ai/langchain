@@ -4,7 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import DataFrameLoader
-    from langchain_community.document_loaders.dataframe import BaseDataFrameLoader
+    from langchain_community.document_loaders.dataframe import \
+        BaseDataFrameLoader
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

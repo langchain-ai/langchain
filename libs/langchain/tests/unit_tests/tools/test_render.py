@@ -1,10 +1,8 @@
 import pytest
 from langchain_core.tools import BaseTool, tool
 
-from langchain.tools.render import (
-    render_text_description,
-    render_text_description_and_args,
-)
+from langchain.tools.render import (render_text_description,
+                                    render_text_description_and_args)
 
 
 @tool

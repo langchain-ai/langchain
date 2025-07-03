@@ -7,16 +7,15 @@ from importlib import util
 from typing import Any, Optional
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks.manager import (AsyncCallbackManagerForChainRun,
+                                              CallbackManagerForChainRun)
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
 
 from langchain.chains.base import Chain
-from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
+from langchain.evaluation.schema import (PairwiseStringEvaluator,
+                                         StringEvaluator)
 from langchain.schema import RUN_KEY
 
 
@@ -60,9 +59,8 @@ def _embedding_factory() -> Embeddings:
         from langchain_openai import OpenAIEmbeddings
     except ImportError:
         try:
-            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
-                OpenAIEmbeddings,
-            )
+            from langchain_community.embeddings.openai import \
+                OpenAIEmbeddings  # type: ignore[no-redef]
         except ImportError:
             raise ImportError(
                 "Could not import OpenAIEmbeddings. Please install the "
@@ -121,9 +119,8 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         try:
-            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
-                OpenAIEmbeddings,
-            )
+            from langchain_community.embeddings.openai import \
+                OpenAIEmbeddings  # type: ignore[no-redef]
 
             types_.append(OpenAIEmbeddings)
         except ImportError:

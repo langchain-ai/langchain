@@ -7,13 +7,7 @@ import warnings
 from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 from itertools import islice
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -21,11 +15,10 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
+from langchain_qdrant._utils import maximal_marginal_relevance
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http import models
 from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
-
-from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     DictFilter = dict[str, Union[str, int, bool, dict, list]]
@@ -1027,9 +1020,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -1100,9 +1095,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -2162,9 +2159,11 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector  # type: ignore[arg-type]
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector  # type: ignore[arg-type]
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(
@@ -2202,9 +2201,11 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector  # type: ignore[arg-type]
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector  # type: ignore[arg-type]
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(

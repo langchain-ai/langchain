@@ -16,7 +16,8 @@ from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_core.vectorstores import VectorStoreRetriever
 from pydantic import Field, PrivateAttr
 
-from langchain.memory import ConversationTokenBufferMemory, VectorStoreRetrieverMemory
+from langchain.memory import (ConversationTokenBufferMemory,
+                              VectorStoreRetrieverMemory)
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 

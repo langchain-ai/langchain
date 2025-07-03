@@ -21,59 +21,36 @@ the backbone of a retriever, but there are other types of retrievers as well.
 from typing import TYPE_CHECKING, Any
 
 from langchain._api.module_import import create_importer
-from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
+from langchain.retrievers.contextual_compression import \
+    ContextualCompressionRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
+from langchain.retrievers.parent_document_retriever import \
+    ParentDocumentRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.retrievers.time_weighted_retriever import (
-    TimeWeightedVectorStoreRetriever,
-)
+from langchain.retrievers.time_weighted_retriever import \
+    TimeWeightedVectorStoreRetriever
 
 if TYPE_CHECKING:
     from langchain_community.retrievers import (
-        AmazonKendraRetriever,
-        AmazonKnowledgeBasesRetriever,
-        ArceeRetriever,
-        ArxivRetriever,
-        AzureAISearchRetriever,
-        AzureCognitiveSearchRetriever,
-        BM25Retriever,
-        ChaindeskRetriever,
-        ChatGPTPluginRetriever,
-        CohereRagRetriever,
-        DocArrayRetriever,
-        DriaRetriever,
-        ElasticSearchBM25Retriever,
-        EmbedchainRetriever,
+        AmazonKendraRetriever, AmazonKnowledgeBasesRetriever, ArceeRetriever,
+        ArxivRetriever, AzureAISearchRetriever, AzureCognitiveSearchRetriever,
+        BM25Retriever, ChaindeskRetriever, ChatGPTPluginRetriever,
+        CohereRagRetriever, DocArrayRetriever, DriaRetriever,
+        ElasticSearchBM25Retriever, EmbedchainRetriever,
         GoogleCloudEnterpriseSearchRetriever,
         GoogleDocumentAIWarehouseRetriever,
-        GoogleVertexAIMultiTurnSearchRetriever,
-        GoogleVertexAISearchRetriever,
-        KayAiRetriever,
-        KNNRetriever,
-        LlamaIndexGraphRetriever,
-        LlamaIndexRetriever,
-        MetalRetriever,
-        MilvusRetriever,
-        NeuralDBRetriever,
-        OutlineRetriever,
-        PineconeHybridSearchRetriever,
-        PubMedRetriever,
-        RemoteLangChainRetriever,
-        SVMRetriever,
-        TavilySearchAPIRetriever,
-        TFIDFRetriever,
-        VespaRetriever,
-        WeaviateHybridSearchRetriever,
-        WebResearchRetriever,
-        WikipediaRetriever,
-        ZepRetriever,
-        ZillizRetriever,
-    )
+        GoogleVertexAIMultiTurnSearchRetriever, GoogleVertexAISearchRetriever,
+        KayAiRetriever, KNNRetriever, LlamaIndexGraphRetriever,
+        LlamaIndexRetriever, MetalRetriever, MilvusRetriever,
+        NeuralDBRetriever, OutlineRetriever, PineconeHybridSearchRetriever,
+        PubMedRetriever, RemoteLangChainRetriever, SVMRetriever,
+        TavilySearchAPIRetriever, TFIDFRetriever, VespaRetriever,
+        WeaviateHybridSearchRetriever, WebResearchRetriever,
+        WikipediaRetriever, ZepRetriever, ZillizRetriever)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

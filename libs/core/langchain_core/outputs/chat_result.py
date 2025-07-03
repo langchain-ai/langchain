@@ -2,9 +2,8 @@
 
 from typing import Optional
 
-from pydantic import BaseModel
-
 from langchain_core.outputs.chat_generation import ChatGeneration
+from pydantic import BaseModel
 
 
 class ChatResult(BaseModel):

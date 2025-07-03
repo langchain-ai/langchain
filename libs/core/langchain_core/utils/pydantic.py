@@ -8,39 +8,19 @@ import warnings
 from contextlib import nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union,
+                    cast, overload)
 
 import pydantic
 from packaging import version
-
 # root_validator is deprecated but we need it for backward compatibility of @pre_init
-from pydantic import (  # type: ignore[deprecated]
-    BaseModel,
-    ConfigDict,
-    Field,
-    PydanticDeprecationWarning,
-    RootModel,
-    root_validator,
-)
-from pydantic import (
-    create_model as _create_model_base,
-)
+from pydantic import (BaseModel, ConfigDict, Field,  # type: ignore[deprecated]
+                      PydanticDeprecationWarning, RootModel)
+from pydantic import create_model as _create_model_base
+from pydantic import root_validator  # type: ignore[deprecated]
 from pydantic.fields import FieldInfo as FieldInfoV2
-from pydantic.json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-    JsonSchemaValue,
-)
+from pydantic.json_schema import (DEFAULT_REF_TEMPLATE, GenerateJsonSchema,
+                                  JsonSchemaMode, JsonSchemaValue)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import create_model as create_model_v1
 from pydantic.v1.fields import ModelField

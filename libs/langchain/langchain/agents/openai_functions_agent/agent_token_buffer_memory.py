@@ -6,9 +6,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 
 from langchain.agents.format_scratchpad import (
-    format_to_openai_function_messages,
-    format_to_tool_messages,
-)
+    format_to_openai_function_messages, format_to_tool_messages)
 from langchain.memory.chat_memory import BaseChatMemory
 
 

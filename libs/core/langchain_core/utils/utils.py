@@ -10,14 +10,11 @@ from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
 
+from langchain_core.utils.pydantic import is_pydantic_v1_subclass
 from packaging.version import parse
 from pydantic import SecretStr
 from requests import HTTPError, Response
 from typing_extensions import override
-
-from langchain_core.utils.pydantic import (
-    is_pydantic_v1_subclass,
-)
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:

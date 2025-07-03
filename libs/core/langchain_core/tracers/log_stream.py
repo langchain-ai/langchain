@@ -7,19 +7,10 @@ import contextlib
 import copy
 import threading
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import (TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union,
+                    overload)
 
 import jsonpatch  # type: ignore[import-untyped]
-from typing_extensions import NotRequired, TypedDict, override
-
 from langchain_core.load import dumps
 from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
@@ -27,6 +18,7 @@ from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
+from typing_extensions import NotRequired, TypedDict, override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -463,9 +455,11 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/end_time",
-                        "value": run.end_time.isoformat(timespec="milliseconds")
-                        if run.end_time is not None
-                        else None,
+                        "value": (
+                            run.end_time.isoformat(timespec="milliseconds")
+                            if run.end_time is not None
+                            else None
+                        ),
                     },
                 ]
             )
@@ -496,9 +490,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             {
                 "op": "add",
                 "path": f"/logs/{index}/streamed_output/-",
-                "value": chunk.message
-                if isinstance(chunk, ChatGenerationChunk)
-                else token,
+                "value": (
+                    chunk.message if isinstance(chunk, ChatGenerationChunk) else token
+                ),
             },
         )
 
@@ -619,12 +613,8 @@ async def _astream_log_implementation(
     astream_log and astream_events relies on it.
     """
     import jsonpatch
-
     from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
 
     # Assign the stream handler to the config
     config = ensure_config(config)

@@ -6,9 +6,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.tools.dataforseo_api_search.tool import (
-        DataForSeoAPISearchResults,
-        DataForSeoAPISearchRun,
-    )
+        DataForSeoAPISearchResults, DataForSeoAPISearchRun)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

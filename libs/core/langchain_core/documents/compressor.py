@@ -5,9 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel
-
 from langchain_core.runnables import run_in_executor
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

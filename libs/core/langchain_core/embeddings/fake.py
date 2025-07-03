@@ -3,10 +3,9 @@
 # Please do not add additional fake embedding model implementations here.
 import hashlib
 
+from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel
 from typing_extensions import override
-
-from langchain_core.embeddings import Embeddings
 
 
 class FakeEmbeddings(Embeddings, BaseModel):

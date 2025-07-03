@@ -5,21 +5,16 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
-from typing_extensions import override
-
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.prompts import (
-    AIMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
+from langchain_core.prompts import (AIMessagePromptTemplate,
+                                    ChatPromptTemplate,
+                                    HumanMessagePromptTemplate)
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
-from langchain_core.prompts.few_shot import (
-    FewShotChatMessagePromptTemplate,
-    FewShotPromptTemplate,
-)
+from langchain_core.prompts.few_shot import (FewShotChatMessagePromptTemplate,
+                                             FewShotPromptTemplate)
 from langchain_core.prompts.prompt import PromptTemplate
+from typing_extensions import override
 
 EXAMPLE_PROMPT = PromptTemplate(
     input_variables=["question", "answer"], template="{question}: {answer}"

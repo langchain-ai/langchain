@@ -8,9 +8,9 @@ from typing import Any
 import pytest
 from httpx import Client, Request, Response
 from langchain_core.messages import ChatMessage
+from langchain_ollama.chat_models import (ChatOllama,
+                                          _parse_arguments_from_tool_call)
 from langchain_tests.unit_tests import ChatModelUnitTests
-
-from langchain_ollama.chat_models import ChatOllama, _parse_arguments_from_tool_call
 
 
 class TestChatOllama(ChatModelUnitTests):

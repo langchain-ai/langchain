@@ -3,10 +3,9 @@
 from typing import Annotated, Optional
 
 import pytest
+from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-
-from langchain_ollama import ChatOllama
 
 DEFAULT_MODEL_NAME = "llama3.1"
 
@@ -61,7 +60,7 @@ def test_structured_output(method: str) -> None:
     assert set(chunk.keys()) == {"setup", "punchline"}
 
 
-@pytest.mark.parametrize(("model"), [(DEFAULT_MODEL_NAME)])
+@pytest.mark.parametrize(("model"), [DEFAULT_MODEL_NAME])
 def test_structured_output_deeply_nested(model: str) -> None:
     """Test to verify structured output with a nested objects."""
     llm = ChatOllama(model=model, temperature=0)

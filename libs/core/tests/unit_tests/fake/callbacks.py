@@ -4,11 +4,11 @@ from itertools import chain
 from typing import Any, Optional, Union
 from uuid import UUID
 
+from langchain_core.callbacks.base import (AsyncCallbackHandler,
+                                           BaseCallbackHandler)
+from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 from typing_extensions import override
-
-from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain_core.messages import BaseMessage
 
 
 class BaseFakeCallbackHandler(BaseModel):

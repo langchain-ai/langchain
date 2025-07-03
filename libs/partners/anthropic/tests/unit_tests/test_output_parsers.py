@@ -1,10 +1,9 @@
 from typing import Any, Literal
 
+from langchain_anthropic.output_parsers import ToolsOutputParser
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
 from pydantic import BaseModel
-
-from langchain_anthropic.output_parsers import ToolsOutputParser
 
 _CONTENT: list = [
     {

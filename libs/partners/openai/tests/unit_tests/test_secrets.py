@@ -2,17 +2,11 @@ from typing import cast
 
 import pytest
 from langchain_core.load import dumpd
+from langchain_openai import (AzureChatOpenAI, AzureOpenAI,
+                              AzureOpenAIEmbeddings, ChatOpenAI, OpenAI,
+                              OpenAIEmbeddings)
 from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
-
-from langchain_openai import (
-    AzureChatOpenAI,
-    AzureOpenAI,
-    AzureOpenAIEmbeddings,
-    ChatOpenAI,
-    OpenAI,
-    OpenAIEmbeddings,
-)
 
 AZURE_AD_TOKEN = "secret-api-key"  # noqa: S105
 

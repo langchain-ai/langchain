@@ -6,30 +6,24 @@ from json import JSONDecodeError
 from typing import Any, Optional, Union
 
 from langchain_core._api import deprecated
-from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.agents import (AgentAction, AgentActionMessageLog,
+                                   AgentFinish)
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate,
+                                         MessagesPlaceholder)
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import model_validator
 from typing_extensions import Self
 
 from langchain.agents import BaseMultiActionAgent
-from langchain.agents.format_scratchpad.openai_functions import (
-    format_to_openai_function_messages,
-)
+from langchain.agents.format_scratchpad.openai_functions import \
+    format_to_openai_function_messages
 
 # For backwards compatibility
 _FunctionsAgentAction = AgentActionMessageLog

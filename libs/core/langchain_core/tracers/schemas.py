@@ -7,13 +7,12 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
+from langchain_core._api import deprecated
 from langsmith import RunTree
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 from pydantic import PydanticDeprecationWarning
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-
-from langchain_core._api import deprecated
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")

@@ -1,11 +1,9 @@
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 
-from langchain.agents.format_scratchpad.openai_tools import (
-    format_to_openai_tool_messages,
-)
-from langchain.agents.output_parsers.openai_tools import (
-    parse_ai_message_to_openai_tool_action,
-)
+from langchain.agents.format_scratchpad.openai_tools import \
+    format_to_openai_tool_messages
+from langchain.agents.output_parsers.openai_tools import \
+    parse_ai_message_to_openai_tool_action
 
 
 def test_calls_convert_agent_action_to_messages() -> None:

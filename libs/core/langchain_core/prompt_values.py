@@ -10,15 +10,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Literal, cast
 
-from typing_extensions import TypedDict
-
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import (
-    AnyMessage,
-    BaseMessage,
-    HumanMessage,
-    get_buffer_string,
-)
+from langchain_core.messages import (AnyMessage, BaseMessage, HumanMessage,
+                                     get_buffer_string)
+from typing_extensions import TypedDict
 
 
 class PromptValue(Serializable, ABC):

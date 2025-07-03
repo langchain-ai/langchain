@@ -1,13 +1,9 @@
 """Prompt for trajectory evaluation chain."""
 
 # flake8: noqa
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
-
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.prompts.chat import (ChatPromptTemplate,
+                                         HumanMessagePromptTemplate)
 
 EVAL_TEMPLATE = """An AI language model has been given access to the following set of tools to help answer a user's question.
 

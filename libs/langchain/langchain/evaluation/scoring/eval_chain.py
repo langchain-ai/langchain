@@ -14,17 +14,11 @@ from pydantic import ConfigDict, Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.criteria.eval_chain import (
-    CRITERIA_TYPE,
-    Criteria,
-)
+from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE, Criteria
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.evaluation.scoring.prompt import (
-    CRITERIA_INSTRUCTIONS,
-    DEFAULT_CRITERIA,
-    SCORING_TEMPLATE,
-    SCORING_TEMPLATE_WITH_REFERENCE,
-)
+    CRITERIA_INSTRUCTIONS, DEFAULT_CRITERIA, SCORING_TEMPLATE,
+    SCORING_TEMPLATE_WITH_REFERENCE)
 from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)

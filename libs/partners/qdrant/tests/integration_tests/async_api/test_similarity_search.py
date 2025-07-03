@@ -3,12 +3,9 @@ from typing import Optional
 import numpy as np
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
-
 from langchain_qdrant import Qdrant
-from tests.integration_tests.common import (
-    ConsistentFakeEmbeddings,
-    assert_documents_equals,
-)
+from tests.integration_tests.common import (ConsistentFakeEmbeddings,
+                                            assert_documents_equals)
 from tests.integration_tests.fixtures import qdrant_locations
 
 

@@ -5,13 +5,12 @@ from typing import Any, Union
 from unittest import mock
 
 import pytest
-from packaging import version
-from syrupy.assertion import SnapshotAssertion
-
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from packaging import version
+from syrupy.assertion import SnapshotAssertion
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION

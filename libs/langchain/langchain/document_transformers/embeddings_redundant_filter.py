@@ -4,15 +4,11 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.document_transformers import (
-        EmbeddingsClusteringFilter,
-        EmbeddingsRedundantFilter,
-        get_stateful_documents,
-    )
+        EmbeddingsClusteringFilter, EmbeddingsRedundantFilter,
+        get_stateful_documents)
     from langchain_community.document_transformers.embeddings_redundant_filter import (
-        _DocumentWithState,
-        _filter_similar_embeddings,
-        _get_embeddings_from_stateful_docs,
-    )
+        _DocumentWithState, _filter_similar_embeddings,
+        _get_embeddings_from_stateful_docs)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

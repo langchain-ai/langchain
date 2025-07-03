@@ -9,7 +9,8 @@ import requests
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain_core.output_parsers.openai_functions import \
+    JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response

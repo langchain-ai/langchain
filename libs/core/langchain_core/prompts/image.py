@@ -2,15 +2,13 @@
 
 from typing import Any
 
-from pydantic import Field
-
-from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
+from langchain_core.prompt_values import (ImagePromptValue, ImageURL,
+                                          PromptValue)
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.string import (
-    DEFAULT_FORMATTER_MAPPING,
-    PromptTemplateFormat,
-)
+from langchain_core.prompts.string import (DEFAULT_FORMATTER_MAPPING,
+                                           PromptTemplateFormat)
 from langchain_core.runnables import run_in_executor
+from pydantic import Field
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):

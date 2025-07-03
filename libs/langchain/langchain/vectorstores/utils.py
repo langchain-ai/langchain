@@ -4,10 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.vectorstores.utils import (
-        DistanceStrategy,
-        filter_complex_metadata,
-        maximal_marginal_relevance,
-    )
+        DistanceStrategy, filter_complex_metadata, maximal_marginal_relevance)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

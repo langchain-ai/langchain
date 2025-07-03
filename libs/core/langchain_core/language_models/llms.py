@@ -11,55 +11,34 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 import yaml
-from pydantic import ConfigDict, Field, model_validator
-from tenacity import (
-    RetryCallState,
-    before_sleep_log,
-    retry,
-    retry_base,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-from typing_extensions import override
-
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForLLMRun,
-    BaseCallbackManager,
-    CallbackManager,
-    CallbackManagerForLLMRun,
-    Callbacks,
-)
+from langchain_core.callbacks import (AsyncCallbackManager,
+                                      AsyncCallbackManagerForLLMRun,
+                                      BaseCallbackManager, CallbackManager,
+                                      CallbackManagerForLLMRun, Callbacks)
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import (
-    BaseLanguageModel,
-    LangSmithParams,
-    LanguageModelInput,
-)
+from langchain_core.language_models.base import (BaseLanguageModel,
+                                                 LangSmithParams,
+                                                 LanguageModelInput)
 from langchain_core.load import dumpd
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    convert_to_messages,
-    get_buffer_string,
-)
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
-from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
+from langchain_core.messages import (AIMessage, BaseMessage,
+                                     convert_to_messages, get_buffer_string)
+from langchain_core.outputs import (Generation, GenerationChunk, LLMResult,
+                                    RunInfo)
+from langchain_core.prompt_values import (ChatPromptValue, PromptValue,
+                                          StringPromptValue)
+from langchain_core.runnables import (RunnableConfig, ensure_config,
+                                      get_config_list)
 from langchain_core.runnables.config import run_in_executor
+from pydantic import ConfigDict, Field, model_validator
+from tenacity import (RetryCallState, before_sleep_log, retry, retry_base,
+                      retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
+from typing_extensions import override
 
 if TYPE_CHECKING:
     import uuid

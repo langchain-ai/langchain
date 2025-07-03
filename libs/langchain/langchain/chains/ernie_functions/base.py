@@ -4,14 +4,10 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chains.ernie_functions.base import (
-        convert_python_function_to_ernie_function,
-        convert_to_ernie_function,
-        create_ernie_fn_chain,
-        create_ernie_fn_runnable,
-        create_structured_output_chain,
-        create_structured_output_runnable,
-        get_ernie_output_parser,
-    )
+        convert_python_function_to_ernie_function, convert_to_ernie_function,
+        create_ernie_fn_chain, create_ernie_fn_runnable,
+        create_structured_output_chain, create_structured_output_runnable,
+        get_ernie_output_parser)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

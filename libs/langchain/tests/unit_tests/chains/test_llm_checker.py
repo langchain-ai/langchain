@@ -3,15 +3,13 @@
 """Test LLMCheckerChain functionality."""
 
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.chains.llm_checker.base import LLMCheckerChain
-from langchain.chains.llm_checker.prompt import (
-    _CHECK_ASSERTIONS_TEMPLATE,
-    _CREATE_DRAFT_ANSWER_TEMPLATE,
-    _LIST_ASSERTIONS_TEMPLATE,
-    _REVISED_ANSWER_TEMPLATE,
-)
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.chains.llm_checker.prompt import (_CHECK_ASSERTIONS_TEMPLATE,
+                                                 _CREATE_DRAFT_ANSWER_TEMPLATE,
+                                                 _LIST_ASSERTIONS_TEMPLATE,
+                                                 _REVISED_ANSWER_TEMPLATE)
 
 
 @pytest.fixture

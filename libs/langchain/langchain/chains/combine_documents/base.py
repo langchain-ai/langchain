@@ -4,15 +4,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
-from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+from langchain_text_splitters import (RecursiveCharacterTextSplitter,
+                                      TextSplitter)
 from pydantic import BaseModel, Field
 
 from langchain.chains.base import Chain

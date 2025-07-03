@@ -26,8 +26,7 @@ class NomicEmbeddings(Embeddings):
         nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["remote"] = ...,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -38,8 +37,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["local", "dynamic"],
         device: Optional[str] = ...,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -50,8 +48,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: str,
         device: Optional[str] = ...,
-    ):
-        ...
+    ): ...
 
     def __init__(
         self,

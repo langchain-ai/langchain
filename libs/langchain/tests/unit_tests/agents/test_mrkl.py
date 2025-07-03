@@ -5,11 +5,11 @@ from langchain_core.agents import AgentAction
 from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import Tool
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def get_action_and_input(text: str) -> tuple[str, str]:

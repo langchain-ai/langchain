@@ -1,10 +1,8 @@
 """Standard LangChain interface tests"""
 
 from langchain_core.language_models import BaseChatModel
-from langchain_tests.unit_tests import (  # type: ignore[import-not-found]
-    ChatModelUnitTests,  # type: ignore[import-not-found]
-)
-
+from langchain_tests.unit_tests import \
+    ChatModelUnitTests  # type: ignore[import-not-found]; type: ignore[import-not-found]
 from langchain_xai import ChatXAI
 
 

@@ -5,14 +5,13 @@ import uuid
 from collections.abc import Sequence
 from typing import Any, Optional, cast
 
-from pydantic import Field
-from typing_extensions import override
-
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
 from langchain_core.indexing.base import DeleteResponse, DocumentIndex
+from pydantic import Field
+from typing_extensions import override
 
 
 @beta(message="Introduced in version 0.2.29. Underlying abstraction subject to change.")

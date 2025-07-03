@@ -15,14 +15,9 @@ from pydantic import ConfigDict, Field
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import (
-    COMPARISON_TEMPLATE,
-    COMPARISON_TEMPLATE_WITH_REFERENCE,
-    CRITERIA_INSTRUCTIONS,
-)
-from langchain.evaluation.criteria.eval_chain import (
-    CRITERIA_TYPE,
-    Criteria,
-)
+    COMPARISON_TEMPLATE, COMPARISON_TEMPLATE_WITH_REFERENCE,
+    CRITERIA_INSTRUCTIONS)
+from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE, Criteria
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.schema import RUN_KEY
 

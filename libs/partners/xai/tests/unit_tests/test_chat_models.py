@@ -1,18 +1,10 @@
 import json
 
 import pytest  # type: ignore[import-not-found]
-from langchain_core.messages import (
-    AIMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
-)
-from langchain_openai.chat_models.base import (
-    _convert_dict_to_message,
-    _convert_message_to_dict,
-)
-
+from langchain_core.messages import (AIMessage, FunctionMessage, HumanMessage,
+                                     SystemMessage, ToolMessage)
+from langchain_openai.chat_models.base import (_convert_dict_to_message,
+                                               _convert_message_to_dict)
 from langchain_xai import ChatXAI
 
 

@@ -1,6 +1,7 @@
 import pytest
 
-from langchain.retrievers.document_compressors.listwise_rerank import LLMListwiseRerank
+from langchain.retrievers.document_compressors.listwise_rerank import \
+    LLMListwiseRerank
 
 
 @pytest.mark.requires("langchain_openai")

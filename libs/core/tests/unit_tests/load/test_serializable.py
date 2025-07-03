@@ -1,9 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
-
 from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class NonBoolObj:
@@ -57,9 +56,8 @@ def test_simple_serialization_is_serializable() -> None:
 
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
-    from pydantic import SecretStr
-
     from langchain_core.load import Serializable
+    from pydantic import SecretStr
 
     class Foo(Serializable):
         bar: int

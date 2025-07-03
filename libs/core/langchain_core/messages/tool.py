@@ -4,11 +4,11 @@ import json
 from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
+from langchain_core.messages.base import (BaseMessage, BaseMessageChunk,
+                                          merge_content)
+from langchain_core.utils._merge import merge_dicts, merge_obj
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict, override
-
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
-from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
 class ToolOutputMixin:

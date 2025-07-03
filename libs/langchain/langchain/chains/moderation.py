@@ -2,10 +2,8 @@
 
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      CallbackManagerForChainRun)
 from langchain_core.utils import check_package_version, get_from_dict_or_env
 from pydantic import Field, model_validator
 

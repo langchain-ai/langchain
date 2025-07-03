@@ -2,7 +2,8 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 from langchain_core.messages import AIMessageChunk
-from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain_core.output_parsers.openai_functions import \
+    JsonOutputFunctionsParser
 
 GOOD_JSON = """```json
 {

@@ -6,27 +6,18 @@ import inspect
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Protocol,
-    TypedDict,
-    Union,
-    overload,
-)
+from typing import (TYPE_CHECKING, Any, Callable, NamedTuple, Optional,
+                    Protocol, TypedDict, Union, overload)
 from uuid import UUID, uuid4
 
-from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
+from langchain_core.utils.pydantic import (_IgnoreUnserializable,
+                                           is_basemodel_subclass)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from pydantic import BaseModel
-
     from langchain_core.runnables.base import Runnable as RunnableType
+    from pydantic import BaseModel
 
 
 class Stringifiable(Protocol):

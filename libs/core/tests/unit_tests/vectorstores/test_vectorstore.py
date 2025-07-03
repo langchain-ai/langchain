@@ -10,11 +10,10 @@ import uuid
 from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
-from typing_extensions import override
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

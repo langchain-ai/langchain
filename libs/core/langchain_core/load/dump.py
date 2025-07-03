@@ -3,9 +3,9 @@
 import json
 from typing import Any
 
+from langchain_core.load.serializable import (Serializable,
+                                              to_json_not_implemented)
 from pydantic import BaseModel
-
-from langchain_core.load.serializable import Serializable, to_json_not_implemented
 
 
 def default(obj: Any) -> Any:

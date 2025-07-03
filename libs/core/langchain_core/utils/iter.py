@@ -5,14 +5,7 @@ from collections.abc import Generator, Iterable, Iterator
 from contextlib import AbstractContextManager
 from itertools import islice
 from types import TracebackType
-from typing import (
-    Any,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, Generic, Optional, TypeVar, Union, overload
 
 from typing_extensions import Literal
 

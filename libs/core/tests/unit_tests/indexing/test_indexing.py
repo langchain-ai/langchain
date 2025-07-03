@@ -1,25 +1,19 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime, timezone
-from typing import (
-    Any,
-)
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
-from pytest_mock import MockerFixture
-
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
-from langchain_core.indexing.api import (
-    IndexingException,
-    _abatch,
-    _get_document_with_hash,
-)
+from langchain_core.indexing.api import (IndexingException, _abatch,
+                                         _get_document_with_hash)
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
+from pytest_mock import MockerFixture
 
 
 class ToyLoader(BaseLoader):

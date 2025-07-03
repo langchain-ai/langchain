@@ -3,25 +3,12 @@ from __future__ import annotations
 import warnings
 from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast, overload
 
-from langchain_core.language_models import (
-    BaseChatModel,
-    LanguageModelInput,
-    SimpleChatModel,
-)
-from langchain_core.language_models.chat_models import (
-    agenerate_from_stream,
-    generate_from_stream,
-)
+from langchain_core.language_models import (BaseChatModel, LanguageModelInput,
+                                            SimpleChatModel)
+from langchain_core.language_models.chat_models import (agenerate_from_stream,
+                                                        generate_from_stream)
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
@@ -584,9 +571,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                 queued_declarative_operations.append((name, args, kwargs))
                 return _ConfigurableModel(
                     default_config=dict(self._default_config),
-                    configurable_fields=list(self._configurable_fields)
-                    if isinstance(self._configurable_fields, list)
-                    else self._configurable_fields,
+                    configurable_fields=(
+                        list(self._configurable_fields)
+                        if isinstance(self._configurable_fields, list)
+                        else self._configurable_fields
+                    ),
                     config_prefix=self._config_prefix,
                     queued_declarative_operations=queued_declarative_operations,
                 )
@@ -646,9 +635,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
-            configurable_fields=list(self._configurable_fields)
-            if isinstance(self._configurable_fields, list)
-            else self._configurable_fields,
+            configurable_fields=(
+                list(self._configurable_fields)
+                if isinstance(self._configurable_fields, list)
+                else self._configurable_fields
+            ),
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )
@@ -656,10 +647,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @property
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
+        from langchain_core.prompt_values import (ChatPromptValueConcrete,
+                                                  StringPromptValue)
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes

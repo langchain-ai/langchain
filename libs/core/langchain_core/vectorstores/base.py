@@ -26,29 +26,19 @@ import math
 import warnings
 from abc import ABC, abstractmethod
 from itertools import cycle
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Optional,
-    TypeVar,
-)
-
-from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, TypeVar
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Iterable, Iterator, Sequence
 
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForRetrieverRun,
-        CallbackManagerForRetrieverRun,
-    )
+        AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun)
     from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)

@@ -8,13 +8,7 @@ The primary goal of these storages is to support implementation of caching.
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
-from typing import (
-    Any,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Generic, Optional, TypeVar, Union
 
 from langchain_core.exceptions import LangChainException
 from langchain_core.runnables import run_in_executor

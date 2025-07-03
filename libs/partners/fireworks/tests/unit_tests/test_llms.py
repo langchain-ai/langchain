@@ -2,10 +2,9 @@
 
 from typing import cast
 
+from langchain_fireworks import Fireworks
 from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
-
-from langchain_fireworks import Fireworks
 
 
 def test_fireworks_api_key_is_secret_string() -> None:

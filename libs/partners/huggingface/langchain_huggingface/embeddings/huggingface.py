@@ -3,12 +3,9 @@ from typing import Any, Optional
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..utils.import_utils import (
-    IMPORT_ERROR,
-    is_ipex_available,
-    is_optimum_intel_available,
-    is_optimum_intel_version,
-)
+from ..utils.import_utils import (IMPORT_ERROR, is_ipex_available,
+                                  is_optimum_intel_available,
+                                  is_optimum_intel_version)
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
@@ -84,7 +81,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                     "`optimum[ipex]`."
                 )
 
-            from optimum.intel import IPEXSentenceTransformer  # type: ignore[import]
+            from optimum.intel import \
+                IPEXSentenceTransformer  # type: ignore[import]
 
             model_cls = IPEXSentenceTransformer
 

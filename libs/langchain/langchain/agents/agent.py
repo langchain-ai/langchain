@@ -10,25 +10,16 @@ import time
 from abc import abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 
 import yaml
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-    AsyncCallbackManagerForToolRun,
-    BaseCallbackManager,
-    CallbackManagerForChainRun,
-    CallbackManagerForToolRun,
-    Callbacks,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForChainRun,
+                                      AsyncCallbackManagerForToolRun,
+                                      BaseCallbackManager,
+                                      CallbackManagerForChainRun,
+                                      CallbackManagerForToolRun, Callbacks)
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage

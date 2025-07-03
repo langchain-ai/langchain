@@ -6,31 +6,20 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cache
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-)
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict, override
+from typing import (TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar,
+                    Union)
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import Callbacks
-from langchain_core.messages import (
-    AnyMessage,
-    BaseMessage,
-    MessageLikeRepresentation,
-    get_buffer_string,
-)
+from langchain_core.messages import (AnyMessage, BaseMessage,
+                                     MessageLikeRepresentation,
+                                     get_buffer_string)
 from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing_extensions import TypeAlias, TypedDict, override
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
@@ -61,7 +50,8 @@ def get_tokenizer() -> Any:
     every time it is called.
     """
     try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+        from transformers import \
+            GPT2TokenizerFast  # type: ignore[import-not-found]
     except ImportError as e:
         msg = (
             "Could not import transformers python package. "
@@ -149,10 +139,8 @@ class BaseLanguageModel(
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
+        from langchain_core.prompt_values import (ChatPromptValueConcrete,
+                                                  StringPromptValue)
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes

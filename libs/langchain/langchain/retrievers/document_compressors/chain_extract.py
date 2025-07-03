@@ -14,9 +14,8 @@ from langchain_core.runnables import Runnable
 from pydantic import ConfigDict
 
 from langchain.chains.llm import LLMChain
-from langchain.retrievers.document_compressors.chain_extract_prompt import (
-    prompt_template,
-)
+from langchain.retrievers.document_compressors.chain_extract_prompt import \
+    prompt_template
 
 
 def default_get_input(query: str, doc: Document) -> dict[str, Any]:

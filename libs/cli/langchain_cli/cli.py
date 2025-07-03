@@ -1,14 +1,13 @@
 from typing import Optional
 
 import typer
-from typing_extensions import Annotated
-
 from langchain_cli._version import __version__
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.namespaces.migrate import main as migrate_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
+from typing_extensions import Annotated
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(

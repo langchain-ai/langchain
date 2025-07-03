@@ -2,13 +2,8 @@ import base64
 import re
 from typing import Union
 
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    FunctionMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import (AIMessage, BaseMessage, FunctionMessage,
+                                     HumanMessage, SystemMessage)
 from pydantic import BaseModel
 
 from .core import Invoker, Prompty, SimpleModel

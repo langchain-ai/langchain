@@ -12,46 +12,31 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.callbacks.base import (
-        AsyncCallbackHandler,
-        BaseCallbackHandler,
-        BaseCallbackManager,
-        CallbackManagerMixin,
-        Callbacks,
-        ChainManagerMixin,
-        LLMManagerMixin,
-        RetrieverManagerMixin,
-        RunManagerMixin,
-        ToolManagerMixin,
-    )
+    from langchain_core.callbacks.base import (AsyncCallbackHandler,
+                                               BaseCallbackHandler,
+                                               BaseCallbackManager,
+                                               CallbackManagerMixin, Callbacks,
+                                               ChainManagerMixin,
+                                               LLMManagerMixin,
+                                               RetrieverManagerMixin,
+                                               RunManagerMixin,
+                                               ToolManagerMixin)
     from langchain_core.callbacks.file import FileCallbackHandler
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManager,
-        AsyncCallbackManagerForChainGroup,
-        AsyncCallbackManagerForChainRun,
-        AsyncCallbackManagerForLLMRun,
-        AsyncCallbackManagerForRetrieverRun,
-        AsyncCallbackManagerForToolRun,
-        AsyncParentRunManager,
-        AsyncRunManager,
-        BaseRunManager,
-        CallbackManager,
-        CallbackManagerForChainGroup,
-        CallbackManagerForChainRun,
-        CallbackManagerForLLMRun,
-        CallbackManagerForRetrieverRun,
-        CallbackManagerForToolRun,
-        ParentRunManager,
-        RunManager,
-        adispatch_custom_event,
-        dispatch_custom_event,
-    )
+        AsyncCallbackManager, AsyncCallbackManagerForChainGroup,
+        AsyncCallbackManagerForChainRun, AsyncCallbackManagerForLLMRun,
+        AsyncCallbackManagerForRetrieverRun, AsyncCallbackManagerForToolRun,
+        AsyncParentRunManager, AsyncRunManager, BaseRunManager,
+        CallbackManager, CallbackManagerForChainGroup,
+        CallbackManagerForChainRun, CallbackManagerForLLMRun,
+        CallbackManagerForRetrieverRun, CallbackManagerForToolRun,
+        ParentRunManager, RunManager, adispatch_custom_event,
+        dispatch_custom_event)
     from langchain_core.callbacks.stdout import StdOutCallbackHandler
-    from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-    from langchain_core.callbacks.usage import (
-        UsageMetadataCallbackHandler,
-        get_usage_metadata_callback,
-    )
+    from langchain_core.callbacks.streaming_stdout import \
+        StreamingStdOutCallbackHandler
+    from langchain_core.callbacks.usage import (UsageMetadataCallbackHandler,
+                                                get_usage_metadata_callback)
 
 __all__ = (
     "AsyncCallbackHandler",

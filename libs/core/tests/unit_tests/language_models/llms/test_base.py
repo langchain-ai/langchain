@@ -2,24 +2,15 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional
 
 import pytest
-from typing_extensions import override
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models import (
-    LLM,
-    BaseLLM,
-    FakeListLLM,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
+from langchain_core.language_models import LLM, BaseLLM, FakeListLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.callbacks import (
-    BaseFakeCallbackHandler,
-    FakeAsyncCallbackHandler,
-    FakeCallbackHandler,
-)
+from tests.unit_tests.fake.callbacks import (BaseFakeCallbackHandler,
+                                             FakeAsyncCallbackHandler,
+                                             FakeCallbackHandler)
+from typing_extensions import override
 
 
 def test_batch() -> None:

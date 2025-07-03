@@ -1,17 +1,11 @@
 from typing import Any
 
-from langchain_core.callbacks import (
-    UsageMetadataCallbackHandler,
-    get_usage_metadata_callback,
-)
+from langchain_core.callbacks import (UsageMetadataCallbackHandler,
+                                      get_usage_metadata_callback)
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
-from langchain_core.messages.ai import (
-    InputTokenDetails,
-    OutputTokenDetails,
-    UsageMetadata,
-    add_usage,
-)
+from langchain_core.messages.ai import (InputTokenDetails, OutputTokenDetails,
+                                        UsageMetadata, add_usage)
 from langchain_core.outputs import ChatResult
 
 usage1 = UsageMetadata(

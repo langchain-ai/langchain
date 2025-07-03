@@ -10,23 +10,16 @@ import httpx
 import pytest
 import requests
 from anthropic import BadRequestError
+from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     SystemMessage, ToolMessage)
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
-
-from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
 MODEL_NAME = "claude-3-5-haiku-latest"

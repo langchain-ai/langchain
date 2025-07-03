@@ -2,7 +2,6 @@ import os
 
 import pytest
 from langchain_core.outputs import GenerationChunk
-
 from langchain_openai import OpenAI
 from langchain_openai.llms.base import _stream_response_to_generation_chunk
 

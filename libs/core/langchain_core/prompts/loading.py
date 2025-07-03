@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Callable, Optional, Union
 
 import yaml
-
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate

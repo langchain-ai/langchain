@@ -4,12 +4,7 @@ from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    PrivateAttr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
 

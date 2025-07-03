@@ -3,14 +3,11 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, Field
-
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers.json import (
-    SimpleJsonOutputParser,
-)
+from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
+from pydantic import BaseModel, Field
 from tests.unit_tests.pydantic_utils import _schema
 
 GOOD_JSON = """```json
@@ -614,6 +611,6 @@ def test_unicode_handling() -> None:
 
     parser = SimpleJsonOutputParser(pydantic_object=Sample)
     format_instructions = parser.get_format_instructions()
-    assert "科学文章的标题" in format_instructions, (
-        "Unicode characters should not be escaped"
-    )
+    assert (
+        "科学文章的标题" in format_instructions
+    ), "Unicode characters should not be escaped"

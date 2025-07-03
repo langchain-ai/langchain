@@ -6,18 +6,12 @@ from typing import Annotated, Any, Literal, Optional, cast
 
 import openai
 import pytest
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    MessageLikeRepresentation,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     MessageLikeRepresentation)
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 from typing_extensions import TypedDict
-
-from langchain_openai import ChatOpenAI
 
 MODEL_NAME = "gpt-4o-mini"
 

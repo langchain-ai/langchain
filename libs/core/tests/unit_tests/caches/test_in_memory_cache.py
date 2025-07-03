@@ -1,5 +1,4 @@
 import pytest
-
 from langchain_core.caches import RETURN_VAL_TYPE, InMemoryCache
 from langchain_core.outputs import Generation
 

@@ -9,10 +9,9 @@ from collections import deque
 from io import StringIO
 from typing import TYPE_CHECKING, TypeVar, Union
 
-from typing_extensions import override
-
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator

@@ -2,41 +2,33 @@ from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
-from openai.types.responses import (
-    ResponseCompletedEvent,
-    ResponseContentPartAddedEvent,
-    ResponseContentPartDoneEvent,
-    ResponseCreatedEvent,
-    ResponseInProgressEvent,
-    ResponseOutputItemAddedEvent,
-    ResponseOutputItemDoneEvent,
-    ResponseOutputMessage,
-    ResponseReasoningItem,
-    ResponseReasoningSummaryPartAddedEvent,
-    ResponseReasoningSummaryPartDoneEvent,
-    ResponseReasoningSummaryTextDeltaEvent,
-    ResponseReasoningSummaryTextDoneEvent,
-    ResponseTextConfig,
-    ResponseTextDeltaEvent,
-    ResponseTextDoneEvent,
-)
+from langchain_openai import ChatOpenAI
+from openai.types.responses import (ResponseCompletedEvent,
+                                    ResponseContentPartAddedEvent,
+                                    ResponseContentPartDoneEvent,
+                                    ResponseCreatedEvent,
+                                    ResponseInProgressEvent,
+                                    ResponseOutputItemAddedEvent,
+                                    ResponseOutputItemDoneEvent,
+                                    ResponseOutputMessage,
+                                    ResponseReasoningItem,
+                                    ResponseReasoningSummaryPartAddedEvent,
+                                    ResponseReasoningSummaryPartDoneEvent,
+                                    ResponseReasoningSummaryTextDeltaEvent,
+                                    ResponseReasoningSummaryTextDoneEvent,
+                                    ResponseTextConfig, ResponseTextDeltaEvent,
+                                    ResponseTextDoneEvent)
 from openai.types.responses.response import Response, ResponseUsage
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
-from openai.types.responses.response_reasoning_summary_part_added_event import (
-    Part as PartAdded,
-)
-from openai.types.responses.response_reasoning_summary_part_done_event import (
-    Part as PartDone,
-)
-from openai.types.responses.response_usage import (
-    InputTokensDetails,
-    OutputTokensDetails,
-)
+from openai.types.responses.response_reasoning_summary_part_added_event import \
+    Part as PartAdded
+from openai.types.responses.response_reasoning_summary_part_done_event import \
+    Part as PartDone
+from openai.types.responses.response_usage import (InputTokensDetails,
+                                                   OutputTokensDetails)
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
-
-from langchain_openai import ChatOpenAI
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
 responses_stream = [

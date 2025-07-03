@@ -4,11 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chains.graph_qa.gremlin import (
-        GRAPHDB_SPARQL_FIX_TEMPLATE,
-        INTERMEDIATE_STEPS_KEY,
-        GremlinQAChain,
-        extract_gremlin,
-    )
+        GRAPHDB_SPARQL_FIX_TEMPLATE, INTERMEDIATE_STEPS_KEY, GremlinQAChain,
+        extract_gremlin)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

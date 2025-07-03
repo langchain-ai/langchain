@@ -5,12 +5,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, TypedDict
 
 from git import Repo
-
-from langchain_cli.constants import (
-    DEFAULT_GIT_REF,
-    DEFAULT_GIT_REPO,
-    DEFAULT_GIT_SUBDIRECTORY,
-)
+from langchain_cli.constants import (DEFAULT_GIT_REF, DEFAULT_GIT_REPO,
+                                     DEFAULT_GIT_SUBDIRECTORY)
 
 
 class DependencySource(TypedDict):

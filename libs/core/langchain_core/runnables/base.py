@@ -9,98 +9,57 @@ import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
-from collections.abc import (
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
-    Coroutine,
-    Iterator,
-    Mapping,
-    Sequence,
-)
+from collections.abc import (AsyncGenerator, AsyncIterator, Awaitable,
+                             Coroutine, Iterator, Mapping, Sequence)
 from concurrent.futures import FIRST_COMPLETED, wait
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
 from types import GenericAlias
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
-    cast,
-    get_type_hints,
-    overload,
-)
-
-from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args, override
+from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, Protocol,
+                    TypeVar, Union, cast, get_type_hints, overload)
 
 from langchain_core._api import beta_decorator
-from langchain_core.load.serializable import (
-    Serializable,
-    SerializedConstructor,
-    SerializedNotImplemented,
-)
+from langchain_core.load.serializable import (Serializable,
+                                              SerializedConstructor,
+                                              SerializedNotImplemented)
 from langchain_core.runnables.config import (
-    RunnableConfig,
-    acall_func_with_variable_args,
-    call_func_with_variable_args,
-    ensure_config,
-    get_async_callback_manager_for_config,
-    get_callback_manager_for_config,
-    get_config_list,
-    get_executor_for_config,
-    merge_configs,
-    patch_config,
-    run_in_executor,
-    set_config_context,
-)
+    RunnableConfig, acall_func_with_variable_args,
+    call_func_with_variable_args, ensure_config,
+    get_async_callback_manager_for_config, get_callback_manager_for_config,
+    get_config_list, get_executor_for_config, merge_configs, patch_config,
+    run_in_executor, set_config_context)
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.utils import (
-    AddableDict,
-    AnyConfigurableField,
-    ConfigurableField,
-    ConfigurableFieldSpec,
-    Input,
-    Output,
-    accepts_config,
-    accepts_run_manager,
-    coro_with_context,
-    gated_coro,
-    gather_with_concurrency,
-    get_function_first_arg_dict_keys,
-    get_function_nonlocals,
-    get_lambda_source,
-    get_unique_config_specs,
-    indent_lines_after_first,
-    is_async_callable,
-    is_async_generator,
-)
+from langchain_core.runnables.utils import (AddableDict, AnyConfigurableField,
+                                            ConfigurableField,
+                                            ConfigurableFieldSpec, Input,
+                                            Output, accepts_config,
+                                            accepts_run_manager,
+                                            coro_with_context, gated_coro,
+                                            gather_with_concurrency,
+                                            get_function_first_arg_dict_keys,
+                                            get_function_nonlocals,
+                                            get_lambda_source,
+                                            get_unique_config_specs,
+                                            indent_lines_after_first,
+                                            is_async_callable,
+                                            is_async_generator)
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
+from pydantic import BaseModel, ConfigDict, Field, RootModel
+from typing_extensions import Literal, get_args, override
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForChainRun,
-        CallbackManagerForChainRun,
-    )
+        AsyncCallbackManagerForChainRun, CallbackManagerForChainRun)
     from langchain_core.prompts.base import BasePromptTemplate
-    from langchain_core.runnables.fallbacks import (
-        RunnableWithFallbacks as RunnableWithFallbacksT,
-    )
+    from langchain_core.runnables.fallbacks import \
+        RunnableWithFallbacks as RunnableWithFallbacksT
     from langchain_core.runnables.retry import ExponentialJitterParams
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
@@ -984,9 +943,11 @@ class Runnable(Generic[Input, Output], ABC):
             return (i, out)
 
         coros = [
-            gated_coro(semaphore, ainvoke_task(i, input_, config))
-            if semaphore
-            else ainvoke_task(i, input_, config)
+            (
+                gated_coro(semaphore, ainvoke_task(i, input_, config))
+                if semaphore
+                else ainvoke_task(i, input_, config)
+            )
             for i, (input_, config) in enumerate(zip(inputs, configs))
         ]
 
@@ -1109,9 +1070,7 @@ class Runnable(Generic[Input, Output], ABC):
             A RunLogPatch or RunLog object.
         """
         from langchain_core.tracers.log_stream import (
-            LogStreamCallbackHandler,
-            _astream_log_implementation,
-        )
+            LogStreamCallbackHandler, _astream_log_implementation)
 
         stream = LogStreamCallbackHandler(
             auto_close=False,
@@ -1365,8 +1324,7 @@ class Runnable(Generic[Input, Output], ABC):
         """  # noqa: E501
         from langchain_core.tracers.event_stream import (
             _astream_events_implementation_v1,
-            _astream_events_implementation_v2,
-        )
+            _astream_events_implementation_v2)
 
         if version == "v2":
             event_stream = _astream_events_implementation_v2(
@@ -1706,7 +1664,8 @@ class Runnable(Generic[Input, Output], ABC):
             on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
         """
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+        from langchain_core.tracers.root_listeners import \
+            AsyncRootListenersTracer
 
         return RunnableBinding(
             bound=self,
@@ -2524,7 +2483,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                 ).invoke("tell me something about chess").content
             )
         """
-        from langchain_core.runnables.configurable import RunnableConfigurableFields
+        from langchain_core.runnables.configurable import \
+            RunnableConfigurableFields
 
         model_fields = type(self).model_fields
         for key in kwargs:
@@ -2584,9 +2544,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                 ).invoke("which organization created you?").content
             )
         """
-        from langchain_core.runnables.configurable import (
-            RunnableConfigurableAlternatives,
-        )
+        from langchain_core.runnables.configurable import \
+            RunnableConfigurableAlternatives
 
         return RunnableConfigurableAlternatives(
             which=which,
@@ -2600,7 +2559,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 def _seq_input_schema(
     steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    from langchain_core.runnables.passthrough import (RunnableAssign,
+                                                      RunnablePick)
 
     first = steps[0]
     if len(steps) == 1:
@@ -2626,7 +2586,8 @@ def _seq_input_schema(
 def _seq_output_schema(
     steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    from langchain_core.runnables.passthrough import (RunnableAssign,
+                                                      RunnablePick)
 
     last = steps[-1]
     if len(steps) == 1:
@@ -2875,9 +2836,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             The config specs of the Runnable.
         """
         from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            _key_from_id,
-        )
+            CONTEXT_CONFIG_PREFIX, _key_from_id)
 
         # get all specs
         all_specs = [

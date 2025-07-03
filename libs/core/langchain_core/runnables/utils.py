@@ -11,30 +11,16 @@ from contextvars import Context
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
-)
-
-from typing_extensions import TypeGuard, override
+from typing import (TYPE_CHECKING, Any, Callable, NamedTuple, Optional,
+                    Protocol, TypeVar, Union)
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401
+from typing_extensions import TypeGuard, override
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterable,
-        AsyncIterator,
-        Awaitable,
-        Coroutine,
-        Iterable,
-    )
+    from collections.abc import (AsyncIterable, AsyncIterator, Awaitable,
+                                 Coroutine, Iterable)
 
     from langchain_core.runnables.schema import StreamEvent
 

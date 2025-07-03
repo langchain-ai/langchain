@@ -1,10 +1,7 @@
 import pytest
-from langchain_tests.integration_tests.base_store import (
-    BaseStoreAsyncTests,
-    BaseStoreSyncTests,
-)
-
 from langchain_core.stores import InMemoryStore
+from langchain_tests.integration_tests.base_store import (BaseStoreAsyncTests,
+                                                          BaseStoreSyncTests)
 
 
 # Check against standard tests

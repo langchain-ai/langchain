@@ -1,7 +1,6 @@
 """Test OllamaLLM llm."""
 
 from langchain_core.runnables import RunnableConfig
-
 from langchain_ollama.llms import OllamaLLM
 
 MODEL_NAME = "llama3.1"

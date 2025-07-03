@@ -1,9 +1,7 @@
 from typing import Any
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForRetrieverRun,
+                                      CallbackManagerForRetrieverRun)
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from pydantic import ConfigDict

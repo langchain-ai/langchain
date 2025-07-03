@@ -2,8 +2,6 @@ from functools import partial
 from inspect import isclass
 from typing import Any, Union, cast
 
-from pydantic import BaseModel
-
 from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
@@ -11,6 +9,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel
 
 
 def _fake_runnable(

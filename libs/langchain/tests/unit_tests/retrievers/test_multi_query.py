@@ -1,7 +1,8 @@
 import pytest as pytest
 from langchain_core.documents import Document
 
-from langchain.retrievers.multi_query import LineListOutputParser, _unique_documents
+from langchain.retrievers.multi_query import (LineListOutputParser,
+                                              _unique_documents)
 
 
 @pytest.mark.parametrize(

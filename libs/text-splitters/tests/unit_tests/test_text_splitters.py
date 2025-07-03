@@ -7,26 +7,17 @@ from typing import Any, Callable, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
-
-from langchain_text_splitters import (
-    Language,
-    RecursiveCharacterTextSplitter,
-    TextSplitter,
-    Tokenizer,
-)
+from langchain_text_splitters import (Language, RecursiveCharacterTextSplitter,
+                                      TextSplitter, Tokenizer)
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.html import (
-    HTMLHeaderTextSplitter,
-    HTMLSectionSplitter,
-    HTMLSemanticPreservingSplitter,
-)
+from langchain_text_splitters.html import (HTMLHeaderTextSplitter,
+                                           HTMLSectionSplitter,
+                                           HTMLSemanticPreservingSplitter)
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.markdown import (
-    ExperimentalMarkdownSyntaxTextSplitter,
-    MarkdownHeaderTextSplitter,
-)
+    ExperimentalMarkdownSyntaxTextSplitter, MarkdownHeaderTextSplitter)
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
 FAKE_PYTHON_TEXT = """
@@ -2223,9 +2214,9 @@ def test_haskell_code_splitter() -> None:
 
 @pytest.fixture
 @pytest.mark.requires("bs4")
-def html_header_splitter_splitter_factory() -> Callable[
-    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
-]:
+def html_header_splitter_splitter_factory() -> (
+    Callable[[List[Tuple[str, str]]], HTMLHeaderTextSplitter]
+):
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.

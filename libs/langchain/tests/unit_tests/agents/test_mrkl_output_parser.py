@@ -4,9 +4,7 @@ from langchain_core.exceptions import OutputParserException
 
 from langchain.agents.mrkl.output_parser import (
     MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
-    MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
-    MRKLOutputParser,
-)
+    MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE, MRKLOutputParser)
 
 mrkl_output_parser = MRKLOutputParser()
 

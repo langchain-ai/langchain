@@ -1,9 +1,9 @@
 """Standard LangChain interface tests"""
 
 from langchain_core.embeddings import Embeddings
-from langchain_tests.integration_tests.embeddings import EmbeddingsIntegrationTests
-
 from langchain_openai import OpenAIEmbeddings
+from langchain_tests.integration_tests.embeddings import \
+    EmbeddingsIntegrationTests
 
 
 class TestOpenAIStandard(EmbeddingsIntegrationTests):

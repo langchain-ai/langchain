@@ -14,29 +14,17 @@ from langchain_core.output_parsers.json import parse_and_check_json_markdown
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    FilterDirective,
-    Operation,
-    Operator,
-    StructuredQuery,
-)
+from langchain_core.structured_query import (Comparator, Comparison,
+                                             FilterDirective, Operation,
+                                             Operator, StructuredQuery)
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
 from langchain.chains.query_constructor.prompt import (
-    DEFAULT_EXAMPLES,
-    DEFAULT_PREFIX,
-    DEFAULT_SCHEMA_PROMPT,
-    DEFAULT_SUFFIX,
-    EXAMPLE_PROMPT,
-    EXAMPLES_WITH_LIMIT,
-    PREFIX_WITH_DATA_SOURCE,
-    SCHEMA_WITH_LIMIT_PROMPT,
-    SUFFIX_WITHOUT_DATA_SOURCE,
-    USER_SPECIFIED_EXAMPLE_PROMPT,
-)
+    DEFAULT_EXAMPLES, DEFAULT_PREFIX, DEFAULT_SCHEMA_PROMPT, DEFAULT_SUFFIX,
+    EXAMPLE_PROMPT, EXAMPLES_WITH_LIMIT, PREFIX_WITH_DATA_SOURCE,
+    SCHEMA_WITH_LIMIT_PROMPT, SUFFIX_WITHOUT_DATA_SOURCE,
+    USER_SPECIFIED_EXAMPLE_PROMPT)
 from langchain.chains.query_constructor.schema import AttributeInfo
 
 

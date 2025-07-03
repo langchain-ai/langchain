@@ -5,9 +5,7 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union
 
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+    AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.retrievers import BaseRetriever
@@ -16,7 +14,8 @@ from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
 
-from langchain.chains.query_constructor.base import load_query_constructor_runnable
+from langchain.chains.query_constructor.base import \
+    load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
 
 logger = logging.getLogger(__name__)
@@ -33,68 +32,61 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             " Please install it using `pip install langchain-community`."
         )
 
-    from langchain_community.query_constructors.astradb import AstraDBTranslator
+    from langchain_community.query_constructors.astradb import \
+        AstraDBTranslator
     from langchain_community.query_constructors.chroma import ChromaTranslator
-    from langchain_community.query_constructors.dashvector import DashvectorTranslator
-    from langchain_community.query_constructors.databricks_vector_search import (
-        DatabricksVectorSearchTranslator,
-    )
-    from langchain_community.query_constructors.deeplake import DeepLakeTranslator
+    from langchain_community.query_constructors.dashvector import \
+        DashvectorTranslator
+    from langchain_community.query_constructors.databricks_vector_search import \
+        DatabricksVectorSearchTranslator
+    from langchain_community.query_constructors.deeplake import \
+        DeepLakeTranslator
     from langchain_community.query_constructors.dingo import DingoDBTranslator
-    from langchain_community.query_constructors.elasticsearch import (
-        ElasticsearchTranslator,
-    )
+    from langchain_community.query_constructors.elasticsearch import \
+        ElasticsearchTranslator
     from langchain_community.query_constructors.milvus import MilvusTranslator
-    from langchain_community.query_constructors.mongodb_atlas import (
-        MongoDBAtlasTranslator,
-    )
-    from langchain_community.query_constructors.myscale import MyScaleTranslator
+    from langchain_community.query_constructors.mongodb_atlas import \
+        MongoDBAtlasTranslator
+    from langchain_community.query_constructors.myscale import \
+        MyScaleTranslator
     from langchain_community.query_constructors.neo4j import Neo4jTranslator
-    from langchain_community.query_constructors.opensearch import OpenSearchTranslator
-    from langchain_community.query_constructors.pgvector import PGVectorTranslator
-    from langchain_community.query_constructors.pinecone import PineconeTranslator
+    from langchain_community.query_constructors.opensearch import \
+        OpenSearchTranslator
+    from langchain_community.query_constructors.pgvector import \
+        PGVectorTranslator
+    from langchain_community.query_constructors.pinecone import \
+        PineconeTranslator
     from langchain_community.query_constructors.qdrant import QdrantTranslator
     from langchain_community.query_constructors.redis import RedisTranslator
-    from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
-    from langchain_community.query_constructors.tencentvectordb import (
-        TencentVectorDBTranslator,
-    )
-    from langchain_community.query_constructors.timescalevector import (
-        TimescaleVectorTranslator,
-    )
-    from langchain_community.query_constructors.vectara import VectaraTranslator
-    from langchain_community.query_constructors.weaviate import WeaviateTranslator
-    from langchain_community.vectorstores import (
-        AstraDB,
-        DashVector,
-        DatabricksVectorSearch,
-        DeepLake,
-        Dingo,
-        Milvus,
-        MyScale,
-        Neo4jVector,
-        OpenSearchVectorSearch,
-        PGVector,
-        Qdrant,
-        Redis,
-        SupabaseVectorStore,
-        TencentVectorDB,
-        TimescaleVector,
-        Vectara,
-        Weaviate,
-    )
-    from langchain_community.vectorstores import (
-        Chroma as CommunityChroma,
-    )
-    from langchain_community.vectorstores import (
-        ElasticsearchStore as ElasticsearchStoreCommunity,
-    )
-    from langchain_community.vectorstores import (
-        MongoDBAtlasVectorSearch as CommunityMongoDBAtlasVectorSearch,
-    )
-    from langchain_community.vectorstores import (
-        Pinecone as CommunityPinecone,
-    )
+    from langchain_community.query_constructors.supabase import \
+        SupabaseVectorTranslator
+    from langchain_community.query_constructors.tencentvectordb import \
+        TencentVectorDBTranslator
+    from langchain_community.query_constructors.timescalevector import \
+        TimescaleVectorTranslator
+    from langchain_community.query_constructors.vectara import \
+        VectaraTranslator
+    from langchain_community.query_constructors.weaviate import \
+        WeaviateTranslator
+    from langchain_community.vectorstores import AstraDB
+    from langchain_community.vectorstores import Chroma as CommunityChroma
+    from langchain_community.vectorstores import (DashVector,
+                                                  DatabricksVectorSearch,
+                                                  DeepLake, Dingo)
+    from langchain_community.vectorstores import \
+        ElasticsearchStore as ElasticsearchStoreCommunity
+    from langchain_community.vectorstores import Milvus
+    from langchain_community.vectorstores import \
+        MongoDBAtlasVectorSearch as CommunityMongoDBAtlasVectorSearch
+    from langchain_community.vectorstores import (MyScale, Neo4jVector,
+                                                  OpenSearchVectorSearch,
+                                                  PGVector)
+    from langchain_community.vectorstores import Pinecone as CommunityPinecone
+    from langchain_community.vectorstores import (Qdrant, Redis,
+                                                  SupabaseVectorStore,
+                                                  TencentVectorDB,
+                                                  TimescaleVector, Vectara,
+                                                  Weaviate)
 
     BUILTIN_TRANSLATORS: dict[type[VectorStore], type[Visitor]] = {
         AstraDB: AstraDBTranslator,
@@ -189,7 +181,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
         try:
             from langchain_postgres import PGVector
-            from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
+            from langchain_postgres import \
+                PGVectorTranslator as NewPGVectorTranslator
         except ImportError:
             pass
         else:
@@ -206,7 +199,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
         try:
             # Added in langchain-community==0.2.11
-            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.query_constructors.hanavector import \
+                HanaTranslator
             from langchain_community.vectorstores import HanaDB
         except ImportError:
             pass

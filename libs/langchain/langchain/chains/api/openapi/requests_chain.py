@@ -4,10 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chains.openapi.requests_chain import (
-        REQUEST_TEMPLATE,
-        APIRequesterChain,
-        APIRequesterOutputParser,
-    )
+        REQUEST_TEMPLATE, APIRequesterChain, APIRequesterOutputParser)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

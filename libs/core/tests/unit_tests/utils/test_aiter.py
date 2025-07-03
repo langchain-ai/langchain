@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator
 
 import pytest
-
 from langchain_core.utils.aiter import abatch_iterate
 
 

@@ -21,24 +21,11 @@ from collections.abc import AsyncGenerator, Generator, Sequence
 from typing import Any, Optional, Union
 
 from langchain_core.indexing import RecordManager
-from sqlalchemy import (
-    Column,
-    Float,
-    Index,
-    String,
-    UniqueConstraint,
-    and_,
-    create_engine,
-    delete,
-    select,
-    text,
-)
+from sqlalchemy import (Column, Float, Index, String, UniqueConstraint, and_,
+                        create_engine, delete, select, text)
 from sqlalchemy.engine import URL, Engine
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    create_async_engine)
 from sqlalchemy.orm import Query, Session, declarative_base, sessionmaker
 
 try:
@@ -288,7 +275,8 @@ class SQLRecordManager(RecordManager):
 
         with self._make_session() as session:
             if self.dialect == "sqlite":
-                from sqlalchemy.dialects.sqlite import Insert as SqliteInsertType
+                from sqlalchemy.dialects.sqlite import \
+                    Insert as SqliteInsertType
                 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
@@ -304,7 +292,8 @@ class SQLRecordManager(RecordManager):
                     ),
                 )
             elif self.dialect == "postgresql":
-                from sqlalchemy.dialects.postgresql import Insert as PgInsertType
+                from sqlalchemy.dialects.postgresql import \
+                    Insert as PgInsertType
                 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
                 # Note: uses postgresql insert to make on_conflict_do_update work.
@@ -367,7 +356,8 @@ class SQLRecordManager(RecordManager):
 
         async with self._amake_session() as session:
             if self.dialect == "sqlite":
-                from sqlalchemy.dialects.sqlite import Insert as SqliteInsertType
+                from sqlalchemy.dialects.sqlite import \
+                    Insert as SqliteInsertType
                 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
@@ -383,7 +373,8 @@ class SQLRecordManager(RecordManager):
                     ),
                 )
             elif self.dialect == "postgresql":
-                from sqlalchemy.dialects.postgresql import Insert as PgInsertType
+                from sqlalchemy.dialects.postgresql import \
+                    Insert as PgInsertType
                 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.

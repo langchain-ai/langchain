@@ -4,11 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.utils.ernie_functions import (
-        FunctionDescription,
-        ToolDescription,
-        convert_pydantic_to_ernie_function,
-        convert_pydantic_to_ernie_tool,
-    )
+        FunctionDescription, ToolDescription,
+        convert_pydantic_to_ernie_function, convert_pydantic_to_ernie_tool)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

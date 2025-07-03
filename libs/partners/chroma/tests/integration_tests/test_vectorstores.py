@@ -4,9 +4,7 @@ import os.path
 import tempfile
 import uuid
 from collections.abc import Generator
-from typing import (
-    cast,
-)
+from typing import cast
 
 import chromadb
 import pytest  # type: ignore[import-not-found]
@@ -14,14 +12,11 @@ import requests
 from chromadb.api.client import SharedSystemClient
 from chromadb.api.rust import RustBindingsAPI
 from chromadb.api.types import Embeddable
+from langchain_chroma.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
-
-from langchain_chroma.vectorstores import Chroma
-from tests.integration_tests.fake_embeddings import (
-    ConsistentFakeEmbeddings,
-    FakeEmbeddings,
-)
+from tests.integration_tests.fake_embeddings import (ConsistentFakeEmbeddings,
+                                                     FakeEmbeddings)
 
 
 class MyEmbeddingFunction:

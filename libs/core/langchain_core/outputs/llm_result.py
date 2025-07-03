@@ -5,11 +5,11 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Literal, Optional, Union
 
-from pydantic import BaseModel
-
-from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.chat_generation import (ChatGeneration,
+                                                    ChatGenerationChunk)
 from langchain_core.outputs.generation import Generation, GenerationChunk
 from langchain_core.outputs.run_info import RunInfo
+from pydantic import BaseModel
 
 
 class LLMResult(BaseModel):

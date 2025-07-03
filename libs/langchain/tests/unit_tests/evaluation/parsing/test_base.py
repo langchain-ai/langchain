@@ -2,10 +2,8 @@ import random
 
 import pytest
 
-from langchain.evaluation.parsing.base import (
-    JsonEqualityEvaluator,
-    JsonValidityEvaluator,
-)
+from langchain.evaluation.parsing.base import (JsonEqualityEvaluator,
+                                               JsonValidityEvaluator)
 
 
 @pytest.fixture

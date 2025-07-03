@@ -27,10 +27,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, Optional
 
-from typing_extensions import override
-
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor
+from typing_extensions import override
 
 RETURN_VAL_TYPE = Sequence[Generation]
 

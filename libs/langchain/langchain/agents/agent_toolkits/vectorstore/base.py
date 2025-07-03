@@ -7,11 +7,10 @@ from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX, ROUTER_PREFIX
+from langchain.agents.agent_toolkits.vectorstore.prompt import (PREFIX,
+                                                                ROUTER_PREFIX)
 from langchain.agents.agent_toolkits.vectorstore.toolkit import (
-    VectorStoreRouterToolkit,
-    VectorStoreToolkit,
-)
+    VectorStoreRouterToolkit, VectorStoreToolkit)
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.chains.llm import LLMChain
 

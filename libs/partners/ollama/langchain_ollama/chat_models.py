@@ -3,51 +3,31 @@
 import json
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Final,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Final, Literal, Optional, Union, cast
 from uuid import uuid4
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolCall,
-    ToolMessage,
-    is_data_content_block,
-)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        LangSmithParams)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, ChatMessage,
+                                     HumanMessage, SystemMessage, ToolCall,
+                                     ToolMessage, is_data_content_block)
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
-from langchain_core.output_parsers import (
-    JsonOutputKeyToolsParser,
-    JsonOutputParser,
-    PydanticOutputParser,
-    PydanticToolsParser,
-)
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.output_parsers import (JsonOutputKeyToolsParser,
+                                           JsonOutputParser,
+                                           PydanticOutputParser,
+                                           PydanticToolsParser)
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import (
-    convert_to_json_schema,
-    convert_to_openai_tool,
-)
+from langchain_core.utils.function_calling import (convert_to_json_schema,
+                                                   convert_to_openai_tool)
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
 from pydantic import BaseModel, PrivateAttr, model_validator

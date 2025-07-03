@@ -5,7 +5,8 @@ from typing import Any
 import pandas as pd
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
+from langchain.output_parsers.pandas_dataframe import \
+    PandasDataFrameOutputParser
 
 df = pd.DataFrame(
     {

@@ -2,7 +2,6 @@ import time
 
 import pytest
 from blockbuster import BlockBuster
-
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter

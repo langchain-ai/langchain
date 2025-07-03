@@ -1,7 +1,6 @@
 """Security tests for HTML splitters to prevent XXE attacks."""
 
 import pytest
-
 from langchain_text_splitters.html import HTMLSectionSplitter
 
 

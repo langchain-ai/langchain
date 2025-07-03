@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.agent_toolkits.azure_cognitive_services import (
-        AzureCognitiveServicesToolkit,
-    )
+    from langchain_community.agent_toolkits.azure_cognitive_services import \
+        AzureCognitiveServicesToolkit
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

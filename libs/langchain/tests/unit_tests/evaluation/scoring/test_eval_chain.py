@@ -3,13 +3,11 @@
 import re
 
 import pytest
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 from langchain.evaluation.scoring.eval_chain import (
-    LabeledScoreStringEvalChain,
-    ScoreStringEvalChain,
-    ScoreStringResultOutputParser,
-)
-from tests.unit_tests.llms.fake_llm import FakeLLM
+    LabeledScoreStringEvalChain, ScoreStringEvalChain,
+    ScoreStringResultOutputParser)
 
 
 def test_PairwiseStringResultOutputParser_parse() -> None:

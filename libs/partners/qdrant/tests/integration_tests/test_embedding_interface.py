@@ -3,7 +3,6 @@ from typing import Callable, Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.embeddings import Embeddings
-
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import ConsistentFakeEmbeddings
 

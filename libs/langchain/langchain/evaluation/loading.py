@@ -6,35 +6,30 @@ from typing import Any, Optional, Union
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain.chains.base import Chain
-from langchain.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
+from langchain.evaluation.agents.trajectory_eval_chain import \
+    TrajectoryEvalChain
 from langchain.evaluation.comparison import PairwiseStringEvalChain
-from langchain.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
-from langchain.evaluation.criteria.eval_chain import (
-    CriteriaEvalChain,
-    LabeledCriteriaEvalChain,
-)
+from langchain.evaluation.comparison.eval_chain import \
+    LabeledPairwiseStringEvalChain
+from langchain.evaluation.criteria.eval_chain import (CriteriaEvalChain,
+                                                      LabeledCriteriaEvalChain)
 from langchain.evaluation.embedding_distance.base import (
-    EmbeddingDistanceEvalChain,
-    PairwiseEmbeddingDistanceEvalChain,
-)
+    EmbeddingDistanceEvalChain, PairwiseEmbeddingDistanceEvalChain)
 from langchain.evaluation.exact_match.base import ExactMatchStringEvaluator
-from langchain.evaluation.parsing.base import (
-    JsonEqualityEvaluator,
-    JsonValidityEvaluator,
-)
-from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+from langchain.evaluation.parsing.base import (JsonEqualityEvaluator,
+                                               JsonValidityEvaluator)
+from langchain.evaluation.parsing.json_distance import \
+    JsonEditDistanceEvaluator
 from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
-from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.qa import (ContextQAEvalChain, CotQAEvalChain,
+                                     QAEvalChain)
 from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
-from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
+from langchain.evaluation.schema import (EvaluatorType, LLMEvalChain,
+                                         StringEvaluator)
 from langchain.evaluation.scoring.eval_chain import (
-    LabeledScoreStringEvalChain,
-    ScoreStringEvalChain,
-)
+    LabeledScoreStringEvalChain, ScoreStringEvalChain)
 from langchain.evaluation.string_distance.base import (
-    PairwiseStringDistanceEvalChain,
-    StringDistanceEvalChain,
-)
+    PairwiseStringDistanceEvalChain, StringDistanceEvalChain)
 
 
 def load_dataset(uri: str) -> list[dict]:
@@ -136,9 +131,8 @@ def load_evaluator(
                 from langchain_openai import ChatOpenAI
             except ImportError:
                 try:
-                    from langchain_community.chat_models.openai import (  # type: ignore[no-redef]
-                        ChatOpenAI,
-                    )
+                    from langchain_community.chat_models.openai import \
+                        ChatOpenAI  # type: ignore[no-redef]
                 except ImportError:
                     raise ImportError(
                         "Could not import langchain_openai or fallback onto "

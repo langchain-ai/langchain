@@ -6,16 +6,15 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional, Union, cast
 
-from typing_extensions import override
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
+from langchain_core.language_models.chat_models import (BaseChatModel,
+                                                        SimpleChatModel)
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
+                                    ChatResult)
 from langchain_core.runnables import RunnableConfig
+from typing_extensions import override
 
 
 class FakeMessagesListChatModel(BaseChatModel):

@@ -6,11 +6,10 @@ import uuid
 from collections.abc import Iterator, Sequence
 from typing import Any, Callable, Optional, Union
 
-from langsmith import Client as LangSmithClient
-from typing_extensions import override
-
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from langsmith import Client as LangSmithClient
+from typing_extensions import override
 
 
 class LangSmithLoader(BaseLoader):

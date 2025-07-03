@@ -5,20 +5,10 @@ from langchain._api import create_importer
 if TYPE_CHECKING:
     from langchain_community.retrievers import AmazonKendraRetriever
     from langchain_community.retrievers.kendra import (
-        AdditionalResultAttribute,
-        AdditionalResultAttributeValue,
-        DocumentAttribute,
-        DocumentAttributeValue,
-        Highlight,
-        QueryResult,
-        QueryResultItem,
-        ResultItem,
-        RetrieveResult,
-        RetrieveResultItem,
-        TextWithHighLights,
-        clean_excerpt,
-        combined_text,
-    )
+        AdditionalResultAttribute, AdditionalResultAttributeValue,
+        DocumentAttribute, DocumentAttributeValue, Highlight, QueryResult,
+        QueryResultItem, ResultItem, RetrieveResult, RetrieveResultItem,
+        TextWithHighLights, clean_excerpt, combined_text)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

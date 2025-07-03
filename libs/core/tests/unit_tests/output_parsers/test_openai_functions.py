@@ -2,15 +2,12 @@ import json
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers.openai_functions import (
-    JsonOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
-)
+    JsonOutputFunctionsParser, PydanticOutputFunctionsParser)
 from langchain_core.outputs import ChatGeneration
+from pydantic import BaseModel
 
 
 def test_json_output_function_parser() -> None:

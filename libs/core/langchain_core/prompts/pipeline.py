@@ -2,12 +2,11 @@
 
 from typing import Any
 
-from pydantic import model_validator
-
 from langchain_core._api.deprecation import deprecated
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
+from pydantic import model_validator
 
 
 def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:

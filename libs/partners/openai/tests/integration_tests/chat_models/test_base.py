@@ -11,25 +11,15 @@ import httpx
 import openai
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    SystemMessage,
-    ToolCall,
-    ToolMessage,
-)
+from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
+                                     BaseMessageChunk, HumanMessage,
+                                     SystemMessage, ToolCall, ToolMessage)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-    magic_function,
-)
-from pydantic import BaseModel, Field
-
 from langchain_openai import ChatOpenAI
+from langchain_tests.integration_tests.chat_models import (
+    _validate_tool_call_message, magic_function)
+from pydantic import BaseModel, Field
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 MAX_TOKEN_COUNT = 16

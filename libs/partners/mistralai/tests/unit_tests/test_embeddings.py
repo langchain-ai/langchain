@@ -1,9 +1,8 @@
 import os
 from typing import cast
 
-from pydantic import SecretStr
-
 from langchain_mistralai import MistralAIEmbeddings
+from pydantic import SecretStr
 
 os.environ["MISTRAL_API_KEY"] = "foo"
 

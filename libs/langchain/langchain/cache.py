@@ -3,24 +3,16 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.cache import (
-        AstraDBCache,
-        AstraDBSemanticCache,
-        AzureCosmosDBSemanticCache,
-        CassandraCache,
-        CassandraSemanticCache,
-        FullLLMCache,
-        FullMd5LLMCache,
-        GPTCache,
-        InMemoryCache,
-        MomentoCache,
-        RedisCache,
-        RedisSemanticCache,
-        SQLAlchemyCache,
-        SQLAlchemyMd5Cache,
-        SQLiteCache,
-        UpstashRedisCache,
-    )
+    from langchain_community.cache import (AstraDBCache, AstraDBSemanticCache,
+                                           AzureCosmosDBSemanticCache,
+                                           CassandraCache,
+                                           CassandraSemanticCache,
+                                           FullLLMCache, FullMd5LLMCache,
+                                           GPTCache, InMemoryCache,
+                                           MomentoCache, RedisCache,
+                                           RedisSemanticCache, SQLAlchemyCache,
+                                           SQLAlchemyMd5Cache, SQLiteCache,
+                                           UpstashRedisCache)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

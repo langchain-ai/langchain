@@ -4,9 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.openapi.spec import (
-        ReducedOpenAPISpec,
-        reduce_openapi_spec,
-    )
+        ReducedOpenAPISpec, reduce_openapi_spec)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

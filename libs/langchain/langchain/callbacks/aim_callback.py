@@ -4,10 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.aim_callback import (
-        AimCallbackHandler,
-        BaseMetadataCallbackHandler,
-        import_aim,
-    )
+        AimCallbackHandler, BaseMetadataCallbackHandler, import_aim)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

@@ -4,27 +4,16 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chat_message_histories import (
-        AstraDBChatMessageHistory,
-        CassandraChatMessageHistory,
-        ChatMessageHistory,
-        CosmosDBChatMessageHistory,
-        DynamoDBChatMessageHistory,
-        ElasticsearchChatMessageHistory,
-        FileChatMessageHistory,
-        FirestoreChatMessageHistory,
-        MomentoChatMessageHistory,
-        MongoDBChatMessageHistory,
-        Neo4jChatMessageHistory,
-        PostgresChatMessageHistory,
-        RedisChatMessageHistory,
-        RocksetChatMessageHistory,
-        SingleStoreDBChatMessageHistory,
-        SQLChatMessageHistory,
-        StreamlitChatMessageHistory,
-        UpstashRedisChatMessageHistory,
-        XataChatMessageHistory,
-        ZepChatMessageHistory,
-    )
+        AstraDBChatMessageHistory, CassandraChatMessageHistory,
+        ChatMessageHistory, CosmosDBChatMessageHistory,
+        DynamoDBChatMessageHistory, ElasticsearchChatMessageHistory,
+        FileChatMessageHistory, FirestoreChatMessageHistory,
+        MomentoChatMessageHistory, MongoDBChatMessageHistory,
+        Neo4jChatMessageHistory, PostgresChatMessageHistory,
+        RedisChatMessageHistory, RocksetChatMessageHistory,
+        SingleStoreDBChatMessageHistory, SQLChatMessageHistory,
+        StreamlitChatMessageHistory, UpstashRedisChatMessageHistory,
+        XataChatMessageHistory, ZepChatMessageHistory)
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and

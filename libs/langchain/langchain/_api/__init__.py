@@ -9,13 +9,10 @@ This module is only relevant for LangChain developers, not for users.
 
 """
 
-from .deprecation import (
-    LangChainDeprecationWarning,
-    deprecated,
-    suppress_langchain_deprecation_warning,
-    surface_langchain_deprecation_warnings,
-    warn_deprecated,
-)
+from .deprecation import (LangChainDeprecationWarning, deprecated,
+                          suppress_langchain_deprecation_warning,
+                          surface_langchain_deprecation_warnings,
+                          warn_deprecated)
 from .module_import import create_importer
 
 __all__ = [

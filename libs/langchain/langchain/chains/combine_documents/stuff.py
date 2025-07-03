@@ -12,12 +12,8 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.combine_documents.base import (
-    DEFAULT_DOCUMENT_PROMPT,
-    DEFAULT_DOCUMENT_SEPARATOR,
-    DOCUMENTS_KEY,
-    BaseCombineDocumentsChain,
-    _validate_prompt,
-)
+    DEFAULT_DOCUMENT_PROMPT, DEFAULT_DOCUMENT_SEPARATOR, DOCUMENTS_KEY,
+    BaseCombineDocumentsChain, _validate_prompt)
 from langchain.chains.llm import LLMChain
 
 

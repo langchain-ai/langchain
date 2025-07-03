@@ -1,10 +1,7 @@
 import pytest
-from langchain_core.vectorstores import (
-    InMemoryVectorStore,
-    VectorStore,
-)
-
-from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
+from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
+from langchain_tests.integration_tests.vectorstores import \
+    VectorStoreIntegrationTests
 
 
 class TestInMemoryVectorStore(VectorStoreIntegrationTests):

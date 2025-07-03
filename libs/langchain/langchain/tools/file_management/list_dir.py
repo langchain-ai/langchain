@@ -4,7 +4,8 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.tools import ListDirectoryTool
-    from langchain_community.tools.file_management.list_dir import DirectoryListingInput
+    from langchain_community.tools.file_management.list_dir import \
+        DirectoryListingInput
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
