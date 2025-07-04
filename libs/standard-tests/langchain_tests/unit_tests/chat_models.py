@@ -1,6 +1,4 @@
-"""
-:autodoc-options: autoproperty
-"""
+""":autodoc-options: autoproperty."""
 
 import inspect
 import os
@@ -31,13 +29,13 @@ from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 def generate_schema_pydantic_v1_from_2() -> Any:
-    """
-    Use to generate a schema from v1 namespace in pydantic 2.
+    """Use to generate a schema from v1 namespace in pydantic 2.
 
     :private:
     """
     if PYDANTIC_MAJOR_VERSION != 2:
-        raise AssertionError("This function is only compatible with Pydantic v2.")
+        msg = "This function is only compatible with Pydantic v2."
+        raise AssertionError(msg)
 
     class PersonB(BaseModelV1):
         """Record attributes of a person."""
@@ -49,8 +47,7 @@ def generate_schema_pydantic_v1_from_2() -> Any:
 
 
 def generate_schema_pydantic() -> Any:
-    """
-    Works with either pydantic 1 or 2
+    """Works with either pydantic 1 or 2.
 
     :private:
     """
@@ -74,7 +71,7 @@ class ChatModelTests(BaseStandardTests):
     """Base class for chat model tests.
 
     :private:
-    """  # noqa: E501
+    """
 
     @property
     @abstractmethod
@@ -158,13 +155,15 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_image_inputs(self) -> bool:
         """(bool) whether the chat model supports image inputs, defaults to
-        ``False``."""
+        ``False``.
+        """
         return False
 
     @property
     def supports_image_urls(self) -> bool:
         """(bool) whether the chat model supports image inputs from URLs, defaults to
-        ``False``."""
+        ``False``.
+        """
         return False
 
     @property
@@ -175,19 +174,22 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_audio_inputs(self) -> bool:
         """(bool) whether the chat model supports audio inputs, defaults to
-        ``False``."""
+        ``False``.
+        """
         return False
 
     @property
     def supports_video_inputs(self) -> bool:
         """(bool) whether the chat model supports video inputs, defaults to ``False``.
-        No current tests are written for this feature."""
+        No current tests are written for this feature.
+        """
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
         """(bool) whether the chat model returns usage metadata on invoke and streaming
-        responses."""
+        responses.
+        """
         return True
 
     @property
@@ -198,7 +200,8 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_image_tool_message(self) -> bool:
         """(bool) whether the chat model supports ToolMessages that include image
-        content."""
+        content.
+        """
         return False
 
     @property
@@ -227,7 +230,8 @@ class ChatModelTests(BaseStandardTests):
         ],
     ]:
         """(dict) what usage metadata details are emitted in invoke and stream. Only
-        needs to be overridden if these details are returned by the model."""
+        needs to be overridden if these details are returned by the model.
+        """
         return {"invoke": [], "stream": []}
 
 
@@ -806,7 +810,8 @@ class ChatModelUnitTests(ChatModelTests):
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """(tuple) environment variables, additional initialization args, and expected
-        instance attributes for testing initialization from environment variables."""
+        instance attributes for testing initialization from environment variables.
+        """
         return {}, {}, {}
 
     def test_init(self) -> None:
@@ -887,7 +892,7 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``bind_tools`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             return
 
@@ -927,7 +932,7 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
-        """  # noqa: E501
+        """
         if not self.has_structured_output:
             return
 

@@ -31,7 +31,7 @@ class DocumentIndexerTestSuite(ABC):
         """Get the index."""
 
     def test_upsert_documents_has_no_ids(self, index: DocumentIndex) -> None:
-        """Verify that there is not parameter called ids in upsert"""
+        """Verify that there is not parameter called ids in upsert."""
         signature = inspect.signature(index.upsert)
         assert "ids" not in signature.parameters
 
@@ -75,7 +75,7 @@ class DocumentIndexerTestSuite(ABC):
         ]
         response = index.upsert(documents)
         ids = response["succeeded"]
-        other_id = list(set(ids) - {foo_uuid})[0]
+        other_id = next(iter(set(ids) - {foo_uuid}))
         assert response["failed"] == []
         assert foo_uuid in ids
         # Ordering is not guaranteed, so we use a set.
@@ -221,7 +221,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         """Get the index."""
 
     async def test_upsert_documents_has_no_ids(self, index: DocumentIndex) -> None:
-        """Verify that there is not parameter called ids in upsert"""
+        """Verify that there is not parameter called ids in upsert."""
         signature = inspect.signature(index.upsert)
         assert "ids" not in signature.parameters
 
@@ -265,7 +265,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         ]
         response = await index.aupsert(documents)
         ids = response["succeeded"]
-        other_id = list(set(ids) - {foo_uuid})[0]
+        other_id = next(iter(set(ids) - {foo_uuid}))
         assert response["failed"] == []
         assert foo_uuid in ids
         # Ordering is not guaranteed, so we use a set.

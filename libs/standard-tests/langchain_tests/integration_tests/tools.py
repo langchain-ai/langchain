@@ -5,12 +5,11 @@ from langchain_tests.unit_tests.tools import ToolsTests
 
 
 class ToolsIntegrationTests(ToolsTests):
-    """
-    Base class for tools integration tests.
-    """
+    """Base class for tools integration tests."""
 
     def test_invoke_matches_output_schema(self, tool: BaseTool) -> None:
-        """
+        """Test invoke matches output schema.
+
         If invoked with a ToolCall, the tool should return a valid ToolMessage content.
 
         If you have followed the `custom tool guide <https://python.langchain.com/docs/how_to/custom_tools/>`_,
@@ -41,7 +40,8 @@ class ToolsIntegrationTests(ToolsTests):
             assert all(isinstance(c, (str, dict)) for c in tool_message.content)
 
     async def test_async_invoke_matches_output_schema(self, tool: BaseTool) -> None:
-        """
+        """Test async invoke matches output schema.
+
         If ainvoked with a ToolCall, the tool should return a valid ToolMessage content.
 
         For debugging tips, see :meth:`test_invoke_matches_output_schema`.
@@ -66,9 +66,8 @@ class ToolsIntegrationTests(ToolsTests):
             assert all(isinstance(c, (str, dict)) for c in tool_message.content)
 
     def test_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """
-        If invoked without a ToolCall, the tool can return anything
-        but it shouldn't throw an error
+        """If invoked without a ToolCall, the tool can return anything
+        but it shouldn't throw an error.
 
         If this test fails, your tool may not be handling the input you defined
         in `tool_invoke_params_example` correctly, and it's throwing an error.
@@ -79,9 +78,8 @@ class ToolsIntegrationTests(ToolsTests):
         tool.invoke(self.tool_invoke_params_example)
 
     async def test_async_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """
-        If ainvoked without a ToolCall, the tool can return anything
-        but it shouldn't throw an error
+        """If ainvoked without a ToolCall, the tool can return anything
+        but it shouldn't throw an error.
 
         For debugging tips, see :meth:`test_invoke_no_tool_call`.
         """
