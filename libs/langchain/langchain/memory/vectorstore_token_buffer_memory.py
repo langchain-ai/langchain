@@ -23,7 +23,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 DEFAULT_HISTORY_TEMPLATE = """
 Current date and time: {current_time}.
 
-Potentially relevant timestamped excerpts of previous conversations (you 
+Potentially relevant timestamped excerpts of previous conversations (you
 do not need to use these if irrelevant):
 {previous_history}
 

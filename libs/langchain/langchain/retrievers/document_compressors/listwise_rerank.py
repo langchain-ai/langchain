@@ -73,8 +73,8 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     """
 
     reranker: Runnable[dict, list[Document]]
-    """LLM-based reranker to use for filtering documents. Expected to take in a dict 
-        with 'documents: Sequence[Document]' and 'query: str' keys and output a 
+    """LLM-based reranker to use for filtering documents. Expected to take in a dict
+        with 'documents: Sequence[Document]' and 'query: str' keys and output a
         List[Document]."""
 
     top_n: int = 3
