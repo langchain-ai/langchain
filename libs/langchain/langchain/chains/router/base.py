@@ -104,9 +104,8 @@ class MultiRouteChain(Chain):
         elif self.silent_errors:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
         else:
-            raise ValueError(
-                f"Received invalid destination chain name '{route.destination}'"
-            )
+            msg = f"Received invalid destination chain name '{route.destination}'"
+            raise ValueError(msg)
 
     async def _acall(
         self,
@@ -133,6 +132,5 @@ class MultiRouteChain(Chain):
                 route.next_inputs, callbacks=callbacks
             )
         else:
-            raise ValueError(
-                f"Received invalid destination chain name '{route.destination}'"
-            )
+            msg = f"Received invalid destination chain name '{route.destination}'"
+            raise ValueError(msg)

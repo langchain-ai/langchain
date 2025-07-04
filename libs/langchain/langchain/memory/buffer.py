@@ -121,9 +121,8 @@ class ConversationStringBufferMemory(BaseMemory):
     def validate_chains(cls, values: dict) -> dict:
         """Validate that return messages is not True."""
         if values.get("return_messages", False):
-            raise ValueError(
-                "return_messages must be False for ConversationStringBufferMemory"
-            )
+            msg = "return_messages must be False for ConversationStringBufferMemory"
+            raise ValueError(msg)
         return values
 
     @property
@@ -149,7 +148,8 @@ class ConversationStringBufferMemory(BaseMemory):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
+                msg = f"One output key expected, got {outputs.keys()}"
+                raise ValueError(msg)
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key

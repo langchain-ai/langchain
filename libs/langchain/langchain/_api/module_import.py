@@ -60,20 +60,22 @@ def create_importer(
         if all_module_lookup and name in all_module_lookup:
             new_module = all_module_lookup[name]
             if new_module.split(".")[0] not in ALLOWED_TOP_LEVEL_PKGS:
-                raise AssertionError(
+                msg = (
                     f"Importing from {new_module} is not allowed. "
                     f"Allowed top-level packages are: {ALLOWED_TOP_LEVEL_PKGS}"
                 )
+                raise AssertionError(msg)
 
             try:
                 module = importlib.import_module(new_module)
             except ModuleNotFoundError as e:
                 if new_module.startswith("langchain_community"):
-                    raise ModuleNotFoundError(
+                    msg = (
                         f"Module {new_module} not found. "
                         "Please install langchain-community to access this module. "
                         "You can install it using `pip install -U langchain-community`"
-                    ) from e
+                    )
+                    raise ModuleNotFoundError(msg) from e
                 raise
 
             try:
@@ -106,9 +108,8 @@ def create_importer(
                         )
                 return result
             except Exception as e:
-                raise AttributeError(
-                    f"module {new_module} has no attribute {name}"
-                ) from e
+                msg = f"module {new_module} has no attribute {name}"
+                raise AttributeError(msg) from e
 
         if fallback_module:
             try:
@@ -139,10 +140,10 @@ def create_importer(
                 return result
 
             except Exception as e:
-                raise AttributeError(
-                    f"module {fallback_module} has no attribute {name}"
-                ) from e
+                msg = f"module {fallback_module} has no attribute {name}"
+                raise AttributeError(msg) from e
 
-        raise AttributeError(f"module {package} has no attribute {name}")
+        msg = f"module {package} has no attribute {name}"
+        raise AttributeError(msg)
 
     return import_by_name

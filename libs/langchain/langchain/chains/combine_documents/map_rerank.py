@@ -122,21 +122,24 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """Validate that the combine chain outputs a dictionary."""
         output_parser = self.llm_chain.prompt.output_parser
         if not isinstance(output_parser, RegexParser):
-            raise ValueError(
+            msg = (
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
+            raise ValueError(msg)
         output_keys = output_parser.output_keys
         if self.rank_key not in output_keys:
-            raise ValueError(
+            msg = (
                 f"Got {self.rank_key} as key to rank on, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
+            raise ValueError(msg)
         if self.answer_key not in output_keys:
-            raise ValueError(
+            msg = (
                 f"Got {self.answer_key} as key to return, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="before")
@@ -144,23 +147,26 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
-            raise ValueError("llm_chain must be provided")
+            msg = "llm_chain must be provided"
+            raise ValueError(msg)
 
         llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain input_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     def combine_docs(

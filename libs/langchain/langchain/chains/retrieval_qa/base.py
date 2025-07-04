@@ -326,7 +326,8 @@ class VectorDBQA(BaseRetrievalQA):
         if "search_type" in values:
             search_type = values["search_type"]
             if search_type not in ("similarity", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
+                msg = f"search_type of {search_type} not allowed."
+                raise ValueError(msg)
         return values
 
     def _get_docs(
@@ -345,7 +346,8 @@ class VectorDBQA(BaseRetrievalQA):
                 question, k=self.k, **self.search_kwargs
             )
         else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
         return docs
 
     async def _aget_docs(
@@ -355,7 +357,8 @@ class VectorDBQA(BaseRetrievalQA):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("VectorDBQA does not support async")
+        msg = "VectorDBQA does not support async"
+        raise NotImplementedError(msg)
 
     @property
     def _chain_type(self) -> str:

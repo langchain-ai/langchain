@@ -75,10 +75,11 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """
         prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
-            raise ValueError(
+            msg = (
                 "`agent_scratchpad` should be one of the variables in the prompt, "
                 f"got {prompt.input_variables}"
             )
+            raise ValueError(msg)
         return self
 
     @property
@@ -199,14 +200,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             if isinstance(agent_decision, AgentFinish):
                 return agent_decision
             else:
-                raise ValueError(
-                    f"got AgentAction with no functions provided: {agent_decision}"
-                )
+                msg = f"got AgentAction with no functions provided: {agent_decision}"
+                raise ValueError(msg)
         else:
-            raise ValueError(
+            msg = (
                 "early_stopping_method should be one of `force` or `generate`, "
                 f"got {early_stopping_method}"
             )
+            raise ValueError(msg)
 
     @classmethod
     def create_prompt(
@@ -354,10 +355,11 @@ def create_openai_functions_agent(
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)
     ):
-        raise ValueError(
+        msg = (
             "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
             f"Found {prompt.input_variables} instead."
         )
+        raise ValueError(msg)
     llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
     agent = (
         RunnablePassthrough.assign(

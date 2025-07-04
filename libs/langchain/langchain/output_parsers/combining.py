@@ -20,12 +20,15 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
         """Validate the parsers."""
         parsers = values["parsers"]
         if len(parsers) < 2:
-            raise ValueError("Must have at least two parsers")
+            msg = "Must have at least two parsers"
+            raise ValueError(msg)
         for parser in parsers:
             if parser._type == "combining":
-                raise ValueError("Cannot nest combining parsers")
+                msg = "Cannot nest combining parsers"
+                raise ValueError(msg)
             if parser._type == "list":
-                raise ValueError("Cannot combine list parsers")
+                msg = "Cannot combine list parsers"
+                raise ValueError(msg)
         return values
 
     @property
