@@ -67,7 +67,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                 f"Invalid array format in '{original_request_params}'. \
                     Please check the format instructions."
             )
-        elif (
+        if (
             isinstance(parsed_array[0], int)
             and parsed_array[-1] > self.dataframe.index.max()
         ):

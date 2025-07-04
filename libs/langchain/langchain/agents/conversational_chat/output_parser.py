@@ -39,16 +39,14 @@ class ConvoOutputParser(AgentOutputParser):
                 # If the action indicates a final answer, return an AgentFinish
                 if action == "Final Answer":
                     return AgentFinish({"output": action_input}, text)
-                else:
-                    # Otherwise, return an AgentAction with the specified action and
-                    # input
-                    return AgentAction(action, action_input, text)
-            else:
-                # If the necessary keys aren't present in the response, raise an
-                # exception
-                raise OutputParserException(
-                    f"Missing 'action' or 'action_input' in LLM output: {text}"
-                )
+                # Otherwise, return an AgentAction with the specified action and
+                # input
+                return AgentAction(action, action_input, text)
+            # If the necessary keys aren't present in the response, raise an
+            # exception
+            raise OutputParserException(
+                f"Missing 'action' or 'action_input' in LLM output: {text}"
+            )
         except Exception as e:
             # If any other exception is raised during parsing, also raise an
             # OutputParserException

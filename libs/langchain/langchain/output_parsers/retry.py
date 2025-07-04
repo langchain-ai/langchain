@@ -107,20 +107,19 @@ class RetryOutputParser(BaseOutputParser[T]):
             except OutputParserException as e:
                 if retries == self.max_retries:
                     raise e
+                retries += 1
+                if self.legacy and hasattr(self.retry_chain, "run"):
+                    completion = self.retry_chain.run(
+                        prompt=prompt_value.to_string(),
+                        completion=completion,
+                    )
                 else:
-                    retries += 1
-                    if self.legacy and hasattr(self.retry_chain, "run"):
-                        completion = self.retry_chain.run(
+                    completion = self.retry_chain.invoke(
+                        dict(
                             prompt=prompt_value.to_string(),
                             completion=completion,
                         )
-                    else:
-                        completion = self.retry_chain.invoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
-                        )
+                    )
 
         raise OutputParserException("Failed to parse")
 
@@ -142,21 +141,20 @@ class RetryOutputParser(BaseOutputParser[T]):
             except OutputParserException as e:
                 if retries == self.max_retries:
                     raise e
+                retries += 1
+                if self.legacy and hasattr(self.retry_chain, "arun"):
+                    completion = await self.retry_chain.arun(
+                        prompt=prompt_value.to_string(),
+                        completion=completion,
+                        error=repr(e),
+                    )
                 else:
-                    retries += 1
-                    if self.legacy and hasattr(self.retry_chain, "arun"):
-                        completion = await self.retry_chain.arun(
+                    completion = await self.retry_chain.ainvoke(
+                        dict(
                             prompt=prompt_value.to_string(),
                             completion=completion,
-                            error=repr(e),
                         )
-                    else:
-                        completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
-                        )
+                    )
 
         raise OutputParserException("Failed to parse")
 
@@ -233,22 +231,21 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
             except OutputParserException as e:
                 if retries == self.max_retries:
                     raise e
+                retries += 1
+                if self.legacy and hasattr(self.retry_chain, "run"):
+                    completion = self.retry_chain.run(
+                        prompt=prompt_value.to_string(),
+                        completion=completion,
+                        error=repr(e),
+                    )
                 else:
-                    retries += 1
-                    if self.legacy and hasattr(self.retry_chain, "run"):
-                        completion = self.retry_chain.run(
-                            prompt=prompt_value.to_string(),
+                    completion = self.retry_chain.invoke(
+                        dict(
                             completion=completion,
+                            prompt=prompt_value.to_string(),
                             error=repr(e),
                         )
-                    else:
-                        completion = self.retry_chain.invoke(
-                            dict(
-                                completion=completion,
-                                prompt=prompt_value.to_string(),
-                                error=repr(e),
-                            )
-                        )
+                    )
 
         raise OutputParserException("Failed to parse")
 
@@ -261,22 +258,21 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
             except OutputParserException as e:
                 if retries == self.max_retries:
                     raise e
+                retries += 1
+                if self.legacy and hasattr(self.retry_chain, "arun"):
+                    completion = await self.retry_chain.arun(
+                        prompt=prompt_value.to_string(),
+                        completion=completion,
+                        error=repr(e),
+                    )
                 else:
-                    retries += 1
-                    if self.legacy and hasattr(self.retry_chain, "arun"):
-                        completion = await self.retry_chain.arun(
+                    completion = await self.retry_chain.ainvoke(
+                        dict(
                             prompt=prompt_value.to_string(),
                             completion=completion,
                             error=repr(e),
                         )
-                    else:
-                        completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                                error=repr(e),
-                            )
-                        )
+                    )
 
         raise OutputParserException("Failed to parse")
 

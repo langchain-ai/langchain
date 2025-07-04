@@ -158,8 +158,7 @@ def load_evaluator(
                 " or check your openai credentials."
             ) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
-    else:
-        return evaluator_cls(**kwargs)
+    return evaluator_cls(**kwargs)
 
 
 def load_evaluators(

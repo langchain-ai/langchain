@@ -253,8 +253,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         """
         if verbose is None:
             return _get_verbosity()
-        else:
-            return verbose
+        return verbose
 
     @property
     @abstractmethod
@@ -463,8 +462,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             self.memory.save_context(inputs, outputs)
         if return_only_outputs:
             return outputs
-        else:
-            return {**inputs, **outputs}
+        return {**inputs, **outputs}
 
     async def aprep_outputs(
         self,
@@ -489,8 +487,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             await self.memory.asave_context(inputs, outputs)
         if return_only_outputs:
             return outputs
-        else:
-            return {**inputs, **outputs}
+        return {**inputs, **outputs}
 
     def prep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
         """Prepare chain inputs, including adding inputs from memory.
@@ -614,11 +611,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 "`run` supported with either positional arguments or keyword arguments,"
                 " but none were provided."
             )
-        else:
-            raise ValueError(
-                f"`run` supported with either positional arguments or keyword arguments"
-                f" but not both. Got args: {args} and kwargs: {kwargs}."
-            )
+        raise ValueError(
+            f"`run` supported with either positional arguments or keyword arguments"
+            f" but not both. Got args: {args} and kwargs: {kwargs}."
+        )
 
     @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
     async def arun(
@@ -671,7 +667,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 f"`run` not supported when there is not exactly "
                 f"one output key. Got {self.output_keys}."
             )
-        elif args and not kwargs:
+        if args and not kwargs:
             if len(args) != 1:
                 raise ValueError("`run` supports only one positional argument.")
             return (

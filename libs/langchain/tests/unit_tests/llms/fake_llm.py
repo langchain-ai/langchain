@@ -46,8 +46,7 @@ class FakeLLM(LLM):
             return self.queries[prompt]
         if stop is None:
             return "foo"
-        else:
-            return "bar"
+        return "bar"
 
     @property
     def _identifying_params(self) -> dict[str, Any]:

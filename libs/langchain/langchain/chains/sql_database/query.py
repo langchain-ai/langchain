@@ -139,8 +139,7 @@ def create_sql_query_chain(
                 f"'postgresql', 'mysql', and 'oracle'. Received dialect: "
                 f"{db.dialect}"
             )
-        else:
-            table_info_kwargs["get_col_comments"] = True
+        table_info_kwargs["get_col_comments"] = True
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",

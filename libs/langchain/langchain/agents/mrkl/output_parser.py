@@ -55,10 +55,9 @@ class MRKLOutputParser(AgentOutputParser):
                 return AgentFinish(
                     {"output": text[start_index:end_index].strip()}, text[:end_index]
                 )
-            else:
-                raise OutputParserException(
-                    f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
-                )
+            raise OutputParserException(
+                f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
+            )
 
         if action_match:
             action = action_match.group(1).strip()
@@ -70,7 +69,7 @@ class MRKLOutputParser(AgentOutputParser):
 
             return AgentAction(action, tool_input, text)
 
-        elif includes_answer:
+        if includes_answer:
             return AgentFinish(
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
@@ -82,7 +81,7 @@ class MRKLOutputParser(AgentOutputParser):
                 llm_output=text,
                 send_to_llm=True,
             )
-        elif not re.search(
+        if not re.search(
             r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
         ):
             raise OutputParserException(
@@ -91,8 +90,7 @@ class MRKLOutputParser(AgentOutputParser):
                 llm_output=text,
                 send_to_llm=True,
             )
-        else:
-            raise OutputParserException(f"Could not parse LLM output: `{text}`")
+        raise OutputParserException(f"Could not parse LLM output: `{text}`")
 
     @property
     def _type(self) -> str:

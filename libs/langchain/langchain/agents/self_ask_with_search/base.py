@@ -194,7 +194,7 @@ def create_self_ask_with_search_agent(
         )
 
     llm_with_stop = llm.bind(stop=["\nIntermediate answer:"])
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(
                 x["intermediate_steps"],
@@ -208,4 +208,3 @@ def create_self_ask_with_search_agent(
         | llm_with_stop
         | SelfAskOutputParser()
     )
-    return agent
