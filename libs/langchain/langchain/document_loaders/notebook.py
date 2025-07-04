@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "NotebookLoader",
     "concatenate_cells",
     "remove_newlines",
-    "NotebookLoader",
 ]

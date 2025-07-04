@@ -49,7 +49,7 @@ class BaseChatMemory(BaseMemory, ABC):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) == 1:
-                output_key = list(outputs.keys())[0]
+                output_key = next(iter(outputs.keys()))
             elif "output" in outputs:
                 output_key = "output"
                 warnings.warn(

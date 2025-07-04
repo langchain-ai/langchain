@@ -25,6 +25,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "convert_dict_to_message",
     "VolcEngineMaasChat",
+    "convert_dict_to_message",
 ]

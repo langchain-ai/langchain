@@ -31,13 +31,13 @@ from langchain.chains.structured_output.base import (
 )
 
 __all__ = [
-    "get_openai_output_parser",
-    "create_openai_fn_runnable",
-    "create_structured_output_runnable",  # deprecated
-    "create_openai_fn_chain",  # deprecated
-    "create_structured_output_chain",  # deprecated
     "PYTHON_TO_JSON_TYPES",  # backwards compatibility
     "convert_to_openai_function",  # backwards compatibility
+    "create_openai_fn_chain",  # deprecated
+    "create_openai_fn_runnable",
+    "create_structured_output_chain",  # deprecated
+    "create_structured_output_runnable",  # deprecated
+    "get_openai_output_parser",
 ]
 
 

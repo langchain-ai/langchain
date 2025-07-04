@@ -150,7 +150,7 @@ class ConversationStringBufferMemory(BaseMemory):
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            output_key = next(iter(outputs.keys()))
         else:
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]

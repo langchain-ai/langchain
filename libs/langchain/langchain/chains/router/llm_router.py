@@ -27,7 +27,7 @@ from langchain.chains.router.base import RouterChain
     message=(
         "Use RunnableLambda to select from multiple prompt templates. See example "
         "in API reference: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.llm_router.LLMRouterChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.llm_router.LLMRouterChain.html"
     ),
 )
 class LLMRouterChain(RouterChain):

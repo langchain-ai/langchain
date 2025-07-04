@@ -133,7 +133,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         return _output_keys
 
     model_config = ConfigDict(

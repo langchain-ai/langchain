@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "MultionCloseSession",
     "MultionCreateSession",
     "MultionUpdateSession",
-    "MultionCloseSession",
 ]

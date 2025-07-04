@@ -19,7 +19,7 @@ from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
     since="0.2.7",
     alternative=(
         "example in API reference with more detail: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"
     ),
     removal="1.0",
 )

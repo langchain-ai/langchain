@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "default_preprocessing_func",
     "BM25Retriever",
+    "default_preprocessing_func",
 ]

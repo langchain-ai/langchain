@@ -27,7 +27,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     message=(
         "This class is deprecated. Please see the migration guide here for "
         "a recommended replacement: "
-        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"
     ),
 )
 class RefineDocumentsChain(BaseCombineDocumentsChain):
@@ -105,7 +105,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         return _output_keys
 
     model_config = ConfigDict(

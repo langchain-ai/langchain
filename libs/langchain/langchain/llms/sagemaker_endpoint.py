@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "SagemakerEndpoint",
     "LLMContentHandler",
+    "SagemakerEndpoint",
 ]

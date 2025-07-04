@@ -217,7 +217,7 @@ class StringExampleMapper(Serializable):
                     " specify a reference_key."
                 )
             else:
-                output = list(example.outputs.values())[0]
+                output = next(iter(example.outputs.values()))
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"

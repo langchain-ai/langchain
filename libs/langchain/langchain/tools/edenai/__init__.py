@@ -43,8 +43,8 @@ __all__ = [
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
     "EdenAiParsingInvoiceTool",
-    "EdenAiTextToSpeechTool",
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
     "EdenaiTool",
 ]

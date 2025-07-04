@@ -13,7 +13,7 @@ from langchain.agents.output_parsers.openai_functions import (
 
 def test_not_an_ai() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
-    err = f"Expected an AI message got {str(SystemMessage)}"
+    err = f"Expected an AI message got {SystemMessage!s}"
     with pytest.raises(TypeError, match=err):
         parser.invoke(SystemMessage(content="x"))
 

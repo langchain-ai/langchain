@@ -15,7 +15,7 @@ from langchain.agents.openai_functions_multi_agent.base import (
 class TestParseAIMessage:
     # Test: Pass Non-AIMessage.
     def test_not_an_ai(self) -> None:
-        err = f"Expected an AI message got {str(SystemMessage)}"
+        err = f"Expected an AI message got {SystemMessage!s}"
         with pytest.raises(TypeError, match=err):
             _parse_ai_message(SystemMessage(content="x"))
 

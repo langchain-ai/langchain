@@ -118,7 +118,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """
         _output_keys = [self.answer_key, self.sources_answer_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         return _output_keys
 
     @model_validator(mode="before")

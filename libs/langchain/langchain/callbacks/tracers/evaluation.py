@@ -5,4 +5,4 @@ from langchain_core.tracers.evaluation import (
     wait_for_all_evaluators,
 )
 
-__all__ = ["wait_for_all_evaluators", "EvaluatorCallbackHandler"]
+__all__ = ["EvaluatorCallbackHandler", "wait_for_all_evaluators"]
