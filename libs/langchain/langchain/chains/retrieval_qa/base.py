@@ -157,8 +157,7 @@ class BaseRetrievalQA(Chain):
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
     @abstractmethod
     async def _aget_docs(
@@ -200,8 +199,7 @@ class BaseRetrievalQA(Chain):
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
 
 @deprecated(

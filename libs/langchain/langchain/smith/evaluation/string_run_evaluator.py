@@ -28,8 +28,7 @@ def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
     first_message = messages[0]
     if "lc" in first_message:
         return [load(dumpd(message)) for message in messages]
-    else:
-        return messages_from_dict(messages)
+    return messages_from_dict(messages)
 
 
 class StringRunMapper(Serializable):
@@ -99,29 +98,25 @@ class LLMStringRunMapper(StringRunMapper):
         """Maps the Run to a dictionary."""
         if run.run_type != "llm":
             raise ValueError("LLM RunMapper only supports LLM runs.")
-        elif not run.outputs:
+        if not run.outputs:
             if run.error:
                 raise ValueError(
                     f"Cannot evaluate errored LLM run {run.id}: {run.error}"
                 )
-            else:
-                raise ValueError(
-                    f"Run {run.id} has no outputs. Cannot evaluate this run."
-                )
-        else:
-            try:
-                inputs = self.serialize_inputs(run.inputs)
-            except Exception as e:
-                raise ValueError(
-                    f"Could not parse LM input from run inputs {run.inputs}"
-                ) from e
-            try:
-                output_ = self.serialize_outputs(run.outputs)
-            except Exception as e:
-                raise ValueError(
-                    f"Could not parse LM prediction from run outputs {run.outputs}"
-                ) from e
-            return {"input": inputs, "prediction": output_}
+            raise ValueError(f"Run {run.id} has no outputs. Cannot evaluate this run.")
+        try:
+            inputs = self.serialize_inputs(run.inputs)
+        except Exception as e:
+            raise ValueError(
+                f"Could not parse LM input from run inputs {run.inputs}"
+            ) from e
+        try:
+            output_ = self.serialize_outputs(run.outputs)
+        except Exception as e:
+            raise ValueError(
+                f"Could not parse LM prediction from run outputs {run.outputs}"
+            ) from e
+        return {"input": inputs, "prediction": output_}
 
 
 class ChainStringRunMapper(StringRunMapper):
@@ -139,13 +134,12 @@ class ChainStringRunMapper(StringRunMapper):
     def _get_key(self, source: dict, key: Optional[str], which: str) -> str:
         if key is not None:
             return source[key]
-        elif len(source) == 1:
+        if len(source) == 1:
             return next(iter(source.values()))
-        else:
-            raise ValueError(
-                f"Could not map run {which} with multiple keys: "
-                f"{source}\nPlease manually specify a {which}_key"
-            )
+        raise ValueError(
+            f"Could not map run {which} with multiple keys: "
+            f"{source}\nPlease manually specify a {which}_key"
+        )
 
     def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
@@ -162,7 +156,7 @@ class ChainStringRunMapper(StringRunMapper):
                 f" input_key or ensure your input data includes key"
                 f" '{self.input_key}'."
             )
-        elif self.prediction_key is not None and self.prediction_key not in run.outputs:
+        if self.prediction_key is not None and self.prediction_key not in run.outputs:
             available_keys = ", ".join(run.outputs.keys())
             raise ValueError(
                 f"Run with ID {run.id} doesn't have the expected prediction key"
@@ -171,13 +165,12 @@ class ChainStringRunMapper(StringRunMapper):
                 " ensure the Run object's outputs the expected key."
             )
 
-        else:
-            input_ = self._get_key(run.inputs, self.input_key, "input")
-            prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
-            return {
-                "input": input_,
-                "prediction": prediction,
-            }
+        input_ = self._get_key(run.inputs, self.input_key, "input")
+        prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
+        return {
+            "input": input_,
+            "prediction": prediction,
+        }
 
 
 class ToolStringRunMapper(StringRunMapper):
@@ -216,8 +209,7 @@ class StringExampleMapper(Serializable):
                     f"Example {example.id} has multiple outputs, so you must"
                     " specify a reference_key."
                 )
-            else:
-                output = list(example.outputs.values())[0]
+            output = list(example.outputs.values())[0]
         elif self.reference_key not in example.outputs:
             raise ValueError(
                 f"Example {example.id} does not have reference key"

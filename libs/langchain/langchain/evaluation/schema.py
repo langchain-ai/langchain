@@ -122,11 +122,11 @@ class _EvalArgsMixin:
         """
         if self.requires_input and input is None:
             raise ValueError(f"{self.__class__.__name__} requires an input string.")
-        elif input is not None and not self.requires_input:
+        if input is not None and not self.requires_input:
             warn(self._skip_input_warning)
         if self.requires_reference and reference is None:
             raise ValueError(f"{self.__class__.__name__} requires a reference string.")
-        elif reference is not None and not self.requires_reference:
+        if reference is not None and not self.requires_reference:
             warn(self._skip_reference_warning)
 
 

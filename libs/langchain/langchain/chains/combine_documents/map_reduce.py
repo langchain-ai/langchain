@@ -204,26 +204,23 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
             if self.reduce_documents_chain.collapse_documents_chain:
                 return self.reduce_documents_chain.collapse_documents_chain
-            else:
-                return self.reduce_documents_chain.combine_documents_chain
-        else:
-            raise ValueError(
-                f"`reduce_documents_chain` is of type "
-                f"{type(self.reduce_documents_chain)} so it does not have "
-                f"this attribute."
-            )
+            return self.reduce_documents_chain.combine_documents_chain
+        raise ValueError(
+            f"`reduce_documents_chain` is of type "
+            f"{type(self.reduce_documents_chain)} so it does not have "
+            f"this attribute."
+        )
 
     @property
     def combine_document_chain(self) -> BaseCombineDocumentsChain:
         """Kept for backward compatibility."""
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
             return self.reduce_documents_chain.combine_documents_chain
-        else:
-            raise ValueError(
-                f"`reduce_documents_chain` is of type "
-                f"{type(self.reduce_documents_chain)} so it does not have "
-                f"this attribute."
-            )
+        raise ValueError(
+            f"`reduce_documents_chain` is of type "
+            f"{type(self.reduce_documents_chain)} so it does not have "
+            f"this attribute."
+        )
 
     def combine_docs(
         self,

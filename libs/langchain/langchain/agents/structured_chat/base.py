@@ -61,8 +61,7 @@ class StructuredChatAgent(Agent):
                 f"(but I haven't seen any of it! I only see what "
                 f"you return as final answer):\n{agent_scratchpad}"
             )
-        else:
-            return agent_scratchpad
+        return agent_scratchpad
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
@@ -290,7 +289,7 @@ def create_structured_chat_agent(
     else:
         llm_with_stop = llm
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
@@ -298,4 +297,3 @@ def create_structured_chat_agent(
         | llm_with_stop
         | JSONAgentOutputParser()
     )
-    return agent

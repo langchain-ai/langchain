@@ -135,8 +135,7 @@ class _RapidFuzzChainMixin(Chain):
         module = module_map[distance]
         if normalize_score:
             return module.normalized_distance
-        else:
-            return module.distance
+        return module.distance
 
     @property
     def metric(self) -> Callable:

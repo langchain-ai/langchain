@@ -128,8 +128,7 @@ def _get_assistants_tool(
     """
     if _is_assistants_builtin_tool(tool):
         return tool  # type: ignore[return-value]
-    else:
-        return convert_to_openai_tool(tool)
+    return convert_to_openai_tool(tool)
 
 
 OutputType = Union[
@@ -508,12 +507,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]
-        submit_tool_outputs = {
+        return {
             "tool_outputs": tool_outputs,
             "run_id": last_action.run_id,
             "thread_id": last_action.thread_id,
         }
-        return submit_tool_outputs
 
     def _create_run(self, input: dict) -> Any:
         params = {
@@ -556,12 +554,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 "run_metadata",
             )
         }
-        run = self.client.beta.threads.create_and_run(
+        return self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
             **params,
         )
-        return run
 
     def _get_response(self, run: Any) -> Any:
         # TODO: Pagination
@@ -610,7 +607,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_id=run.id,
                 thread_id=run.thread_id,
             )
-        elif run.status == "requires_action":
+        if run.status == "requires_action":
             if not self.as_agent:
                 return run.required_action.submit_tool_outputs.tool_calls
             actions = []
@@ -636,11 +633,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     )
                 )
             return actions
-        else:
-            run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+        run_info = json.dumps(run.dict(), indent=2)
+        raise ValueError(
+            f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+        )
 
     def _wait_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True
@@ -666,12 +662,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]
-        submit_tool_outputs = {
+        return {
             "tool_outputs": tool_outputs,
             "run_id": last_action.run_id,
             "thread_id": last_action.thread_id,
         }
-        return submit_tool_outputs
 
     async def _acreate_run(self, input: dict) -> Any:
         params = {
@@ -714,12 +709,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 "run_metadata",
             )
         }
-        run = await self.async_client.beta.threads.create_and_run(
+        return await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
             **params,
         )
-        return run
 
     async def _aget_response(self, run: Any) -> Any:
         # TODO: Pagination
@@ -764,7 +758,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_id=run.id,
                 thread_id=run.thread_id,
             )
-        elif run.status == "requires_action":
+        if run.status == "requires_action":
             if not self.as_agent:
                 return run.required_action.submit_tool_outputs.tool_calls
             actions = []
@@ -790,11 +784,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     )
                 )
             return actions
-        else:
-            run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+        run_info = json.dumps(run.dict(), indent=2)
+        raise ValueError(
+            f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+        )
 
     async def _await_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True

@@ -54,9 +54,8 @@ class _FakeTrajectoryChatModel(FakeChatModel):
             response = self.queries[list(self.queries.keys())[self.response_index]]
             self.response_index = self.response_index + 1
             return response
-        else:
-            prompt = messages[0].content
-            return self.queries[prompt]
+        prompt = messages[0].content
+        return self.queries[prompt]
 
 
 def test_trajectory_output_parser_parse() -> None:

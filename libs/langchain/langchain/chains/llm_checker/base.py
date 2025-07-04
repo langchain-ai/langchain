@@ -55,13 +55,12 @@ def _load_question_to_checked_assertions_chain(
         check_assertions_chain,
         revised_answer_chain,
     ]
-    question_to_checked_assertions_chain = SequentialChain(
+    return SequentialChain(
         chains=chains,  # type: ignore[arg-type]
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
     )
-    return question_to_checked_assertions_chain
 
 
 @deprecated(

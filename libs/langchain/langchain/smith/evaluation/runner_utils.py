@@ -190,13 +190,13 @@ def _wrap_in_chain_factory(
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
         return lambda: chain
-    elif isinstance(llm_or_chain_factory, BaseLanguageModel):
+    if isinstance(llm_or_chain_factory, BaseLanguageModel):
         return llm_or_chain_factory
-    elif isinstance(llm_or_chain_factory, Runnable):
+    if isinstance(llm_or_chain_factory, Runnable):
         # Memory may exist here, but it's not elegant to check all those cases.
         lcf = llm_or_chain_factory
         return lambda: lcf
-    elif callable(llm_or_chain_factory):
+    if callable(llm_or_chain_factory):
         if is_traceable_function(llm_or_chain_factory):
             runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
             return lambda: runnable_
@@ -214,15 +214,14 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
-        elif is_traceable_function(cast(Callable, _model)):
+        if is_traceable_function(cast(Callable, _model)):
             runnable_ = as_runnable(cast(Callable, _model))
             return lambda: runnable_
-        elif not isinstance(_model, Runnable):
+        if not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
-        else:
-            # Typical correct case
-            return constructor
+        # Typical correct case
+        return constructor
     return llm_or_chain_factory
 
 
@@ -270,10 +269,9 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
         )
     if len(prompts) == 1:
         return prompts[0]
-    else:
-        raise InputFormatError(
-            f"LLM Run expects single prompt input. Got {len(prompts)} prompts."
-        )
+    raise InputFormatError(
+        f"LLM Run expects single prompt input. Got {len(prompts)} prompts."
+    )
 
 
 class ChatModelInput(TypedDict):
@@ -318,11 +316,10 @@ def _get_messages(inputs: dict[str, Any]) -> dict:
                 " single list of messages."
             )
         return input_copy
-    else:
-        raise InputFormatError(
-            f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
-            f" input. Got {inputs}"
-        )
+    raise InputFormatError(
+        f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
+        f" input. Got {inputs}"
+    )
 
 
 ## Shared data validation utilities
@@ -694,30 +691,28 @@ async def _arun_llm(
                     callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
             )
-        else:
-            raise InputFormatError(
-                "Input mapper returned invalid format"
-                f" {prompt_or_messages}"
-                "\nExpected a single string or list of chat messages."
-            )
+        raise InputFormatError(
+            "Input mapper returned invalid format"
+            f" {prompt_or_messages}"
+            "\nExpected a single string or list of chat messages."
+        )
 
-    else:
-        try:
-            prompt = _get_prompt(inputs)
-            llm_output: Union[str, BaseMessage] = await llm.ainvoke(
-                prompt,
-                config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
-                ),
-            )
-        except InputFormatError:
-            llm_inputs = _get_messages(inputs)
-            llm_output = await llm.ainvoke(
-                **llm_inputs,
-                config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
-                ),
-            )
+    try:
+        prompt = _get_prompt(inputs)
+        llm_output: Union[str, BaseMessage] = await llm.ainvoke(
+            prompt,
+            config=RunnableConfig(
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+            ),
+        )
+    except InputFormatError:
+        llm_inputs = _get_messages(inputs)
+        llm_output = await llm.ainvoke(
+            **llm_inputs,
+            config=RunnableConfig(
+                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+            ),
+        )
     return llm_output
 
 

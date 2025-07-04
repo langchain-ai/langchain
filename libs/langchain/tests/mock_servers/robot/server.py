@@ -139,8 +139,7 @@ async def get_state(
 async def ask_for_passphrase(said_please: bool) -> dict[str, Any]:
     if said_please:
         return {"passphrase": f"The passphrase is {PASS_PHRASE}"}
-    else:
-        return {"passphrase": "I won't share the passphrase without saying 'please'."}
+    return {"passphrase": "I won't share the passphrase without saying 'please'."}
 
 
 @app.delete(
@@ -153,12 +152,11 @@ async def recycle(password: SecretPassPhrase) -> dict[str, Any]:
     if password.pw == PASS_PHRASE:
         _ROBOT_STATE["destruct"] = True
         return {"status": "Self-destruct initiated", "state": _ROBOT_STATE}
-    else:
-        _ROBOT_STATE["destruct"] = False
-        raise HTTPException(
-            status_code=400,
-            detail="Pass phrase required. You should have thought to ask for it.",
-        )
+    _ROBOT_STATE["destruct"] = False
+    raise HTTPException(
+        status_code=400,
+        detail="Pass phrase required. You should have thought to ask for it.",
+    )
 
 
 @app.post(

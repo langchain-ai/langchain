@@ -182,7 +182,7 @@ def create_json_chat_agent(
     else:
         llm_to_use = llm
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
                 x["intermediate_steps"], template_tool_response=template_tool_response
@@ -192,4 +192,3 @@ def create_json_chat_agent(
         | llm_to_use
         | JSONAgentOutputParser()
     )
-    return agent

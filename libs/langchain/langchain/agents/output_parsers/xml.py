@@ -36,13 +36,12 @@ class XMLAgentOutputParser(AgentOutputParser):
             if "</tool_input>" in _tool_input:
                 _tool_input = _tool_input.split("</tool_input>")[0]
             return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
-        elif "<final_answer>" in text:
+        if "<final_answer>" in text:
             _, answer = text.split("<final_answer>")
             if "</final_answer>" in answer:
                 answer = answer.split("</final_answer>")[0]
             return AgentFinish(return_values={"output": answer}, log=text)
-        else:
-            raise ValueError
+        raise ValueError
 
     def get_format_instructions(self) -> str:
         raise NotImplementedError

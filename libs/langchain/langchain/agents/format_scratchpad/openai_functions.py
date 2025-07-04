@@ -23,8 +23,7 @@ def _convert_agent_action_to_messages(
         return list(agent_action.message_log) + [
             _create_function_message(agent_action, observation)
         ]
-    else:
-        return [AIMessage(content=agent_action.log)]
+    return [AIMessage(content=agent_action.log)]
 
 
 def _create_function_message(
