@@ -149,7 +149,7 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert sorted(kv_store.yield_keys(prefix="foo")) == ["foo"]
 
 
-class BaseStoreAsyncTests(BaseStandardTests):
+class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
     """Test suite for checking the key-value API of a BaseStore.
 
     This test suite verifies the basic key-value API of a BaseStore.

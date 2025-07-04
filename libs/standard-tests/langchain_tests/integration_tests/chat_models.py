@@ -1346,7 +1346,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Test stream
         full: Optional[BaseMessageChunk] = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk  # type: ignore
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -1407,7 +1407,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Test astream
         full: Optional[BaseMessageChunk] = None
         async for chunk in model_with_tools.astream(query):
-            full = chunk if full is None else full + chunk  # type: ignore
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -1743,7 +1743,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         full: Optional[BaseMessageChunk] = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk  # type: ignore
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
 

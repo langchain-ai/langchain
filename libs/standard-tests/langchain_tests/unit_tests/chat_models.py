@@ -908,7 +908,7 @@ class ChatModelUnitTests(ChatModelTests):
         # Doing a mypy ignore here since some of the tools are from pydantic
         # BaseModel 2 which isn't typed properly yet. This will need to be fixed
         # so type checking does not become annoying to users.
-        tool_model = model.bind_tools(tools, tool_choice="any")  # type: ignore
+        tool_model = model.bind_tools(tools, tool_choice="any")  # type: ignore[arg-type]
         assert isinstance(tool_model, RunnableBinding)
 
     @pytest.mark.parametrize("schema", TEST_PYDANTIC_MODELS)
@@ -962,19 +962,19 @@ class ChatModelUnitTests(ChatModelTests):
 
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)  # type: ignore
+            ExpectedParams(**ls_params)  # type: ignore[arg-type]
         except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
 
         # Test optional params
         model = self.chat_model_class(
-            max_tokens=10,
-            stop=["test"],
-            **self.chat_model_params,  # type: ignore
+            max_tokens=10,  # type: ignore[call-arg]
+            stop=["test"],  # type: ignore[call-arg]
+            **self.chat_model_params,
         )
         ls_params = model._get_ls_params()
         try:
-            ExpectedParams(**ls_params)  # type: ignore
+            ExpectedParams(**ls_params)  # type: ignore[arg-type]
         except ValidationErrorV1 as e:
             pytest.fail(f"Validation error: {e}")
 
