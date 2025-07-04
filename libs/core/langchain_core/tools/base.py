@@ -776,7 +776,7 @@ class ChildTool(BaseTool):
     def run(
         self,
         tool_input: Union[str, dict[str, Any]],
-        verbose: Optional[bool] = None,
+        verbose: Optional[bool] = None,  # noqa: FBT001
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
@@ -888,7 +888,7 @@ class ChildTool(BaseTool):
     async def arun(
         self,
         tool_input: Union[str, dict],
-        verbose: Optional[bool] = None,
+        verbose: Optional[bool] = None,  # noqa: FBT001
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
