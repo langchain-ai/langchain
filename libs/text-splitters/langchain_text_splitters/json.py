@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 
@@ -123,10 +123,10 @@ class RecursiveJsonSplitter:
 
     def split_text(
         self,
-        json_data: Dict[str, Any],
+        json_data: dict[str, Any],
         convert_lists: bool = False,
         ensure_ascii: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         """Splits JSON into a list of JSON formatted strings."""
         chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
 

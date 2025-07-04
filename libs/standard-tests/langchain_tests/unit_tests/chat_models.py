@@ -5,7 +5,7 @@
 import inspect
 import os
 from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type
+from typing import Any, Literal, Optional
 from unittest import mock
 
 import pytest
@@ -78,7 +78,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     @abstractmethod
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         """The chat model class to test, e.g., ``ChatParrotLink``."""
         ...
 
@@ -214,9 +214,9 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supported_usage_metadata_details(
         self,
-    ) -> Dict[
+    ) -> dict[
         Literal["invoke", "stream"],
-        List[
+        list[
             Literal[
                 "audio_input",
                 "audio_output",
@@ -804,7 +804,7 @@ class ChatModelUnitTests(ChatModelTests):
         return params
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """(tuple) environment variables, additional initialization args, and expected
         instance attributes for testing initialization from environment variables."""
         return {}, {}, {}
@@ -958,7 +958,7 @@ class ChatModelUnitTests(ChatModelTests):
             ls_model_type: Literal["chat"]
             ls_temperature: Optional[float]
             ls_max_tokens: Optional[int]
-            ls_stop: Optional[List[str]]
+            ls_stop: Optional[list[str]]
 
         ls_params = model._get_ls_params()
         try:

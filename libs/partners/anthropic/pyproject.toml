@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.52.0",
-    "langchain-core<1.0.0,>=0.3.66",
+    "anthropic<1,>=0.57.0",
+    "langchain-core<1.0.0,>=0.3.68",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.16"
+version = "0.3.17"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
