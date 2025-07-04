@@ -15,12 +15,12 @@ def get_package_root(cwd: Optional[Path] = None) -> Path:
         if pyproject_path.exists():
             return package_root
         package_root = package_root.parent
-    raise FileNotFoundError("No pyproject.toml found")
+    msg = "No pyproject.toml found"
+    raise FileNotFoundError(msg)
 
 
 class LangServeExport(TypedDict):
-    """
-    Fields from pyproject.toml that are relevant to LangServe
+    """Fields from pyproject.toml that are relevant to LangServe.
 
     Attributes:
         module: The module to import from, tool.langserve.export_module
@@ -41,5 +41,6 @@ def get_langserve_export(filepath: Path) -> LangServeExport:
         attr = data["tool"]["langserve"]["export_attr"]
         package_name = data["tool"]["poetry"]["name"]
     except KeyError as e:
-        raise KeyError("Invalid LangServe PyProject.toml") from e
+        msg = "Invalid LangServe PyProject.toml"
+        raise KeyError(msg) from e
     return LangServeExport(module=module, attr=attr, package_name=package_name)
