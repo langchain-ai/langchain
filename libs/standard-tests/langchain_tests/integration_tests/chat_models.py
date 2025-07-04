@@ -1,7 +1,7 @@
 import base64
 import inspect
 import json
-from typing import Any, List, Literal, Optional, cast
+from typing import Annotated, Any, Literal, Optional, cast
 from unittest.mock import MagicMock
 
 import httpx
@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import (
@@ -2680,7 +2680,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content: List[dict] = [
+        human_content: list[dict] = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",

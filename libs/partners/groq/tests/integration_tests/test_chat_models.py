@@ -4,6 +4,7 @@ import json
 from typing import Any, Optional, cast
 
 import pytest
+from groq import BadRequestError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -264,6 +265,19 @@ def test_reasoning_output_stream() -> None:
     assert len(full_response.additional_kwargs["reasoning_content"]) > 0
 
 
+def test_reasoning_effort_none() -> None:
+    """Test that no reasoning output is returned if effort is set to none."""
+    chat = ChatGroq(
+        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort
+        reasoning_effort="none",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert "reasoning_content" not in response.additional_kwargs
+    assert "<think>" not in response.content and "<think/>" not in response.content
+
+
 #
 # Misc tests
 #
@@ -452,6 +466,113 @@ def test_json_mode_structured_output() -> None:
     assert type(result) is Joke
     assert len(result.setup) != 0
     assert len(result.punchline) != 0
+
+
+def test_setting_service_tier_class() -> None:
+    """Test setting service tier defined at ChatGroq level."""
+    message = HumanMessage(content="Welcome to the Groqetship")
+
+    # Initialization
+    chat = ChatGroq(model=MODEL_NAME, service_tier="auto")
+    assert chat.service_tier == "auto"
+    response = chat.invoke([message])
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, str)
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    chat = ChatGroq(model=MODEL_NAME, service_tier="flex")
+    assert chat.service_tier == "flex"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "flex"
+
+    chat = ChatGroq(model=MODEL_NAME, service_tier="on_demand")
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    chat = ChatGroq(model=MODEL_NAME)
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    with pytest.raises(ValueError):
+        ChatGroq(model=MODEL_NAME, service_tier=None)  # type: ignore
+    with pytest.raises(ValueError):
+        ChatGroq(model=MODEL_NAME, service_tier="invalid")  # type: ignore
+
+
+def test_setting_service_tier_request() -> None:
+    """Test setting service tier defined at request level."""
+    message = HumanMessage(content="Welcome to the Groqetship")
+    chat = ChatGroq(model=MODEL_NAME)
+
+    response = chat.invoke(
+        [message],
+        service_tier="auto",
+    )
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, str)
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    response = chat.invoke(
+        [message],
+        service_tier="flex",
+    )
+    assert response.response_metadata.get("service_tier") == "flex"
+
+    response = chat.invoke(
+        [message],
+        service_tier="on_demand",
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke(
+        [message],
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    # If an `invoke` call is made with no service tier, we fall back to the class level
+    # setting
+    chat = ChatGroq(model=MODEL_NAME, service_tier="auto")
+    response = chat.invoke(
+        [message],
+    )
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    response = chat.invoke(
+        [message],
+        service_tier="on_demand",
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    with pytest.raises(BadRequestError):
+        response = chat.invoke(
+            [message],
+            service_tier="invalid",
+        )
+
+    response = chat.invoke(
+        [message],
+        service_tier=None,
+    )
+    assert response.response_metadata.get("service_tier") == "auto"
+
+
+def test_setting_service_tier_streaming() -> None:
+    """Test service tier settings for streaming calls."""
+    chat = ChatGroq(model=MODEL_NAME, service_tier="flex")
+    chunks = list(chat.stream("Why is the sky blue?", service_tier="auto"))
+
+    assert chunks[-1].response_metadata.get("service_tier") == "auto"
+
+
+async def test_setting_service_tier_request_async() -> None:
+    """Test async setting of service tier at the request level."""
+    chat = ChatGroq(model=MODEL_NAME, service_tier="flex")
+    response = await chat.ainvoke("Hello!", service_tier="on_demand")
+
+    assert response.response_metadata.get("service_tier") == "on_demand"
 
 
 # Groq does not currently support N > 1

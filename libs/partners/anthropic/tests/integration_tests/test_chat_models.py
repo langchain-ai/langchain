@@ -651,7 +651,7 @@ def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
 
 def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-    data = b64encode(requests.get(url).content).decode()
+    data = b64encode(requests.get(url, timeout=10).content).decode()
 
     result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
         [
@@ -1083,6 +1083,106 @@ def test_files_api_pdf(block_format: str) -> None:
         ],
     }
     _ = llm.invoke([input_message])
+
+
+def test_search_result_tool_message() -> None:
+    """Test that we can pass a search result tool message to the model."""
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest",
+        betas=["search-results-2025-06-09"],
+    )
+
+    @tool
+    def retrieval_tool(query: str) -> list[dict]:
+        """Retrieve information from a knowledge base."""
+        return [
+            {
+                "type": "search_result",
+                "title": "Leave policy",
+                "source": "HR Leave Policy 2025",
+                "citations": {"enabled": True},
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "To request vacation days, submit a leave request form "
+                            "through the HR portal. Approval will be sent by email."
+                        ),
+                    }
+                ],
+            }
+        ]
+
+    tool_call = {
+        "type": "tool_call",
+        "name": "retrieval_tool",
+        "args": {"query": "vacation days request process"},
+        "id": "toolu_abc123",
+    }
+
+    tool_message = retrieval_tool.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    assert isinstance(tool_message.content, list)
+
+    messages = [
+        HumanMessage("How do I request vacation days?"),
+        AIMessage(
+            [{"type": "text", "text": "Let me look that up for you."}],
+            tool_calls=[tool_call],
+        ),
+        tool_message,
+    ]
+
+    result = llm.invoke(messages)
+    assert isinstance(result, AIMessage)
+    assert isinstance(result.content, list)
+    assert any("citations" in block for block in result.content)
+
+
+def test_search_result_top_level() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest",
+        betas=["search-results-2025-06-09"],
+    )
+    input_message = HumanMessage(
+        [
+            {
+                "type": "search_result",
+                "title": "Leave policy",
+                "source": "HR Leave Policy 2025 - page 1",
+                "citations": {"enabled": True},
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "To request vacation days, submit a leave request form "
+                            "through the HR portal. Approval will be sent by email."
+                        ),
+                    }
+                ],
+            },
+            {
+                "type": "search_result",
+                "title": "Leave policy",
+                "source": "HR Leave Policy 2025 - page 2",
+                "citations": {"enabled": True},
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Managers have 3 days to approve a request.",
+                    }
+                ],
+            },
+            {
+                "type": "text",
+                "text": "How do I request vacation days?",
+            },
+        ]
+    )
+    result = llm.invoke([input_message])
+    assert isinstance(result, AIMessage)
+    assert isinstance(result.content, list)
+    assert any("citations" in block for block in result.content)
 
 
 def test_async_shared_client() -> None:

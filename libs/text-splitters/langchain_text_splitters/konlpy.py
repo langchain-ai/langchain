@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -30,7 +30,7 @@ class KonlpyTextSplitter(TextSplitter):
             )
         self.kkma = konlpy.tag.Kkma()
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         splits = self.kkma.sentences(text)
         return self._merge_splits(splits, self._separator)

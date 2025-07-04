@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Tuple, TypedDict, Union
+from typing import Any, TypedDict, Union
 
 from langchain_core.documents import Document
 
@@ -23,7 +23,7 @@ class MarkdownHeaderTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
+        headers_to_split_on: list[tuple[str, str]],
         return_each_line: bool = False,
         strip_headers: bool = True,
     ):
@@ -44,13 +44,13 @@ class MarkdownHeaderTextSplitter:
         # Strip headers split headers from the content of the chunk
         self.strip_headers = strip_headers
 
-    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
+    def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
         """Combine lines with common metadata into chunks.
 
         Args:
             lines: Line of text / associated header metadata
         """
-        aggregated_chunks: List[LineType] = []
+        aggregated_chunks: list[LineType] = []
 
         for line in lines:
             if (
@@ -87,7 +87,7 @@ class MarkdownHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
         """Split markdown file.
 
         Args:
@@ -96,14 +96,14 @@ class MarkdownHeaderTextSplitter:
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
         # Final output
-        lines_with_metadata: List[LineType] = []
+        lines_with_metadata: list[LineType] = []
         # Content and metadata of the chunk currently being processed
-        current_content: List[str] = []
-        current_metadata: Dict[str, str] = {}
+        current_content: list[str] = []
+        current_metadata: dict[str, str] = {}
         # Keep track of the nested header structure
         # header_stack: List[Dict[str, Union[int, str]]] = []
-        header_stack: List[HeaderType] = []
-        initial_metadata: Dict[str, str] = {}
+        header_stack: list[HeaderType] = []
+        initial_metadata: dict[str, str] = {}
 
         in_code_block = False
         opening_fence = ""
@@ -217,7 +217,7 @@ class MarkdownHeaderTextSplitter:
 class LineType(TypedDict):
     """Line type as typed dict."""
 
-    metadata: Dict[str, str]
+    metadata: dict[str, str]
     content: str
 
 
@@ -280,7 +280,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
+        headers_to_split_on: Union[list[tuple[str, str]], None] = None,
         return_each_line: bool = False,
         strip_headers: bool = True,
     ):
@@ -300,9 +300,9 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 Whether to exclude headers from the resulting chunks.
                 Defaults to True.
         """
-        self.chunks: List[Document] = []
+        self.chunks: list[Document] = []
         self.current_chunk = Document(page_content="")
-        self.current_header_stack: List[Tuple[int, str]] = []
+        self.current_header_stack: list[tuple[int, str]] = []
         self.strip_headers = strip_headers
         if headers_to_split_on:
             self.splittable_headers = dict(headers_to_split_on)
@@ -311,7 +311,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
         self.return_each_line = return_each_line
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
         """Split the input text into structured chunks.
 
         This method processes the input text line by line, identifying and handling
@@ -382,7 +382,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 break
         self.current_header_stack.append((header_depth, header_text))
 
-    def _resolve_code_chunk(self, current_line: str, raw_lines: List[str]) -> str:
+    def _resolve_code_chunk(self, current_line: str, raw_lines: list[str]) -> str:
         chunk = current_line
         while raw_lines:
             raw_line = raw_lines.pop(0)

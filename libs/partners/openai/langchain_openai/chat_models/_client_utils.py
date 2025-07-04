@@ -23,7 +23,7 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
@@ -37,7 +37,7 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 

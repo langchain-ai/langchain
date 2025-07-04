@@ -54,6 +54,7 @@ select = [
     "T201", # print
     "D",    # pydocstyle
     "UP",   # pyupgrade
+    "S",    # flake8-bandit
 ]
 ignore = [ "UP007", ]
 
@@ -72,3 +73,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

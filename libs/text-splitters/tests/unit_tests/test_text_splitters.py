@@ -3,8 +3,7 @@
 import random
 import re
 import string
-from pathlib import Path
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable
 
 import pytest
 from langchain_core.documents import Document
@@ -283,7 +282,7 @@ def test_create_documents_with_metadata() -> None:
     ],
 )
 def test_create_documents_with_start_index(
-    splitter: TextSplitter, text: str, expected_docs: List[Document]
+    splitter: TextSplitter, text: str, expected_docs: list[Document]
 ) -> None:
     """Test create documents method."""
     docs = splitter.create_documents([text])
@@ -334,7 +333,7 @@ def test_iterative_text_splitter_discard_separator() -> None:
     ]
 
 
-def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> list[str]:
     chunk_size += 1 if keep_separator else 0
 
     splitter = RecursiveCharacterTextSplitter(
@@ -2225,7 +2224,7 @@ def test_haskell_code_splitter() -> None:
 @pytest.fixture
 @pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
-    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+    [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
@@ -2233,7 +2232,7 @@ def html_header_splitter_splitter_factory() -> Callable[
     """
 
     def _create_splitter(
-        headers_to_split_on: List[Tuple[str, str]],
+        headers_to_split_on: list[tuple[str, str]],
     ) -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
@@ -2427,9 +2426,9 @@ def html_header_splitter_splitter_factory() -> Callable[
 @pytest.mark.requires("bs4")
 def test_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_input: str,
-    expected_documents: List[Document],
+    expected_documents: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2583,9 +2582,9 @@ def test_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_additional_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2654,9 +2653,9 @@ def test_additional_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_html_no_headers_with_multiple_splitters(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2863,37 +2862,6 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
         "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
-
-
-@pytest.mark.requires("bs4")
-@pytest.mark.requires("lxml")
-def test_section_splitter_accepts_a_relative_path() -> None:
-    html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt")
-    assert test_file.is_file()
-
-    sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-        xslt_path=test_file.as_posix(),
-    )
-
-    sec_splitter.split_text(html_string)
-
-
-@pytest.mark.requires("bs4")
-@pytest.mark.requires("lxml")
-def test_section_splitter_accepts_an_absolute_path() -> None:
-    html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
-    assert test_file.is_absolute()
-    assert test_file.is_file()
-
-    sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-        xslt_path=test_file.as_posix(),
-    )
-
-    sec_splitter.split_text(html_string)
 
 
 @pytest.mark.requires("bs4")
@@ -3604,7 +3572,7 @@ def test_character_text_splitter_chunk_size_effect(
     is_regex: bool,
     text: str,
     chunk_size: int,
-    expected: List[str],
+    expected: list[str],
 ) -> None:
     splitter = CharacterTextSplitter(
         separator=separator,

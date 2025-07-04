@@ -327,9 +327,10 @@ def _format_messages(
 
         if not isinstance(message.content, str):
             # parse as dict
-            assert isinstance(
-                message.content, list
-            ), "Anthropic message content must be str or list of dicts"
+            if not isinstance(message.content, list):
+                raise ValueError(
+                    "Anthropic message content must be str or list of dicts"
+                )
 
             # populate content
             content = []
@@ -486,7 +487,8 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
 
-    See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
+    See `Anthropic's docs <https://docs.anthropic.com/en/docs/models-overview>`__ for a
+    list of the latest models.
 
     Setup:
         Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
@@ -498,9 +500,9 @@ class ChatAnthropic(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
+            Name of Anthropic model to use. e.g. ``'claude-3-sonnet-20240229'``.
         temperature: float
-            Sampling temperature. Ranges from 0.0 to 1.0.
+            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         max_tokens: int
             Max number of tokens to generate.
 
@@ -510,7 +512,8 @@ class ChatAnthropic(BaseChatModel):
         max_retries: int
             Max number of retries if a request fails.
         api_key: Optional[str]
-            Anthropic API key. If not passed in will be read from env var ANTHROPIC_API_KEY.
+            Anthropic API key. If not passed in will be read from env var
+            ``ANTHROPIC_API_KEY``.
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
@@ -1182,8 +1185,8 @@ class ChatAnthropic(BaseChatModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
-    ANTHROPIC_API_URL and if that is not set, ANTHROPIC_BASE_URL.
-    If neither are set, the default value of 'https://api.anthropic.com' will
+    ``ANTHROPIC_API_URL`` and if that is not set, ``ANTHROPIC_BASE_URL``.
+    If neither are set, the default value of ``https://api.anthropic.com`` will
     be used.
     """
 
@@ -1191,8 +1194,7 @@ class ChatAnthropic(BaseChatModel):
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
@@ -1210,7 +1212,7 @@ class ChatAnthropic(BaseChatModel):
     """Whether to use streaming or not."""
 
     stream_usage: bool = True
-    """Whether to include usage metadata in streaming output. If True, additional
+    """Whether to include usage metadata in streaming output. If ``True``, additional
     message chunks will be generated during the stream including usage metadata.
     """
 
@@ -1569,7 +1571,7 @@ class ChatAnthropic(BaseChatModel):
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
+                - ``"auto"``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
                 - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
@@ -1579,6 +1581,7 @@ class ChatAnthropic(BaseChatModel):
                 :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
         Example:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1607,7 +1610,8 @@ class ChatAnthropic(BaseChatModel):
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
-        Example — force tool call with tool_choice 'any':
+        Example — force tool call with tool_choice ``'any'``:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1629,7 +1633,8 @@ class ChatAnthropic(BaseChatModel):
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
 
-        Example — force specific tool call with tool_choice '<name_of_tool>':
+        Example — force specific tool call with tool_choice ``'<name_of_tool>'``:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1651,6 +1656,7 @@ class ChatAnthropic(BaseChatModel):
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
         Example — cache specific tools:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
@@ -1753,28 +1759,29 @@ class ChatAnthropic(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If ``False`` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If ``True``
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``raw``, ``parsed``, and ``parsing_error``.
             kwargs: Additional keyword arguments are ignored.
 
         Returns:
             A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+                - ``raw``: BaseMessage
+                - ``parsed``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``parsing_error``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1796,6 +1803,7 @@ class ChatAnthropic(BaseChatModel):
                 # )
 
         Example:  Pydantic schema (include_raw=True):
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1817,6 +1825,7 @@ class ChatAnthropic(BaseChatModel):
                 # }
 
         Example: Dict schema (include_raw=False):
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1901,6 +1910,7 @@ class ChatAnthropic(BaseChatModel):
                 to be converted to tool schemas.
 
         Basic usage:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1919,6 +1929,7 @@ class ChatAnthropic(BaseChatModel):
                 14
 
         Pass tool schemas:
+
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
@@ -1947,9 +1958,9 @@ class ChatAnthropic(BaseChatModel):
 
         .. versionchanged:: 0.3.0
 
-                Uses Anthropic's token counting API to count tokens in messages. See:
-                https://docs.anthropic.com/en/docs/build-with-claude/token-counting
-        """
+                Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
+
+        """  # noqa: E501
         formatted_system, formatted_messages = _format_messages(messages)
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
@@ -2043,7 +2054,7 @@ def _make_message_chunk_from_anthropic_event(
     """Convert Anthropic event to AIMessageChunk.
 
     Note that not all events will result in a message chunk. In these cases
-    we return None.
+    we return ``None``.
     """
     message_chunk: Optional[AIMessageChunk] = None
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501

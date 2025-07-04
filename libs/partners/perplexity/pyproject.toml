@@ -59,7 +59,7 @@ ignore_missing_imports = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
+select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.ruff.format]
@@ -79,4 +79,10 @@ markers = [
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]

@@ -66,15 +66,15 @@ class _AnthropicCommon(BaseLanguageModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value from
-    ANTHROPIC_API_URL. If not set, the default value of 'https://api.anthropic.com' will
-    be used.
+    ``ANTHROPIC_API_URL``. If not set, the default value ``https://api.anthropic.com``
+    will be used.
     """
 
     anthropic_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
@@ -311,6 +311,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         Returns:
             A generator representing the stream of tokens from Anthropic.
         Example:
+
             .. code-block:: python
 
                 prompt = "Write a poem about a stream."
@@ -347,6 +348,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             A generator representing the stream of tokens from Anthropic.
         Example:
             .. code-block:: python
+
                 prompt = "Write a poem about a stream."
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
                 generator = anthropic.stream(prompt)
