@@ -375,6 +375,21 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    """Optional parameter that you can include to specify the service tier you'd like to
+    use for requests.
+
+    - ``'on_demand'``: Default.
+    - ``'flex'``: On-demand processing when capacity is available, with rapid timeouts
+      if resources are constrained. Provides balance between performance and reliability
+      for workloads that don't require guaranteed processing.
+    - ``'auto'``: Uses on-demand rate limits, then falls back to ``'flex'`` if those
+      limits are exceeded
+
+    See the `Groq documentation
+    <https://console.groq.com/docs/flex-processing>`__ for more details and a list of
+    service tiers and descriptions.
+    """
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -534,7 +549,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = self.client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     async def _agenerate(
         self,
@@ -555,7 +570,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = await self.async_client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     def _stream(
         self,
@@ -582,6 +597,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or self.service_tier
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -623,6 +640,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or self.service_tier
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -653,13 +672,16 @@ class ChatGroq(BaseChatModel):
             "stop": self.stop,
             "reasoning_format": self.reasoning_format,
             "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, BaseModel], params: dict
+    ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -689,6 +711,7 @@ class ChatGroq(BaseChatModel):
             "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        llm_output["service_tier"] = params.get("service_tier") or self.service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -719,6 +742,8 @@ class ChatGroq(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
+        if self.service_tier:
+            combined["service_tier"] = self.service_tier
         return combined
 
     @deprecated(

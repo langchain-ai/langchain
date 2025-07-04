@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from itertools import islice
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -19,6 +19,9 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
+
+if TYPE_CHECKING:
+    import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +286,7 @@ class RedisEntityStore(BaseEntityStore):
     ),
 )
 class SQLiteEntityStore(BaseEntityStore):
-    """SQLite-backed Entity store"""
+    """SQLite-backed Entity store with safe query construction."""
 
     session_id: str = "default"
     table_name: str = "memory_store"
@@ -301,6 +304,7 @@ class SQLiteEntityStore(BaseEntityStore):
         *args: Any,
         **kwargs: Any,
     ):
+        super().__init__(*args, **kwargs)
         try:
             import sqlite3
         except ImportError:
@@ -308,7 +312,13 @@ class SQLiteEntityStore(BaseEntityStore):
                 "Could not import sqlite3 python package. "
                 "Please install it with `pip install sqlite3`."
             )
-        super().__init__(*args, **kwargs)
+
+        # Basic validation to prevent obviously malicious table/session names
+        if not table_name.isidentifier() or not session_id.isidentifier():
+            # Since we validate here, we can safely suppress the S608 bandit warning
+            raise ValueError(
+                "Table name and session ID must be valid Python identifiers."
+            )
 
         self.conn = sqlite3.connect(db_file)
         self.session_id = session_id
@@ -319,62 +329,60 @@ class SQLiteEntityStore(BaseEntityStore):
     def full_table_name(self) -> str:
         return f"{self.table_name}_{self.session_id}"
 
+    def _execute_query(self, query: str, params: tuple = ()) -> "sqlite3.Cursor":
+        """Executes a query with proper connection handling."""
+        with self.conn:
+            return self.conn.execute(query, params)
+
     def _create_table_if_not_exists(self) -> None:
+        """Creates the entity table if it doesn't exist, using safe quoting."""
+        # Use standard SQL double quotes for the table name identifier
         create_table_query = f"""
-            CREATE TABLE IF NOT EXISTS {self.full_table_name} (
+            CREATE TABLE IF NOT EXISTS "{self.full_table_name}" (
                 key TEXT PRIMARY KEY,
                 value TEXT
             )
         """
-        with self.conn:
-            self.conn.execute(create_table_query)
+        self._execute_query(create_table_query)
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        query = f"""
-            SELECT value
-            FROM {self.full_table_name}
-            WHERE key = ?
-        """
-        cursor = self.conn.execute(query, (key,))
+        """Retrieves a value, safely quoting the table name."""
+        # `?` placeholder is used for the value to prevent SQL injection
+        # noqa since we validate for malicious table/session names in `__init__`
+        query = f'SELECT value FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        cursor = self._execute_query(query, (key,))
         result = cursor.fetchone()
-        if result is not None:
-            value = result[0]
-            return value
-        return default
+        return result[0] if result is not None else default
 
     def set(self, key: str, value: Optional[str]) -> None:
+        """Inserts or replaces a value, safely quoting the table name."""
         if not value:
             return self.delete(key)
-        query = f"""
-            INSERT OR REPLACE INTO {self.full_table_name} (key, value)
-            VALUES (?, ?)
-        """
-        with self.conn:
-            self.conn.execute(query, (key, value))
+        # noqa since we validate for malicious table/session names in `__init__`
+        query = (
+            "INSERT OR REPLACE INTO "  # noqa: S608
+            f'"{self.full_table_name}" (key, value) VALUES (?, ?)'
+        )
+        self._execute_query(query, (key, value))
 
     def delete(self, key: str) -> None:
-        query = f"""
-            DELETE FROM {self.full_table_name}
-            WHERE key = ?
-        """
-        with self.conn:
-            self.conn.execute(query, (key,))
+        """Deletes a key-value pair, safely quoting the table name."""
+        # noqa since we validate for malicious table/session names in `__init__`
+        query = f'DELETE FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        self._execute_query(query, (key,))
 
     def exists(self, key: str) -> bool:
-        query = f"""
-            SELECT 1
-            FROM {self.full_table_name}
-            WHERE key = ?
-            LIMIT 1
-        """
-        cursor = self.conn.execute(query, (key,))
-        result = cursor.fetchone()
-        return result is not None
+        """Checks for the existence of a key, safely quoting the table name."""
+        # noqa since we validate for malicious table/session names in `__init__`
+        query = f'SELECT 1 FROM "{self.full_table_name}" WHERE key = ? LIMIT 1'  # noqa: S608
+        cursor = self._execute_query(query, (key,))
+        return cursor.fetchone() is not None
 
     def clear(self) -> None:
+        # noqa since we validate for malicious table/session names in `__init__`
         query = f"""
             DELETE FROM {self.full_table_name}
-        """
+        """  # noqa: S608
         with self.conn:
             self.conn.execute(query)
 

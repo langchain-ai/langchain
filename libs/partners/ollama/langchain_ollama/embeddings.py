@@ -12,6 +12,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from ._utils import validate_model
+
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama embedding model integration.
@@ -122,6 +124,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     model: str
     """Model name to use."""
+
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in ollama locally on initialization."""
 
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
@@ -259,6 +264,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

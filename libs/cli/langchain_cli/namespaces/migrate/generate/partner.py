@@ -1,7 +1,6 @@
 """Generate migrations for partner packages."""
 
 import importlib
-from typing import List, Tuple
 
 from langchain_core.documents import BaseDocumentCompressor, BaseDocumentTransformer
 from langchain_core.embeddings import Embeddings
@@ -19,7 +18,7 @@ from langchain_cli.namespaces.migrate.generate.utils import (
 # PUBLIC API
 
 
-def get_migrations_for_partner_package(pkg_name: str) -> List[Tuple[str, str]]:
+def get_migrations_for_partner_package(pkg_name: str) -> list[tuple[str, str]]:
     """Generate migrations from community package to partner package.
 
     This code works

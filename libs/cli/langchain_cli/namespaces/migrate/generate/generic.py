@@ -3,12 +3,11 @@
 import importlib
 import inspect
 import pkgutil
-from typing import List, Tuple
 
 
 def generate_raw_migrations(
     from_package: str, to_package: str, filter_by_all: bool = False
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """Scan the `langchain` package and generate migrations for all modules."""
     package = importlib.import_module(from_package)
 
@@ -56,7 +55,7 @@ def generate_raw_migrations(
     return items
 
 
-def generate_top_level_imports(pkg: str) -> List[Tuple[str, str]]:
+def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     """This code will look at all the top level modules in langchain_community.
 
     It'll attempt to import everything from each __init__ file
@@ -121,7 +120,7 @@ def generate_top_level_imports(pkg: str) -> List[Tuple[str, str]]:
 
 def generate_simplified_migrations(
     from_package: str, to_package: str, filter_by_all: bool = True
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """Get all the raw migrations, then simplify them if possible."""
     raw_migrations = generate_raw_migrations(
         from_package, to_package, filter_by_all=filter_by_all

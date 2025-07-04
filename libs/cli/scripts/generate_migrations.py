@@ -100,7 +100,7 @@ def partner(pkg: str, output: str) -> None:
 @click.argument("json_file")
 def json_to_grit(json_file: str) -> None:
     """Generate a Grit migration from an old JSON migration file."""
-    with open(json_file, "r") as f:
+    with open(json_file) as f:
         migrations = json.load(f)
     name = os.path.basename(json_file).removesuffix(".json").removesuffix(".grit")
     data = dump_migrations_as_grit(name, migrations)

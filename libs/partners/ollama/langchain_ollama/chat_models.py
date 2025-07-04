@@ -55,6 +55,8 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
+from ._utils import validate_model
+
 DEFAULT_THINK_TOKEN_START: Final[str] = "<think>"
 DEFAULT_THINK_TOKEN_END: Final[str] = "</think>"
 
@@ -350,6 +352,9 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in Ollama locally on initialization."""
+
     extract_reasoning: Optional[Union[bool, tuple[str, str]]] = False
     """Whether to extract the reasoning tokens in think blocks.
     Extracts `chunk.content` to `chunk.additional_kwargs.reasoning_content`.
@@ -529,6 +534,8 @@ class ChatOllama(BaseChatModel):
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     def _convert_messages_to_ollama_messages(
@@ -1226,7 +1233,7 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)

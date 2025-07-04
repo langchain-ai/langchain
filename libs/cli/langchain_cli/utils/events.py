@@ -1,16 +1,16 @@
 import http.client
 import json
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
 
 class EventDict(TypedDict):
     event: str
-    properties: Optional[Dict[str, Any]]
+    properties: Optional[dict[str, Any]]
 
 
-def create_events(events: List[EventDict]) -> Optional[Any]:
+def create_events(events: list[EventDict]) -> Optional[Any]:
     try:
         data = {
             "events": [

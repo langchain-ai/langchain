@@ -139,7 +139,8 @@ def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
     role = _message["role"]
-    assert role == "assistant", f"Expected role to be 'assistant', got {role}"
+    if role != "assistant":
+        raise ValueError(f"Expected role to be 'assistant', got {role}")
     content = cast(str, _message["content"])
 
     additional_kwargs: dict = {}
@@ -398,7 +399,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: Optional[int] = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-       probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
+    probability sum is at least ``top_p``. Must be in the closed interval
+    ``[0.0, 1.0]``."""
     random_seed: Optional[int] = None
     safe_mode: Optional[bool] = None
     streaming: bool = False

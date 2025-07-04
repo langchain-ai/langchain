@@ -6,6 +6,9 @@ on:
       - 'libs/core/pyproject.toml'
       - 'libs/core/langchain_core/version.py'
 
+permissions:
+  contents: read
+
 jobs:
   check_version_equality:
     runs-on: ubuntu-latest

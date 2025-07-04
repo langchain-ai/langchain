@@ -5,6 +5,9 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   check-links:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'

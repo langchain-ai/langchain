@@ -3,7 +3,7 @@ import inspect
 import os
 import pathlib
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
@@ -29,7 +29,7 @@ class ImportExtractor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def _get_class_names(code: str) -> List[str]:
+def _get_class_names(code: str) -> list[str]:
     """Extract class names from a code string."""
     # Parse the content of the file into an AST
     tree = ast.parse(code)
@@ -49,7 +49,7 @@ def _get_class_names(code: str) -> List[str]:
     return class_names
 
 
-def is_subclass(class_obj: Any, classes_: List[Type]) -> bool:
+def is_subclass(class_obj: Any, classes_: list[type]) -> bool:
     """Check if the given class object is a subclass of any class in list classes."""
     return any(
         issubclass(class_obj, kls)
@@ -58,7 +58,7 @@ def is_subclass(class_obj: Any, classes_: List[Type]) -> bool:
     )
 
 
-def find_subclasses_in_module(module, classes_: List[Type]) -> List[str]:
+def find_subclasses_in_module(module, classes_: list[type]) -> list[str]:
     """Find all classes in the module that inherit from one of the classes."""
     subclasses = []
     # Iterate over all attributes of the module that are classes
@@ -68,7 +68,7 @@ def find_subclasses_in_module(module, classes_: List[Type]) -> List[str]:
     return subclasses
 
 
-def _get_all_classnames_from_file(file: Path, pkg: str) -> List[Tuple[str, str]]:
+def _get_all_classnames_from_file(file: Path, pkg: str) -> list[tuple[str, str]]:
     """Extract all class names from a file."""
     with open(file, encoding="utf-8") as f:
         code = f.read()
@@ -80,7 +80,7 @@ def _get_all_classnames_from_file(file: Path, pkg: str) -> List[Tuple[str, str]]
 
 def identify_all_imports_in_file(
     file: str, *, from_package: Optional[str] = None
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """Let's also identify all the imports in the given file."""
     with open(file, encoding="utf-8") as f:
         code = f.read()
@@ -103,7 +103,7 @@ def identify_pkg_source(pkg_root: str) -> pathlib.Path:
     return matching_dirs[0]
 
 
-def list_classes_by_package(pkg_root: str) -> List[Tuple[str, str]]:
+def list_classes_by_package(pkg_root: str) -> list[tuple[str, str]]:
     """List all classes in a package."""
     module_classes = []
     pkg_source = identify_pkg_source(pkg_root)
@@ -117,7 +117,7 @@ def list_classes_by_package(pkg_root: str) -> List[Tuple[str, str]]:
     return module_classes
 
 
-def list_init_imports_by_package(pkg_root: str) -> List[Tuple[str, str]]:
+def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
     """List all the things that are being imported in a package by module."""
     imports = []
     pkg_source = identify_pkg_source(pkg_root)
@@ -135,7 +135,7 @@ def list_init_imports_by_package(pkg_root: str) -> List[Tuple[str, str]]:
 
 def find_imports_from_package(
     code: str, *, from_package: Optional[str] = None
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     # Parse the code into an AST
     tree = ast.parse(code)
     # Create an instance of the visitor

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import pytest
 
@@ -16,7 +16,7 @@ def _assert_dependency_equals(
     git: Optional[str] = None,
     ref: Optional[str] = None,
     subdirectory: Optional[str] = None,
-    event_metadata: Optional[Dict] = None,
+    event_metadata: Optional[dict] = None,
 ) -> None:
     assert dep["git"] == git
     assert dep["ref"] == ref

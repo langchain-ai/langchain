@@ -45,7 +45,9 @@ select = [
     "F",    # pyflakes
     "I",    # isort
     "T201", # print
+    "UP",   # pyupgrade
 ]
+ignore = ["UP007",]
 
 [tool.mypy]
 exclude = [
