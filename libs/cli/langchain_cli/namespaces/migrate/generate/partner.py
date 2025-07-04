@@ -46,9 +46,8 @@ def get_migrations_for_partner_package(pkg_name: str) -> list[tuple[str, str]]:
 
     old_paths = community_classes + imports_for_pkg
 
-    migrations = [
+    return [
         (f"{module}.{item}", f"{pkg_name}.{item}")
         for module, item in old_paths
         if item in classes_
     ]
-    return migrations
