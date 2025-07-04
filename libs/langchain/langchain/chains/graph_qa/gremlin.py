@@ -30,7 +30,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "GRAPHDB_SPARQL_FIX_TEMPLATE",
-    "GremlinQAChain",
     "INTERMEDIATE_STEPS_KEY",
+    "GremlinQAChain",
     "extract_gremlin",
 ]

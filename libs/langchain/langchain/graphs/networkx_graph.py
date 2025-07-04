@@ -30,7 +30,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "KnowledgeTriple",
-    "parse_triples",
-    "get_entities",
     "NetworkxEntityGraph",
+    "get_entities",
+    "parse_triples",
 ]

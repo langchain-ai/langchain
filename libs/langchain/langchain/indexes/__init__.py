@@ -40,11 +40,11 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    # Keep sorted
-    "aindex",
     "GraphIndexCreator",
-    "index",
     "IndexingResult",
     "SQLRecordManager",
     "VectorstoreIndexCreator",
+    # Keep sorted
+    "aindex",
+    "index",
 ]

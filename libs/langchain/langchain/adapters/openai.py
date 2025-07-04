@@ -47,17 +47,17 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "IndexableBaseModel",
-    "Choice",
-    "ChatCompletions",
-    "ChoiceChunk",
+    "Chat",
+    "ChatCompletion",
     "ChatCompletionChunk",
+    "ChatCompletions",
+    "Choice",
+    "ChoiceChunk",
+    "Completions",
+    "IndexableBaseModel",
+    "chat",
     "convert_dict_to_message",
     "convert_message_to_dict",
-    "convert_openai_messages",
-    "ChatCompletion",
     "convert_messages_for_finetuning",
-    "Completions",
-    "Chat",
-    "chat",
+    "convert_openai_messages",
 ]

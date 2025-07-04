@@ -10,6 +10,6 @@ from langchain.chains.combine_documents.stuff import create_stuff_documents_chai
 __all__ = [
     "acollapse_docs",
     "collapse_docs",
-    "split_list_of_docs",
     "create_stuff_documents_chain",
+    "split_list_of_docs",
 ]

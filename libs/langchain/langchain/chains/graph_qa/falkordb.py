@@ -26,4 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = ["FalkorDBQAChain", "INTERMEDIATE_STEPS_KEY", "extract_cypher"]
+__all__ = ["INTERMEDIATE_STEPS_KEY", "FalkorDBQAChain", "extract_cypher"]

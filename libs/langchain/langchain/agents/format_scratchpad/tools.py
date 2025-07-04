@@ -54,8 +54,9 @@ def format_to_tool_messages(
     messages = []
     for agent_action, observation in intermediate_steps:
         if isinstance(agent_action, ToolAgentAction):
-            new_messages = list(agent_action.message_log) + [
-                _create_tool_message(agent_action, observation)
+            new_messages = [
+                *list(agent_action.message_log),
+                _create_tool_message(agent_action, observation),
             ]
             messages.extend([new for new in new_messages if new not in messages])
         else:

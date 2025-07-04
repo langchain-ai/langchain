@@ -26,4 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = ["SQL_PREFIX", "SQL_SUFFIX", "SQL_FUNCTIONS_SUFFIX"]
+__all__ = ["SQL_FUNCTIONS_SUFFIX", "SQL_PREFIX", "SQL_SUFFIX"]

@@ -49,17 +49,17 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "UnstructuredPDFLoader",
+    "AmazonTextractPDFLoader",
     "BasePDFLoader",
+    "DocumentIntelligenceLoader",
+    "MathpixPDFLoader",
     "OnlinePDFLoader",
-    "PagedPDFSplitter",
-    "PyPDFium2Loader",
-    "PyPDFDirectoryLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
-    "PyMuPDFLoader",
-    "MathpixPDFLoader",
     "PDFPlumberLoader",
-    "AmazonTextractPDFLoader",
-    "DocumentIntelligenceLoader",
+    "PagedPDFSplitter",
+    "PyMuPDFLoader",
+    "PyPDFDirectoryLoader",
+    "PyPDFium2Loader",
+    "UnstructuredPDFLoader",
 ]

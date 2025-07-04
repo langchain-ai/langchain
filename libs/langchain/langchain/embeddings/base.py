@@ -221,6 +221,6 @@ def init_embeddings(
 
 
 __all__ = [
-    "init_embeddings",
     "Embeddings",  # This one is for backwards compatibility
+    "init_embeddings",
 ]

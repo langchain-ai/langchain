@@ -44,14 +44,14 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "MemgraphGraph",
-    "NetworkxEntityGraph",
-    "Neo4jGraph",
-    "NebulaGraph",
-    "NeptuneGraph",
-    "KuzuGraph",
-    "HugeGraph",
-    "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
+    "HugeGraph",
+    "KuzuGraph",
+    "MemgraphGraph",
+    "NebulaGraph",
+    "Neo4jGraph",
+    "NeptuneGraph",
+    "NetworkxEntityGraph",
+    "RdfGraph",
 ]
