@@ -198,7 +198,10 @@ class StructuredTool(BaseTool):
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
                 description_ = args_schema.__doc__
-                if "A base class for creating Pydantic models" in description_:
+                if (
+                    description_
+                    and "A base class for creating Pydantic models" in description_
+                ):
                     description_ = ""
                 elif not description_:
                     description_ = None
