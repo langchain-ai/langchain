@@ -251,11 +251,12 @@ class FlareChain(Chain):
         try:
             from langchain_openai import ChatOpenAI
         except ImportError:
-            raise ImportError(
+            msg = (
                 "OpenAI is required for FlareChain. "
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
+            raise ImportError(msg)
         llm = ChatOpenAI(
             max_completion_tokens=max_generation_len, logprobs=True, temperature=0
         )

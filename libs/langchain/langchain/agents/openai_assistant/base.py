@@ -80,14 +80,14 @@ def _get_openai_client() -> openai.OpenAI:
 
         return openai.OpenAI()
     except ImportError as e:
-        raise ImportError(
-            "Unable to import openai, please install with `pip install openai`."
-        ) from e
+        msg = "Unable to import openai, please install with `pip install openai`."
+        raise ImportError(msg) from e
     except AttributeError as e:
-        raise AttributeError(
+        msg = (
             "Please make sure you are using a v1.1-compatible version of openai. You "
             'can install with `pip install "openai>=1.1"`.'
-        ) from e
+        )
+        raise AttributeError(msg) from e
 
 
 def _get_openai_async_client() -> openai.AsyncOpenAI:
@@ -96,14 +96,14 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
         return openai.AsyncOpenAI()
     except ImportError as e:
-        raise ImportError(
-            "Unable to import openai, please install with `pip install openai`."
-        ) from e
+        msg = "Unable to import openai, please install with `pip install openai`."
+        raise ImportError(msg) from e
     except AttributeError as e:
-        raise AttributeError(
+        msg = (
             "Please make sure you are using a v1.1-compatible version of openai. You "
             'can install with `pip install "openai>=1.1"`.'
-        ) from e
+        )
+        raise AttributeError(msg) from e
 
 
 def _is_assistants_builtin_tool(
@@ -619,10 +619,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 try:
                     args = json.loads(function.arguments, strict=False)
                 except JSONDecodeError as e:
-                    raise ValueError(
+                    msg = (
                         f"Received invalid JSON function arguments: "
                         f"{function.arguments} for function {function.name}"
-                    ) from e
+                    )
+                    raise ValueError(msg) from e
                 if len(args) == 1 and "__arg1" in args:
                     args = args["__arg1"]
                 actions.append(
@@ -638,9 +639,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             return actions
         else:
             run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+            msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+            raise ValueError(msg)
 
     def _wait_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True
@@ -773,10 +773,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 try:
                     args = json.loads(function.arguments, strict=False)
                 except JSONDecodeError as e:
-                    raise ValueError(
+                    msg = (
                         f"Received invalid JSON function arguments: "
                         f"{function.arguments} for function {function.name}"
-                    ) from e
+                    )
+                    raise ValueError(msg) from e
                 if len(args) == 1 and "__arg1" in args:
                     args = args["__arg1"]
                 actions.append(
@@ -792,9 +793,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             return actions
         else:
             run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+            msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+            raise ValueError(msg)
 
     async def _await_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True

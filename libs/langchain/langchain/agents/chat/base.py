@@ -53,7 +53,8 @@ class ChatAgent(Agent):
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
+            msg = "agent_scratchpad should be of type string."
+            raise ValueError(msg)
         if agent_scratchpad:
             return (
                 f"This was your previous work "

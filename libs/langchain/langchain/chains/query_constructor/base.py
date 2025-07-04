@@ -63,9 +63,8 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 **{k: v for k, v in parsed.items() if k in allowed_keys}
             )
         except Exception as e:
-            raise OutputParserException(
-                f"Parsing text\n{text}\n raised following error:\n{e}"
-            )
+            msg = f"Parsing text\n{text}\n raised following error:\n{e}"
+            raise OutputParserException(msg)
 
     @classmethod
     def from_components(

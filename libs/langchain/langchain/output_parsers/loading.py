@@ -17,6 +17,7 @@ def load_output_parser(config: dict) -> dict:
             if output_parser_type == "regex_parser":
                 output_parser = RegexParser(**_config)
             else:
-                raise ValueError(f"Unsupported output parser {output_parser_type}")
+                msg = f"Unsupported output parser {output_parser_type}"
+                raise ValueError(msg)
             config["output_parsers"] = output_parser
     return config

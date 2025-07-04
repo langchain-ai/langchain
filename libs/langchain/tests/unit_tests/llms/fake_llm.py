@@ -19,9 +19,8 @@ class FakeLLM(LLM):
     @classmethod
     def check_queries_required(cls, values: dict) -> dict:
         if values.get("sequential_response") and not values.get("queries"):
-            raise ValueError(
-                "queries is required when sequential_response is set to True"
-            )
+            msg = "queries is required when sequential_response is set to True"
+            raise ValueError(msg)
         return values
 
     def get_num_tokens(self, text: str) -> int:

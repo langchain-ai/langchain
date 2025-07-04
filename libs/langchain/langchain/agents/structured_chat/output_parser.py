@@ -49,7 +49,8 @@ class StructuredChatOutputParser(AgentOutputParser):
             else:
                 return AgentFinish({"output": text}, text)
         except Exception as e:
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:
@@ -77,7 +78,8 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
                 parsed_obj = self.base_parser.parse(text)
             return parsed_obj
         except Exception as e:
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @classmethod
     def from_llm(

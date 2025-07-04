@@ -46,13 +46,13 @@ class ConvoOutputParser(AgentOutputParser):
             else:
                 # If the necessary keys aren't present in the response, raise an
                 # exception
-                raise OutputParserException(
-                    f"Missing 'action' or 'action_input' in LLM output: {text}"
-                )
+                msg = f"Missing 'action' or 'action_input' in LLM output: {text}"
+                raise OutputParserException(msg)
         except Exception as e:
             # If any other exception is raised during parsing, also raise an
             # OutputParserException
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

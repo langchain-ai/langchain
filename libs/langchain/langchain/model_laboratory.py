@@ -34,24 +34,28 @@ class ModelLaboratory:
         """
         for chain in chains:
             if not isinstance(chain, Chain):
-                raise ValueError(
+                msg = (
                     "ModelLaboratory should now be initialized with Chains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
                 )
+                raise ValueError(msg)
             if len(chain.input_keys) != 1:
-                raise ValueError(
+                msg = (
                     "Currently only support chains with one input variable, "
                     f"got {chain.input_keys}"
                 )
+                raise ValueError(msg)
             if len(chain.output_keys) != 1:
-                raise ValueError(
+                msg = (
                     "Currently only support chains with one output variable, "
                     f"got {chain.output_keys}"
                 )
+                raise ValueError(msg)
         if names is not None:
             if len(names) != len(chains):
-                raise ValueError("Length of chains does not match length of names.")
+                msg = "Length of chains does not match length of names."
+                raise ValueError(msg)
         self.chains = chains
         chain_range = [str(i) for i in range(len(self.chains))]
         self.chain_colors = get_color_mapping(chain_range)

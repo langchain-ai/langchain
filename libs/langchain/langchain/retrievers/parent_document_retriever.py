@@ -81,15 +81,15 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         if ids is None:
             doc_ids = [str(uuid.uuid4()) for _ in documents]
             if not add_to_docstore:
-                raise ValueError(
-                    "If ids are not passed in, `add_to_docstore` MUST be True"
-                )
+                msg = "If ids are not passed in, `add_to_docstore` MUST be True"
+                raise ValueError(msg)
         else:
             if len(documents) != len(ids):
-                raise ValueError(
+                msg = (
                     "Got uneven list of documents and ids. "
                     "If `ids` is provided, should be same length as `documents`."
                 )
+                raise ValueError(msg)
             doc_ids = ids
 
         docs = []

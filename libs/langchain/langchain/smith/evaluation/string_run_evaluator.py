@@ -47,7 +47,8 @@ class StringRunMapper(Serializable):
     def __call__(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
-            raise ValueError(f"Run {run.id} has no outputs to evaluate.")
+            msg = f"Run {run.id} has no outputs to evaluate."
+            raise ValueError(msg)
         return self.map(run)
 
 
@@ -63,9 +64,11 @@ class LLMStringRunMapper(StringRunMapper):
                 # Runs from Tracer have messages as a list of lists of dicts
                 chat_messages = _get_messages_from_run_dict(messages[0])
             else:
-                raise ValueError(f"Could not extract messages to evaluate {messages}")
+                msg = f"Could not extract messages to evaluate {messages}"
+                raise ValueError(msg)
             return get_buffer_string(chat_messages)
-        raise ValueError(f"Could not extract messages to evaluate {messages}")
+        msg = f"Could not extract messages to evaluate {messages}"
+        raise ValueError(msg)
 
     def serialize_inputs(self, inputs: dict) -> str:
         if "prompts" in inputs:  # Should we even accept this?
@@ -75,15 +78,18 @@ class LLMStringRunMapper(StringRunMapper):
         elif "messages" in inputs:
             input_ = self.serialize_chat_messages(inputs["messages"])
         else:
-            raise ValueError("LLM Run must have either messages or prompts as inputs.")
+            msg = "LLM Run must have either messages or prompts as inputs."
+            raise ValueError(msg)
         return input_
 
     def serialize_outputs(self, outputs: dict) -> str:
         if not outputs.get("generations"):
-            raise ValueError("Cannot evaluate LLM Run without generations.")
+            msg = "Cannot evaluate LLM Run without generations."
+            raise ValueError(msg)
         generations: list[dict] = outputs["generations"]
         if not generations:
-            raise ValueError("Cannot evaluate LLM run with empty generations.")
+            msg = "Cannot evaluate LLM run with empty generations."
+            raise ValueError(msg)
         first_generation: dict = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
@@ -98,29 +104,26 @@ class LLMStringRunMapper(StringRunMapper):
     def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if run.run_type != "llm":
-            raise ValueError("LLM RunMapper only supports LLM runs.")
+            msg = "LLM RunMapper only supports LLM runs."
+            raise ValueError(msg)
         elif not run.outputs:
             if run.error:
-                raise ValueError(
-                    f"Cannot evaluate errored LLM run {run.id}: {run.error}"
-                )
+                msg = f"Cannot evaluate errored LLM run {run.id}: {run.error}"
+                raise ValueError(msg)
             else:
-                raise ValueError(
-                    f"Run {run.id} has no outputs. Cannot evaluate this run."
-                )
+                msg = f"Run {run.id} has no outputs. Cannot evaluate this run."
+                raise ValueError(msg)
         else:
             try:
                 inputs = self.serialize_inputs(run.inputs)
             except Exception as e:
-                raise ValueError(
-                    f"Could not parse LM input from run inputs {run.inputs}"
-                ) from e
+                msg = f"Could not parse LM input from run inputs {run.inputs}"
+                raise ValueError(msg) from e
             try:
                 output_ = self.serialize_outputs(run.outputs)
             except Exception as e:
-                raise ValueError(
-                    f"Could not parse LM prediction from run outputs {run.outputs}"
-                ) from e
+                msg = f"Could not parse LM prediction from run outputs {run.outputs}"
+                raise ValueError(msg) from e
             return {"input": inputs, "prediction": output_}
 
 
@@ -142,34 +145,38 @@ class ChainStringRunMapper(StringRunMapper):
         elif len(source) == 1:
             return next(iter(source.values()))
         else:
-            raise ValueError(
+            msg = (
                 f"Could not map run {which} with multiple keys: "
                 f"{source}\nPlease manually specify a {which}_key"
             )
+            raise ValueError(msg)
 
     def map(self, run: Run) -> dict[str, str]:
         """Maps the Run to a dictionary."""
         if not run.outputs:
-            raise ValueError(
+            msg = (
                 f"Run with ID {run.id} lacks outputs required for evaluation."
                 " Ensure the Run has valid outputs."
             )
+            raise ValueError(msg)
         if self.input_key is not None and self.input_key not in run.inputs:
-            raise ValueError(
+            msg = (
                 f"Run with ID {run.id} is missing the expected input key"
                 f" '{self.input_key}'.\nAvailable input keys in this Run"
                 f"  are: {run.inputs.keys()}.\nAdjust the evaluator's"
                 f" input_key or ensure your input data includes key"
                 f" '{self.input_key}'."
             )
+            raise ValueError(msg)
         elif self.prediction_key is not None and self.prediction_key not in run.outputs:
             available_keys = ", ".join(run.outputs.keys())
-            raise ValueError(
+            msg = (
                 f"Run with ID {run.id} doesn't have the expected prediction key"
                 f" '{self.prediction_key}'. Available prediction keys in this Run are:"
                 f" {available_keys}. Adjust the evaluator's prediction_key or"
                 " ensure the Run object's outputs the expected key."
             )
+            raise ValueError(msg)
 
         else:
             input_ = self._get_key(run.inputs, self.input_key, "input")
@@ -185,7 +192,8 @@ class ToolStringRunMapper(StringRunMapper):
 
     def map(self, run: Run) -> dict[str, str]:
         if not run.outputs:
-            raise ValueError(f"Run {run.id} has no outputs to evaluate.")
+            msg = f"Run {run.id} has no outputs to evaluate."
+            raise ValueError(msg)
         return {"input": run.inputs["input"], "prediction": run.outputs["output"]}
 
 
@@ -207,22 +215,23 @@ class StringExampleMapper(Serializable):
     def map(self, example: Example) -> dict[str, str]:
         """Maps the Example, or dataset row to a dictionary."""
         if not example.outputs:
-            raise ValueError(
-                f"Example {example.id} has no outputs to use as a reference."
-            )
+            msg = f"Example {example.id} has no outputs to use as a reference."
+            raise ValueError(msg)
         if self.reference_key is None:
             if len(example.outputs) > 1:
-                raise ValueError(
+                msg = (
                     f"Example {example.id} has multiple outputs, so you must"
                     " specify a reference_key."
                 )
+                raise ValueError(msg)
             else:
                 output = list(example.outputs.values())[0]
         elif self.reference_key not in example.outputs:
-            raise ValueError(
+            msg = (
                 f"Example {example.id} does not have reference key"
                 f" {self.reference_key}."
             )
+            raise ValueError(msg)
         else:
             output = example.outputs[self.reference_key]
         return {
@@ -234,9 +243,8 @@ class StringExampleMapper(Serializable):
     def __call__(self, example: Example) -> dict[str, str]:
         """Maps the Run and Example to a dictionary."""
         if not example.outputs:
-            raise ValueError(
-                f"Example {example.id} has no outputs to use as areference label."
-            )
+            msg = f"Example {example.id} has no outputs to use as areference label."
+            raise ValueError(msg)
         return self.map(example)
 
 
@@ -271,11 +279,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         if example and self.example_mapper and self.string_evaluator.requires_reference:
             evaluate_strings_inputs.update(self.example_mapper(example))
         elif self.string_evaluator.requires_reference:
-            raise ValueError(
+            msg = (
                 f"Evaluator {self.name} requires an reference"
                 " example from the dataset,"
                 f" but none was provided for run {run.id}."
             )
+            raise ValueError(msg)
         return evaluate_strings_inputs
 
     def _prepare_output(self, output: dict[str, Any]) -> dict[str, Any]:
@@ -405,9 +414,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 input_key=input_key, prediction_key=prediction_key
             )
         else:
-            raise ValueError(
-                f"Unsupported run type {run_type}. Expected one of 'llm' or 'chain'."
-            )
+            msg = f"Unsupported run type {run_type}. Expected one of 'llm' or 'chain'."
+            raise ValueError(msg)
 
         # Configure how example rows are fed as a reference string to the evaluator
         if (
@@ -417,11 +425,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
-            raise ValueError(
+            msg = (
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"
                 " amongst the dataset outputs keys."
             )
+            raise ValueError(msg)
         else:
             example_mapper = None
         return cls(

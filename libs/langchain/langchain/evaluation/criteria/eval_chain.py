@@ -156,11 +156,12 @@ def resolve_criteria(
         criteria_ = {criteria.name: criteria.critique_request}
     else:
         if not criteria:
-            raise ValueError(
+            msg = (
                 "Criteria cannot be empty. "
                 "Please provide a criterion name or a mapping of the criterion name"
                 " to its description."
             )
+            raise ValueError(msg)
         criteria_ = dict(criteria)
     return criteria_
 
@@ -276,10 +277,11 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         expected_input_vars = {"input", "output", "criteria"}
         prompt_ = prompt or PROMPT
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         return prompt_
 
     @classmethod
@@ -360,12 +362,13 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """
         prompt_ = cls._resolve_prompt(prompt)
         if criteria == Criteria.CORRECTNESS:
-            raise ValueError(
+            msg = (
                 "Correctness should not be used in the reference-free"
                 " 'criteria' evaluator (CriteriaEvalChain)."
                 " Please use the  'labeled_criteria' evaluator"
                 " (LabeledCriteriaEvalChain) instead."
             )
+            raise ValueError(msg)
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt_.partial(criteria=criteria_str)
@@ -528,10 +531,11 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         expected_input_vars = {"input", "output", "criteria", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCES
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         return prompt_
 
     @classmethod

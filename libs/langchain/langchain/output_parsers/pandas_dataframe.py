@@ -24,12 +24,12 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         if issubclass(type(val), pd.DataFrame):
             return val
         if pd.DataFrame(val).empty:
-            raise ValueError("DataFrame cannot be empty.")
+            msg = "DataFrame cannot be empty."
+            raise ValueError(msg)
 
-        raise TypeError(
-            "Wrong type for 'dataframe', must be a subclass \
+        msg = "Wrong type for 'dataframe', must be a subclass \
                 of Pandas DataFrame (pd.DataFrame)"
-        )
+        raise TypeError(msg)
 
     def parse_array(
         self, array: str, original_request_params: str
@@ -46,35 +46,31 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                 start, end = map(int, match.groups())
                 parsed_array = list(range(start, end + 1))
             else:
-                raise OutputParserException(
-                    f"Unable to parse the array provided in {array}. \
+                msg = f"Unable to parse the array provided in {array}. \
                         Please check the format instructions."
-                )
+                raise OutputParserException(msg)
         # Check if the format is ["column_name"]
         elif re.match(r"\[[a-zA-Z0-9_]+(?:,[a-zA-Z0-9_]+)*\]", array):
             match = re.match(r"\[[a-zA-Z0-9_]+(?:,[a-zA-Z0-9_]+)*\]", array)
             if match:
                 parsed_array = list(map(str, match.group().strip("[]").split(",")))
             else:
-                raise OutputParserException(
-                    f"Unable to parse the array provided in {array}. \
+                msg = f"Unable to parse the array provided in {array}. \
                         Please check the format instructions."
-                )
+                raise OutputParserException(msg)
 
         # Validate the array
         if not parsed_array:
-            raise OutputParserException(
-                f"Invalid array format in '{original_request_params}'. \
+            msg = f"Invalid array format in '{original_request_params}'. \
                     Please check the format instructions."
-            )
+            raise OutputParserException(msg)
         elif (
             isinstance(parsed_array[0], int)
             and parsed_array[-1] > self.dataframe.index.max()
         ):
-            raise OutputParserException(
-                f"The maximum index {parsed_array[-1]} exceeds the maximum index of \
+            msg = f"The maximum index {parsed_array[-1]} exceeds the maximum index of \
                     the Pandas DataFrame {self.dataframe.index.max()}."
-            )
+            raise OutputParserException(msg)
 
         return parsed_array, original_request_params.split("[")[0]
 
@@ -82,17 +78,15 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         stripped_request_params = None
         splitted_request = request.strip().split(":")
         if len(splitted_request) != 2:
-            raise OutputParserException(
-                f"Request '{request}' is not correctly formatted. \
+            msg = f"Request '{request}' is not correctly formatted. \
                     Please refer to the format instructions."
-            )
+            raise OutputParserException(msg)
         result = {}
         try:
             request_type, request_params = splitted_request
             if request_type in {"Invalid column", "Invalid operation"}:
-                raise OutputParserException(
-                    f"{request}. Please check the format instructions."
-                )
+                msg = f"{request}. Please check the format instructions."
+                raise OutputParserException(msg)
             array_exists = re.search(r"(\[.*?\])", request_params)
             if array_exists:
                 parsed_array, stripped_request_params = self.parse_array(
@@ -140,17 +134,15 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                     )()
         except (AttributeError, IndexError, KeyError):
             if request_type not in {"column", "row"}:
-                raise OutputParserException(
-                    f"Unsupported request type '{request_type}'. \
+                msg = f"Unsupported request type '{request_type}'. \
                         Please check the format instructions."
-                )
-            raise OutputParserException(
-                f"""Requested index {
-                    request_params
-                    if stripped_request_params is None
-                    else stripped_request_params
-                } is out of bounds."""
-            )
+                raise OutputParserException(msg)
+            msg = f"""Requested index {
+                request_params
+                if stripped_request_params is None
+                else stripped_request_params
+            } is out of bounds."""
+            raise OutputParserException(msg)
 
         return result
 

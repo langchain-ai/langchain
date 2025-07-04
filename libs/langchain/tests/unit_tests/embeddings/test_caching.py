@@ -17,7 +17,8 @@ class MockEmbeddings(Embeddings):
         embeddings: list[list[float]] = []
         for text in texts:
             if text == "RAISE_EXCEPTION":
-                raise ValueError("Simulated embedding failure")
+                msg = "Simulated embedding failure"
+                raise ValueError(msg)
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 

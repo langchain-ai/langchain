@@ -123,7 +123,8 @@ def create_openai_fn_chain(
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        msg = "Need to pass in at least one function. Received zero."
+        raise ValueError(msg)
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
     llm_kwargs: dict[str, Any] = {

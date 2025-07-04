@@ -208,7 +208,8 @@ def create_xml_agent(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),

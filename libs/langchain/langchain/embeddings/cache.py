@@ -67,7 +67,8 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
             return f"{namespace}{hashlib.sha256(key.encode('utf-8')).hexdigest()}"
         if algorithm == "sha512":
             return f"{namespace}{hashlib.sha512(key.encode('utf-8')).hexdigest()}"
-        raise ValueError(f"Unsupported algorithm: {algorithm}")
+        msg = f"Unsupported algorithm: {algorithm}"
+        raise ValueError(msg)
 
     return _key_encoder
 
@@ -326,15 +327,17 @@ class CacheBackedEmbeddings(Embeddings):
             # namespace.
             # A user can handle namespacing in directly their custom key encoder.
             if namespace:
-                raise ValueError(
+                msg = (
                     "Do not supply `namespace` when using a custom key_encoder; "
                     "add any prefixing inside the encoder itself."
                 )
+                raise ValueError(msg)
         else:
-            raise ValueError(
+            msg = (
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
+            raise ValueError(msg)
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

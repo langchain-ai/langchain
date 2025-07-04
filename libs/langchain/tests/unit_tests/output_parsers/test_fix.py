@@ -25,7 +25,8 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
-            raise OutputParserException("error")
+            msg = "error"
+            raise OutputParserException(msg)
         return "parsed"
 
 

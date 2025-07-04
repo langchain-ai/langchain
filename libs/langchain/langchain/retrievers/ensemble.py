@@ -297,9 +297,8 @@ class EnsembleRetriever(BaseRetriever):
                     scores in descending order.
         """
         if len(doc_lists) != len(self.weights):
-            raise ValueError(
-                "Number of rank lists must be equal to the number of weights."
-            )
+            msg = "Number of rank lists must be equal to the number of weights."
+            raise ValueError(msg)
 
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively

@@ -103,10 +103,11 @@ def openapi_spec_to_openai_fn(
     try:
         from langchain_community.tools import APIOperation
     except ImportError:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.tools. "
             "Please install it with `pip install langchain-community`."
         )
+        raise ImportError(msg)
 
     if not spec.paths:
         return [], lambda: None
@@ -353,10 +354,11 @@ def get_openapi_chain(
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.utilities.openapi. "
             "Please install it with `pip install langchain-community`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -371,14 +373,16 @@ def get_openapi_chain(
             except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
-            raise ValueError(f"Unable to parse spec from source {spec}")
+            msg = f"Unable to parse spec from source {spec}"
+            raise ValueError(msg)
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
-        raise ValueError(
+        msg = (
             "Must provide an LLM for this chain.For example,\n"
             "from langchain_openai import ChatOpenAI\n"
             "llm = ChatOpenAI()\n"
         )
+        raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

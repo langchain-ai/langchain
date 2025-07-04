@@ -86,11 +86,12 @@ def resolve_pairwise_criteria(
         }
     else:
         if not criteria:
-            raise ValueError(
+            msg = (
                 "Criteria cannot be empty. "
                 "Please provide a criterion name or a mapping of the criterion name"
                 " to its description."
             )
+            raise ValueError(msg)
         criteria_ = dict(criteria)
     return criteria_
 
@@ -132,11 +133,12 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
             verdict = match.group(1)
 
         if not match or verdict not in {"A", "B", "C"}:
-            raise ValueError(
+            msg = (
                 f"Invalid output: {text}. "
                 "Output must contain a double bracketed string\
                  with the verdict 'A', 'B', or 'C'."
             )
+            raise ValueError(msg)
         # C means the models are tied. Return 'None' meaning no preference
         verdict_ = None if verdict == "C" else verdict
         score = {
@@ -262,10 +264,11 @@ Performance may be significantly worse with other models."
         expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}
         prompt_ = prompt or COMPARISON_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
         criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
@@ -444,10 +447,11 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         }
         prompt_ = prompt or COMPARISON_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""

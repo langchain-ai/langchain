@@ -117,9 +117,10 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         """
 
         if llm.with_structured_output == BaseLanguageModel.with_structured_output:
-            raise ValueError(
+            msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )
+            raise ValueError(msg)
 
         class RankDocuments(BaseModel):
             """Rank the documents by their relevance to the user question.

@@ -167,10 +167,11 @@ class LLMMathChain(Chain):
         try:
             import numexpr  # noqa: F401
         except ImportError:
-            raise ImportError(
+            msg = (
                 "LLMMathChain requires the numexpr package. "
                 "Please install it with `pip install numexpr`."
             )
+            raise ImportError(msg)
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
@@ -211,10 +212,11 @@ class LLMMathChain(Chain):
                 )
             )
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f'LLMMathChain._evaluate("{expression}") raised error: {e}.'
                 " Please try again with a valid numerical expression"
             )
+            raise ValueError(msg)
 
         # Remove any leading and trailing brackets from the output
         return re.sub(r"^\[|\]$", "", output)
@@ -236,7 +238,8 @@ class LLMMathChain(Chain):
         elif "Answer:" in llm_output:
             answer = "Answer: " + llm_output.split("Answer:")[-1]
         else:
-            raise ValueError(f"unknown format from LLM: {llm_output}")
+            msg = f"unknown format from LLM: {llm_output}"
+            raise ValueError(msg)
         return {self.output_key: answer}
 
     async def _aprocess_llm_result(
@@ -258,7 +261,8 @@ class LLMMathChain(Chain):
         elif "Answer:" in llm_output:
             answer = "Answer: " + llm_output.split("Answer:")[-1]
         else:
-            raise ValueError(f"unknown format from LLM: {llm_output}")
+            msg = f"unknown format from LLM: {llm_output}"
+            raise ValueError(msg)
         return {self.output_key: answer}
 
     def _call(

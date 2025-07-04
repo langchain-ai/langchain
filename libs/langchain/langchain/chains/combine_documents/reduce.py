@@ -48,10 +48,11 @@ def split_list_of_docs(
         _num_tokens = length_func(_sub_result_docs, **kwargs)
         if _num_tokens > token_max:
             if len(_sub_result_docs) == 1:
-                raise ValueError(
+                msg = (
                     "A single document was longer than the context length,"
                     " we cannot handle this."
                 )
+                raise ValueError(msg)
             new_result_doc_list.append(_sub_result_docs[:-1])
             _sub_result_docs = _sub_result_docs[-1:]
     new_result_doc_list.append(_sub_result_docs)
@@ -314,10 +315,9 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     async def _acollapse(
@@ -349,10 +349,9 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     @property

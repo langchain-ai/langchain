@@ -71,10 +71,11 @@ def StreamlitCallbackHandler(
                 StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
             )
         except ImportError:
-            raise ImportError(
+            msg = (
                 "To use the StreamlitCallbackHandler, please install "
                 "langchain-community with `pip install langchain-community`."
             )
+            raise ImportError(msg)
 
         return _InternalStreamlitCallbackHandler(
             parent_container,
