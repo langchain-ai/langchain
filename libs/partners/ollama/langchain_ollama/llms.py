@@ -18,6 +18,8 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
+from ._utils import validate_model
+
 
 class OllamaLLM(BaseLLM):
     """OllamaLLM large language models.
@@ -28,11 +30,14 @@ class OllamaLLM(BaseLLM):
             from langchain_ollama import OllamaLLM
 
             model = OllamaLLM(model="llama3")
-            model.invoke("Come up with 10 names for a song about parrots")
+            print(model.invoke("Come up with 10 names for a song about parrots"))
     """
 
     model: str
     """Model name to use."""
+
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in ollama locally on initialization."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -120,15 +125,16 @@ class OllamaLLM(BaseLLM):
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
-    passing to the httpx AsyncClient.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#asyncclient)
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX 
+    AsyncClient.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
-    passing to the httpx Client.
-    For a full list of the params, see [this link](https://www.python-httpx.org/api/#client)
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
+    
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
     _client: Client = PrivateAttr(default=None)  # type: ignore
@@ -214,6 +220,8 @@ class OllamaLLM(BaseLLM):
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     async def _acreate_generate_stream(

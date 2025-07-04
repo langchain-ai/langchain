@@ -3,7 +3,7 @@
 Development Scripts for template packages
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from fastapi import FastAPI
 from langserve import add_routes

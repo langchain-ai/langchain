@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -17,7 +17,7 @@ class CharacterTextSplitter(TextSplitter):
         self._separator = separator
         self._is_separator_regex = is_separator_regex
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split into chunks without re-inserting lookaround separators."""
         # 1. Determine split pattern: raw regex or escaped literal
         sep_pattern = (
@@ -46,7 +46,7 @@ class CharacterTextSplitter(TextSplitter):
 
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
-) -> List[str]:
+) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
@@ -80,7 +80,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     def __init__(
         self,
-        separators: Optional[List[str]] = None,
+        separators: Optional[list[str]] = None,
         keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
@@ -90,7 +90,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         self._separators = separators or ["\n\n", "\n", " ", ""]
         self._is_separator_regex = is_separator_regex
 
-    def _split_text(self, text: str, separators: List[str]) -> List[str]:
+    def _split_text(self, text: str, separators: list[str]) -> list[str]:
         """Split incoming text and return chunks."""
         final_chunks = []
         # Get appropriate separator to use
@@ -130,7 +130,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             final_chunks.extend(merged_text)
         return final_chunks
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split the input text into smaller chunks based on predefined separators.
 
         Args:
@@ -161,7 +161,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
-    def get_separators_for_language(language: Language) -> List[str]:
+    def get_separators_for_language(language: Language) -> list[str]:
         """Retrieve a list of separators specific to the given language.
 
         Args:

@@ -48,7 +48,7 @@ disallow_untyped_defs = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
+select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.coverage.run]
@@ -61,3 +61,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

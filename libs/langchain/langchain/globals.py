@@ -64,7 +64,7 @@ def get_verbose() -> bool:
         # In the meantime, the `verbose` setting is considered True if either the old
         # or the new value are True. This accommodates users who haven't migrated
         # to using `set_verbose()` yet. Those users are getting deprecation warnings
-        # directing them to use `set_verbose()` when they import `langhchain.verbose`.
+        # directing them to use `set_verbose()` when they import `langchain.verbose`.
         old_verbose = langchain.verbose
 
     global _verbose
@@ -115,7 +115,7 @@ def get_debug() -> bool:
         # In the meantime, the `debug` setting is considered True if either the old
         # or the new value are True. This accommodates users who haven't migrated
         # to using `set_debug()` yet. Those users are getting deprecation warnings
-        # directing them to use `set_debug()` when they import `langhchain.debug`.
+        # directing them to use `set_debug()` when they import `langchain.debug`.
         old_debug = langchain.debug
 
     global _debug
@@ -172,7 +172,7 @@ def get_llm_cache() -> "BaseCache":
         # or the old value if both are falsy. This accommodates users
         # who haven't migrated to using `set_llm_cache()` yet.
         # Those users are getting deprecation warnings directing them
-        # to use `set_llm_cache()` when they import `langhchain.llm_cache`.
+        # to use `set_llm_cache()` when they import `langchain.llm_cache`.
         old_llm_cache = langchain.llm_cache
 
     global _llm_cache

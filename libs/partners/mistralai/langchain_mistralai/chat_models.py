@@ -83,7 +83,7 @@ logger = logging.getLogger(__name__)
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -139,7 +139,8 @@ def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
     role = _message["role"]
-    assert role == "assistant", f"Expected role to be 'assistant', got {role}"
+    if role != "assistant":
+        raise ValueError(f"Expected role to be 'assistant', got {role}")
     content = cast(str, _message["content"])
 
     additional_kwargs: dict = {}
@@ -271,7 +272,8 @@ def _convert_chunk_to_message_chunk(
         if _choice.get("finish_reason") is not None and isinstance(
             chunk.get("model"), str
         ):
-            response_metadata["model_name"] = chunk.get("model")
+            response_metadata["model_name"] = chunk["model"]
+            response_metadata["finish_reason"] = _choice["finish_reason"]
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -397,7 +399,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: Optional[int] = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-       probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
+    probability sum is at least ``top_p``. Must be in the closed interval
+    ``[0.0, 1.0]``."""
     random_seed: Optional[int] = None
     safe_mode: Optional[bool] = None
     streaming: bool = False
@@ -592,7 +595,7 @@ class ChatMistralAI(BaseChatModel):
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model,
-            "model": self.model,  # Backwards compatability
+            "model": self.model,  # Backwards compatibility
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 

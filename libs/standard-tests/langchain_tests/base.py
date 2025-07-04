@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import Type
 
 
 class BaseStandardTests(ABC):
@@ -16,7 +15,7 @@ class BaseStandardTests(ABC):
         # find path to standard test implementations
         comparison_class = None
 
-        def explore_bases(cls: Type) -> None:
+        def explore_bases(cls: type) -> None:
             nonlocal comparison_class
             for base in cls.__bases__:
                 if base.__module__.startswith("langchain_tests."):

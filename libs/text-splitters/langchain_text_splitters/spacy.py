@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -31,7 +31,7 @@ class SpacyTextSplitter(TextSplitter):
         self._separator = separator
         self._strip_whitespace = strip_whitespace
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         splits = (
             s.text if self._strip_whitespace else s.text_with_ws

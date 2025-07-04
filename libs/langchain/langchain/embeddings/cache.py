@@ -26,16 +26,16 @@ NAMESPACE_UUID = uuid.UUID(int=1985)
 
 
 def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
-    """Return a UUID derived from *text* using SHA‑1 (deterministic).
+    """Return a UUID derived from *text* using SHA-1 (deterministic).
 
-    Deterministic and fast, **but not collision‑resistant**.
+    Deterministic and fast, **but not collision-resistant**.
 
     A malicious attacker could try to create two different texts that hash to the same
     UUID. This may not necessarily be an issue in the context of caching embeddings,
     but new applications should swap this out for a stronger hash function like
-    xxHash, BLAKE2 or SHA‑256, which are collision-resistant.
+    xxHash, BLAKE2 or SHA-256, which are collision-resistant.
     """
-    sha1_hex = hashlib.sha1(text.encode("utf-8")).hexdigest()
+    sha1_hex = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
     # Embed the hex string in `uuid5` to obtain a valid UUID.
     return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
@@ -44,12 +44,12 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
     """Create a default key encoder function.
 
     Args:
-       namespace: Prefix that segregates keys from different embedding models.
-       algorithm:
-           * `sha1` - fast but not collision‑resistant
-           * `blake2b` - cryptographically strong, faster than SHA‑1
-           * `sha256` - cryptographically strong, slower than SHA‑1
-           * `sha512` - cryptographically strong, slower than SHA‑1
+        namespace: Prefix that segregates keys from different embedding models.
+        algorithm:
+           * ``'sha1'`` - fast but not collision-resistant
+           * ``'blake2b'`` - cryptographically strong, faster than SHA-1
+           * ``'sha256'`` - cryptographically strong, slower than SHA-1
+           * ``'sha512'`` - cryptographically strong, slower than SHA-1
 
     Returns:
         A function that encodes a key using the specified algorithm.
@@ -87,15 +87,15 @@ _warned_about_sha1: bool = False
 
 
 def _warn_about_sha1_encoder() -> None:
-    """Emit a one‑time warning about SHA‑1 collision weaknesses."""
+    """Emit a one-time warning about SHA-1 collision weaknesses."""
     global _warned_about_sha1
     if not _warned_about_sha1:
         warnings.warn(
-            "Using default key encoder: SHA‑1 is *not* collision‑resistant. "
+            "Using default key encoder: SHA-1 is *not* collision-resistant. "
             "While acceptable for most cache scenarios, a motivated attacker "
             "can craft two different payloads that map to the same cache key. "
             "If that risk matters in your environment, supply a stronger "
-            "encoder (e.g. SHA‑256 or BLAKE2) via the `key_encoder` argument. "
+            "encoder (e.g. SHA-256 or BLAKE2) via the `key_encoder` argument. "
             "If you change the key encoder, consider also creating a new cache, "
             "to avoid (the potential for) collisions with existing keys.",
             category=UserWarning,
@@ -118,7 +118,6 @@ class CacheBackedEmbeddings(Embeddings):
     embeddings too, pass in a query_embedding_store to constructor.
 
     Examples:
-
         .. code-block: python
 
             from langchain.embeddings import CacheBackedEmbeddings
@@ -154,7 +153,7 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_store: The store to use for caching document embeddings.
             batch_size: The number of documents to embed between store updates.
             query_embedding_store: The store to use for caching query embeddings.
-                If None, query embeddings are not cached.
+                If ``None``, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
@@ -236,7 +235,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        `cache_query` parameter to `True` when initializing the embedder.
+        ``cache_query`` parameter to ``True`` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -259,7 +258,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        `cache_query` parameter to `True` when initializing the embedder.
+        ``cache_query`` parameter to ``True`` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -298,14 +297,14 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_cache: The cache to use for storing document embeddings.
             *,
             namespace: The namespace to use for document cache.
-                       This namespace is used to avoid collisions with other caches.
-                       For example, set it to the name of the embedding model used.
+                This namespace is used to avoid collisions with other caches.
+                For example, set it to the name of the embedding model used.
             batch_size: The number of documents to embed between store updates.
             query_embedding_cache: The cache to use for storing query embeddings.
                 True to use the same cache as document embeddings.
                 False to not cache query embeddings.
             key_encoder: Optional callable to encode keys. If not provided,
-                a default encoder using SHA‑1 will be used. SHA-1 is not
+                a default encoder using SHA-1 will be used. SHA-1 is not
                 collision-resistant, and a motivated attacker could craft two
                 different texts that hash to the same cache key.
 

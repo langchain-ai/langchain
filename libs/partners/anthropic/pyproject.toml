@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.52.0",
-    "langchain-core<1.0.0,>=0.3.63",
+    "anthropic<1,>=0.57.0",
+    "langchain-core<1.0.0,>=0.3.68",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.15"
+version = "0.3.17"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
@@ -60,7 +60,7 @@ plugins = ['pydantic.mypy']
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
+select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.coverage.run]
@@ -73,3 +73,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

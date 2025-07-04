@@ -83,7 +83,7 @@ from langchain_groq.version import __version__
 
 
 class ChatGroq(BaseChatModel):
-    """`Groq` Chat large language models API.
+    """Groq Chat large language models API.
 
     To use, you should have the
     environment variable ``GROQ_API_KEY`` set with your API key.
@@ -102,11 +102,27 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
+            Name of Groq model to use, e.g. ``llama-3.1-8b-instant``.
         temperature: float
-            Sampling temperature. Ranges from 0.0 to 1.0.
+            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
+            The format for reasoning output. Groq will default to ``raw`` if left
+            undefined.
+
+            - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
+              response concise. Reasoning will be returned in the
+              ``additional_kwargs.reasoning_content`` field of the response.
+            - ``'raw'``: Includes reasoning within think tags (e.g.
+              ``<think>{reasoning_content}</think>``).
+            - ``'hidden'``: Returns only the final answer content. Note: this only
+              supresses reasoning content in the response; the model will still perform
+              reasoning unless overridden in ``reasoning_effort``.
+
+            See the `Groq documentation
+            <https://console.groq.com/docs/reasoning#reasoning>`__ for more
+            details and a list of supported reasoning models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -117,7 +133,7 @@ class ChatGroq(BaseChatModel):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            Groq API key. If not passed in will be read from env var GROQ_API_KEY.
+            Groq API key. If not passed in will be read from env var ``GROQ_API_KEY``.
         base_url: Optional[str]
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
@@ -164,6 +180,7 @@ class ChatGroq(BaseChatModel):
     Stream:
         .. code-block:: python
 
+            # Streaming `text` for each content chunk received
             for chunk in llm.stream(messages):
                 print(chunk.text(), end="")
 
@@ -181,6 +198,7 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
+            # Reconstructing a full response
             stream = llm.stream(messages)
             full = next(stream)
             for chunk in stream:
@@ -190,16 +208,15 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             AIMessageChunk(content='The English sentence "I love programming"
-            can be translated to French as "J\'aime programmer".
-            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the
-            French equivalent of "I love"\n* "programmer" is the French
-            infinitive for "to program"\n\nSo, the literal translation
-            is "I love to program". However, in English we often omit the
-            "to" when talking about activities we love, and the same applies
-            to French. Therefore, "J\'aime programmer" is the correct and
-            natural way to express "I love programming" in French.',
-            response_metadata={'finish_reason': 'stop'},
-            id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+            can be translated to French as "J\'aime programmer". Here\'s the
+            breakdown of the sentence: "J\'aime" is the French equivalent of "
+            I love", and "programmer" is the French infinitive for "to program".
+            So, the literal translation is "I love to program". However, in
+            English we often omit the "to" when talking about activities we
+            love, and the same applies to French. Therefore, "J\'aime
+            programmer" is the correct and natural way to express "I love
+            programming" in French.', response_metadata={'finish_reason':
+            'stop'}, id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
 
     Async:
         .. code-block:: python
@@ -273,7 +290,7 @@ class ChatGroq(BaseChatModel):
 
         See ``ChatGroq.with_structured_output()`` for more.
 
-    Response metadata
+    Response metadata:
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)
@@ -302,16 +319,44 @@ class ChatGroq(BaseChatModel):
     """What sampling temperature to use."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+    reasoning_format: Optional[Literal["parsed", "raw", "hidden"]] = Field(default=None)
+    """The format for reasoning output. Groq will default to raw if left undefined.
+
+    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
+      response concise. Reasoning will be returned in the
+      ``additional_kwargs.reasoning_content`` field of the response.
+    - ``'raw'``: Includes reasoning within think tags (e.g.
+      ``<think>{reasoning_content}</think>``).
+    - ``'hidden'``: Returns only the final answer content. Note: this only supresses
+      reasoning content in the response; the model will still perform reasoning unless
+      overridden in ``reasoning_effort``.
+
+    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
+    for more details and a list of supported reasoning models.
+    """
+    reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
+    """The level of effort the model will put into reasoning. Groq will default to
+    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
+    not apply and ``reasoning_content`` will not be returned.
+
+    - ``'none'``: Disable reasoning. The model will not use any reasoning tokens when
+      generating a response.
+    - ``'default'``: Enable reasoning.
+
+    See the `Groq documentation
+    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
+    details and a list of models that support setting a reasoning effort.
+    """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
     )
-    """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
+    """Automatically inferred from env var ``GROQ_API_KEY`` if not provided."""
     groq_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service
+    """Base URL path for API requests. Leave blank if not using a proxy or service
         emulator."""
     # to support explicit proxy for Groq
     groq_proxy: Optional[str] = Field(
@@ -330,6 +375,21 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    """Optional parameter that you can include to specify the service tier you'd like to
+    use for requests.
+
+    - ``'on_demand'``: Default.
+    - ``'flex'``: On-demand processing when capacity is available, with rapid timeouts
+      if resources are constrained. Provides balance between performance and reliability
+      for workloads that don't require guaranteed processing.
+    - ``'auto'``: Uses on-demand rate limits, then falls back to ``'flex'`` if those
+      limits are exceeded
+
+    See the `Groq documentation
+    <https://console.groq.com/docs/flex-processing>`__ for more details and a list of
+    service tiers and descriptions.
+    """
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -409,11 +469,11 @@ class ChatGroq(BaseChatModel):
                 self.async_client = groq.AsyncGroq(
                     **client_params, **async_specific
                 ).chat.completions
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "Could not import groq python package. "
                 "Please install it with `pip install groq`."
-            )
+            ) from exc
         return self
 
     #
@@ -489,7 +549,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = self.client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     async def _agenerate(
         self,
@@ -510,7 +570,7 @@ class ChatGroq(BaseChatModel):
             **kwargs,
         }
         response = await self.async_client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, params)
 
     def _stream(
         self,
@@ -537,6 +597,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or self.service_tier
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -578,6 +640,8 @@ class ChatGroq(BaseChatModel):
                 generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
+                service_tier = params.get("service_tier") or self.service_tier
+                generation_info["service_tier"] = service_tier
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -606,13 +670,18 @@ class ChatGroq(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "stop": self.stop,
+            "reasoning_format": self.reasoning_format,
+            "reasoning_effort": self.reasoning_effort,
+            "service_tier": self.service_tier,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, BaseModel], params: dict
+    ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -642,6 +711,7 @@ class ChatGroq(BaseChatModel):
             "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        llm_output["service_tier"] = params.get("service_tier") or self.service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -672,6 +742,8 @@ class ChatGroq(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
+        if self.service_tier:
+            combined["service_tier"] = self.service_tier
         return combined
 
     @deprecated(
@@ -1153,6 +1225,8 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1196,6 +1270,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "assistant":
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning := _dict.get("reasoning"):
+            additional_kwargs["reasoning_content"] = reasoning
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -1205,7 +1281,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )

@@ -62,7 +62,7 @@ disallow_untyped_defs = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "D", "UP"]
+select = ["E", "F", "I", "T201", "D", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.coverage.run]
@@ -81,3 +81,9 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

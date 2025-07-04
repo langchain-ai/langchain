@@ -11,7 +11,7 @@ time.
 import inspect
 import uuid
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 from langchain_core.documents import Document
