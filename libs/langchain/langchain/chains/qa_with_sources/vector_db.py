@@ -59,7 +59,8 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     async def _aget_docs(
         self, inputs: dict[str, Any], *, run_manager: AsyncCallbackManagerForChainRun
     ) -> list[Document]:
-        raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
+        msg = "VectorDBQAWithSourcesChain does not support async"
+        raise NotImplementedError(msg)
 
     @model_validator(mode="before")
     @classmethod

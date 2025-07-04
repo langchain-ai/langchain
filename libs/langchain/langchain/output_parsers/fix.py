@@ -97,7 +97,8 @@ class OutputFixingParser(BaseOutputParser[T]):
                                 )
                             )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse(self, completion: str) -> T:
         retries = 0
@@ -134,7 +135,8 @@ class OutputFixingParser(BaseOutputParser[T]):
                                 )
                             )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()

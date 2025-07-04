@@ -162,15 +162,17 @@ class ZeroShotAgent(Agent):
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         validate_tools_single_input(cls.__name__, tools)
         if len(tools) == 0:
-            raise ValueError(
+            msg = (
                 f"Got no tools for {cls.__name__}. At least one tool must be provided."
             )
+            raise ValueError(msg)
         for tool in tools:
             if tool.description is None:
-                raise ValueError(
+                msg = (
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
+                raise ValueError(msg)
         super()._validate_tools(tools)
 
 

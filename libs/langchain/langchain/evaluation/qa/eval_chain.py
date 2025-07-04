@@ -119,10 +119,11 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         prompt = prompt or PROMPT
         expected_input_vars = {"query", "answer", "result"}
         if expected_input_vars != set(prompt.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt.input_variables}"
             )
+            raise ValueError(msg)
         return cls(llm=llm, prompt=prompt, **kwargs)
 
     def evaluate(
@@ -231,10 +232,11 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
         expected_input_vars = {"query", "context", "result"}
         if expected_input_vars != set(prompt.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt.input_variables}"
             )
+            raise ValueError(msg)
 
     @property
     def evaluation_name(self) -> str:

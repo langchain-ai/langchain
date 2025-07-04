@@ -55,7 +55,8 @@ class JSONAgentOutputParser(AgentOutputParser):
                     action_input = {}
                 return AgentAction(response["action"], action_input, text)
         except Exception as e:
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

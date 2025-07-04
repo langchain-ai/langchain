@@ -134,7 +134,8 @@ def create_openai_fn_runnable(
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        msg = "Need to pass in at least one function. Received zero."
+        raise ValueError(msg)
     openai_functions = [convert_to_openai_function(f) for f in functions]
     llm_kwargs_: dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
     if len(openai_functions) == 1 and enforce_single_function_usage:
@@ -400,9 +401,8 @@ def create_structured_output_runnable(
         # Backwards compatibility keys
         unrecognized_keys = keys_in_kwargs - {"enforce_single_function_usage"}
         if unrecognized_keys:
-            raise TypeError(
-                f"Got an unexpected keyword argument(s): {unrecognized_keys}."
-            )
+            msg = f"Got an unexpected keyword argument(s): {unrecognized_keys}."
+            raise TypeError(msg)
 
         return _create_openai_tools_runnable(
             output_schema,
@@ -424,17 +424,19 @@ def create_structured_output_runnable(
         )
     elif mode == "openai-json":
         if force_function_usage:
-            raise ValueError(
+            msg = (
                 "enforce_single_function_usage is not supported for mode='openai-json'."
             )
+            raise ValueError(msg)
         return _create_openai_json_runnable(
             output_schema, llm, prompt=prompt, output_parser=output_parser, **kwargs
         )
     else:
-        raise ValueError(
+        msg = (
             f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
             f"'openai-json'."
         )
+        raise ValueError(msg)
 
 
 def _create_openai_tools_runnable(

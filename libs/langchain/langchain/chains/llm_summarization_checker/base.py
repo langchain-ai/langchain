@@ -172,7 +172,8 @@ class LLMSummarizationCheckerChain(Chain):
             chain_input = output["revised_summary"]
 
         if not output:
-            raise ValueError("No output from chain")
+            msg = "No output from chain"
+            raise ValueError(msg)
 
         return {self.output_key: output["revised_summary"].strip()}
 

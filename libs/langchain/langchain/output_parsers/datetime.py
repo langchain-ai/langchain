@@ -50,9 +50,8 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
         try:
             return datetime.strptime(response.strip(), self.format)
         except ValueError as e:
-            raise OutputParserException(
-                f"Could not parse datetime string: {response}"
-            ) from e
+            msg = f"Could not parse datetime string: {response}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

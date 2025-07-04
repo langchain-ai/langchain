@@ -54,7 +54,8 @@ class StructuredChatAgent(Agent):
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
+            msg = "agent_scratchpad should be of type string."
+            raise ValueError(msg)
         if agent_scratchpad:
             return (
                 f"This was your previous work "
@@ -278,7 +279,8 @@ def create_structured_chat_agent(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),

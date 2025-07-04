@@ -66,18 +66,17 @@ class InMemoryVectorStore(VectorStore):
     ) -> list[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
+            msg = f"Expected {len(ids)} ids, got {len(documents)} documents."
+            raise ValueError(msg)
 
         if not ids:
-            raise NotImplementedError("This is not implemented yet.")
+            msg = "This is not implemented yet."
+            raise NotImplementedError(msg)
 
         for _id, document in zip(ids, documents):
             if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
+                msg = f"Document with uid {_id} already exists in the store."
+                raise ValueError(msg)
             self.store[_id] = document
 
         return list(ids)
@@ -90,18 +89,17 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[str]:
         if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
+            msg = f"Expected {len(ids)} ids, got {len(documents)} documents."
+            raise ValueError(msg)
 
         if not ids:
-            raise NotImplementedError("This is not implemented yet.")
+            msg = "This is not implemented yet."
+            raise NotImplementedError(msg)
 
         for _id, document in zip(ids, documents):
             if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
+                msg = f"Document with uid {_id} already exists in the store."
+                raise ValueError(msg)
             self.store[_id] = document
         return list(ids)
 

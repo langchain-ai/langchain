@@ -38,13 +38,11 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
     ):
         if functions is not None:
             if len(functions) != len(runnables):
-                raise ValueError(
-                    "The number of functions does not match the number of runnables."
-                )
+                msg = "The number of functions does not match the number of runnables."
+                raise ValueError(msg)
             if not all(func["name"] in runnables for func in functions):
-                raise ValueError(
-                    "One or more function names are not found in runnables."
-                )
+                msg = "One or more function names are not found in runnables."
+                raise ValueError(msg)
         router = (
             JsonOutputFunctionsParser(args_only=False)
             | {"key": itemgetter("name"), "input": itemgetter("arguments")}

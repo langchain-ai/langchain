@@ -58,11 +58,12 @@ class BaseChatMemory(BaseMemory, ABC):
                     f" If this is not desired, please manually set 'output_key'."
                 )
             else:
-                raise ValueError(
+                msg = (
                     f"Got multiple output keys: {outputs.keys()}, cannot "
                     f"determine which to store in memory. Please set the "
                     f"'output_key' explicitly."
                 )
+                raise ValueError(msg)
         else:
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]

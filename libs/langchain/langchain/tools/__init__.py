@@ -39,7 +39,7 @@ _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 
 def _import_python_tool_PythonAstREPLTool() -> Any:
-    raise ImportError(
+    msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
@@ -47,10 +47,11 @@ def _import_python_tool_PythonAstREPLTool() -> Any:
         "To keep using this code as is, install langchain experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
+    raise ImportError(msg)
 
 
 def _import_python_tool_PythonREPLTool() -> Any:
-    raise ImportError(
+    msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
@@ -58,6 +59,7 @@ def _import_python_tool_PythonREPLTool() -> Any:
         "To keep using this code as is, install langchain experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
+    raise ImportError(msg)
 
 
 def __getattr__(name: str) -> Any:

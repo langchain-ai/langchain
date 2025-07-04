@@ -45,10 +45,11 @@ class JsonSchemaEvaluator(StringEvaluator):
         try:
             import jsonschema  # noqa: F401
         except ImportError:
-            raise ImportError(
+            msg = (
                 "The JsonSchemaEvaluator requires the jsonschema package."
                 " Please install it with `pip install jsonschema`."
             )
+            raise ImportError(msg)
 
     @property
     def requires_input(self) -> bool:

@@ -95,10 +95,11 @@ class QueryTransformer(Transformer):
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
             if self.allowed_attributes and args[0] not in self.allowed_attributes:
-                raise ValueError(
+                msg = (
                     f"Received invalid attributes {args[0]}. Allowed attributes are "
                     f"{self.allowed_attributes}"
                 )
+                raise ValueError(msg)
             return Comparison(comparator=func, attribute=args[0], value=args[1])
         elif len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
@@ -109,24 +110,27 @@ class QueryTransformer(Transformer):
         if func_name in set(Comparator):
             if self.allowed_comparators is not None:
                 if func_name not in self.allowed_comparators:
-                    raise ValueError(
+                    msg = (
                         f"Received disallowed comparator {func_name}. Allowed "
                         f"comparators are {self.allowed_comparators}"
                     )
+                    raise ValueError(msg)
             return Comparator(func_name)
         elif func_name in set(Operator):
             if self.allowed_operators is not None:
                 if func_name not in self.allowed_operators:
-                    raise ValueError(
+                    msg = (
                         f"Received disallowed operator {func_name}. Allowed operators"
                         f" are {self.allowed_operators}"
                     )
+                    raise ValueError(msg)
             return Operator(func_name)
         else:
-            raise ValueError(
+            msg = (
                 f"Received unrecognized function {func_name}. Valid functions are "
                 f"{list(Operator) + list(Comparator)}"
             )
+            raise ValueError(msg)
 
     def args(self, *items: Any) -> tuple:
         return items
@@ -168,9 +172,8 @@ class QueryTransformer(Transformer):
             try:
                 datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")
             except ValueError:
-                raise ValueError(
-                    "Datetime values are expected to be in ISO 8601 format."
-                )
+                msg = "Datetime values are expected to be in ISO 8601 format."
+                raise ValueError(msg)
         return {"datetime": item, "type": "datetime"}
 
     def string(self, item: Any) -> str:
@@ -194,9 +197,8 @@ def get_parser(
     """
     # QueryTransformer is None when Lark cannot be imported.
     if QueryTransformer is None:
-        raise ImportError(
-            "Cannot import lark, please install it with 'pip install lark'."
-        )
+        msg = "Cannot import lark, please install it with 'pip install lark'."
+        raise ImportError(msg)
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

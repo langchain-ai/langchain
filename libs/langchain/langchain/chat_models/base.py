@@ -456,10 +456,11 @@ def _init_chat_model_helper(
         return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
-        raise ValueError(
+        msg = (
             f"Unsupported {model_provider=}.\n\nSupported model providers are: "
             f"{supported}"
         )
+        raise ValueError(msg)
 
 
 _SUPPORTED_PROVIDERS = {
@@ -521,10 +522,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
-        raise ValueError(
+        msg = (
             f"Unable to infer model provider for {model=}, please specify "
             f"model_provider directly."
         )
+        raise ValueError(msg)
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
@@ -532,9 +534,10 @@ def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
 def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
-        raise ImportError(
+        msg = (
             f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
+        raise ImportError(msg)
 
 
 def _remove_prefix(s: str, prefix: str) -> str:

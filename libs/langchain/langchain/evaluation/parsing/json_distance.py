@@ -48,12 +48,13 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             try:
                 from rapidfuzz import distance as rfd
             except ImportError:
-                raise ImportError(
+                msg = (
                     "The default string_distance operator for the "
                     " JsonEditDistanceEvaluator requires installation of "
                     "the rapidfuzz package. "
                     "Please install it with `pip install rapidfuzz`."
                 )
+                raise ImportError(msg)
             self._string_distance = rfd.DamerauLevenshtein.normalized_distance
         if canonicalize is not None:
             self._canonicalize = canonicalize

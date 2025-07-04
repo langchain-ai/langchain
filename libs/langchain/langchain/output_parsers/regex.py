@@ -32,7 +32,8 @@ class RegexParser(BaseOutputParser[dict[str, str]]):
             return {key: match.group(i + 1) for i, key in enumerate(self.output_keys)}
         else:
             if self.default_output_key is None:
-                raise ValueError(f"Could not parse output: {text}")
+                msg = f"Could not parse output: {text}"
+                raise ValueError(msg)
             else:
                 return {
                     key: text if key == self.default_output_key else ""

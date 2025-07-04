@@ -147,11 +147,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """For backwards compatibility."""
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
-                raise ValueError(
+                msg = (
                     "Both `reduce_documents_chain` and `combine_document_chain` "
                     "cannot be provided at the same time. `combine_document_chain` "
                     "is deprecated, please only provide `reduce_documents_chain`"
                 )
+                raise ValueError(msg)
             combine_chain = values["combine_document_chain"]
             collapse_chain = values.get("collapse_document_chain")
             reduce_chain = ReduceDocumentsChain(
@@ -179,23 +180,26 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
-            raise ValueError("llm_chain must be provided")
+            msg = "llm_chain must be provided"
+            raise ValueError(msg)
 
         llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain input_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     @property
@@ -207,11 +211,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             else:
                 return self.reduce_documents_chain.combine_documents_chain
         else:
-            raise ValueError(
+            msg = (
                 f"`reduce_documents_chain` is of type "
                 f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
+            raise ValueError(msg)
 
     @property
     def combine_document_chain(self) -> BaseCombineDocumentsChain:
@@ -219,11 +224,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
             return self.reduce_documents_chain.combine_documents_chain
         else:
-            raise ValueError(
+            msg = (
                 f"`reduce_documents_chain` is of type "
                 f"{type(self.reduce_documents_chain)} so it does not have "
                 f"this attribute."
             )
+            raise ValueError(msg)
 
     def combine_docs(
         self,

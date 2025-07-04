@@ -122,7 +122,8 @@ class RetryOutputParser(BaseOutputParser[T]):
                             )
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         """Parse the output of an LLM call using a wrapped parser.
@@ -158,12 +159,12 @@ class RetryOutputParser(BaseOutputParser[T]):
                             )
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def parse(self, completion: str) -> T:
-        raise NotImplementedError(
-            "This OutputParser can only be called by the `parse_with_prompt` method."
-        )
+        msg = "This OutputParser can only be called by the `parse_with_prompt` method."
+        raise NotImplementedError(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
@@ -250,7 +251,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             )
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         retries = 0
@@ -278,12 +280,12 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             )
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def parse(self, completion: str) -> T:
-        raise NotImplementedError(
-            "This OutputParser can only be called by the `parse_with_prompt` method."
-        )
+        msg = "This OutputParser can only be called by the `parse_with_prompt` method."
+        raise NotImplementedError(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()

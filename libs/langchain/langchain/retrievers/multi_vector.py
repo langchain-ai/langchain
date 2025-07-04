@@ -49,7 +49,8 @@ class MultiVectorRetriever(BaseRetriever):
         if byte_store is not None:
             docstore = create_kv_docstore(byte_store)
         elif docstore is None:
-            raise Exception("You must pass a `byte_store` parameter.")
+            msg = "You must pass a `byte_store` parameter."
+            raise Exception(msg)
         values["docstore"] = docstore
         return values
 

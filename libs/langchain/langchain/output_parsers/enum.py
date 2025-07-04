@@ -15,7 +15,8 @@ class EnumOutputParser(BaseOutputParser[Enum]):
     def raise_deprecation(cls, values: dict) -> dict:
         enum = values["enum"]
         if not all(isinstance(e.value, str) for e in enum):
-            raise ValueError("Enum values must be strings")
+            msg = "Enum values must be strings"
+            raise ValueError(msg)
         return values
 
     @property
@@ -26,10 +27,11 @@ class EnumOutputParser(BaseOutputParser[Enum]):
         try:
             return self.enum(response.strip())
         except ValueError:
-            raise OutputParserException(
+            msg = (
                 f"Response '{response}' is not one of the "
                 f"expected values: {self._valid_values}"
             )
+            raise OutputParserException(msg)
 
     def get_format_instructions(self) -> str:
         return f"Select one of the following options: {', '.join(self._valid_values)}"

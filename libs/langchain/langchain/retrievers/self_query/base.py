@@ -28,10 +28,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     try:
         import langchain_community  # noqa: F401
     except ImportError:
-        raise ImportError(
+        msg = (
             "The langchain-community package must be installed to use this feature."
             " Please install it using `pip install langchain-community`."
         )
+        raise ImportError(msg)
 
     from langchain_community.query_constructors.astradb import AstraDBTranslator
     from langchain_community.query_constructors.chroma import ChromaTranslator
@@ -224,10 +225,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, WeaviateVectorStore):
                 return WeaviateTranslator()
 
-        raise ValueError(
+        msg = (
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
         )
+        raise ValueError(msg)
 
 
 class SelfQueryRetriever(BaseRetriever):

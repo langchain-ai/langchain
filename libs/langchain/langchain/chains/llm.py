@@ -201,9 +201,8 @@ class LLMChain(Chain):
             if run_manager:
                 run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
+                msg = "If `stop` is present in any inputs, should be present in all."
+                raise ValueError(msg)
             prompts.append(prompt)
         return prompts, stop
 
@@ -227,9 +226,8 @@ class LLMChain(Chain):
             if run_manager:
                 await run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
+                msg = "If `stop` is present in any inputs, should be present in all."
+                raise ValueError(msg)
             prompts.append(prompt)
         return prompts, stop
 
@@ -420,7 +418,8 @@ def _get_language_model(llm_like: Runnable) -> BaseLanguageModel:
     elif isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
         return _get_language_model(llm_like.default)
     else:
-        raise ValueError(
+        msg = (
             f"Unable to extract BaseLanguageModel from llm_like object of type "
             f"{type(llm_like)}"
         )
+        raise ValueError(msg)
