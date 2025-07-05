@@ -713,6 +713,13 @@ def test_citations() -> None:
     assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
 
+    # Test pass back in
+    next_message = {
+        "role": "user",
+        "content": "Can you comment on the citations you just made?"
+    }
+    _ = llm.invoke(messages + [full, next_message])
+
 
 def test_thinking() -> None:
     llm = ChatAnthropic(
@@ -882,9 +889,8 @@ def test_image_tool_calling() -> None:
     llm.bind_tools([color_picker]).invoke(messages)
 
 
-# TODO: set up VCR
+@pytest.mark.vcr
 def test_web_search() -> None:
-    pytest.skip()
     llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
 
     tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
@@ -923,11 +929,12 @@ def test_web_search() -> None:
     )
 
 
+@pytest.mark.vcr
 def test_code_execution() -> None:
-    pytest.skip()
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",
         betas=["code-execution-2025-05-22"],
+        max_tokens=10_000,
     )
 
     tool = {"type": "code_execution_20250522", "name": "code_execution"}
@@ -969,8 +976,8 @@ def test_code_execution() -> None:
     )
 
 
+@pytest.mark.vcr
 def test_remote_mcp() -> None:
-    pytest.skip()
     mcp_servers = [
         {
             "type": "url",
@@ -985,6 +992,7 @@ def test_remote_mcp() -> None:
         model="claude-sonnet-4-20250514",
         betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
+        max_tokens=10_000,
     )
 
     input_message = {
