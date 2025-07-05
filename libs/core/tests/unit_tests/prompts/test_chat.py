@@ -778,7 +778,8 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
     )
     with pytest.raises(
         ValueError,
-        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+        match="Loading images from 'path' has been removed "
+        "as of 0.3.15 for security reasons.",
     ):
         template.format_messages(
             name="R2D2",
@@ -788,7 +789,8 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+        match="Loading images from 'path' has been removed "
+        "as of 0.3.15 for security reasons.",
     ):
         await template.aformat_messages(
             name="R2D2",

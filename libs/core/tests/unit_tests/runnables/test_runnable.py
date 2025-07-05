@@ -2785,7 +2785,12 @@ Question:
                 response_metadata={},
             ),
             HumanMessage(
-                content="Context:\n[Document(metadata={}, page_content='foo'), Document(metadata={}, page_content='bar')]\n\nQuestion:\nWhat is your name?",
+                content="Context:\n"
+                "[Document(metadata={}, page_content='foo'), "
+                "Document(metadata={}, page_content='bar')]\n"
+                "\n"
+                "Question:\n"
+                "What is your name?",
                 additional_kwargs={},
                 response_metadata={},
             ),
@@ -4140,7 +4145,8 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
                 if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) "
+                            f"fail for {value}"
                         )
                     )
                 else:
@@ -4280,7 +4286,8 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
                 if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) "
+                            f"fail for {value}"
                         )
                     )
                 else:
@@ -4931,7 +4938,8 @@ def test_runnable_gen_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_gen_context_config_async() -> None:
     """Test that a generator can call other runnables with config
@@ -5057,7 +5065,8 @@ def test_runnable_iter_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_iter_context_config_async() -> None:
     """Test that a generator can call other runnables with config
@@ -5179,7 +5188,8 @@ def test_runnable_lambda_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_lambda_context_config_async() -> None:
     """Test that a function can call other runnables with config
