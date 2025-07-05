@@ -721,13 +721,16 @@ def test_citations() -> None:
     _ = llm.invoke(messages + [full, next_message])
 
 
+@pytest.mark.vcr
 def test_thinking() -> None:
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-latest",
         max_tokens=5_000,
         thinking={"type": "enabled", "budget_tokens": 2_000},
     )
-    response = llm.invoke("Hello")
+
+    input_message = {"role": "user", "content": "Hello"}
+    response = llm.invoke([input_message])
     assert any("thinking" in block for block in response.content)
     for block in response.content:
         assert isinstance(block, dict)
@@ -738,7 +741,7 @@ def test_thinking() -> None:
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream("Hello"):
+    for chunk in llm.stream([input_message]):
         if full is None:
             full = cast(BaseMessageChunk, chunk)
         else:
@@ -753,8 +756,12 @@ def test_thinking() -> None:
             assert block["thinking"] and isinstance(block["thinking"], str)
             assert block["signature"] and isinstance(block["signature"], str)
 
+    # Test pass back in
+    next_message = {"role": "user", "content": "How are you?"}
+    _ = llm.invoke([input_message, full, next_message])
 
-@pytest.mark.flaky(retries=3, delay=1)
+
+@pytest.mark.vcr
 def test_redacted_thinking() -> None:
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-latest",
@@ -762,8 +769,9 @@ def test_redacted_thinking() -> None:
         thinking={"type": "enabled", "budget_tokens": 2_000},
     )
     query = "ANTHROPIC_MAGIC_STRING_TRIGGER_REDACTED_THINKING_46C9A13E193C177646C7398A98432ECCCE4C1253D5E2D82641AC0E52CC2876CB"  # noqa: E501
+    input_message = {"role": "user", "content": query}
 
-    response = llm.invoke(query)
+    response = llm.invoke([input_message])
     has_reasoning = False
     for block in response.content:
         assert isinstance(block, dict)
@@ -775,7 +783,7 @@ def test_redacted_thinking() -> None:
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream(query):
+    for chunk in llm.stream([input_message]):
         if full is None:
             full = cast(BaseMessageChunk, chunk)
         else:
@@ -790,6 +798,10 @@ def test_redacted_thinking() -> None:
             assert set(block.keys()) == {"type", "data", "index"}
             assert block["data"] and isinstance(block["data"], str)
     assert stream_has_reasoning
+
+    # Test pass back in
+    next_message = {"role": "user", "content": "What?"}
+    _ = llm.invoke([input_message, full, next_message])
 
 
 def test_structured_output_thinking_enabled() -> None:
