@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import operator
+from functools import reduce
 from itertools import cycle
 from typing import Any, Optional, Union, cast
 
@@ -520,14 +522,7 @@ async def test_runnable_agent() -> None:
     assert messages != []
 
     # Aggregate state
-    run_log = None
-
-    for result in results:
-        if run_log is None:
-            run_log = result
-        else:
-            # `+` is defined for RunLogPatch
-            run_log = run_log + result
+    run_log = reduce(operator.add, results)
 
     assert isinstance(run_log, RunLog)
 
