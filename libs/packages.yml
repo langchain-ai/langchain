@@ -687,3 +687,6 @@ packages:
   path: libs/langchain-db2
   repo: langchain-ai/langchain-ibm
   provider_page: ibm
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi
