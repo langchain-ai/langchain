@@ -41,9 +41,7 @@ from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 def _get_joke_class(
     schema_type: Literal["pydantic", "typeddict", "json_schema"],
 ) -> Any:
-    """
-    :private:
-    """
+    """:private:"""
 
     class Joke(BaseModel):
         """Joke to tell user."""
@@ -61,18 +59,18 @@ def _get_joke_class(
         punchline: Annotated[str, ..., "answer to resolve the joke"]
 
     def validate_joke_dict(result: Any) -> bool:
-        return all(key in ["setup", "punchline"] for key in result.keys())
+        return all(key in ["setup", "punchline"] for key in result)
 
     if schema_type == "pydantic":
         return Joke, validate_joke
 
-    elif schema_type == "typeddict":
+    if schema_type == "typeddict":
         return JokeDict, validate_joke_dict
 
-    elif schema_type == "json_schema":
+    if schema_type == "json_schema":
         return Joke.model_json_schema(), validate_joke_dict
-    else:
-        raise ValueError("Invalid schema type")
+    msg = "Invalid schema type"
+    raise ValueError(msg)
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
@@ -879,8 +877,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
-        """
-        Test to verify that the model can handle double-message conversations.
+        """Test to verify that the model can handle double-message conversations.
 
         This should pass for all integrations. Tests the model's ability to process
         a sequence of double-system, double-human, and double-ai messages as context
@@ -1083,7 +1080,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        """
+        """Test usage metadata in streaming mode.
+
         Test to verify that the model returns correct usage metadata in streaming mode.
 
         .. versionchanged:: 0.3.17
@@ -1193,7 +1191,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
-            full = chunk if full is None else cast(AIMessageChunk, full + chunk)
+            full = chunk if full is None else cast("AIMessageChunk", full + chunk)
 
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
@@ -1261,7 +1259,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     run_manager: Optional[CallbackManagerForLLMRun] = None,
                     **kwargs: Any,
                 ) -> ChatResult:
-        """  # noqa: E501
+        """
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
 
@@ -1315,10 +1313,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if not self.has_tool_choice:
-            tool_choice_value = None
-        else:
-            tool_choice_value = "any"
+        tool_choice_value = None if not self.has_tool_choice else "any"
         # Emit warning if tool_choice_value property is overridden
         if inspect.getattr_static(
             self, "tool_choice_value"
@@ -1391,10 +1386,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if not self.has_tool_choice:
-            tool_choice_value = None
-        else:
-            tool_choice_value = "any"
+        tool_choice_value = None if not self.has_tool_choice else "any"
         model_with_tools = model.bind_tools(
             [magic_function], tool_choice=tool_choice_value
         )
@@ -1730,10 +1722,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if not self.has_tool_choice:
-            tool_choice_value = None
-        else:
-            tool_choice_value = "any"
+        tool_choice_value = None if not self.has_tool_choice else "any"
         model_with_tools = model.bind_tools(
             [magic_function_no_args], tool_choice=tool_choice_value
         )
@@ -1856,14 +1845,15 @@ class ChatModelIntegrationTests(ChatModelTests):
                 @pytest.mark.xfail(reason=("Not implemented."))
                 def test_structured_few_shot_examples(self, *args: Any) -> None:
                     super().test_structured_few_shot_examples(*args)
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
         function_result = json.dumps({"result": 3})
 
         tool_schema = my_adder_tool.args_schema
-        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
+        assert isinstance(tool_schema, type)
+        assert issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
             [tool_schema(a=1, b=2)],
@@ -1871,7 +1861,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             ai_response=function_result,
         )
 
-        messages = few_shot_messages + [HumanMessage("What is 3 + 4")]
+        messages = [*few_shot_messages, HumanMessage("What is 3 + 4")]
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
@@ -1905,7 +1895,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
-        """  # noqa: E501
+        """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
@@ -1983,7 +1973,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
-        """  # noqa: E501
+        """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
@@ -2163,7 +2153,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
-        """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_
+        """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_.
 
         This test is optional and should be skipped if the model does not support
         the JSON mode feature (see Configuration below).
@@ -2183,7 +2173,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
-        """  # noqa: E501
+        """
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
@@ -2893,20 +2883,20 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
-        raise NotImplementedError()
+        raise NotImplementedError

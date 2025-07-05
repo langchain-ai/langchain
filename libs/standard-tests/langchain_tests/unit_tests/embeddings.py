@@ -10,9 +10,7 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """
-    :private:
-    """
+    """:private:"""
 
     @property
     @abstractmethod
@@ -88,7 +86,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                             "my_api_key": "api_key",
                         },
                     )
-    """  # noqa: E501
+    """
 
     def test_init(self) -> None:
         """Test model initialization.
@@ -106,7 +104,8 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         """This property is used in unit tests to test initialization from environment
         variables. It should return a tuple of three dictionaries that specify the
         environment variables, additional initialization args, and expected instance
-        attributes to check."""
+        attributes to check.
+        """
         return {}, {}, {}
 
     def test_init_from_env(self) -> None:
