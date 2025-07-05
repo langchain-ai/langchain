@@ -129,7 +129,7 @@ def create_base_retry_decorator(
     )
 
 
-def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
+def _resolve_cache(*, cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     """Resolve the cache."""
     if isinstance(cache, BaseCache):
         llm_cache = cache
@@ -155,7 +155,7 @@ def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
 def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
+    cache: Optional[Union[BaseCache, bool, None]] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
@@ -176,7 +176,7 @@ def get_prompts(
     missing_prompt_idxs = []
     existing_prompts = {}
 
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = llm_cache.lookup(prompt, llm_string)
@@ -191,7 +191,7 @@ def get_prompts(
 async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
+    cache: Optional[Union[BaseCache, bool, None]] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
@@ -211,7 +211,7 @@ async def aget_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -224,7 +224,7 @@ async def aget_prompts(
 
 
 def update_cache(
-    cache: Union[BaseCache, bool, None],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -247,7 +247,7 @@ def update_cache(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -257,7 +257,7 @@ def update_cache(
 
 
 async def aupdate_cache(
-    cache: Union[BaseCache, bool, None],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -280,7 +280,7 @@ async def aupdate_cache(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]

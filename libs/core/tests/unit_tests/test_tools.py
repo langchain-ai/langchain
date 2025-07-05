@@ -884,6 +884,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -949,6 +950,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -2330,6 +2332,9 @@ def test_tool_return_output_mixin() -> None:
 
         def __eq__(self, other: object) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
+
+        def __hash__(self) -> int:
+            return hash(self.x)
 
     @tool
     def foo(x: int) -> Bar:

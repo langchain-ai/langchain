@@ -27,7 +27,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 lint = [
-    "ruff<0.12.0,>=0.11.2",
+    "ruff<0.13.0,>=0.12.2",
 ]
 typing = [
     "mypy<1.16,>=1.15",
@@ -95,12 +95,12 @@ ignore = [
     "TC003", # Doesn't play well with Pydantic
     "TD002", # Missing author in TODO
     "TD003", # Missing issue link in TODO
-    "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
     "ANN401",
     "BLE",
     "ERA",
+    "PLC0415",
     "PLR2004",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
@@ -108,6 +108,7 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 pydocstyle.convention = "google"
 pydocstyle.ignore-var-parameters = true
+pyupgrade.keep-runtime-typing = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]

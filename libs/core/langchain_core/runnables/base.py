@@ -4205,6 +4205,8 @@ class RunnableGenerator(Runnable[Input, Output]):
             return False
         return False
 
+    __hash__ = None  # type: ignore[assignment]
+
     @override
     def __repr__(self) -> str:
         return f"RunnableGenerator({self.name})"
@@ -4587,6 +4589,8 @@ class RunnableLambda(Runnable[Input, Output]):
                 return self.afunc == other.afunc
             return False
         return False
+
+    __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
         """A string representation of this Runnable."""
