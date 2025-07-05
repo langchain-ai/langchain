@@ -1,7 +1,5 @@
 # type: ignore
-"""
-Development Scripts for template packages
-"""
+"""Development Scripts for template packages."""
 
 from collections.abc import Sequence
 
@@ -16,9 +14,7 @@ def create_demo_server(
     config_keys: Sequence[str] = (),
     playground_type: str = "default",
 ):
-    """
-    Creates a demo server for the current template.
-    """
+    """Creates a demo server for the current template."""
     app = FastAPI()
     package_root = get_package_root()
     pyproject = package_root / "pyproject.toml"
@@ -35,9 +31,11 @@ def create_demo_server(
             playground_type=playground_type,
         )
     except KeyError as e:
-        raise KeyError("Missing fields from pyproject.toml") from e
+        msg = "Missing fields from pyproject.toml"
+        raise KeyError(msg) from e
     except ImportError as e:
-        raise ImportError("Could not import module defined in pyproject.toml") from e
+        msg = "Could not import module defined in pyproject.toml"
+        raise ImportError(msg) from e
 
     return app
 

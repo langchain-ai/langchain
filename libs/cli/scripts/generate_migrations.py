@@ -4,6 +4,7 @@
 import json
 import os
 import pkgutil
+from typing import Optional
 
 import click
 
@@ -19,9 +20,8 @@ from langchain_cli.namespaces.migrate.generate.partner import (
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """Migration scripts management."""
-    pass
 
 
 @cli.command()
@@ -73,7 +73,7 @@ def generic(
         f.write(dumped)
 
 
-def handle_partner(pkg: str, output: str = None):
+def handle_partner(pkg: str, output: Optional[str] = None) -> None:
     migrations = get_migrations_for_partner_package(pkg)
     # Run with python 3.9+
     name = pkg.removeprefix("langchain_")
