@@ -134,7 +134,7 @@ def _get_filtered_args(
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
         if k not in filter_args
-        and (i > 0 or param.name not in ("self", "cls"))
+        and (i > 0 or param.name not in {"self", "cls"})
         and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
@@ -336,7 +336,7 @@ def create_schema_from_function(
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
-        if existing_params and existing_params[0] in ("self", "cls") and in_class:
+        if existing_params and existing_params[0] in {"self", "cls"} and in_class:
             filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
@@ -846,9 +846,9 @@ class ChildTool(BaseTool):
                     tool_input, tool_call_id
                 )
                 if signature(self._run).parameters.get("run_manager"):
-                    tool_kwargs = tool_kwargs | {"run_manager": run_manager}
+                    tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs = tool_kwargs | {config_param: config}
+                    tool_kwargs |= {config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
