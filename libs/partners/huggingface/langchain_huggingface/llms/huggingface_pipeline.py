@@ -3,20 +3,17 @@ from __future__ import annotations  # type: ignore[import-not-found]
 import importlib.util
 import logging
 from collections.abc import Iterator, Mapping
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
-from ..utils.import_utils import (
-    IMPORT_ERROR,
-    is_ipex_available,
-    is_openvino_available,
-    is_optimum_intel_available,
-    is_optimum_intel_version,
-)
+from ..utils.import_utils import (IMPORT_ERROR, is_ipex_available,
+                                  is_openvino_available,
+                                  is_optimum_intel_available,
+                                  is_optimum_intel_version)
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -67,13 +64,13 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any = None  #: :meta private:
-    model_id: Optional[str] = None
+    model_id: str | None = None
     """The model name. If not set explicitly by the user,
     it will be inferred from the provided pipeline (if available).
     If neither is provided, the DEFAULT_MODEL_ID will be used."""
-    model_kwargs: Optional[dict] = None
+    model_kwargs: dict | None = None
     """Keyword arguments passed to the model."""
-    pipeline_kwargs: Optional[dict] = None
+    pipeline_kwargs: dict | None = None
     """Keyword arguments passed to the pipeline."""
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
@@ -99,21 +96,19 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: Optional[int] = None,
-        device_map: Optional[str] = None,
-        model_kwargs: Optional[dict] = None,
-        pipeline_kwargs: Optional[dict] = None,
+        device: int | None = None,
+        device_map: str | None = None,
+        model_kwargs: dict | None = None,
+        pipeline_kwargs: dict | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (  # type: ignore[import]
-                AutoModelForCausalLM,
-                AutoModelForSeq2SeqLM,
-                AutoTokenizer,
-            )
-            from transformers import pipeline as hf_pipeline  # type: ignore[import]
+                AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer)
+            from transformers import \
+                pipeline as hf_pipeline  # type: ignore[import]
 
         except ImportError:
             raise ValueError(
@@ -145,7 +140,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
-            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            err_msg = f"Backend: {backend} {IMPORT_ERROR.format(f'optimum[{backend}]')}"
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
@@ -168,9 +163,7 @@ class HuggingFacePipeline(BaseLLM):
                     raise ImportError(err_msg)
 
                 from optimum.intel import (  # type: ignore[import]
-                    OVModelForCausalLM,
-                    OVModelForSeq2SeqLM,
-                )
+                    OVModelForCausalLM, OVModelForSeq2SeqLM)
 
                 model_cls = (
                     OVModelForCausalLM
@@ -182,15 +175,13 @@ class HuggingFacePipeline(BaseLLM):
                     raise ImportError(err_msg)
 
                 if task == "text-generation":
-                    from optimum.intel import (
-                        IPEXModelForCausalLM,  # type: ignore[import]
-                    )
+                    from optimum.intel import \
+                        IPEXModelForCausalLM  # type: ignore[import]
 
                     model_cls = IPEXModelForCausalLM
                 else:
-                    from optimum.intel import (
-                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
-                    )
+                    from optimum.intel import \
+                        IPEXModelForSeq2SeqLM  # type: ignore[import]
 
                     model_cls = IPEXModelForSeq2SeqLM
 
@@ -300,8 +291,8 @@ class HuggingFacePipeline(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         # List to hold all results
@@ -351,18 +342,15 @@ class HuggingFacePipeline(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         from threading import Thread
 
         import torch
-        from transformers import (
-            StoppingCriteria,
-            StoppingCriteriaList,
-            TextIteratorStreamer,
-        )
+        from transformers import (StoppingCriteria, StoppingCriteriaList,
+                                  TextIteratorStreamer)
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", True)
