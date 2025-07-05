@@ -10,7 +10,7 @@ class DummyExampleSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> None:
         self.example = example
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
         return [input_variables]
 
 
