@@ -25,6 +25,70 @@ If you're building applications that access external resources like file systems
 or databases, consider speaking with your company's security team to determine how to best
 design and secure your applications.
 
+## API Key & Credential Safety
+
+Do not pass API keys, tokens, or secrets directly through LLM prompts or outputs. LLMs may inadvertently expose these in responses or logs.
+
+Best practices:
+- Store secrets using environment variables or secret managers
+- Avoid embedding credentials in chains or tools unless scoped and encrypted
+- Monitor logs to ensure sensitive info is not being passed into LLM calls
+
+## Threat Modeling for LLM Applications
+
+When designing an LLM-powered system, consider these common threat surfaces:
+
+- **Input Surface**: Can users provide prompts or instructions? If so, how are inputs validated?
+- **Output Surface**: Can LLM outputs trigger actions (e.g., file writes, API calls)? Are these outputs filtered or moderated?
+- **Contextual Leakage**: Does the system store prompts, memory, or internal reasoning? Could this be leaked or tampered with?
+- **Tool Use**: If your agents can invoke tools, what guardrails prevent misuse?
+
+A structured threat model helps determine where to apply input sanitization, rate limits, logging, and fallback controls.
+
+## Prompt Injection
+
+Prompt injection is a specific threat to LLM-powered applications where users craft inputs designed to override instructions, leak internal data, or trigger unintended tool usage.
+
+LangChain integrates with third-party defenses (e.g., ZenGuard), but developers should also adopt core mitigation strategies during prompt construction.
+
+### Common Risks:
+- Overriding system prompts via user input
+- Triggering unintended agent or tool actions
+- Leaking internal reasoning or configuration logic
+- Causing hallucinations that result in unsafe behavior
+
+### Mitigation Strategies:
+
+- **Use `PromptTemplate`** to safely isolate user inputs.
+
+  **Example**
+
+  Instead of this (vulnerable to injection):
+  ```python
+  prompt = f"Tell me about {user_input}"
+
+  Use this:
+  from langchain_core.prompts import PromptTemplate
+
+  template = PromptTemplate.from_template("Tell me about {topic}")
+  prompt = template.format(topic=user_input)
+
+- **Avoid raw string interpolation** with `f""` or `.format()` for prompts
+- **Apply runtime guards**, such as:
+  - [ZenGuard](https://github.com/zenml-io/zenml)
+- **Rate-limit LLM endpoints**
+- **Log and monitor prompt interactions**
+
+For broader LLM guidance, see the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+
+## Memory & Context Leakage
+
+LangChain supports memory modules that store past interactions (e.g., `ConversationBufferMemory`). When using memory:
+
+- Always scope memory to individual users or sessions
+- Avoid storing personally identifiable or sensitive data unless necessary
+- Regularly flush or expire stale memory entries
+
 ## Reporting OSS Vulnerabilities
 
 LangChain is partnered with [huntr by Protect AI](https://huntr.com/) to provide 
@@ -84,3 +148,4 @@ Please report security vulnerabilities associated with LangSmith by email to `se
 ### Other Security Concerns
 
 For any other security concerns, please contact us at `security@langchain.dev`.
+
