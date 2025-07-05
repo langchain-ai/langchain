@@ -3,8 +3,10 @@
 from typing import Any
 
 import pytest
+from langchain_core.documents import Document
 
 from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
     TokenTextSplitter,
 )
 from langchain_text_splitters.character import CharacterTextSplitter
@@ -118,3 +120,78 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
+
+def test_text_splitter_from_tiktoken_start_index() -> None:
+    text = """
+    The View3DAttributes function is used to create View3DAttributes objects
+    which are then passed
+    to the SetView3D function to set the view when the visualization window is
+    in 3D. Note that
+    
+    View3DAttributes can be used in arithmetic expressions so you can add views
+    together, multiply
+    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
+    (1. - t) + view1 * t).
+    """
+    doc = Document(page_content=text)
+
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        model_name="gpt-3.5-turbo",
+        chunk_size=15,
+        chunk_overlap=1,
+        add_start_index=True,
+        strip_whitespace=True,
+    )
+
+    for doc in text_splitter.split_documents([doc]):
+        assert doc.metadata["start_index"] >= 0
+
+
+def test_text_splitter_from_huggingface_start_index() -> None:
+    from transformers import AutoTokenizer  # type: ignore[attr-defined]
+
+    text = """
+    The View3DAttributes function is used to create View3DAttributes objects
+    which are then passed
+    to the SetView3D function to set the view when the visualization window is
+    in 3D. Note that
+    
+    View3DAttributes can be used in arithmetic expressions so you can add views
+    together, multiply
+    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
+    (1. - t) + view1 * t).
+    """
+    doc = Document(page_content=text)
+
+    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+        AutoTokenizer.from_pretrained("Alibaba-NLP/gte-Qwen2-7B-instruct"),
+        chunk_size=15,
+        chunk_overlap=1,
+        add_start_index=True,
+        strip_whitespace=True,
+    )
+
+    for doc in text_splitter.split_documents([doc]):
+        assert doc.metadata["start_index"] >= 0
+
+
+def test_token_text_splitter_start_index() -> None:
+    text = """
+    The View3DAttributes function is used to create View3DAttributes objects
+    which are then passed
+    to the SetView3D function to set the view when the visualization window is
+    in 3D. Note that
+    
+    View3DAttributes can be used in arithmetic expressions so you can add views
+    together, multiply
+    them by a scale factor, etc. You can even interpolate views (e.g. view0 *
+    (1. - t) + view1 * t).
+    """
+    chunker = TokenTextSplitter(
+        add_start_index=True,
+        chunk_size=10,
+        chunk_overlap=5,
+    )
+    for doc in chunker.create_documents([text]):
+        assert doc.metadata["start_index"] >= 0
