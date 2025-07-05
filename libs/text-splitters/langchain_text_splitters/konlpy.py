@@ -22,12 +22,11 @@ class KonlpyTextSplitter(TextSplitter):
         try:
             import konlpy
         except ImportError:
-            raise ImportError(
-                """
-                Konlpy is not installed, please install it with 
+            msg = """
+                Konlpy is not installed, please install it with
                 `pip install konlpy`
                 """
-            )
+            raise ImportError(msg)
         self.kkma = konlpy.tag.Kkma()
 
     def split_text(self, text: str) -> list[str]:

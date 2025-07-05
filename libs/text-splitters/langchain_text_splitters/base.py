@@ -3,7 +3,8 @@ from __future__ import annotations
 import copy
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Sequence, Set
+from collections.abc import Collection, Iterable, Sequence
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -47,10 +48,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                               every document
         """
         if chunk_overlap > chunk_size:
-            raise ValueError(
+            msg = (
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
                 f"({chunk_size}), should be smaller."
             )
+            raise ValueError(msg)
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
@@ -96,8 +98,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             text = text.strip()
         if text == "":
             return None
-        else:
-            return text
+        return text
 
     def _merge_splits(self, splits: Iterable[str], separator: str) -> list[str]:
         # We now want to combine these smaller pieces into medium size
@@ -148,18 +149,20 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError(
+                msg = (
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
+                raise ValueError(msg)
 
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.tokenize(text))
 
         except ImportError:
-            raise ValueError(
+            msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
+            raise ValueError(msg)
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
@@ -167,7 +170,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         cls: type[TS],
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], Set[str]] = set(),
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> TS:
@@ -175,11 +178,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         try:
             import tiktoken
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -220,7 +224,7 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], Set[str]] = set(),
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> None:
@@ -229,11 +233,12 @@ class TokenTextSplitter(TextSplitter):
         try:
             import tiktoken
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
