@@ -28,7 +28,7 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """
     # Get the dependencies from the [tool.poetry.dependencies] section
     dependencies = uv_conf["project"]["dependencies"]
-    required_dependencies = set(Requirement(dep).name for dep in dependencies)
+    required_dependencies = {Requirement(dep).name for dep in dependencies}
 
     assert sorted(required_dependencies) == sorted(
         [
@@ -54,7 +54,7 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """
 
     dependencies = uv_conf["dependency-groups"]["test"]
-    test_group_deps = set(Requirement(dep).name for dep in dependencies)
+    test_group_deps = {Requirement(dep).name for dep in dependencies}
 
     assert sorted(test_group_deps) == sorted(
         [

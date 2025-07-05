@@ -48,7 +48,7 @@ class SequentialChain(Chain):
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
         input_variables = values["input_variables"]
-        memory_keys = list()
+        memory_keys = []
         if "memory" in values and values["memory"] is not None:
             """Validate that prompt input variables are consistent."""
             memory_keys = values["memory"].memory_variables
