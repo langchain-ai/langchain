@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
@@ -31,7 +31,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
                     [
                         now.strftime(self.format),
                         (now.replace(year=now.year - 1)).strftime(self.format),
-                        (now.replace(day=now.day - 1)).strftime(self.format),
+                        (now - timedelta(days=1)).strftime(self.format),
                     ]
                 )
             except ValueError:
