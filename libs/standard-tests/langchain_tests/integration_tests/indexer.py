@@ -49,7 +49,7 @@ class DocumentIndexerTestSuite(ABC):
 
         # Ordering is not guaranteed, need to test carefully
         documents = index.get(ids)
-        sorted_documents = sorted(documents, key=lambda x: x.id)  # type: ignore
+        sorted_documents = sorted(documents, key=lambda x: x.id or "")
 
         if sorted_documents[0].page_content == "bar":
             assert sorted_documents[0] == Document(
@@ -196,7 +196,7 @@ class DocumentIndexerTestSuite(ABC):
         }
         retrieved_documents = index.get(["1", "2", "3", "4"])
         # The ordering is not guaranteed, so we use a set.
-        assert sorted(retrieved_documents, key=lambda x: x.id) == [  # type: ignore
+        assert sorted(retrieved_documents, key=lambda x: x.id or "") == [
             Document(page_content="foo", metadata={"id": 1}, id="1"),
             Document(page_content="bar", metadata={"id": 2}, id="2"),
         ]
@@ -239,7 +239,7 @@ class AsyncDocumentIndexTestSuite(ABC):
 
         # Ordering is not guaranteed, need to test carefully
         documents = await index.aget(ids)
-        sorted_documents = sorted(documents, key=lambda x: x.id)  # type: ignore
+        sorted_documents = sorted(documents, key=lambda x: x.id or "")
 
         if sorted_documents[0].page_content == "bar":
             assert sorted_documents[0] == Document(
@@ -388,7 +388,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         }
         retrieved_documents = await index.aget(["1", "2", "3", "4"])
         # The ordering is not guaranteed, so we use a set.
-        assert sorted(retrieved_documents, key=lambda x: x.id) == [  # type: ignore
+        assert sorted(retrieved_documents, key=lambda x: x.id or "") == [
             Document(page_content="foo", metadata={"id": 1}, id="1"),
             Document(page_content="bar", metadata={"id": 2}, id="2"),
         ]
