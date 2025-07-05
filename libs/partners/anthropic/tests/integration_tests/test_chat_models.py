@@ -716,7 +716,7 @@ def test_citations() -> None:
     # Test pass back in
     next_message = {
         "role": "user",
-        "content": "Can you comment on the citations you just made?"
+        "content": "Can you comment on the citations you just made?",
     }
     _ = llm.invoke(messages + [full, next_message])
 
@@ -906,7 +906,8 @@ def test_web_search() -> None:
         ],
     }
     response = llm_with_tools.invoke([input_message])
-    block_types = {block["type"] for block in response.content}
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
     assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
 
     # Test streaming
@@ -953,7 +954,8 @@ def test_code_execution() -> None:
         ],
     }
     response = llm_with_tools.invoke([input_message])
-    block_types = {block["type"] for block in response.content}
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
     assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
 
     # Test streaming
@@ -1008,7 +1010,8 @@ def test_remote_mcp() -> None:
         ],
     }
     response = llm.invoke([input_message])
-    block_types = {block["type"] for block in response.content}
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
 
     # Test streaming
@@ -1018,7 +1021,8 @@ def test_remote_mcp() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
-    block_types = {block["type"] for block in full.content}
+    assert all(isinstance(block, dict) for block in full.content)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
     assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
 
     # Test we can pass back in
