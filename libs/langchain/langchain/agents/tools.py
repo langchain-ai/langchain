@@ -24,7 +24,7 @@ class InvalidTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        available_tool_names_str = ", ".join([tool for tool in available_tool_names])
+        available_tool_names_str = ", ".join(list(available_tool_names))
         return (
             f"{requested_tool_name} is not a valid tool, "
             f"try one of [{available_tool_names_str}]."
@@ -37,7 +37,7 @@ class InvalidTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
-        available_tool_names_str = ", ".join([tool for tool in available_tool_names])
+        available_tool_names_str = ", ".join(list(available_tool_names))
         return (
             f"{requested_tool_name} is not a valid tool, "
             f"try one of [{available_tool_names_str}]."

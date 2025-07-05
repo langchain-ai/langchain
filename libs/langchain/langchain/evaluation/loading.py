@@ -68,7 +68,7 @@ def load_dataset(uri: str) -> list[dict]:
         )
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
-    return [d for d in dataset["train"]]
+    return list(dataset["train"])
 
 
 _EVALUATOR_MAP: dict[
