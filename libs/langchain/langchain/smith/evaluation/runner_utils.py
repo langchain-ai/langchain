@@ -98,10 +98,8 @@ class TestResult(dict):
         to_drop = [
             col
             for col in df.columns
-            if col.startswith("inputs.")
-            or col.startswith("outputs.")
+            if col.startswith(("inputs.", "outputs.", "reference"))
             or col in {"input", "output"}
-            or col.startswith("reference")
         ]
         return df.describe(include="all").drop(to_drop, axis=1)
 
