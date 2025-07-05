@@ -124,9 +124,12 @@ def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "DEPRECATED_LOOKUP":
-                    if isinstance(node.value, ast.Dict):
-                        return _dict_from_ast(node.value)
+                if (
+                    isinstance(target, ast.Name)
+                    and target.id == "DEPRECATED_LOOKUP"
+                    and isinstance(node.value, ast.Dict)
+                ):
+                    return _dict_from_ast(node.value)
     return None
 
 
@@ -156,9 +159,11 @@ def _literal_eval_str(node: ast.AST) -> str:
     Returns:
         str: The corresponding string value.
     """
-    if isinstance(node, ast.Constant):  # Python 3.8+
-        if isinstance(node.value, str):
-            return node.value
+    if (
+        isinstance(node, ast.Constant)  # Python 3.8+
+        and isinstance(node.value, str)
+    ):
+        return node.value
     raise AssertionError(
         f"Invalid DEPRECATED_LOOKUP format: expected str, got {type(node).__name__}"
     )

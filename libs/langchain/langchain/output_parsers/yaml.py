@@ -27,12 +27,8 @@ class YamlOutputParser(BaseOutputParser[T]):
         try:
             # Greedy search for 1st yaml candidate.
             match = re.search(self.pattern, text.strip())
-            yaml_str = ""
-            if match:
-                yaml_str = match.group("yaml")
-            else:
-                # If no backticks were present, try to parse the entire output as yaml.
-                yaml_str = text
+            # If no backticks were present, try to parse the entire output as yaml.
+            yaml_str = match.group("yaml") if match else text
 
             json_object = yaml.safe_load(yaml_str)
             if hasattr(self.pydantic_object, "model_validate"):
