@@ -1303,32 +1303,14 @@ def _first_max_tokens(
     if not messages:
         return messages
 
-    # Check if all messages already fit within token limit
-    if token_counter(messages) <= max_tokens:
-        # When all messages fit, only apply end_on filtering if needed
-        if end_on:
-            for _ in range(len(messages)):
-                if not _is_message_type(messages[-1], end_on):
-                    messages.pop()
-                else:
-                    break
-        return messages
-
-    # Use binary search to find the maximum number of messages within token limit
-    left, right = 0, len(messages)
-    max_iterations = len(messages).bit_length()
-    for _ in range(max_iterations):
-        if left >= right:
+    total_tokens = 0
+    idx = 0
+    for i, message in enumerate(messages):
+        message_tokens = token_counter([message])
+        if total_tokens + message_tokens > max_tokens:
             break
-        mid = (left + right + 1) // 2
-        if token_counter(messages[:mid]) <= max_tokens:
-            left = mid
-            idx = mid
-        else:
-            right = mid - 1
-
-    # idx now contains the maximum number of complete messages we can include
-    idx = left
+        total_tokens += message_tokens
+        idx = i + 1
 
     if partial_strategy and idx < len(messages):
         included_partial = False
