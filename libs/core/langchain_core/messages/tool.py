@@ -126,8 +126,6 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                         raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
-        else:
-            pass
 
         tool_call_id = values["tool_call_id"]
         if isinstance(tool_call_id, (UUID, int, float)):
@@ -366,4 +364,4 @@ def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]
 def _merge_status(
     left: Literal["success", "error"], right: Literal["success", "error"]
 ) -> Literal["success", "error"]:
-    return "error" if "error" in (left, right) else "success"
+    return "error" if "error" in {left, right} else "success"

@@ -61,10 +61,10 @@ class _StreamingParser:
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg) from e
-            _parser = XMLParser(target=TreeBuilder())
+            parser_ = XMLParser(target=TreeBuilder())
         else:
-            _parser = None
-        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
+            parser_ = None
+        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=parser_)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
         self.current_path: list[str] = []
         self.current_path_has_children = False
@@ -218,9 +218,9 @@ class XMLOutputParser(BaseTransformOutputParser):
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg) from e
-            _et = ElementTree  # Use the defusedxml parser
+            et = ElementTree  # Use the defusedxml parser
         else:
-            _et = ET  # Use the standard library parser
+            et = ET  # Use the standard library parser
 
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
@@ -232,9 +232,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = _et.fromstring(text)
+            root = et.fromstring(text)
             return self._root_to_dict(root)
-        except _et.ParseError as e:
+        except et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 

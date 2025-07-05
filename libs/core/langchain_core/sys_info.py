@@ -8,7 +8,7 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     from importlib import metadata
 
     sub_deps = set()
-    _underscored_packages = {pkg.replace("-", "_") for pkg in packages}
+    underscored_packages = {pkg.replace("-", "_") for pkg in packages}
 
     for pkg in packages:
         try:
@@ -21,7 +21,7 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
 
         for req in required:
             cleaned_req = req.split(" ")[0]
-            if cleaned_req.replace("-", "_") not in _underscored_packages:
+            if cleaned_req.replace("-", "_") not in underscored_packages:
                 sub_deps.add(cleaned_req)
 
     return sorted(sub_deps, key=lambda x: x.lower())

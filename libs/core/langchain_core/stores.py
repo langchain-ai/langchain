@@ -23,7 +23,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class BaseStore(Generic[K, V], ABC):
+class BaseStore(ABC, Generic[K, V]):
     """Abstract interface for a key-value store.
 
     This is an interface that's meant to abstract away the details of

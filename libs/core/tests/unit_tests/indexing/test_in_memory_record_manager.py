@@ -242,11 +242,11 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
 
     results = manager.list_keys(limit=1)
     assert len(results) == 1
-    assert results[0] in ["key1", "key2", "key3", "key4", "key5"]
+    assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
     results = await manager.alist_keys(limit=1)
     assert len(results) == 1
-    assert results[0] in ["key1", "key2", "key3", "key4", "key5"]
+    assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
 
 def test_delete_keys(manager: InMemoryRecordManager) -> None:

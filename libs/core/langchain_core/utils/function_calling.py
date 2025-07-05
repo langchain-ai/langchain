@@ -294,8 +294,6 @@ def _convert_any_typed_dicts_to_pydantic(
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                else:
-                    pass
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
@@ -456,7 +454,7 @@ def convert_to_openai_function(
         oai_function = {
             k: v
             for k, v in function.items()
-            if k in ("name", "description", "parameters", "strict")
+            if k in {"name", "description", "parameters", "strict"}
         }
     # a JSON schema with title and description
     elif isinstance(function, dict) and "title" in function:
@@ -734,7 +732,7 @@ def _parse_google_docstring(
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
             filtered_annotations = {
-                arg for arg in args if arg not in ("run_manager", "callbacks", "return")
+                arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
             }
             if filtered_annotations and (
                 len(docstring_blocks) < 2
@@ -770,8 +768,8 @@ def _parse_google_docstring(
             if ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
-                arg_name, _, _annotations = arg.partition(" ")
-                if _annotations.startswith("(") and _annotations.endswith(")"):
+                arg_name, _, annotations_ = arg.partition(" ")
+                if annotations_.startswith("(") and annotations_.endswith(")"):
                     arg = arg_name
                 arg_descriptions[arg] = desc.strip()
             elif arg:

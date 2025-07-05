@@ -43,7 +43,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -186,14 +186,14 @@ class BasePromptTemplate(
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return self.format_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
         self, inner_input: dict
     ) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return await self.aformat_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(
