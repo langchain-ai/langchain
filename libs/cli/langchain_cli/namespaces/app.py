@@ -216,7 +216,7 @@ def add(
             destination_path = package_dir / inner_api_path
             if destination_path.exists():
                 typer.echo(
-                    f"Folder {str(inner_api_path)} already exists. " "Skipping...",
+                    f"Folder {str(inner_api_path)} already exists. Skipping...",
                 )
                 continue
             copy_repo(source_path, destination_path)
@@ -255,7 +255,7 @@ def add(
 
     chain_names = []
     for e in installed_exports:
-        original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
+        original_candidate = f"{e['package_name'].replace('-', '_')}_chain"
         candidate = original_candidate
         i = 2
         while candidate in chain_names:
