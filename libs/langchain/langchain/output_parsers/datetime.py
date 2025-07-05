@@ -10,7 +10,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
 
     format: str = "%Y-%m-%dT%H:%M:%S.%fZ"
     """The string value that is used as the datetime format.
-    
+
     Update this to match the desired datetime format for your application.
     """
 
