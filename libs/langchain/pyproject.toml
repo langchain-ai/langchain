@@ -86,7 +86,7 @@ test_integration = [
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff<1.0.0,>=0.9.2",
+    "ruff<0.13,>=0.12.2",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
@@ -144,8 +144,8 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "PGH003", "T201", "D", "UP", "S"]
-ignore = ["UP007", ]
-pydocstyle = { convention = "google" }
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"]
