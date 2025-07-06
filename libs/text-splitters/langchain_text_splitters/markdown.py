@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, TypedDict, Union
+from typing import Any, Dict, Optional, TypedDict, Union
 
 from langchain_core.documents import Document
 
@@ -26,7 +26,7 @@ class MarkdownHeaderTextSplitter:
         headers_to_split_on: list[tuple[str, str]],
         return_each_line: bool = False,
         strip_headers: bool = True,
-        custom_header_patterns: dict[str, int] | None = None,
+        custom_header_patterns: Optional[Dict[str, int]] = None,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
