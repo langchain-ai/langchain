@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Optional, TypedDict, Union
+from typing import Any, Optional, TypedDict, Union
 
 from langchain_core.documents import Document
 
@@ -26,7 +26,7 @@ class MarkdownHeaderTextSplitter:
         headers_to_split_on: list[tuple[str, str]],
         return_each_line: bool = False,
         strip_headers: bool = True,
-        custom_header_patterns: Optional[Dict[str, int]] = None,
+        custom_header_patterns: Optional[dict[str, int]] = None,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
@@ -34,9 +34,9 @@ class MarkdownHeaderTextSplitter:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
             strip_headers: Strip split headers from the content of the chunk
-            custom_header_patterns: Optional dict mapping header patterns to their levels.
-                For example: {"**": 1, "***": 2} to treat **Header** as level 1
-                and ***Header*** as level 2 headers.
+            custom_header_patterns: Optional dict mapping header patterns to their
+                levels. For example: {"**": 1, "***": 2} to treat **Header** as
+                level 1 and ***Header*** as level 2 headers.
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -192,10 +192,12 @@ class MarkdownHeaderTextSplitter:
                         # Push the current header to the stack
                         # Extract header text based on header type
                         if is_custom_header:
-                            # For custom headers like **Header**, extract text between patterns
+                            # For custom headers like **Header**, extract text
+                            # between patterns
                             header_text = stripped_line[len(sep):-len(sep)].strip()
                         else:
-                            # For standard headers like # Header, extract text after the separator
+                            # For standard headers like # Header, extract text
+                            # after the separator
                             header_text = stripped_line[len(sep):].strip()
 
                         header: HeaderType = {
