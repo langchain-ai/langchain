@@ -66,7 +66,7 @@ class MarkdownHeaderTextSplitter:
         # For patterns like "**", check if line starts and ends with the pattern
         if line.startswith(sep) and line.endswith(sep):
             # Extract the content between the patterns
-            content = line[len(sep):-len(sep)].strip()
+            content = line[len(sep) : -len(sep)].strip()
             # Valid header if there's content between the patterns
             return bool(content)
         return False
@@ -194,11 +194,11 @@ class MarkdownHeaderTextSplitter:
                         if is_custom_header:
                             # For custom headers like **Header**, extract text
                             # between patterns
-                            header_text = stripped_line[len(sep):-len(sep)].strip()
+                            header_text = stripped_line[len(sep) : -len(sep)].strip()
                         else:
                             # For standard headers like # Header, extract text
                             # after the separator
-                            header_text = stripped_line[len(sep):].strip()
+                            header_text = stripped_line[len(sep) :].strip()
 
                         header: HeaderType = {
                             "level": current_header_level,
