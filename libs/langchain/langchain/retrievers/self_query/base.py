@@ -155,6 +155,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return PineconeTranslator()
 
         try:
+            from langchain_milvus import Milvus
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Milvus):
+                return MilvusTranslator()
+
+        try:
             from langchain_mongodb import MongoDBAtlasVectorSearch
         except ImportError:
             pass
@@ -230,7 +238,7 @@ class SelfQueryRetriever(BaseRetriever):
     """The underlying vector store from which documents will be retrieved."""
     query_constructor: Runnable[dict, StructuredQuery] = Field(alias="llm_chain")
     """The query constructor chain for generating the vector store queries.
-    
+
     llm_chain is legacy name kept for backwards compatibility."""
     search_type: str = "similarity"
     """The search type to perform on the vector store."""

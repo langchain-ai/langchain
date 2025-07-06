@@ -13,7 +13,11 @@ from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
-from langchain_core.indexing.api import IndexingException, _abatch, _HashedDocument
+from langchain_core.indexing.api import (
+    IndexingException,
+    _abatch,
+    _get_document_with_hash,
+)
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
@@ -2222,7 +2226,7 @@ def test_indexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
 
@@ -2232,7 +2236,13 @@ def test_indexing_custom_batch_size(
         mock_add_documents = MagicMock()
         vector_store.add_documents = mock_add_documents  # type: ignore[method-assign]
 
-        index(docs, record_manager, vector_store, batch_size=batch_size)
+        index(
+            docs,
+            record_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         doc_with_id = Document(
             id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
@@ -2253,7 +2263,7 @@ async def test_aindexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     mock_add_documents = AsyncMock()
@@ -2261,7 +2271,9 @@ async def test_aindexing_custom_batch_size(
         id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
     )
     vector_store.aadd_documents = mock_add_documents  # type: ignore[method-assign]
-    await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+    await aindex(
+        docs, arecord_manager, vector_store, batch_size=batch_size, key_encoder="sha256"
+    )
     args, kwargs = mock_add_documents.call_args
     assert args == ([doc_with_id],)
     assert kwargs == {"ids": ids, "batch_size": batch_size}

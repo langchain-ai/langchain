@@ -24,7 +24,7 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
     cohere_api_key: Optional[str] = None
-    """Cohere API key. Must be specified directly or via environment variable 
+    """Cohere API key. Must be specified directly or via environment variable
         COHERE_API_KEY."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
