@@ -201,10 +201,10 @@ try:
         output_key: str = "output"  #: :meta private:
         limit_to_domains: Optional[Sequence[str]] = Field(default_factory=list)  # type: ignore[arg-type]
         """Use to limit the domains that can be accessed by the API chain.
-        
+
         * For example, to limit to just the domain `https://www.example.com`, set
             `limit_to_domains=["https://www.example.com"]`.
-            
+
         * The default value is an empty tuple, which means that no domains are
           allowed by default. By design this will raise an error on instantiation.
         * Use a None if you want to allow all domains by default -- this is not

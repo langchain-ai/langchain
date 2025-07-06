@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
@@ -10,7 +10,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
 
     format: str = "%Y-%m-%dT%H:%M:%S.%fZ"
     """The string value that is used as the datetime format.
-    
+
     Update this to match the desired datetime format for your application.
     """
 
@@ -31,7 +31,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
                     [
                         now.strftime(self.format),
                         (now.replace(year=now.year - 1)).strftime(self.format),
-                        (now.replace(day=now.day - 1)).strftime(self.format),
+                        (now - timedelta(days=1)).strftime(self.format),
                     ]
                 )
             except ValueError:

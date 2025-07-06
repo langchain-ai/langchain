@@ -66,7 +66,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     If none, then the parent documents will be the raw documents passed in."""
 
     child_metadata_fields: Optional[Sequence[str]] = None
-    """Metadata fields to leave in child documents. If None, leave all parent document 
+    """Metadata fields to leave in child documents. If None, leave all parent document
         metadata.
     """
 
