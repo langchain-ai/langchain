@@ -290,11 +290,11 @@ def test_index_simple_delete_full(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
@@ -366,11 +366,11 @@ async def test_aindex_simple_delete_full(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
@@ -659,11 +659,11 @@ def test_incremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
@@ -718,11 +718,11 @@ def test_incremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {
         "mutated document 1",
         "mutated document 2",
@@ -786,11 +786,11 @@ def test_incremental_indexing_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
 
@@ -836,11 +836,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
@@ -982,11 +982,11 @@ async def test_aincremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
@@ -1041,11 +1041,11 @@ async def test_aincremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {
         "mutated document 1",
         "mutated document 2",

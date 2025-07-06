@@ -37,7 +37,7 @@ class SelfAskOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         last_line = text.split("\n")[-1]
-        if not any([follow in last_line for follow in self.followups]):
+        if not any(follow in last_line for follow in self.followups):
             if self.finish_string not in last_line:
                 raise OutputParserException(f"Could not parse output: {text}")
             return AgentFinish({"output": last_line[len(self.finish_string) :]}, text)

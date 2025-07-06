@@ -100,7 +100,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         if self.return_intermediate_steps:
             schema["intermediate_steps"] = (list[str], None)
         if self.metadata_keys:
-            schema.update({key: (Any, None) for key in self.metadata_keys})
+            schema.update(dict.fromkeys(self.metadata_keys, (Any, None)))
 
         return create_model("MapRerankOutput", **schema)
 
