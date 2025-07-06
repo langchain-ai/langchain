@@ -31,7 +31,7 @@ async def test_zero_distance_async(distance: StringDistance) -> None:
 @pytest.mark.parametrize("distance", list(StringDistance))
 @pytest.mark.parametrize("normalize_score", [True, False])
 def test_zero_distance_pairwise(
-    distance: StringDistance, normalize_score: bool
+    *, distance: StringDistance, normalize_score: bool
 ) -> None:
     eval_chain = PairwiseStringDistanceEvalChain(
         distance=distance, normalize_score=normalize_score
@@ -62,7 +62,7 @@ valid_distances = [
 @pytest.mark.requires("rapidfuzz")
 @pytest.mark.parametrize("distance", valid_distances)
 @pytest.mark.parametrize("normalize_score", [True, False])
-def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> None:
+def test_non_zero_distance(*, distance: StringDistance, normalize_score: bool) -> None:
     eval_chain = StringDistanceEvalChain(
         distance=distance, normalize_score=normalize_score
     )

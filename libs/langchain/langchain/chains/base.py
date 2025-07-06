@@ -246,7 +246,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
     @field_validator("verbose", mode="before")
     @classmethod
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+    def set_verbose(
+        cls,
+        verbose: Optional[bool],  # noqa: FBT001
+    ) -> bool:
         """Set the chain verbosity.
 
         Defaults to the global setting if not specified by the user.
@@ -343,7 +346,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def __call__(
         self,
         inputs: Union[dict[str, Any], Any],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
@@ -394,7 +397,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     async def acall(
         self,
         inputs: Union[dict[str, Any], Any],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
@@ -444,7 +447,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, str],
         outputs: dict[str, str],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
     ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
@@ -470,7 +473,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, str],
         outputs: dict[str, str],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
     ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
