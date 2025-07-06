@@ -335,7 +335,7 @@ class HuggingFaceEndpoint(LLM):
         if self.streaming:
             completion = ""
             async for chunk in self._astream(
-                prompt, stop, run_manager, **invocation_params
+                prompt, run_manager=run_manager, **invocation_params
             ):
                 completion += chunk.text
             return completion
