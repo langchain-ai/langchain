@@ -28,6 +28,7 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 from pydantic import model_validator
+from typing_extensions import override
 
 T = TypeVar("T")
 H = TypeVar("H", bound=Hashable)
@@ -86,6 +87,7 @@ class EnsembleRetriever(BaseRetriever):
             values["weights"] = [1 / n_retrievers] * n_retrievers
         return values
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -119,6 +121,7 @@ class EnsembleRetriever(BaseRetriever):
             )
             return result
 
+    @override
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:

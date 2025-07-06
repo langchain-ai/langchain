@@ -20,7 +20,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     import openai
@@ -272,6 +272,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
+    @override
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
@@ -399,6 +400,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
 
+    @override
     async def ainvoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
@@ -515,10 +517,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         }
         return submit_tool_outputs
 
-    def _create_run(self, input: dict) -> Any:
+    def _create_run(self, input_dict: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -534,15 +536,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             )
         }
         return self.client.beta.threads.runs.create(
-            input["thread_id"],
+            input_dict["thread_id"],
             assistant_id=self.assistant_id,
             **params,
         )
 
-    def _create_thread_and_run(self, input: dict, thread: dict) -> Any:
+    def _create_thread_and_run(self, input_dict: dict, thread: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -673,10 +675,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         }
         return submit_tool_outputs
 
-    async def _acreate_run(self, input: dict) -> Any:
+    async def _acreate_run(self, input_dict: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -692,15 +694,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             )
         }
         return await self.async_client.beta.threads.runs.create(
-            input["thread_id"],
+            input_dict["thread_id"],
             assistant_id=self.assistant_id,
             **params,
         )
 
-    async def _acreate_thread_and_run(self, input: dict, thread: dict) -> Any:
+    async def _acreate_thread_and_run(self, input_dict: dict, thread: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",

@@ -2981,7 +2981,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
+lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13" }]
 test = [{ name = "langchain-core", editable = "../core" }]
 test-integration = []
 typing = [
@@ -3007,7 +3007,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "../core" },
-    { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
+    { name = "ruff", specifier = ">=0.12.2,<0.13" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
