@@ -202,13 +202,17 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
+    BaseMessage,
+    list[str],
+    tuple[str, Union[str, list[Union[str, dict[str, Any]]]]],
+    str,
+    dict[str, Any],
 ]
 
 
 def _create_message_from_message_type(
     message_type: str,
-    content: str,
+    content: Union[str, list[Union[str, dict[str, Any]]]],
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
@@ -218,13 +222,13 @@ def _create_message_from_message_type(
     """Create a message from a message type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., "human", "ai", etc.).
-        content: (str) the content string.
-        name: (str) the name of the message. Default is None.
-        tool_call_id: (str) the tool call id. Default is None.
-        tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
-        id: (str) the id of the message. Default is None.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., "human", "ai", etc.).
+        content: the content string.
+        name: the name of the message. Default is None.
+        tool_call_id: the tool call id. Default is None.
+        tool_calls: the tool calls. Default is None.
+        id: the id of the message. Default is None.
+        **additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
@@ -1006,12 +1010,13 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str)):
-        messages = [messages]
+    messages_ = (
+        [messages]
+        if (is_single := isinstance(messages, (BaseMessage, dict, str, tuple)))
+        else messages
+    )
 
-    messages = convert_to_messages(messages)
-
-    for i, message in enumerate(messages):
+    for i, message in enumerate(convert_to_messages(messages_)):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
         content: Union[str, list[dict]]
