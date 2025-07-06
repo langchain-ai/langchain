@@ -19,7 +19,7 @@ from langchain.chains.llm import LLMChain
     message=(
         "This class is deprecated and will be removed in langchain 1.0. "
         "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"
     ),
     removal="1.0",
 )

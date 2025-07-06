@@ -131,7 +131,7 @@ class ConversationChain(LLMChain):
                 f"({memory_keys}) - please provide keys that don't overlap."
             )
         prompt_variables = self.prompt.input_variables
-        expected_keys = memory_keys + [input_key]
+        expected_keys = [*memory_keys, input_key]
         if set(expected_keys) != set(prompt_variables):
             raise ValueError(
                 "Got unexpected prompt input variables. The prompt expects "

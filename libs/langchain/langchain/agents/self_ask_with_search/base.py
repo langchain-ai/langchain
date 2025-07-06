@@ -187,7 +187,7 @@ def create_self_ask_with_search_agent(
 
     if len(tools) != 1:
         raise ValueError("This agent expects exactly one tool")
-    tool = list(tools)[0]
+    tool = next(iter(tools))
     if tool.name != "Intermediate Answer":
         raise ValueError(
             "This agent expects the tool to be named `Intermediate Answer`"

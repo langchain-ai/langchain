@@ -24,7 +24,7 @@ from langchain.output_parsers.regex import RegexParser
     message=(
         "This class is deprecated. Please see the migration guide here for "
         "a recommended replacement: "
-        "https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain/"
     ),
 )
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
@@ -112,7 +112,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         if self.metadata_keys is not None:
             _output_keys += self.metadata_keys
         return _output_keys

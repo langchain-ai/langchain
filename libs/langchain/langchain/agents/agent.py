@@ -1249,7 +1249,7 @@ class AgentExecutor(Chain):
         :meta private:
         """
         if self.return_intermediate_steps:
-            return self._action_agent.return_values + ["intermediate_steps"]
+            return [*self._action_agent.return_values, "intermediate_steps"]
         else:
             return self._action_agent.return_values
 
@@ -1369,7 +1369,7 @@ class AgentExecutor(Chain):
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
-                    f"This is the error: {str(e)}"
+                    f"This is the error: {e!s}"
                 )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
@@ -1506,7 +1506,7 @@ class AgentExecutor(Chain):
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
-                    f"This is the error: {str(e)}"
+                    f"This is the error: {e!s}"
                 )
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):

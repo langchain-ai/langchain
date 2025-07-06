@@ -33,8 +33,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "AzureCogsImageAnalysisTool",
     "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
     "AzureCogsTextAnalyticsHealthTool",
