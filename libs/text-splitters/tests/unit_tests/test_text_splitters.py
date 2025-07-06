@@ -1481,12 +1481,11 @@ This is the content for section 2.1.
         ("**", "Bold Header"),
         ("***", "Bold Italic Header"),
     ]
-    
+
     custom_header_patterns = {
         "**": 1,   # Level 1 headers
         "***": 2,  # Level 2 headers
     }
-    
     markdown_splitter = MarkdownHeaderTextSplitter(
         headers_to_split_on=headers_to_split_on,
         custom_header_patterns=custom_header_patterns,
@@ -1540,12 +1539,12 @@ Content under custom header 2.
         ("**", "Bold Header"),
         ("***", "Bold Italic Header"),
     ]
-    
+
     custom_header_patterns = {
         "**": 1,   # Same level as #
         "***": 2,  # Same level as ##
     }
-    
+
     markdown_splitter = MarkdownHeaderTextSplitter(
         headers_to_split_on=headers_to_split_on,
         custom_header_patterns=custom_header_patterns,

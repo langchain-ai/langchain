@@ -52,17 +52,17 @@ class MarkdownHeaderTextSplitter:
 
     def _is_custom_header(self, line: str, sep: str) -> bool:
         """Check if line matches a custom header pattern.
-        
+
         Args:
             line: The line to check
             sep: The separator pattern to match
-            
+
         Returns:
             True if the line matches the custom pattern format
         """
         if sep not in self.custom_header_patterns:
             return False
-            
+
         # For patterns like "**", check if line starts and ends with the pattern
         if line.startswith(sep) and line.endswith(sep):
             # Extract the content between the patterns
@@ -165,7 +165,7 @@ class MarkdownHeaderTextSplitter:
                     len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
                 )
                 is_custom_header = self._is_custom_header(stripped_line, sep)
-                
+
                 # Check if line matches either standard or custom header pattern
                 if is_standard_header or is_custom_header:
                     # Ensure we are tracking the header as metadata
@@ -197,7 +197,7 @@ class MarkdownHeaderTextSplitter:
                         else:
                             # For standard headers like # Header, extract text after the separator
                             header_text = stripped_line[len(sep):].strip()
-                            
+
                         header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
