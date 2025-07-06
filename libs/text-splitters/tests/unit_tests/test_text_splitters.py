@@ -1562,11 +1562,17 @@ Content under custom header 2.
         ),
         Document(
             page_content="Content under standard header 2.",
-            metadata={"Bold Header": "Custom Header 1", "Header 2": "Standard Header 2"},
+            metadata={
+                "Bold Header": "Custom Header 1",
+                "Header 2": "Standard Header 2",
+            },
         ),
         Document(
             page_content="Content under custom header 2.",
-            metadata={"Bold Header": "Custom Header 1", "Bold Italic Header": "Custom Header 2"},
+            metadata={
+                "Bold Header": "Custom Header 1",
+                "Bold Italic Header": "Custom Header 2",
+            },
         ),
     ]
 
