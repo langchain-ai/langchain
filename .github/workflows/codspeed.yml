@@ -7,6 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: foo
   AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo

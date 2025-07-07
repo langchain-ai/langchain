@@ -4,6 +4,7 @@
 import json
 import os
 import pkgutil
+from typing import Optional
 
 import click
 
@@ -19,9 +20,8 @@ from langchain_cli.namespaces.migrate.generate.partner import (
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """Migration scripts management."""
-    pass
 
 
 @cli.command()
@@ -73,7 +73,7 @@ def generic(
         f.write(dumped)
 
 
-def handle_partner(pkg: str, output: str = None):
+def handle_partner(pkg: str, output: Optional[str] = None) -> None:
     migrations = get_migrations_for_partner_package(pkg)
     # Run with python 3.9+
     name = pkg.removeprefix("langchain_")
@@ -100,7 +100,7 @@ def partner(pkg: str, output: str) -> None:
 @click.argument("json_file")
 def json_to_grit(json_file: str) -> None:
     """Generate a Grit migration from an old JSON migration file."""
-    with open(json_file, "r") as f:
+    with open(json_file) as f:
         migrations = json.load(f)
     name = os.path.basename(json_file).removesuffix(".json").removesuffix(".grit")
     data = dump_migrations_as_grit(name, migrations)

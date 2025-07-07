@@ -65,8 +65,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -79,9 +77,11 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict:
     if isinstance(tool_schema, dict):
         return tool_schema
 
-    if hasattr(tool_schema, "model_json_schema"):
+    if issubclass(tool_schema, BaseModel):
         return tool_schema.model_json_schema()
-    return tool_schema.schema()
+    if issubclass(tool_schema, BaseModelV1):
+        return tool_schema.schema()
+    return {}
 
 
 def test_unnamed_decorator() -> None:
@@ -752,16 +752,16 @@ class _FakeExceptionTool(BaseTool):
 
 
 def test_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = _tool.run({})
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -771,28 +771,28 @@ def test_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = await _tool.arun({})
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -802,15 +802,15 @@ async def test_async_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_structured_tool_from_function() -> None:
@@ -850,16 +850,16 @@ def test_structured_tool_from_function() -> None:
 def test_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -870,8 +870,8 @@ def test_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -884,6 +884,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -907,24 +908,24 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -935,8 +936,8 @@ async def test_async_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -949,6 +950,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -972,9 +974,9 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_optional_subset_model_rewrite() -> None:
@@ -1853,11 +1855,14 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     )
 
     input_schema = tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
+
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1943,12 +1948,14 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast("BaseModel", foo_tool.args_schema)
-    args_json_schema = (
-        args_schema.model_json_schema()
-        if hasattr(args_schema, "model_json_schema")
-        else args_schema.schema()
-    )
+    args_schema = cast("type[BaseModel]", foo_tool.args_schema)
+    if issubclass(args_schema, BaseModel):
+        args_json_schema = args_schema.model_json_schema()
+    elif issubclass(args_schema, BaseModelV1):
+        args_json_schema = args_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1960,11 +1967,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2020,7 +2029,6 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
@@ -2038,63 +2046,6 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    class ModelB(ModelA[str]):
-        b: Annotated[ModelA[dict[str, Any]], "foo"]
-
-    class Mixin:
-        def foo(self) -> str:
-            return "foo"
-
-    class ModelC(Mixin, ModelB):
-        c: dict
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = get_all_basemodel_annotations(ModelC)
-    assert actual == expected
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = get_all_basemodel_annotations(ModelB)
-    assert actual == expected
-
-    expected = {"a": Any}
-    actual = get_all_basemodel_annotations(ModelA)
-    assert actual == expected
-
-    expected = {"a": int}
-    actual = get_all_basemodel_annotations(ModelA[int])
-    assert actual == expected
-
-    D = TypeVar("D", bound=Union[str, int])
-
-    class ModelD(ModelC, Generic[D]):
-        d: Optional[D]
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[str, int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD)
-    assert actual == expected
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD[int])
-    assert actual == expected
-
-
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
-def test__get_all_basemodel_annotations_v1() -> None:
-    A = TypeVar("A")
-
-    class ModelA(BaseModel, Generic[A], extra="allow"):
-        a: A
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[dict[str, Any]], "foo"]
@@ -2226,7 +2177,6 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
@@ -2382,6 +2332,9 @@ def test_tool_return_output_mixin() -> None:
 
         def __eq__(self, other: object) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
+
+        def __hash__(self) -> int:
+            return hash(self.x)
 
     @tool
     def foo(x: int) -> Bar:

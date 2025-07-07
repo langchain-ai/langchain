@@ -11,10 +11,10 @@ import pytest_asyncio
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
 
 from langchain.indexes import aindex, index
-from langchain.indexes._api import _abatch, _HashedDocument
 from langchain.indexes._sql_record_manager import SQLRecordManager
 
 
@@ -40,7 +40,7 @@ class ToyLoader(BaseLoader):
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self, permit_upserts: bool = False) -> None:
+    def __init__(self, *, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
@@ -66,18 +66,17 @@ class InMemoryVectorStore(VectorStore):
     ) -> list[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
+            msg = f"Expected {len(ids)} ids, got {len(documents)} documents."
+            raise ValueError(msg)
 
         if not ids:
-            raise NotImplementedError("This is not implemented yet.")
+            msg = "This is not implemented yet."
+            raise NotImplementedError(msg)
 
         for _id, document in zip(ids, documents):
             if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
+                msg = f"Document with uid {_id} already exists in the store."
+                raise ValueError(msg)
             self.store[_id] = document
 
         return list(ids)
@@ -90,18 +89,17 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[str]:
         if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
+            msg = f"Expected {len(ids)} ids, got {len(documents)} documents."
+            raise ValueError(msg)
 
         if not ids:
-            raise NotImplementedError("This is not implemented yet.")
+            msg = "This is not implemented yet."
+            raise NotImplementedError(msg)
 
         for _id, document in zip(ids, documents):
             if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
+                msg = f"Document with uid {_id} already exists in the store."
+                raise ValueError(msg)
             self.store[_id] = document
         return list(ids)
 
@@ -290,11 +288,11 @@ def test_index_simple_delete_full(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
@@ -366,11 +364,11 @@ async def test_aindex_simple_delete_full(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
@@ -659,11 +657,11 @@ def test_incremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
@@ -718,11 +716,11 @@ def test_incremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {
         "mutated document 1",
         "mutated document 2",
@@ -786,11 +784,11 @@ def test_incremental_indexing_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
 
@@ -836,11 +834,11 @@ def test_incremental_delete_with_batch_size(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
@@ -982,11 +980,11 @@ async def test_aincremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
@@ -1041,11 +1039,11 @@ async def test_aincremental_delete(
             "num_updated": 0,
         }
 
-    doc_texts = set(
+    doc_texts = {
         # Ignoring type since doc should be in the store and not a None
         vector_store.store.get(uid).page_content  # type: ignore[union-attr]
         for uid in vector_store.store
-    )
+    }
     assert doc_texts == {
         "mutated document 1",
         "mutated document 2",
@@ -1374,11 +1372,17 @@ def test_indexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     with patch.object(vector_store, "add_documents") as mock_add_documents:
-        index(docs, record_manager, vector_store, batch_size=batch_size)
+        index(
+            docs,
+            record_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         docs_with_id = [
             Document(
@@ -1402,11 +1406,17 @@ async def test_aindexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     with patch.object(vector_store, "aadd_documents") as mock_add_documents:
-        await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+        await aindex(
+            docs,
+            arecord_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         docs_with_id = [
             Document(

@@ -23,14 +23,6 @@ if TYPE_CHECKING:
     from openapi_pydantic import Parameter
 
 
-def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
-    summary = getattr(o, "summary", None)
-    description = getattr(o, "description", None)
-    if prefer_short:
-        return summary or description
-    return description or summary
-
-
 def _format_url(url: str, path_params: dict) -> str:
     expected_path_param = re.findall(r"{(.*?)}", url)
     new_params = {}
@@ -77,7 +69,7 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema
+            media_type_schema = next(iter(p.content.values())).media_type_schema
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -103,10 +95,11 @@ def openapi_spec_to_openai_fn(
     try:
         from langchain_community.tools import APIOperation
     except ImportError:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.tools. "
             "Please install it with `pip install langchain-community`."
         )
+        raise ImportError(msg)
 
     if not spec.paths:
         return [], lambda: None
@@ -147,7 +140,7 @@ def openapi_spec_to_openai_fn(
                             schema.json(exclude_none=True)
                         )
                 if len(media_types) == 1:
-                    media_type, schema_dict = list(media_types.items())[0]
+                    media_type, schema_dict = next(iter(media_types.items()))
                     key = "json" if media_type == "application/json" else "data"
                     request_args[key] = schema_dict
                 elif len(media_types) > 1:
@@ -173,6 +166,7 @@ def openapi_spec_to_openai_fn(
         fn_args: dict,
         headers: Optional[dict] = None,
         params: Optional[dict] = None,
+        timeout: Optional[int] = 30,
         **kwargs: Any,
     ) -> Any:
         method = _name_to_call_map[name]["method"]
@@ -192,7 +186,7 @@ def openapi_spec_to_openai_fn(
                 _kwargs["params"].update(params)
             else:
                 _kwargs["params"] = params
-        return requests.request(method, url, **_kwargs)
+        return requests.request(method, url, **_kwargs, timeout=timeout)
 
     return functions, default_call_api
 
@@ -248,7 +242,7 @@ class SimpleRequestChain(Chain):
     message=(
         "This function is deprecated and will be removed in langchain 1.0. "
         "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"
     ),
     removal="1.0",
 )
@@ -258,7 +252,7 @@ def get_openapi_chain(
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
     llm_chain_kwargs: Optional[dict] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     headers: Optional[dict] = None,
     params: Optional[dict] = None,
     **kwargs: Any,
@@ -352,10 +346,11 @@ def get_openapi_chain(
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.utilities.openapi. "
             "Please install it with `pip install langchain-community`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -367,17 +362,19 @@ def get_openapi_chain(
                 break
             except ImportError as e:
                 raise e
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
-            raise ValueError(f"Unable to parse spec from source {spec}")
+            msg = f"Unable to parse spec from source {spec}"
+            raise ValueError(msg)
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
-        raise ValueError(
+        msg = (
             "Must provide an LLM for this chain.For example,\n"
             "from langchain_openai import ChatOpenAI\n"
             "llm = ChatOpenAI()\n"
         )
+        raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

@@ -27,7 +27,6 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
-
         Returns:
             Structured output.
         """

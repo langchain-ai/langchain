@@ -35,7 +35,7 @@ def test_regex_dict_result() -> None:
     )
     result_dict = regex_dict_parser.parse(DEF_README)
     print("parse_result:", result_dict)  # noqa: T201
-    assert DEF_EXPECTED_RESULT == result_dict
+    assert result_dict == DEF_EXPECTED_RESULT
 
 
 def test_regex_dict_output_type() -> None:

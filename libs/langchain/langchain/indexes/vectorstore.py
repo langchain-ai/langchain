@@ -48,13 +48,14 @@ class VectorStoreIndexWrapper(BaseModel):
             The result string from the RetrievalQA chain.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -80,13 +81,14 @@ class VectorStoreIndexWrapper(BaseModel):
             The asynchronous result string from the RetrievalQA chain.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -112,13 +114,14 @@ class VectorStoreIndexWrapper(BaseModel):
             A dictionary containing the answer and source documents.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -144,13 +147,14 @@ class VectorStoreIndexWrapper(BaseModel):
             A dictionary containing the answer and source documents.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -165,9 +169,8 @@ def _get_in_memory_vectorstore() -> type[VectorStore]:
     try:
         from langchain_community.vectorstores.inmemory import InMemoryVectorStore
     except ImportError:
-        raise ImportError(
-            "Please install langchain-community to use the InMemoryVectorStore."
-        )
+        msg = "Please install langchain-community to use the InMemoryVectorStore."
+        raise ImportError(msg)
     warnings.warn(
         "Using InMemoryVectorStore as the default vectorstore."
         "This memory store won't persist data. You should explicitly"

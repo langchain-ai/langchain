@@ -27,7 +27,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     message=(
         "This class is deprecated. Please see the migration guide here for "
         "a recommended replacement: "
-        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"
     ),
 )
 class RefineDocumentsChain(BaseCombineDocumentsChain):
@@ -105,7 +105,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         return _output_keys
 
     model_config = ConfigDict(
@@ -127,23 +127,26 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "initial_llm_chain" not in values:
-            raise ValueError("initial_llm_chain must be provided")
+            msg = "initial_llm_chain must be provided"
+            raise ValueError(msg)
 
         llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain input_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     def combine_docs(
@@ -219,8 +222,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         base_inputs: dict = {
             self.document_variable_name: self.document_prompt.format(**document_info)
         }
-        inputs = {**base_inputs, **kwargs}
-        return inputs
+        return {**base_inputs, **kwargs}
 
     @property
     def _chain_type(self) -> str:

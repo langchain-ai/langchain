@@ -245,8 +245,8 @@ def test_chat_groq_invalid_streaming_params() -> None:
 
 def test_chat_groq_secret() -> None:
     """Test that secret is not printed"""
-    secret = "secretKey"
-    not_secret = "safe"
+    secret = "secretKey"  # noqa: S105
+    not_secret = "safe"  # noqa: S105
     llm = ChatGroq(model="foo", api_key=secret, model_kwargs={"not_secret": not_secret})  # type: ignore[call-arg, arg-type]
     stringified = str(llm)
     assert not_secret in stringified

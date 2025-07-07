@@ -106,6 +106,10 @@ from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_openai.chat_models._compat import (
+    _convert_from_v03_ai_message,
+    _convert_to_v03_ai_message,
+)
 
 if TYPE_CHECKING:
     from openai.types.responses import Response
@@ -115,8 +119,6 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivelent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
-
-_FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 WellKnownTools = (
     "file_search",
@@ -500,14 +502,30 @@ class BaseChatOpenAI(BaseChatModel):
     max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
     reasoning_effort: Optional[str] = None
-    """Constrains effort on reasoning for reasoning models. 
-    
-    Reasoning models only, like OpenAI o1 and o3-mini.
+    """Constrains effort on reasoning for reasoning models. For use with the Chat
+    Completions API.
+
+    Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
     Currently supported values are low, medium, and high. Reducing reasoning effort 
     can result in faster responses and fewer tokens used on reasoning in a response.
-    
+
     .. versionadded:: 0.2.14
+    """
+    reasoning: Optional[dict[str, Any]] = None
+    """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
+    o4-mini, etc.). For use with the Responses API.
+
+    Example:
+
+    .. code-block:: python
+
+        reasoning={
+            "effort": "medium",  # can be "low", "medium", or "high"
+            "summary": "auto",  # can be "auto", "concise", or "detailed"
+        }
+
+    .. versionadded:: 0.3.24
     """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -554,9 +572,73 @@ class BaseChatOpenAI(BaseChatModel):
     However this does not prevent a user from directly passed in the parameter during
     invocation. 
     """
+
+    include: Optional[list[str]] = None
+    """Additional fields to include in generations from Responses API.
+
+    Supported values:
+
+    - ``"file_search_call.results"``
+    - ``"message.input_image.image_url"``
+    - ``"computer_call_output.output.image_url"``
+    - ``"reasoning.encrypted_content"``
+    - ``"code_interpreter_call.outputs"``
+
+    .. versionadded:: 0.3.24
+    """
+
     service_tier: Optional[str] = None
     """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
     for users of OpenAI's scale tier service.
+    """
+
+    store: Optional[bool] = None
+    """If True, OpenAI may store response data for future use. Defaults to True
+    for the Responses API and False for the Chat Completions API.
+
+    .. versionadded:: 0.3.24
+    """
+
+    truncation: Optional[str] = None
+    """Truncation strategy (Responses API). Can be ``"auto"`` or ``"disabled"``
+    (default). If ``"auto"``, model may drop input items from the middle of the
+    message sequence to fit the context window.
+
+    .. versionadded:: 0.3.24
+    """
+
+    use_previous_response_id: bool = False
+    """If True, always pass ``previous_response_id`` using the ID of the most recent
+    response. Responses API only.
+
+    Input messages up to the most recent response will be dropped from request
+    payloads.
+
+    For example, the following two are equivalent:
+
+    .. code-block:: python
+
+        llm = ChatOpenAI(
+            model="o4-mini",
+            use_previous_response_id=True,
+        )
+        llm.invoke(
+            [
+                HumanMessage("Hello"),
+                AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+                HumanMessage("How are you?"),
+            ]
+        )
+
+    .. code-block:: python
+
+        llm = ChatOpenAI(
+            model="o4-mini",
+            use_responses_api=True,
+        )
+        llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
+
+    .. versionadded:: 0.3.26
     """
 
     use_responses_api: Optional[bool] = None
@@ -565,6 +647,25 @@ class BaseChatOpenAI(BaseChatModel):
     If not specified then will be inferred based on invocation params.
 
     .. versionadded:: 0.3.9
+    """
+
+    output_version: Literal["v0", "responses/v1"] = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    Supported values:
+
+    - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
+    - ``"responses/v1"``: Formats Responses API output
+      items into AIMessage content blocks.
+
+    Currently only impacts the Responses API. ``output_version="responses/v1"`` is
+    recommended.
+
+    .. versionadded:: 0.3.25
+
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -683,7 +784,11 @@ class BaseChatOpenAI(BaseChatModel):
             "n": self.n,
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
+            "reasoning": self.reasoning,
+            "include": self.include,
             "service_tier": self.service_tier,
+            "truncation": self.truncation,
+            "store": self.store,
         }
 
         params = {
@@ -741,7 +846,8 @@ class BaseChatOpenAI(BaseChatModel):
         if len(choices) == 0:
             # logprobs is implicitly None
             generation_chunk = ChatGenerationChunk(
-                message=default_chunk_class(content="", usage_metadata=usage_metadata)
+                message=default_chunk_class(content="", usage_metadata=usage_metadata),
+                generation_info=base_generation_info,
             )
             return generation_chunk
 
@@ -797,15 +903,28 @@ class BaseChatOpenAI(BaseChatModel):
 
         with context_manager as response:
             is_first_chunk = True
+            current_index = -1
+            current_output_index = -1
+            current_sub_index = -1
             has_reasoning = False
             for chunk in response:
                 metadata = headers if is_first_chunk else {}
-                if generation_chunk := _convert_responses_chunk_to_generation_chunk(
+                (
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    generation_chunk,
+                ) = _convert_responses_chunk_to_generation_chunk(
                     chunk,
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                ):
+                    output_version=self.output_version,
+                )
+                if generation_chunk:
                     if run_manager:
                         run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
@@ -839,15 +958,28 @@ class BaseChatOpenAI(BaseChatModel):
 
         async with context_manager as response:
             is_first_chunk = True
+            current_index = -1
+            current_output_index = -1
+            current_sub_index = -1
             has_reasoning = False
             async for chunk in response:
                 metadata = headers if is_first_chunk else {}
-                if generation_chunk := _convert_responses_chunk_to_generation_chunk(
+                (
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    generation_chunk,
+                ) = _convert_responses_chunk_to_generation_chunk(
                     chunk,
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                ):
+                    output_version=self.output_version,
+                )
+                if generation_chunk:
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
@@ -985,7 +1117,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = self.root_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
@@ -998,6 +1133,16 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif self.output_version == "responses/v1":
+            return True
+        elif self.include is not None:
+            return True
+        elif self.reasoning is not None:
+            return True
+        elif self.truncation is not None:
+            return True
+        elif self.use_previous_response_id:
+            return True
         else:
             return _use_responses_api(payload)
 
@@ -1014,7 +1159,14 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
         if self._use_responses_api(payload):
-            payload = _construct_responses_api_payload(messages, payload)
+            if self.use_previous_response_id:
+                last_messages, previous_response_id = _get_last_messages(messages)
+                payload_to_use = last_messages if previous_response_id else messages
+                if previous_response_id:
+                    payload["previous_response_id"] = previous_response_id
+                payload = _construct_responses_api_payload(payload_to_use, payload)
+            else:
+                payload = _construct_responses_api_payload(messages, payload)
         else:
             payload["messages"] = [_convert_message_to_dict(m) for m in messages]
         return payload
@@ -1029,15 +1181,27 @@ class BaseChatOpenAI(BaseChatModel):
         response_dict = (
             response if isinstance(response, dict) else response.model_dump()
         )
-        # Sometimes the AI Model calling will get error, we should raise it.
-        # Otherwise, the next code 'choices.extend(response["choices"])'
-        # will throw a "TypeError: 'NoneType' object is not iterable" error
-        # to mask the true error. Because 'response["choices"]' is None.
+        # Sometimes the AI Model calling will get error, we should raise it (this is
+        # typically followed by a null value for `choices`, which we raise for
+        # separately below).
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
+        # Raise informative error messages for non-OpenAI chat completions APIs
+        # that return malformed responses.
+        try:
+            choices = response_dict["choices"]
+        except KeyError as e:
+            raise KeyError(
+                f"Response missing `choices` key: {response_dict.keys()}"
+            ) from e
+
+        if choices is None:
+            raise TypeError("Received response with null value for `choices`.")
+
         token_usage = response_dict.get("usage")
-        for res in response_dict["choices"]:
+
+        for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
@@ -1189,7 +1353,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = await self.root_async_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
@@ -2111,11 +2278,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
         detail.
 
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini")
+            llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
             tool = {"type": "web_search_preview"}
             llm_with_tools = llm.bind_tools([tool])
@@ -2156,7 +2335,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 
@@ -2175,10 +2354,33 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
+        .. versionadded:: 0.3.26
+
+        You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
+        Input messages up to the most recent response will then be dropped from request
+        payloads, and ``previous_response_id`` will be set using the ID of the most
+        recent response.
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
+
     .. dropdown:: Reasoning output
 
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
+
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
 
         .. code-block:: python
 
@@ -2190,24 +2392,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             }
 
             llm = ChatOpenAI(
-                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+                model="o4-mini", reasoning=reasoning, output_version="responses/v1"
             )
             response = llm.invoke("What is 3^3?")
 
+            # Response text
             print(f"Output: {response.text()}")
-            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+            # Reasoning summaries
+            for block in response.content:
+                if block["type"] == "reasoning":
+                    for summary in block["summary"]:
+                        print(summary["text"])
 
         .. code-block:: none
 
-            Output: 3^3 = 27.
-
-            Reasoning: {
-                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
-                'summary': [
-                    {'text': 'The user wants to know...', 'type': 'summary_text'}
-                ],
-                'type': 'reasoning'
-            }
+            Output: 3³ = 27
+            Reasoning: The user wants to know...
 
     .. dropdown:: Structured output
 
@@ -3070,19 +3271,23 @@ def _create_usage_metadata_responses(oai_token_usage: dict) -> UsageMetadata:
     input_tokens = oai_token_usage.get("input_tokens", 0)
     output_tokens = oai_token_usage.get("output_tokens", 0)
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
-
     output_token_details: dict = {
-        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
-            "audio_tokens"
-        ),
-        "reasoning": (oai_token_usage.get("output_token_details") or {}).get(
+        "reasoning": (oai_token_usage.get("output_tokens_details") or {}).get(
             "reasoning_tokens"
-        ),
+        )
+    }
+    input_token_details: dict = {
+        "cache_read": (oai_token_usage.get("input_tokens_details") or {}).get(
+            "cached_tokens"
+        )
     }
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
         output_token_details=OutputTokenDetails(
             **{k: v for k, v in output_token_details.items() if v is not None}
         ),
@@ -3097,8 +3302,38 @@ def _use_responses_api(payload: dict) -> bool:
     uses_builtin_tools = "tools" in payload and any(
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
-    responses_only_args = {"previous_response_id", "text", "truncation", "include"}
+    responses_only_args = {
+        "include",
+        "previous_response_id",
+        "reasoning",
+        "text",
+        "truncation",
+    }
     return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+
+
+def _get_last_messages(
+    messages: Sequence[BaseMessage],
+) -> tuple[Sequence[BaseMessage], Optional[str]]:
+    """
+    Return
+        1. Every message after the most-recent AIMessage that has a non-empty
+           ``response_metadata["id"]`` (may be an empty list),
+        2. That id.
+
+    If the most-recent AIMessage does not have an id (or there is no
+    AIMessage at all) the entire conversation is returned together with ``None``.
+    """
+    for i in range(len(messages) - 1, -1, -1):
+        msg = messages[i]
+        if isinstance(msg, AIMessage):
+            response_id = msg.response_metadata.get("id")
+            if response_id:
+                return messages[i + 1 :], response_id
+            else:
+                return messages, None
+
+    return messages, None
 
 
 def _construct_responses_api_payload(
@@ -3108,7 +3343,7 @@ def _construct_responses_api_payload(
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
         if legacy_token_param in payload:
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
-    if "reasoning_effort" in payload:
+    if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     payload["input"] = _construct_responses_api_input(messages)
@@ -3209,27 +3444,26 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
-def _pop_summary_index_from_reasoning(reasoning: dict) -> dict:
-    """When streaming, langchain-core uses the ``index`` key to aggregate reasoning
+def _pop_index_and_sub_index(block: dict) -> dict:
+    """When streaming, langchain-core uses the ``index`` key to aggregate
     text blocks. OpenAI API does not support this key, so we need to remove it.
-
-    N.B. OpenAI also does not appear to support the ``summary_inex`` key when passed
-    back in.
     """
-    new_reasoning = reasoning.copy()
-    if "summary" in reasoning and isinstance(reasoning["summary"], list):
+    new_block = {k: v for k, v in block.items() if k != "index"}
+    if "summary" in new_block and isinstance(new_block["summary"], list):
         new_summary = []
-        for block in reasoning["summary"]:
-            new_block = {k: v for k, v in block.items() if k != "index"}
-            new_summary.append(new_block)
-        new_reasoning["summary"] = new_summary
-    return new_reasoning
+        for sub_block in new_block["summary"]:
+            new_sub_block = {k: v for k, v in sub_block.items() if k != "index"}
+            new_summary.append(new_sub_block)
+        new_block["summary"] = new_summary
+    return new_block
 
 
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
+        if isinstance(lc_msg, AIMessage):
+            lc_msg = _convert_from_v03_ai_message(lc_msg)
         msg = _convert_message_to_dict(lc_msg)
         # "name" parameter unsupported
         if "name" in msg:
@@ -3251,97 +3485,85 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
-            # Reasoning items
-            reasoning_items = []
-            if reasoning := lc_msg.additional_kwargs.get("reasoning"):
-                reasoning_items.append(_pop_summary_index_from_reasoning(reasoning))
-            input_.extend(reasoning_items)
-            # Function calls
-            function_calls = []
-            if tool_calls := msg.pop("tool_calls", None):
-                # TODO: should you be able to preserve the function call object id on
-                #  the langchain tool calls themselves?
-                function_call_ids = lc_msg.additional_kwargs.get(
-                    _FUNCTION_CALL_IDS_MAP_KEY
-                )
-                for tool_call in tool_calls:
-                    function_call = {
-                        "type": "function_call",
-                        "name": tool_call["function"]["name"],
-                        "arguments": tool_call["function"]["arguments"],
-                        "call_id": tool_call["id"],
-                    }
-                    if function_call_ids is not None and (
-                        _id := function_call_ids.get(tool_call["id"])
-                    ):
-                        function_call["id"] = _id
-                    function_calls.append(function_call)
-            # Built-in tool calls
-            computer_calls = []
-            code_interpreter_calls = []
-            mcp_calls = []
-            image_generation_calls = []
-            tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
-            for tool_output in tool_outputs:
-                if tool_output.get("type") == "computer_call":
-                    computer_calls.append(tool_output)
-                elif tool_output.get("type") == "code_interpreter_call":
-                    code_interpreter_calls.append(tool_output)
-                elif tool_output.get("type") == "mcp_call":
-                    mcp_calls.append(tool_output)
-                elif tool_output.get("type") == "image_generation_call":
-                    image_generation_calls.append(tool_output)
-                else:
-                    pass
-            input_.extend(code_interpreter_calls)
-            input_.extend(mcp_calls)
-
-            # A previous image generation call can be referenced by ID
-
-            input_.extend(
-                [
-                    {"type": "image_generation_call", "id": image_generation_call["id"]}
-                    for image_generation_call in image_generation_calls
-                ]
-            )
-
-            msg["content"] = msg.get("content") or []
-            if lc_msg.additional_kwargs.get("refusal"):
-                if isinstance(msg["content"], str):
-                    msg["content"] = [
-                        {
-                            "type": "output_text",
-                            "text": msg["content"],
-                            "annotations": [],
-                        }
-                    ]
-                msg["content"] = msg["content"] + [
-                    {"type": "refusal", "refusal": lc_msg.additional_kwargs["refusal"]}
-                ]
-            if isinstance(msg["content"], list):
-                new_blocks = []
+            if isinstance(msg.get("content"), list):
                 for block in msg["content"]:
-                    # chat api: {"type": "text", "text": "..."}
-                    # responses api: {"type": "output_text", "text": "...", "annotations": [...]}  # noqa: E501
-                    if block["type"] == "text":
-                        new_blocks.append(
-                            {
-                                "type": "output_text",
-                                "text": block["text"],
-                                "annotations": block.get("annotations") or [],
-                            }
-                        )
-                    elif block["type"] in ("output_text", "refusal"):
-                        new_blocks.append(block)
-                    else:
-                        pass
-                msg["content"] = new_blocks
-            if msg["content"]:
-                if lc_msg.id and lc_msg.id.startswith("msg_"):
-                    msg["id"] = lc_msg.id
-                input_.append(msg)
-            input_.extend(function_calls)
-            input_.extend(computer_calls)
+                    if isinstance(block, dict) and (block_type := block.get("type")):
+                        # Aggregate content blocks for a single message
+                        if block_type in ("text", "output_text", "refusal"):
+                            msg_id = block.get("id")
+                            if block_type in ("text", "output_text"):
+                                new_block = {
+                                    "type": "output_text",
+                                    "text": block["text"],
+                                    "annotations": block.get("annotations") or [],
+                                }
+                            elif block_type == "refusal":
+                                new_block = {
+                                    "type": "refusal",
+                                    "refusal": block["refusal"],
+                                }
+                            for item in input_:
+                                if (item_id := item.get("id")) and item_id == msg_id:
+                                    # If existing block with this ID, append to it
+                                    if "content" not in item:
+                                        item["content"] = []
+                                    item["content"].append(new_block)
+                                    break
+                            else:
+                                # If no block with this ID, create a new one
+                                input_.append(
+                                    {
+                                        "type": "message",
+                                        "content": [new_block],
+                                        "role": "assistant",
+                                        "id": msg_id,
+                                    }
+                                )
+                        elif block_type in (
+                            "reasoning",
+                            "web_search_call",
+                            "file_search_call",
+                            "function_call",
+                            "computer_call",
+                            "code_interpreter_call",
+                            "mcp_call",
+                            "mcp_list_tools",
+                            "mcp_approval_request",
+                        ):
+                            input_.append(_pop_index_and_sub_index(block))
+                        elif block_type == "image_generation_call":
+                            # A previous image generation call can be referenced by ID
+                            input_.append(
+                                {"type": "image_generation_call", "id": block["id"]}
+                            )
+                        else:
+                            pass
+            elif isinstance(msg.get("content"), str):
+                input_.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": msg["content"]}],
+                    }
+                )
+
+            # Add function calls from tool calls if not already present
+            if tool_calls := msg.pop("tool_calls", None):
+                content_call_ids = {
+                    block["call_id"]
+                    for block in input_
+                    if block.get("type") == "function_call" and "call_id" in block
+                }
+                for tool_call in tool_calls:
+                    if tool_call["id"] not in content_call_ids:
+                        function_call = {
+                            "type": "function_call",
+                            "name": tool_call["function"]["name"],
+                            "arguments": tool_call["function"]["arguments"],
+                            "call_id": tool_call["id"],
+                        }
+                        input_.append(function_call)
+
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
@@ -3385,6 +3607,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
+    output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3396,6 +3619,8 @@ def _construct_lc_result_from_responses_api(
         if k
         in (
             "created_at",
+            # backwards compatibility: keep response ID in response_metadata as well as
+            # top-level-id
             "id",
             "incomplete_details",
             "metadata",
@@ -3419,7 +3644,6 @@ def _construct_lc_result_from_responses_api(
     tool_calls = []
     invalid_tool_calls = []
     additional_kwargs: dict = {}
-    msg_id = None
     for output in response.output:
         if output.type == "message":
             for content in output.content:
@@ -3431,14 +3655,17 @@ def _construct_lc_result_from_responses_api(
                             annotation.model_dump()
                             for annotation in content.annotations
                         ],
+                        "id": output.id,
                     }
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
-                    additional_kwargs["refusal"] = content.refusal
-            msg_id = output.id
+                    content_blocks.append(
+                        {"type": "refusal", "refusal": content.refusal, "id": output.id}
+                    )
         elif output.type == "function_call":
+            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -3462,19 +3689,19 @@ def _construct_lc_result_from_responses_api(
                     "error": error,
                 }
                 invalid_tool_calls.append(tool_call)
-            if _FUNCTION_CALL_IDS_MAP_KEY not in additional_kwargs:
-                additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {}
-            additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][output.call_id] = output.id
-        elif output.type == "reasoning":
-            additional_kwargs["reasoning"] = output.model_dump(
-                exclude_none=True, mode="json"
-            )
-        else:
-            tool_output = output.model_dump(exclude_none=True, mode="json")
-            if "tool_outputs" in additional_kwargs:
-                additional_kwargs["tool_outputs"].append(tool_output)
-            else:
-                additional_kwargs["tool_outputs"] = [tool_output]
+        elif output.type in (
+            "reasoning",
+            "web_search_call",
+            "file_search_call",
+            "computer_call",
+            "code_interpreter_call",
+            "mcp_call",
+            "mcp_list_tools",
+            "mcp_approval_request",
+            "image_generation_call",
+        ):
+            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
     #    from pydantic import BaseModel
@@ -3510,22 +3737,74 @@ def _construct_lc_result_from_responses_api(
             pass
     message = AIMessage(
         content=content_blocks,
-        id=msg_id,
+        id=response.id,
         usage_metadata=usage_metadata,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
     )
+    if output_version == "v0":
+        message = _convert_to_v03_ai_message(message)
+    else:
+        pass
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
+    current_index: int,  # index in content
+    current_output_index: int,  # index in Response output
+    current_sub_index: int,  # index of content block in output item
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-) -> Optional[ChatGenerationChunk]:
+    output_version: Literal["v0", "responses/v1"] = "v0",
+) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
+    def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
+        """Advance indexes tracked during streaming.
+
+        Example: we stream a response item of the form:
+
+        .. code-block:: python
+
+            {
+                "type": "message",  # output_index 0
+                "role": "assistant",
+                "id": "msg_123",
+                "content": [
+                    {"type": "output_text", "text": "foo"},  # sub_index 0
+                    {"type": "output_text", "text": "bar"},  # sub_index 1
+                ],
+            }
+
+        This is a single item with a shared ``output_index`` and two sub-indexes, one
+        for each content block.
+
+        This will be processed into an AIMessage with two text blocks:
+
+        .. code-block:: python
+
+            AIMessage(
+                [
+                    {"type": "text", "text": "foo", "id": "msg_123"},  # index 0
+                    {"type": "text", "text": "bar", "id": "msg_123"},  # index 1
+                ]
+            )
+
+        This function just identifies updates in output or sub-indexes and increments
+        the current index accordingly.
+        """
+        nonlocal current_index, current_output_index, current_sub_index
+        if sub_idx is None:
+            if current_output_index != output_idx:
+                current_index += 1
+        else:
+            if (current_output_index != output_idx) or (current_sub_index != sub_idx):
+                current_index += 1
+            current_sub_index = sub_idx
+        current_output_index = output_idx
+
     content = []
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
@@ -3536,23 +3815,28 @@ def _convert_responses_chunk_to_generation_chunk(
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
-        content.append(
-            {"type": "text", "text": chunk.delta, "index": chunk.content_index}
-        )
+        _advance(chunk.output_index, chunk.content_index)
+        content.append({"type": "text", "text": chunk.delta, "index": current_index})
     elif chunk.type == "response.output_text.annotation.added":
+        _advance(chunk.output_index, chunk.content_index)
         if isinstance(chunk.annotation, dict):
             # Appears to be a breaking change in openai==1.82.0
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        content.append({"annotations": [annotation], "index": chunk.content_index})
+        content.append({"annotations": [annotation], "index": current_index})
+    elif chunk.type == "response.output_text.done":
+        content.append({"id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
-        response_metadata["id"] = chunk.response.id
+        id = chunk.response.id
+        response_metadata["id"] = chunk.response.id  # Backwards compatibility
     elif chunk.type == "response.completed":
         msg = cast(
             AIMessage,
             (
-                _construct_lc_result_from_responses_api(chunk.response, schema=schema)
+                _construct_lc_result_from_responses_api(
+                    chunk.response, schema=schema, output_version=output_version
+                )
                 .generations[0]
                 .message
             ),
@@ -3564,23 +3848,34 @@ def _convert_responses_chunk_to_generation_chunk(
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
-        id = chunk.item.id
+        if output_version == "v0":
+            id = chunk.item.id
+        else:
+            pass
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
     ):
+        _advance(chunk.output_index)
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
                 "name": chunk.item.name,
                 "args": chunk.item.arguments,
                 "id": chunk.item.call_id,
-                "index": chunk.output_index,
+                "index": current_index,
             }
         )
-        additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {
-            chunk.item.call_id: chunk.item.id
-        }
+        content.append(
+            {
+                "type": "function_call",
+                "name": chunk.item.name,
+                "arguments": chunk.item.arguments,
+                "call_id": chunk.item.call_id,
+                "id": chunk.item.id,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "web_search_call",
         "file_search_call",
@@ -3591,55 +3886,76 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_approval_request",
         "image_generation_call",
     ):
-        additional_kwargs["tool_outputs"] = [
-            chunk.item.model_dump(exclude_none=True, mode="json")
-        ]
+        _advance(chunk.output_index)
+        tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
+        tool_output["index"] = current_index
+        content.append(tool_output)
     elif chunk.type == "response.function_call_arguments.delta":
+        _advance(chunk.output_index)
         tool_call_chunks.append(
-            {
-                "type": "tool_call_chunk",
-                "args": chunk.delta,
-                "index": chunk.output_index,
-            }
+            {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
+        )
+        content.append(
+            {"type": "function_call", "arguments": chunk.delta, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
-        additional_kwargs["refusal"] = chunk.refusal
+        content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
-        if not has_reasoning:
-            # Hack until breaking release: store first reasoning item ID.
-            additional_kwargs["reasoning"] = chunk.item.model_dump(
-                exclude_none=True, mode="json"
-            )
+        _advance(chunk.output_index)
+        reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+        reasoning["index"] = current_index
+        content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        additional_kwargs["reasoning"] = {
-            # langchain-core uses the `index` key to aggregate text blocks.
-            "summary": [
-                {"index": chunk.summary_index, "type": "summary_text", "text": ""}
-            ]
-        }
+        _advance(chunk.output_index)
+        content.append(
+            {
+                # langchain-core uses the `index` key to aggregate text blocks.
+                "summary": [
+                    {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+                ],
+                "index": current_index,
+                "type": "reasoning",
+            }
+        )
     elif chunk.type == "response.image_generation_call.partial_image":
         # Partial images are not supported yet.
         pass
     elif chunk.type == "response.reasoning_summary_text.delta":
-        additional_kwargs["reasoning"] = {
-            "summary": [
-                {
-                    "index": chunk.summary_index,
-                    "type": "summary_text",
-                    "text": chunk.delta,
-                }
-            ]
-        }
-    else:
-        return None
-
-    return ChatGenerationChunk(
-        message=AIMessageChunk(
-            content=content,  # type: ignore[arg-type]
-            tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,
-            response_metadata=response_metadata,
-            additional_kwargs=additional_kwargs,
-            id=id,
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "summary": [
+                    {
+                        "index": chunk.summary_index,
+                        "type": "summary_text",
+                        "text": chunk.delta,
+                    }
+                ],
+                "index": current_index,
+                "type": "reasoning",
+            }
         )
+    else:
+        return current_index, current_output_index, current_sub_index, None
+
+    message = AIMessageChunk(
+        content=content,  # type: ignore[arg-type]
+        tool_call_chunks=tool_call_chunks,
+        usage_metadata=usage_metadata,
+        response_metadata=response_metadata,
+        additional_kwargs=additional_kwargs,
+        id=id,
+    )
+    if output_version == "v0":
+        message = cast(
+            AIMessageChunk,
+            _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
+        )
+    else:
+        pass
+    return (
+        current_index,
+        current_output_index,
+        current_sub_index,
+        ChatGenerationChunk(message=message),
     )

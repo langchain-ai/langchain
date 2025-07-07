@@ -12,6 +12,9 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 
+permissions:
+  contents: read
+
 env:
   POETRY_VERSION: "1.8.4"
   UV_FROZEN: "true"

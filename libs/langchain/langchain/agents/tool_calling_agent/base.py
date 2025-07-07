@@ -90,15 +90,17 @@ def create_tool_calling_agent(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     if not hasattr(llm, "bind_tools"):
+        msg = "This function requires a bind_tools() method be implemented on the LLM."
         raise ValueError(
-            "This function requires a .bind_tools method be implemented on the LLM.",
+            msg,
         )
     llm_with_tools = llm.bind_tools(tools)
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
         )
@@ -106,4 +108,3 @@ def create_tool_calling_agent(
         | llm_with_tools
         | ToolsAgentOutputParser()
     )
-    return agent

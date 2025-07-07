@@ -21,7 +21,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
     removal="1.0",
     message=(
         "Please see migration guide here for recommended implementation: "
-        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"
     ),
 )
 class MultiPromptChain(MultiRouteChain):
