@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -38,9 +39,7 @@ def remove_dependencies_from_pyproject_toml(
         # tomlkit types aren't amazing - treat as Dict instead
         dependencies = pyproject["tool"]["poetry"]["dependencies"]
         for name in local_editable_dependencies:
-            try:
+            with contextlib.suppress(KeyError):
                 del dependencies[name]
-            except KeyError:
-                pass
     with open(pyproject_toml, "w", encoding="utf-8") as f:
         dump(pyproject, f)

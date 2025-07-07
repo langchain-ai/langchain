@@ -549,8 +549,8 @@ def test_using_custom_config_specs() -> None:
         user_id: str, conversation_id: str
     ) -> InMemoryChatMessageHistory:
         if (user_id, conversation_id) not in store:
-            store[(user_id, conversation_id)] = InMemoryChatMessageHistory()
-        return store[(user_id, conversation_id)]
+            store[user_id, conversation_id] = InMemoryChatMessageHistory()
+        return store[user_id, conversation_id]
 
     with_message_history = RunnableWithMessageHistory(
         runnable,
@@ -662,8 +662,8 @@ async def test_using_custom_config_specs_async() -> None:
         user_id: str, conversation_id: str
     ) -> InMemoryChatMessageHistory:
         if (user_id, conversation_id) not in store:
-            store[(user_id, conversation_id)] = InMemoryChatMessageHistory()
-        return store[(user_id, conversation_id)]
+            store[user_id, conversation_id] = InMemoryChatMessageHistory()
+        return store[user_id, conversation_id]
 
     with_message_history = RunnableWithMessageHistory(
         runnable,
@@ -807,7 +807,7 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
 
         return RunnableBinding(
             bound=self,
-            config_factories=[lambda config: create_tracer(config)],
+            config_factories=[create_tracer],
         )
 
     def with_alisteners(
@@ -833,7 +833,7 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
 
         return RunnableBinding(
             bound=self,
-            config_factories=[lambda config: create_tracer(config)],
+            config_factories=[create_tracer],
         )
 
 

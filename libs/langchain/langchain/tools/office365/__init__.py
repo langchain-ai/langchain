@@ -33,9 +33,9 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "O365CreateDraftMessage",
     "O365SearchEmails",
     "O365SearchEvents",
-    "O365CreateDraftMessage",
-    "O365SendMessage",
     "O365SendEvent",
+    "O365SendMessage",
 ]

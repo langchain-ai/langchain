@@ -38,7 +38,8 @@ _FunctionsAgentAction = AgentActionMessageLog
 def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message."""
     if not isinstance(message, AIMessage):
-        raise TypeError(f"Expected an AI message got {type(message)}")
+        msg = f"Expected an AI message got {type(message)}"
+        raise TypeError(msg)
 
     function_call = message.additional_kwargs.get("function_call", {})
 
@@ -46,18 +47,20 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
         try:
             arguments = json.loads(function_call["arguments"], strict=False)
         except JSONDecodeError:
-            raise OutputParserException(
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
+            raise OutputParserException(msg)
 
         try:
             tools = arguments["actions"]
         except (TypeError, KeyError):
-            raise OutputParserException(
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` JSON does not contain `actions` key."
             )
+            raise OutputParserException(msg)
 
         final_tools: list[AgentAction] = []
         for tool_schema in tools:
@@ -121,10 +124,11 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     def validate_prompt(self) -> Self:
         prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
-            raise ValueError(
+            msg = (
                 "`agent_scratchpad` should be one of the variables in the prompt, "
                 f"got {prompt.input_variables}"
             )
+            raise ValueError(msg)
         return self
 
     @property
@@ -220,8 +224,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         predicted_message = self.llm.predict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -250,8 +253,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     @classmethod
     def create_prompt(
@@ -274,10 +276,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         """
         _prompts = extra_prompt_messages or []
         messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
-        if system_message:
-            messages = [system_message]
-        else:
-            messages = []
+        messages = [system_message] if system_message else []
 
         messages.extend(
             [

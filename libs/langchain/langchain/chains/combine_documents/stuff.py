@@ -102,7 +102,7 @@ def create_stuff_documents_chain(
     message=(
         "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"
     ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):
@@ -175,16 +175,18 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     @property

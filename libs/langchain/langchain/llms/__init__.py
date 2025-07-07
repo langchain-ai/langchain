@@ -561,12 +561,13 @@ def __getattr__(name: str) -> Any:
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
-    else:
-        return getattr(llms, name)
+    return getattr(llms, name)
 
 
 __all__ = [
     "AI21",
+    "RWKV",
+    "VLLM",
     "AlephAlpha",
     "AmazonAPIGateway",
     "Anthropic",
@@ -592,8 +593,8 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
-    "GigaChat",
     "GPT4All",
+    "GigaChat",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",
@@ -602,18 +603,20 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "JavelinAIGateway",
     "KoboldApiLLM",
     "LlamaCpp",
-    "TextGen",
     "ManifestWrapper",
     "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
-    "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "Nebula",
+    "OctoAIEndpoint",
     "Ollama",
+    "OpaquePrompts",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -625,28 +628,24 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "OpaquePrompts",
-    "RWKV",
+    "QianfanLLMEndpoint",
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TextGen",
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
+    "VLLMOpenAI",
     "VertexAI",
     "VertexAIModelGarden",
-    "VLLM",
-    "VLLMOpenAI",
+    "VolcEngineMaasLLM",
     "WatsonxLLM",
     "Writer",
-    "OctoAIEndpoint",
     "Xinference",
-    "JavelinAIGateway",
-    "QianfanLLMEndpoint",
     "YandexGPT",
-    "VolcEngineMaasLLM",
 ]
 
 

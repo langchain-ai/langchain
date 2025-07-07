@@ -91,14 +91,13 @@ def create_tagging_chain(
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = JsonOutputFunctionsParser()
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         **kwargs,
     )
-    return chain
 
 
 @deprecated(
@@ -164,11 +163,10 @@ def create_tagging_chain_pydantic(
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         **kwargs,
     )
-    return chain

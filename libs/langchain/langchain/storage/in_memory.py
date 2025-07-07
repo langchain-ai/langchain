@@ -7,7 +7,7 @@ primarily for unit testing purposes.
 from langchain_core.stores import InMemoryBaseStore, InMemoryByteStore, InMemoryStore
 
 __all__ = [
-    "InMemoryStore",
     "InMemoryBaseStore",
     "InMemoryByteStore",
+    "InMemoryStore",
 ]

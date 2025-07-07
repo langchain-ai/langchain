@@ -52,10 +52,11 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
             ai = "Assistant: " + dialogue_turn[1]
             buffer += "\n" + "\n".join([human, ai])
         else:
-            raise ValueError(
+            msg = (
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
+            raise ValueError(msg)
     return buffer
 
 
@@ -120,9 +121,9 @@ class BaseConversationalRetrievalChain(Chain):
         """
         _output_keys = [self.output_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         if self.return_generated_question:
-            _output_keys = _output_keys + ["generated_question"]
+            _output_keys = [*_output_keys, "generated_question"]
         return _output_keys
 
     @abstractmethod
@@ -233,7 +234,8 @@ class BaseConversationalRetrievalChain(Chain):
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
-            raise ValueError("Chain not saveable when `get_chat_history` is not None.")
+            msg = "Chain not saveable when `get_chat_history` is not None."
+            raise ValueError(msg)
         super().save(file_path)
 
 
@@ -418,7 +420,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[dict] = None,
         callbacks: Callbacks = None,
@@ -514,7 +516,8 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("ChatVectorDBChain does not support async")
+        msg = "ChatVectorDBChain does not support async"
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_llm(

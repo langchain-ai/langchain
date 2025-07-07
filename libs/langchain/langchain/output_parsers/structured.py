@@ -43,7 +43,10 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
     ) -> StructuredOutputParser:
         return cls(response_schemas=response_schemas)
 
-    def get_format_instructions(self, only_json: bool = False) -> str:
+    def get_format_instructions(
+        self,
+        only_json: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get format instructions for the output parser.
 
         example:
@@ -89,8 +92,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
         )
         if only_json:
             return STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS.format(format=schema_str)
-        else:
-            return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
+        return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
     def parse(self, text: str) -> dict[str, Any]:
         expected_keys = [rs.name for rs in self.response_schemas]

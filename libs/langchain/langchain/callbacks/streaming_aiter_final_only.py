@@ -24,8 +24,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     def check_if_answer_reached(self) -> bool:
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
-        else:
-            return self.last_tokens == self.answer_prefix_tokens
+        return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
         self,
