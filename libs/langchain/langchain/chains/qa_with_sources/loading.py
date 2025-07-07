@@ -167,10 +167,10 @@ def _load_refine_chain(
         "https://python.langchain.com/docs/how_to/qa_sources/"
         "\nSee also the following migration guides for replacements "
         "based on `chain_type`:\n"
-        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"  # noqa: E501
-        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"  # noqa: E501
-        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"  # noqa: E501
-        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"  # noqa: E501
+        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"
+        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"
+        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"
+        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"
     ),
 )
 def load_qa_with_sources_chain(

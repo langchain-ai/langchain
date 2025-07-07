@@ -133,7 +133,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         return _output_keys
 
     model_config = ConfigDict(
@@ -161,8 +161,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             )
             values["reduce_documents_chain"] = reduce_chain
             del values["combine_document_chain"]
-            if "collapse_document_chain" in values:
-                del values["collapse_document_chain"]
+            values.pop("collapse_document_chain", None)
 
         return values
 

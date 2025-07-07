@@ -30,7 +30,7 @@ from langchain.chains.llm import LLMChain
     removal="1.0",
     message=(
         "Refer to migration guide here for a recommended implementation using "
-        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
         ". See also LangGraph guides for map-reduce: "
         "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/."
     ),

@@ -521,7 +521,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
-            inputs = {list(_input_keys)[0]: inputs}
+            inputs = {next(iter(_input_keys)): inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
@@ -545,7 +545,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
-            inputs = {list(_input_keys)[0]: inputs}
+            inputs = {next(iter(_input_keys)): inputs}
         if self.memory is not None:
             external_context = await self.memory.aload_memory_variables(inputs)
             inputs = dict(inputs, **external_context)

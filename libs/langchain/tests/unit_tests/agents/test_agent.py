@@ -1196,7 +1196,7 @@ async def test_openai_agent_tools_agent() -> None:
                         action=OpenAIToolAgentAction(
                             tool="find_pet",
                             tool_input={"pet": "cat"},
-                            log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",  # noqa: E501
+                            log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                             message_log=[
                                 _AnyIdAIMessageChunk(
                                     content="",

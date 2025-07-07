@@ -143,7 +143,8 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.lint]
-select = ["A", "C4", "D", "E", "EM", "F", "FBT", "I", "PGH003", "PIE", "RET", "S", "SIM", "T201", "UP", "W"]
+select = ["A", "C4", "D", "E", "EM", "F", "FBT", "I", "PGH003", "PIE", "RET", "RUF", "S", "SIM", "T201", "UP", "W"]
+ignore = ["RUF012"]
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 

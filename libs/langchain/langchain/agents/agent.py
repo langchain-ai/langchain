@@ -1241,7 +1241,7 @@ class AgentExecutor(Chain):
         :meta private:
         """
         if self.return_intermediate_steps:
-            return self._action_agent.return_values + ["intermediate_steps"]
+            return [*self._action_agent.return_values, "intermediate_steps"]
         return self._action_agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
@@ -1349,7 +1349,7 @@ class AgentExecutor(Chain):
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
-                    f"This is the error: {str(e)}"
+                    f"This is the error: {e!s}"
                 )
                 raise ValueError(msg)
             text = str(e)
@@ -1485,7 +1485,7 @@ class AgentExecutor(Chain):
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
-                    f"This is the error: {str(e)}"
+                    f"This is the error: {e!s}"
                 )
                 raise ValueError(msg)
             text = str(e)
