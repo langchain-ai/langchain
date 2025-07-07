@@ -127,10 +127,9 @@ class UpstashRedisEntityStore(BaseEntityStore):
         try:
             self.redis_client = Redis(url=url, token=token)
         except Exception as exc:
-            logger.error("Upstash Redis instance could not be initiated.")
-            raise RuntimeError(
-                "Upstash Redis instance could not be initiated"
-            ) from exc
+            error_msg = "Upstash Redis instance could not be initiated"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from exc
 
         self.session_id = session_id
         self.key_prefix = key_prefix
