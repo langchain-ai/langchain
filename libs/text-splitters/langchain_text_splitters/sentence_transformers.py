@@ -21,11 +21,12 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
+            raise ImportError(msg)
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)
@@ -43,12 +44,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             self.tokens_per_chunk = tokens_per_chunk
 
         if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
-            raise ValueError(
+            msg = (
                 f"The token limit of the models '{self.model_name}'"
                 f" is: {self.maximum_tokens_per_chunk}."
                 f" Argument tokens_per_chunk={self.tokens_per_chunk}"
                 f" > maximum token limit."
             )
+            raise ValueError(msg)
 
     def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller components by splitting text on tokens.

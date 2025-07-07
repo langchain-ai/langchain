@@ -120,12 +120,14 @@ class _EvalArgsMixin:
             ValueError: If the evaluator requires an input string but none is provided,
                 or if the evaluator requires a reference label but none is provided.
         """
-        if self.requires_input and input_ is None:
-            raise ValueError(f"{self.__class__.__name__} requires an input string.")
-        elif input_ is not None and not self.requires_input:
+        if self.requires_input and input is None:
+            msg = f"{self.__class__.__name__} requires an input string."
+            raise ValueError(msg)
+        elif input is not None and not self.requires_input:
             warn(self._skip_input_warning)
         if self.requires_reference and reference is None:
-            raise ValueError(f"{self.__class__.__name__} requires a reference string.")
+            msg = f"{self.__class__.__name__} requires a reference string."
+            raise ValueError(msg)
         elif reference is not None and not self.requires_reference:
             warn(self._skip_reference_warning)
 
