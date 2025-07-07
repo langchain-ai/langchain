@@ -33,7 +33,7 @@ def _load_sequential_chain(
     *,
     verbose: bool = False,
 ) -> SequentialChain:
-    chain = SequentialChain(
+    return SequentialChain(
         chains=[
             LLMChain(
                 llm=llm,
@@ -64,7 +64,6 @@ def _load_sequential_chain(
         output_variables=["all_true", "revised_summary"],
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(

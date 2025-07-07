@@ -141,8 +141,7 @@ def create_sql_query_chain(
                 f"{db.dialect}"
             )
             raise ValueError(msg)
-        else:
-            table_info_kwargs["get_col_comments"] = True
+        table_info_kwargs["get_col_comments"] = True
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",

@@ -70,7 +70,7 @@ class JsonSchemaEvaluator(StringEvaluator):
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(node, str):
             return parse_json_markdown(node)
-        elif hasattr(node, "schema") and callable(getattr(node, "schema")):
+        if hasattr(node, "schema") and callable(getattr(node, "schema")):
             # Pydantic model
             return getattr(node, "schema")()
         return node

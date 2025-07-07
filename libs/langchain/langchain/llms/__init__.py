@@ -561,8 +561,7 @@ def __getattr__(name: str) -> Any:
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
-    else:
-        return getattr(llms, name)
+    return getattr(llms, name)
 
 
 __all__ = [

@@ -91,13 +91,12 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 filter_directive = cast(
                     Optional[FilterDirective], get_parser().parse(raw_filter)
                 )
-                fixed = fix_filter_directive(
+                return fix_filter_directive(
                     filter_directive,
                     allowed_comparators=allowed_comparators,
                     allowed_operators=allowed_operators,
                     allowed_attributes=allowed_attributes,
                 )
-                return fixed
 
         else:
             ast_parse = get_parser(
@@ -131,13 +130,13 @@ def fix_filter_directive(
     ) or not filter:
         return filter
 
-    elif isinstance(filter, Comparison):
+    if isinstance(filter, Comparison):
         if allowed_comparators and filter.comparator not in allowed_comparators:
             return None
         if allowed_attributes and filter.attribute not in allowed_attributes:
             return None
         return filter
-    elif isinstance(filter, Operation):
+    if isinstance(filter, Operation):
         if allowed_operators and filter.operator not in allowed_operators:
             return None
         args = [
@@ -155,15 +154,13 @@ def fix_filter_directive(
         ]
         if not args:
             return None
-        elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
+        if len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(
-                operator=filter.operator,
-                arguments=args,
-            )
-    else:
-        return filter
+        return Operation(
+            operator=filter.operator,
+            arguments=args,
+        )
+    return filter
 
 
 def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:

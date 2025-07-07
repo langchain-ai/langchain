@@ -47,8 +47,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Output keys for Hyde's LLM chain."""
         if isinstance(self.llm_chain, LLMChain):
             return self.llm_chain.output_keys
-        else:
-            return ["text"]
+        return ["text"]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Call the base embeddings."""

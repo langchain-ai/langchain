@@ -143,8 +143,7 @@ def create_openai_fn_runnable(
     output_parser = output_parser or get_openai_output_parser(functions)
     if prompt:
         return prompt | llm.bind(**llm_kwargs_) | output_parser
-    else:
-        return llm.bind(**llm_kwargs_) | output_parser
+    return llm.bind(**llm_kwargs_) | output_parser
 
 
 @deprecated(
@@ -413,7 +412,7 @@ def create_structured_output_runnable(
             first_tool_only=return_single,
         )
 
-    elif mode == "openai-functions":
+    if mode == "openai-functions":
         return _create_openai_functions_structured_output_runnable(
             output_schema,
             llm,
@@ -422,7 +421,7 @@ def create_structured_output_runnable(
             enforce_single_function_usage=force_function_usage,
             **kwargs,  # llm-specific kwargs
         )
-    elif mode == "openai-json":
+    if mode == "openai-json":
         if force_function_usage:
             msg = (
                 "enforce_single_function_usage is not supported for mode='openai-json'."
@@ -431,12 +430,11 @@ def create_structured_output_runnable(
         return _create_openai_json_runnable(
             output_schema, llm, prompt=prompt, output_parser=output_parser, **kwargs
         )
-    else:
-        msg = (
-            f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
-            f"'openai-json'."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
+        f"'openai-json'."
+    )
+    raise ValueError(msg)
 
 
 def _create_openai_tools_runnable(
@@ -460,8 +458,7 @@ def _create_openai_tools_runnable(
     )
     if prompt:
         return prompt | llm.bind(**llm_kwargs) | output_parser
-    else:
-        return llm.bind(**llm_kwargs) | output_parser
+    return llm.bind(**llm_kwargs) | output_parser
 
 
 def _get_openai_tool_output_parser(
@@ -535,8 +532,7 @@ def _create_openai_json_runnable(
             prompt = prompt.partial(output_schema=json.dumps(schema_as_dict, indent=2))
 
         return prompt | llm | output_parser
-    else:
-        return llm | output_parser
+    return llm | output_parser
 
 
 def _create_openai_functions_structured_output_runnable(

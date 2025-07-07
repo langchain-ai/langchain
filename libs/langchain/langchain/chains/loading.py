@@ -311,8 +311,7 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
         prompt = load_prompt(config.pop("prompt_path"))
     if llm_chain:
         return LLMMathChain(llm_chain=llm_chain, prompt=prompt, **config)  # type: ignore[arg-type]
-    else:
-        return LLMMathChain(llm=llm, prompt=prompt, **config)
+    return LLMMathChain(llm=llm, prompt=prompt, **config)
 
 
 def _load_map_rerank_documents_chain(
@@ -609,8 +608,7 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
         return LLMRequestsChain(
             llm_chain=llm_chain, requests_wrapper=requests_wrapper, **config
         )
-    else:
-        return LLMRequestsChain(llm_chain=llm_chain, **config)
+    return LLMRequestsChain(llm_chain=llm_chain, **config)
 
 
 type_to_loader_dict = {

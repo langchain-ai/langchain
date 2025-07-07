@@ -96,7 +96,7 @@ def create_openai_tools_agent(
         tools=[convert_to_openai_tool(tool, strict=strict) for tool in tools]
     )
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_tool_messages(
                 x["intermediate_steps"]
@@ -106,4 +106,3 @@ def create_openai_tools_agent(
         | llm_with_tools
         | OpenAIToolsAgentOutputParser()
     )
-    return agent
