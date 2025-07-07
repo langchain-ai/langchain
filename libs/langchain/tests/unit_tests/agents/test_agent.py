@@ -517,7 +517,7 @@ async def test_runnable_agent() -> None:
     for log_record in results:
         for op in log_record.ops:  # type: ignore[attr-defined]
             if op["op"] == "add" and isinstance(op["value"], AIMessageChunk):
-                messages.append(op["value"])
+                messages.append(op["value"])  # noqa: PERF401
 
     assert messages != []
 
@@ -622,19 +622,15 @@ async def test_runnable_agent_with_function_calls() -> None:
 
     messages = []
     async for patch in executor.astream_log({"question": "hello"}):
-        for op in patch.ops:
-            if op["op"] != "add":
-                continue
-
-            value = op["value"]
-
-            if not isinstance(value, AIMessageChunk):
-                continue
-
-            if value.content == "":  # Then it's a function invocation message
-                continue
-
-            messages.append(value.content)
+        messages.extend(
+            [
+                op["value"].content
+                for op in patch.ops
+                if op["op"] == "add"
+                and isinstance(op["value"], AIMessageChunk)
+                and op["value"].content != ""
+            ]
+        )
 
     assert messages == ["looking", " ", "for", " ", "pet...", "Found", " ", "Pet"]
 

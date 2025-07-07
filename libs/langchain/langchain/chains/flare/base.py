@@ -69,7 +69,8 @@ def _low_confidence_spans(
             "NumPy not found in the current Python environment. FlareChain will use a "
             "pure Python implementation for internal calculations, which may "
             "significantly impact performance, especially for large datasets. For "
-            "optimal speed and efficiency, consider installing NumPy: pip install numpy",
+            "optimal speed and efficiency, consider installing NumPy: pip install "
+            "numpy",
         )
         import math
 

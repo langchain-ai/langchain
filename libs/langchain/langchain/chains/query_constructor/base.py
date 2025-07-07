@@ -305,11 +305,10 @@ def load_query_constructor_chain(
         enable_limit=enable_limit,
         schema_prompt=schema_prompt,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"],
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
@@ -364,11 +363,10 @@ def load_query_constructor_runnable(
         schema_prompt=schema_prompt,
         **kwargs,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"],
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

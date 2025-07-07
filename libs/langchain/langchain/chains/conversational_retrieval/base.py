@@ -51,7 +51,7 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
         elif isinstance(dialogue_turn, tuple):
             human = "Human: " + dialogue_turn[0]
             ai = "Assistant: " + dialogue_turn[1]
-            buffer += "\n" + "\n".join([human, ai])
+            buffer += f"\n{human}\n{ai}"
         else:
             msg = (
                 f"Unsupported chat history format: {type(dialogue_turn)}."

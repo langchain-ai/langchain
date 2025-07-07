@@ -103,7 +103,7 @@ class ConversationalAgent(Agent):
             ai_prefix=ai_prefix,
             human_prefix=human_prefix,
         )
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        template = f"{prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{suffix}"
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)

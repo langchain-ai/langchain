@@ -227,8 +227,7 @@ class VectorstoreIndexCreator(BaseModel):
         """
         docs = []
         for loader in loaders:
-            async for doc in loader.alazy_load():
-                docs.append(doc)
+            docs.extend([doc async for doc in loader.alazy_load()])
         return await self.afrom_documents(docs)
 
     def from_documents(self, documents: list[Document]) -> VectorStoreIndexWrapper:

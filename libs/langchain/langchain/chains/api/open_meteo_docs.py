@@ -1,4 +1,3 @@
-# flake8: noqa
 OPEN_METEO_DOCS = """BASE URL: https://api.open-meteo.com/
 
 API Documentation
@@ -30,4 +29,4 @@ showers	Preceding hour sum	mm (inch)	Showers from convective precipitation in mi
 weathercode	Instant	WMO code	Weather condition as a numeric code. Follow WMO weather interpretation codes. See table below for details.
 snow_depth	Instant	meters	Snow depth on the ground
 freezinglevel_height	Instant	meters	Altitude above sea level of the 0°C level
-visibility	Instant	meters	Viewing distance in meters. Influenced by low clouds, humidity and aerosols. Maximum visibility is approximately 24 km."""
+visibility	Instant	meters	Viewing distance in meters. Influenced by low clouds, humidity and aerosols. Maximum visibility is approximately 24 km."""  # noqa: E501

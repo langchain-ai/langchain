@@ -155,7 +155,7 @@ class ConversationStringBufferMemory(BaseMemory):
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer += "\n" + "\n".join([human, ai])
+        self.buffer += f"\n{human}\n{ai}"
 
     async def asave_context(
         self,

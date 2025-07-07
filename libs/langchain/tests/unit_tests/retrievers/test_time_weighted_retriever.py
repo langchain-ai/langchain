@@ -120,7 +120,7 @@ def test_get_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 
@@ -132,7 +132,7 @@ async def test_aget_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 

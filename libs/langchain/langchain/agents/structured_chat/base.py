@@ -99,7 +99,7 @@ class StructuredChatAgent(Agent):
         formatted_tools = "\n".join(tool_strings)
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
+        template = f"{prefix}\n\n{formatted_tools}\n\n{format_instructions}\n\n{suffix}"
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         _memory_prompts = memory_prompts or []

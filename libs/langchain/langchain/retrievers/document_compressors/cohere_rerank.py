@@ -93,15 +93,10 @@ class CohereRerank(BaseDocumentCompressor):
         )
         if hasattr(results, "results"):
             results = getattr(results, "results")
-        result_dicts = []
-        for res in results:
-            result_dicts.append(
-                {
-                    "index": res.index,
-                    "relevance_score": res.relevance_score,
-                },
-            )
-        return result_dicts
+        return [
+            {"index": res.index, "relevance_score": res.relevance_score}
+            for res in results
+        ]
 
     def compress_documents(
         self,
