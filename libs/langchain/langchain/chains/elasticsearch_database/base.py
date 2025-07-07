@@ -80,8 +80,7 @@ class ElasticsearchDatabaseChain(Chain):
         """
         if not self.return_intermediate_steps:
             return [self.output_key]
-        else:
-            return [self.output_key, INTERMEDIATE_STEPS_KEY]
+        return [self.output_key, INTERMEDIATE_STEPS_KEY]
 
     def _list_indices(self) -> list[str]:
         all_indices = [

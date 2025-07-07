@@ -222,8 +222,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         base_inputs: dict = {
             self.document_variable_name: self.document_prompt.format(**document_info)
         }
-        inputs = {**base_inputs, **kwargs}
-        return inputs
+        return {**base_inputs, **kwargs}
 
     @property
     def _chain_type(self) -> str:

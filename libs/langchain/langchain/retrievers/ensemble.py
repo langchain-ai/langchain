@@ -174,9 +174,8 @@ class EnsembleRetriever(BaseRetriever):
         """
 
         # Get fused result of the retrievers.
-        fused_documents = self.rank_fusion(query, run_manager)
+        return self.rank_fusion(query, run_manager)
 
-        return fused_documents
 
     async def _aget_relevant_documents(
         self,
@@ -195,9 +194,8 @@ class EnsembleRetriever(BaseRetriever):
         """
 
         # Get fused result of the retrievers.
-        fused_documents = await self.arank_fusion(query, run_manager)
+        return await self.arank_fusion(query, run_manager)
 
-        return fused_documents
 
     def rank_fusion(
         self,
@@ -236,9 +234,8 @@ class EnsembleRetriever(BaseRetriever):
             ]
 
         # apply rank fusion
-        fused_documents = self.weighted_reciprocal_rank(retriever_docs)
+        return self.weighted_reciprocal_rank(retriever_docs)
 
-        return fused_documents
 
     async def arank_fusion(
         self,
@@ -280,9 +277,8 @@ class EnsembleRetriever(BaseRetriever):
             ]
 
         # apply rank fusion
-        fused_documents = self.weighted_reciprocal_rank(retriever_docs)
+        return self.weighted_reciprocal_rank(retriever_docs)
 
-        return fused_documents
 
     def weighted_reciprocal_rank(
         self, doc_lists: list[list[Document]]
@@ -318,7 +314,7 @@ class EnsembleRetriever(BaseRetriever):
 
         # Docs are deduplicated by their contents then sorted by their scores
         all_docs = chain.from_iterable(doc_lists)
-        sorted_docs = sorted(
+        return sorted(
             unique_by_key(
                 all_docs,
                 lambda doc: (
@@ -332,4 +328,3 @@ class EnsembleRetriever(BaseRetriever):
                 doc.page_content if self.id_key is None else doc.metadata[self.id_key]
             ],
         )
-        return sorted_docs

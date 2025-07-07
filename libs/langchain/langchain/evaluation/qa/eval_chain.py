@@ -24,7 +24,7 @@ def _get_score(text: str) -> Optional[tuple[str, int]]:
     if match:
         if match.group(1).upper() == "CORRECT":
             return "CORRECT", 1
-        elif match.group(1).upper() == "INCORRECT":
+        if match.group(1).upper() == "INCORRECT":
             return "INCORRECT", 0
     try:
         first_word = (
@@ -32,7 +32,7 @@ def _get_score(text: str) -> Optional[tuple[str, int]]:
         )
         if first_word.upper() == "CORRECT":
             return "CORRECT", 1
-        elif first_word.upper() == "INCORRECT":
+        if first_word.upper() == "INCORRECT":
             return "INCORRECT", 0
         last_word = (
             text.strip()
@@ -41,7 +41,7 @@ def _get_score(text: str) -> Optional[tuple[str, int]]:
         )
         if last_word.upper() == "CORRECT":
             return "CORRECT", 1
-        elif last_word.upper() == "INCORRECT":
+        if last_word.upper() == "INCORRECT":
             return "INCORRECT", 0
     except IndexError:
         pass

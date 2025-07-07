@@ -33,8 +33,7 @@ class YamlOutputParser(BaseOutputParser[T]):
             json_object = yaml.safe_load(yaml_str)
             if hasattr(self.pydantic_object, "model_validate"):
                 return self.pydantic_object.model_validate(json_object)
-            else:
-                return self.pydantic_object.parse_obj(json_object)
+            return self.pydantic_object.parse_obj(json_object)
 
         except (yaml.YAMLError, ValidationError) as e:
             name = self.pydantic_object.__name__

@@ -224,8 +224,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         predicted_message = self.llm.predict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -254,8 +253,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     @classmethod
     def create_prompt(

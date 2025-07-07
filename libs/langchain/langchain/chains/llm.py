@@ -116,8 +116,7 @@ class LLMChain(Chain):
         """
         if self.return_final_only:
             return [self.output_key]
-        else:
-            return [self.output_key, "full_generation"]
+        return [self.output_key, "full_generation"]
 
     def _call(
         self,
@@ -142,17 +141,16 @@ class LLMChain(Chain):
                 callbacks=callbacks,
                 **self.llm_kwargs,
             )
-        else:
-            results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-                cast(list, prompts), {"callbacks": callbacks}
-            )
-            generations: list[list[Generation]] = []
-            for res in results:
-                if isinstance(res, BaseMessage):
-                    generations.append([ChatGeneration(message=res)])
-                else:
-                    generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+        results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
+            cast(list, prompts), {"callbacks": callbacks}
+        )
+        generations: list[list[Generation]] = []
+        for res in results:
+            if isinstance(res, BaseMessage):
+                generations.append([ChatGeneration(message=res)])
+            else:
+                generations.append([Generation(text=res)])
+        return LLMResult(generations=generations)
 
     async def agenerate(
         self,
@@ -169,17 +167,16 @@ class LLMChain(Chain):
                 callbacks=callbacks,
                 **self.llm_kwargs,
             )
-        else:
-            results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-                cast(list, prompts), {"callbacks": callbacks}
-            )
-            generations: list[list[Generation]] = []
-            for res in results:
-                if isinstance(res, BaseMessage):
-                    generations.append([ChatGeneration(message=res)])
-                else:
-                    generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+        results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
+            cast(list, prompts), {"callbacks": callbacks}
+        )
+        generations: list[list[Generation]] = []
+        for res in results:
+            if isinstance(res, BaseMessage):
+                generations.append([ChatGeneration(message=res)])
+            else:
+                generations.append([Generation(text=res)])
+        return LLMResult(generations=generations)
 
     def prep_prompts(
         self,
@@ -344,8 +341,7 @@ class LLMChain(Chain):
         result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
-        else:
-            return result
+        return result
 
     async def apredict_and_parse(
         self, callbacks: Callbacks = None, **kwargs: Any
@@ -358,8 +354,7 @@ class LLMChain(Chain):
         result = await self.apredict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
-        else:
-            return result
+        return result
 
     def apply_and_parse(
         self, input_list: list[dict[str, Any]], callbacks: Callbacks = None
@@ -380,8 +375,7 @@ class LLMChain(Chain):
                 self.prompt.output_parser.parse(res[self.output_key])
                 for res in generation
             ]
-        else:
-            return generation
+        return generation
 
     async def aapply_and_parse(
         self, input_list: list[dict[str, Any]], callbacks: Callbacks = None
@@ -411,15 +405,14 @@ class LLMChain(Chain):
 def _get_language_model(llm_like: Runnable) -> BaseLanguageModel:
     if isinstance(llm_like, BaseLanguageModel):
         return llm_like
-    elif isinstance(llm_like, RunnableBinding):
+    if isinstance(llm_like, RunnableBinding):
         return _get_language_model(llm_like.bound)
-    elif isinstance(llm_like, RunnableWithFallbacks):
+    if isinstance(llm_like, RunnableWithFallbacks):
         return _get_language_model(llm_like.runnable)
-    elif isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
+    if isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
         return _get_language_model(llm_like.default)
-    else:
-        msg = (
-            f"Unable to extract BaseLanguageModel from llm_like object of type "
-            f"{type(llm_like)}"
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Unable to extract BaseLanguageModel from llm_like object of type "
+        f"{type(llm_like)}"
+    )
+    raise ValueError(msg)

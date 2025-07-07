@@ -96,9 +96,8 @@ class DocstoreExplorer:
         if isinstance(result, Document):
             self.document = result
             return self._summary
-        else:
-            self.document = None
-            return result
+        self.document = None
+        return result
 
     def lookup(self, term: str) -> str:
         """Lookup a term in document (if saved)."""
@@ -113,11 +112,10 @@ class DocstoreExplorer:
         lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
         if len(lookups) == 0:
             return "No Results"
-        elif self.lookup_index >= len(lookups):
+        if self.lookup_index >= len(lookups):
             return "No More Results"
-        else:
-            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
-            return f"{result_prefix} {lookups[self.lookup_index]}"
+        result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+        return f"{result_prefix} {lookups[self.lookup_index]}"
 
     @property
     def _summary(self) -> str:

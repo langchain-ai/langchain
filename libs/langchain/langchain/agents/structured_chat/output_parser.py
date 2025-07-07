@@ -42,12 +42,10 @@ class StructuredChatOutputParser(AgentOutputParser):
                     response = response[0]
                 if response["action"] == "Final Answer":
                     return AgentFinish({"output": response["action_input"]}, text)
-                else:
-                    return AgentAction(
-                        response["action"], response.get("action_input", {}), text
-                    )
-            else:
-                return AgentFinish({"output": text}, text)
+                return AgentAction(
+                    response["action"], response.get("action_input", {}), text
+                )
+            return AgentFinish({"output": text}, text)
         except Exception as e:
             msg = f"Could not parse LLM output: {text}"
             raise OutputParserException(msg) from e
@@ -93,10 +91,9 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
                 llm=llm, parser=base_parser
             )
             return cls(output_fixing_parser=output_fixing_parser)
-        elif base_parser is not None:
+        if base_parser is not None:
             return cls(base_parser=base_parser)
-        else:
-            return cls()
+        return cls()
 
     @property
     def _type(self) -> str:

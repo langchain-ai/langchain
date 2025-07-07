@@ -34,7 +34,7 @@ class BooleanOutputParser(BaseOutputParser[bool]):
                 )
                 raise ValueError(msg)
             return True
-        elif self.false_val.upper() in truthy:
+        if self.false_val.upper() in truthy:
             if self.true_val.upper() in truthy:
                 msg = (
                     f"Ambiguous response. Both {self.true_val} and {self.false_val} "

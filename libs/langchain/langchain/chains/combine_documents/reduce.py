@@ -225,8 +225,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
         if self.collapse_documents_chain is not None:
             return self.collapse_documents_chain
-        else:
-            return self.combine_documents_chain
+        return self.combine_documents_chain
 
     def combine_docs(
         self,

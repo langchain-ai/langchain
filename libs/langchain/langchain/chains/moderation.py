@@ -100,8 +100,7 @@ class OpenAIModerationChain(Chain):
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
                 raise ValueError(error_str)
-            else:
-                return error_str
+            return error_str
         return text
 
     def _call(

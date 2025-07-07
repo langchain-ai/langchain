@@ -162,8 +162,7 @@ def load_evaluator(
             )
             raise ValueError(msg) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
-    else:
-        return evaluator_cls(**kwargs)
+    return evaluator_cls(**kwargs)
 
 
 def load_evaluators(

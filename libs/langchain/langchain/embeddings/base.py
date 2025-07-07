@@ -192,41 +192,40 @@ def init_embeddings(
         from langchain_openai import OpenAIEmbeddings
 
         return OpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "azure_openai":
+    if provider == "azure_openai":
         from langchain_openai import AzureOpenAIEmbeddings
 
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "google_vertexai":
+    if provider == "google_vertexai":
         from langchain_google_vertexai import VertexAIEmbeddings
 
         return VertexAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "bedrock":
+    if provider == "bedrock":
         from langchain_aws import BedrockEmbeddings
 
         return BedrockEmbeddings(model_id=model_name, **kwargs)
-    elif provider == "cohere":
+    if provider == "cohere":
         from langchain_cohere import CohereEmbeddings
 
         return CohereEmbeddings(model=model_name, **kwargs)
-    elif provider == "mistralai":
+    if provider == "mistralai":
         from langchain_mistralai import MistralAIEmbeddings
 
         return MistralAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "huggingface":
+    if provider == "huggingface":
         from langchain_huggingface import HuggingFaceEmbeddings
 
         return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
-    elif provider == "ollama":
+    if provider == "ollama":
         from langchain_ollama import OllamaEmbeddings
 
         return OllamaEmbeddings(model=model_name, **kwargs)
-    else:
-        msg = (
-            f"Provider '{provider}' is not supported.\n"
-            f"Supported providers and their required packages:\n"
-            f"{_get_provider_list()}"
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Provider '{provider}' is not supported.\n"
+        f"Supported providers and their required packages:\n"
+        f"{_get_provider_list()}"
+    )
+    raise ValueError(msg)
 
 
 __all__ = [

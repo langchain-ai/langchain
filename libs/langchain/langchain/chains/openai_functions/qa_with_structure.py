@@ -100,14 +100,13 @@ def create_qa_with_structure_chain(
     ]
     prompt = prompt or ChatPromptTemplate(messages=messages)  # type: ignore[arg-type]
 
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=_output_parser,
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
