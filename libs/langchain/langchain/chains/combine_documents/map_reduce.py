@@ -270,7 +270,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         map_results = await self.llm_chain.aapply(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         question_result_key = self.llm_chain.output_key
