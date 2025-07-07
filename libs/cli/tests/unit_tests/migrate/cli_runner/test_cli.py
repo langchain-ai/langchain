@@ -1,18 +1,16 @@
-# ruff: noqa: E402
 from __future__ import annotations
-
-import pytest
-
-pytest.importorskip("gritql")
 
 import difflib
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from langchain_cli.cli import app
 from tests.unit_tests.migrate.cli_runner.cases import before, expected
 from tests.unit_tests.migrate.cli_runner.folder import Folder
+
+pytest.importorskip("gritql")
 
 
 def find_issue(current: Folder, expected: Folder) -> str:
@@ -25,7 +23,7 @@ def find_issue(current: Folder, expected: Folder) -> str:
                 )
             if isinstance(current_file, Folder) and isinstance(expected_file, Folder):
                 return find_issue(current_file, expected_file)
-            elif isinstance(current_file, Folder) or isinstance(expected_file, Folder):
+            if isinstance(current_file, Folder) or isinstance(expected_file, Folder):
                 return (
                     f"One of the files is a "
                     f"folder: {current_file.name} != {expected_file.name}"
