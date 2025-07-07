@@ -83,7 +83,7 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
-select = ["D"]
+select = ["D"] # global select for pydocstyle
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]
