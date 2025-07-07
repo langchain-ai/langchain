@@ -1,5 +1,4 @@
-"""
-Standard tests for the BaseStore abstraction
+"""Standard tests for the BaseStore abstraction.
 
 We don't recommend implementing externally managed BaseStore abstractions at this time.
 
@@ -38,10 +37,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         """
 
     @abstractmethod
-    @pytest.fixture()
+    @pytest.fixture
     def three_values(self) -> tuple[V, V, V]:
         """Three example values that will be used in the tests."""
-        pass
 
     def test_three_values(self, three_values: tuple[V, V, V]) -> None:
         """Test that the fixture provides three values."""
@@ -169,10 +167,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         """
 
     @abstractmethod
-    @pytest.fixture()
+    @pytest.fixture
     def three_values(self) -> tuple[V, V, V]:
         """Three example values that will be used in the tests."""
-        pass
 
     async def test_three_values(self, three_values: tuple[V, V, V]) -> None:
         """Test that the fixture provides three values."""
