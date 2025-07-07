@@ -12,7 +12,7 @@ def generate_raw_migrations(
     package = importlib.import_module(from_package)
 
     items = []
-    for importer, modname, ispkg in pkgutil.walk_packages(
+    for _importer, modname, _ispkg in pkgutil.walk_packages(
         package.__path__, package.__name__ + "."
     ):
         try:
@@ -84,9 +84,9 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     items = []
 
     # Function to handle importing from modules
-    def handle_module(module, module_name):
+    def handle_module(module, module_name) -> None:
         if hasattr(module, "__all__"):
-            all_objects = getattr(module, "__all__")
+            all_objects = module.__all__
             for name in all_objects:
                 # Attempt to fetch each object declared in __all__
                 obj = getattr(module, name, None)
@@ -105,7 +105,7 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     handle_module(package, pkg)
 
     # Only iterate through top-level modules/packages
-    for finder, modname, ispkg in pkgutil.iter_modules(
+    for _finder, modname, ispkg in pkgutil.iter_modules(
         package.__path__, package.__name__ + "."
     ):
         if ispkg:
@@ -126,7 +126,7 @@ def generate_simplified_migrations(
         from_package, to_package, filter_by_all=filter_by_all
     )
     top_level_simplifications = generate_top_level_imports(to_package)
-    top_level_dict = {full: top_level for full, top_level in top_level_simplifications}
+    top_level_dict = dict(top_level_simplifications)
     simple_migrations = []
     for migration in raw_migrations:
         original, new = migration

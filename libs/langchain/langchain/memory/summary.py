@@ -22,7 +22,7 @@ from langchain.memory.prompt import SUMMARY_PROMPT
     removal="1.0",
     message=(
         "Refer here for how to incorporate summaries of conversation history: "
-        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501
+        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"
     ),
 )
 class SummarizerMixin(BaseModel):
@@ -116,10 +116,11 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:

@@ -58,8 +58,7 @@ class FakeChain(Chain):
     ) -> dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
-        else:
-            return {"baz": "bar"}
+        return {"baz": "bar"}
 
 
 def test_bad_inputs() -> None:

@@ -57,9 +57,11 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
         self, result: list[Generation], *, partial: bool = False
     ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
-            raise ValueError("This output parser only works on ChatGeneration output")
+            msg = "This output parser only works on ChatGeneration output"
+            raise ValueError(msg)
         message = result[0].message
         return parse_ai_message_to_openai_tool_action(message)
 
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
-        raise ValueError("Can only parse messages")
+        msg = "Can only parse messages"
+        raise ValueError(msg)

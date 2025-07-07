@@ -30,7 +30,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "create_retry_decorator",
-    "raise_vertex_import_error",
-    "init_vertexai",
     "get_client_info",
+    "init_vertexai",
+    "raise_vertex_import_error",
 ]

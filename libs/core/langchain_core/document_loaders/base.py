@@ -60,11 +60,11 @@ class BaseLoader(ABC):  # noqa: B024
                 )
                 raise ImportError(msg) from e
 
-            _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
+            text_splitter_: TextSplitter = RecursiveCharacterTextSplitter()
         else:
-            _text_splitter = text_splitter
+            text_splitter_ = text_splitter
         docs = self.load()
-        return _text_splitter.split_documents(docs)
+        return text_splitter_.split_documents(docs)
 
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.

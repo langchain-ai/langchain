@@ -93,6 +93,7 @@ class XMLAgentOutputParser(AgentOutputParser):
                 _tool_input = _unescape(_tool_input)
 
             return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
+<<<<<<< HEAD
 
         # Check for final answer
         elif "<final_answer>" in text and "</final_answer>" in text:
@@ -114,6 +115,14 @@ class XMLAgentOutputParser(AgentOutputParser):
                 "or a final answer in XML format."
             )
             raise ValueError(msg)
+=======
+        if "<final_answer>" in text:
+            _, answer = text.split("<final_answer>")
+            if "</final_answer>" in answer:
+                answer = answer.split("</final_answer>")[0]
+            return AgentFinish(return_values={"output": answer}, log=text)
+        raise ValueError
+>>>>>>> master
 
     def get_format_instructions(self) -> str:
         raise NotImplementedError

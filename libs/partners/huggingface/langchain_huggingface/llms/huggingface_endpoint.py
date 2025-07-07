@@ -78,13 +78,13 @@ class HuggingFaceEndpoint(LLM):
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
-    """Endpoint URL to use. If repo_id is not specified then this needs to given or 
+    """Endpoint URL to use. If repo_id is not specified then this needs to given or
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
     provider: Optional[str] = None
     """Name of the provider to use for inference with the model specified in `repo_id`.
-        e.g. "cerebras". if not specified, Defaults to "auto" i.e. the first of the 
+        e.g. "cerebras". if not specified, Defaults to "auto" i.e. the first of the
         providers available for the model, sorted by the user's order in https://hf.co/settings/inference-providers.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     huggingfacehub_api_token: Optional[str] = Field(
@@ -305,7 +305,9 @@ class HuggingFaceEndpoint(LLM):
         invocation_params = self._invocation_params(stop, **kwargs)
         if self.streaming:
             completion = ""
-            for chunk in self._stream(prompt, stop, run_manager, **invocation_params):
+            for chunk in self._stream(
+                prompt, run_manager=run_manager, **invocation_params
+            ):
                 completion += chunk.text
             return completion
         else:
@@ -333,7 +335,7 @@ class HuggingFaceEndpoint(LLM):
         if self.streaming:
             completion = ""
             async for chunk in self._astream(
-                prompt, stop, run_manager, **invocation_params
+                prompt, run_manager=run_manager, **invocation_params
             ):
                 completion += chunk.text
             return completion

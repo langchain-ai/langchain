@@ -119,10 +119,12 @@ class SQLRecordManager(RecordManager):
         """
         super().__init__(namespace=namespace)
         if db_url is None and engine is None:
-            raise ValueError("Must specify either db_url or engine")
+            msg = "Must specify either db_url or engine"
+            raise ValueError(msg)
 
         if db_url is not None and engine is not None:
-            raise ValueError("Must specify either db_url or engine, not both")
+            msg = "Must specify either db_url or engine, not both"
+            raise ValueError(msg)
 
         _engine: Union[Engine, AsyncEngine]
         if db_url:
@@ -134,7 +136,8 @@ class SQLRecordManager(RecordManager):
             _engine = engine
 
         else:
-            raise AssertionError("Something went wrong with configuration of engine.")
+            msg = "Something went wrong with configuration of engine."
+            raise AssertionError(msg)
 
         _session_factory: Union[sessionmaker[Session], async_sessionmaker[AsyncSession]]
         if isinstance(_engine, AsyncEngine):
@@ -149,7 +152,8 @@ class SQLRecordManager(RecordManager):
     def create_schema(self) -> None:
         """Create the database schema."""
         if isinstance(self.engine, AsyncEngine):
-            raise AssertionError("This method is not supported for async engines.")
+            msg = "This method is not supported for async engines."
+            raise AssertionError(msg)
 
         Base.metadata.create_all(self.engine)
 
@@ -157,7 +161,8 @@ class SQLRecordManager(RecordManager):
         """Create the database schema."""
 
         if not isinstance(self.engine, AsyncEngine):
-            raise AssertionError("This method is not supported for sync engines.")
+            msg = "This method is not supported for sync engines."
+            raise AssertionError(msg)
 
         async with self.engine.begin() as session:
             await session.run_sync(Base.metadata.create_all)
@@ -167,7 +172,8 @@ class SQLRecordManager(RecordManager):
         """Create a session and close it after use."""
 
         if isinstance(self.session_factory, async_sessionmaker):
-            raise AssertionError("This method is not supported for async engines.")
+            msg = "This method is not supported for async engines."
+            raise AssertionError(msg)
 
         session = self.session_factory()
         try:
@@ -180,7 +186,8 @@ class SQLRecordManager(RecordManager):
         """Create a session and close it after use."""
 
         if not isinstance(self.session_factory, async_sessionmaker):
-            raise AssertionError("This method is not supported for sync engines.")
+            msg = "This method is not supported for sync engines."
+            raise AssertionError(msg)
 
         async with self.session_factory() as session:
             yield session
@@ -206,13 +213,15 @@ class SQLRecordManager(RecordManager):
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             else:
-                raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
+                msg = f"Not implemented for dialect {self.dialect}"
+                raise NotImplementedError(msg)
 
             dt = session.execute(query).scalar()
             if isinstance(dt, decimal.Decimal):
                 dt = float(dt)
             if not isinstance(dt, float):
-                raise AssertionError(f"Unexpected type for datetime: {type(dt)}")
+                msg = f"Unexpected type for datetime: {type(dt)}"
+                raise AssertionError(msg)
             return dt
 
     async def aget_time(self) -> float:
@@ -236,14 +245,16 @@ class SQLRecordManager(RecordManager):
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
             else:
-                raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
+                msg = f"Not implemented for dialect {self.dialect}"
+                raise NotImplementedError(msg)
 
             dt = (await session.execute(query)).scalar_one_or_none()
 
             if isinstance(dt, decimal.Decimal):
                 dt = float(dt)
             if not isinstance(dt, float):
-                raise AssertionError(f"Unexpected type for datetime: {type(dt)}")
+                msg = f"Unexpected type for datetime: {type(dt)}"
+                raise AssertionError(msg)
             return dt
 
     def update(
@@ -258,10 +269,11 @@ class SQLRecordManager(RecordManager):
             group_ids = [None] * len(keys)
 
         if len(keys) != len(group_ids):
-            raise ValueError(
+            msg = (
                 f"Number of keys ({len(keys)}) does not match number of "
                 f"group_ids ({len(group_ids)})"
             )
+            raise ValueError(msg)
 
         # Get the current time from the server.
         # This makes an extra round trip to the server, should not be a big deal
@@ -274,7 +286,8 @@ class SQLRecordManager(RecordManager):
 
         if time_at_least and update_time < time_at_least:
             # Safeguard against time sync issues
-            raise AssertionError(f"Time sync issue: {update_time} < {time_at_least}")
+            msg = f"Time sync issue: {update_time} < {time_at_least}"
+            raise AssertionError(msg)
 
         records_to_upsert = [
             {
@@ -298,10 +311,10 @@ class SQLRecordManager(RecordManager):
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
-                    set_=dict(
-                        updated_at=sqlite_insert_stmt.excluded.updated_at,
-                        group_id=sqlite_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": sqlite_insert_stmt.excluded.updated_at,
+                        "group_id": sqlite_insert_stmt.excluded.group_id,
+                    },
                 )
             elif self.dialect == "postgresql":
                 from sqlalchemy.dialects.postgresql import Insert as PgInsertType
@@ -314,13 +327,14 @@ class SQLRecordManager(RecordManager):
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
-                    set_=dict(
-                        updated_at=pg_insert_stmt.excluded.updated_at,
-                        group_id=pg_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": pg_insert_stmt.excluded.updated_at,
+                        "group_id": pg_insert_stmt.excluded.group_id,
+                    },
                 )
             else:
-                raise NotImplementedError(f"Unsupported dialect {self.dialect}")
+                msg = f"Unsupported dialect {self.dialect}"
+                raise NotImplementedError(msg)
 
             session.execute(stmt)
             session.commit()
@@ -337,10 +351,11 @@ class SQLRecordManager(RecordManager):
             group_ids = [None] * len(keys)
 
         if len(keys) != len(group_ids):
-            raise ValueError(
+            msg = (
                 f"Number of keys ({len(keys)}) does not match number of "
                 f"group_ids ({len(group_ids)})"
             )
+            raise ValueError(msg)
 
         # Get the current time from the server.
         # This makes an extra round trip to the server, should not be a big deal
@@ -353,7 +368,8 @@ class SQLRecordManager(RecordManager):
 
         if time_at_least and update_time < time_at_least:
             # Safeguard against time sync issues
-            raise AssertionError(f"Time sync issue: {update_time} < {time_at_least}")
+            msg = f"Time sync issue: {update_time} < {time_at_least}"
+            raise AssertionError(msg)
 
         records_to_upsert = [
             {
@@ -377,10 +393,10 @@ class SQLRecordManager(RecordManager):
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
-                    set_=dict(
-                        updated_at=sqlite_insert_stmt.excluded.updated_at,
-                        group_id=sqlite_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": sqlite_insert_stmt.excluded.updated_at,
+                        "group_id": sqlite_insert_stmt.excluded.group_id,
+                    },
                 )
             elif self.dialect == "postgresql":
                 from sqlalchemy.dialects.postgresql import Insert as PgInsertType
@@ -393,13 +409,14 @@ class SQLRecordManager(RecordManager):
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
-                    set_=dict(
-                        updated_at=pg_insert_stmt.excluded.updated_at,
-                        group_id=pg_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": pg_insert_stmt.excluded.updated_at,
+                        "group_id": pg_insert_stmt.excluded.group_id,
+                    },
                 )
             else:
-                raise NotImplementedError(f"Unsupported dialect {self.dialect}")
+                msg = f"Unsupported dialect {self.dialect}"
+                raise NotImplementedError(msg)
 
             await session.execute(stmt)
             await session.commit()
@@ -415,7 +432,7 @@ class SQLRecordManager(RecordManager):
                 )
             )
             records = filtered_query.all()
-        found_keys = set(r.key for r in records)
+        found_keys = {r.key for r in records}
         return [k in found_keys for k in keys]
 
     async def aexists(self, keys: Sequence[str]) -> list[bool]:

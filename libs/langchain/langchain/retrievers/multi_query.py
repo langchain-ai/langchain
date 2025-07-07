@@ -31,12 +31,12 @@ class LineListOutputParser(BaseOutputParser[list[str]]):
 # Default prompt
 DEFAULT_QUERY_PROMPT = PromptTemplate(
     input_variables=["question"],
-    template="""You are an AI language model assistant. Your task is 
-    to generate 3 different versions of the given user 
-    question to retrieve relevant documents from a vector  database. 
-    By generating multiple perspectives on the user question, 
-    your goal is to help the user overcome some of the limitations 
-    of distance-based similarity search. Provide these alternative 
+    template="""You are an AI language model assistant. Your task is
+    to generate 3 different versions of the given user
+    question to retrieve relevant documents from a vector  database.
+    By generating multiple perspectives on the user question,
+    your goal is to help the user overcome some of the limitations
+    of distance-based similarity search. Provide these alternative
     questions separated by newlines. Original question: {question}""",
 )
 
@@ -66,7 +66,7 @@ class MultiQueryRetriever(BaseRetriever):
         llm: BaseLanguageModel,
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: Optional[str] = None,
-        include_original: bool = False,
+        include_original: bool = False,  # noqa: FBT001,FBT002
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 
@@ -123,10 +123,7 @@ class MultiQueryRetriever(BaseRetriever):
         response = await self.llm_chain.ainvoke(
             {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        if isinstance(self.llm_chain, LLMChain):
-            lines = response["text"]
-        else:
-            lines = response
+        lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
@@ -186,10 +183,7 @@ class MultiQueryRetriever(BaseRetriever):
         response = self.llm_chain.invoke(
             {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        if isinstance(self.llm_chain, LLMChain):
-            lines = response["text"]
-        else:
-            lines = response
+        lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines

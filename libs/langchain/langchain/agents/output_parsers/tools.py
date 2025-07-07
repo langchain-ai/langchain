@@ -24,7 +24,8 @@ def parse_ai_message_to_tool_action(
 ) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):
-        raise TypeError(f"Expected an AI message got {type(message)}")
+        msg = f"Expected an AI message got {type(message)}"
+        raise TypeError(msg)
 
     actions: list = []
     if message.tool_calls:
@@ -45,10 +46,11 @@ def parse_ai_message_to_tool_action(
                     ToolCall(name=function_name, args=args, id=tool_call["id"])
                 )
             except JSONDecodeError:
-                raise OutputParserException(
+                msg = (
                     f"Could not parse tool input: {function} because "
                     f"the `arguments` is not valid JSON."
                 )
+                raise OutputParserException(msg)
     for tool_call in tool_calls:
         # HACK HACK HACK:
         # The code that encodes tool input into Open AI uses a special variable
@@ -58,10 +60,7 @@ def parse_ai_message_to_tool_action(
         # Open AI does not support passing in a JSON array as an argument.
         function_name = tool_call["name"]
         _tool_input = tool_call["args"]
-        if "__arg1" in _tool_input:
-            tool_input = _tool_input["__arg1"]
-        else:
-            tool_input = _tool_input
+        tool_input = _tool_input.get("__arg1", _tool_input)
 
         content_msg = f"responded: {message.content}\n" if message.content else "\n"
         log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
@@ -94,9 +93,11 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         self, result: list[Generation], *, partial: bool = False
     ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
-            raise ValueError("This output parser only works on ChatGeneration output")
+            msg = "This output parser only works on ChatGeneration output"
+            raise ValueError(msg)
         message = result[0].message
         return parse_ai_message_to_tool_action(message)
 
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
-        raise ValueError("Can only parse messages")
+        msg = "Can only parse messages"
+        raise ValueError(msg)
