@@ -9,7 +9,7 @@ from langchain_tests.integration_tests.base_store import (
 )
 
 
-class TestInMemoryStore(BaseStoreSyncTests):
+class TestInMemoryStore(BaseStoreSyncTests[str]):
     @pytest.fixture
     def three_values(self) -> tuple[str, str, str]:
         return "foo", "bar", "buzz"
@@ -19,9 +19,9 @@ class TestInMemoryStore(BaseStoreSyncTests):
         return InMemoryStore()
 
 
-class TestInMemoryStoreAsync(BaseStoreAsyncTests):
+class TestInMemoryStoreAsync(BaseStoreAsyncTests[str]):
     @pytest.fixture
-    def three_values(self) -> tuple[str, str, str]:  # type: ignore
+    def three_values(self) -> tuple[str, str, str]:
         return "foo", "bar", "buzz"
 
     @pytest.fixture

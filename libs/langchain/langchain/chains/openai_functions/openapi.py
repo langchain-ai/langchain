@@ -23,14 +23,6 @@ if TYPE_CHECKING:
     from openapi_pydantic import Parameter
 
 
-def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
-    summary = getattr(o, "summary", None)
-    description = getattr(o, "description", None)
-    if prefer_short:
-        return summary or description
-    return description or summary
-
-
 def _format_url(url: str, path_params: dict) -> str:
     expected_path_param = re.findall(r"{(.*?)}", url)
     new_params = {}
@@ -103,10 +95,11 @@ def openapi_spec_to_openai_fn(
     try:
         from langchain_community.tools import APIOperation
     except ImportError:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.tools. "
             "Please install it with `pip install langchain-community`."
         )
+        raise ImportError(msg)
 
     if not spec.paths:
         return [], lambda: None
@@ -259,7 +252,7 @@ def get_openapi_chain(
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
     llm_chain_kwargs: Optional[dict] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     headers: Optional[dict] = None,
     params: Optional[dict] = None,
     **kwargs: Any,
@@ -353,10 +346,11 @@ def get_openapi_chain(
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import langchain_community.utilities.openapi. "
             "Please install it with `pip install langchain-community`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -371,14 +365,16 @@ def get_openapi_chain(
             except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
-            raise ValueError(f"Unable to parse spec from source {spec}")
+            msg = f"Unable to parse spec from source {spec}"
+            raise ValueError(msg)
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
-        raise ValueError(
+        msg = (
             "Must provide an LLM for this chain.For example,\n"
             "from langchain_openai import ChatOpenAI\n"
             "llm = ChatOpenAI()\n"
         )
+        raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

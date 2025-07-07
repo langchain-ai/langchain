@@ -194,9 +194,10 @@ class HTMLHeaderTextSplitter:
         try:
             from bs4 import BeautifulSoup
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "Unable to import BeautifulSoup. Please install via `pip install bs4`."
-            ) from e
+            )
+            raise ImportError(msg) from e
 
         soup = BeautifulSoup(html_content, "html.parser")
         body = soup.body if soup.body else soup
@@ -352,7 +353,7 @@ class HTMLSectionSplitter:
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
 
-                for key in chunk.metadata.keys():
+                for key in chunk.metadata:
                     if chunk.metadata[key] == "#TITLE#":
                         chunk.metadata[key] = metadata["Title"]
                 metadata = {**metadata, **chunk.metadata}
@@ -382,17 +383,16 @@ class HTMLSectionSplitter:
             from bs4 import BeautifulSoup
             from bs4.element import PageElement
         except ImportError as e:
-            raise ImportError(
-                "Unable to import BeautifulSoup/PageElement, \
+            msg = "Unable to import BeautifulSoup/PageElement, \
                     please install with `pip install \
                     bs4`."
-            ) from e
+            raise ImportError(msg) from e
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections: list[dict[str, str | None]] = []
 
-        headers = soup.find_all(["body"] + headers)  # type: ignore[assignment]
+        headers = soup.find_all(["body", *headers])  # type: ignore[assignment]
 
         for i, header in enumerate(headers):
             header_element = cast(PageElement, header)
@@ -441,9 +441,8 @@ class HTMLSectionSplitter:
         try:
             from lxml import etree
         except ImportError as e:
-            raise ImportError(
-                "Unable to import lxml, please install with `pip install lxml`."
-            ) from e
+            msg = "Unable to import lxml, please install with `pip install lxml`."
+            raise ImportError(msg) from e
         # use lxml library to parse html document and return xml ElementTree
         # Create secure parsers to prevent XXE attacks
         html_parser = etree.HTMLParser(no_network=True)
@@ -594,10 +593,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             self._BeautifulSoup = BeautifulSoup
             self._Tag = Tag
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
             )
+            raise ImportError(msg)
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -646,9 +646,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 nltk.download("stopwords")
                 self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
             except ImportError:
-                raise ImportError(
+                msg = (
                     "Could not import nltk. Please install it with 'pip install nltk'."
                 )
+                raise ImportError(msg)
 
     def split_text(self, text: str) -> list[Document]:
         """Splits the provided HTML text into smaller chunks based on the configuration.
@@ -927,8 +928,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 content, preserved_elements
             )
             return [Document(page_content=page_content, metadata=metadata)]
-        else:
-            return self._further_split_chunk(content, metadata, preserved_elements)
+        return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
         self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]

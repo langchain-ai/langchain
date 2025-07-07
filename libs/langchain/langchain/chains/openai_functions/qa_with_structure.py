@@ -40,7 +40,7 @@ def create_qa_with_structure_chain(
     schema: Union[dict, type[BaseModel]],
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> LLMChain:
     """Create a question answering chain that returns an answer with sources
      based on schema.
@@ -57,20 +57,22 @@ def create_qa_with_structure_chain(
     """
     if output_parser == "pydantic":
         if not (isinstance(schema, type) and is_basemodel_subclass(schema)):
-            raise ValueError(
+            msg = (
                 "Must provide a pydantic class for schema when output_parser is "
                 "'pydantic'."
             )
+            raise ValueError(msg)
         _output_parser: BaseLLMOutputParser = PydanticOutputFunctionsParser(
             pydantic_schema=schema
         )
     elif output_parser == "base":
         _output_parser = OutputFunctionsParser()
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected output_parser: {output_parser}. "
             f"Should be one of `pydantic` or `base`."
         )
+        raise ValueError(msg)
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         if hasattr(schema, "model_json_schema"):
             schema_dict = cast(dict, schema.model_json_schema())
@@ -98,14 +100,13 @@ def create_qa_with_structure_chain(
     ]
     prompt = prompt or ChatPromptTemplate(messages=messages)  # type: ignore[arg-type]
 
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=_output_parser,
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -118,7 +119,9 @@ def create_qa_with_structure_chain(
     ),
 )
 def create_qa_with_sources_chain(
-    llm: BaseLanguageModel, verbose: bool = False, **kwargs: Any
+    llm: BaseLanguageModel,
+    verbose: bool = False,  # noqa: FBT001,FBT002
+    **kwargs: Any,
 ) -> LLMChain:
     """Create a question answering chain that returns an answer with sources.
 

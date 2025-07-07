@@ -130,6 +130,8 @@ class RunLogPatch:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RunLogPatch) and self.ops == other.ops
 
+    __hash__ = None  # type: ignore[assignment]
+
 
 class RunLog(RunLogPatch):
     """Run log."""
@@ -173,6 +175,8 @@ class RunLog(RunLogPatch):
             return False
         # Then compare that the ops are the same
         return super().__eq__(other)
+
+    __hash__ = None  # type: ignore[assignment]
 
 
 T = TypeVar("T")

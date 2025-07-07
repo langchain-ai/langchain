@@ -12,10 +12,11 @@ def _get_similarity_function() -> Callable:
     try:
         from langchain_community.utils.math import cosine_similarity
     except ImportError:
-        raise ImportError(
+        msg = (
             "To use please install langchain-community "
             "with `pip install langchain-community`."
         )
+        raise ImportError(msg)
     return cosine_similarity
 
 
@@ -45,7 +46,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     def validate_params(cls, values: dict) -> dict:
         """Validate similarity parameters."""
         if values["k"] is None and values["similarity_threshold"] is None:
-            raise ValueError("Must specify one of `k` or `similarity_threshold`.")
+            msg = "Must specify one of `k` or `similarity_threshold`."
+            raise ValueError(msg)
         return values
 
     def compress_documents(
@@ -61,17 +63,17 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 get_stateful_documents,
             )
         except ImportError:
-            raise ImportError(
+            msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
+            raise ImportError(msg)
 
         try:
             import numpy as np
         except ImportError as e:
-            raise ImportError(
-                "Could not import numpy, please install with `pip install numpy`."
-            ) from e
+            msg = "Could not import numpy, please install with `pip install numpy`."
+            raise ImportError(msg) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents
@@ -103,17 +105,17 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 get_stateful_documents,
             )
         except ImportError:
-            raise ImportError(
+            msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
+            raise ImportError(msg)
 
         try:
             import numpy as np
         except ImportError as e:
-            raise ImportError(
-                "Could not import numpy, please install with `pip install numpy`."
-            ) from e
+            msg = "Could not import numpy, please install with `pip install numpy`."
+            raise ImportError(msg) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = await _aget_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents

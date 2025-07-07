@@ -23,7 +23,4 @@ def list_packages(*, contains: Optional[str] = None):
     package_names = [
         p["name"] for p in data if p["type"] == "dir" and p["name"] != "docs"
     ]
-    package_names_filtered = (
-        [p for p in package_names if contains in p] if contains else package_names
-    )
-    return package_names_filtered
+    return [p for p in package_names if contains in p] if contains else package_names

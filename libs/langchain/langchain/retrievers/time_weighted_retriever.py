@@ -24,7 +24,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""
 
-    search_kwargs: dict = Field(default_factory=lambda: dict(k=100))
+    search_kwargs: dict = Field(default_factory=lambda: {"k": 100})
     """Keyword arguments to pass to the vectorstore similarity search."""
 
     # TODO: abstract as a queue

@@ -28,19 +28,16 @@ class RegexDictParser(BaseOutputParser[dict[str, str]]):
             specific_regex = self.regex_pattern.format(re.escape(expected_format))
             matches = re.findall(specific_regex, text)
             if not matches:
-                raise ValueError(
+                msg = (
                     f"No match found for output key: {output_key} with expected format \
                         {expected_format} on text {text}"
                 )
-            elif len(matches) > 1:
-                raise ValueError(
-                    f"Multiple matches found for output key: {output_key} with \
+                raise ValueError(msg)
+            if len(matches) > 1:
+                msg = f"Multiple matches found for output key: {output_key} with \
                         expected format {expected_format} on text {text}"
-                )
-            elif (
-                self.no_update_value is not None and matches[0] == self.no_update_value
-            ):
+                raise ValueError(msg)
+            if self.no_update_value is not None and matches[0] == self.no_update_value:
                 continue
-            else:
-                result[output_key] = matches[0]
+            result[output_key] = matches[0]
         return result
