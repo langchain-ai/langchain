@@ -50,7 +50,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     """
     if ":" not in model_name:
         providers = _SUPPORTED_PROVIDERS
-        raise ValueError(
+        msg = (
             f"Invalid model format '{model_name}'.\n"
             f"Model name must be in format 'provider:model-name'\n"
             f"Example valid model strings:\n"
@@ -59,19 +59,22 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
             f"  - cohere:embed-english-v3.0\n"
             f"Supported providers: {providers}"
         )
+        raise ValueError(msg)
 
     provider, model = model_name.split(":", 1)
     provider = provider.lower().strip()
     model = model.strip()
 
     if provider not in _SUPPORTED_PROVIDERS:
-        raise ValueError(
+        msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
             f"{_get_provider_list()}"
         )
+        raise ValueError(msg)
     if not model:
-        raise ValueError("Model name cannot be empty")
+        msg = "Model name cannot be empty"
+        raise ValueError(msg)
     return provider, model
 
 
@@ -79,7 +82,8 @@ def _infer_model_and_provider(
     model: str, *, provider: Optional[str] = None
 ) -> tuple[str, str]:
     if not model.strip():
-        raise ValueError("Model name cannot be empty")
+        msg = "Model name cannot be empty"
+        raise ValueError(msg)
     if provider is None and ":" in model:
         provider, model_name = _parse_model_string(model)
     else:
@@ -88,20 +92,22 @@ def _infer_model_and_provider(
 
     if not provider:
         providers = _SUPPORTED_PROVIDERS
-        raise ValueError(
+        msg = (
             "Must specify either:\n"
             "1. A model string in format 'provider:model-name'\n"
             "   Example: 'openai:text-embedding-3-small'\n"
             "2. Or explicitly set provider from: "
             f"{providers}"
         )
+        raise ValueError(msg)
 
     if provider not in _SUPPORTED_PROVIDERS:
-        raise ValueError(
+        msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
             f"{_get_provider_list()}"
         )
+        raise ValueError(msg)
     return provider, model_name
 
 
@@ -109,10 +115,11 @@ def _infer_model_and_provider(
 def _check_pkg(pkg: str) -> None:
     """Check if a package is installed."""
     if not util.find_spec(pkg):
-        raise ImportError(
+        msg = (
             f"Could not import {pkg} python package. "
             f"Please install it with `pip install {pkg}`"
         )
+        raise ImportError(msg)
 
 
 def init_embeddings(
@@ -172,9 +179,10 @@ def init_embeddings(
     """
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
-        raise ValueError(
+        msg = (
             f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
+        raise ValueError(msg)
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
     pkg = _SUPPORTED_PROVIDERS[provider]
@@ -213,11 +221,12 @@ def init_embeddings(
 
         return OllamaEmbeddings(model=model_name, **kwargs)
     else:
-        raise ValueError(
+        msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
             f"{_get_provider_list()}"
         )
+        raise ValueError(msg)
 
 
 __all__ = [

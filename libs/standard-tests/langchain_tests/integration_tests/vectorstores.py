@@ -105,16 +105,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     @property
     def has_sync(self) -> bool:
-        """
-        Configurable property to enable or disable sync tests.
-        """
+        """Configurable property to enable or disable sync tests."""
         return True
 
     @property
     def has_async(self) -> bool:
-        """
-        Configurable property to enable or disable async tests.
-        """
+        """Configurable property to enable or disable async tests."""
         return True
 
     @staticmethod
@@ -368,7 +364,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
                     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
                         super().test_get_by_ids_missing(vectorstore)
-        """  # noqa: E501
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 

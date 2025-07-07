@@ -10,6 +10,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.utils import pre_init
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -29,10 +30,11 @@ def _load_rapidfuzz() -> Any:
     try:
         import rapidfuzz
     except ImportError:
-        raise ImportError(
+        msg = (
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
             "Please install it with `pip install rapidfuzz`."
         )
+        raise ImportError(msg)
     return rapidfuzz.distance
 
 
@@ -128,10 +130,11 @@ class _RapidFuzzChainMixin(Chain):
             StringDistance.INDEL: rf_distance.Indel,
         }
         if distance not in module_map:
-            raise ValueError(
+            msg = (
                 f"Invalid distance metric: {distance}"
                 f"\nMust be one of: {list(StringDistance)}"
             )
+            raise ValueError(msg)
         module = module_map[distance]
         if normalize_score:
             return module.normalized_distance
@@ -258,6 +261,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -293,6 +297,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,

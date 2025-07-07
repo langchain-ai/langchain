@@ -31,10 +31,11 @@ def parse_dependency_string(
 ) -> DependencySource:
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
-            raise ValueError(
+            msg = (
                 "If a dependency starts with git+, you cannot manually specify "
                 "a repo or branch."
             )
+            raise ValueError(msg)
         # remove git+
         gitstring = dep[4:]
         subdirectory = None
@@ -43,9 +44,8 @@ def parse_dependency_string(
         if "#subdirectory=" in gitstring:
             gitstring, subdirectory = gitstring.split("#subdirectory=")
             if "#" in subdirectory or "@" in subdirectory:
-                raise ValueError(
-                    "#subdirectory must be the last part of the dependency string"
-                )
+                msg = "#subdirectory must be the last part of the dependency string"
+                raise ValueError(msg)
 
         # find first slash after ://
         # find @ or # after that slash
@@ -54,9 +54,8 @@ def parse_dependency_string(
 
         # find first slash after ://
         if "://" not in gitstring:
-            raise ValueError(
-                "git+ dependencies must start with git+https:// or git+ssh://"
-            )
+            msg = "git+ dependencies must start with git+https:// or git+ssh://"
+            raise ValueError(msg)
 
         _, find_slash = gitstring.split("://", 1)
 
@@ -79,41 +78,41 @@ def parse_dependency_string(
             event_metadata={"dependency_string": dep},
         )
 
-    elif dep is not None and dep.startswith("https://"):
-        raise ValueError("Only git dependencies are supported")
-    else:
-        # if repo is none, use default, including subdirectory
-        base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
-        subdir = str(base_subdir / dep) if dep is not None else None
-        gitstring = (
-            DEFAULT_GIT_REPO
-            if repo is None
-            else f"https://github.com/{repo.strip('/')}.git"
-        )
-        ref = DEFAULT_GIT_REF if branch is None else branch
-        # it's a default git repo dependency
-        return DependencySource(
-            git=gitstring,
-            ref=ref,
-            subdirectory=subdir,
-            api_path=api_path,
-            event_metadata={
-                "dependency_string": dep,
-                "used_repo_flag": repo is not None,
-                "used_branch_flag": branch is not None,
-            },
-        )
+    if dep is not None and dep.startswith("https://"):
+        msg = "Only git dependencies are supported"
+        raise ValueError(msg)
+    # if repo is none, use default, including subdirectory
+    base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
+    subdir = str(base_subdir / dep) if dep is not None else None
+    gitstring = (
+        DEFAULT_GIT_REPO
+        if repo is None
+        else f"https://github.com/{repo.strip('/')}.git"
+    )
+    ref = DEFAULT_GIT_REF if branch is None else branch
+    # it's a default git repo dependency
+    return DependencySource(
+        git=gitstring,
+        ref=ref,
+        subdirectory=subdir,
+        api_path=api_path,
+        event_metadata={
+            "dependency_string": dep,
+            "used_repo_flag": repo is not None,
+            "used_branch_flag": branch is not None,
+        },
+    )
 
 
 def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional[str]]:
     if not arg:
         return [None] * num
-    elif len(arg) == 1:
+    if len(arg) == 1:
         return arg * num
-    elif len(arg) == num:
+    if len(arg) == num:
         return arg
-    else:
-        raise ValueError(f"Argument must be of length 1 or {num}")
+    msg = f"Argument must be of length 1 or {num}"
+    raise ValueError(msg)
 
 
 def parse_dependencies(
@@ -131,10 +130,11 @@ def parse_dependencies(
         or (repo and len(repo) not in [1, num_deps])
         or (branch and len(branch) not in [1, num_deps])
     ):
-        raise ValueError(
+        msg = (
             "Number of defined repos/branches/api_paths did not match the "
             "number of templates."
         )
+        raise ValueError(msg)
     inner_deps = _list_arg_to_length(dependencies, num_deps)
     inner_api_paths = _list_arg_to_length(api_path, num_deps)
     inner_repos = _list_arg_to_length(repo, num_deps)
@@ -170,7 +170,7 @@ def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
         try:
             repo = Repo(repo_path)
             if repo.active_branch.name != ref:
-                raise ValueError()
+                raise ValueError
             repo.remotes.origin.pull()
         except Exception:
             # if it fails, delete and clone again
@@ -186,8 +186,7 @@ def copy_repo(
     source: Path,
     destination: Path,
 ) -> None:
-    """
-    Copies a repo, ignoring git folders.
+    """Copies a repo, ignoring git folders.
 
     Raises FileNotFound error if it can't find source
     """

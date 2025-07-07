@@ -45,7 +45,7 @@ def test_combining_dict_result() -> None:
     ]
     combining_parser = CombiningOutputParser(parsers=parsers)
     result_dict = combining_parser.parse(DEF_README)
-    assert DEF_EXPECTED_RESULT == result_dict
+    assert result_dict == DEF_EXPECTED_RESULT
 
 
 def test_combining_output_parser_output_type() -> None:

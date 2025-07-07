@@ -67,7 +67,7 @@ def __getattr__(name: str) -> Any:
 
         return ConversationChain
     elif name == "LLMBashChain":
-        raise ImportError(
+        msg = (
             "This module has been moved to langchain-experimental. "
             "For more details: "
             "https://github.com/langchain-ai/langchain/discussions/11352."
@@ -75,6 +75,7 @@ def __getattr__(name: str) -> Any:
             "`from langchain_experimental.llm_bash.base "
             "import LLMBashChain`"
         )
+        raise ImportError(msg)
 
     elif name == "LLMChain":
         from langchain.chains import LLMChain
@@ -386,7 +387,8 @@ def __getattr__(name: str) -> Any:
 
         return _llm_cache
     else:
-        raise AttributeError(f"Could not find: {name}")
+        msg = f"Could not find: {name}"
+        raise AttributeError(msg)
 
 
 __all__ = [

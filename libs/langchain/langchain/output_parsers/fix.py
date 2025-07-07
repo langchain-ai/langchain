@@ -82,22 +82,23 @@ class OutputFixingParser(BaseOutputParser[T]):
                     else:
                         try:
                             completion = self.retry_chain.invoke(
-                                dict(
-                                    instructions=self.parser.get_format_instructions(),
-                                    completion=completion,
-                                    error=repr(e),
-                                )
+                                {
+                                    "instructions": self.parser.get_format_instructions(),  # noqa: E501
+                                    "completion": completion,
+                                    "error": repr(e),
+                                }
                             )
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions
                             completion = self.retry_chain.invoke(
-                                dict(
-                                    completion=completion,
-                                    error=repr(e),
-                                )
+                                {
+                                    "completion": completion,
+                                    "error": repr(e),
+                                }
                             )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse(self, completion: str) -> T:
         retries = 0
@@ -119,22 +120,23 @@ class OutputFixingParser(BaseOutputParser[T]):
                     else:
                         try:
                             completion = await self.retry_chain.ainvoke(
-                                dict(
-                                    instructions=self.parser.get_format_instructions(),
-                                    completion=completion,
-                                    error=repr(e),
-                                )
+                                {
+                                    "instructions": self.parser.get_format_instructions(),  # noqa: E501
+                                    "completion": completion,
+                                    "error": repr(e),
+                                }
                             )
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions
                             completion = await self.retry_chain.ainvoke(
-                                dict(
-                                    completion=completion,
-                                    error=repr(e),
-                                )
+                                {
+                                    "completion": completion,
+                                    "error": repr(e),
+                                }
                             )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()

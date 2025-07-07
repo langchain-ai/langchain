@@ -71,10 +71,11 @@ class OpenAIModerationChain(Chain):
                 values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
 
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+            raise ImportError(msg)
         return values
 
     @property
@@ -94,10 +95,7 @@ class OpenAIModerationChain(Chain):
         return [self.output_key]
 
     def _moderate(self, text: str, results: Any) -> str:
-        if self.openai_pre_1_0:
-            condition = results["flagged"]
-        else:
-            condition = results.flagged
+        condition = results["flagged"] if self.openai_pre_1_0 else results.flagged
         if condition:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:

@@ -57,20 +57,22 @@ def create_qa_with_structure_chain(
     """
     if output_parser == "pydantic":
         if not (isinstance(schema, type) and is_basemodel_subclass(schema)):
-            raise ValueError(
+            msg = (
                 "Must provide a pydantic class for schema when output_parser is "
                 "'pydantic'."
             )
+            raise ValueError(msg)
         _output_parser: BaseLLMOutputParser = PydanticOutputFunctionsParser(
             pydantic_schema=schema
         )
     elif output_parser == "base":
         _output_parser = OutputFunctionsParser()
     else:
-        raise ValueError(
+        msg = (
             f"Got unexpected output_parser: {output_parser}. "
             f"Should be one of `pydantic` or `base`."
         )
+        raise ValueError(msg)
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         if hasattr(schema, "model_json_schema"):
             schema_dict = cast(dict, schema.model_json_schema())

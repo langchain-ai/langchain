@@ -28,6 +28,7 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 from pydantic import model_validator
+from typing_extensions import override
 
 T = TypeVar("T")
 H = TypeVar("H", bound=Hashable)
@@ -86,6 +87,7 @@ class EnsembleRetriever(BaseRetriever):
             values["weights"] = [1 / n_retrievers] * n_retrievers
         return values
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -119,6 +121,7 @@ class EnsembleRetriever(BaseRetriever):
             )
             return result
 
+    @override
     async def ainvoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -297,9 +300,8 @@ class EnsembleRetriever(BaseRetriever):
                     scores in descending order.
         """
         if len(doc_lists) != len(self.weights):
-            raise ValueError(
-                "Number of rank lists must be equal to the number of weights."
-            )
+            msg = "Number of rank lists must be equal to the number of weights."
+            raise ValueError(msg)
 
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively

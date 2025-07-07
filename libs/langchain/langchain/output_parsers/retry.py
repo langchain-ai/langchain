@@ -116,13 +116,14 @@ class RetryOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = self.retry_chain.invoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                            }
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         """Parse the output of an LLM call using a wrapped parser.
@@ -152,18 +153,18 @@ class RetryOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                            }
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def parse(self, completion: str) -> T:
-        raise NotImplementedError(
-            "This OutputParser can only be called by the `parse_with_prompt` method."
-        )
+        msg = "This OutputParser can only be called by the `parse_with_prompt` method."
+        raise NotImplementedError(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
@@ -243,14 +244,15 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = self.retry_chain.invoke(
-                            dict(
-                                completion=completion,
-                                prompt=prompt_value.to_string(),
-                                error=repr(e),
-                            )
+                            {
+                                "completion": completion,
+                                "prompt": prompt_value.to_string(),
+                                "error": repr(e),
+                            }
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         retries = 0
@@ -271,19 +273,19 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                                error=repr(e),
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                                "error": repr(e),
+                            }
                         )
 
-        raise OutputParserException("Failed to parse")
+        msg = "Failed to parse"
+        raise OutputParserException(msg)
 
     def parse(self, completion: str) -> T:
-        raise NotImplementedError(
-            "This OutputParser can only be called by the `parse_with_prompt` method."
-        )
+        msg = "This OutputParser can only be called by the `parse_with_prompt` method."
+        raise NotImplementedError(msg)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()

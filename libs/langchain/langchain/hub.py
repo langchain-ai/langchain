@@ -31,15 +31,16 @@ def _get_client(
 
             return LangChainHubClient(api_url, api_key=api_key)
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "Could not import langsmith or langchainhub (deprecated),"
                 "please install with `pip install langsmith`."
-            ) from e
+            )
+            raise ImportError(msg) from e
 
 
 def push(
     repo_full_name: str,
-    object: Any,
+    object: Any,  # noqa: A002
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,

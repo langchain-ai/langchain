@@ -57,9 +57,7 @@ class EvalConfig(BaseModel):
         """
         kwargs = {}
         for field, val in self:
-            if field == "evaluator_type":
-                continue
-            elif val is None:
+            if field == "evaluator_type" or val is None:
                 continue
             kwargs[field] = val
         return kwargs
