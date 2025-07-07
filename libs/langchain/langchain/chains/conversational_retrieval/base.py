@@ -93,7 +93,7 @@ class BaseConversationalRetrievalChain(Chain):
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
     response_if_no_docs_found: Optional[str] = None
-    """If specified, the chain will return a fixed response if no docs 
+    """If specified, the chain will return a fixed response if no docs
     are found for the question. """
 
     model_config = ConfigDict(

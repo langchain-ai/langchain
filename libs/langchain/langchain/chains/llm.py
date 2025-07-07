@@ -88,7 +88,7 @@ class LLMChain(Chain):
     output_key: str = "text"  #: :meta private:
     output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
-    Defaults to one that takes the most likely string but does not change it 
+    Defaults to one that takes the most likely string but does not change it
     otherwise."""
     return_final_only: bool = True
     """Whether to return only the final parsed result. Defaults to True.

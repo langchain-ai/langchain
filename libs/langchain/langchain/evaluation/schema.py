@@ -34,7 +34,7 @@ class EvaluatorType(str, Enum):
     """The pairwise string evaluator, which predicts the preferred prediction from
     between two models."""
     SCORE_STRING = "score_string"
-    """The scored string evaluator, which gives a score between 1 and 10 
+    """The scored string evaluator, which gives a score between 1 and 10
     to a prediction."""
     LABELED_PAIRWISE_STRING = "labeled_pairwise_string"
     """The labeled pairwise string evaluator, which predicts the preferred prediction

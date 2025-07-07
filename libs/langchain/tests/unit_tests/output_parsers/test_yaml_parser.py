@@ -38,7 +38,7 @@ action_input: The yamlOutputParser class is powerful
 additional_fields: null
 for_new_lines: |
   not_escape_newline:
-   escape_newline: 
+   escape_newline:
 
 ```"""
 DEF_RESULT_NO_BACKTICKS = """
@@ -47,7 +47,7 @@ action_input: The yamlOutputParser class is powerful
 additional_fields: null
 for_new_lines: |
   not_escape_newline:
-   escape_newline: 
+   escape_newline:
 
 """
 
@@ -62,7 +62,7 @@ DEF_EXPECTED_RESULT = TestModel(
     action=Actions.UPDATE,
     action_input="The yamlOutputParser class is powerful",
     additional_fields=None,
-    for_new_lines="not_escape_newline:\n escape_newline: \n",
+    for_new_lines="not_escape_newline:\n escape_newline:\n",
 )
 
 
