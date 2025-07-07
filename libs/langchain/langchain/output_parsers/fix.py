@@ -82,7 +82,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                     try:
                         completion = self.retry_chain.invoke(
                             {
-                                "instructions": self.parser.get_format_instructions(),  # noqa: E501
+                                "instructions": self.parser.get_format_instructions(),
                                 "completion": completion,
                                 "error": repr(e),
                             }
@@ -119,7 +119,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                     try:
                         completion = await self.retry_chain.ainvoke(
                             {
-                                "instructions": self.parser.get_format_instructions(),  # noqa: E501
+                                "instructions": self.parser.get_format_instructions(),
                                 "completion": completion,
                                 "error": repr(e),
                             }

@@ -167,6 +167,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             self._pop_and_store_interaction(buffer)
 
     def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:
+        input_ = buffer.pop(0)
         output = buffer.pop(0)
         timestamp = self._timestamps.pop(0).strftime(TIMESTAMP_FORMAT)
         # Split AI output into smaller chunks to avoid creating documents
@@ -174,7 +175,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         ai_chunks = self._split_long_ai_text(str(output.content))
         for index, chunk in enumerate(ai_chunks):
             self.memory_retriever.save_context(
-                {"Human": f"<{timestamp}/00> {input.content!s}"},
+                {"Human": f"<{timestamp}/00> {input_.content!s}"},
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 
