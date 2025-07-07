@@ -121,9 +121,9 @@ class BaseConversationalRetrievalChain(Chain):
         """
         _output_keys = [self.output_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         if self.return_generated_question:
-            _output_keys = _output_keys + ["generated_question"]
+            _output_keys = [*_output_keys, "generated_question"]
         return _output_keys
 
     @abstractmethod
@@ -420,7 +420,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[dict] = None,
         callbacks: Callbacks = None,

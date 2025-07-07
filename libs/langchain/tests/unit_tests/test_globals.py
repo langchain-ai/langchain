@@ -17,9 +17,9 @@ def test_no_warning() -> None:
         get_verbose()
         set_verbose(False)
         core_get_debug()
-        core_set_debug(False)
+        core_set_debug(value=False)
         core_get_verbose()
-        core_set_verbose(False)
+        core_set_verbose(value=False)
 
 
 def test_debug_is_settable_directly() -> None:

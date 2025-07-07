@@ -254,7 +254,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
     @field_validator("verbose", mode="before")
     @classmethod
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+    def set_verbose(
+        cls,
+        verbose: Optional[bool],  # noqa: FBT001
+    ) -> bool:
         """Set the chain verbosity.
 
         Defaults to the global setting if not specified by the user.
@@ -353,7 +356,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def __call__(
         self,
         inputs: Union[dict[str, Any], Any],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
@@ -404,7 +407,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     async def acall(
         self,
         inputs: Union[dict[str, Any], Any],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
@@ -454,7 +457,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, str],
         outputs: dict[str, str],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
     ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
@@ -479,7 +482,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, str],
         outputs: dict[str, str],
-        return_only_outputs: bool = False,
+        return_only_outputs: bool = False,  # noqa: FBT001,FBT002
     ) -> dict[str, str]:
         """Validate and prepare chain outputs, and save info about this run to memory.
 
@@ -518,7 +521,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
-            inputs = {list(_input_keys)[0]: inputs}
+            inputs = {next(iter(_input_keys)): inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
@@ -542,7 +545,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
-            inputs = {list(_input_keys)[0]: inputs}
+            inputs = {next(iter(_input_keys)): inputs}
         if self.memory is not None:
             external_context = await self.memory.aload_memory_variables(inputs)
             inputs = dict(inputs, **external_context)

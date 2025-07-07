@@ -66,7 +66,7 @@ class MultiQueryRetriever(BaseRetriever):
         llm: BaseLanguageModel,
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: Optional[str] = None,
-        include_original: bool = False,
+        include_original: bool = False,  # noqa: FBT001,FBT002
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
 

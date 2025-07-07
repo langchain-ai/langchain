@@ -136,7 +136,7 @@ async def get_state(
 
 
 @app.get("/ask_for_passphrase", description="Get the robot's pass phrase")
-async def ask_for_passphrase(said_please: bool) -> dict[str, Any]:
+async def ask_for_passphrase(*, said_please: bool) -> dict[str, Any]:
     if said_please:
         return {"passphrase": f"The passphrase is {PASS_PHRASE}"}
     return {"passphrase": "I won't share the passphrase without saying 'please'."}

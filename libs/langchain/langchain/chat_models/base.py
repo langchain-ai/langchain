@@ -31,12 +31,12 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias, override
 
 __all__ = [
-    "init_chat_model",
     # For backwards compatibility
     "BaseChatModel",
     "SimpleChatModel",
-    "generate_from_stream",
     "agenerate_from_stream",
+    "generate_from_stream",
+    "init_chat_model",
 ]
 
 

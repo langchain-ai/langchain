@@ -342,8 +342,8 @@ class SelfQueryRetriever(BaseRetriever):
         metadata_field_info: Sequence[Union[AttributeInfo, dict]],
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[dict] = None,
-        enable_limit: bool = False,
-        use_original_query: bool = False,
+        enable_limit: bool = False,  # noqa: FBT001,FBT002
+        use_original_query: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:

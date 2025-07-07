@@ -52,7 +52,11 @@ class TestCosineSimilarity:
         y: list[list[float]] = [[1, 0], [0, 1]]
         result = _cosine_similarity(x, y)
         expected = np.array(
-            [[1.0, 0.0], [0.0, 1.0], [1 / math.sqrt(2), 1 / math.sqrt(2)]]
+            [
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1 / math.sqrt(2), 1 / math.sqrt(2)],
+            ]
         )
         np.testing.assert_array_almost_equal(result, expected)
 

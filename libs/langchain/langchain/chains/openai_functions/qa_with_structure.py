@@ -32,7 +32,7 @@ class AnswerWithSources(BaseModel):
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with structured responses: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
     ),
 )
 def create_qa_with_structure_chain(
@@ -40,7 +40,7 @@ def create_qa_with_structure_chain(
     schema: Union[dict, type[BaseModel]],
     output_parser: str = "base",
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> LLMChain:
     """Create a question answering chain that returns an answer with sources
      based on schema.
@@ -115,11 +115,13 @@ def create_qa_with_structure_chain(
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
     ),
 )
 def create_qa_with_sources_chain(
-    llm: BaseLanguageModel, verbose: bool = False, **kwargs: Any
+    llm: BaseLanguageModel,
+    verbose: bool = False,  # noqa: FBT001,FBT002
+    **kwargs: Any,
 ) -> LLMChain:
     """Create a question answering chain that returns an answer with sources.
 

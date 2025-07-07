@@ -175,7 +175,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         ai_chunks = self._split_long_ai_text(str(output.content))
         for index, chunk in enumerate(ai_chunks):
             self.memory_retriever.save_context(
-                {"Human": f"<{timestamp}/00> {str(input_.content)}"},
+                {"Human": f"<{timestamp}/00> {input_.content!s}"},
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 

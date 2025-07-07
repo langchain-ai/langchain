@@ -273,7 +273,7 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -540,10 +540,10 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 _delete(destination, uids_to_delete)
@@ -609,7 +609,7 @@ async def aindex(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -881,10 +881,10 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 await _adelete(destination, uids_to_delete)

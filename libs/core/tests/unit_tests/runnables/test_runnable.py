@@ -3875,14 +3875,14 @@ def test_retrying(mocker: MockerFixture) -> None:
             raise RuntimeError(msg)
         return x
 
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock)
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.invoke(1)
 
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
@@ -3891,8 +3891,8 @@ def test_retrying(mocker: MockerFixture) -> None:
             exponential_jitter_params={"initial": 0.1},
         ).invoke(1)
 
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
 
     with pytest.raises(RuntimeError):
         runnable.with_retry(
@@ -3901,8 +3901,8 @@ def test_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError,),
         ).invoke(2)
 
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1  # did not retry
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
@@ -3912,8 +3912,8 @@ def test_retrying(mocker: MockerFixture) -> None:
         ).batch([1, 2, 0])
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 3 + 2
+    lambda_mock.reset_mock()
 
     output = runnable.with_retry(
         stop_after_attempt=2,
@@ -3922,12 +3922,12 @@ def test_retrying(mocker: MockerFixture) -> None:
     ).batch([1, 2, 0], return_exceptions=True)
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
+    assert lambda_mock.call_count == 3 + 2
     assert len(output) == 3
     assert isinstance(output[0], ValueError)
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
-    _lambda_mock.reset_mock()
+    lambda_mock.reset_mock()
 
 
 async def test_async_retrying(mocker: MockerFixture) -> None:
@@ -3940,14 +3940,14 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             raise RuntimeError(msg)
         return x
 
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock)
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.ainvoke(1)
 
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
@@ -3956,8 +3956,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
 
     with pytest.raises(RuntimeError):
         await runnable.with_retry(
@@ -3966,8 +3966,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError,),
         ).ainvoke(2)
 
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1  # did not retry
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
@@ -3977,8 +3977,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
         ).abatch([1, 2, 0])
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 3 + 2
+    lambda_mock.reset_mock()
 
     output = await runnable.with_retry(
         stop_after_attempt=2,
@@ -3987,12 +3987,12 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     ).abatch([1, 2, 0], return_exceptions=True)
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
+    assert lambda_mock.call_count == 3 + 2
     assert len(output) == 3
     assert isinstance(output[0], ValueError)
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
-    _lambda_mock.reset_mock()
+    lambda_mock.reset_mock()
 
 
 def test_runnable_lambda_stream() -> None:
@@ -5373,7 +5373,7 @@ async def test_astream_log_deep_copies() -> None:
         """Get run log."""
         run_log = RunLog(state=None)  # type: ignore[arg-type]
         for log_patch in run_log_patches:
-            run_log = run_log + log_patch
+            run_log += log_patch
         return run_log
 
     def add_one(x: int) -> int:

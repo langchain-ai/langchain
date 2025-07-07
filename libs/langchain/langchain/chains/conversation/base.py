@@ -132,7 +132,7 @@ class ConversationChain(LLMChain):
             )
             raise ValueError(msg)
         prompt_variables = self.prompt.input_variables
-        expected_keys = memory_keys + [input_key]
+        expected_keys = [*memory_keys, input_key]
         if set(expected_keys) != set(prompt_variables):
             msg = (
                 "Got unexpected prompt input variables. The prompt expects "

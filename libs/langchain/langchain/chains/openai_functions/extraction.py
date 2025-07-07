@@ -84,7 +84,7 @@ def create_extraction_chain(
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
     tags: Optional[list[str]] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
 
@@ -152,7 +152,7 @@ def create_extraction_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage using pydantic schema.
 

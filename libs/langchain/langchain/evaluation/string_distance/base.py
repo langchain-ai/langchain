@@ -106,7 +106,7 @@ class _RapidFuzzChainMixin(Chain):
         return result
 
     @staticmethod
-    def _get_metric(distance: str, normalize_score: bool = False) -> Callable:
+    def _get_metric(distance: str, *, normalize_score: bool = False) -> Callable:
         """
         Get the distance metric function based on the distance type.
 
