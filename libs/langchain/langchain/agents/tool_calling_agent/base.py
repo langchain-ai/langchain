@@ -94,7 +94,7 @@ def create_tool_calling_agent(
         raise ValueError(msg)
 
     if not hasattr(llm, "bind_tools"):
-        msg = "This function requires a `bind_tools()` method be implemented on the LLM."
+        msg = "This function requires a bind_tools() method be implemented on the LLM."
         raise ValueError(
             msg,
         )
