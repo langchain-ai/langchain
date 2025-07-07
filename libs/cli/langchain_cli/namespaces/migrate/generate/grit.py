@@ -17,7 +17,7 @@ def dump_migrations_as_grit(name: str, migration_pairs: list[tuple[str, str]]) -
             ]
             """
             for from_module, to_module in migration_pairs
-        ]
+        ],
     )
     pattern_name = f"langchain_migrate_{name}"
     return f"""

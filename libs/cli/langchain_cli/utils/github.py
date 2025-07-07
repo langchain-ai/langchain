@@ -13,7 +13,9 @@ def list_packages(*, contains: Optional[str] = None):
     }
 
     conn.request(
-        "GET", "/repos/langchain-ai/langchain/contents/templates", headers=headers
+        "GET",
+        "/repos/langchain-ai/langchain/contents/templates",
+        headers=headers,
     )
     res = conn.getresponse()
 

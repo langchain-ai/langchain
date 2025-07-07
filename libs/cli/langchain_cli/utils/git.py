@@ -122,7 +122,9 @@ def parse_dependencies(
     api_path: list[str],
 ) -> list[DependencySource]:
     num_deps = max(
-        len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
+        len(dependencies) if dependencies is not None else 0,
+        len(repo),
+        len(branch),
     )
     if (
         (dependencies and len(dependencies) != num_deps)
@@ -143,7 +145,10 @@ def parse_dependencies(
     return [
         parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
         for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
-            inner_deps, inner_repos, inner_branches, inner_api_paths
+            inner_deps,
+            inner_repos,
+            inner_branches,
+            inner_api_paths,
         )
     ]
 
@@ -186,7 +191,7 @@ def copy_repo(
     source: Path,
     destination: Path,
 ) -> None:
-    """Copies a repo, ignoring git folders.
+    """Copiy a repo, ignoring git folders.
 
     Raises FileNotFound error if it can't find source
     """

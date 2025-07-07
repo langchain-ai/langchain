@@ -20,7 +20,7 @@ class ImportExtractor(ast.NodeVisitor):
         self.imports: list = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node) -> None:
+    def visit_ImportFrom(self, node) -> None:  # noqa: N802
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -39,7 +39,7 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node) -> None:
+        def visit_ClassDef(self, node) -> None:  # noqa: N802
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -79,7 +79,9 @@ def _get_all_classnames_from_file(file: Path, pkg: str) -> list[tuple[str, str]]
 
 
 def identify_all_imports_in_file(
-    file: str, *, from_package: Optional[str] = None
+    file: str,
+    *,
+    from_package: Optional[str] = None,
 ) -> list[tuple[str, str]]:
     """Let's also identify all the imports in the given file."""
     with open(file, encoding="utf-8") as f:
@@ -96,10 +98,13 @@ def identify_pkg_source(pkg_root: str) -> pathlib.Path:
 
     Returns:
         Returns the path to the source code for the package.
+
     """
     dirs = [d for d in Path(pkg_root).iterdir() if d.is_dir()]
     matching_dirs = [d for d in dirs if d.name.startswith("langchain_")]
-    assert len(matching_dirs) == 1, "There should be only one langchain package."
+    if len(matching_dirs) != 1:
+        msg = "There should be only one langchain package."
+        raise ValueError(msg)
     return matching_dirs[0]
 
 
@@ -134,7 +139,9 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
 
 
 def find_imports_from_package(
-    code: str, *, from_package: Optional[str] = None
+    code: str,
+    *,
+    from_package: Optional[str] = None,
 ) -> list[tuple[str, str]]:
     # Parse the code into an AST
     tree = ast.parse(code)
