@@ -28,7 +28,7 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, override
 
 __all__ = [
     "init_chat_model",
@@ -673,6 +673,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             list[AnyMessage],
         ]
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -681,6 +682,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return self._model(config).invoke(input, config=config, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -689,6 +691,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return await self._model(config).ainvoke(input, config=config, **kwargs)
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -697,6 +700,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Iterator[Any]:
         yield from self._model(config).stream(input, config=config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
@@ -802,6 +806,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             ):
                 yield x
 
+    @override
     def transform(
         self,
         input: Iterator[LanguageModelInput],
@@ -810,6 +815,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Iterator[Any]:
         yield from self._model(config).transform(input, config=config, **kwargs)
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[LanguageModelInput],
@@ -853,6 +859,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> AsyncIterator[RunLog]: ...
 
+    @override
     async def astream_log(
         self,
         input: Any,
@@ -883,6 +890,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         ):
             yield x
 
+    @override
     async def astream_events(
         self,
         input: Any,

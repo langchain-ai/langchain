@@ -27,6 +27,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.tools import BaseTool
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -326,6 +327,7 @@ The following is the expected answer. Use this to measure correctness:
         )
         return cast(dict, self.output_parser.parse(raw_output))
 
+    @override
     def _evaluate_agent_trajectory(
         self,
         *,
@@ -368,6 +370,7 @@ The following is the expected answer. Use this to measure correctness:
             return_only_outputs=True,
         )
 
+    @override
     async def _aevaluate_agent_trajectory(
         self,
         *,

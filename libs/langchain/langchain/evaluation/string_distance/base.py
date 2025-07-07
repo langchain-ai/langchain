@@ -10,6 +10,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.utils import pre_init
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -260,6 +261,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -295,6 +297,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,

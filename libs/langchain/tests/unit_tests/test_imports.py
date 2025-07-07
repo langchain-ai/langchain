@@ -26,9 +26,9 @@ def test_import_all() -> None:
 
             mod = importlib.import_module(module_name)
 
-            all = getattr(mod, "__all__", [])
+            all_attrs = getattr(mod, "__all__", [])
 
-            for name in all:
+            for name in all_attrs:
                 # Attempt to import the name from the module
                 try:
                     obj = getattr(mod, name)
@@ -65,9 +65,9 @@ def test_import_all_using_dir() -> None:
         except ModuleNotFoundError as e:
             msg = f"Could not import {module_name}"
             raise ModuleNotFoundError(msg) from e
-        all = dir(mod)
+        attributes = dir(mod)
 
-        for name in all:
+        for name in attributes:
             if name.strip().startswith("_"):
                 continue
             # Attempt to import the name from the module

@@ -11,6 +11,7 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
@@ -154,6 +155,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             parsed_result[RUN_KEY] = result[RUN_KEY]
         return parsed_result
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -189,6 +191,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -296,6 +299,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             parsed_result[RUN_KEY] = result[RUN_KEY]
         return parsed_result
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -317,6 +321,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,

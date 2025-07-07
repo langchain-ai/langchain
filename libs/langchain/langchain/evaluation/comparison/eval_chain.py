@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -278,7 +279,7 @@ Performance may be significantly worse with other models."
         self,
         prediction: str,
         prediction_b: str,
-        input: Optional[str],
+        input_: Optional[str],
         reference: Optional[str],
     ) -> dict:
         """Prepare the input for the chain.
@@ -286,21 +287,21 @@ Performance may be significantly worse with other models."
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str, optional): The input or task string.
+            input_ (str, optional): The input or task string.
             reference (str, optional): The reference string, if any.
 
         Returns:
             dict: The prepared input for the chain.
 
         """
-        input_ = {
+        input_dict = {
             "prediction": prediction,
             "prediction_b": prediction_b,
-            "input": input,
+            "input": input_,
         }
         if self.requires_reference:
-            input_["reference"] = reference
-        return input_
+            input_dict["reference"] = reference
+        return input_dict
 
     def _prepare_output(self, result: dict) -> dict:
         """Prepare the output."""
@@ -309,6 +310,7 @@ Performance may be significantly worse with other models."
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -351,6 +353,7 @@ Performance may be significantly worse with other models."
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,

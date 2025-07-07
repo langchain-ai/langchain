@@ -109,13 +109,13 @@ class _EvalArgsMixin:
     def _check_evaluation_args(
         self,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input_: Optional[str] = None,
     ) -> None:
         """Check if the evaluation arguments are valid.
 
         Args:
             reference (Optional[str], optional): The reference label.
-            input (Optional[str], optional): The input string.
+            input_ (Optional[str], optional): The input string.
         Raises:
             ValueError: If the evaluator requires an input string but none is provided,
                 or if the evaluator requires a reference label but none is provided.
@@ -152,7 +152,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: Union[str, Any],
         reference: Optional[Union[str, Any]] = None,
-        input: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Evaluate Chain or LLM output, based on optional input and label.
@@ -175,7 +175,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: Union[str, Any],
         reference: Optional[Union[str, Any]] = None,
-        input: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate Chain or LLM output, based on optional input and label.
@@ -206,7 +206,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Evaluate Chain or LLM output, based on optional input and label.
@@ -219,7 +219,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation results containing the score or value.
         """  # noqa: E501
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_strings(
             prediction=prediction, reference=reference, input=input, **kwargs
         )
@@ -229,7 +229,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate Chain or LLM output, based on optional input and label.
@@ -242,7 +242,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation results containing the score or value.
         """  # noqa: E501
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_strings(
             prediction=prediction, reference=reference, input=input, **kwargs
         )
@@ -258,7 +258,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Evaluate the output string pairs.
@@ -279,7 +279,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate the output string pairs.
@@ -309,7 +309,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Evaluate the output string pairs.
@@ -323,7 +323,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: A dictionary containing the preference, scores, and/or other information.
         """  # noqa: E501
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_string_pairs(
             prediction=prediction,
             prediction_b=prediction_b,
@@ -338,7 +338,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         prediction: str,
         prediction_b: str,
         reference: Optional[str] = None,
-        input: Optional[str] = None,
+        input: Optional[str] = None,  # noqa: A002
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate the output string pairs.
@@ -352,7 +352,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: A dictionary containing the preference, scores, and/or other information.
         """  # noqa: E501
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_string_pairs(
             prediction=prediction,
             prediction_b=prediction_b,
@@ -376,7 +376,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         agent_trajectory: Sequence[tuple[AgentAction, str]],
-        input: str,
+        input: str,  # noqa: A002
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
@@ -398,7 +398,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         agent_trajectory: Sequence[tuple[AgentAction, str]],
-        input: str,
+        input: str,  # noqa: A002
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
@@ -429,7 +429,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         agent_trajectory: Sequence[tuple[AgentAction, str]],
-        input: str,
+        input: str,  # noqa: A002
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
@@ -445,7 +445,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation result.
         """
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_agent_trajectory(
             prediction=prediction,
             input=input,
@@ -459,7 +459,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         *,
         prediction: str,
         agent_trajectory: Sequence[tuple[AgentAction, str]],
-        input: str,
+        input: str,  # noqa: A002
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
@@ -475,7 +475,7 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation result.
         """
-        self._check_evaluation_args(reference=reference, input=input)
+        self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_agent_trajectory(
             prediction=prediction,
             input=input,

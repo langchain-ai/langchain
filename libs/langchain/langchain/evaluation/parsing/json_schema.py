@@ -1,6 +1,7 @@
 from typing import Any, Union
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -85,6 +86,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         except ValidationError as e:
             return {"score": False, "reasoning": repr(e)}
 
+    @override
     def _evaluate_strings(
         self,
         prediction: Union[str, Any],

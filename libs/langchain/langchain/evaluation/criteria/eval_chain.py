@@ -10,6 +10,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -383,16 +384,16 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         self,
         prediction: str,
         reference: Optional[str],
-        input: Optional[str],
+        input_: Optional[str],
     ) -> dict:
         """Get the evaluation input."""
-        input_ = {
-            "input": input,
+        input_dict = {
+            "input": input_,
             "output": prediction,
         }
         if self.requires_reference:
-            input_["reference"] = reference
-        return input_
+            input_dict["reference"] = reference
+        return input_dict
 
     def _prepare_output(self, result: dict) -> dict:
         """Prepare the output."""
@@ -401,6 +402,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -456,6 +458,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,

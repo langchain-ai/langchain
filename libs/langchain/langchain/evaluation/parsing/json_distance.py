@@ -2,6 +2,7 @@ import json
 from typing import Any, Callable, Optional, Union
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -82,6 +83,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             return parse_json_markdown(node)
         return node
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,

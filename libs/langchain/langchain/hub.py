@@ -40,7 +40,7 @@ def _get_client(
 
 def push(
     repo_full_name: str,
-    object: Any,
+    object: Any,  # noqa: A002
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,

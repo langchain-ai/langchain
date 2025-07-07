@@ -35,6 +35,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from typing_extensions import override
 
 from langchain.schema import RUN_KEY
 
@@ -118,6 +119,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model("ChainOutput", **{k: (Any, None) for k in self.output_keys})
 
+    @override
     def invoke(
         self,
         input: dict[str, Any],
@@ -171,6 +173,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
         return final_outputs
 
+    @override
     async def ainvoke(
         self,
         input: dict[str, Any],

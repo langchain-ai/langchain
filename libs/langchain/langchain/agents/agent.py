@@ -41,7 +41,7 @@ from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent_iterator import AgentExecutorIterator
@@ -1749,6 +1749,7 @@ class AgentExecutor(Chain):
         else:
             return intermediate_steps
 
+    @override
     def stream(
         self,
         input: Union[dict[str, Any], Any],
@@ -1779,6 +1780,7 @@ class AgentExecutor(Chain):
         )
         yield from iterator
 
+    @override
     async def astream(
         self,
         input: Union[dict[str, Any], Any],
