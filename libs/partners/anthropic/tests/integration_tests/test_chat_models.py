@@ -1,5 +1,7 @@
 """Test ChatAnthropic chat model."""
 
+from __future__ import annotations
+
 import asyncio
 import json
 import os
@@ -43,10 +45,7 @@ def test_stream() -> None:
     chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        if full is None:
-            full = cast(BaseMessageChunk, token)
-        else:
-            full = full + token
+        full = cast(BaseMessageChunk, token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -55,10 +54,13 @@ def test_stream() -> None:
                 chunks_with_output_token_counts += 1
         chunks_with_model_name += int("model_name" in token.response_metadata)
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with input or output token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
+        )
+        raise AssertionError(
+            msg,
         )
     assert chunks_with_model_name == 1
     # check token usage is populated
@@ -85,10 +87,7 @@ async def test_astream() -> None:
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        if full is None:
-            full = cast(BaseMessageChunk, token)
-        else:
-            full = full + token
+        full = cast(BaseMessageChunk, token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -96,10 +95,13 @@ async def test_astream() -> None:
             if token.usage_metadata.get("output_tokens"):
                 chunks_with_output_token_counts += 1
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with input or output token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
+        )
+        raise AssertionError(
+            msg,
         )
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
@@ -167,7 +169,8 @@ async def test_abatch_tags() -> None:
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
-        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
+        ["I'm Pickle Rick", "I'm not Pickle Rick"],
+        config={"tags": ["foo"]},
     )
     for token in result:
         assert isinstance(token.content, str)
@@ -187,8 +190,8 @@ async def test_async_tool_use() -> None:
                     "type": "object",
                     "properties": {"location": {"type": "string"}},
                 },
-            }
-        ]
+            },
+        ],
     )
     response = await llm_with_tools.ainvoke("what's the weather in san francisco, ca")
     assert isinstance(response, AIMessage)
@@ -202,16 +205,16 @@ async def test_async_tool_use() -> None:
 
     # Test streaming
     first = True
-    chunks = []  # type: ignore
+    chunks: list[BaseMessage | BaseMessageChunk] = []
     async for chunk in llm_with_tools.astream(
-        "what's the weather in san francisco, ca"
+        "what's the weather in san francisco, ca",
     ):
-        chunks = chunks + [chunk]
+        chunks = [*chunks, chunk]
         if first:
             gathered = chunk
             first = False
         else:
-            gathered = gathered + chunk  # type: ignore
+            gathered = gathered + chunk  # type: ignore[assignment]
     assert len(chunks) > 1
     assert isinstance(gathered, AIMessageChunk)
     assert isinstance(gathered.tool_call_chunks, list)
@@ -244,12 +247,12 @@ def test_invoke() -> None:
     """Test invoke tokens from ChatAnthropicMessages."""
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
 def test_system_invoke() -> None:
-    """Test invoke tokens with a system message"""
+    """Test invoke tokens with a system message."""
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
@@ -260,7 +263,7 @@ def test_system_invoke() -> None:
                 "STAY IN CHARACTER",
             ),
             ("human", "Are you a mathematician?"),
-        ]
+        ],
     )
 
     chain = prompt | llm
@@ -282,7 +285,7 @@ def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
     chat = ChatAnthropic(model=MODEL_NAME)
     chat_messages: list[list[BaseMessage]] = [
-        [HumanMessage(content="How many toes do dogs have?")]
+        [HumanMessage(content="How many toes do dogs have?")],
     ]
     messages_copy = [messages.copy() for messages in chat_messages]
     result: LLMResult = chat.generate(chat_messages)
@@ -330,7 +333,7 @@ async def test_anthropic_async_streaming_callback() -> None:
         verbose=True,
     )
     chat_messages: list[BaseMessage] = [
-        HumanMessage(content="How many toes do dogs have?")
+        HumanMessage(content="How many toes do dogs have?"),
     ]
     async for token in chat.astream(chat_messages):
         assert isinstance(token, AIMessageChunk)
@@ -352,8 +355,8 @@ def test_anthropic_multimodal() -> None:
                     },
                 },
                 {"type": "text", "text": "What is this a logo for?"},
-            ]
-        )
+            ],
+        ),
     ]
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
@@ -368,7 +371,9 @@ def test_streaming() -> None:
     callback_manager = CallbackManager([callback_handler])
 
     llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
-        model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
+        model_name=MODEL_NAME,
+        streaming=True,
+        callback_manager=callback_manager,
     )
 
     response = llm.generate([[HumanMessage(content="I'm Pickle Rick")]])
@@ -382,7 +387,9 @@ async def test_astreaming() -> None:
     callback_manager = CallbackManager([callback_handler])
 
     llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
-        model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
+        model_name=MODEL_NAME,
+        streaming=True,
+        callback_manager=callback_manager,
     )
 
     response = await llm.agenerate([[HumanMessage(content="I'm Pickle Rick")]])
@@ -421,19 +428,19 @@ def test_tool_use() -> None:
         temperature=0,
         # Add extra headers to also test token-efficient tools
         model_kwargs={
-            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"}
+            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"},
         },
     )
     llm_with_tools = llm.bind_tools([tool_definition])
     first = True
-    chunks = []  # type: ignore
+    chunks: list[BaseMessage | BaseMessageChunk] = []
     for chunk in llm_with_tools.stream(query):
-        chunks = chunks + [chunk]
+        chunks = [*chunks, chunk]
         if first:
             gathered = chunk
             first = False
         else:
-            gathered = gathered + chunk  # type: ignore
+            gathered = gathered + chunk  # type: ignore[assignment]
     assert len(chunks) > 1
     assert isinstance(gathered.content, list)
     assert len(gathered.content) == 2
@@ -470,17 +477,17 @@ def test_tool_use() -> None:
             query,
             gathered,
             ToolMessage(content="sunny and warm", tool_call_id=tool_call["id"]),
-        ]
+        ],
     )
-    chunks = []  # type: ignore
+    chunks = []
     first = True
     for chunk in stream:
-        chunks = chunks + [chunk]
+        chunks = [*chunks, chunk]
         if first:
             gathered = chunk
             first = False
         else:
-            gathered = gathered + chunk  # type: ignore
+            gathered = gathered + chunk  # type: ignore[assignment]
     assert len(chunks) > 1
 
 
@@ -489,14 +496,14 @@ def test_builtin_tools() -> None:
     tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
     llm_with_tools = llm.bind_tools([tool])
     response = llm_with_tools.invoke(
-        "There's a syntax error in my primes.py file. Can you help me fix it?"
+        "There's a syntax error in my primes.py file. Can you help me fix it?",
     )
     assert isinstance(response, AIMessage)
     assert response.tool_calls
 
 
 class GenerateUsername(BaseModel):
-    "Get a username based on someone's name and hair color."
+    """Get a username based on someone's name and hair color."""
 
     name: str
     hair_color: str
@@ -508,7 +515,7 @@ def test_disable_parallel_tool_calling() -> None:
     result = llm_with_tools.invoke(
         "Use the GenerateUsername tool to generate user names for:\n\n"
         "Sally with green hair\n"
-        "Bob with blue hair"
+        "Bob with blue hair",
     )
     assert isinstance(result, AIMessage)
     assert len(result.tool_calls) == 1
@@ -523,7 +530,7 @@ def test_anthropic_with_empty_text_block() -> None:
         return "OK"
 
     model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
-        [type_letter]
+        [type_letter],
     )
 
     messages = [
@@ -531,7 +538,7 @@ def test_anthropic_with_empty_text_block() -> None:
             content="Repeat the given string using the provided tools. Do not write "
             "anything else or provide any explanations. For example, "
             "if the string is 'abc', you must print the "
-            "letters 'a', 'b', and 'c' one at a time and in that order. "
+            "letters 'a', 'b', and 'c' one at a time and in that order. ",
         ),
         HumanMessage(content="dog"),
         AIMessage(
@@ -572,7 +579,7 @@ def test_with_structured_output() -> None:
                 "type": "object",
                 "properties": {"location": {"type": "string"}},
             },
-        }
+        },
     )
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
@@ -593,10 +600,11 @@ def test_get_num_tokens_from_messages() -> None:
     # Test tool use
     @tool(parse_docstring=True)
     def get_weather(location: str) -> str:
-        """Get the current weather in a given location
+        """Get the current weather in a given location.
 
         Args:
             location: The city and state, e.g. San Francisco, CA
+
         """
         return "Sunny"
 
@@ -634,7 +642,7 @@ def test_get_num_tokens_from_messages() -> None:
 
 
 class GetWeather(BaseModel):
-    """Get the current weather in a given location"""
+    """Get the current weather in a given location."""
 
     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
@@ -666,9 +674,9 @@ def test_pdf_document_input() -> None:
                             "media_type": "application/pdf",
                         },
                     },
-                ]
-            )
-        ]
+                ],
+            ),
+        ],
     )
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
@@ -694,7 +702,7 @@ def test_citations() -> None:
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
             ],
-        }
+        },
     ]
     response = llm.invoke(messages)
     assert isinstance(response, AIMessage)
@@ -704,10 +712,7 @@ def test_citations() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(messages):
-        if full is None:
-            full = cast(BaseMessageChunk, chunk)
-        else:
-            full = full + chunk
+        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
@@ -718,7 +723,7 @@ def test_citations() -> None:
         "role": "user",
         "content": "Can you comment on the citations you just made?",
     }
-    _ = llm.invoke(messages + [full, next_message])
+    _ = llm.invoke([*messages, full, next_message])
 
 
 @pytest.mark.vcr
@@ -742,10 +747,7 @@ def test_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        if full is None:
-            full = cast(BaseMessageChunk, chunk)
-        else:
-            full = full + chunk
+        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("thinking" in block for block in full.content)
@@ -784,10 +786,7 @@ def test_redacted_thinking() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        if full is None:
-            full = cast(BaseMessageChunk, chunk)
-        else:
-            full = full + chunk
+        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     stream_has_reasoning = False
@@ -864,7 +863,7 @@ def test_image_tool_calling() -> None:
                 "media_type": "image/jpeg",
                 "data": image_data,
             },
-        }
+        },
     )
     messages = [
         SystemMessage("you're a good assistant"),
@@ -878,7 +877,7 @@ def test_image_tool_calling() -> None:
                     "id": "foo",
                     "name": "color_picker",
                 },
-            ]
+            ],
         ),
         HumanMessage(
             [
@@ -889,12 +888,12 @@ def test_image_tool_calling() -> None:
                         {
                             "type": "text",
                             "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
-                        }
+                        },
                     ],
                     "is_error": False,
                 },
                 {"type": "text", "text": "what's my sister's favorite color"},
-            ]
+            ],
         ),
     ]
     llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
@@ -914,7 +913,7 @@ def test_web_search() -> None:
             {
                 "type": "text",
                 "text": "How do I update a web app to TypeScript 5.5?",
-            }
+            },
         ],
     }
     response = llm_with_tools.invoke([input_message])
@@ -962,7 +961,7 @@ def test_code_execution() -> None:
                     "Calculate the mean and standard deviation of "
                     "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                 ),
-            }
+            },
         ],
     }
     response = llm_with_tools.invoke([input_message])
@@ -999,7 +998,7 @@ def test_remote_mcp() -> None:
             "name": "deepwiki",
             "tool_configuration": {"enabled": True, "allowed_tools": ["ask_question"]},
             "authorization_token": "PLACEHOLDER",
-        }
+        },
     ]
 
     llm = ChatAnthropic(
@@ -1018,7 +1017,7 @@ def test_remote_mcp() -> None:
                     "What transport protocols does the 2025-03-26 version of the MCP "
                     "spec (modelcontextprotocol/modelcontextprotocol) support?"
                 ),
-            }
+            },
         ],
     }
     response = llm.invoke([input_message])
@@ -1132,9 +1131,9 @@ def test_search_result_tool_message() -> None:
                             "To request vacation days, submit a leave request form "
                             "through the HR portal. Approval will be sent by email."
                         ),
-                    }
+                    },
                 ],
-            }
+            },
         ]
 
     tool_call = {
@@ -1182,7 +1181,7 @@ def test_search_result_top_level() -> None:
                             "To request vacation days, submit a leave request form "
                             "through the HR portal. Approval will be sent by email."
                         ),
-                    }
+                    },
                 ],
             },
             {
@@ -1194,14 +1193,14 @@ def test_search_result_top_level() -> None:
                     {
                         "type": "text",
                         "text": "Managers have 3 days to approve a request.",
-                    }
+                    },
                 ],
             },
             {
                 "type": "text",
                 "text": "How do I request vacation days?",
             },
-        ]
+        ],
     )
     result = llm.invoke([input_message])
     assert isinstance(result, AIMessage)
