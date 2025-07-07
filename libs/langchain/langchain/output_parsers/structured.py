@@ -89,8 +89,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
         )
         if only_json:
             return STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS.format(format=schema_str)
-        else:
-            return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
+        return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
     def parse(self, text: str) -> dict[str, Any]:
         expected_keys = [rs.name for rs in self.response_schemas]

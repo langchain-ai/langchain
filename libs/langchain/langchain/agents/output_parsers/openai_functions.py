@@ -33,7 +33,8 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
     def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         """Parse an AI message."""
         if not isinstance(message, AIMessage):
-            raise TypeError(f"Expected an AI message got {type(message)}")
+            msg = f"Expected an AI message got {type(message)}"
+            raise TypeError(msg)
 
         function_call = message.additional_kwargs.get("function_call", {})
 
@@ -47,10 +48,11 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                     # otherwise it returns a json object
                     _tool_input = json.loads(function_call["arguments"], strict=False)
             except JSONDecodeError:
-                raise OutputParserException(
+                msg = (
                     f"Could not parse tool input: {function_call} because "
                     f"the `arguments` is not valid JSON."
                 )
+                raise OutputParserException(msg)
 
             # HACK HACK HACK:
             # The code that encodes tool input into Open AI uses a special variable
@@ -80,9 +82,11 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         self, result: list[Generation], *, partial: bool = False
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
-            raise ValueError("This output parser only works on ChatGeneration output")
+            msg = "This output parser only works on ChatGeneration output"
+            raise ValueError(msg)
         message = result[0].message
         return self._parse_ai_message(message)
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        raise ValueError("Can only parse messages")
+        msg = "Can only parse messages"
+        raise ValueError(msg)

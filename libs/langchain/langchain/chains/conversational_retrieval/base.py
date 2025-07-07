@@ -52,10 +52,11 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
             ai = "Assistant: " + dialogue_turn[1]
             buffer += "\n" + "\n".join([human, ai])
         else:
-            raise ValueError(
+            msg = (
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
+            raise ValueError(msg)
     return buffer
 
 
@@ -233,7 +234,8 @@ class BaseConversationalRetrievalChain(Chain):
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
-            raise ValueError("Chain not saveable when `get_chat_history` is not None.")
+            msg = "Chain not saveable when `get_chat_history` is not None."
+            raise ValueError(msg)
         super().save(file_path)
 
 
@@ -514,7 +516,8 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("ChatVectorDBChain does not support async")
+        msg = "ChatVectorDBChain does not support async"
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_llm(

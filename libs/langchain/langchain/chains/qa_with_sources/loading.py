@@ -98,10 +98,11 @@ def _load_map_reduce_chain(
     if collapse_prompt is None:
         collapse_chain = None
         if collapse_llm is not None:
-            raise ValueError(
+            msg = (
                 "collapse_llm provided, but collapse_prompt was not: please "
                 "provide one or stop providing collapse_llm."
             )
+            raise ValueError(msg)
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
@@ -193,9 +194,10 @@ def load_qa_with_sources_chain(
         "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
-        raise ValueError(
+        msg = (
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
+        raise ValueError(msg)
     _func: LoadingCallable = loader_mapping[chain_type]
     return _func(llm, verbose=verbose, **kwargs)

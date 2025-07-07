@@ -116,10 +116,11 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:

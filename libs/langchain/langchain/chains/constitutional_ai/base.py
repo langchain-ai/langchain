@@ -201,8 +201,7 @@ class ConstitutionalChain(Chain):
     ) -> list[ConstitutionalPrinciple]:
         if names is None:
             return list(PRINCIPLES.values())
-        else:
-            return [PRINCIPLES[name] for name in names]
+        return [PRINCIPLES[name] for name in names]
 
     @classmethod
     def from_llm(
