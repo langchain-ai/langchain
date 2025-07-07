@@ -1,5 +1,6 @@
 import re
-from typing import Literal, Optional, Union
+import xml.sax.saxutils
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
@@ -7,35 +8,20 @@ from pydantic import Field
 from langchain.agents import AgentOutputParser
 
 
-def _unescape(text: str) -> str:
-    """Convert custom tag delimiters back into XML tags."""
-    replacements = {
-        "[[tool]]": "<tool>",
-        "[[/tool]]": "</tool>",
-        "[[tool_input]]": "<tool_input>",
-        "[[/tool_input]]": "</tool_input>",
-        "[[observation]]": "<observation>",
-        "[[/observation]]": "</observation>",
-    }
-    for repl, orig in replacements.items():
-        text = text.replace(repl, orig)
-    return text
-
-
 class XMLAgentOutputParser(AgentOutputParser):
     """Parses tool invocations and final answers from XML-formatted agent output.
 
-    This parser extracts structured information from XML tags to determine whether
-    an agent should perform a tool action or provide a final answer. It includes
-    built-in escaping support to safely handle tool names and inputs
-    containing XML special characters.
+    This parser is hardened against XML injection by using standard XML entity
+    decoding for content within tags. It is designed to work with the corresponding
+    ``format_xml`` function.
 
     Args:
-        escape_format: The escaping format to use when parsing XML content.
-            Supports 'minimal' which uses custom delimiters like [[tool]] to replace
-            XML tags within content, preventing parsing conflicts.
-            Use 'minimal' if using a corresponding encoding format that uses
-            the _escape function when formatting the output (e.g., with format_xml).
+        unescape_xml: If True, the parser will unescape XML special characters in the
+            content of tags. This should be enabled if the agent's output was formatted
+            with XML escaping.
+
+            If False, the parser will return the raw content as is, which may include
+            XML special characters like `<`, `>`, and `&`.
 
     Expected formats:
         Tool invocation (returns AgentAction):
@@ -45,75 +31,83 @@ class XMLAgentOutputParser(AgentOutputParser):
         Final answer (returns AgentFinish):
             <final_answer>The answer is 4</final_answer>
 
-    Note:
-        Minimal escaping allows tool names containing XML tags to be safely
-        represented. For example, a tool named "search<tool>nested</tool>" would be
-        escaped as "search[[tool]]nested[[/tool]]" in the XML and automatically
-        unescaped during parsing.
-
     Raises:
         ValueError: If the input doesn't match either expected XML format or
             contains malformed XML structure.
     """
 
-    escape_format: Optional[Literal["minimal"]] = Field(default="minimal")
-    """The format to use for escaping XML characters.
-    
-    minimal - uses custom delimiters to replace XML tags within content,
-    preventing parsing conflicts. This is the only supported format currently.
-    
-    None - no escaping is applied, which may lead to parsing conflicts.
+    unescape_xml: bool = Field(default=True)
+    """If True, the parser will unescape XML special characters in the content
+    of tags. This should be enabled if the agent's output was formatted
+    with XML escaping.
+
+    If False, the parser will return the raw content as is,
+    which may include XML special characters like `<`, `>`, and `&`.
     """
 
+    def _extract_tag_content(
+        self, tag: str, text: str, *, required: bool
+    ) -> Union[str, None]:
+        """
+        Extracts content from a specified XML tag, ensuring it appears at most once.
+
+        Args:
+            tag: The name of the XML tag (e.g., ``'tool'``).
+            text: The text to parse.
+            required: If True, a ValueError will be raised if the tag is not found.
+
+        Returns:
+            The unescaped content of the tag as a string, or None if not found
+            and not required.
+
+        Raises:
+            ValueError: If the tag appears more than once, or if it is required
+                but not found.
+        """
+        pattern = f"<{tag}>(.*?)</{tag}>"
+        matches = re.findall(pattern, text, re.DOTALL)
+
+        if len(matches) > 1:
+            raise ValueError(
+                f"Malformed XML: Found {len(matches)} <{tag}> blocks. Expected 0 or 1."
+            )
+
+        if not matches:
+            if required:
+                raise ValueError(f"Malformed XML: Missing required <{tag}> block.")
+            return None
+
+        content = matches[0]
+        if self.unescape_xml:
+            entities = {"&apos;": "'", "&quot;": '"'}
+            return xml.sax.saxutils.unescape(content, entities)
+        return content
+
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        # Check for tool invocation first
-        tool_matches = re.findall(r"<tool>(.*?)</tool>", text, re.DOTALL)
-        if tool_matches:
-            if len(tool_matches) != 1:
-                raise ValueError(
-                    f"Malformed tool invocation: expected exactly one <tool> block, "
-                    f"but found {len(tool_matches)}."
-                )
-            _tool = tool_matches[0]
-
-            # Match optional tool input
-            input_matches = re.findall(
-                r"<tool_input>(.*?)</tool_input>", text, re.DOTALL
+        """
+        Parses the given text into an AgentAction or AgentFinish object.
+        """
+        # Check for a tool invocation
+        if "<tool>" in text and "</tool>" in text:
+            tool = self._extract_tag_content("tool", text, required=True)
+            # Tool input is optional
+            tool_input = (
+                self._extract_tag_content("tool_input", text, required=False) or ""
             )
-            if len(input_matches) > 1:
-                raise ValueError(
-                    f"Malformed tool invocation: expected at most one <tool_input> "
-                    f"block, but found {len(input_matches)}."
-                )
-            _tool_input = input_matches[0] if input_matches else ""
 
-            # Unescape if minimal escape format is used
-            if self.escape_format == "minimal":
-                _tool = _unescape(_tool)
-                _tool_input = _unescape(_tool_input)
+            return AgentAction(tool=tool, tool_input=tool_input, log=text)
 
-            return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
-
-        # Check for final answer
+        # Check for a final answer
         elif "<final_answer>" in text and "</final_answer>" in text:
-            matches = re.findall(r"<final_answer>(.*?)</final_answer>", text, re.DOTALL)
-            if len(matches) != 1:
-                msg = (
-                    "Malformed output: expected exactly one "
-                    "<final_answer>...</final_answer> block."
-                )
-                raise ValueError(msg)
-            answer = matches[0]
-            # Unescape custom delimiters in final answer
-            if self.escape_format == "minimal":
-                answer = _unescape(answer)
+            answer = self._extract_tag_content("final_answer", text, required=True)
             return AgentFinish(return_values={"output": answer}, log=text)
+
+        # If neither format is found, raise an error
         else:
-            msg = (
-                "Malformed output: expected either a tool invocation "
-                "or a final answer in XML format."
+            raise ValueError(
+                "Could not parse LLM output. Expected a tool invocation with <tool> "
+                "and <tool_input> tags, or a final answer with <final_answer> tags."
             )
-            raise ValueError(msg)
 
     def get_format_instructions(self) -> str:
         raise NotImplementedError

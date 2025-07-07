@@ -1,52 +1,41 @@
-from typing import Literal, Optional
+import xml.sax.saxutils
 
 from langchain_core.agents import AgentAction
 
 
-def _escape(xml: str) -> str:
-    """Replace XML tags with custom safe delimiters."""
-    replacements = {
-        "<tool>": "[[tool]]",
-        "</tool>": "[[/tool]]",
-        "<tool_input>": "[[tool_input]]",
-        "</tool_input>": "[[/tool_input]]",
-        "<observation>": "[[observation]]",
-        "</observation>": "[[/observation]]",
-    }
-    for orig, repl in replacements.items():
-        xml = xml.replace(orig, repl)
-    return xml
-
-
 def format_xml(
-    intermediate_steps: list[tuple[AgentAction, str]],
+    intermediate_steps: List[Tuple[AgentAction, str]],
     *,
-    escape_format: Optional[Literal["minimal"]] = "minimal",
+    escape_xml: bool = True,
 ) -> str:
     """Format the intermediate steps as XML.
 
+    Escapes all special XML characters in the content, preventing injection of malicious
+    or malformed XML.
+
     Args:
-        intermediate_steps: The intermediate steps.
-        escape_format: The escaping format to use. Currently only 'minimal' is
-            supported, which replaces XML tags with custom delimiters to prevent
-            conflicts.
+        intermediate_steps: The intermediate steps, each a tuple of
+            (AgentAction, observation).
+        escape_xml: If True, all XML special characters in the tool name,
+            tool input, and observation will be escaped (e.g., ``<`` becomes ``&lt;``).
 
     Returns:
-        The intermediate steps as XML.
+        A string of concatenated XML blocks representing the intermediate steps.
     """
     log = ""
     for action, observation in intermediate_steps:
-        if escape_format == "minimal":
-            # Escape XML tags in tool names and inputs using custom delimiters
-            tool = _escape(action.tool)
-            tool_input = _escape(str(action.tool_input))
-            observation = _escape(str(observation))
-        else:
-            tool = action.tool
-            tool_input = str(action.tool_input)
-            observation = str(observation)
+        tool = str(action.tool)
+        tool_input = str(action.tool_input)
+        observation_str = str(observation)
+
+        if escape_xml:
+            entities = {"'": "&apos;", '"': "&quot;"}
+            tool = xml.sax.saxutils.escape(tool, entities)
+            tool_input = xml.sax.saxutils.escape(tool_input, entities)
+            observation_str = xml.sax.saxutils.escape(observation_str, entities)
+
         log += (
             f"<tool>{tool}</tool><tool_input>{tool_input}"
-            f"</tool_input><observation>{observation}</observation>"
+            f"</tool_input><observation>{observation_str}</observation>"
         )
     return log
