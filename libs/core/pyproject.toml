@@ -103,11 +103,10 @@ ignore = [
     "PLC0415",
     "PLR2004",
 ]
-unfixable = ["PLW1510",]
-
-flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pydocstyle.ignore-var-parameters = true
 pyupgrade.keep-runtime-typing = true
@@ -122,14 +121,8 @@ asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
