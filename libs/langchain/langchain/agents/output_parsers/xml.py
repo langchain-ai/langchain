@@ -1,10 +1,10 @@
 import re
 from typing import Literal, Optional, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
 
 from langchain.agents import AgentOutputParser
-from langchain_core.agents import AgentAction, AgentFinish
 
 
 def _unescape(text: str) -> str:
@@ -70,10 +70,11 @@ class XMLAgentOutputParser(AgentOutputParser):
         tool_matches = re.findall(r"<tool>(.*?)</tool>", text, re.DOTALL)
         if tool_matches:
             if len(tool_matches) != 1:
-                raise ValueError(
+                msg = (
                     f"Malformed tool invocation: expected exactly one <tool> block, "
                     f"but found {len(tool_matches)}."
                 )
+                raise ValueError(msg)
             _tool = tool_matches[0]
 
             # Match optional tool input
@@ -81,10 +82,11 @@ class XMLAgentOutputParser(AgentOutputParser):
                 r"<tool_input>(.*?)</tool_input>", text, re.DOTALL
             )
             if len(input_matches) > 1:
-                raise ValueError(
+                msg = (
                     f"Malformed tool invocation: expected at most one <tool_input> "
                     f"block, but found {len(input_matches)}."
                 )
+                raise ValueError(msg)
             _tool_input = input_matches[0] if input_matches else ""
 
             # Unescape if minimal escape format is used
