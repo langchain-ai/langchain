@@ -30,6 +30,7 @@ def _load_sequential_chain(
     check_assertions_prompt: PromptTemplate,
     revised_summary_prompt: PromptTemplate,
     are_all_true_prompt: PromptTemplate,
+    *,
     verbose: bool = False,
 ) -> SequentialChain:
     return SequentialChain(
@@ -188,7 +189,7 @@ class LLMSummarizationCheckerChain(Chain):
         check_assertions_prompt: PromptTemplate = CHECK_ASSERTIONS_PROMPT,
         revised_summary_prompt: PromptTemplate = REVISED_SUMMARY_PROMPT,
         are_all_true_prompt: PromptTemplate = ARE_ALL_TRUE_PROMPT,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> LLMSummarizationCheckerChain:
         chain = _load_sequential_chain(

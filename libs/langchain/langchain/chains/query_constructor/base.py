@@ -72,7 +72,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
         allowed_attributes: Optional[Sequence[str]] = None,
-        fix_invalid: bool = False,
+        fix_invalid: bool = False,  # noqa: FBT001,FBT002
     ) -> StructuredQueryOutputParser:
         """
         Create a structured query output parser from components.
@@ -269,7 +269,7 @@ def load_query_constructor_chain(
     examples: Optional[list] = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
-    enable_limit: bool = False,
+    enable_limit: bool = False,  # noqa: FBT001,FBT002
     schema_prompt: Optional[BasePromptTemplate] = None,
     **kwargs: Any,
 ) -> LLMChain:

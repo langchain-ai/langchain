@@ -40,7 +40,7 @@ class ToyLoader(BaseLoader):
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self, permit_upserts: bool = False) -> None:
+    def __init__(self, *, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
