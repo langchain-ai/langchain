@@ -29,10 +29,11 @@ def _load_rapidfuzz() -> Any:
     try:
         import rapidfuzz
     except ImportError:
-        raise ImportError(
+        msg = (
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
             "Please install it with `pip install rapidfuzz`."
         )
+        raise ImportError(msg)
     return rapidfuzz.distance
 
 
@@ -128,10 +129,11 @@ class _RapidFuzzChainMixin(Chain):
             StringDistance.INDEL: rf_distance.Indel,
         }
         if distance not in module_map:
-            raise ValueError(
+            msg = (
                 f"Invalid distance metric: {distance}"
                 f"\nMust be one of: {list(StringDistance)}"
             )
+            raise ValueError(msg)
         module = module_map[distance]
         if normalize_score:
             return module.normalized_distance

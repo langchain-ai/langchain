@@ -59,16 +59,18 @@ def initialize_agent(
     if agent is None and agent_path is None:
         agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:
-        raise ValueError(
+        msg = (
             "Both `agent` and `agent_path` are specified, "
             "but at most only one should be."
         )
+        raise ValueError(msg)
     if agent is not None:
         if agent not in AGENT_TO_CLASS:
-            raise ValueError(
+            msg = (
                 f"Got unknown agent type: {agent}. "
                 f"Valid types are: {AGENT_TO_CLASS.keys()}."
             )
+            raise ValueError(msg)
         tags_.append(agent.value if isinstance(agent, AgentType) else agent)
         agent_cls = AGENT_TO_CLASS[agent]
         agent_kwargs = agent_kwargs or {}
@@ -85,9 +87,10 @@ def initialize_agent(
         except NotImplementedError:
             pass
     else:
-        raise ValueError(
+        msg = (
             "Somehow both `agent` and `agent_path` are None, this should never happen."
         )
+        raise ValueError(msg)
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
         tools=tools,

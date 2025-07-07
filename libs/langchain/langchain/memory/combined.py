@@ -22,10 +22,11 @@ class CombinedMemory(BaseMemory):
         for val in value:
             overlap = all_variables.intersection(val.memory_variables)
             if overlap:
-                raise ValueError(
+                msg = (
                     f"The same variables {overlap} are found in multiple"
                     "memory object, which is not allowed by CombinedMemory."
                 )
+                raise ValueError(msg)
             all_variables |= set(val.memory_variables)
 
         return value
@@ -65,9 +66,8 @@ class CombinedMemory(BaseMemory):
             data = memory.load_memory_variables(inputs)
             for key, value in data.items():
                 if key in memory_data:
-                    raise ValueError(
-                        f"The variable {key} is repeated in the CombinedMemory."
-                    )
+                    msg = f"The variable {key} is repeated in the CombinedMemory."
+                    raise ValueError(msg)
                 memory_data[key] = value
 
         return memory_data

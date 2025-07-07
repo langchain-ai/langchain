@@ -66,9 +66,8 @@ class TrajectoryOutputParser(BaseOutputParser):
                 if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
-            raise OutputParserException(
-                f"Could not find score in model eval output: {text}"
-            )
+            msg = f"Could not find score in model eval output: {text}"
+            raise OutputParserException(msg)
 
         reasoning, score_str = text.split("Score: ", maxsplit=1)
 
@@ -82,15 +81,13 @@ class TrajectoryOutputParser(BaseOutputParser):
         _score = re.search(r"(\d+(\.\d+)?)", score_str)
         # If the score is not found or is a float, raise an exception.
         if _score is None or "." in _score.group(1):
-            raise OutputParserException(
-                f"Score is not an integer digit in the range 1-5: {text}"
-            )
+            msg = f"Score is not an integer digit in the range 1-5: {text}"
+            raise OutputParserException(msg)
         score = int(_score.group(1))
         # If the score is not in the range 1-5, raise an exception.
         if not 1 <= score <= 5:
-            raise OutputParserException(
-                f"Score is not a digit in the range 1-5: {text}"
-            )
+            msg = f"Score is not a digit in the range 1-5: {text}"
+            raise OutputParserException(msg)
         normalized_score = (score - 1) / 4
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
@@ -244,9 +241,8 @@ The following is the expected answer. Use this to measure correctness:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
         if not isinstance(llm, BaseChatModel):
-            raise NotImplementedError(
-                "Only chat models supported by the current trajectory eval"
-            )
+            msg = "Only chat models supported by the current trajectory eval"
+            raise NotImplementedError(msg)
         if agent_tools:
             prompt = EVAL_CHAT_PROMPT
         else:

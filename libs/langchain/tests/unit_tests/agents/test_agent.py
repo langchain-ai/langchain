@@ -579,7 +579,8 @@ async def test_runnable_agent_with_function_calls() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
@@ -690,14 +691,16 @@ async def test_runnable_with_multi_action_per_step() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     @tool
     def pet_pet(pet: str) -> str:
         """Pet the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats should be petted.")
+            msg = "Only cats should be petted."
+            raise ValueError(msg)
         return "purrrr"
 
     agent = template | model | fake_parse
@@ -835,7 +838,8 @@ async def test_openai_agent_with_streaming() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     template = ChatPromptTemplate.from_messages(
@@ -1031,7 +1035,8 @@ async def test_openai_agent_tools_agent() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     @tool

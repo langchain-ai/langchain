@@ -224,7 +224,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
     @property
     def _chain_type(self) -> str:
-        raise NotImplementedError("Saving not supported for this chain type.")
+        msg = "Saving not supported for this chain type."
+        raise NotImplementedError(msg)
 
     @model_validator(mode="before")
     @classmethod
@@ -232,11 +233,12 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             if values.get("callbacks") is not None:
-                raise ValueError(
+                msg = (
                     "Cannot specify both callback_manager and callbacks. "
                     "callback_manager is deprecated, callbacks is the preferred "
                     "parameter to pass in."
                 )
+                raise ValueError(msg)
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
@@ -275,21 +277,24 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
             if len(_input_keys) != 1:
-                raise ValueError(
+                msg = (
                     f"A single string input was passed in, but this chain expects "
                     f"multiple inputs ({_input_keys}). When a chain expects "
                     f"multiple inputs, please call it by passing in a dictionary, "
                     "eg `chain({'foo': 1, 'bar': 2})`"
                 )
+                raise ValueError(msg)
 
         missing_keys = set(self.input_keys).difference(inputs)
         if missing_keys:
-            raise ValueError(f"Missing some input keys: {missing_keys}")
+            msg = f"Missing some input keys: {missing_keys}"
+            raise ValueError(msg)
 
     def _validate_outputs(self, outputs: dict[str, Any]) -> None:
         missing_keys = set(self.output_keys).difference(outputs)
         if missing_keys:
-            raise ValueError(f"Missing some output keys: {missing_keys}")
+            msg = f"Missing some output keys: {missing_keys}"
+            raise ValueError(msg)
 
     @abstractmethod
     def _call(
@@ -543,10 +548,11 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @property
     def _run_output_key(self) -> str:
         if len(self.output_keys) != 1:
-            raise ValueError(
+            msg = (
                 f"`run` not supported when there is not exactly "
                 f"one output key. Got {self.output_keys}."
             )
+            raise ValueError(msg)
         return self.output_keys[0]
 
     @deprecated("0.1.0", alternative="invoke", removal="1.0")
@@ -599,7 +605,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
         if args and not kwargs:
             if len(args) != 1:
-                raise ValueError("`run` supports only one positional argument.")
+                msg = "`run` supports only one positional argument."
+                raise ValueError(msg)
             return self(args[0], callbacks=callbacks, tags=tags, metadata=metadata)[
                 _output_key
             ]
@@ -610,15 +617,17 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             ]
 
         if not kwargs and not args:
-            raise ValueError(
+            msg = (
                 "`run` supported with either positional arguments or keyword arguments,"
                 " but none were provided."
             )
+            raise ValueError(msg)
         else:
-            raise ValueError(
+            msg = (
                 f"`run` supported with either positional arguments or keyword arguments"
                 f" but not both. Got args: {args} and kwargs: {kwargs}."
             )
+            raise ValueError(msg)
 
     @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
     async def arun(
@@ -667,13 +676,15 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # -> "The temperature in Boise is..."
         """
         if len(self.output_keys) != 1:
-            raise ValueError(
+            msg = (
                 f"`run` not supported when there is not exactly "
                 f"one output key. Got {self.output_keys}."
             )
+            raise ValueError(msg)
         elif args and not kwargs:
             if len(args) != 1:
-                raise ValueError("`run` supports only one positional argument.")
+                msg = "`run` supports only one positional argument."
+                raise ValueError(msg)
             return (
                 await self.acall(
                     args[0], callbacks=callbacks, tags=tags, metadata=metadata
@@ -687,10 +698,11 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 )
             )[self.output_keys[0]]
 
-        raise ValueError(
+        msg = (
             f"`run` supported with either positional arguments or keyword arguments"
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
+        raise ValueError(msg)
 
     def dict(self, **kwargs: Any) -> dict:
         """Dictionary representation of chain.
@@ -733,12 +745,14 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 chain.save(file_path="path/chain.yaml")
         """
         if self.memory is not None:
-            raise ValueError("Saving of memory is not yet supported.")
+            msg = "Saving of memory is not yet supported."
+            raise ValueError(msg)
 
         # Fetch dictionary to save
         chain_dict = self.dict()
         if "_type" not in chain_dict:
-            raise NotImplementedError(f"Chain {self} does not support saving.")
+            msg = f"Chain {self} does not support saving."
+            raise NotImplementedError(msg)
 
         # Convert file to Path object.
         if isinstance(file_path, str):
@@ -756,7 +770,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             with open(file_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
     @deprecated("0.1.0", alternative="batch", removal="1.0")
     def apply(

@@ -62,10 +62,11 @@ def load_dataset(uri: str) -> list[dict]:
     try:
         from datasets import load_dataset
     except ImportError:
-        raise ImportError(
+        msg = (
             "load_dataset requires the `datasets` package."
             " Please install with `pip install datasets`"
         )
+        raise ImportError(msg)
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
     return [d for d in dataset["train"]]
@@ -125,10 +126,11 @@ def load_evaluator(
     >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
     if evaluator not in _EVALUATOR_MAP:
-        raise ValueError(
+        msg = (
             f"Unknown evaluator type: {evaluator}"
             f"\nValid types are: {list(_EVALUATOR_MAP.keys())}"
         )
+        raise ValueError(msg)
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
@@ -140,23 +142,25 @@ def load_evaluator(
                         ChatOpenAI,
                     )
                 except ImportError:
-                    raise ImportError(
+                    msg = (
                         "Could not import langchain_openai or fallback onto "
                         "langchain_community. Please install langchain_openai "
                         "or specify a language model explicitly. "
                         "It's recommended to install langchain_openai AND "
                         "specify a language model explicitly."
                     )
+                    raise ImportError(msg)
 
             llm = llm or ChatOpenAI(model="gpt-4", seed=42, temperature=0)
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f"Evaluation with the {evaluator_cls} requires a "
                 "language model to function."
                 " Failed to create the default 'gpt-4' model."
                 " Please manually provide an evaluation LLM"
                 " or check your openai credentials."
-            ) from e
+            )
+            raise ValueError(msg) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
     else:
         return evaluator_cls(**kwargs)
