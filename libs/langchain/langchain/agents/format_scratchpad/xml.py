@@ -4,7 +4,7 @@ from langchain_core.agents import AgentAction
 
 
 def format_xml(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
     *,
     escape_xml: bool = True,
 ) -> str:
