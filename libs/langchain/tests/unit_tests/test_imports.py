@@ -26,9 +26,9 @@ def test_import_all() -> None:
 
             mod = importlib.import_module(module_name)
 
-            all = getattr(mod, "__all__", [])
+            all_attrs = getattr(mod, "__all__", [])
 
-            for name in all:
+            for name in all_attrs:
                 # Attempt to import the name from the module
                 try:
                     obj = getattr(mod, name)
@@ -41,9 +41,8 @@ def test_import_all() -> None:
                     ):
                         pass
                 except Exception as e:
-                    raise AssertionError(
-                        f"Could not import {module_name}.{name}"
-                    ) from e
+                    msg = f"Could not import {module_name}.{name}"
+                    raise AssertionError(msg) from e
 
 
 def test_import_all_using_dir() -> None:
@@ -64,10 +63,11 @@ def test_import_all_using_dir() -> None:
         try:
             mod = importlib.import_module(module_name)
         except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(f"Could not import {module_name}") from e
-        all = dir(mod)
+            msg = f"Could not import {module_name}"
+            raise ModuleNotFoundError(msg) from e
+        attributes = dir(mod)
 
-        for name in all:
+        for name in attributes:
             if name.strip().startswith("_"):
                 continue
             # Attempt to import the name from the module
@@ -164,6 +164,5 @@ def _literal_eval_str(node: ast.AST) -> str:
         and isinstance(node.value, str)
     ):
         return node.value
-    raise AssertionError(
-        f"Invalid DEPRECATED_LOOKUP format: expected str, got {type(node).__name__}"
-    )
+    msg = f"Invalid DEPRECATED_LOOKUP format: expected str, got {type(node).__name__}"
+    raise AssertionError(msg)

@@ -26,9 +26,8 @@ def _import_numpy() -> Any:
 
         return np
     except ImportError as e:
-        raise ImportError(
-            "Could not import numpy, please install with `pip install numpy`."
-        ) from e
+        msg = "Could not import numpy, please install with `pip install numpy`."
+        raise ImportError(msg) from e
 
 
 logger = logging.getLogger(__name__)
@@ -64,10 +63,11 @@ def _embedding_factory() -> Embeddings:
                 OpenAIEmbeddings,
             )
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import OpenAIEmbeddings. Please install the "
                 "OpenAIEmbeddings package using `pip install langchain-openai`."
             )
+            raise ImportError(msg)
     return OpenAIEmbeddings()
 
 
@@ -130,21 +130,23 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         if not types_:
-            raise ImportError(
+            msg = (
                 "Could not import OpenAIEmbeddings. Please install the "
                 "OpenAIEmbeddings package using `pip install langchain-openai`."
             )
+            raise ImportError(msg)
 
         if isinstance(embeddings, tuple(types_)):
             try:
                 import tiktoken  # noqa: F401
             except ImportError:
-                raise ImportError(
+                msg = (
                     "The tiktoken library is required to use the default "
                     "OpenAI embeddings with embedding distance evaluators."
                     " Please either manually select a different Embeddings object"
                     " or install tiktoken using `pip install tiktoken`."
                 )
+                raise ImportError(msg)
         return values
 
     model_config = ConfigDict(
@@ -185,7 +187,8 @@ class _EmbeddingDistanceChainMixin(Chain):
         if metric in metrics:
             return metrics[metric]
         else:
-            raise ValueError(f"Invalid metric: {metric}")
+            msg = f"Invalid metric: {metric}"
+            raise ValueError(msg)
 
     @staticmethod
     def _cosine_distance(a: Any, b: Any) -> Any:
@@ -201,11 +204,12 @@ class _EmbeddingDistanceChainMixin(Chain):
         try:
             from langchain_community.utils.math import cosine_similarity
         except ImportError:
-            raise ImportError(
+            msg = (
                 "The cosine_similarity function is required to compute cosine distance."
                 " Please install the langchain-community package using"
                 " `pip install langchain-community`."
             )
+            raise ImportError(msg)
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod

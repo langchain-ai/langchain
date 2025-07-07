@@ -94,5 +94,4 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
         self._separators = separators
-        chunks = super().split_text(text)
-        return chunks
+        return super().split_text(text)

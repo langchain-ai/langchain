@@ -46,9 +46,8 @@ def _make_spacy_pipeline_for_splitting(
     try:
         import spacy
     except ImportError:
-        raise ImportError(
-            "Spacy is not installed, please install it with `pip install spacy`."
-        )
+        msg = "Spacy is not installed, please install it with `pip install spacy`."
+        raise ImportError(msg)
     if pipeline == "sentencizer":
         sentencizer: Any = spacy.lang.en.English()
         sentencizer.add_pipe("sentencizer")

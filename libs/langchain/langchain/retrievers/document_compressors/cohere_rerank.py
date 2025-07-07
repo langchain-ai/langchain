@@ -42,10 +42,11 @@ class CohereRerank(BaseDocumentCompressor):
             try:
                 import cohere
             except ImportError:
-                raise ImportError(
+                msg = (
                     "Could not import cohere python package. "
                     "Please install it with `pip install cohere`."
                 )
+                raise ImportError(msg)
             cohere_api_key = get_from_dict_or_env(
                 values, "cohere_api_key", "COHERE_API_KEY"
             )

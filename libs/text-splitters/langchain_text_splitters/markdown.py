@@ -121,10 +121,9 @@ class MarkdownHeaderTextSplitter:
                 elif stripped_line.startswith("~~~"):
                     in_code_block = True
                     opening_fence = "~~~"
-            else:
-                if stripped_line.startswith(opening_fence):
-                    in_code_block = False
-                    opening_fence = ""
+            elif stripped_line.startswith(opening_fence):
+                in_code_block = False
+                opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
@@ -207,11 +206,10 @@ class MarkdownHeaderTextSplitter:
         # aggregate these into chunks based on common metadata
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
-        else:
-            return [
-                Document(page_content=chunk["content"], metadata=chunk["metadata"])
-                for chunk in lines_with_metadata
-            ]
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in lines_with_metadata
+        ]
 
 
 class LineType(TypedDict):

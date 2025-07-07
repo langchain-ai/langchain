@@ -71,10 +71,11 @@ class OpenAIModerationChain(Chain):
                 values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
 
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+            raise ImportError(msg)
         return values
 
     @property

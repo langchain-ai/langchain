@@ -1341,8 +1341,8 @@ def _first_max_tokens(
                 excluded.content = list(reversed(excluded.content))
             for _ in range(1, num_block):
                 excluded.content = excluded.content[:-1]
-                if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                    messages = messages[:idx] + [excluded]
+                if token_counter([*messages[:idx], excluded]) <= max_tokens:
+                    messages = [*messages[:idx], excluded]
                     idx += 1
                     included_partial = True
                     break
@@ -1393,7 +1393,7 @@ def _first_max_tokens(
                     if partial_strategy == "last":
                         content_splits = list(reversed(content_splits))
                     excluded.content = "".join(content_splits)
-                    messages = messages[:idx] + [excluded]
+                    messages = [*messages[:idx], excluded]
                     idx += 1
 
     if end_on:

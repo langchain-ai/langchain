@@ -42,7 +42,7 @@ from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent_iterator import AgentExecutorIterator
@@ -138,9 +138,8 @@ class BaseSingleActionAgent(BaseModel):
                 {"output": "Agent stopped due to iteration limit or time limit."}, ""
             )
         else:
-            raise ValueError(
-                f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            )
+            msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
+            raise ValueError(msg)
 
     @classmethod
     def from_llm_and_tools(
@@ -206,7 +205,8 @@ class BaseSingleActionAgent(BaseModel):
         # Fetch dictionary to save
         agent_dict = self.dict()
         if "_type" not in agent_dict:
-            raise NotImplementedError(f"Agent {self} does not support saving")
+            msg = f"Agent {self} does not support saving"
+            raise NotImplementedError(msg)
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
@@ -215,7 +215,8 @@ class BaseSingleActionAgent(BaseModel):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
@@ -308,9 +309,8 @@ class BaseMultiActionAgent(BaseModel):
             # `force` just returns a constant string
             return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
         else:
-            raise ValueError(
-                f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            )
+            msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
+            raise ValueError(msg)
 
     @property
     def _agent_type(self) -> str:
@@ -346,7 +346,8 @@ class BaseMultiActionAgent(BaseModel):
         # Fetch dictionary to save
         agent_dict = self.dict()
         if "_type" not in agent_dict:
-            raise NotImplementedError(f"Agent {self} does not support saving.")
+            msg = f"Agent {self} does not support saving."
+            raise NotImplementedError(msg)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -358,7 +359,8 @@ class BaseMultiActionAgent(BaseModel):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
@@ -442,7 +444,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -481,7 +483,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -558,7 +560,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -597,7 +599,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -753,7 +755,8 @@ class Agent(BaseSingleActionAgent):
         Returns:
             str: Fixed text.
         """
-        raise ValueError("fix_text not implemented for this agent.")
+        msg = "fix_text not implemented for this agent."
+        raise ValueError(msg)
 
     @property
     def _stop(self) -> list[str]:
@@ -867,7 +870,8 @@ class Agent(BaseSingleActionAgent):
             elif isinstance(prompt, FewShotPromptTemplate):
                 prompt.suffix += "\n{agent_scratchpad}"
             else:
-                raise ValueError(f"Got unexpected prompt type {type(prompt)}")
+                msg = f"Got unexpected prompt type {type(prompt)}"
+                raise ValueError(msg)
         return self
 
     @property
@@ -899,8 +903,6 @@ class Agent(BaseSingleActionAgent):
         Args:
             tools: Tools to use.
         """
-
-        pass
 
     @classmethod
     @abstractmethod
@@ -993,10 +995,11 @@ class Agent(BaseSingleActionAgent):
                 # we just return the full output
                 return AgentFinish({"output": full_output}, full_output)
         else:
-            raise ValueError(
+            msg = (
                 "early_stopping_method should be one of `force` or `generate`, "
                 f"got {early_stopping_method}"
             )
+            raise ValueError(msg)
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
@@ -1126,10 +1129,11 @@ class AgentExecutor(Chain):
         if allowed_tools is not None and set(allowed_tools) != set(
             [tool.name for tool in tools]
         ):
-            raise ValueError(
+            msg = (
                 f"Allowed tools ({allowed_tools}) different than "
                 f"provided tools ({[tool.name for tool in tools]})"
             )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="before")
@@ -1187,11 +1191,12 @@ class AgentExecutor(Chain):
         Raises:
             ValueError: Saving not supported for agent executors.
         """
-        raise ValueError(
+        msg = (
             "Saving not supported for agent executors. "
             "If you are trying to save the agent, please use the "
             "`.save_agent(...)`"
         )
+        raise ValueError(msg)
 
     def save_agent(self, file_path: Union[Path, str]) -> None:
         """Save the underlying agent.
@@ -1296,9 +1301,8 @@ class AgentExecutor(Chain):
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         if isinstance(values[-1], AgentFinish):
             if len(values) != 1:
-                raise ValueError(
-                    "Expected a single AgentFinish output, but got multiple values."
-                )
+                msg = "Expected a single AgentFinish output, but got multiple values."
+                raise ValueError(msg)
             return values[-1]
         else:
             return [
@@ -1353,12 +1357,13 @@ class AgentExecutor(Chain):
             else:
                 raise_error = False
             if raise_error:
-                raise ValueError(
+                msg = (
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {str(e)}"
                 )
+                raise ValueError(msg)
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1371,7 +1376,8 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                raise ValueError("Got unexpected type of `handle_parsing_errors`")
+                msg = "Got unexpected type of `handle_parsing_errors`"
+                raise ValueError(msg)
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
@@ -1487,12 +1493,13 @@ class AgentExecutor(Chain):
             else:
                 raise_error = False
             if raise_error:
-                raise ValueError(
+                msg = (
                     "An output parsing error occurred. "
                     "In order to pass this error back to the agent and have it try "
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {str(e)}"
                 )
+                raise ValueError(msg)
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1505,7 +1512,8 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                raise ValueError("Got unexpected type of `handle_parsing_errors`")
+                msg = "Got unexpected type of `handle_parsing_errors`"
+                raise ValueError(msg)
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
@@ -1725,6 +1733,7 @@ class AgentExecutor(Chain):
         else:
             return intermediate_steps
 
+    @override
     def stream(
         self,
         input: Union[dict[str, Any], Any],
@@ -1755,6 +1764,7 @@ class AgentExecutor(Chain):
         )
         yield from iterator
 
+    @override
     async def astream(
         self,
         input: Union[dict[str, Any], Any],
