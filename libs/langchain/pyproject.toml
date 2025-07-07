@@ -180,13 +180,13 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100", 
-    "D101", 
-    "D102", 
-    "D103", 
-    "D104", 
-    "D105", 
-    "D107",
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D107",    # Missing docstring in __init__
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
