@@ -176,7 +176,6 @@ class EnsembleRetriever(BaseRetriever):
         # Get fused result of the retrievers.
         return self.rank_fusion(query, run_manager)
 
-
     async def _aget_relevant_documents(
         self,
         query: str,
@@ -195,7 +194,6 @@ class EnsembleRetriever(BaseRetriever):
 
         # Get fused result of the retrievers.
         return await self.arank_fusion(query, run_manager)
-
 
     def rank_fusion(
         self,
@@ -235,7 +233,6 @@ class EnsembleRetriever(BaseRetriever):
 
         # apply rank fusion
         return self.weighted_reciprocal_rank(retriever_docs)
-
 
     async def arank_fusion(
         self,
@@ -278,7 +275,6 @@ class EnsembleRetriever(BaseRetriever):
 
         # apply rank fusion
         return self.weighted_reciprocal_rank(retriever_docs)
-
 
     def weighted_reciprocal_rank(
         self, doc_lists: list[list[Document]]

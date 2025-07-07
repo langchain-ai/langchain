@@ -455,8 +455,7 @@ def _init_chat_model_helper(
         return ChatPerplexity(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
-        f"Unsupported {model_provider=}.\n\nSupported model providers are: "
-        f"{supported}"
+        f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     )
     raise ValueError(msg)
 

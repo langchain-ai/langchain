@@ -65,4 +65,3 @@ def create_retrieval_chain(
             context=retrieval_docs.with_config(run_name="retrieve_documents"),
         ).assign(answer=combine_docs_chain)
     ).with_config(run_name="retrieval_chain")
-

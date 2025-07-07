@@ -37,9 +37,7 @@ class RegexDictParser(BaseOutputParser[dict[str, str]]):
                 msg = f"Multiple matches found for output key: {output_key} with \
                         expected format {expected_format} on text {text}"
                 raise ValueError(msg)
-            if (
-                self.no_update_value is not None and matches[0] == self.no_update_value
-            ):
+            if self.no_update_value is not None and matches[0] == self.no_update_value:
                 continue
             result[output_key] = matches[0]
         return result

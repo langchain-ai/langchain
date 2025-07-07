@@ -1296,9 +1296,7 @@ class AgentExecutor(Chain):
                 msg = "Expected a single AgentFinish output, but got multiple values."
                 raise ValueError(msg)
             return values[-1]
-        return [
-            (a.action, a.observation) for a in values if isinstance(a, AgentStep)
-        ]
+        return [(a.action, a.observation) for a in values if isinstance(a, AgentStep)]
 
     def _take_next_step(
         self,

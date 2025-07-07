@@ -33,7 +33,6 @@ class MergerRetriever(BaseRetriever):
         # Merge the results of the retrievers.
         return self.merge_documents(query, run_manager)
 
-
     async def _aget_relevant_documents(
         self,
         query: str,
@@ -52,7 +51,6 @@ class MergerRetriever(BaseRetriever):
 
         # Merge the results of the retrievers.
         return await self.amerge_documents(query, run_manager)
-
 
     def merge_documents(
         self, query: str, run_manager: CallbackManagerForRetrieverRun
