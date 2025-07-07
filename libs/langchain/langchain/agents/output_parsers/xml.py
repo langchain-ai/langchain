@@ -1,5 +1,5 @@
 import re
-from typing import Literal, Union, Optional
+from typing import Literal, Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
