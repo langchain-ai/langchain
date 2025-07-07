@@ -155,7 +155,7 @@ def _resolve_cache(*, cache: Union[BaseCache, bool, None]) -> Optional[BaseCache
 def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Union[BaseCache, bool, None] = None, # noqa: FBT001
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
@@ -191,7 +191,7 @@ def get_prompts(
 async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Union[BaseCache, bool, None] = None, # noqa: FBT001
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
