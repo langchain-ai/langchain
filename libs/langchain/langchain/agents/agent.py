@@ -1126,7 +1126,8 @@ class AgentExecutor(Chain):
         agent = self.agent
         tools = self.tools
         allowed_tools = agent.get_allowed_tools()  # type: ignore[union-attr]
-        if allowed_tools is not None and set(allowed_tools) != {tool.name for tool in tools}:
+        if (allowed_tools is not None
+                and set(allowed_tools) != {tool.name for tool in tools}):
             msg = (
                 f"Allowed tools ({allowed_tools}) different than "
                 f"provided tools ({[tool.name for tool in tools]})"
