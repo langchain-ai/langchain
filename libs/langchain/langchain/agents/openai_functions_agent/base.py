@@ -132,8 +132,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        agent_decision = self.output_parser._parse_ai_message(predicted_message)
-        return agent_decision
+        return self.output_parser._parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -164,8 +163,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         predicted_message = await self.llm.apredict_messages(
             messages, functions=self.functions, callbacks=callbacks
         )
-        agent_decision = self.output_parser._parse_ai_message(predicted_message)
-        return agent_decision
+        return self.output_parser._parse_ai_message(predicted_message)
 
     def return_stopped_response(
         self,
@@ -192,22 +190,20 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             return AgentFinish(
                 {"output": "Agent stopped due to iteration limit or time limit."}, ""
             )
-        elif early_stopping_method == "generate":
+        if early_stopping_method == "generate":
             # Generate does one final forward pass
             agent_decision = self.plan(
                 intermediate_steps, with_functions=False, **kwargs
             )
             if isinstance(agent_decision, AgentFinish):
                 return agent_decision
-            else:
-                msg = f"got AgentAction with no functions provided: {agent_decision}"
-                raise ValueError(msg)
-        else:
-            msg = (
-                "early_stopping_method should be one of `force` or `generate`, "
-                f"got {early_stopping_method}"
-            )
+            msg = f"got AgentAction with no functions provided: {agent_decision}"
             raise ValueError(msg)
+        msg = (
+            "early_stopping_method should be one of `force` or `generate`, "
+            f"got {early_stopping_method}"
+        )
+        raise ValueError(msg)
 
     @classmethod
     def create_prompt(
@@ -358,7 +354,7 @@ def create_openai_functions_agent(
         )
         raise ValueError(msg)
     llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
@@ -368,4 +364,3 @@ def create_openai_functions_agent(
         | llm_with_tools
         | OpenAIFunctionsAgentOutputParser()
     )
-    return agent

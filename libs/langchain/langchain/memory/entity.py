@@ -154,6 +154,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
         logger.debug(
             f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
         )
+        return None
 
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
@@ -255,6 +256,7 @@ class RedisEntityStore(BaseEntityStore):
         logger.debug(
             f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
         )
+        return None
 
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
@@ -362,6 +364,7 @@ class SQLiteEntityStore(BaseEntityStore):
             f'"{self.full_table_name}" (key, value) VALUES (?, ?)'
         )
         self._execute_query(query, (key, value))
+        return None
 
     def delete(self, key: str) -> None:
         """Deletes a key-value pair, safely quoting the table name."""

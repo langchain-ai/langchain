@@ -322,16 +322,15 @@ def init_chat_model(
         return _init_chat_model_helper(
             cast(str, model), model_provider=model_provider, **kwargs
         )
-    else:
-        if model:
-            kwargs["model"] = model
-        if model_provider:
-            kwargs["model_provider"] = model_provider
-        return _ConfigurableModel(
-            default_config=kwargs,
-            config_prefix=config_prefix,
-            configurable_fields=configurable_fields,
-        )
+    if model:
+        kwargs["model"] = model
+    if model_provider:
+        kwargs["model_provider"] = model_provider
+    return _ConfigurableModel(
+        default_config=kwargs,
+        config_prefix=config_prefix,
+        configurable_fields=configurable_fields,
+    )
 
 
 def _init_chat_model_helper(
@@ -343,42 +342,42 @@ def _init_chat_model_helper(
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(model=model, **kwargs)
-    elif model_provider == "anthropic":
+    if model_provider == "anthropic":
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
-    elif model_provider == "azure_openai":
+    if model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
-    elif model_provider == "azure_ai":
+    if model_provider == "azure_ai":
         _check_pkg("langchain_azure_ai")
         from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
         return AzureAIChatCompletionsModel(model=model, **kwargs)
-    elif model_provider == "cohere":
+    if model_provider == "cohere":
         _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
 
         return ChatCohere(model=model, **kwargs)
-    elif model_provider == "google_vertexai":
+    if model_provider == "google_vertexai":
         _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai import ChatVertexAI
 
         return ChatVertexAI(model=model, **kwargs)
-    elif model_provider == "google_genai":
+    if model_provider == "google_genai":
         _check_pkg("langchain_google_genai")
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=model, **kwargs)
-    elif model_provider == "fireworks":
+    if model_provider == "fireworks":
         _check_pkg("langchain_fireworks")
         from langchain_fireworks import ChatFireworks
 
         return ChatFireworks(model=model, **kwargs)
-    elif model_provider == "ollama":
+    if model_provider == "ollama":
         try:
             _check_pkg("langchain_ollama")
             from langchain_ollama import ChatOllama
@@ -393,74 +392,72 @@ def _init_chat_model_helper(
                 _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
-    elif model_provider == "together":
+    if model_provider == "together":
         _check_pkg("langchain_together")
         from langchain_together import ChatTogether
 
         return ChatTogether(model=model, **kwargs)
-    elif model_provider == "mistralai":
+    if model_provider == "mistralai":
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
-    elif model_provider == "huggingface":
+    if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
 
         return ChatHuggingFace(model_id=model, **kwargs)
-    elif model_provider == "groq":
+    if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
 
         return ChatGroq(model=model, **kwargs)
-    elif model_provider == "bedrock":
+    if model_provider == "bedrock":
         _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrock
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
-    elif model_provider == "bedrock_converse":
+    if model_provider == "bedrock_converse":
         _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
-    elif model_provider == "google_anthropic_vertex":
+    if model_provider == "google_anthropic_vertex":
         _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai.model_garden import ChatAnthropicVertex
 
         return ChatAnthropicVertex(model=model, **kwargs)
-    elif model_provider == "deepseek":
+    if model_provider == "deepseek":
         _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
-    elif model_provider == "nvidia":
+    if model_provider == "nvidia":
         _check_pkg("langchain_nvidia_ai_endpoints")
         from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
         return ChatNVIDIA(model=model, **kwargs)
-    elif model_provider == "ibm":
+    if model_provider == "ibm":
         _check_pkg("langchain_ibm")
         from langchain_ibm import ChatWatsonx
 
         return ChatWatsonx(model_id=model, **kwargs)
-    elif model_provider == "xai":
+    if model_provider == "xai":
         _check_pkg("langchain_xai")
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
-    elif model_provider == "perplexity":
+    if model_provider == "perplexity":
         _check_pkg("langchain_perplexity")
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
-    else:
-        supported = ", ".join(_SUPPORTED_PROVIDERS)
-        msg = (
-            f"Unsupported {model_provider=}.\n\nSupported model providers are: "
-            f"{supported}"
-        )
-        raise ValueError(msg)
+    supported = ", ".join(_SUPPORTED_PROVIDERS)
+    msg = (
+        f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
+    )
+    raise ValueError(msg)
 
 
 _SUPPORTED_PROVIDERS = {
@@ -490,26 +487,25 @@ _SUPPORTED_PROVIDERS = {
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
     if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
-    elif model_name.startswith("claude"):
+    if model_name.startswith("claude"):
         return "anthropic"
-    elif model_name.startswith("command"):
+    if model_name.startswith("command"):
         return "cohere"
-    elif model_name.startswith("accounts/fireworks"):
+    if model_name.startswith("accounts/fireworks"):
         return "fireworks"
-    elif model_name.startswith("gemini"):
+    if model_name.startswith("gemini"):
         return "google_vertexai"
-    elif model_name.startswith("amazon."):
+    if model_name.startswith("amazon."):
         return "bedrock"
-    elif model_name.startswith("mistral"):
+    if model_name.startswith("mistral"):
         return "mistralai"
-    elif model_name.startswith("deepseek"):
+    if model_name.startswith("deepseek"):
         return "deepseek"
-    elif model_name.startswith("grok"):
+    if model_name.startswith("grok"):
         return "xai"
-    elif model_name.startswith("sonar"):
+    if model_name.startswith("sonar"):
         return "perplexity"
-    else:
-        return None
+    return None
 
 
 def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
@@ -595,14 +591,13 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                 )
 
             return queue
-        elif self._default_config and (model := self._model()) and hasattr(model, name):
+        if self._default_config and (model := self._model()) and hasattr(model, name):
             return getattr(model, name)
-        else:
-            msg = f"{name} is not a BaseChatModel attribute"
-            if self._default_config:
-                msg += " and is not implemented on the default model"
-            msg += "."
-            raise AttributeError(msg)
+        msg = f"{name} is not a BaseChatModel attribute"
+        if self._default_config:
+            msg += " and is not implemented on the default model"
+        msg += "."
+        raise AttributeError(msg)
 
     def _model(self, config: Optional[RunnableConfig] = None) -> Runnable:
         params = {**self._default_config, **self._model_params(config)}
@@ -728,10 +723,9 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
-        else:
-            return super().batch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
-            )
+        return super().batch(
+            inputs, config=config, return_exceptions=return_exceptions, **kwargs
+        )
 
     async def abatch(
         self,
@@ -751,10 +745,9 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
-        else:
-            return await super().abatch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
-            )
+        return await super().abatch(
+            inputs, config=config, return_exceptions=return_exceptions, **kwargs
+        )
 
     def batch_as_completed(
         self,

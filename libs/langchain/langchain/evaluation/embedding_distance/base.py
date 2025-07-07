@@ -186,9 +186,8 @@ class _EmbeddingDistanceChainMixin(Chain):
         }
         if metric in metrics:
             return metrics[metric]
-        else:
-            msg = f"Invalid metric: {metric}"
-            raise ValueError(msg)
+        msg = f"Invalid metric: {metric}"
+        raise ValueError(msg)
 
     @staticmethod
     def _cosine_distance(a: Any, b: Any) -> Any:

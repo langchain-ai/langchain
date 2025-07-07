@@ -33,14 +33,11 @@ class RegexDictParser(BaseOutputParser[dict[str, str]]):
                         {expected_format} on text {text}"
                 )
                 raise ValueError(msg)
-            elif len(matches) > 1:
+            if len(matches) > 1:
                 msg = f"Multiple matches found for output key: {output_key} with \
                         expected format {expected_format} on text {text}"
                 raise ValueError(msg)
-            elif (
-                self.no_update_value is not None and matches[0] == self.no_update_value
-            ):
+            if self.no_update_value is not None and matches[0] == self.no_update_value:
                 continue
-            else:
-                result[output_key] = matches[0]
+            result[output_key] = matches[0]
         return result

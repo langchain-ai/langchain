@@ -134,7 +134,7 @@ def create_react_agent(
     else:
         llm_with_stop = llm
     output_parser = output_parser or ReActSingleInputOutputParser()
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
@@ -142,4 +142,3 @@ def create_react_agent(
         | llm_with_stop
         | output_parser
     )
-    return agent

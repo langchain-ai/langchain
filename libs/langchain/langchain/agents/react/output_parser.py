@@ -26,8 +26,7 @@ class ReActOutputParser(AgentOutputParser):
         action, action_input = re_matches.group(1), re_matches.group(2)
         if action == "Finish":
             return AgentFinish({"output": action_input}, text)
-        else:
-            return AgentAction(action, action_input, text)
+        return AgentAction(action, action_input, text)
 
     @property
     def _type(self) -> str:

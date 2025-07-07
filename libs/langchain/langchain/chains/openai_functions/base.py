@@ -132,7 +132,7 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -140,7 +140,6 @@ def create_openai_fn_chain(
         output_key=output_key,
         **kwargs,
     )
-    return llm_chain
 
 
 @deprecated(

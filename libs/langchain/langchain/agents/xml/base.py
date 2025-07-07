@@ -221,7 +221,7 @@ def create_xml_agent(
     else:
         llm_with_stop = llm
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_xml(x["intermediate_steps"]),
         )
@@ -229,4 +229,3 @@ def create_xml_agent(
         | llm_with_stop
         | XMLAgentOutputParser()
     )
-    return agent

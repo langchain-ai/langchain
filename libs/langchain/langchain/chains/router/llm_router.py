@@ -136,11 +136,10 @@ class LLMRouterChain(RouterChain):
         callbacks = _run_manager.get_child()
 
         prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
-        output = cast(
+        return cast(
             dict[str, Any],
             self.llm_chain.prompt.output_parser.parse(prediction),
         )
-        return output
 
     async def _acall(
         self,
@@ -149,11 +148,10 @@ class LLMRouterChain(RouterChain):
     ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        output = cast(
+        return cast(
             dict[str, Any],
             await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
         )
-        return output
 
     @classmethod
     def from_llm(

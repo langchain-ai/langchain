@@ -101,10 +101,9 @@ class QueryTransformer(Transformer):
                 )
                 raise ValueError(msg)
             return Comparison(comparator=func, attribute=args[0], value=args[1])
-        elif len(args) == 1 and func in (Operator.AND, Operator.OR):
+        if len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(operator=func, arguments=args)
+        return Operation(operator=func, arguments=args)
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):
@@ -118,7 +117,7 @@ class QueryTransformer(Transformer):
                 )
                 raise ValueError(msg)
             return Comparator(func_name)
-        elif func_name in set(Operator):
+        if func_name in set(Operator):
             if (
                 self.allowed_operators is not None
                 and func_name not in self.allowed_operators
@@ -129,12 +128,11 @@ class QueryTransformer(Transformer):
                 )
                 raise ValueError(msg)
             return Operator(func_name)
-        else:
-            msg = (
-                f"Received unrecognized function {func_name}. Valid functions are "
-                f"{list(Operator) + list(Comparator)}"
-            )
-            raise ValueError(msg)
+        msg = (
+            f"Received unrecognized function {func_name}. Valid functions are "
+            f"{list(Operator) + list(Comparator)}"
+        )
+        raise ValueError(msg)
 
     def args(self, *items: Any) -> tuple:
         return items

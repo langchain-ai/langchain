@@ -100,7 +100,7 @@ def create_tool_calling_agent(
         )
     llm_with_tools = llm.bind_tools(tools)
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
         )
@@ -108,4 +108,3 @@ def create_tool_calling_agent(
         | llm_with_tools
         | ToolsAgentOutputParser()
     )
-    return agent

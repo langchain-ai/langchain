@@ -21,11 +21,10 @@ def get_action_and_input(text: str) -> tuple[str, str]:
     output = output_parser.parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    elif isinstance(output, AgentFinish):
+    if isinstance(output, AgentFinish):
         return output.return_values["output"], output.log
-    else:
-        msg = "Unexpected output type"
-        raise ValueError(msg)
+    msg = "Unexpected output type"
+    raise ValueError(msg)
 
 
 def test_parse_with_language() -> None:

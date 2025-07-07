@@ -137,9 +137,8 @@ class BaseSingleActionAgent(BaseModel):
             return AgentFinish(
                 {"output": "Agent stopped due to iteration limit or time limit."}, ""
             )
-        else:
-            msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            raise ValueError(msg)
+        msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
+        raise ValueError(msg)
 
     @classmethod
     def from_llm_and_tools(
@@ -308,9 +307,8 @@ class BaseMultiActionAgent(BaseModel):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
-        else:
-            msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
-            raise ValueError(msg)
+        msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
+        raise ValueError(msg)
 
     @property
     def _agent_type(self) -> str:
@@ -815,8 +813,7 @@ class Agent(BaseSingleActionAgent):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
-        agent_output = await self.output_parser.aparse(full_output)
-        return agent_output
+        return await self.output_parser.aparse(full_output)
 
     def get_full_inputs(
         self, intermediate_steps: list[tuple[AgentAction, str]], **kwargs: Any
@@ -833,8 +830,7 @@ class Agent(BaseSingleActionAgent):
         """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
-        full_inputs = {**kwargs, **new_inputs}
-        return full_inputs
+        return {**kwargs, **new_inputs}
 
     @property
     def input_keys(self) -> list[str]:
@@ -970,7 +966,7 @@ class Agent(BaseSingleActionAgent):
             return AgentFinish(
                 {"output": "Agent stopped due to iteration limit or time limit."}, ""
             )
-        elif early_stopping_method == "generate":
+        if early_stopping_method == "generate":
             # Generate does one final forward pass
             thoughts = ""
             for action, observation in intermediate_steps:
@@ -990,16 +986,14 @@ class Agent(BaseSingleActionAgent):
             if isinstance(parsed_output, AgentFinish):
                 # If we can extract, we send the correct stuff
                 return parsed_output
-            else:
-                # If we can extract, but the tool is not the final tool,
-                # we just return the full output
-                return AgentFinish({"output": full_output}, full_output)
-        else:
-            msg = (
-                "early_stopping_method should be one of `force` or `generate`, "
-                f"got {early_stopping_method}"
-            )
-            raise ValueError(msg)
+            # If we can extract, but the tool is not the final tool,
+            # we just return the full output
+            return AgentFinish({"output": full_output}, full_output)
+        msg = (
+            "early_stopping_method should be one of `force` or `generate`, "
+            f"got {early_stopping_method}"
+        )
+        raise ValueError(msg)
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
@@ -1179,8 +1173,7 @@ class AgentExecutor(Chain):
         """
         if isinstance(self.agent, Runnable):
             return cast(RunnableAgentType, self.agent)
-        else:
-            return self.agent
+        return self.agent
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
@@ -1249,8 +1242,7 @@ class AgentExecutor(Chain):
         """
         if self.return_intermediate_steps:
             return self._action_agent.return_values + ["intermediate_steps"]
-        else:
-            return self._action_agent.return_values
+        return self._action_agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
         """Lookup tool by name.
@@ -1304,10 +1296,7 @@ class AgentExecutor(Chain):
                 msg = "Expected a single AgentFinish output, but got multiple values."
                 raise ValueError(msg)
             return values[-1]
-        else:
-            return [
-                (a.action, a.observation) for a in values if isinstance(a, AgentStep)
-            ]
+        return [(a.action, a.observation) for a in values if isinstance(a, AgentStep)]
 
     def _take_next_step(
         self,
@@ -1727,10 +1716,9 @@ class AgentExecutor(Chain):
             and self.trim_intermediate_steps > 0
         ):
             return intermediate_steps[-self.trim_intermediate_steps :]
-        elif callable(self.trim_intermediate_steps):
+        if callable(self.trim_intermediate_steps):
             return self.trim_intermediate_steps(intermediate_steps)
-        else:
-            return intermediate_steps
+        return intermediate_steps
 
     @override
     def stream(

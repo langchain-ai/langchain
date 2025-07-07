@@ -74,10 +74,9 @@ class RePhraseQueryRetriever(BaseRetriever):
             query, {"callbacks": run_manager.get_child()}
         )
         logger.info(f"Re-phrased question: {re_phrased_question}")
-        docs = self.retriever.invoke(
+        return self.retriever.invoke(
             re_phrased_question, config={"callbacks": run_manager.get_child()}
         )
-        return docs
 
     async def _aget_relevant_documents(
         self,

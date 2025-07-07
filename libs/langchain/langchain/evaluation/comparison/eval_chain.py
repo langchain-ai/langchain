@@ -70,7 +70,7 @@ def resolve_pairwise_criteria(
             Criteria.DEPTH,
         ]
         return {k.value: _SUPPORTED_CRITERIA[k] for k in _default_criteria}
-    elif isinstance(criteria, Criteria):
+    if isinstance(criteria, Criteria):
         criteria_ = {criteria.value: _SUPPORTED_CRITERIA[criteria]}
     elif isinstance(criteria, str):
         if criteria in _SUPPORTED_CRITERIA:
