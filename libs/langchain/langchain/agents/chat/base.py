@@ -49,7 +49,8 @@ class ChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
@@ -112,7 +113,7 @@ class ChatAgent(Agent):
                 tool_strings,
                 format_instructions,
                 system_message_suffix,
-            ]
+            ],
         )
         messages = [
             SystemMessagePromptTemplate.from_template(template),

@@ -161,7 +161,7 @@ class QueryTransformer(Transformer):
         except ValueError:
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
-                "(YYYY-MM-DD)."
+                "(YYYY-MM-DD).",
             )
         return {"date": item, "type": "date"}
 

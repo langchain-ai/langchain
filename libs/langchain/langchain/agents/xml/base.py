@@ -52,7 +52,7 @@ class XMLAgent(BaseSingleActionAgent):
     def get_default_prompt() -> ChatPromptTemplate:
         base_prompt = ChatPromptTemplate.from_template(agent_instructions)
         return base_prompt + AIMessagePromptTemplate.from_template(
-            "{intermediate_steps}"
+            "{intermediate_steps}",
         )
 
     @staticmethod
@@ -205,7 +205,7 @@ def create_xml_agent(
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"tools", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"

@@ -158,7 +158,9 @@ class ConversationStringBufferMemory(BaseMemory):
         self.buffer += "\n" + "\n".join([human, ai])
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         return self.save_context(inputs, outputs)

@@ -79,7 +79,9 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
 
 
 def _infer_model_and_provider(
-    model: str, *, provider: Optional[str] = None
+    model: str,
+    *,
+    provider: Optional[str] = None,
 ) -> tuple[str, str]:
     if not model.strip():
         msg = "Model name cannot be empty"

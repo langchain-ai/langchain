@@ -186,7 +186,10 @@ class MRKLChain(AgentExecutor):
 
     @classmethod
     def from_chains(
-        cls, llm: BaseLanguageModel, chains: list[ChainConfig], **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        chains: list[ChainConfig],
+        **kwargs: Any,
     ) -> AgentExecutor:
         """User-friendly way to initialize the MRKL chain.
 

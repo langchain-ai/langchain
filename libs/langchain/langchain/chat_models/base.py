@@ -315,12 +315,14 @@ def init_chat_model(
         warnings.warn(
             f"{config_prefix=} has been set but no fields are configurable. Set "
             f"`configurable_fields=(...)` to specify the model params that are "
-            f"configurable."
+            f"configurable.",
         )
 
     if not configurable_fields:
         return _init_chat_model_helper(
-            cast(str, model), model_provider=model_provider, **kwargs
+            cast(str, model),
+            model_provider=model_provider,
+            **kwargs,
         )
     if model:
         kwargs["model"] = model
@@ -334,7 +336,10 @@ def init_chat_model(
 
 
 def _init_chat_model_helper(
-    model: str, *, model_provider: Optional[str] = None, **kwargs: Any
+    model: str,
+    *,
+    model_provider: Optional[str] = None,
+    **kwargs: Any,
 ) -> BaseChatModel:
     model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
@@ -566,7 +571,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             else config_prefix
         )
         self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
-            queued_declarative_operations
+            queued_declarative_operations,
         )
 
     def __getattr__(self, name: str) -> Any:
@@ -578,7 +583,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             # self._model()).
             def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
                 queued_declarative_operations = list(
-                    self._queued_declarative_operations
+                    self._queued_declarative_operations,
                 )
                 queued_declarative_operations.append((name, args, kwargs))
                 return _ConfigurableModel(
@@ -640,7 +645,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                     "with_config",
                     (),
                     {"config": remaining_config},
-                )
+                ),
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
@@ -719,12 +724,18 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             return self._model(config).batch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         return super().batch(
-            inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            inputs,
+            config=config,
+            return_exceptions=return_exceptions,
+            **kwargs,
         )
 
     async def abatch(
@@ -741,12 +752,18 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             return await self._model(config).abatch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         return await super().abatch(
-            inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            inputs,
+            config=config,
+            return_exceptions=return_exceptions,
+            **kwargs,
         )
 
     def batch_as_completed(
@@ -763,13 +780,19 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         else:
             yield from super().batch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
 
     async def abatch_as_completed(
@@ -786,16 +809,22 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             async for x in self._model(
-                cast(RunnableConfig, config)
+                cast(RunnableConfig, config),
             ).abatch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             ):
                 yield x
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         else:
             async for x in super().abatch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             ):
                 yield x
 
@@ -922,6 +951,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
-        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+        self,
+        schema: Union[dict, type[BaseModel]],
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)

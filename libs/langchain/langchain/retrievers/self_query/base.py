@@ -263,7 +263,7 @@ class SelfQueryRetriever(BaseRetriever):
         """Validate translator."""
         if "structured_query_translator" not in values:
             values["structured_query_translator"] = _get_builtin_translator(
-                values["vectorstore"]
+                values["vectorstore"],
             )
         return values
 
@@ -273,10 +273,12 @@ class SelfQueryRetriever(BaseRetriever):
         return self.query_constructor
 
     def _prepare_query(
-        self, query: str, structured_query: StructuredQuery
+        self,
+        query: str,
+        structured_query: StructuredQuery,
     ) -> tuple[str, dict[str, Any]]:
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
-            structured_query
+            structured_query,
         )
         if structured_query.limit is not None:
             new_kwargs["k"] = structured_query.limit
@@ -286,17 +288,24 @@ class SelfQueryRetriever(BaseRetriever):
         return new_query, search_kwargs
 
     def _get_docs_with_query(
-        self, query: str, search_kwargs: dict[str, Any]
+        self,
+        query: str,
+        search_kwargs: dict[str, Any],
     ) -> list[Document]:
         return self.vectorstore.search(query, self.search_type, **search_kwargs)
 
     async def _aget_docs_with_query(
-        self, query: str, search_kwargs: dict[str, Any]
+        self,
+        query: str,
+        search_kwargs: dict[str, Any],
     ) -> list[Document]:
         return await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Get documents relevant for a query.
 
@@ -307,7 +316,8 @@ class SelfQueryRetriever(BaseRetriever):
             List of relevant documents
         """
         structured_query = self.query_constructor.invoke(
-            {"query": query}, config={"callbacks": run_manager.get_child()}
+            {"query": query},
+            config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
             logger.info(f"Generated Query: {structured_query}")
@@ -315,7 +325,10 @@ class SelfQueryRetriever(BaseRetriever):
         return self._get_docs_with_query(new_query, search_kwargs)
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Get documents relevant for a query.
 
@@ -326,7 +339,8 @@ class SelfQueryRetriever(BaseRetriever):
             List of relevant documents
         """
         structured_query = await self.query_constructor.ainvoke(
-            {"query": query}, config={"callbacks": run_manager.get_child()}
+            {"query": query},
+            config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
             logger.info(f"Generated Query: {structured_query}")
@@ -372,7 +386,7 @@ class SelfQueryRetriever(BaseRetriever):
             **chain_kwargs,
         )
         query_constructor = query_constructor.with_config(
-            run_name=QUERY_CONSTRUCTOR_RUN_NAME
+            run_name=QUERY_CONSTRUCTOR_RUN_NAME,
         )
         return cls(  # type: ignore[call-arg]
             query_constructor=query_constructor,

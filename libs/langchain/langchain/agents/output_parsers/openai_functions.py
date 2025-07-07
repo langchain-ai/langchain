@@ -75,11 +75,15 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             )
 
         return AgentFinish(
-            return_values={"output": message.content}, log=str(message.content)
+            return_values={"output": message.content},
+            log=str(message.content),
         )
 
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self,
+        result: list[Generation],
+        *,
+        partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"

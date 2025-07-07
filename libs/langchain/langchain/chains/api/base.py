@@ -287,7 +287,8 @@ try:
             _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
                 msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
@@ -295,7 +296,10 @@ try:
                 raise ValueError(msg)
             api_response = self.requests_wrapper.get(api_url)
             _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = self.api_answer_chain.predict(
                 question=question,
@@ -321,11 +325,15 @@ try:
                 callbacks=_run_manager.get_child(),
             )
             await _run_manager.on_text(
-                api_url, color="green", end="\n", verbose=self.verbose
+                api_url,
+                color="green",
+                end="\n",
+                verbose=self.verbose,
             )
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
                 msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
@@ -333,7 +341,10 @@ try:
                 raise ValueError(msg)
             api_response = await self.requests_wrapper.aget(api_url)
             await _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = await self.api_answer_chain.apredict(
                 question=question,

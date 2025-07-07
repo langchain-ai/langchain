@@ -125,7 +125,9 @@ def test_agent_iterator_with_callbacks() -> None:
         verbose=True,
     )
     agent_iter = agent.iter(
-        inputs="when was langchain made", callbacks=[handler1], include_run_info=True
+        inputs="when was langchain made",
+        callbacks=[handler1],
+        include_run_info=True,
     )
 
     outputs = []
@@ -186,7 +188,10 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     ]
 
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
     agent_async_iter = agent.iter(
         inputs="when was langchain made",
@@ -379,7 +384,10 @@ def test_agent_iterator_failing_tool() -> None:
     ]
 
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
 
     agent_iter = agent.iter(inputs="when was langchain made")

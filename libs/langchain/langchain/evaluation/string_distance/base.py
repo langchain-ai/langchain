@@ -149,7 +149,8 @@ class _RapidFuzzChainMixin(Chain):
             Callable: The distance metric function.
         """
         return _RapidFuzzChainMixin._get_metric(
-            self.distance, normalize_score=self.normalize_score
+            self.distance,
+            normalize_score=self.normalize_score,
         )
 
     def compute_metric(self, a: str, b: str) -> float:
@@ -373,7 +374,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
     async def _acall(
@@ -393,7 +394,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
     def _evaluate_string_pairs(

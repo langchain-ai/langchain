@@ -192,7 +192,9 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     )
     assert result == {"output": "2", "the right input": "1"}
     bad_result = _run_llm_or_chain(
-        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
     )
     assert "Error" in bad_result
 
@@ -339,13 +341,13 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         expected = {
             str(example.id): {
                 "output": {
-                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                    "result": f"Result for example {uuid.UUID(str(example.id))}",
                 },
                 "input": {"input": (example.inputs or {}).get("input")},
                 "reference": {
                     "output": example.outputs["output"]
                     if example.outputs is not None
-                    else None
+                    else None,
                 },
                 "feedback": [],
                 # No run since we mock the call to the llm above

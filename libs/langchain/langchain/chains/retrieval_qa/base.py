@@ -84,10 +84,14 @@ class BaseRetrievalQA(Chain):
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(
-            llm=llm, prompt=_prompt, callbacks=callbacks, **(llm_chain_kwargs or {})
+            llm=llm,
+            prompt=_prompt,
+            callbacks=callbacks,
+            **(llm_chain_kwargs or {}),
         )
         document_prompt = PromptTemplate(
-            input_variables=["page_content"], template="Context:\n{page_content}"
+            input_variables=["page_content"],
+            template="Context:\n{page_content}",
         )
         combine_documents_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
@@ -113,7 +117,9 @@ class BaseRetrievalQA(Chain):
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
-            llm, chain_type=chain_type, **_chain_type_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_type_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -152,7 +158,9 @@ class BaseRetrievalQA(Chain):
         else:
             docs = self._get_docs(question)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
@@ -194,7 +202,9 @@ class BaseRetrievalQA(Chain):
         else:
             docs = await self._aget_docs(question)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
@@ -267,7 +277,8 @@ class RetrievalQA(BaseRetrievalQA):
     ) -> list[Document]:
         """Get docs."""
         return self.retriever.invoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     async def _aget_docs(
@@ -278,7 +289,8 @@ class RetrievalQA(BaseRetrievalQA):
     ) -> list[Document]:
         """Get docs."""
         return await self.retriever.ainvoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     @property
@@ -313,7 +325,7 @@ class VectorDBQA(BaseRetrievalQA):
     def raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import RetrievalQA`"
+            "please use `from langchain.chains import RetrievalQA`",
         )
         return values
 
@@ -337,11 +349,15 @@ class VectorDBQA(BaseRetrievalQA):
         """Get docs."""
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         else:
             msg = f"search_type of {self.search_type} not allowed."

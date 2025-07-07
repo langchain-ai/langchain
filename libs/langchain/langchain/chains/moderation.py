@@ -45,7 +45,9 @@ class OpenAIModerationChain(Chain):
     def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+            values,
+            "openai_api_key",
+            "OPENAI_API_KEY",
         )
         openai_organization = get_from_dict_or_env(
             values,

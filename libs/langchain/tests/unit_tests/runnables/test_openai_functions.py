@@ -31,19 +31,20 @@ class FakeChatOpenAI(BaseChatModel):
                             "function_call": {
                                 "name": "accept",
                                 "arguments": '{\n  "draft": "turtles"\n}',
-                            }
+                            },
                         },
-                    )
-                )
-            ]
+                    ),
+                ),
+            ],
         )
 
 
 def test_openai_functions_router(
-    snapshot: SnapshotAssertion, mocker: MockerFixture
+    snapshot: SnapshotAssertion,
+    mocker: MockerFixture,
 ) -> None:
     revise = mocker.Mock(
-        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!"
+        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!",
     )
     accept = mocker.Mock(side_effect=lambda kw: f"Accepted draft: {kw['draft']}!")
 

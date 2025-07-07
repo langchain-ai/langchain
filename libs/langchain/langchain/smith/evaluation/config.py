@@ -21,7 +21,8 @@ from langchain.evaluation.string_distance.base import (
 )
 
 RUN_EVALUATOR_LIKE = Callable[
-    [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
+    [Run, Optional[Example]],
+    Union[EvaluationResult, EvaluationResults, dict],
 ]
 BATCH_EVALUATOR_LIKE = Callable[
     [Sequence[Run], Optional[Sequence[Example]]],
@@ -176,7 +177,9 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
 
         def __init__(
-            self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
+            self,
+            criteria: Optional[CRITERIA_TYPE] = None,
+            **kwargs: Any,
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
@@ -196,7 +199,9 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
 
         def __init__(
-            self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
+            self,
+            criteria: Optional[CRITERIA_TYPE] = None,
+            **kwargs: Any,
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 

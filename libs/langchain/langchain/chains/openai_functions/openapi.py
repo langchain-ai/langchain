@@ -127,7 +127,8 @@ def openapi_spec_to_openai_fn(
             for param_loc, arg_name in param_loc_to_arg_name.items():
                 if params_by_type[param_loc]:
                     request_args[arg_name] = _openapi_params_to_json_schema(
-                        params_by_type[param_loc], spec
+                        params_by_type[param_loc],
+                        spec,
                     )
             request_body = spec.get_request_body_for_operation(op)
             # TODO: Support more MIME types.
@@ -137,7 +138,7 @@ def openapi_spec_to_openai_fn(
                     if media_type_object.media_type_schema:
                         schema = spec.get_schema(media_type_object.media_type_schema)
                         media_types[media_type] = json.loads(
-                            schema.json(exclude_none=True)
+                            schema.json(exclude_none=True),
                         )
                 if len(media_types) == 1:
                     media_type, schema_dict = next(iter(media_types.items()))
@@ -226,8 +227,8 @@ class SimpleRequestChain(Chain):
         if api_response.status_code != 200:
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
-                + f"\nFor {name} "
-                + f"Called with args: {args.get('params', '')}"
+                f"\nFor {name} "
+                f"Called with args: {args.get('params', '')}"
             )
         else:
             try:
@@ -376,7 +377,7 @@ def get_openapi_chain(
         )
         raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(
-        "Use the provided API's to respond to this user query:\n\n{query}"
+        "Use the provided API's to respond to this user query:\n\n{query}",
     )
     llm_chain = LLMChain(
         llm=llm,
@@ -389,7 +390,10 @@ def get_openapi_chain(
     )
     request_chain = request_chain or SimpleRequestChain(
         request_method=lambda name, args: call_api_fn(
-            name, args, headers=headers, params=params
+            name,
+            args,
+            headers=headers,
+            params=params,
         ),
         verbose=verbose,
     )

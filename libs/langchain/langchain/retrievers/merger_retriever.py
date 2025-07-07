@@ -53,7 +53,9 @@ class MergerRetriever(BaseRetriever):
         return await self.amerge_documents(query, run_manager)
 
     def merge_documents(
-        self, query: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """
         Merge the results of the retrievers.
@@ -85,7 +87,9 @@ class MergerRetriever(BaseRetriever):
         return merged_documents
 
     async def amerge_documents(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """
         Asynchronously merge the results of the retrievers.
@@ -105,7 +109,7 @@ class MergerRetriever(BaseRetriever):
                     config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
                 )
                 for i, retriever in enumerate(self.retrievers)
-            )
+            ),
         )
 
         # Merge the results of the retrievers.

@@ -183,12 +183,12 @@ async def test_agent_stream() -> None:
                     tool="Search",
                     tool_input="misalignment",
                     log="FooBarBaz\nAction: Search\nAction Input: misalignment",
-                )
+                ),
             ],
             "messages": [
                 AIMessage(
-                    content="FooBarBaz\nAction: Search\nAction Input: misalignment"
-                )
+                    content="FooBarBaz\nAction: Search\nAction Input: misalignment",
+                ),
             ],
         },
         {
@@ -200,7 +200,7 @@ async def test_agent_stream() -> None:
                         log="FooBarBaz\nAction: Search\nAction Input: misalignment",
                     ),
                     observation="Results for: misalignment",
-                )
+                ),
             ],
             "messages": [HumanMessage(content="Results for: misalignment")],
         },
@@ -210,12 +210,12 @@ async def test_agent_stream() -> None:
                     tool="Search",
                     tool_input="something else",
                     log="FooBarBaz\nAction: Search\nAction Input: something else",
-                )
+                ),
             ],
             "messages": [
                 AIMessage(
-                    content="FooBarBaz\nAction: Search\nAction Input: something else"
-                )
+                    content="FooBarBaz\nAction: Search\nAction Input: something else",
+                ),
             ],
         },
         {
@@ -227,14 +227,14 @@ async def test_agent_stream() -> None:
                         log="FooBarBaz\nAction: Search\nAction Input: something else",
                     ),
                     observation="Results for: something else",
-                )
+                ),
             ],
             "messages": [HumanMessage(content="Results for: something else")],
         },
         {
             "output": "curses foiled again",
             "messages": [
-                AIMessage(content="Oh well\nFinal Answer: curses foiled again")
+                AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
             ],
         },
     ]
@@ -273,7 +273,7 @@ async def test_agent_stream() -> None:
             AIMessage(content="FooBarBaz\nAction: Search\nAction Input: misalignment"),
             HumanMessage(content="Results for: misalignment"),
             AIMessage(
-                content="FooBarBaz\nAction: Search\nAction Input: something else"
+                content="FooBarBaz\nAction: Search\nAction Input: something else",
             ),
             HumanMessage(content="Results for: something else"),
             AIMessage(content="Oh well\nFinal Answer: curses foiled again"),

@@ -35,7 +35,7 @@ class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 
     output_parser: AgentOutputParser = Field(
-        default_factory=StructuredChatOutputParserWithRetries
+        default_factory=StructuredChatOutputParserWithRetries,
     )
     """Output parser for the agent."""
 
@@ -50,7 +50,8 @@ class StructuredChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
@@ -70,7 +71,9 @@ class StructuredChatAgent(Agent):
 
     @classmethod
     def _get_default_output_parser(
-        cls, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        cls,
+        llm: Optional[BaseLanguageModel] = None,
+        **kwargs: Any,
     ) -> AgentOutputParser:
         return StructuredChatOutputParserWithRetries.from_llm(llm=llm)
 
@@ -275,7 +278,7 @@ def create_structured_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"

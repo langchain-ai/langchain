@@ -190,7 +190,9 @@ def create_structured_output_runnable(
     enforce_function_usage: bool = True,
     return_single: bool = True,
     mode: Literal[
-        "openai-functions", "openai-tools", "openai-json"
+        "openai-functions",
+        "openai-tools",
+        "openai-json",
     ] = "openai-functions",
     **kwargs: Any,
 ) -> Runnable:
@@ -391,7 +393,8 @@ def create_structured_output_runnable(
     """  # noqa: E501
     # for backwards compatibility
     force_function_usage = kwargs.get(
-        "enforce_single_function_usage", enforce_function_usage
+        "enforce_single_function_usage",
+        enforce_function_usage,
     )
 
     if mode == "openai-tools":
@@ -428,7 +431,11 @@ def create_structured_output_runnable(
             )
             raise ValueError(msg)
         return _create_openai_json_runnable(
-            output_schema, llm, prompt=prompt, output_parser=output_parser, **kwargs
+            output_schema,
+            llm,
+            prompt=prompt,
+            output_parser=output_parser,
+            **kwargs,
         )
     msg = (
         f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
@@ -454,7 +461,8 @@ def _create_openai_tools_runnable(
             "function": {"name": oai_tool["function"]["name"]},
         }
     output_parser = output_parser or _get_openai_tool_output_parser(
-        tool, first_tool_only=first_tool_only
+        tool,
+        first_tool_only=first_tool_only,
     )
     if prompt:
         return prompt | llm.bind(**llm_kwargs) | output_parser
@@ -473,7 +481,8 @@ def _get_openai_tool_output_parser(
     else:
         key_name = convert_to_openai_tool(tool)["function"]["name"]
         output_parser = JsonOutputKeyToolsParser(
-            first_tool_only=first_tool_only, key_name=key_name
+            first_tool_only=first_tool_only,
+            key_name=key_name,
         )
     return output_parser
 
@@ -561,7 +570,8 @@ def _create_openai_functions_structured_output_runnable(
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_runnable(
         [function],

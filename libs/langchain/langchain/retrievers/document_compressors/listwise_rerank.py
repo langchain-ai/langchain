@@ -92,7 +92,8 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         results = self.reranker.invoke(
-            {"documents": documents, "query": query}, config={"callbacks": callbacks}
+            {"documents": documents, "query": query},
+            config={"callbacks": callbacks},
         )
         return results[: self.top_n]
 
@@ -138,6 +139,6 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         reranker = RunnablePassthrough.assign(
             ranking=RunnableLambda(_get_prompt_input)
             | _prompt
-            | llm.with_structured_output(RankDocuments)
+            | llm.with_structured_output(RankDocuments),
         ) | RunnableLambda(_parse_ranking)
         return cls(reranker=reranker, **kwargs)

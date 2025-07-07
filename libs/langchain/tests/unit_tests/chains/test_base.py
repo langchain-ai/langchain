@@ -22,7 +22,8 @@ class FakeMemory(BaseMemory):
         return ["baz"]
 
     def load_memory_variables(
-        self, inputs: Optional[dict[str, Any]] = None
+        self,
+        inputs: Optional[dict[str, Any]] = None,
     ) -> dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}

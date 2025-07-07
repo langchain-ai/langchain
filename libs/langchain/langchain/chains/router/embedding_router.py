@@ -65,7 +65,7 @@ class EmbeddingRouterChain(RouterChain):
         for name, descriptions in names_and_descriptions:
             for description in descriptions:
                 documents.append(
-                    Document(page_content=description, metadata={"name": name})
+                    Document(page_content=description, metadata={"name": name}),
                 )
         vectorstore = vectorstore_cls.from_documents(documents, embeddings)
         return cls(vectorstore=vectorstore, **kwargs)
@@ -83,7 +83,7 @@ class EmbeddingRouterChain(RouterChain):
         for name, descriptions in names_and_descriptions:
             for description in descriptions:
                 documents.append(
-                    Document(page_content=description, metadata={"name": name})
+                    Document(page_content=description, metadata={"name": name}),
                 )
         vectorstore = await vectorstore_cls.afrom_documents(documents, embeddings)
         return cls(vectorstore=vectorstore, **kwargs)

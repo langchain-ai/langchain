@@ -42,7 +42,7 @@ def _check_numpy() -> bool:
         "langchain will use a pure Python implementation for embedding distance "
         "operations, which may significantly impact performance, especially for large "
         "datasets. For optimal speed and efficiency, consider installing NumPy: "
-        "pip install numpy"
+        "pip install numpy",
     )
     return False
 
@@ -346,7 +346,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         vectors = self.embeddings.embed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [inputs["prediction"], inputs["reference"]],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -373,7 +373,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             [
                 inputs["prediction"],
                 inputs["reference"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -451,7 +451,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
 
 class PairwiseEmbeddingDistanceEvalChain(
-    _EmbeddingDistanceChainMixin, PairwiseStringEvaluator
+    _EmbeddingDistanceChainMixin,
+    PairwiseStringEvaluator,
 ):
     """Use embedding distances to score semantic difference between two predictions.
 
@@ -494,7 +495,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -521,7 +522,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()

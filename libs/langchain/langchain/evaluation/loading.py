@@ -73,7 +73,8 @@ def load_dataset(uri: str) -> list[dict]:
 
 
 _EVALUATOR_MAP: dict[
-    EvaluatorType, Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]]
+    EvaluatorType,
+    Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]],
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,

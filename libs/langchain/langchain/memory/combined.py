@@ -16,7 +16,8 @@ class CombinedMemory(BaseMemory):
     @field_validator("memories")
     @classmethod
     def check_repeated_memory_variable(
-        cls, value: list[BaseMemory]
+        cls,
+        value: list[BaseMemory],
     ) -> list[BaseMemory]:
         all_variables: set[str] = set()
         for val in value:
@@ -40,7 +41,7 @@ class CombinedMemory(BaseMemory):
                 warnings.warn(
                     "When using CombinedMemory, "
                     "input keys should be so the input is known. "
-                    f" Was not set on {val}"
+                    f" Was not set on {val}",
                 )
         return value
 

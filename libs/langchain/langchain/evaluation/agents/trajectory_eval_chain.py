@@ -145,7 +145,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     eval_chain: LLMChain
     """The language model chain used for evaluation."""
     output_parser: TrajectoryOutputParser = Field(
-        default_factory=TrajectoryOutputParser
+        default_factory=TrajectoryOutputParser,
     )
     """The output parser used to parse the output."""
     return_reasoning: bool = False  # :meta private:
@@ -174,7 +174,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
                 f"""Tool {i}: {tool.name}
 Description: {tool.description}"""
                 for i, tool in enumerate(self.agent_tools, 1)
-            ]
+            ],
         )
 
     @staticmethod
@@ -199,7 +199,7 @@ Tool used: {action.tool}
 Tool input: {action.tool_input}
 Tool output: {output}"""
                 for i, (action, output) in enumerate(steps, 1)
-            ]
+            ],
         )
 
     @staticmethod
@@ -296,7 +296,8 @@ The following is the expected answer. Use this to measure correctness:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         raw_output = self.eval_chain.run(
-            chain_input, callbacks=_run_manager.get_child()
+            chain_input,
+            callbacks=_run_manager.get_child(),
         )
         return cast(dict, self.output_parser.parse(raw_output))
 
@@ -320,7 +321,8 @@ The following is the expected answer. Use this to measure correctness:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         raw_output = await self.eval_chain.arun(
-            chain_input, callbacks=_run_manager.get_child()
+            chain_input,
+            callbacks=_run_manager.get_child(),
         )
         return cast(dict, self.output_parser.parse(raw_output))
 

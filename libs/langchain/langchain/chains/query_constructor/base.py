@@ -60,7 +60,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             if not parsed.get("limit"):
                 parsed.pop("limit", None)
             return StructuredQuery(
-                **{k: v for k, v in parsed.items() if k in allowed_keys}
+                **{k: v for k, v in parsed.items() if k in allowed_keys},
             )
         except Exception as e:
             msg = f"Parsing text\n{text}\n raised following error:\n{e}"
@@ -89,7 +89,8 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
                 filter_directive = cast(
-                    Optional[FilterDirective], get_parser().parse(raw_filter)
+                    Optional[FilterDirective],
+                    get_parser().parse(raw_filter),
                 )
                 return fix_filter_directive(
                     filter_directive,
@@ -235,7 +236,9 @@ def get_query_constructor_prompt(
         examples = construct_examples(examples)
         example_prompt = USER_SPECIFIED_EXAMPLE_PROMPT
         prefix = PREFIX_WITH_DATA_SOURCE.format(
-            schema=schema, content=document_contents, attributes=attribute_str
+            schema=schema,
+            content=document_contents,
+            attributes=attribute_str,
         )
         suffix = SUFFIX_WITHOUT_DATA_SOURCE.format(i=len(examples) + 1)
     else:
@@ -245,7 +248,9 @@ def get_query_constructor_prompt(
         example_prompt = EXAMPLE_PROMPT
         prefix = DEFAULT_PREFIX.format(schema=schema)
         suffix = DEFAULT_SUFFIX.format(
-            i=len(examples) + 1, content=document_contents, attributes=attribute_str
+            i=len(examples) + 1,
+            content=document_contents,
+            attributes=attribute_str,
         )
     return FewShotPromptTemplate(
         examples=list(examples),
@@ -303,7 +308,7 @@ def load_query_constructor_chain(
     allowed_attributes = []
     for ainfo in attribute_info:
         allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"],
         )
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
@@ -362,7 +367,7 @@ def load_query_constructor_runnable(
     allowed_attributes = []
     for ainfo in attribute_info:
         allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"],
         )
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,

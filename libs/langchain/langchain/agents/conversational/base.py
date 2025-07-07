@@ -36,7 +36,9 @@ class ConversationalAgent(Agent):
 
     @classmethod
     def _get_default_output_parser(
-        cls, ai_prefix: str = "AI", **kwargs: Any
+        cls,
+        ai_prefix: str = "AI",
+        **kwargs: Any,
     ) -> AgentOutputParser:
         return ConvoOutputParser(ai_prefix=ai_prefix)
 
@@ -93,11 +95,13 @@ class ConversationalAgent(Agent):
             A PromptTemplate with the template assembled from the pieces here.
         """
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [f"> {tool.name}: {tool.description}" for tool in tools],
         )
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(
-            tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
+            tool_names=tool_names,
+            ai_prefix=ai_prefix,
+            human_prefix=human_prefix,
         )
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
@@ -161,7 +165,7 @@ class ConversationalAgent(Agent):
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser(
-            ai_prefix=ai_prefix
+            ai_prefix=ai_prefix,
         )
         return cls(
             llm_chain=llm_chain,

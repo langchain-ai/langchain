@@ -155,7 +155,10 @@ class LLMRouterChain(RouterChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, prompt: BasePromptTemplate, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: BasePromptTemplate,
+        **kwargs: Any,
     ) -> LLMRouterChain:
         """Convenience constructor."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)

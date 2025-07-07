@@ -76,11 +76,17 @@ def initialize_agent(
         agent_cls = AGENT_TO_CLASS[agent]
         agent_kwargs = agent_kwargs or {}
         agent_obj = agent_cls.from_llm_and_tools(
-            llm, tools, callback_manager=callback_manager, **agent_kwargs
+            llm,
+            tools,
+            callback_manager=callback_manager,
+            **agent_kwargs,
         )
     elif agent_path is not None:
         agent_obj = load_agent(
-            agent_path, llm=llm, tools=tools, callback_manager=callback_manager
+            agent_path,
+            llm=llm,
+            tools=tools,
+            callback_manager=callback_manager,
         )
         with contextlib.suppress(NotImplementedError):
             # TODO: Add tags from the serialized object directly.

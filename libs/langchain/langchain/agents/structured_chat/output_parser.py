@@ -43,7 +43,9 @@ class StructuredChatOutputParser(AgentOutputParser):
                 if response["action"] == "Final Answer":
                     return AgentFinish({"output": response["action_input"]}, text)
                 return AgentAction(
-                    response["action"], response.get("action_input", {}), text
+                    response["action"],
+                    response.get("action_input", {}),
+                    text,
                 )
             return AgentFinish({"output": text}, text)
         except Exception as e:
@@ -88,7 +90,8 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
         if llm is not None:
             base_parser = base_parser or StructuredChatOutputParser()
             output_fixing_parser: OutputFixingParser = OutputFixingParser.from_llm(
-                llm=llm, parser=base_parser
+                llm=llm,
+                parser=base_parser,
             )
             return cls(output_fixing_parser=output_fixing_parser)
         if base_parser is not None:
