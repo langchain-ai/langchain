@@ -65,7 +65,7 @@ def test_import_all_using_dir() -> None:
         except ModuleNotFoundError as e:
             msg = f"Could not import {module_name}"
             raise ModuleNotFoundError(msg) from e
-        all = dir(mod)
+        attributes = dir(mod)
 
         for name in attributes:
             if name.strip().startswith("_"):
