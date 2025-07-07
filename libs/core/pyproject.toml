@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.66"
+version = "0.3.68"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -27,7 +27,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 lint = [
-    "ruff<0.12.0,>=0.11.2",
+    "ruff<0.13.0,>=0.12.2",
 ]
 typing = [
     "mypy<1.16,>=1.15",
@@ -95,19 +95,21 @@ ignore = [
     "TC003", # Doesn't play well with Pydantic
     "TD002", # Missing author in TODO
     "TD003", # Missing issue link in TODO
-    "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
     "ANN401",
     "BLE",
     "ERA",
+    "PLC0415",
     "PLR2004",
 ]
-flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pydocstyle.ignore-var-parameters = true
+pyupgrade.keep-runtime-typing = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -119,14 +121,8 @@ asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]

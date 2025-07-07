@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 
@@ -64,15 +64,14 @@ class RecursiveJsonSplitter:
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
-        elif isinstance(data, list):
+        if isinstance(data, list):
             # Convert the list to a dictionary with index-based keys
             return {
                 str(i): self._list_to_dict_preprocessing(item)
                 for i, item in enumerate(data)
             }
-        else:
-            # Base case: the item is neither a dict nor a list, so return it unchanged
-            return data
+        # Base case: the item is neither a dict nor a list, so return it unchanged
+        return data
 
     def _json_split(
         self,
@@ -85,7 +84,7 @@ class RecursiveJsonSplitter:
         chunks = chunks if chunks is not None else [{}]
         if isinstance(data, dict):
             for key, value in data.items():
-                new_path = current_path + [key]
+                new_path = [*current_path, key]
                 chunk_size = self._json_size(chunks[-1])
                 size = self._json_size({key: value})
                 remaining = self.max_chunk_size - chunk_size
@@ -123,10 +122,10 @@ class RecursiveJsonSplitter:
 
     def split_text(
         self,
-        json_data: Dict[str, Any],
+        json_data: dict[str, Any],
         convert_lists: bool = False,
         ensure_ascii: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         """Splits JSON into a list of JSON formatted strings."""
         chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
 

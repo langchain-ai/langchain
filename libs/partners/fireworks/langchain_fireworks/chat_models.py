@@ -288,7 +288,7 @@ class ChatFireworks(BaseChatModel):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object."""
         return ["langchain", "chat_models", "fireworks"]
 
     @property
@@ -327,7 +327,7 @@ class ChatFireworks(BaseChatModel):
     )
     """Fireworks API key.
     
-    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
 
     fireworks_api_base: Optional[str] = Field(
@@ -338,8 +338,8 @@ class ChatFireworks(BaseChatModel):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Fireworks completion API. Can be float, httpx.Timeout or 
-        None."""
+    """Timeout for requests to Fireworks completion API. Can be ``float``,
+    ``httpx.Timeout`` or ``None``."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -636,8 +636,8 @@ class ChatFireworks(BaseChatModel):
 
         Assumes model is compatible with Fireworks function-calling API.
 
-        NOTE: Using bind_tools is recommended instead, as the `functions` and
-            `function_call` request parameters are officially marked as deprecated by
+        NOTE: Using bind_tools is recommended instead, as the ``functions`` and
+            ``function_call`` request parameters are officially marked as deprecated by
             Fireworks.
 
         Args:
@@ -699,10 +699,10 @@ class ChatFireworks(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
-                "auto" to automatically determine which function to call
-                with the option to not call any function, "any" to enforce that some
+                ``'auto'`` to automatically determine which function to call
+                with the option to not call any function, ``'any'`` to enforce that some
                 function is called, or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to
                 :meth:`~langchain_fireworks.chat_models.ChatFireworks.bind`
         """
@@ -760,11 +760,11 @@ class ChatFireworks(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
-                - "json_mode":
+                - ``'json_mode'``:
                     Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
 
                 .. versionchanged:: 0.2.8
@@ -793,6 +793,7 @@ class ChatFireworks(BaseChatModel):
                 - ``"parsing_error"``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from typing import Optional
@@ -826,6 +827,7 @@ class ChatFireworks(BaseChatModel):
                 # )
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
+
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
@@ -854,6 +856,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
@@ -884,6 +887,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
@@ -897,9 +901,9 @@ class ChatFireworks(BaseChatModel):
                             'answer': {'type': 'string'},
                             'justification': {'description': 'A justification for the answer.', 'type': 'string'}
                         },
-                       'required': ['answer']
-                   }
-               }
+                        'required': ['answer']
+                    }
+                }
 
                 llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
@@ -913,6 +917,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
+
             .. code-block::
 
                 from langchain_fireworks import ChatFireworks
@@ -941,6 +946,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=None, method="json_mode", include_raw=True:
+
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)

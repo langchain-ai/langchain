@@ -53,6 +53,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
+from ._utils import validate_model
 
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
@@ -375,6 +376,9 @@ class ChatOllama(BaseChatModel):
       ()``<think>`` and ``</think>``) will be present within the main response content
       unless you set ``reasoning`` to ``True``."""
 
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in Ollama locally on initialization."""
+
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
     (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
@@ -547,6 +551,8 @@ class ChatOllama(BaseChatModel):
 
         self._client = Client(host=self.base_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     def _convert_messages_to_ollama_messages(

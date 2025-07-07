@@ -81,13 +81,13 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
-                kwargs[k] = prompt.format_messages(**_inputs)
+                kwargs[k] = prompt.format_messages(**inputs)
             else:
-                kwargs[k] = prompt.format(**_inputs)
-        _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
-        return self.final_prompt.format_prompt(**_inputs)
+                kwargs[k] = prompt.format(**inputs)
+        inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
+        return self.final_prompt.format_prompt(**inputs)
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         """Async format the prompt with the inputs.
@@ -99,13 +99,13 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
-                kwargs[k] = await prompt.aformat_messages(**_inputs)
+                kwargs[k] = await prompt.aformat_messages(**inputs)
             else:
-                kwargs[k] = await prompt.aformat(**_inputs)
-        _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
-        return await self.final_prompt.aformat_prompt(**_inputs)
+                kwargs[k] = await prompt.aformat(**inputs)
+        inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
+        return await self.final_prompt.aformat_prompt(**inputs)
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.

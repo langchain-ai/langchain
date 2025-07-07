@@ -54,15 +54,15 @@ class StructuredChatAgent(Agent):
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
+            msg = "agent_scratchpad should be of type string."
+            raise ValueError(msg)
         if agent_scratchpad:
             return (
                 f"This was your previous work "
                 f"(but I haven't seen any of it! I only see what "
                 f"you return as final answer):\n{agent_scratchpad}"
             )
-        else:
-            return agent_scratchpad
+        return agent_scratchpad
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
@@ -278,7 +278,8 @@ def create_structured_chat_agent(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
@@ -290,7 +291,7 @@ def create_structured_chat_agent(
     else:
         llm_with_stop = llm
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
@@ -298,4 +299,3 @@ def create_structured_chat_agent(
         | llm_with_stop
         | JSONAgentOutputParser()
     )
-    return agent

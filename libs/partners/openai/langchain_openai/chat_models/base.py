@@ -649,6 +649,25 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
+    output_version: Literal["v0", "responses/v1"] = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    Supported values:
+
+    - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
+    - ``"responses/v1"``: Formats Responses API output
+      items into AIMessage content blocks.
+
+    Currently only impacts the Responses API. ``output_version="responses/v1"`` is
+    recommended.
+
+    .. versionadded:: 0.3.25
+
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -903,6 +922,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
+                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -957,6 +977,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
+                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1096,7 +1117,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = self.root_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
@@ -1109,6 +1133,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif self.output_version == "responses/v1":
+            return True
         elif self.include is not None:
             return True
         elif self.reasoning is not None:
@@ -1327,7 +1353,10 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     response = await self.root_async_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj, metadata=generation_info
+                response,
+                schema=original_schema_obj,
+                metadata=generation_info,
+                output_version=self.output_version,
             )
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
@@ -2249,11 +2278,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
         detail.
 
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini")
+            llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
             tool = {"type": "web_search_preview"}
             llm_with_tools = llm.bind_tools([tool])
@@ -2294,7 +2335,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 
@@ -2313,10 +2354,33 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
+        .. versionadded:: 0.3.26
+
+        You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
+        Input messages up to the most recent response will then be dropped from request
+        payloads, and ``previous_response_id`` will be set using the ID of the most
+        recent response.
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
+
     .. dropdown:: Reasoning output
 
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
+
+        .. note::
+            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
+            AIMessage format when using the Responses API. Setting
+
+            ..  code-block:: python
+
+                llm = ChatOpenAI(model="...", output_version="responses/v1")
+
+            will format output from reasoning summaries, built-in tool invocations, and
+            other response items into the message's ``content`` field, rather than
+            ``additional_kwargs``. We recommend this format for new applications.
 
         .. code-block:: python
 
@@ -2328,24 +2392,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             }
 
             llm = ChatOpenAI(
-                model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+                model="o4-mini", reasoning=reasoning, output_version="responses/v1"
             )
             response = llm.invoke("What is 3^3?")
 
+            # Response text
             print(f"Output: {response.text()}")
-            print(f"Reasoning: {response.additional_kwargs['reasoning']}")
+
+            # Reasoning summaries
+            for block in response.content:
+                if block["type"] == "reasoning":
+                    for summary in block["summary"]:
+                        print(summary["text"])
 
         .. code-block:: none
 
-            Output: 3^3 = 27.
-
-            Reasoning: {
-                'id': 'rs_67fffc44b1c08191b6ca9bead6d832590433145b1786f809',
-                'summary': [
-                    {'text': 'The user wants to know...', 'type': 'summary_text'}
-                ],
-                'type': 'reasoning'
-            }
+            Output: 3³ = 27
+            Reasoning: The user wants to know...
 
     .. dropdown:: Structured output
 
@@ -3208,19 +3271,23 @@ def _create_usage_metadata_responses(oai_token_usage: dict) -> UsageMetadata:
     input_tokens = oai_token_usage.get("input_tokens", 0)
     output_tokens = oai_token_usage.get("output_tokens", 0)
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
-
     output_token_details: dict = {
-        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
-            "audio_tokens"
-        ),
-        "reasoning": (oai_token_usage.get("output_token_details") or {}).get(
+        "reasoning": (oai_token_usage.get("output_tokens_details") or {}).get(
             "reasoning_tokens"
-        ),
+        )
+    }
+    input_token_details: dict = {
+        "cache_read": (oai_token_usage.get("input_tokens_details") or {}).get(
+            "cached_tokens"
+        )
     }
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
         output_token_details=OutputTokenDetails(
             **{k: v for k, v in output_token_details.items() if v is not None}
         ),
@@ -3540,6 +3607,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
+    output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3676,7 +3744,10 @@ def _construct_lc_result_from_responses_api(
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
     )
-    message = _convert_to_v03_ai_message(message)
+    if output_version == "v0":
+        message = _convert_to_v03_ai_message(message)
+    else:
+        pass
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -3688,6 +3759,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
+    output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -3756,12 +3828,15 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_text.done":
         content.append({"id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
-        response_metadata["id"] = chunk.response.id
+        id = chunk.response.id
+        response_metadata["id"] = chunk.response.id  # Backwards compatibility
     elif chunk.type == "response.completed":
         msg = cast(
             AIMessage,
             (
-                _construct_lc_result_from_responses_api(chunk.response, schema=schema)
+                _construct_lc_result_from_responses_api(
+                    chunk.response, schema=schema, output_version=output_version
+                )
                 .generations[0]
                 .message
             ),
@@ -3773,7 +3848,10 @@ def _convert_responses_chunk_to_generation_chunk(
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
-        id = chunk.item.id
+        if output_version == "v0":
+            id = chunk.item.id
+        else:
+            pass
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
@@ -3868,9 +3946,13 @@ def _convert_responses_chunk_to_generation_chunk(
         additional_kwargs=additional_kwargs,
         id=id,
     )
-    message = cast(
-        AIMessageChunk, _convert_to_v03_ai_message(message, has_reasoning=has_reasoning)
-    )
+    if output_version == "v0":
+        message = cast(
+            AIMessageChunk,
+            _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
+        )
+    else:
+        pass
     return (
         current_index,
         current_output_index,

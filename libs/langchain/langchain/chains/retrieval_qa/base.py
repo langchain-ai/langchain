@@ -69,7 +69,7 @@ class BaseRetrievalQA(Chain):
         """
         _output_keys = [self.output_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         return _output_keys
 
     @classmethod
@@ -157,8 +157,7 @@ class BaseRetrievalQA(Chain):
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
     @abstractmethod
     async def _aget_docs(
@@ -200,8 +199,7 @@ class BaseRetrievalQA(Chain):
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
 
 @deprecated(
@@ -326,7 +324,8 @@ class VectorDBQA(BaseRetrievalQA):
         if "search_type" in values:
             search_type = values["search_type"]
             if search_type not in ("similarity", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
+                msg = f"search_type of {search_type} not allowed."
+                raise ValueError(msg)
         return values
 
     def _get_docs(
@@ -345,7 +344,8 @@ class VectorDBQA(BaseRetrievalQA):
                 question, k=self.k, **self.search_kwargs
             )
         else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
         return docs
 
     async def _aget_docs(
@@ -355,7 +355,8 @@ class VectorDBQA(BaseRetrievalQA):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("VectorDBQA does not support async")
+        msg = "VectorDBQA does not support async"
+        raise NotImplementedError(msg)
 
     @property
     def _chain_type(self) -> str:
