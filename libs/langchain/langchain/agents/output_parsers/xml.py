@@ -1,5 +1,5 @@
 import re
-from typing import Literal, Union
+from typing import Literal, Union, Optional
 
 from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
@@ -56,7 +56,7 @@ class XMLAgentOutputParser(AgentOutputParser):
             contains malformed XML structure.
     """
 
-    escape_format: Literal["minimal"] | None = Field(default="minimal")
+    escape_format: Optional[Literal["minimal"]] = Field(default="minimal")
     """The format to use for escaping XML characters.
     
     minimal - uses custom delimiters to replace XML tags within content,
