@@ -22,6 +22,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "SearchAPIRun",
     "SearchAPIResults",
+    "SearchAPIRun",
 ]

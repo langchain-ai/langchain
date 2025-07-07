@@ -348,7 +348,7 @@ class SQLiteEntityStore(BaseEntityStore):
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Retrieves a value, safely quoting the table name."""
         # `?` placeholder is used for the value to prevent SQL injection
-        # noqa since we validate for malicious table/session names in `__init__`
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f'SELECT value FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
         cursor = self._execute_query(query, (key,))
         result = cursor.fetchone()
@@ -358,7 +358,7 @@ class SQLiteEntityStore(BaseEntityStore):
         """Inserts or replaces a value, safely quoting the table name."""
         if not value:
             return self.delete(key)
-        # noqa since we validate for malicious table/session names in `__init__`
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = (
             "INSERT OR REPLACE INTO "  # noqa: S608
             f'"{self.full_table_name}" (key, value) VALUES (?, ?)'
@@ -368,19 +368,19 @@ class SQLiteEntityStore(BaseEntityStore):
 
     def delete(self, key: str) -> None:
         """Deletes a key-value pair, safely quoting the table name."""
-        # noqa since we validate for malicious table/session names in `__init__`
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f'DELETE FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
         self._execute_query(query, (key,))
 
     def exists(self, key: str) -> bool:
         """Checks for the existence of a key, safely quoting the table name."""
-        # noqa since we validate for malicious table/session names in `__init__`
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f'SELECT 1 FROM "{self.full_table_name}" WHERE key = ? LIMIT 1'  # noqa: S608
         cursor = self._execute_query(query, (key,))
         return cursor.fetchone() is not None
 
     def clear(self) -> None:
-        # noqa since we validate for malicious table/session names in `__init__`
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f"""
             DELETE FROM {self.full_table_name}
         """  # noqa: S608

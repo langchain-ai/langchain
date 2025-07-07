@@ -163,7 +163,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     since="0.2.7",
     alternative=(
         "example in API reference with more detail: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.combine_documents.base.AnalyzeDocumentChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.combine_documents.base.AnalyzeDocumentChain.html"
     ),
     removal="1.0",
 )

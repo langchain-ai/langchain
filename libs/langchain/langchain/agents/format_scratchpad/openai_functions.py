@@ -20,8 +20,9 @@ def _convert_agent_action_to_messages(
             the original tool invocation
     """
     if isinstance(agent_action, AgentActionMessageLog):
-        return list(agent_action.message_log) + [
-            _create_function_message(agent_action, observation)
+        return [
+            *list(agent_action.message_log),
+            _create_function_message(agent_action, observation),
         ]
     return [AIMessage(content=agent_action.log)]
 

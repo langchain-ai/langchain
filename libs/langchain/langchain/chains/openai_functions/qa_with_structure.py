@@ -32,7 +32,7 @@ class AnswerWithSources(BaseModel):
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with structured responses: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
     ),
 )
 def create_qa_with_structure_chain(
@@ -115,7 +115,7 @@ def create_qa_with_structure_chain(
     message=(
         "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
     ),
 )
 def create_qa_with_sources_chain(

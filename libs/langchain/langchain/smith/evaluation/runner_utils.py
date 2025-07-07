@@ -512,7 +512,7 @@ def _determine_reference_key(
             )
             raise ValueError(msg)
     elif example_outputs and len(example_outputs) == 1:
-        reference_key = list(example_outputs)[0]
+        reference_key = next(iter(example_outputs))
     else:
         reference_key = None
     return reference_key
@@ -693,9 +693,8 @@ async def _arun_llm(
     """
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if (
-            isinstance(prompt_or_messages, str)
-            or isinstance(prompt_or_messages, list)
+        if isinstance(prompt_or_messages, str) or (
+            isinstance(prompt_or_messages, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             return await llm.ainvoke(
@@ -810,7 +809,7 @@ async def _arun_llm_or_chain(
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\n{repr(e)}"
+            f"\n{e!r}"
         )
         result = EvalError(Error=e)
     return result
@@ -846,9 +845,8 @@ def _run_llm(
     # Most of this is legacy code; we could probably remove a lot of it.
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if (
-            isinstance(prompt_or_messages, str)
-            or isinstance(prompt_or_messages, list)
+        if isinstance(prompt_or_messages, str) or (
+            isinstance(prompt_or_messages, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             llm_output: Union[str, BaseMessage] = llm.invoke(
@@ -1094,9 +1092,7 @@ class _DatasetRunContainer:
                         project_id=self.project.id,
                     )
                 except Exception as e:
-                    logger.error(
-                        f"Error running batch evaluator {repr(evaluator)}: {e}"
-                    )
+                    logger.error(f"Error running batch evaluator {evaluator!r}: {e}")
         return aggregate_feedback
 
     def _collect_metrics(self) -> tuple[dict[str, _RowResult], dict[str, Run]]:
@@ -1157,14 +1153,14 @@ class _DatasetRunContainer:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
             except Exception as e:
-                logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
+                logger.debug(f"Failed to print aggregate feedback: {e!r}")
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
                 self.project.id, end_time=datetime.now(timezone.utc)
             )
         except Exception as e:
-            logger.debug(f"Failed to close project: {repr(e)}")
+            logger.debug(f"Failed to close project: {e!r}")
         return results
 
     @classmethod
