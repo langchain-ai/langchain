@@ -28,7 +28,7 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, override
 
 __all__ = [
     "init_chat_model",
@@ -456,10 +456,11 @@ def _init_chat_model_helper(
         return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
-        raise ValueError(
+        msg = (
             f"Unsupported {model_provider=}.\n\nSupported model providers are: "
             f"{supported}"
         )
+        raise ValueError(msg)
 
 
 _SUPPORTED_PROVIDERS = {
@@ -521,10 +522,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
-        raise ValueError(
+        msg = (
             f"Unable to infer model provider for {model=}, please specify "
             f"model_provider directly."
         )
+        raise ValueError(msg)
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
@@ -532,9 +534,10 @@ def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
 def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
-        raise ImportError(
+        msg = (
             f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
+        raise ImportError(msg)
 
 
 def _remove_prefix(s: str, prefix: str) -> str:
@@ -670,6 +673,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             list[AnyMessage],
         ]
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -678,6 +682,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return self._model(config).invoke(input, config=config, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -686,6 +691,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return await self._model(config).ainvoke(input, config=config, **kwargs)
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -694,6 +700,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Iterator[Any]:
         yield from self._model(config).stream(input, config=config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
@@ -799,6 +806,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             ):
                 yield x
 
+    @override
     def transform(
         self,
         input: Iterator[LanguageModelInput],
@@ -807,6 +815,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Iterator[Any]:
         yield from self._model(config).transform(input, config=config, **kwargs)
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[LanguageModelInput],
@@ -850,6 +859,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> AsyncIterator[RunLog]: ...
 
+    @override
     async def astream_log(
         self,
         input: Any,
@@ -880,6 +890,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         ):
             yield x
 
+    @override
     async def astream_events(
         self,
         input: Any,

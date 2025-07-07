@@ -235,9 +235,8 @@ try:
             input_vars = self.api_request_chain.prompt.input_variables
             expected_vars = {"question", "api_docs"}
             if set(input_vars) != expected_vars:
-                raise ValueError(
-                    f"Input variables should be {expected_vars}, got {input_vars}"
-                )
+                msg = f"Input variables should be {expected_vars}, got {input_vars}"
+                raise ValueError(msg)
             return self
 
         @model_validator(mode="before")
@@ -247,18 +246,20 @@ try:
             # This check must be a pre=True check, so that a default of None
             # won't be set to limit_to_domains if it's not provided.
             if "limit_to_domains" not in values:
-                raise ValueError(
+                msg = (
                     "You must specify a list of domains to limit access using "
                     "`limit_to_domains`"
                 )
+                raise ValueError(msg)
             if (
                 not values["limit_to_domains"]
                 and values["limit_to_domains"] is not None
             ):
-                raise ValueError(
+                msg = (
                     "Please provide a list of domains to limit access using "
                     "`limit_to_domains`."
                 )
+                raise ValueError(msg)
             return values
 
         @model_validator(mode="after")
@@ -267,9 +268,8 @@ try:
             input_vars = self.api_answer_chain.prompt.input_variables
             expected_vars = {"question", "api_docs", "api_url", "api_response"}
             if set(input_vars) != expected_vars:
-                raise ValueError(
-                    f"Input variables should be {expected_vars}, got {input_vars}"
-                )
+                msg = f"Input variables should be {expected_vars}, got {input_vars}"
+                raise ValueError(msg)
             return self
 
         def _call(
@@ -289,9 +289,10 @@ try:
             if self.limit_to_domains and not _check_in_allowed_domain(
                 api_url, self.limit_to_domains
             ):
-                raise ValueError(
+                msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
                 )
+                raise ValueError(msg)
             api_response = self.requests_wrapper.get(api_url)
             _run_manager.on_text(
                 str(api_response), color="yellow", end="\n", verbose=self.verbose
@@ -326,9 +327,10 @@ try:
             if self.limit_to_domains and not _check_in_allowed_domain(
                 api_url, self.limit_to_domains
             ):
-                raise ValueError(
+                msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
                 )
+                raise ValueError(msg)
             api_response = await self.requests_wrapper.aget(api_url)
             await _run_manager.on_text(
                 str(api_response), color="yellow", end="\n", verbose=self.verbose
@@ -374,7 +376,8 @@ except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise ImportError(
+            msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"
             )
+            raise ImportError(msg)

@@ -1,5 +1,4 @@
-"""
-Standard tests for the BaseCache abstraction
+"""Standard tests for the BaseCache abstraction.
 
 We don't recommend implementing externally managed BaseCache abstractions at this time.
 

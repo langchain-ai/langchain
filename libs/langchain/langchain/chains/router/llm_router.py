@@ -105,12 +105,13 @@ class LLMRouterChain(RouterChain):
     def validate_prompt(self) -> Self:
         prompt = self.llm_chain.prompt
         if prompt.output_parser is None:
-            raise ValueError(
+            msg = (
                 "LLMRouterChain requires base llm_chain prompt to have an output"
                 " parser that converts LLM text output to a dictionary with keys"
                 " 'destination' and 'next_inputs'. Received a prompt with no output"
                 " parser."
             )
+            raise ValueError(msg)
         return self
 
     @property
@@ -175,11 +176,11 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
             expected_keys = ["destination", "next_inputs"]
             parsed = parse_and_check_json_markdown(text, expected_keys)
             if not isinstance(parsed["destination"], str):
-                raise ValueError("Expected 'destination' to be a string.")
+                msg = "Expected 'destination' to be a string."
+                raise ValueError(msg)
             if not isinstance(parsed["next_inputs"], self.next_inputs_type):
-                raise ValueError(
-                    f"Expected 'next_inputs' to be {self.next_inputs_type}."
-                )
+                msg = f"Expected 'next_inputs' to be {self.next_inputs_type}."
+                raise ValueError(msg)
             parsed["next_inputs"] = {self.next_inputs_inner_key: parsed["next_inputs"]}
             if (
                 parsed["destination"].strip().lower()
@@ -190,6 +191,5 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
                 parsed["destination"] = parsed["destination"].strip()
             return parsed
         except Exception as e:
-            raise OutputParserException(
-                f"Parsing text\n{text}\n raised following error:\n{e}"
-            )
+            msg = f"Parsing text\n{text}\n raised following error:\n{e}"
+            raise OutputParserException(msg)

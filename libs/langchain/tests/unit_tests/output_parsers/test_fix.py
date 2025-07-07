@@ -25,7 +25,8 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
-            raise OutputParserException("error")
+            msg = "error"
+            raise OutputParserException(msg)
         return "parsed"
 
 
@@ -151,7 +152,7 @@ def test_output_fixing_parser_output_type(
 
 
 @pytest.mark.parametrize(
-    "input,base_parser,retry_chain,expected",
+    "completion,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
@@ -170,7 +171,7 @@ def test_output_fixing_parser_output_type(
     ],
 )
 def test_output_fixing_parser_parse_with_retry_chain(
-    input: str,
+    completion: str,
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[dict[str, Any], str],
     expected: T,
@@ -184,11 +185,11 @@ def test_output_fixing_parser_parse_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert parser.parse(input) == expected
+    assert parser.parse(completion) == expected
 
 
 @pytest.mark.parametrize(
-    "input,base_parser,retry_chain,expected",
+    "completion,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
@@ -207,7 +208,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
     ],
 )
 async def test_output_fixing_parser_aparse_with_retry_chain(
-    input: str,
+    completion: str,
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[dict[str, Any], str],
     expected: T,
@@ -220,7 +221,7 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert (await parser.aparse(input)) == expected
+    assert (await parser.aparse(completion)) == expected
 
 
 def _extract_exception(

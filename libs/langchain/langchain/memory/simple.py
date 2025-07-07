@@ -19,8 +19,6 @@ class SimpleMemory(BaseMemory):
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Nothing should be saved or changed, my memory is set in stone."""
-        pass
 
     def clear(self) -> None:
         """Nothing to clear, got a memory like a vault."""
-        pass

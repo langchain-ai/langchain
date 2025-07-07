@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import operator
+from functools import reduce
 from itertools import cycle
 from typing import Any, Optional, Union, cast
 
@@ -520,14 +522,7 @@ async def test_runnable_agent() -> None:
     assert messages != []
 
     # Aggregate state
-    run_log = None
-
-    for result in results:
-        if run_log is None:
-            run_log = result
-        else:
-            # `+` is defined for RunLogPatch
-            run_log = run_log + result
+    run_log = reduce(operator.add, results)
 
     assert isinstance(run_log, RunLog)
 
@@ -579,7 +574,8 @@ async def test_runnable_agent_with_function_calls() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
@@ -690,14 +686,16 @@ async def test_runnable_with_multi_action_per_step() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     @tool
     def pet_pet(pet: str) -> str:
         """Pet the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats should be petted.")
+            msg = "Only cats should be petted."
+            raise ValueError(msg)
         return "purrrr"
 
     agent = template | model | fake_parse
@@ -835,7 +833,8 @@ async def test_openai_agent_with_streaming() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     template = ChatPromptTemplate.from_messages(
@@ -1031,7 +1030,8 @@ async def test_openai_agent_tools_agent() -> None:
     def find_pet(pet: str) -> str:
         """Find the given pet."""
         if pet != "cat":
-            raise ValueError("Only cats allowed")
+            msg = "Only cats allowed"
+            raise ValueError(msg)
         return "Spying from under the bed."
 
     @tool

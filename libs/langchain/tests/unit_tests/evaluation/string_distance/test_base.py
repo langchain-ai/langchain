@@ -70,7 +70,7 @@ def test_non_zero_distance(distance: StringDistance, normalize_score: bool) -> N
     reference = "I like apples."
     result = eval_chain.evaluate_strings(prediction=prediction, reference=reference)
     assert "score" in result
-    assert 0 < result["score"]
+    assert result["score"] > 0
     if normalize_score:
         assert result["score"] < 1.0
 
