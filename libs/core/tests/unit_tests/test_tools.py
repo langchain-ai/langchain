@@ -752,16 +752,16 @@ class _FakeExceptionTool(BaseTool):
 
 
 def test_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = _tool.run({})
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -771,28 +771,28 @@ def test_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = await _tool.arun({})
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -802,15 +802,15 @@ async def test_async_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_structured_tool_from_function() -> None:
@@ -850,16 +850,16 @@ def test_structured_tool_from_function() -> None:
 def test_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -870,8 +870,8 @@ def test_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -908,24 +908,24 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -936,8 +936,8 @@ async def test_async_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -974,9 +974,9 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_optional_subset_model_rewrite() -> None:
