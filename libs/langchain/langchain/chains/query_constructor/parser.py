@@ -108,22 +108,26 @@ class QueryTransformer(Transformer):
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):
-            if self.allowed_comparators is not None:
-                if func_name not in self.allowed_comparators:
-                    msg = (
-                        f"Received disallowed comparator {func_name}. Allowed "
-                        f"comparators are {self.allowed_comparators}"
-                    )
-                    raise ValueError(msg)
+            if (
+                self.allowed_comparators is not None
+                and func_name not in self.allowed_comparators
+            ):
+                msg = (
+                    f"Received disallowed comparator {func_name}. Allowed "
+                    f"comparators are {self.allowed_comparators}"
+                )
+                raise ValueError(msg)
             return Comparator(func_name)
         elif func_name in set(Operator):
-            if self.allowed_operators is not None:
-                if func_name not in self.allowed_operators:
-                    msg = (
-                        f"Received disallowed operator {func_name}. Allowed operators"
-                        f" are {self.allowed_operators}"
-                    )
-                    raise ValueError(msg)
+            if (
+                self.allowed_operators is not None
+                and func_name not in self.allowed_operators
+            ):
+                msg = (
+                    f"Received disallowed operator {func_name}. Allowed operators"
+                    f" are {self.allowed_operators}"
+                )
+                raise ValueError(msg)
             return Operator(func_name)
         else:
             msg = (

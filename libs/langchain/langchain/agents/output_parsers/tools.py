@@ -60,10 +60,7 @@ def parse_ai_message_to_tool_action(
         # Open AI does not support passing in a JSON array as an argument.
         function_name = tool_call["name"]
         _tool_input = tool_call["args"]
-        if "__arg1" in _tool_input:
-            tool_input = _tool_input["__arg1"]
-        else:
-            tool_input = _tool_input
+        tool_input = _tool_input.get("__arg1", _tool_input)
 
         content_msg = f"responded: {message.content}\n" if message.content else "\n"
         log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"

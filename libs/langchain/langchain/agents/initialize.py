@@ -1,5 +1,6 @@
 """Load agent."""
 
+import contextlib
 from collections.abc import Sequence
 from typing import Any, Optional
 
@@ -81,11 +82,9 @@ def initialize_agent(
         agent_obj = load_agent(
             agent_path, llm=llm, tools=tools, callback_manager=callback_manager
         )
-        try:
+        with contextlib.suppress(NotImplementedError):
             # TODO: Add tags from the serialized object directly.
             tags_.append(agent_obj._agent_type)
-        except NotImplementedError:
-            pass
     else:
         msg = (
             "Somehow both `agent` and `agent_path` are None, this should never happen."

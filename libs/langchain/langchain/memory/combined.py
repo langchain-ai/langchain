@@ -36,13 +36,12 @@ class CombinedMemory(BaseMemory):
     def check_input_key(cls, value: list[BaseMemory]) -> list[BaseMemory]:
         """Check that if memories are of type BaseChatMemory that input keys exist."""
         for val in value:
-            if isinstance(val, BaseChatMemory):
-                if val.input_key is None:
-                    warnings.warn(
-                        "When using CombinedMemory, "
-                        "input keys should be so the input is known. "
-                        f" Was not set on {val}"
-                    )
+            if isinstance(val, BaseChatMemory) and val.input_key is None:
+                warnings.warn(
+                    "When using CombinedMemory, "
+                    "input keys should be so the input is known. "
+                    f" Was not set on {val}"
+                )
         return value
 
     @property

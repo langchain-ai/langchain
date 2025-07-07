@@ -84,28 +84,28 @@ def create_importer(
                     not is_interactive_env()
                     and deprecated_lookups
                     and name in deprecated_lookups
-                ):
                     # Depth 3:
                     # internal.py
                     # module_import.py
                     # Module in langchain that uses this function
                     # [calling code] whose frame we want to inspect.
-                    if not internal.is_caller_internal(depth=3):
-                        warn_deprecated(
-                            since="0.1",
-                            pending=False,
-                            removal="1.0",
-                            message=(
-                                f"Importing {name} from {package} is deprecated. "
-                                f"Please replace deprecated imports:\n\n"
-                                f">> from {package} import {name}\n\n"
-                                "with new imports of:\n\n"
-                                f">> from {new_module} import {name}\n"
-                                "You can use the langchain cli to **automatically** "
-                                "upgrade many imports. Please see documentation here "
-                                "<https://python.langchain.com/docs/versions/v0_2/>"
-                            ),
-                        )
+                    and not internal.is_caller_internal(depth=3)
+                ):
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="1.0",
+                        message=(
+                            f"Importing {name} from {package} is deprecated. "
+                            f"Please replace deprecated imports:\n\n"
+                            f">> from {package} import {name}\n\n"
+                            "with new imports of:\n\n"
+                            f">> from {new_module} import {name}\n"
+                            "You can use the langchain cli to **automatically** "
+                            "upgrade many imports. Please see documentation here "
+                            "<https://python.langchain.com/docs/versions/v0_2/>"
+                        ),
+                    )
                 return result
             except Exception as e:
                 msg = f"module {new_module} has no attribute {name}"
@@ -115,28 +115,30 @@ def create_importer(
             try:
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
-                if not is_interactive_env():
+                if (
+                    not is_interactive_env()
                     # Depth 3:
                     # internal.py
                     # module_import.py
                     # Module in langchain that uses this function
                     # [calling code] whose frame we want to inspect.
-                    if not internal.is_caller_internal(depth=3):
-                        warn_deprecated(
-                            since="0.1",
-                            pending=False,
-                            removal="1.0",
-                            message=(
-                                f"Importing {name} from {package} is deprecated. "
-                                f"Please replace deprecated imports:\n\n"
-                                f">> from {package} import {name}\n\n"
-                                "with new imports of:\n\n"
-                                f">> from {fallback_module} import {name}\n"
-                                "You can use the langchain cli to **automatically** "
-                                "upgrade many imports. Please see documentation here "
-                                "<https://python.langchain.com/docs/versions/v0_2/>"
-                            ),
-                        )
+                    and not internal.is_caller_internal(depth=3)
+                ):
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="1.0",
+                        message=(
+                            f"Importing {name} from {package} is deprecated. "
+                            f"Please replace deprecated imports:\n\n"
+                            f">> from {package} import {name}\n\n"
+                            "with new imports of:\n\n"
+                            f">> from {fallback_module} import {name}\n"
+                            "You can use the langchain cli to **automatically** "
+                            "upgrade many imports. Please see documentation here "
+                            "<https://python.langchain.com/docs/versions/v0_2/>"
+                        ),
+                    )
                 return result
 
             except Exception as e:

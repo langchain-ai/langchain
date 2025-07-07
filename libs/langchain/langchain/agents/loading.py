@@ -128,10 +128,7 @@ def _load_agent_from_file(
     """Load agent from file."""
     valid_suffixes = {"json", "yaml"}
     # Convert file to Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix[1:] == "json":
         with open(file_path) as f:

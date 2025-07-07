@@ -1,6 +1,7 @@
 """Base interface that all chains should implement."""
 
 import builtins
+import contextlib
 import inspect
 import json
 import logging
@@ -727,10 +728,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # -> {"_type": "foo", "verbose": False, ...}
         """
         _dict = super().dict(**kwargs)
-        try:
+        with contextlib.suppress(NotImplementedError):
             _dict["_type"] = self._chain_type
-        except NotImplementedError:
-            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -758,10 +757,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             raise NotImplementedError(msg)
 
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)

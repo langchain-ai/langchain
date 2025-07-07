@@ -95,10 +95,7 @@ class OpenAIModerationChain(Chain):
         return [self.output_key]
 
     def _moderate(self, text: str, results: Any) -> str:
-        if self.openai_pre_1_0:
-            condition = results["flagged"]
-        else:
-            condition = results.flagged
+        condition = results["flagged"] if self.openai_pre_1_0 else results.flagged
         if condition:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:

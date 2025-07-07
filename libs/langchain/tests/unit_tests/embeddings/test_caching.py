@@ -1,5 +1,6 @@
 """Embeddings tests."""
 
+import contextlib
 import hashlib
 import importlib
 import warnings
@@ -75,10 +76,8 @@ def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
 def test_embed_documents_batch(cache_embeddings_batch: CacheBackedEmbeddings) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         cache_embeddings_batch.embed_documents(texts)
-    except ValueError:
-        pass
     keys = list(cache_embeddings_batch.document_embedding_store.yield_keys())
     # only the first batch of three embeddings should exist
     assert len(keys) == 3
@@ -122,10 +121,8 @@ async def test_aembed_documents_batch(
 ) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         await cache_embeddings_batch.aembed_documents(texts)
-    except ValueError:
-        pass
     keys = [
         key
         async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()

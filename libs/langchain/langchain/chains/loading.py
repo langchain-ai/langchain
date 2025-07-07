@@ -683,10 +683,7 @@ def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
 def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     """Load chain from file."""
     # Convert file to Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
         with open(file_path) as f:

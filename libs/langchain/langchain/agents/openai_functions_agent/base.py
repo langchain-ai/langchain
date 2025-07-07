@@ -230,10 +230,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """
         _prompts = extra_prompt_messages or []
         messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
-        if system_message:
-            messages = [system_message]
-        else:
-            messages = []
+        messages = [system_message] if system_message else []
 
         messages.extend(
             [

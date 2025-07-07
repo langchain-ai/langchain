@@ -244,10 +244,7 @@ The following is the expected answer. Use this to measure correctness:
         if not isinstance(llm, BaseChatModel):
             msg = "Only chat models supported by the current trajectory eval"
             raise NotImplementedError(msg)
-        if agent_tools:
-            prompt = EVAL_CHAT_PROMPT
-        else:
-            prompt = TOOL_FREE_EVAL_CHAT_PROMPT
+        prompt = EVAL_CHAT_PROMPT if agent_tools else TOOL_FREE_EVAL_CHAT_PROMPT
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             agent_tools=agent_tools,  # type: ignore[arg-type]

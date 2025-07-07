@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import builtins
+import contextlib
 import json
 import logging
 import time
@@ -196,10 +197,7 @@ class BaseSingleActionAgent(BaseModel):
             agent.agent.save(file_path="path/agent.yaml")
         """
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -322,10 +320,8 @@ class BaseMultiActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().model_dump()
-        try:
+        with contextlib.suppress(NotImplementedError):
             _dict["_type"] = str(self._agent_type)
-        except NotImplementedError:
-            pass
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -345,10 +341,7 @@ class BaseMultiActionAgent(BaseModel):
             agent.agent.save(file_path="path/agent.yaml")
         """
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         # Fetch dictionary to save
         agent_dict = self.dict()
@@ -1133,13 +1126,14 @@ class AgentExecutor(Chain):
         agent = self.agent
         tools = self.tools
         allowed_tools = agent.get_allowed_tools()  # type: ignore[union-attr]
-        if allowed_tools is not None:
-            if set(allowed_tools) != set([tool.name for tool in tools]):
-                msg = (
-                    f"Allowed tools ({allowed_tools}) different than "
-                    f"provided tools ({[tool.name for tool in tools]})"
-                )
-                raise ValueError(msg)
+        if allowed_tools is not None and set(allowed_tools) != set(
+            [tool.name for tool in tools]
+        ):
+            msg = (
+                f"Allowed tools ({allowed_tools}) different than "
+                f"provided tools ({[tool.name for tool in tools]})"
+            )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="before")
@@ -1272,13 +1266,7 @@ class AgentExecutor(Chain):
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
-        if (
-            self.max_execution_time is not None
-            and time_elapsed >= self.max_execution_time
-        ):
-            return False
-
-        return True
+        return self.max_execution_time is None or time_elapsed < self.max_execution_time
 
     def _return(
         self,
@@ -1410,10 +1398,7 @@ class AgentExecutor(Chain):
             return
 
         actions: list[AgentAction]
-        if isinstance(output, AgentAction):
-            actions = [output]
-        else:
-            actions = output
+        actions = [output] if isinstance(output, AgentAction) else output
         for agent_action in actions:
             yield agent_action
         for agent_action in actions:
@@ -1547,10 +1532,7 @@ class AgentExecutor(Chain):
             return
 
         actions: list[AgentAction]
-        if isinstance(output, AgentAction):
-            actions = [output]
-        else:
-            actions = output
+        actions = [output] if isinstance(output, AgentAction) else output
         for agent_action in actions:
             yield agent_action
 
@@ -1728,12 +1710,14 @@ class AgentExecutor(Chain):
         if len(self._action_agent.return_values) > 0:
             return_value_key = self._action_agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
-        if agent_action.tool in name_to_tool_map:
-            if name_to_tool_map[agent_action.tool].return_direct:
-                return AgentFinish(
-                    {return_value_key: observation},
-                    "",
-                )
+        if (
+            agent_action.tool in name_to_tool_map
+            and name_to_tool_map[agent_action.tool].return_direct
+        ):
+            return AgentFinish(
+                {return_value_key: observation},
+                "",
+            )
         return None
 
     def _prepare_intermediate_steps(
