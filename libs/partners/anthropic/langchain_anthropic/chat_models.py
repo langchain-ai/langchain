@@ -396,7 +396,8 @@ def _format_messages(
                                 {
                                     k: v
                                     for k, v in block.items()
-                                    if k in ("type", "text", "cache_control")
+                                    if k
+                                    in ("type", "text", "cache_control", "citations")
                                 }
                             )
                     elif block["type"] == "thinking":

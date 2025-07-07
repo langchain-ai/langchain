@@ -32,7 +32,7 @@ def _load_sequential_chain(
     are_all_true_prompt: PromptTemplate,
     verbose: bool = False,
 ) -> SequentialChain:
-    chain = SequentialChain(
+    return SequentialChain(
         chains=[
             LLMChain(
                 llm=llm,
@@ -63,7 +63,6 @@ def _load_sequential_chain(
         output_variables=["all_true", "revised_summary"],
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -172,7 +171,8 @@ class LLMSummarizationCheckerChain(Chain):
             chain_input = output["revised_summary"]
 
         if not output:
-            raise ValueError("No output from chain")
+            msg = "No output from chain"
+            raise ValueError(msg)
 
         return {self.output_key: output["revised_summary"].strip()}
 

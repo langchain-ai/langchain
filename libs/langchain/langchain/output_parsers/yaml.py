@@ -20,25 +20,20 @@ class YamlOutputParser(BaseOutputParser[T]):
     pattern: re.Pattern = re.compile(
         r"^```(?:ya?ml)?(?P<yaml>[^`]*)", re.MULTILINE | re.DOTALL
     )
-    """Regex pattern to match yaml code blocks 
+    """Regex pattern to match yaml code blocks
     within triple backticks with optional yaml or yml prefix."""
 
     def parse(self, text: str) -> T:
         try:
             # Greedy search for 1st yaml candidate.
             match = re.search(self.pattern, text.strip())
-            yaml_str = ""
-            if match:
-                yaml_str = match.group("yaml")
-            else:
-                # If no backticks were present, try to parse the entire output as yaml.
-                yaml_str = text
+            # If no backticks were present, try to parse the entire output as yaml.
+            yaml_str = match.group("yaml") if match else text
 
             json_object = yaml.safe_load(yaml_str)
             if hasattr(self.pydantic_object, "model_validate"):
                 return self.pydantic_object.model_validate(json_object)
-            else:
-                return self.pydantic_object.parse_obj(json_object)
+            return self.pydantic_object.parse_obj(json_object)
 
         except (yaml.YAMLError, ValidationError) as e:
             name = self.pydantic_object.__name__
@@ -47,7 +42,7 @@ class YamlOutputParser(BaseOutputParser[T]):
 
     def get_format_instructions(self) -> str:
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.schema().items()}
+        schema = dict(self.pydantic_object.schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema

@@ -45,7 +45,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     only_core = config.getoption("--only-core") or False
 
     if only_extended and only_core:
-        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+        msg = "Cannot specify both `--only-extended` and `--only-core`."
+        raise ValueError(msg)
 
     for item in items:
         requires_marker = item.get_closest_marker("requires")
@@ -81,8 +82,5 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                             pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test.")
-                )
+        elif only_extended:
+            item.add_marker(pytest.mark.skip(reason="Skipping not an extended test."))

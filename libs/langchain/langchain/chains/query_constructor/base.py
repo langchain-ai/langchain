@@ -63,9 +63,8 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
                 **{k: v for k, v in parsed.items() if k in allowed_keys}
             )
         except Exception as e:
-            raise OutputParserException(
-                f"Parsing text\n{text}\n raised following error:\n{e}"
-            )
+            msg = f"Parsing text\n{text}\n raised following error:\n{e}"
+            raise OutputParserException(msg)
 
     @classmethod
     def from_components(
@@ -89,14 +88,15 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         if fix_invalid:
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
-                filter = cast(Optional[FilterDirective], get_parser().parse(raw_filter))
-                fixed = fix_filter_directive(
-                    filter,
+                filter_directive = cast(
+                    Optional[FilterDirective], get_parser().parse(raw_filter)
+                )
+                return fix_filter_directive(
+                    filter_directive,
                     allowed_comparators=allowed_comparators,
                     allowed_operators=allowed_operators,
                     allowed_attributes=allowed_attributes,
                 )
-                return fixed
 
         else:
             ast_parse = get_parser(
@@ -108,7 +108,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
 
 def fix_filter_directive(
-    filter: Optional[FilterDirective],
+    filter: Optional[FilterDirective],  # noqa: A002
     *,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
@@ -130,13 +130,13 @@ def fix_filter_directive(
     ) or not filter:
         return filter
 
-    elif isinstance(filter, Comparison):
+    if isinstance(filter, Comparison):
         if allowed_comparators and filter.comparator not in allowed_comparators:
             return None
         if allowed_attributes and filter.attribute not in allowed_attributes:
             return None
         return filter
-    elif isinstance(filter, Operation):
+    if isinstance(filter, Operation):
         if allowed_operators and filter.operator not in allowed_operators:
             return None
         args = [
@@ -154,15 +154,13 @@ def fix_filter_directive(
         ]
         if not args:
             return None
-        elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
+        if len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(
-                operator=filter.operator,
-                arguments=args,
-            )
-    else:
-        return filter
+        return Operation(
+            operator=filter.operator,
+            arguments=args,
+        )
+    return filter
 
 
 def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
