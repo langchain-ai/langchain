@@ -90,6 +90,8 @@ class XMLAgentOutputParser(AgentOutputParser):
         # Check for a tool invocation
         if "<tool>" in text and "</tool>" in text:
             tool = self._extract_tag_content("tool", text, required=True)
+            if tool is None:
+                raise ValueError("Tool content should not be None when required=True")
             # Tool input is optional
             tool_input = (
                 self._extract_tag_content("tool_input", text, required=False) or ""
