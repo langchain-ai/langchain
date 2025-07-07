@@ -10,7 +10,7 @@ MODEL_NAME = "llama3.1"
 
 def test_initialization() -> None:
     """Test embedding model initialization."""
-    OllamaEmbeddings(model="llama3", keep_alive=1)
+    OllamaEmbeddings(model=MODEL_NAME, keep_alive=1)
 
 
 @patch("langchain_ollama.embeddings.validate_model")

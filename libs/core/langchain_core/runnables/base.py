@@ -1160,22 +1160,21 @@ class Runnable(ABC, Generic[Input, Output]):
 
         A StreamEvent is a dictionary with the following schema:
 
-        - ``event``: **str** - Event names are of the
-            format: on_[runnable_type]_(start|stream|end).
+        - ``event``: **str** - Event names are of the format:
+          on_[runnable_type]_(start|stream|end).
         - ``name``: **str** - The name of the Runnable that generated the event.
-        - ``run_id``: **str** - randomly generated ID associated with the given execution of
-            the Runnable that emitted the event.
-            A child Runnable that gets invoked as part of the execution of a
-            parent Runnable is assigned its own unique ID.
-        - ``parent_ids``: **list[str]** - The IDs of the parent runnables that
-            generated the event. The root Runnable will have an empty list.
-            The order of the parent IDs is from the root to the immediate parent.
-            Only available for v2 version of the API. The v1 version of the API
-            will return an empty list.
+        - ``run_id``: **str** - randomly generated ID associated with the given
+          execution of the Runnable that emitted the event. A child Runnable that gets
+          invoked as part of the execution of a parent Runnable is assigned its own
+          unique ID.
+        - ``parent_ids``: **list[str]** - The IDs of the parent runnables that generated
+          the event. The root Runnable will have an empty list. The order of the parent
+          IDs is from the root to the immediate parent. Only available for v2 version of
+          the API. The v1 version of the API will return an empty list.
         - ``tags``: **Optional[list[str]]** - The tags of the Runnable that generated
-            the event.
-        - ``metadata``: **Optional[dict[str, Any]]** - The metadata of the Runnable
-            that generated the event.
+          the event.
+        - ``metadata``: **Optional[dict[str, Any]]** - The metadata of the Runnable that
+          generated the event.
         - ``data``: **dict[str, Any]**
 
 
@@ -1183,7 +1182,7 @@ class Runnable(ABC, Generic[Input, Output]):
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
-        **ATTENTION** This reference table is for the V2 version of the schema.
+        .. NOTE:: This reference table is for the V2 version of the schema.
 
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | event                | name             | chunk                           | input                                         | output                                          |
