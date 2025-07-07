@@ -380,7 +380,10 @@ def test_chat_prompt_template_with_messages(
     messages: list[BaseMessagePromptTemplate],
 ) -> None:
     chat_prompt_template = ChatPromptTemplate.from_messages(
-        [*messages, HumanMessage(content="foo")]
+        [
+            *messages,
+            HumanMessage(content="foo"),
+        ]
     )
     assert sorted(chat_prompt_template.input_variables) == sorted(
         [
@@ -882,7 +885,10 @@ def test_chat_prompt_message_placeholder_dict() -> None:
 
 def test_chat_prompt_message_dict() -> None:
     prompt = ChatPromptTemplate(
-        [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
+        [
+            {"role": "system", "content": "foo"},
+            {"role": "user", "content": "bar"},
+        ]
     )
     assert prompt.format_messages() == [
         SystemMessage(content="foo"),

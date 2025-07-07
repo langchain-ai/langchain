@@ -1,6 +1,4 @@
-"""
-Develop integration packages for LangChain.
-"""
+"""Develop integration packages for LangChain."""
 
 import re
 import shutil
@@ -28,18 +26,20 @@ class Replacements(TypedDict):
 def _process_name(name: str, *, community: bool = False) -> Replacements:
     preprocessed = name.replace("_", "-").lower()
 
-    if preprocessed.startswith("langchain-"):
-        preprocessed = preprocessed[len("langchain-") :]
+    preprocessed = preprocessed.removeprefix("langchain-")
 
     if not re.match(r"^[a-z][a-z0-9-]*$", preprocessed):
-        raise ValueError(
+        msg = (
             "Name should only contain lowercase letters (a-z), numbers, and hyphens"
             ", and start with a letter."
         )
+        raise ValueError(msg)
     if preprocessed.endswith("-"):
-        raise ValueError("Name should not end with `-`.")
+        msg = "Name should not end with `-`."
+        raise ValueError(msg)
     if preprocessed.find("--") != -1:
-        raise ValueError("Name should not contain consecutive hyphens.")
+        msg = "Name should not contain consecutive hyphens."
+        raise ValueError(msg)
     replacements: Replacements = {
         "__package_name__": f"langchain-{preprocessed}",
         "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
@@ -84,11 +84,8 @@ def new(
             ". e.g. `my-integration/my_integration.py`",
         ),
     ] = None,
-):
-    """
-    Creates a new integration package.
-    """
-
+) -> None:
+    """Creates a new integration package."""
     try:
         replacements = _process_name(name)
     except ValueError as e:
@@ -123,7 +120,7 @@ def new(
         shutil.move(destination_dir / "integration_template", package_dir)
 
         # replacements in files
-        replace_glob(destination_dir, "**/*", cast(dict[str, str], replacements))
+        replace_glob(destination_dir, "**/*", cast("dict[str, str]", replacements))
 
         # poetry install
         subprocess.run(
@@ -167,7 +164,7 @@ def new(
 
         for src_path, dst_path in zip(src_paths, dst_paths):
             shutil.copy(src_path, dst_path)
-            replace_file(dst_path, cast(dict[str, str], replacements))
+            replace_file(dst_path, cast("dict[str, str]", replacements))
 
 
 TEMPLATE_MAP: dict[str, str] = {
@@ -183,7 +180,7 @@ TEMPLATE_MAP: dict[str, str] = {
     "Retriever": "retrievers.ipynb",
 }
 
-_component_types_str = ", ".join(f"`{k}`" for k in TEMPLATE_MAP.keys())
+_component_types_str = ", ".join(f"`{k}`" for k in TEMPLATE_MAP)
 
 
 @integration_cli.command()
@@ -226,10 +223,8 @@ def create_doc(
             prompt="The relative path to the docs directory to place the new file in.",
         ),
     ] = "docs/docs/integrations/chat/",
-):
-    """
-    Creates a new integration doc.
-    """
+) -> None:
+    """Creates a new integration doc."""
     if component_type not in TEMPLATE_MAP:
         typer.echo(
             f"Unrecognized {component_type=}. Expected one of {_component_types_str}."

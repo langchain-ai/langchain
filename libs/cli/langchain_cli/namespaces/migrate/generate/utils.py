@@ -20,7 +20,7 @@ class ImportExtractor(ast.NodeVisitor):
         self.imports: list = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node) -> None:
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -39,7 +39,7 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node):
+        def visit_ClassDef(self, node) -> None:
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -62,7 +62,7 @@ def find_subclasses_in_module(module, classes_: list[type]) -> list[str]:
     """Find all classes in the module that inherit from one of the classes."""
     subclasses = []
     # Iterate over all attributes of the module that are classes
-    for name, obj in inspect.getmembers(module, inspect.isclass):
+    for _name, obj in inspect.getmembers(module, inspect.isclass):
         if is_subclass(obj, classes_):
             subclasses.append(obj.__name__)
     return subclasses
@@ -125,7 +125,7 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
     files = list(Path(pkg_source).rglob("*.py"))
 
     for file in files:
-        if not file.name == "__init__.py":
+        if file.name != "__init__.py":
             continue
         import_in_file = identify_all_imports_in_file(str(file))
         module_name = _get_current_module(file, pkg_root)

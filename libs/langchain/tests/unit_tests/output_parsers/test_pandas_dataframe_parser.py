@@ -47,7 +47,7 @@ def test_pandas_output_parser_col_first_elem() -> None:
 def test_pandas_output_parser_col_multi_elem() -> None:
     expected_output = {"chicken": pd.Series([1, 2], name="chicken", dtype="int64")}
     actual_output = parser.parse("column:chicken[0, 1]")
-    for key in actual_output.keys():
+    for key in actual_output:
         assert expected_output["chicken"].equals(actual_output[key])
 
 

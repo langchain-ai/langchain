@@ -105,11 +105,11 @@ GRADE:""",  # noqa: E501
 
 1. The question asks who founded the Roanoke settlement.
 
-2. The context states that the grade incorrect answer is Walter Raleigh. 
+2. The context states that the grade incorrect answer is Walter Raleigh.
 
 3. The student's answer is "Sir Walter Raleigh".
 
-4. The student's answer matches the context, which states the answer is Walter Raleigh. 
+4. The student's answer matches the context, which states the answer is Walter Raleigh.
 
 5. The addition of "Sir" in the student's answer does not contradict the context. It provides extra detail about Walter Raleigh's title, but the core answer of Walter Raleigh is still correct.
 
@@ -125,7 +125,7 @@ GRADE: CORRECT""",  # noqa: E501
             """  CORRECT
 
 QUESTION: who was the first president of the united states?
-STUDENT ANSWER: George Washington 
+STUDENT ANSWER: George Washington
 TRUE ANSWER: George Washington was the first president of the United States.
 GRADE:""",
             {

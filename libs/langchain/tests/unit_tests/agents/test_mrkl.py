@@ -16,8 +16,7 @@ def get_action_and_input(text: str) -> tuple[str, str]:
     output = MRKLOutputParser().parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    else:
-        return "Final Answer", output.return_values["output"]
+    return "Final Answer", output.return_values["output"]
 
 
 def test_get_action_and_input() -> None:

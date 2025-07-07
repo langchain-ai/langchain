@@ -24,7 +24,7 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
     cohere_api_key: Optional[str] = None
-    """Cohere API key. Must be specified directly or via environment variable 
+    """Cohere API key. Must be specified directly or via environment variable
         COHERE_API_KEY."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
@@ -42,10 +42,11 @@ class CohereRerank(BaseDocumentCompressor):
             try:
                 import cohere
             except ImportError:
-                raise ImportError(
+                msg = (
                     "Could not import cohere python package. "
                     "Please install it with `pip install cohere`."
                 )
+                raise ImportError(msg)
             cohere_api_key = get_from_dict_or_env(
                 values, "cohere_api_key", "COHERE_API_KEY"
             )

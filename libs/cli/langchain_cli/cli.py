@@ -35,7 +35,7 @@ app.command(
 def version_callback(show_version: bool) -> None:
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
-        raise typer.Exit()
+        raise typer.Exit
 
 
 @app.callback()
@@ -48,7 +48,7 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-):
+) -> None:
     pass
 
 
@@ -62,10 +62,7 @@ def serve(
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
 ) -> None:
-    """
-    Start the LangServe app, whether it's a template or an app.
-    """
-
+    """Start the LangServe app, whether it's a template or an app."""
     # see if is a template
     try:
         project_dir = get_package_root()

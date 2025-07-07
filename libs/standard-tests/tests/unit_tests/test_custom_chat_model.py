@@ -1,6 +1,4 @@
-"""
-Test the standard tests on the custom chat model in the docs
-"""
+"""Test the standard tests on the custom chat model in the docs."""
 
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 from langchain_tests.unit_tests import ChatModelUnitTests

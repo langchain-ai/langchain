@@ -30,9 +30,10 @@ def _load_sequential_chain(
     check_assertions_prompt: PromptTemplate,
     revised_summary_prompt: PromptTemplate,
     are_all_true_prompt: PromptTemplate,
+    *,
     verbose: bool = False,
 ) -> SequentialChain:
-    chain = SequentialChain(
+    return SequentialChain(
         chains=[
             LLMChain(
                 llm=llm,
@@ -63,7 +64,6 @@ def _load_sequential_chain(
         output_variables=["all_true", "revised_summary"],
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -172,7 +172,8 @@ class LLMSummarizationCheckerChain(Chain):
             chain_input = output["revised_summary"]
 
         if not output:
-            raise ValueError("No output from chain")
+            msg = "No output from chain"
+            raise ValueError(msg)
 
         return {self.output_key: output["revised_summary"].strip()}
 
@@ -188,7 +189,7 @@ class LLMSummarizationCheckerChain(Chain):
         check_assertions_prompt: PromptTemplate = CHECK_ASSERTIONS_PROMPT,
         revised_summary_prompt: PromptTemplate = REVISED_SUMMARY_PROMPT,
         are_all_true_prompt: PromptTemplate = ARE_ALL_TRUE_PROMPT,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> LLMSummarizationCheckerChain:
         chain = _load_sequential_chain(
