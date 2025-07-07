@@ -103,6 +103,8 @@ ignore = [
     "PLC0415",
     "PLR2004",
 ]
+unfixable = ["PLW1510",]
+
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
