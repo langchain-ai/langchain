@@ -1146,7 +1146,11 @@ class _DatasetRunContainer:
             aggregate_metrics=aggregate_feedback,
         )
 
-    def finish(self, batch_results: list, verbose: bool = False) -> TestResult:
+    def finish(
+        self,
+        batch_results: list,
+        verbose: bool = False,  # noqa: FBT001,FBT002
+    ) -> TestResult:
         results = self._collect_test_results(batch_results)
         if verbose:
             try:

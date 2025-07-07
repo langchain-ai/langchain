@@ -27,10 +27,10 @@ def _get_default_system_message() -> SystemMessage:
 def create_conversational_retrieval_agent(
     llm: BaseLanguageModel,
     tools: list[BaseTool],
-    remember_intermediate_steps: bool = True,
+    remember_intermediate_steps: bool = True,  # noqa: FBT001,FBT002
     memory_key: str = "chat_history",
     system_message: Optional[SystemMessage] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     max_token_limit: int = 2000,
     **kwargs: Any,
 ) -> AgentExecutor:

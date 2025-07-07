@@ -97,7 +97,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
-        with_functions: bool = True,
+        with_functions: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.

@@ -37,6 +37,7 @@ class LoadingCallable(Protocol):
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
@@ -56,6 +57,7 @@ def _load_map_rerank_chain(
 
 def _load_stuff_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
@@ -74,6 +76,7 @@ def _load_stuff_chain(
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.COMBINE_PROMPT,
     document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
@@ -131,6 +134,7 @@ def _load_map_reduce_chain(
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = refine_prompts.DEFAULT_TEXT_QA_PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.DEFAULT_REFINE_PROMPT,
     document_prompt: BasePromptTemplate = refine_prompts.EXAMPLE_PROMPT,
@@ -172,7 +176,7 @@ def _load_refine_chain(
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,
+    verbose: Optional[bool] = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load a question answering with sources chain.

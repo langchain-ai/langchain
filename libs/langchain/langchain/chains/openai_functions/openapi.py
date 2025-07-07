@@ -23,14 +23,6 @@ if TYPE_CHECKING:
     from openapi_pydantic import Parameter
 
 
-def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
-    summary = getattr(o, "summary", None)
-    description = getattr(o, "description", None)
-    if prefer_short:
-        return summary or description
-    return description or summary
-
-
 def _format_url(url: str, path_params: dict) -> str:
     expected_path_param = re.findall(r"{(.*?)}", url)
     new_params = {}
@@ -260,7 +252,7 @@ def get_openapi_chain(
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
     llm_chain_kwargs: Optional[dict] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     headers: Optional[dict] = None,
     params: Optional[dict] = None,
     **kwargs: Any,
