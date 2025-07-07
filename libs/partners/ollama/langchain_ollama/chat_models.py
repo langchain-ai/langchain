@@ -55,6 +55,7 @@ from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
 
+
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
 ) -> Optional[UsageMetadata]:

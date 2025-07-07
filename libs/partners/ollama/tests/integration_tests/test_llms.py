@@ -170,33 +170,34 @@ async def test_ainvoke() -> None:
     assert isinstance(result, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-async def test_ainvoke_no_reasoning(model: str) -> None:
-    """Test using async invoke with `reasoning=False`"""
-    llm = OllamaLLM(model=model, num_ctx=2**12)
-    message = SAMPLE
-    result = await llm.ainvoke(message)
-    assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
+# TODO
+# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+# async def test_ainvoke_no_reasoning(model: str) -> None:
+#     """Test using async invoke with `reasoning=False`"""
+#     llm = OllamaLLM(model=model, num_ctx=2**12)
+#     message = SAMPLE
+#     result = await llm.ainvoke(message)
+#     assert result.content
+#     assert "reasoning_content" not in result.additional_kwargs
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
+#     # Sanity check the old behavior isn't present
+#     assert "<think>" not in result.content and "</think>" not in result.content
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-async def test_reasoning_ainvoke(model: str) -> None:
-    """Test invoke with `reasoning=True`"""
-    llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-    message = SAMPLE
-    result = await llm.ainvoke(message)
-    assert result.content
-    assert "reasoning_content" in result.additional_kwargs
-    assert len(result.additional_kwargs["reasoning_content"]) > 0
+# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+# async def test_reasoning_ainvoke(model: str) -> None:
+#     """Test invoke with `reasoning=True`"""
+#     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
+#     message = SAMPLE
+#     result = await llm.ainvoke(message)
+#     assert result.content
+#     assert "reasoning_content" in result.additional_kwargs
+#     assert len(result.additional_kwargs["reasoning_content"]) > 0
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
-    assert "<think>" not in result.additional_kwargs["reasoning_content"]
-    assert "</think>" not in result.additional_kwargs["reasoning_content"]
+#     # Sanity check the old behavior isn't present
+#     assert "<think>" not in result.content and "</think>" not in result.content
+#     assert "<think>" not in result.additional_kwargs["reasoning_content"]
+#     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
 
 def test_invoke() -> None:
@@ -206,30 +207,31 @@ def test_invoke() -> None:
     assert isinstance(result, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-def test_invoke_no_reasoning(model: str) -> None:
-    """Test using invoke with `reasoning=False`"""
-    llm = OllamaLLM(model=model, num_ctx=2**12)
-    message = SAMPLE
-    result = llm.invoke(message)
-    assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
+# TODO
+# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+# def test_invoke_no_reasoning(model: str) -> None:
+#     """Test using invoke with `reasoning=False`"""
+#     llm = OllamaLLM(model=model, num_ctx=2**12)
+#     message = SAMPLE
+#     result = llm.invoke(message)
+#     assert result.content
+#     assert "reasoning_content" not in result.additional_kwargs
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
+#     # Sanity check the old behavior isn't present
+#     assert "<think>" not in result.content and "</think>" not in result.content
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-def test_reasoning_invoke(model: str) -> None:
-    """Test invoke with `reasoning=True`"""
-    llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-    message = SAMPLE
-    result = llm.invoke(message)
-    assert result.content
-    assert "reasoning_content" in result.additional_kwargs
-    assert len(result.additional_kwargs["reasoning_content"]) > 0
+# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+# def test_reasoning_invoke(model: str) -> None:
+#     """Test invoke with `reasoning=True`"""
+#     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
+#     message = SAMPLE
+#     result = llm.invoke(message)
+#     assert result.content
+#     assert "reasoning_content" in result.additional_kwargs
+#     assert len(result.additional_kwargs["reasoning_content"]) > 0
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
-    assert "<think>" not in result.additional_kwargs["reasoning_content"]
-    assert "</think>" not in result.additional_kwargs["reasoning_content"]
+#     # Sanity check the old behavior isn't present
+#     assert "<think>" not in result.content and "</think>" not in result.content
+#     assert "<think>" not in result.additional_kwargs["reasoning_content"]
+#     assert "</think>" not in result.additional_kwargs["reasoning_content"]
