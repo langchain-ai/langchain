@@ -451,7 +451,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -490,7 +490,7 @@ class RunnableAgent(BaseSingleActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -567,7 +567,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -606,7 +606,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         Returns:
             Action specifying what tool to use.
         """
-        inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
+        inputs = {**kwargs, "intermediate_steps": intermediate_steps}
         final_output: Any = None
         if self.stream_runnable:
             # Use streaming to make sure that the underlying LLM is invoked in a
@@ -910,8 +910,6 @@ class Agent(BaseSingleActionAgent):
         Args:
             tools: Tools to use.
         """
-
-        pass
 
     @classmethod
     @abstractmethod

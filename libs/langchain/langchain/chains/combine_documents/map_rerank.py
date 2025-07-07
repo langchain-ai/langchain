@@ -188,7 +188,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         results = self.llm_chain.apply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         return self._process_results(docs, results)
@@ -212,7 +212,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         results = await self.llm_chain.aapply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         return self._process_results(docs, results)

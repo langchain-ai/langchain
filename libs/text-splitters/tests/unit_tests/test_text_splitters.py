@@ -98,7 +98,7 @@ def test_character_text_splitter_longer_words() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
     separator: str, is_separator_regex: bool
@@ -120,7 +120,7 @@ def test_character_text_splitter_keep_separator_regex(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_start(
     separator: str, is_separator_regex: bool
@@ -142,7 +142,7 @@ def test_character_text_splitter_keep_separator_regex_start(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_end(
     separator: str, is_separator_regex: bool
@@ -164,7 +164,7 @@ def test_character_text_splitter_keep_separator_regex_end(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
     separator: str, is_separator_regex: bool
@@ -250,7 +250,7 @@ def test_create_documents_with_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    "splitter, text, expected_docs",
+    ("splitter", "text", "expected_docs"),
     [
         (
             CharacterTextSplitter(
@@ -1390,7 +1390,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize(["fence", "other_fence"], [("```", "~~~"), ("~~~", "```")])
+@pytest.mark.parametrize(("fence", "other_fence"), [("```", "~~~"), ("~~~", "```")])
 def test_md_header_text_splitter_fenced_code_block_interleaved(
     fence: str, other_fence: str
 ) -> None:
@@ -2240,7 +2240,7 @@ def html_header_splitter_splitter_factory() -> Callable[
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_input, expected_documents, test_case",
+    ("headers_to_split_on", "html_input", "expected_documents", "test_case"),
     [
         (
             # Test Case 1: Split on h1 and h2
@@ -2469,7 +2469,7 @@ def test_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case A: Split on h1 and h2 with h3 in content
@@ -2624,7 +2624,7 @@ def test_additional_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case C: Split on h1, h2, and h3 with no headers present
@@ -3551,7 +3551,7 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator,is_regex,text,chunk_size,expected",
+    ("separator", "is_regex", "text", "chunk_size", "expected"),
     [
         # 1) regex lookaround & split happens
         #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
