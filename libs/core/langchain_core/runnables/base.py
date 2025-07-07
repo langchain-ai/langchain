@@ -108,7 +108,7 @@ if TYPE_CHECKING:
 Other = TypeVar("Other")
 
 
-class Runnable(Generic[Input, Output], ABC):
+class Runnable(ABC, Generic[Input, Output]):
     """A unit of work that can be invoked, batched, streamed, transformed and composed.
 
     Key Methods
@@ -4486,10 +4486,10 @@ class RunnableLambda(Runnable[Input, Output]):
             sig = inspect.signature(func)
             if sig.return_annotation != inspect.Signature.empty:
                 # unwrap iterator types
-                if getattr(sig.return_annotation, "__origin__", None) in (
+                if getattr(sig.return_annotation, "__origin__", None) in {
                     collections.abc.Iterator,
                     collections.abc.AsyncIterator,
-                ):
+                }:
                     return getattr(sig.return_annotation, "__args__", (Any,))[0]
                 return sig.return_annotation
         except ValueError:

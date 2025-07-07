@@ -28,7 +28,7 @@ T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
-class BaseLLMOutputParser(Generic[T], ABC):
+class BaseLLMOutputParser(ABC, Generic[T]):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod

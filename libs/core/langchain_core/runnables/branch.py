@@ -111,7 +111,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
         )
 
-        _branches = []
+        branches_ = []
 
         for branch in branches[:-1]:
             if not isinstance(branch, (tuple, list)):
@@ -130,10 +130,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             condition, runnable = branch
             condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
-            _branches.append((condition, runnable))
+            branches_.append((condition, runnable))
 
         super().__init__(
-            branches=_branches,
+            branches=branches_,
             default=default_,
         )  # type: ignore[call-arg]
 
