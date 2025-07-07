@@ -311,10 +311,10 @@ class SQLRecordManager(RecordManager):
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
-                    set_=dict(
-                        updated_at=sqlite_insert_stmt.excluded.updated_at,
-                        group_id=sqlite_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": sqlite_insert_stmt.excluded.updated_at,
+                        "group_id": sqlite_insert_stmt.excluded.group_id,
+                    },
                 )
             elif self.dialect == "postgresql":
                 from sqlalchemy.dialects.postgresql import Insert as PgInsertType
@@ -327,10 +327,10 @@ class SQLRecordManager(RecordManager):
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
-                    set_=dict(
-                        updated_at=pg_insert_stmt.excluded.updated_at,
-                        group_id=pg_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": pg_insert_stmt.excluded.updated_at,
+                        "group_id": pg_insert_stmt.excluded.group_id,
+                    },
                 )
             else:
                 msg = f"Unsupported dialect {self.dialect}"
@@ -393,10 +393,10 @@ class SQLRecordManager(RecordManager):
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
-                    set_=dict(
-                        updated_at=sqlite_insert_stmt.excluded.updated_at,
-                        group_id=sqlite_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": sqlite_insert_stmt.excluded.updated_at,
+                        "group_id": sqlite_insert_stmt.excluded.group_id,
+                    },
                 )
             elif self.dialect == "postgresql":
                 from sqlalchemy.dialects.postgresql import Insert as PgInsertType
@@ -409,10 +409,10 @@ class SQLRecordManager(RecordManager):
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
-                    set_=dict(
-                        updated_at=pg_insert_stmt.excluded.updated_at,
-                        group_id=pg_insert_stmt.excluded.group_id,
-                    ),
+                    set_={
+                        "updated_at": pg_insert_stmt.excluded.updated_at,
+                        "group_id": pg_insert_stmt.excluded.group_id,
+                    },
                 )
             else:
                 msg = f"Unsupported dialect {self.dialect}"
@@ -432,7 +432,7 @@ class SQLRecordManager(RecordManager):
                 )
             )
             records = filtered_query.all()
-        found_keys = set(r.key for r in records)
+        found_keys = {r.key for r in records}
         return [k in found_keys for k in keys]
 
     async def aexists(self, keys: Sequence[str]) -> list[bool]:

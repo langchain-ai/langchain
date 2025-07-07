@@ -116,10 +116,10 @@ class RetryOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = self.retry_chain.invoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                            }
                         )
 
         msg = "Failed to parse"
@@ -153,10 +153,10 @@ class RetryOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                            }
                         )
 
         msg = "Failed to parse"
@@ -244,11 +244,11 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = self.retry_chain.invoke(
-                            dict(
-                                completion=completion,
-                                prompt=prompt_value.to_string(),
-                                error=repr(e),
-                            )
+                            {
+                                "completion": completion,
+                                "prompt": prompt_value.to_string(),
+                                "error": repr(e),
+                            }
                         )
 
         msg = "Failed to parse"
@@ -273,11 +273,11 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         )
                     else:
                         completion = await self.retry_chain.ainvoke(
-                            dict(
-                                prompt=prompt_value.to_string(),
-                                completion=completion,
-                                error=repr(e),
-                            )
+                            {
+                                "prompt": prompt_value.to_string(),
+                                "completion": completion,
+                                "error": repr(e),
+                            }
                         )
 
         msg = "Failed to parse"

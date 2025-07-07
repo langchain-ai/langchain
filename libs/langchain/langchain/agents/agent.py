@@ -1126,9 +1126,9 @@ class AgentExecutor(Chain):
         agent = self.agent
         tools = self.tools
         allowed_tools = agent.get_allowed_tools()  # type: ignore[union-attr]
-        if allowed_tools is not None and set(allowed_tools) != set(
-            [tool.name for tool in tools]
-        ):
+        if allowed_tools is not None and set(allowed_tools) != {
+            tool.name for tool in tools
+        }:
             msg = (
                 f"Allowed tools ({allowed_tools}) different than "
                 f"provided tools ({[tool.name for tool in tools]})"
@@ -1318,16 +1318,15 @@ class AgentExecutor(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         return self._consume_next_step(
-            [
-                a
-                for a in self._iter_next_step(
+            list(
+                self._iter_next_step(
                     name_to_tool_map,
                     color_mapping,
                     inputs,
                     intermediate_steps,
                     run_manager,
                 )
-            ]
+            )
         )
 
     def _iter_next_step(

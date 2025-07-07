@@ -205,7 +205,7 @@ def test_agent_stream() -> None:
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
-    output = [a for a in agent.stream("when was langchain made")]
+    output = list(agent.stream("when was langchain made"))
     assert output == [
         {
             "actions": [

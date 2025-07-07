@@ -352,7 +352,7 @@ try:
             headers: Optional[dict] = None,
             api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
             api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
-            limit_to_domains: Optional[Sequence[str]] = tuple(),
+            limit_to_domains: Optional[Sequence[str]] = (),
             **kwargs: Any,
         ) -> APIChain:
             """Load chain from just an LLM and the api docs."""

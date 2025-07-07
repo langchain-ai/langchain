@@ -49,7 +49,7 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     def parse(self, text: str) -> dict[str, Any]:
         """Parse the output of an LLM call."""
         texts = text.split("\n\n")
-        output = dict()
+        output = {}
         for txt, parser in zip(texts, self.parsers):
             output.update(parser.parse(txt.strip()))
         return output

@@ -43,7 +43,7 @@ class YamlOutputParser(BaseOutputParser[T]):
 
     def get_format_instructions(self) -> str:
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.schema().items()}
+        schema = dict(self.pydantic_object.schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema

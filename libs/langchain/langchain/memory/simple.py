@@ -8,7 +8,7 @@ class SimpleMemory(BaseMemory):
     ever change between prompts.
     """
 
-    memories: dict[str, Any] = dict()
+    memories: dict[str, Any] = {}
 
     @property
     def memory_variables(self) -> list[str]:
