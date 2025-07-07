@@ -17,7 +17,7 @@ def create_openai_tools_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
-    strict: Optional[bool] = None,
+    strict: Optional[bool] = None,  # noqa: FBT001
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
@@ -89,13 +89,14 @@ def create_openai_tools_agent(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     llm_with_tools = llm.bind(
         tools=[convert_to_openai_tool(tool, strict=strict) for tool in tools]
     )
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_tool_messages(
                 x["intermediate_steps"]
@@ -105,4 +106,3 @@ def create_openai_tools_agent(
         | llm_with_tools
         | OpenAIToolsAgentOutputParser()
     )
-    return agent

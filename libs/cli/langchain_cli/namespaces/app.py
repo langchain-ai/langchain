@@ -1,6 +1,4 @@
-"""
-Manage LangChain apps
-"""
+"""Manage LangChain apps."""
 
 import shutil
 import subprocess
@@ -62,15 +60,14 @@ def new(
             is_flag=True,
         ),
     ] = False,
-):
-    """
-    Create a new LangServe application.
-    """
+) -> None:
+    """Create a new LangServe application."""
     has_packages = package is not None and len(package) > 0
 
     if noninteractive:
         if name is None:
-            raise typer.BadParameter("name is required when --non-interactive is set")
+            msg = "name is required when --non-interactive is set"
+            raise typer.BadParameter(msg)
         name_str = name
         pip_bool = bool(pip)  # None should be false
     else:
@@ -154,9 +151,8 @@ def add(
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
-):
-    """
-    Adds the specified template to the current LangServe app.
+) -> None:
+    """Adds the specified template to the current LangServe app.
 
     e.g.:
     langchain app add extraction-openai-functions
@@ -166,7 +162,8 @@ def add(
     if not branch and not repo:
         warnings.warn(
             "Adding templates from the default branch and repo is deprecated."
-            " At a minimum, you will have to add `--branch v0.2` for this to work"
+            " At a minimum, you will have to add `--branch v0.2` for this to work",
+            stacklevel=2,
         )
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
@@ -176,7 +173,7 @@ def add(
     package_dir = project_root / "packages"
 
     create_events(
-        [{"event": "serve add", "properties": dict(parsed_dep=d)} for d in parsed_deps]
+        [{"event": "serve add", "properties": {"parsed_dep": d}} for d in parsed_deps]
     )
 
     # group by repo/ref
@@ -216,7 +213,7 @@ def add(
             destination_path = package_dir / inner_api_path
             if destination_path.exists():
                 typer.echo(
-                    f"Folder {str(inner_api_path)} already exists. Skipping...",
+                    f"Folder {inner_api_path} already exists. Skipping...",
                 )
                 continue
             copy_repo(source_path, destination_path)
@@ -248,7 +245,7 @@ def add(
         typer.echo("Failed to print install command, continuing...")
     else:
         if pip:
-            cmd = ["pip", "install", "-e"] + installed_destination_strs
+            cmd = ["pip", "install", "-e", *installed_destination_strs]
             cmd_str = " \\\n  ".join(installed_destination_strs)
             typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
             subprocess.run(cmd, cwd=cwd)
@@ -282,13 +279,15 @@ def add(
         if len(chain_names) == 1
         else f"these {len(chain_names)} templates"
     )
-    lines = (
-        ["", f"To use {t}, add the following to your app:\n\n```", ""]
-        + imports
-        + [""]
-        + routes
-        + ["```"]
-    )
+    lines = [
+        "",
+        f"To use {t}, add the following to your app:\n\n```",
+        "",
+        *imports,
+        "",
+        *routes,
+        "```",
+    ]
     typer.echo("\n".join(lines))
 
 
@@ -299,11 +298,8 @@ def remove(
     project_dir: Annotated[
         Optional[Path], typer.Option(help="The project directory")
     ] = None,
-):
-    """
-    Removes the specified package from the current LangServe app.
-    """
-
+) -> None:
+    """Removes the specified package from the current LangServe app."""
     project_root = get_package_root(project_dir)
 
     project_pyproject = project_root / "pyproject.toml"
@@ -347,10 +343,7 @@ def serve(
         Optional[str], typer.Option(help="The app to run, e.g. `app.server:app`")
     ] = None,
 ) -> None:
-    """
-    Starts the LangServe app.
-    """
-
+    """Starts the LangServe app."""
     # add current dir as first entry of path
     sys.path.append(str(Path.cwd()))
 

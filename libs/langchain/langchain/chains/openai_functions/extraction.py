@@ -84,7 +84,7 @@ def create_extraction_chain(
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
     tags: Optional[list[str]] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
 
@@ -103,7 +103,7 @@ def create_extraction_chain(
     extraction_prompt = prompt or ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     output_parser = JsonKeyOutputFunctionsParser(key_name="info")
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
@@ -111,7 +111,6 @@ def create_extraction_chain(
         tags=tags,
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -153,7 +152,7 @@ def create_extraction_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage using pydantic schema.
 
@@ -187,11 +186,10 @@ def create_extraction_chain_pydantic(
         pydantic_schema=PydanticSchema, attr_name="info"
     )
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         verbose=verbose,
     )
-    return chain

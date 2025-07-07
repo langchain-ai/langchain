@@ -31,9 +31,7 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Merge the results of the retrievers.
-        merged_documents = self.merge_documents(query, run_manager)
-
-        return merged_documents
+        return self.merge_documents(query, run_manager)
 
     async def _aget_relevant_documents(
         self,
@@ -52,9 +50,7 @@ class MergerRetriever(BaseRetriever):
         """
 
         # Merge the results of the retrievers.
-        merged_documents = await self.amerge_documents(query, run_manager)
-
-        return merged_documents
+        return await self.amerge_documents(query, run_manager)
 
     def merge_documents(
         self, query: str, run_manager: CallbackManagerForRetrieverRun

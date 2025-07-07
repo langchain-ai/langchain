@@ -1,6 +1,4 @@
-"""
-Develop installable templates.
-"""
+"""Develop installable templates."""
 
 import re
 import shutil
@@ -22,10 +20,8 @@ def new(
         bool,
         typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install"),
     ] = False,
-):
-    """
-    Creates a new template package.
-    """
+) -> None:
+    """Creates a new template package."""
     computed_name = name if name != "." else Path.cwd().name
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
 
@@ -108,9 +104,7 @@ def serve(
         ),
     ] = False,
 ) -> None:
-    """
-    Starts a demo app for this template.
-    """
+    """Starts a demo app for this template."""
     # load pyproject.toml
     project_dir = get_package_root()
     pyproject = project_dir / "pyproject.toml"
@@ -143,9 +137,7 @@ def serve(
 
 @package_cli.command()
 def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
-    """
-    List all or search for available templates.
-    """
+    """List all or search for available templates."""
     from langchain_cli.utils.github import list_packages
 
     packages = list_packages(contains=contains)

@@ -4,9 +4,9 @@ from langchain.chains.router.multi_prompt import MultiPromptChain
 from langchain.chains.router.multi_retrieval_qa import MultiRetrievalQAChain
 
 __all__ = [
-    "RouterChain",
-    "MultiRouteChain",
+    "LLMRouterChain",
     "MultiPromptChain",
     "MultiRetrievalQAChain",
-    "LLMRouterChain",
+    "MultiRouteChain",
+    "RouterChain",
 ]

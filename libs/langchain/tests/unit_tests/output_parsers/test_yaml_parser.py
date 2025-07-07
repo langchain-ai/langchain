@@ -76,7 +76,7 @@ def test_yaml_output_parser(result: str) -> None:
 
     model = yaml_parser.parse(result)
     print("parse_result:", result)  # noqa: T201
-    assert DEF_EXPECTED_RESULT == model
+    assert model == DEF_EXPECTED_RESULT
 
 
 def test_yaml_output_parser_fail() -> None:

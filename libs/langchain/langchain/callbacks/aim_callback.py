@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "import_aim",
-    "BaseMetadataCallbackHandler",
     "AimCallbackHandler",
+    "BaseMetadataCallbackHandler",
+    "import_aim",
 ]

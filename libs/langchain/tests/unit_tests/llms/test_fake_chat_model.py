@@ -51,7 +51,7 @@ async def test_generic_fake_chat_model_stream() -> None:
         _AnyIdAIMessageChunk(content="goodbye"),
     ]
 
-    chunks = [chunk for chunk in model.stream("meow")]
+    chunks = list(model.stream("meow"))
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),

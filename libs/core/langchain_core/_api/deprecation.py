@@ -469,7 +469,7 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        _package = (
+        package_ = (
             package or name.split(".")[0].replace("_", "-")
             if "." in name
             else "LangChain"
@@ -483,14 +483,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {_package} {since}"
+            message += f" was deprecated in {package_} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
             alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == _package:
+            if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)
