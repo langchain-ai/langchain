@@ -1,10 +1,10 @@
 import re
 from typing import Literal, Union
 
-from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
 
 from langchain.agents import AgentOutputParser
+from langchain_core.agents import AgentAction, AgentFinish
 
 
 def _unescape(text: str) -> str:
@@ -93,10 +93,8 @@ class XMLAgentOutputParser(AgentOutputParser):
                 _tool_input = _unescape(_tool_input)
 
             return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
-<<<<<<< HEAD
-
         # Check for final answer
-        elif "<final_answer>" in text and "</final_answer>" in text:
+        if "<final_answer>" in text and "</final_answer>" in text:
             matches = re.findall(r"<final_answer>(.*?)</final_answer>", text, re.DOTALL)
             if len(matches) != 1:
                 msg = (
@@ -109,20 +107,11 @@ class XMLAgentOutputParser(AgentOutputParser):
             if self.escape_format == "minimal":
                 answer = _unescape(answer)
             return AgentFinish(return_values={"output": answer}, log=text)
-        else:
-            msg = (
-                "Malformed output: expected either a tool invocation "
-                "or a final answer in XML format."
-            )
-            raise ValueError(msg)
-=======
-        if "<final_answer>" in text:
-            _, answer = text.split("<final_answer>")
-            if "</final_answer>" in answer:
-                answer = answer.split("</final_answer>")[0]
-            return AgentFinish(return_values={"output": answer}, log=text)
-        raise ValueError
->>>>>>> master
+        msg = (
+            "Malformed output: expected either a tool invocation "
+            "or a final answer in XML format."
+        )
+        raise ValueError(msg)
 
     def get_format_instructions(self) -> str:
         raise NotImplementedError
