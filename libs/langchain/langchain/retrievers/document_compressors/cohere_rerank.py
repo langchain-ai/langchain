@@ -12,7 +12,9 @@ from pydantic import ConfigDict, model_validator
 
 
 @deprecated(
-    since="0.0.30", removal="1.0", alternative_import="langchain_cohere.CohereRerank"
+    since="0.0.30",
+    removal="1.0",
+    alternative_import="langchain_cohere.CohereRerank",
 )
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
@@ -48,7 +50,9 @@ class CohereRerank(BaseDocumentCompressor):
                 )
                 raise ImportError(msg)
             cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+                values,
+                "cohere_api_key",
+                "COHERE_API_KEY",
             )
             client_name = values.get("user_agent", "langchain")
             values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
@@ -89,15 +93,10 @@ class CohereRerank(BaseDocumentCompressor):
         )
         if hasattr(results, "results"):
             results = getattr(results, "results")
-        result_dicts = []
-        for res in results:
-            result_dicts.append(
-                {
-                    "index": res.index,
-                    "relevance_score": res.relevance_score,
-                }
-            )
-        return result_dicts
+        return [
+            {"index": res.index, "relevance_score": res.relevance_score}
+            for res in results
+        ]
 
     def compress_documents(
         self,

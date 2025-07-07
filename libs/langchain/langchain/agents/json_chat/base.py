@@ -162,7 +162,7 @@ def create_json_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"
@@ -185,8 +185,9 @@ def create_json_chat_agent(
     return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
-                x["intermediate_steps"], template_tool_response=template_tool_response
-            )
+                x["intermediate_steps"],
+                template_tool_response=template_tool_response,
+            ),
         )
         | prompt
         | llm_to_use

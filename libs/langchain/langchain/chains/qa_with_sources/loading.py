@@ -30,7 +30,9 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 

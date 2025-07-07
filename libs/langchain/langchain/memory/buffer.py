@@ -155,10 +155,12 @@ class ConversationStringBufferMemory(BaseMemory):
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer += "\n" + "\n".join([human, ai])
+        self.buffer += f"\n{human}\n{ai}"
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         return self.save_context(inputs, outputs)

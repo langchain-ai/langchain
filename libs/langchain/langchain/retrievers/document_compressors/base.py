@@ -32,13 +32,15 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
             if isinstance(_transformer, BaseDocumentCompressor):
                 accepts_callbacks = (
                     signature(_transformer.compress_documents).parameters.get(
-                        "callbacks"
+                        "callbacks",
                     )
                     is not None
                 )
                 if accepts_callbacks:
                     documents = _transformer.compress_documents(
-                        documents, query, callbacks=callbacks
+                        documents,
+                        query,
+                        callbacks=callbacks,
                     )
                 else:
                     documents = _transformer.compress_documents(documents, query)
@@ -60,13 +62,15 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
             if isinstance(_transformer, BaseDocumentCompressor):
                 accepts_callbacks = (
                     signature(_transformer.acompress_documents).parameters.get(
-                        "callbacks"
+                        "callbacks",
                     )
                     is not None
                 )
                 if accepts_callbacks:
                     documents = await _transformer.acompress_documents(
-                        documents, query, callbacks=callbacks
+                        documents,
+                        query,
+                        callbacks=callbacks,
                     )
                 else:
                     documents = await _transformer.acompress_documents(documents, query)

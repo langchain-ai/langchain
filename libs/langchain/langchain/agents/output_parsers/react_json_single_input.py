@@ -67,7 +67,9 @@ class ReActJsonSingleInputOutputParser(AgentOutputParser):
                 )
                 raise OutputParserException(msg)
             return AgentAction(
-                response["action"], response.get("action_input", {}), text
+                response["action"],
+                response.get("action_input", {}),
+                text,
             )
 
         except Exception:

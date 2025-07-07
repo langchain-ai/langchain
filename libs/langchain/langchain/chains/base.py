@@ -109,17 +109,20 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     )
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model("ChainInput", **dict.fromkeys(self.input_keys, (Any, None)))
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(
-            "ChainOutput", **dict.fromkeys(self.output_keys, (Any, None))
+            "ChainOutput",
+            **dict.fromkeys(self.output_keys, (Any, None)),
         )
 
     @override
@@ -165,7 +168,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
 
             final_outputs: dict[str, Any] = self.prep_outputs(
-                inputs, outputs, return_only_outputs
+                inputs,
+                outputs,
+                return_only_outputs,
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -217,7 +222,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 else await self._acall(inputs)
             )
             final_outputs: dict[str, Any] = await self.aprep_outputs(
-                inputs, outputs, return_only_outputs
+                inputs,
+                outputs,
+                return_only_outputs,
             )
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -349,7 +356,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 `Chain.output_keys`.
         """
         return await run_in_executor(
-            None, self._call, inputs, run_manager.get_sync() if run_manager else None
+            None,
+            self._call,
+            inputs,
+            run_manager.get_sync() if run_manager else None,
         )
 
     @deprecated("0.1.0", alternative="invoke", removal="1.0")
@@ -692,14 +702,20 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 raise ValueError(msg)
             return (
                 await self.acall(
-                    args[0], callbacks=callbacks, tags=tags, metadata=metadata
+                    args[0],
+                    callbacks=callbacks,
+                    tags=tags,
+                    metadata=metadata,
                 )
             )[self.output_keys[0]]
 
         if kwargs and not args:
             return (
                 await self.acall(
-                    kwargs, callbacks=callbacks, tags=tags, metadata=metadata
+                    kwargs,
+                    callbacks=callbacks,
+                    tags=tags,
+                    metadata=metadata,
                 )
             )[self.output_keys[0]]
 
@@ -775,7 +791,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
     @deprecated("0.1.0", alternative="batch", removal="1.0")
     def apply(
-        self, input_list: list[builtins.dict[str, Any]], callbacks: Callbacks = None
+        self,
+        input_list: list[builtins.dict[str, Any]],
+        callbacks: Callbacks = None,
     ) -> list[builtins.dict[str, str]]:
         """Call the chain on all inputs in the list."""
         return [self(inputs, callbacks=callbacks) for inputs in input_list]

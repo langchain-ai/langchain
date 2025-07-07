@@ -47,7 +47,8 @@ class BaseCombineDocumentsChain(Chain, ABC):
     output_key: str = "output_text"  #: :meta private:
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsInput",
@@ -55,7 +56,8 @@ class BaseCombineDocumentsChain(Chain, ABC):
         )
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsOutput",
@@ -112,7 +114,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     @abstractmethod
     async def acombine_docs(
-        self, docs: list[Document], **kwargs: Any
+        self,
+        docs: list[Document],
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine documents into a single string.
 
@@ -137,7 +141,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
         output, extra_return_dict = self.combine_docs(
-            docs, callbacks=_run_manager.get_child(), **other_keys
+            docs,
+            callbacks=_run_manager.get_child(),
+            **other_keys,
         )
         extra_return_dict[self.output_key] = output
         return extra_return_dict
@@ -153,7 +159,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
         output, extra_return_dict = await self.acombine_docs(
-            docs, callbacks=_run_manager.get_child(), **other_keys
+            docs,
+            callbacks=_run_manager.get_child(),
+            **other_keys,
         )
         extra_return_dict[self.output_key] = output
         return extra_return_dict
@@ -246,7 +254,8 @@ class AnalyzeDocumentChain(Chain):
         return self.combine_docs_chain.output_keys
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         return create_model(
             "AnalyzeDocumentChain",
@@ -254,7 +263,8 @@ class AnalyzeDocumentChain(Chain):
         )
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         return self.combine_docs_chain.get_output_schema(config)
 
@@ -271,5 +281,7 @@ class AnalyzeDocumentChain(Chain):
         other_keys: dict = {k: v for k, v in inputs.items() if k != self.input_key}
         other_keys[self.combine_docs_chain.input_key] = docs
         return self.combine_docs_chain(
-            other_keys, return_only_outputs=True, callbacks=_run_manager.get_child()
+            other_keys,
+            return_only_outputs=True,
+            callbacks=_run_manager.get_child(),
         )

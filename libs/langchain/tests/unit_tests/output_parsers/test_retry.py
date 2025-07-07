@@ -69,7 +69,8 @@ async def test_retry_output_parser_aparse_with_prompt() -> None:
         legacy=False,
     )
     actual = await parser.aparse_with_prompt(
-        "completion", StringPromptValue(text="dummy")
+        "completion",
+        StringPromptValue(text="dummy"),
     )
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
@@ -153,7 +154,8 @@ async def test_retry_with_error_output_parser_aparse_with_prompt() -> None:
         legacy=False,
     )
     actual = await parser.aparse_with_prompt(
-        "completion", StringPromptValue(text="dummy")
+        "completion",
+        StringPromptValue(text="dummy"),
     )
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
@@ -211,7 +213,7 @@ def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
-        )
+        ),
     ],
 )
 def test_retry_output_parser_parse_with_prompt_with_retry_chain(
@@ -239,7 +241,7 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
-        )
+        ),
     ],
 )
 async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
@@ -268,7 +270,7 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
-        )
+        ),
     ],
 )
 def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
@@ -297,7 +299,7 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
-        )
+        ),
     ],
 )
 async def test_retry_with_error_output_parser_aparse_with_prompt_with_retry_chain(

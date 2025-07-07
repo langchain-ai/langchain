@@ -67,7 +67,8 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
         if includes_answer:
             return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
+                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()},
+                text,
             )
 
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
@@ -79,7 +80,9 @@ class ReActSingleInputOutputParser(AgentOutputParser):
                 send_to_llm=True,
             )
         if not re.search(
-            r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
+            r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)",
+            text,
+            re.DOTALL,
         ):
             msg = f"Could not parse LLM output: `{text}`"
             raise OutputParserException(

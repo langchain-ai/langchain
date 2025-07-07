@@ -58,7 +58,8 @@ class LLMChainFilter(BaseDocumentCompressor):
         config = RunnableConfig(callbacks=callbacks)
         outputs = zip(
             self.llm_chain.batch(
-                [self.get_input(query, doc) for doc in documents], config=config
+                [self.get_input(query, doc) for doc in documents],
+                config=config,
             ),
             documents,
         )
@@ -89,7 +90,8 @@ class LLMChainFilter(BaseDocumentCompressor):
         config = RunnableConfig(callbacks=callbacks)
         outputs = zip(
             await self.llm_chain.abatch(
-                [self.get_input(query, doc) for doc in documents], config=config
+                [self.get_input(query, doc) for doc in documents],
+                config=config,
             ),
             documents,
         )

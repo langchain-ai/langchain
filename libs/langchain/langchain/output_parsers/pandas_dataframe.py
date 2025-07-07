@@ -32,7 +32,9 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         raise TypeError(msg)
 
     def parse_array(
-        self, array: str, original_request_params: str
+        self,
+        array: str,
+        original_request_params: str,
     ) -> tuple[list[Union[int, str]], str]:
         parsed_array: list[Union[int, str]] = []
 
@@ -90,7 +92,8 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
             array_exists = re.search(r"(\[.*?\])", request_params)
             if array_exists:
                 parsed_array, stripped_request_params = self.parse_array(
-                    array_exists.group(1), request_params
+                    array_exists.group(1),
+                    request_params,
                 )
                 if request_type == "column":
                     filtered_df = self.dataframe[
@@ -121,7 +124,8 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                         self.dataframe.index.isin(parsed_array)
                     ]
                     result[request_type] = getattr(
-                        filtered_df[stripped_request_params], request_type
+                        filtered_df[stripped_request_params],
+                        request_type,
                     )()
             else:
                 if request_type == "column":
@@ -130,7 +134,8 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                     result[request_params] = self.dataframe.iloc[int(request_params)]
                 else:
                     result[request_type] = getattr(
-                        self.dataframe[request_params], request_type
+                        self.dataframe[request_params],
+                        request_type,
                     )()
         except (AttributeError, IndexError, KeyError):
             if request_type not in {"column", "row"}:
@@ -148,5 +153,5 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
     def get_format_instructions(self) -> str:
         return PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS.format(
-            columns=", ".join(self.dataframe.columns)
+            columns=", ".join(self.dataframe.columns),
         )

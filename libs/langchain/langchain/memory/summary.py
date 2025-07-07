@@ -35,7 +35,9 @@ class SummarizerMixin(BaseModel):
     summary_message_cls: type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
-        self, messages: list[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -47,7 +49,9 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
     async def apredict_new_summary(
-        self, messages: list[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -90,7 +94,8 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
         for i in range(0, len(obj.chat_memory.messages), summarize_step):
             obj.buffer = obj.predict_new_summary(
-                obj.chat_memory.messages[i : i + summarize_step], obj.buffer
+                obj.chat_memory.messages[i : i + summarize_step],
+                obj.buffer,
             )
         return obj
 
@@ -127,7 +132,8 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
         self.buffer = self.predict_new_summary(
-            self.chat_memory.messages[-2:], self.buffer
+            self.chat_memory.messages[-2:],
+            self.buffer,
         )
 
     def clear(self) -> None:

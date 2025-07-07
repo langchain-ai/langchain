@@ -25,7 +25,7 @@ def _get_extraction_function(entity_schema: dict) -> dict:
         "parameters": {
             "type": "object",
             "properties": {
-                "info": {"type": "array", "items": _convert_schema(entity_schema)}
+                "info": {"type": "array", "items": _convert_schema(entity_schema)},
             },
             "required": ["info"],
         },
@@ -177,13 +177,15 @@ def create_extraction_chain_pydantic(
         openai_schema = pydantic_schema.schema()
 
     openai_schema = _resolve_schema_references(
-        openai_schema, openai_schema.get("definitions", {})
+        openai_schema,
+        openai_schema.get("definitions", {}),
     )
 
     function = _get_extraction_function(openai_schema)
     extraction_prompt = prompt or ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     output_parser = PydanticAttrOutputFunctionsParser(
-        pydantic_schema=PydanticSchema, attr_name="info"
+        pydantic_schema=PydanticSchema,
+        attr_name="info",
     )
     llm_kwargs = get_llm_kwargs(function)
     return LLMChain(

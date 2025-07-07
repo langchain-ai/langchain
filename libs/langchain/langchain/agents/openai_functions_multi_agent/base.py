@@ -95,7 +95,8 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
         return final_tools
 
     return AgentFinish(
-        return_values={"output": message.content}, log=str(message.content)
+        return_values={"output": message.content},
+        log=str(message.content),
     )
 
 
@@ -190,7 +191,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                             },
                             "required": ["action_name", "action"],
                         },
-                    }
+                    },
                 },
                 "required": ["actions"],
             },
@@ -222,7 +223,9 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
         return _parse_ai_message(predicted_message)
 
@@ -251,7 +254,9 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
         return _parse_ai_message(predicted_message)
 
@@ -259,7 +264,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     def create_prompt(
         cls,
         system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
+            content="You are a helpful AI assistant.",
         ),
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> BasePromptTemplate:
@@ -283,7 +288,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 *_prompts,
                 HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+            ],
         )
         return ChatPromptTemplate(messages=messages)
 
@@ -295,7 +300,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
         system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
+            content="You are a helpful AI assistant.",
         ),
         **kwargs: Any,
     ) -> BaseMultiActionAgent:

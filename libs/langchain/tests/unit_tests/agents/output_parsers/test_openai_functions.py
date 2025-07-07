@@ -35,7 +35,7 @@ def test_func_call() -> None:
     msg = AIMessage(
         content="LLM thoughts.",
         additional_kwargs={
-            "function_call": {"name": "foo", "arguments": '{"param": 42}'}
+            "function_call": {"name": "foo", "arguments": '{"param": 42}'},
         },
     )
     result = parser.invoke(msg)
@@ -71,7 +71,7 @@ def test_func_call_oldstyle() -> None:
     msg = AIMessage(
         content="LLM thoughts.",
         additional_kwargs={
-            "function_call": {"name": "foo", "arguments": '{"__arg1": "42"}'}
+            "function_call": {"name": "foo", "arguments": '{"__arg1": "42"}'},
         },
     )
     result = parser.invoke(msg)

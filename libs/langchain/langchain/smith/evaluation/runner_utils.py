@@ -133,7 +133,7 @@ class TestResult(dict):
             if "reference" in result:
                 if isinstance(result["reference"], dict):
                     r.update(
-                        {f"reference.{k}": v for k, v in result["reference"].items()}
+                        {f"reference.{k}": v for k, v in result["reference"].items()},
                     )
                 else:
                     r["reference"] = result["reference"]
@@ -143,7 +143,7 @@ class TestResult(dict):
                     "error": result.get("Error"),
                     "execution_time": result["execution_time"],
                     "run_id": result.get("run_id"),
-                }
+                },
             )
             records.append(r)
             indices.append(example_id)
@@ -462,7 +462,7 @@ def _determine_input_key(
         if run_inputs and input_key not in run_inputs:
             logger.warning(
                 f"Input key {input_key} not in chain's specified"
-                f" input keys {run_inputs}. Evaluation behavior may be undefined."
+                f" input keys {run_inputs}. Evaluation behavior may be undefined.",
             )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
@@ -470,7 +470,7 @@ def _determine_input_key(
         logger.warning(
             f"Chain expects multiple input keys: {run_inputs},"
             f" Evaluator is likely to fail. Evaluation behavior may be undefined."
-            " Specify an input_key in the RunEvalConfig to avoid this warning."
+            " Specify an input_key in the RunEvalConfig to avoid this warning.",
         )
 
     return input_key
@@ -486,7 +486,7 @@ def _determine_prediction_key(
         if run_outputs and prediction_key not in run_outputs:
             logger.warning(
                 f"Prediction key {prediction_key} not in chain's specified"
-                f" output keys {run_outputs}. Evaluation behavior may be undefined."
+                f" output keys {run_outputs}. Evaluation behavior may be undefined.",
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
@@ -494,7 +494,7 @@ def _determine_prediction_key(
         logger.warning(
             f"Chain expects multiple output keys: {run_outputs},"
             f" Evaluation behavior may be undefined. Specify a prediction_key"
-            " in the RunEvalConfig to avoid this warning."
+            " in the RunEvalConfig to avoid this warning.",
         )
     return prediction_key
 
@@ -623,7 +623,10 @@ def _load_run_evaluators(
         and any(isinstance(e, StringEvaluator) for e in config.custom_evaluators)
     ):
         input_key, prediction_key, reference_key = _get_keys(
-            config, run_inputs, run_outputs, example_outputs
+            config,
+            run_inputs,
+            run_outputs,
+            example_outputs,
         )
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
@@ -650,7 +653,7 @@ def _load_run_evaluators(
                     input_key=input_key,
                     prediction_key=prediction_key,
                     reference_key=reference_key,
-                )
+                ),
             )
         elif callable(custom_evaluator):
             run_evaluators.append(run_evaluator_dec(custom_evaluator))
@@ -700,7 +703,9 @@ async def _arun_llm(
             return await llm.ainvoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         msg = (
@@ -715,7 +720,9 @@ async def _arun_llm(
         llm_output: Union[str, BaseMessage] = await llm.ainvoke(
             prompt,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     except InputFormatError:
@@ -723,7 +730,9 @@ async def _arun_llm(
         llm_output = await llm.ainvoke(
             **llm_inputs,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     return llm_output
@@ -750,12 +759,16 @@ async def _arun_chain(
         output = await chain.ainvoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
@@ -809,7 +822,7 @@ async def _arun_llm_or_chain(
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\n{e!r}"
+            f"\n{e!r}",
         )
         result = EvalError(Error=e)
     return result
@@ -852,7 +865,9 @@ def _run_llm(
             llm_output: Union[str, BaseMessage] = llm.invoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         else:
@@ -868,7 +883,9 @@ def _run_llm(
             llm_output = llm.invoke(
                 llm_prompts,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         except InputFormatError:
@@ -901,12 +918,16 @@ def _run_chain(
         output = chain.invoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = chain.invoke(inputs_, config=runnable_config)
     return output
@@ -962,7 +983,7 @@ def _run_llm_or_chain(
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\nError Type: {error_type}, Message: {e}"
+            f"\nError Type: {error_type}, Message: {e}",
         )
         result = EvalError(Error=e)
     return result
@@ -1104,7 +1125,7 @@ class _DatasetRunContainer:
                     eval_results = callback.logged_eval_results
                     for (_, example_id), v in eval_results.items():
                         all_eval_results.setdefault(str(example_id), {}).update(
-                            {"feedback": v}
+                            {"feedback": v},
                         )
                 elif isinstance(callback, LangChainTracer):
                     run = callback.latest_run
@@ -1119,7 +1140,7 @@ class _DatasetRunContainer:
                             "execution_time": execution_time,
                             "run_id": run_id,
                             "run": run,
-                        }
+                        },
                     )
                     all_runs[str(callback.example_id)] = run
         return cast(dict[str, _RowResult], all_eval_results), all_runs
@@ -1157,7 +1178,8 @@ class _DatasetRunContainer:
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
-                self.project.id, end_time=datetime.now(timezone.utc)
+                self.project.id,
+                end_time=datetime.now(timezone.utc),
             )
         except Exception as e:
             logger.debug(f"Failed to close project: {e!r}")
@@ -1200,7 +1222,10 @@ class _DatasetRunContainer:
             run_metadata["revision_id"] = revision_id
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
-            wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
+            wrapped_model,
+            examples,
+            evaluation,
+            dataset.data_type or DataType.kv,
         )
         _validate_example_inputs(examples[0], wrapped_model, input_mapper)
         progress_bar = progress.ProgressBarCallback(len(examples))
@@ -1254,7 +1279,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         display(aggregate_results)
     else:
         formatted_string = aggregate_results.to_string(
-            float_format=lambda x: f"{x:.2f}", justify="right"
+            float_format=lambda x: f"{x:.2f}",
+            justify="right",
         )
         print("\n Experiment Results:")  # noqa: T201
         print(formatted_string)  # noqa: T201
@@ -1413,7 +1439,7 @@ def run_on_dataset(
                     ),
                     container.examples,
                     container.configs,
-                )
+                ),
             )
 
     return container.finish(batch_results, verbose=verbose)
@@ -1528,5 +1554,6 @@ or LangSmith's `RunEvaluator` classes.
 """  # noqa: E501
 run_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING
 arun_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING.replace(
-    "run_on_dataset(", "await arun_on_dataset("
+    "run_on_dataset(",
+    "await arun_on_dataset(",
 )

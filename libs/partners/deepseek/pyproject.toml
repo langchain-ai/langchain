@@ -32,7 +32,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.6"]
 test_integration = []
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = []
 typing = ["mypy<2.0,>=1.10"]
 

@@ -131,13 +131,13 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             previous_history = ""
         current_history = super().load_memory_variables(inputs)
         template = SystemMessagePromptTemplate.from_template(
-            self.previous_history_template
+            self.previous_history_template,
         )
         messages = [
             template.format(
                 previous_history=previous_history,
                 current_time=datetime.now().astimezone().strftime(TIMESTAMP_FORMAT),
-            )
+            ),
         ]
         messages.extend(current_history[self.memory_key])
         return {self.memory_key: messages}

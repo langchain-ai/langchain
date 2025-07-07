@@ -73,7 +73,7 @@ class NatBotChain(Chain):
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
-                "class method."
+                "class method.",
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
@@ -91,7 +91,10 @@ class NatBotChain(Chain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        objective: str,
+        **kwargs: Any,
     ) -> NatBotChain:
         """Load from LLM."""
         llm_chain = PROMPT | llm | StrOutputParser()

@@ -221,7 +221,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_strings(
-            prediction=prediction, reference=reference, input=input, **kwargs
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     async def aevaluate_strings(
@@ -244,7 +247,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_strings(
-            prediction=prediction, reference=reference, input=input, **kwargs
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
 

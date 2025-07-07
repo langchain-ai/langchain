@@ -110,7 +110,9 @@ class MultiQueryRetriever(BaseRetriever):
         return self.unique_union(documents)
 
     async def agenerate_queries(
-        self, question: str, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        question: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[str]:
         """Generate queries based upon user input.
 
@@ -121,7 +123,8 @@ class MultiQueryRetriever(BaseRetriever):
             List of LLM generated queries that are similar to the user input
         """
         response = await self.llm_chain.ainvoke(
-            {"question": question}, config={"callbacks": run_manager.get_child()}
+            {"question": question},
+            config={"callbacks": run_manager.get_child()},
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
@@ -129,7 +132,9 @@ class MultiQueryRetriever(BaseRetriever):
         return lines
 
     async def aretrieve_documents(
-        self, queries: list[str], run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        queries: list[str],
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Run all LLM generated queries.
 
@@ -142,10 +147,11 @@ class MultiQueryRetriever(BaseRetriever):
         document_lists = await asyncio.gather(
             *(
                 self.retriever.ainvoke(
-                    query, config={"callbacks": run_manager.get_child()}
+                    query,
+                    config={"callbacks": run_manager.get_child()},
                 )
                 for query in queries
-            )
+            ),
         )
         return [doc for docs in document_lists for doc in docs]
 
@@ -170,7 +176,9 @@ class MultiQueryRetriever(BaseRetriever):
         return self.unique_union(documents)
 
     def generate_queries(
-        self, question: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        question: str,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[str]:
         """Generate queries based upon user input.
 
@@ -181,7 +189,8 @@ class MultiQueryRetriever(BaseRetriever):
             List of LLM generated queries that are similar to the user input
         """
         response = self.llm_chain.invoke(
-            {"question": question}, config={"callbacks": run_manager.get_child()}
+            {"question": question},
+            config={"callbacks": run_manager.get_child()},
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
@@ -189,7 +198,9 @@ class MultiQueryRetriever(BaseRetriever):
         return lines
 
     def retrieve_documents(
-        self, queries: list[str], run_manager: CallbackManagerForRetrieverRun
+        self,
+        queries: list[str],
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Run all LLM generated queries.
 
@@ -202,7 +213,8 @@ class MultiQueryRetriever(BaseRetriever):
         documents = []
         for query in queries:
             docs = self.retriever.invoke(
-                query, config={"callbacks": run_manager.get_child()}
+                query,
+                config={"callbacks": run_manager.get_child()},
             )
             documents.extend(docs)
         return documents

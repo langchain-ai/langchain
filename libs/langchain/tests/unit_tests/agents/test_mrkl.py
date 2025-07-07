@@ -153,7 +153,7 @@ def test_from_chains() -> None:
             expected_tools_prompt,
             FORMAT_INSTRUCTIONS.format(tool_names=expected_tool_names),
             SUFFIX,
-        ]
+        ],
     )
     prompt = agent.llm_chain.prompt
     assert isinstance(prompt, PromptTemplate)

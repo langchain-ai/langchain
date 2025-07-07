@@ -38,7 +38,7 @@ class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterR
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
+            attemp_count_before_success=5,
         ),
     ],
 )
@@ -81,7 +81,7 @@ def test_output_fixing_parser_from_llm() -> None:
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
+            attemp_count_before_success=5,
         ),
     ],
 )
@@ -140,7 +140,8 @@ def test_output_fixing_parser_output_type(
     base_parser: BaseOutputParser,
 ) -> None:
     parser = OutputFixingParser[str](
-        parser=base_parser, retry_chain=RunnablePassthrough()
+        parser=base_parser,
+        retry_chain=RunnablePassthrough(),
     )
     assert parser.OutputType is base_parser.OutputType
 

@@ -161,7 +161,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
         return self.output_parser._parse_ai_message(predicted_message)
 
@@ -188,12 +190,15 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration limit or time limit."},
+                "",
             )
         if early_stopping_method == "generate":
             # Generate does one final forward pass
             agent_decision = self.plan(
-                intermediate_steps, with_functions=False, **kwargs
+                intermediate_steps,
+                with_functions=False,
+                **kwargs,
             )
             if isinstance(agent_decision, AgentFinish):
                 return agent_decision
@@ -209,7 +214,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     def create_prompt(
         cls,
         system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
+            content="You are a helpful AI assistant.",
         ),
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> ChatPromptTemplate:
@@ -233,7 +238,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 *_prompts,
                 HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+            ],
         )
         return ChatPromptTemplate(messages=messages)
 
@@ -245,7 +250,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
         system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
+            content="You are a helpful AI assistant.",
         ),
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
@@ -274,7 +279,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 
 def create_openai_functions_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
 ) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
@@ -357,8 +364,8 @@ def create_openai_functions_agent(
     return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
-                x["intermediate_steps"]
-            )
+                x["intermediate_steps"],
+            ),
         )
         | prompt
         | llm_with_tools

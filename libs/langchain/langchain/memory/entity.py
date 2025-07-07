@@ -154,7 +154,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
         )
         return None
 
@@ -167,7 +167,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
     def clear(self) -> None:
         def scan_and_delete(cursor: int) -> int:
             cursor, keys_to_delete = self.redis_client.scan(
-                cursor, f"{self.full_key_prefix}:*"
+                cursor,
+                f"{self.full_key_prefix}:*",
             )
             self.redis_client.delete(*keys_to_delete)
             return cursor
@@ -256,7 +257,7 @@ class RedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
         )
         return None
 
@@ -274,7 +275,8 @@ class RedisEntityStore(BaseEntityStore):
                 yield batch
 
         for keybatch in batched(
-            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"), 500
+            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"),
+            500,
         ):
             self.redis_client.delete(*keybatch)
 

@@ -38,7 +38,7 @@ test = [
     "langchain-tests",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["langchain-core"]
 test_integration = ["requests<3.0.0,>=2.32.3", "langchain-core"]
 typing = [

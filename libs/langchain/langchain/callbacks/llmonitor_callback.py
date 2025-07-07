@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "LLMonitorCallbackHandler": "langchain_community.callbacks.llmonitor_callback"
+    "LLMonitorCallbackHandler": "langchain_community.callbacks.llmonitor_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

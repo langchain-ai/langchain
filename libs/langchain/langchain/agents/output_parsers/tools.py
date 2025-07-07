@@ -33,7 +33,8 @@ def parse_ai_message_to_tool_action(
     else:
         if not message.additional_kwargs.get("tool_calls"):
             return AgentFinish(
-                return_values={"output": message.content}, log=str(message.content)
+                return_values={"output": message.content},
+                log=str(message.content),
             )
         # Best-effort parsing
         tool_calls = []
@@ -43,7 +44,7 @@ def parse_ai_message_to_tool_action(
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
-                    ToolCall(name=function_name, args=args, id=tool_call["id"])
+                    ToolCall(name=function_name, args=args, id=tool_call["id"]),
                 )
             except JSONDecodeError:
                 msg = (
@@ -71,7 +72,7 @@ def parse_ai_message_to_tool_action(
                 log=log,
                 message_log=[message],
                 tool_call_id=tool_call["id"],
-            )
+            ),
         )
     return actions
 
@@ -90,7 +91,10 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         return "tools-agent-output-parser"
 
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self,
+        result: list[Generation],
+        *,
+        partial: bool = False,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"

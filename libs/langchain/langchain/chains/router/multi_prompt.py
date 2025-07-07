@@ -157,7 +157,7 @@ class MultiPromptChain(MultiRouteChain):
         destinations = [f"{p['name']}: {p['description']}" for p in prompt_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,

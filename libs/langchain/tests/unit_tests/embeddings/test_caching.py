@@ -34,7 +34,9 @@ def cache_embeddings() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace"
+        embeddings,
+        store,
+        namespace="test_namespace",
     )
 
 
@@ -44,7 +46,10 @@ def cache_embeddings_batch() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace", batch_size=3
+        embeddings,
+        store,
+        namespace="test_namespace",
+        batch_size=3,
     )
 
 
@@ -155,7 +160,10 @@ def test_blake2b_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="blake2b"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="blake2b",
     )
 
     text = "blake"
@@ -171,7 +179,10 @@ def test_sha256_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha256"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha256",
     )
 
     text = "foo"
@@ -187,7 +198,10 @@ def test_sha512_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha512"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha512",
     )
 
     text = "foo"

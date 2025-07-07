@@ -40,7 +40,8 @@ class VectorStoreToolkit(BaseToolkit):
             msg = "You need to install langchain-community to use this toolkit."
             raise ImportError(msg)
         description = VectorStoreQATool.get_description(
-            self.vectorstore_info.name, self.vectorstore_info.description
+            self.vectorstore_info.name,
+            self.vectorstore_info.description,
         )
         qa_tool = VectorStoreQATool(
             name=self.vectorstore_info.name,
@@ -49,7 +50,8 @@ class VectorStoreToolkit(BaseToolkit):
             llm=self.llm,
         )
         description = VectorStoreQAWithSourcesTool.get_description(
-            self.vectorstore_info.name, self.vectorstore_info.description
+            self.vectorstore_info.name,
+            self.vectorstore_info.description,
         )
         qa_with_sources_tool = VectorStoreQAWithSourcesTool(
             name=f"{self.vectorstore_info.name}_with_sources",
@@ -82,7 +84,8 @@ class VectorStoreRouterToolkit(BaseToolkit):
             raise ImportError(msg)
         for vectorstore_info in self.vectorstores:
             description = VectorStoreQATool.get_description(
-                vectorstore_info.name, vectorstore_info.description
+                vectorstore_info.name,
+                vectorstore_info.description,
             )
             qa_tool = VectorStoreQATool(
                 name=vectorstore_info.name,

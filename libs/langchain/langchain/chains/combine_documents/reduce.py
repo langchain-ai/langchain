@@ -27,7 +27,10 @@ class AsyncCombineDocsProtocol(Protocol):
 
 
 def split_list_of_docs(
-    docs: list[Document], length_func: Callable, token_max: int, **kwargs: Any
+    docs: list[Document],
+    length_func: Callable,
+    token_max: int,
+    **kwargs: Any,
 ) -> list[list[Document]]:
     """Split Documents into subsets that each meet a cumulative length constraint.
 
@@ -250,10 +253,15 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = self._collapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return self.combine_documents_chain.combine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     async def acombine_docs(
@@ -279,10 +287,15 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = await self._acollapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return await self.combine_documents_chain.acombine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     def _collapse(
@@ -298,14 +311,19 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return self._collapse_chain.run(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
             result_docs = []
             for docs in new_result_doc_list:
@@ -332,14 +350,19 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         async def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return await self._collapse_chain.arun(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
             result_docs = []
             for docs in new_result_doc_list:

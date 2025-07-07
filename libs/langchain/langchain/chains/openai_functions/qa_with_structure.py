@@ -22,7 +22,8 @@ class AnswerWithSources(BaseModel):
 
     answer: str = Field(..., description="Answer to the question that was asked")
     sources: list[str] = Field(
-        ..., description="List of sources used to answer the question"
+        ...,
+        description="List of sources used to answer the question",
     )
 
 
@@ -63,7 +64,7 @@ def create_qa_with_structure_chain(
             )
             raise ValueError(msg)
         _output_parser: BaseLLMOutputParser = PydanticOutputFunctionsParser(
-            pydantic_schema=schema
+            pydantic_schema=schema,
         )
     elif output_parser == "base":
         _output_parser = OutputFunctionsParser()
@@ -91,7 +92,7 @@ def create_qa_with_structure_chain(
             content=(
                 "You are a world class algorithm to answer "
                 "questions in a specific format."
-            )
+            ),
         ),
         HumanMessage(content="Answer question using the following context"),
         HumanMessagePromptTemplate.from_template("{context}"),
@@ -134,5 +135,8 @@ def create_qa_with_sources_chain(
         Chain (LLMChain) that can be used to answer questions with citations.
     """
     return create_qa_with_structure_chain(
-        llm, AnswerWithSources, verbose=verbose, **kwargs
+        llm,
+        AnswerWithSources,
+        verbose=verbose,
+        **kwargs,
     )
