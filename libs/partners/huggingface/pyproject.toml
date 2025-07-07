@@ -42,7 +42,7 @@ test = [
     "langchain-community",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["ipykernel<7.0.0,>=6.29.2", "langchain-core"]
 test_integration = []
 typing = ["mypy<2.0,>=1.10", "langchain-core"]

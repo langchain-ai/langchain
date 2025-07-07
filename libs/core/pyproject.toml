@@ -26,9 +26,7 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = [
-    "ruff<0.13.0,>=0.12.2",
-]
+lint = ["ruff<0.13,>=0.12.2"]
 typing = [
     "mypy<1.16,>=1.15",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
