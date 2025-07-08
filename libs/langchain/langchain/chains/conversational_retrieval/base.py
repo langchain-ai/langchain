@@ -504,7 +504,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
             "please use `from langchain.chains import ConversationalRetrievalChain`",
-            stacklevel=2,
+            stacklevel=4,
         )
         return values
 

@@ -162,7 +162,7 @@ class QueryTransformer(Transformer):
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
                 "(YYYY-MM-DD).",
-                stacklevel=2,
+                stacklevel=3,
             )
         return {"date": item, "type": "date"}
 

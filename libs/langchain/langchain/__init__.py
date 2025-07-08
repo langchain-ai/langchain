@@ -29,12 +29,12 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
         warnings.warn(
             f"Importing {name} from langchain root module is no longer supported. "
             f"Please use {replacement} instead.",
-            stacklevel=2,
+            stacklevel=3,
         )
     else:
         warnings.warn(
             f"Importing {name} from langchain root module is no longer supported.",
-            stacklevel=2,
+            stacklevel=3,
         )
 
 
