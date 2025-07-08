@@ -83,7 +83,7 @@ from langchain_groq.version import __version__
 
 
 class ChatGroq(BaseChatModel):
-    """Groq Chat large language models API.
+    r"""Groq Chat large language models API.
 
     To use, you should have the
     environment variable ``GROQ_API_KEY`` set with your API key.
@@ -412,7 +412,8 @@ class ChatGroq(BaseChatModel):
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
+                msg = f"Found {field_name} supplied twice."
+                raise ValueError(msg)
             if field_name not in all_required_field_names:
                 warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
@@ -423,10 +424,11 @@ class ChatGroq(BaseChatModel):
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
-            raise ValueError(
+            msg = (
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
+            raise ValueError(msg)
 
         values["model_kwargs"] = extra
         return values
@@ -435,9 +437,11 @@ class ChatGroq(BaseChatModel):
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n < 1:
-            raise ValueError("n must be at least 1.")
+            msg = "n must be at least 1."
+            raise ValueError(msg)
         if self.n > 1 and self.streaming:
-            raise ValueError("n must be 1 when streaming.")
+            msg = "n must be 1 when streaming."
+            raise ValueError(msg)
         if self.temperature == 0:
             self.temperature = 1e-8
 
@@ -470,10 +474,11 @@ class ChatGroq(BaseChatModel):
                     **client_params, **async_specific
                 ).chat.completions
         except ImportError as exc:
-            raise ImportError(
+            msg = (
                 "Could not import groq python package. "
                 "Please install it with `pip install groq`."
-            ) from exc
+            )
+            raise ImportError(msg) from exc
         return self
 
     #
@@ -680,7 +685,7 @@ class ChatGroq(BaseChatModel):
         return params
 
     def _create_chat_result(
-        self, response: Union[dict, BaseModel], params: dict
+        self, response: dict | BaseModel, params: dict
     ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
@@ -698,7 +703,7 @@ class ChatGroq(BaseChatModel):
                         "total_tokens", input_tokens + output_tokens
                     ),
                 }
-            generation_info = dict(finish_reason=res.get("finish_reason"))
+            generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
@@ -755,7 +760,7 @@ class ChatGroq(BaseChatModel):
         self,
         functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
+            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -777,8 +782,8 @@ class ChatGroq(BaseChatModel):
                 (if any).
             **kwargs: Any additional parameters to pass to
                 :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
-        """
 
+        """
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:
             function_call = (
@@ -788,18 +793,20 @@ class ChatGroq(BaseChatModel):
                 else function_call
             )
             if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                raise ValueError(
+                msg = (
                     "When specifying `function_call`, you must provide exactly one "
                     "function."
                 )
+                raise ValueError(msg)
             if (
                 isinstance(function_call, dict)
                 and formatted_functions[0]["name"] != function_call["name"]
             ):
-                raise ValueError(
+                msg = (
                     f"Function call {function_call} was specified, but the only "
                     f"provided function was {formatted_functions[0]['name']}."
                 )
+                raise ValueError(msg)
             kwargs = {**kwargs, "function_call": function_call}
         return super().bind(
             functions=formatted_functions,
@@ -811,7 +818,7 @@ class ChatGroq(BaseChatModel):
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[
-            Union[dict, str, Literal["auto", "any", "none"], bool]
+            Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -829,8 +836,8 @@ class ChatGroq(BaseChatModel):
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
-        """
 
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
@@ -841,10 +848,11 @@ class ChatGroq(BaseChatModel):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
-                    raise ValueError(
+                    msg = (
                         "tool_choice can only be True when there is one tool. Received "
                         f"{len(tools)} tools."
                     )
+                    raise ValueError(msg)
                 tool_name = formatted_tools[0]["function"]["name"]
                 tool_choice = {
                     "type": "function",
@@ -861,8 +869,8 @@ class ChatGroq(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema:
@@ -895,6 +903,9 @@ class ChatGroq(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+            kwargs:
+                Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1075,10 +1086,12 @@ class ChatGroq(BaseChatModel):
                 #     },
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "json_schema":
             # Some applications require that incompatible parameters (e.g., unsupported
@@ -1086,10 +1099,11 @@ class ChatGroq(BaseChatModel):
             method = "function_calling"
         if method == "function_calling":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             formatted_tool = convert_to_openai_tool(schema)
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
@@ -1123,10 +1137,11 @@ class ChatGroq(BaseChatModel):
                 else JsonOutputParser()
             )
         else:
-            raise ValueError(
+            msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
                 f"'json_mode'. Received: '{method}'"
             )
+            raise ValueError(msg)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
@@ -1137,8 +1152,7 @@ class ChatGroq(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -1160,6 +1174,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
     Returns:
         The dictionary.
+
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -1200,7 +1215,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "tool_call_id": message.tool_call_id,
         }
     else:
-        raise TypeError(f"Got unknown type {message}")
+        msg = f"Got unknown type {message}"
+        raise TypeError(msg)
     if "name" in message.additional_kwargs:
         message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
@@ -1224,7 +1240,7 @@ def _convert_chunk_to_message_chunk(
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    if role == "assistant" or default_class == AIMessageChunk:
         if reasoning := _dict.get("reasoning"):
             additional_kwargs["reasoning_content"] = reasoning
         if usage := (chunk.get("x_groq") or {}).get("usage"):
@@ -1242,16 +1258,15 @@ def _convert_chunk_to_message_chunk(
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
-    elif role == "system" or default_class == SystemMessageChunk:
+    if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
-    elif role == "function" or default_class == FunctionMessageChunk:
+    if role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
-    elif role == "tool" or default_class == ToolMessageChunk:
+    if role == "tool" or default_class == ToolMessageChunk:
         return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
-    elif role or default_class == ChatMessageChunk:
+    if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
-    else:
-        return default_class(content=content)  # type: ignore
+    return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -1262,12 +1277,13 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
     Returns:
         The LangChain message.
+
     """
     id_ = _dict.get("id")
     role = _dict.get("role")
     if role == "user":
         return HumanMessage(content=_dict.get("content", ""))
-    elif role == "assistant":
+    if role == "assistant":
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
         if reasoning := _dict.get("reasoning"):
@@ -1292,11 +1308,11 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
-    elif role == "system":
+    if role == "system":
         return SystemMessage(content=_dict.get("content", ""))
-    elif role == "function":
+    if role == "function":
         return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))  # type: ignore[arg-type]
-    elif role == "tool":
+    if role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
             additional_kwargs["name"] = _dict["name"]
@@ -1305,8 +1321,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_call_id=_dict.get("tool_call_id"),
             additional_kwargs=additional_kwargs,
         )
-    else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
+    return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
