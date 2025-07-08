@@ -27,7 +27,8 @@ def test_enum_output_parser_parse() -> None:
     # Test invalid input
     try:
         parser.parse("INVALID")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         pass
 

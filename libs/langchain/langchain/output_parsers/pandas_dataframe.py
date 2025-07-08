@@ -137,17 +137,17 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                         self.dataframe[request_params],
                         request_type,
                     )()
-        except (AttributeError, IndexError, KeyError):
+        except (AttributeError, IndexError, KeyError) as e:
             if request_type not in {"column", "row"}:
                 msg = f"Unsupported request type '{request_type}'. \
                         Please check the format instructions."
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
             msg = f"""Requested index {
                 request_params
                 if stripped_request_params is None
                 else stripped_request_params
             } is out of bounds."""
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
         return result
 

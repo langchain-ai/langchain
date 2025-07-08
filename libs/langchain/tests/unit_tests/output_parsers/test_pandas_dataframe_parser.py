@@ -22,7 +22,8 @@ parser = PandasDataFrameOutputParser(dataframe=df)
 def test_pandas_output_parser_col_no_array() -> None:
     try:
         parser.parse("column:num_legs")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         assert True
 
@@ -31,7 +32,8 @@ def test_pandas_output_parser_col_no_array() -> None:
 def test_pandas_output_parser_col_oob() -> None:
     try:
         parser.parse("row:10")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         assert True
 
@@ -55,7 +57,8 @@ def test_pandas_output_parser_col_multi_elem() -> None:
 def test_pandas_output_parser_row_no_array() -> None:
     try:
         parser.parse("row:5")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         assert True
 
@@ -71,7 +74,8 @@ def test_pandas_output_parser_row_first() -> None:
 def test_pandas_output_parser_row_no_column() -> None:
     try:
         parser.parse("row:1[num_legs]")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         assert True
 
@@ -112,7 +116,8 @@ def test_pandas_output_parser_special_ops() -> None:
 def test_pandas_output_parser_invalid_special_op() -> None:
     try:
         parser.parse("riemann_sum:chicken")
-        assert False, "Should have raised OutputParserException"
+        msg = "Should have raised OutputParserException"
+        raise AssertionError(msg)
     except OutputParserException:
         assert True
 

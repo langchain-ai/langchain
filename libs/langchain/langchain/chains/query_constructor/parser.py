@@ -162,6 +162,7 @@ class QueryTransformer(Transformer):
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
                 "(YYYY-MM-DD).",
+                stacklevel=3,
             )
         return {"date": item, "type": "date"}
 
@@ -173,9 +174,9 @@ class QueryTransformer(Transformer):
         except ValueError:
             try:
                 datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")
-            except ValueError:
+            except ValueError as e:
                 msg = "Datetime values are expected to be in ISO 8601 format."
-                raise ValueError(msg)
+                raise ValueError(msg) from e
         return {"datetime": item, "type": "datetime"}
 
     def string(self, item: Any) -> str:

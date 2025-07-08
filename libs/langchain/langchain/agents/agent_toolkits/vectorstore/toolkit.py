@@ -36,9 +36,9 @@ class VectorStoreToolkit(BaseToolkit):
                 VectorStoreQATool,
                 VectorStoreQAWithSourcesTool,
             )
-        except ImportError:
+        except ImportError as e:
             msg = "You need to install langchain-community to use this toolkit."
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         description = VectorStoreQATool.get_description(
             self.vectorstore_info.name,
             self.vectorstore_info.description,
@@ -79,9 +79,9 @@ class VectorStoreRouterToolkit(BaseToolkit):
             from langchain_community.tools.vectorstore.tool import (
                 VectorStoreQATool,
             )
-        except ImportError:
+        except ImportError as e:
             msg = "You need to install langchain-community to use this toolkit."
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         for vectorstore_info in self.vectorstores:
             description = VectorStoreQATool.get_description(
                 vectorstore_info.name,

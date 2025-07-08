@@ -102,7 +102,7 @@ class SequentialChain(Chain):
     ) -> dict[str, str]:
         known_values = inputs.copy()
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        for i, chain in enumerate(self.chains):
+        for _i, chain in enumerate(self.chains):
             callbacks = _run_manager.get_child()
             outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
             known_values.update(outputs)
@@ -116,7 +116,7 @@ class SequentialChain(Chain):
         known_values = inputs.copy()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        for i, chain in enumerate(self.chains):
+        for _i, chain in enumerate(self.chains):
             outputs = await chain.acall(
                 known_values,
                 return_only_outputs=True,

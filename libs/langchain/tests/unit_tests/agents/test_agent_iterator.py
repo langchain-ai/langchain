@@ -305,7 +305,8 @@ def test_agent_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            msg = "Unexpected output structure"
+            raise AssertionError(msg)
 
 
 async def test_agent_async_iterator_output_structure() -> None:
@@ -321,7 +322,8 @@ async def test_agent_async_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            msg = "Unexpected output structure"
+            raise AssertionError(msg)
 
 
 def test_agent_iterator_empty_input() -> None:

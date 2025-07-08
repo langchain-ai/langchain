@@ -47,12 +47,12 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                 else:
                     # otherwise it returns a json object
                     _tool_input = json.loads(function_call["arguments"], strict=False)
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = (
                     f"Could not parse tool input: {function_call} because "
                     f"the `arguments` is not valid JSON."
                 )
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
 
             # HACK HACK HACK:
             # The code that encodes tool input into Open AI uses a special variable

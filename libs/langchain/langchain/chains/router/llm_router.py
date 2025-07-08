@@ -193,4 +193,4 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
             return parsed
         except Exception as e:
             msg = f"Parsing text\n{text}\n raised following error:\n{e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e

@@ -45,12 +45,12 @@ class JsonSchemaEvaluator(StringEvaluator):
         super().__init__()
         try:
             import jsonschema  # noqa: F401
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "The JsonSchemaEvaluator requires the jsonschema package."
                 " Please install it with `pip install jsonschema`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
     @property
     def requires_input(self) -> bool:
@@ -70,9 +70,9 @@ class JsonSchemaEvaluator(StringEvaluator):
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(node, str):
             return parse_json_markdown(node)
-        if hasattr(node, "schema") and callable(getattr(node, "schema")):
+        if hasattr(node, "schema") and callable(node.schema):
             # Pydantic model
-            return getattr(node, "schema")()
+            return node.schema()
         return node
 
     def _validate(self, prediction: Any, schema: Any) -> dict:

@@ -316,6 +316,7 @@ def init_chat_model(
             f"{config_prefix=} has been set but no fields are configurable. Set "
             f"`configurable_fields=(...)` to specify the model params that are "
             f"configurable.",
+            stacklevel=2,
         )
 
     if not configurable_fields:

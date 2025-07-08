@@ -350,6 +350,7 @@ class LLMChain(Chain):
         warnings.warn(
             "The predict_and_parse method is deprecated, "
             "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
@@ -365,6 +366,7 @@ class LLMChain(Chain):
         warnings.warn(
             "The apredict_and_parse method is deprecated, "
             "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = await self.apredict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
@@ -380,6 +382,7 @@ class LLMChain(Chain):
         warnings.warn(
             "The apply_and_parse method is deprecated, "
             "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = self.apply(input_list, callbacks=callbacks)
         return self._parse_generation(result)
@@ -404,6 +407,7 @@ class LLMChain(Chain):
         warnings.warn(
             "The aapply_and_parse method is deprecated, "
             "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = await self.aapply(input_list, callbacks=callbacks)
         return self._parse_generation(result)

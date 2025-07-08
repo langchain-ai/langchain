@@ -27,12 +27,12 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     try:
         import langchain_community  # noqa: F401
-    except ImportError:
+    except ImportError as e:
         msg = (
             "The langchain-community package must be installed to use this feature."
             " Please install it using `pip install langchain-community`."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     from langchain_community.query_constructors.astradb import AstraDBTranslator
     from langchain_community.query_constructors.chroma import ChromaTranslator

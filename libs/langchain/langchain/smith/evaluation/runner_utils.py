@@ -160,9 +160,9 @@ class EvalError(dict):
     def __getattr__(self, name: str) -> Any:
         try:
             return self[name]
-        except KeyError:
+        except KeyError as e:
             msg = f"'EvalError' object has no attribute '{name}'"
-            raise AttributeError(msg)
+            raise AttributeError(msg) from e
 
 
 def _wrap_in_chain_factory(
@@ -350,7 +350,7 @@ def _validate_example_inputs_for_language_model(
         except InputFormatError:
             try:
                 _get_messages(first_example.inputs or {})
-            except InputFormatError:
+            except InputFormatError as e:
                 msg = (
                     "Example inputs do not match language model input format. "
                     "Expected a dictionary with messages or a single prompt."
@@ -359,7 +359,7 @@ def _validate_example_inputs_for_language_model(
                     " to convert the example.inputs to a compatible format"
                     " for the llm or chat model you wish to evaluate."
                 )
-                raise InputFormatError(msg)
+                raise InputFormatError(msg) from e
 
 
 def _validate_example_inputs_for_chain(
@@ -1041,7 +1041,7 @@ run_on_dataset(
             f"Test project {project_name} already exists. Please use a different name:"
             f"\n\n{example_msg}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg) from e
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
     print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"

@@ -93,7 +93,8 @@ def test_yaml_output_parser_fail() -> None:
         print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
     else:
-        assert False, "Expected OutputParserException"
+        msg = "Expected OutputParserException"
+        raise AssertionError(msg)
 
 
 def test_yaml_output_parser_output_type() -> None:

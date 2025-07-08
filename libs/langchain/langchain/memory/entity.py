@@ -115,12 +115,12 @@ class UpstashRedisEntityStore(BaseEntityStore):
     ):
         try:
             from upstash_redis import Redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
@@ -211,23 +211,23 @@ class RedisEntityStore(BaseEntityStore):
     ):
         try:
             import redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
         try:
             from langchain_community.utilities.redis import get_client
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import langchain_community.utilities.redis.get_client. "
                 "Please install it with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
@@ -311,12 +311,12 @@ class SQLiteEntityStore(BaseEntityStore):
         super().__init__(*args, **kwargs)
         try:
             import sqlite3
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import sqlite3 python package. "
                 "Please install it with `pip install sqlite3`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         # Basic validation to prevent obviously malicious table/session names
         if not table_name.isidentifier() or not session_id.isidentifier():
