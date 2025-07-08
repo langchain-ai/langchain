@@ -170,6 +170,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             "This Anthropic LLM is deprecated. "
             "Please use `from langchain_anthropic import ChatAnthropic` "
             "instead",
+            stacklevel=2,
         )
         return values
 
