@@ -566,13 +566,13 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
 
     try:
         from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use this GraphCypherQAChain functionality you must install the "
             "langchain_community package. "
             "You can install it with `pip install langchain_community`"
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
     return GraphCypherQAChain(
         graph=graph,
         cypher_generation_chain=cypher_generation_chain,
@@ -614,13 +614,13 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
 def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
     try:
         from langchain.chains.llm_requests import LLMRequestsChain
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use this LLMRequestsChain functionality you must install the "
             "langchain package. "
             "You can install it with `pip install langchain`"
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")

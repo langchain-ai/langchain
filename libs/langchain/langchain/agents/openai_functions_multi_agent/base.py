@@ -46,21 +46,21 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
     if function_call:
         try:
             arguments = json.loads(function_call["arguments"], strict=False)
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
         try:
             tools = arguments["actions"]
-        except (TypeError, KeyError):
+        except (TypeError, KeyError) as e:
             msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` JSON does not contain `actions` key."
             )
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
         final_tools: list[AgentAction] = []
         for tool_schema in tools:
@@ -263,7 +263,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(
+        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
             content="You are a helpful AI assistant.",
         ),
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
@@ -299,7 +299,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(
+        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
             content="You are a helpful AI assistant.",
         ),
         **kwargs: Any,

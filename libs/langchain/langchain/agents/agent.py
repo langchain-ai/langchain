@@ -1366,7 +1366,7 @@ class AgentExecutor(Chain):
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {e!s}"
                 )
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1380,7 +1380,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
@@ -1505,7 +1505,7 @@ class AgentExecutor(Chain):
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {e!s}"
                 )
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1519,7 +1519,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(

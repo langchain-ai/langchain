@@ -65,7 +65,6 @@ _INVALID_PROMPTS = (
     _VALID_MESSAGES,
 )
 def test__get_messages_valid(inputs: dict[str, Any]) -> None:
-    {"messages": []}
     _get_messages(inputs)
 
 

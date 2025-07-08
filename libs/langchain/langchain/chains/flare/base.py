@@ -202,7 +202,7 @@ class FlareChain(Chain):
 
         response = ""
 
-        for i in range(self.max_iter):
+        for _i in range(self.max_iter):
             _run_manager.on_text(
                 f"Current Response: {response}",
                 color="blue",
@@ -261,13 +261,13 @@ class FlareChain(Chain):
         """
         try:
             from langchain_openai import ChatOpenAI
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "OpenAI is required for FlareChain. "
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         llm = ChatOpenAI(
             max_completion_tokens=max_generation_len,
             logprobs=True,

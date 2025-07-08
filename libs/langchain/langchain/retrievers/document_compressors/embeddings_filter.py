@@ -11,12 +11,12 @@ from pydantic import ConfigDict, Field
 def _get_similarity_function() -> Callable:
     try:
         from langchain_community.utils.math import cosine_similarity
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use please install langchain-community "
             "with `pip install langchain-community`."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
     return cosine_similarity
 
 
@@ -62,12 +62,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 _get_embeddings_from_stateful_docs,
                 get_stateful_documents,
             )
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             import numpy as np
@@ -105,12 +105,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 _aget_embeddings_from_stateful_docs,
                 get_stateful_documents,
             )
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             import numpy as np

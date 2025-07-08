@@ -213,7 +213,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(
+        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
             content="You are a helpful AI assistant.",
         ),
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
@@ -249,7 +249,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(
+        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
             content="You are a helpful AI assistant.",
         ),
         **kwargs: Any,

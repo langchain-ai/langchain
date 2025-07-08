@@ -42,6 +42,7 @@ class CombinedMemory(BaseMemory):
                     "When using CombinedMemory, "
                     "input keys should be so the input is known. "
                     f" Was not set on {val}",
+                    stacklevel=2,
                 )
         return value
 

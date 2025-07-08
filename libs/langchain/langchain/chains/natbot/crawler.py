@@ -63,12 +63,12 @@ class Crawler:
     def __init__(self) -> None:
         try:
             from playwright.sync_api import sync_playwright
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import playwright python package. "
                 "Please install it with `pip install playwright`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         self.browser: Browser = (
             sync_playwright().start().chromium.launch(headless=False)
         )

@@ -26,12 +26,12 @@ class EnumOutputParser(BaseOutputParser[Enum]):
     def parse(self, response: str) -> Enum:
         try:
             return self.enum(response.strip())
-        except ValueError:
+        except ValueError as e:
             msg = (
                 f"Response '{response}' is not one of the "
                 f"expected values: {self._valid_values}"
             )
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
     def get_format_instructions(self) -> str:
         return f"Select one of the following options: {', '.join(self._valid_values)}"

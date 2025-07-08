@@ -43,12 +43,12 @@ class CohereRerank(BaseDocumentCompressor):
         if not values.get("client"):
             try:
                 import cohere
-            except ImportError:
+            except ImportError as e:
                 msg = (
                     "Could not import cohere python package. "
                     "Please install it with `pip install cohere`."
                 )
-                raise ImportError(msg)
+                raise ImportError(msg) from e
             cohere_api_key = get_from_dict_or_env(
                 values,
                 "cohere_api_key",
@@ -92,7 +92,7 @@ class CohereRerank(BaseDocumentCompressor):
             max_chunks_per_doc=max_chunks_per_doc,
         )
         if hasattr(results, "results"):
-            results = getattr(results, "results")
+            results = results.results
         return [
             {"index": res.index, "relevance_score": res.relevance_score}
             for res in results

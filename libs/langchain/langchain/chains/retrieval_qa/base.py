@@ -326,6 +326,7 @@ class VectorDBQA(BaseRetrievalQA):
         warnings.warn(
             "`VectorDBQA` is deprecated - "
             "please use `from langchain.chains import RetrievalQA`",
+            stacklevel=2,
         )
         return values
 

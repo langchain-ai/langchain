@@ -94,12 +94,12 @@ def openapi_spec_to_openai_fn(
     """
     try:
         from langchain_community.tools import APIOperation
-    except ImportError:
+    except ImportError as e:
         msg = (
             "Could not import langchain_community.tools. "
             "Please install it with `pip install langchain-community`."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     if not spec.paths:
         return [], lambda: None
