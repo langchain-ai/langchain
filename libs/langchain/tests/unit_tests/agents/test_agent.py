@@ -441,7 +441,10 @@ def test_agent_invalid_tool() -> None:
     )
 
     resp = agent("when was langchain made")
-    resp["intermediate_steps"][0][1] == "Foo is not a valid tool, try one of [Search]."
+    assert (
+        resp["intermediate_steps"][0][1]
+        == "Foo is not a valid tool, try one of [Search]."
+    )
 
 
 async def test_runnable_agent() -> None:

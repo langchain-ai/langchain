@@ -359,4 +359,7 @@ async def test_agent_invalid_tool() -> None:
     )
 
     resp = await agent.acall("when was langchain made")
-    resp["intermediate_steps"][0][1] == "Foo is not a valid tool, try one of [Search]."
+    assert (
+        resp["intermediate_steps"][0][1]
+        == "Foo is not a valid tool, try one of [Search]."
+    )

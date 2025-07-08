@@ -166,17 +166,18 @@ class LLMMathChain(Chain):
     def raise_deprecation(cls, values: dict) -> Any:
         try:
             import numexpr  # noqa: F401
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "LLMMathChain requires the numexpr package. "
                 "Please install it with `pip install numexpr`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
                 "class method.",
+                stacklevel=5,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 prompt = values.get("prompt", PROMPT)
@@ -216,7 +217,7 @@ class LLMMathChain(Chain):
                 f'LLMMathChain._evaluate("{expression}") raised error: {e}.'
                 " Please try again with a valid numerical expression"
             )
-            raise ValueError(msg)
+            raise ValueError(msg) from e
 
         # Remove any leading and trailing brackets from the output
         return re.sub(r"^\[|\]$", "", output)

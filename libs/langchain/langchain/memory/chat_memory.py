@@ -58,6 +58,7 @@ class BaseChatMemory(BaseMemory, ABC):
                     f"'{self.__class__.__name__}' got multiple output keys:"
                     f" {outputs.keys()}. The default 'output' key is being used."
                     f" If this is not desired, please manually set 'output_key'.",
+                    stacklevel=3,
                 )
             else:
                 msg = (

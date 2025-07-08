@@ -80,7 +80,7 @@ class MergerRetriever(BaseRetriever):
         merged_documents = []
         max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
-            for retriever, doc in zip(self.retrievers, retriever_docs):
+            for _retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
                     merged_documents.append(doc[i])
 
@@ -116,7 +116,7 @@ class MergerRetriever(BaseRetriever):
         merged_documents = []
         max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
-            for retriever, doc in zip(self.retrievers, retriever_docs):
+            for _retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
                     merged_documents.append(doc[i])
 

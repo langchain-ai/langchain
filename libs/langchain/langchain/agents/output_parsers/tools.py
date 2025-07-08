@@ -46,12 +46,12 @@ def parse_ai_message_to_tool_action(
                 tool_calls.append(
                     ToolCall(name=function_name, args=args, id=tool_call["id"]),
                 )
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = (
                     f"Could not parse tool input: {function} because "
                     f"the `arguments` is not valid JSON."
                 )
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
     for tool_call in tool_calls:
         # HACK HACK HACK:
         # The code that encodes tool input into Open AI uses a special variable

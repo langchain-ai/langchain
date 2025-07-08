@@ -61,12 +61,12 @@ def load_dataset(uri: str) -> list[dict]:
     """
     try:
         from datasets import load_dataset
-    except ImportError:
+    except ImportError as e:
         msg = (
             "load_dataset requires the `datasets` package."
             " Please install with `pip install datasets`"
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
     return list(dataset["train"])
@@ -142,7 +142,7 @@ def load_evaluator(
                     from langchain_community.chat_models.openai import (  # type: ignore[no-redef]
                         ChatOpenAI,
                     )
-                except ImportError:
+                except ImportError as e:
                     msg = (
                         "Could not import langchain_openai or fallback onto "
                         "langchain_community. Please install langchain_openai "
@@ -150,7 +150,7 @@ def load_evaluator(
                         "It's recommended to install langchain_openai AND "
                         "specify a language model explicitly."
                     )
-                    raise ImportError(msg)
+                    raise ImportError(msg) from e
 
             llm = llm or ChatOpenAI(model="gpt-4", seed=42, temperature=0)
         except Exception as e:

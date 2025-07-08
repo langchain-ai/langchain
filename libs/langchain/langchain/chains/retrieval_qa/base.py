@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from abc import abstractmethod
 from typing import Any, Optional
 
@@ -319,15 +318,6 @@ class VectorDBQA(BaseRetrievalQA):
     """Search type to use over vectorstore. `similarity` or `mmr`."""
     search_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        warnings.warn(
-            "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import RetrievalQA`",
-        )
-        return values
 
     @model_validator(mode="before")
     @classmethod

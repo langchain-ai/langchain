@@ -29,12 +29,12 @@ def _load_rapidfuzz() -> Any:
     """
     try:
         import rapidfuzz
-    except ImportError:
+    except ImportError as e:
         msg = (
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
             "Please install it with `pip install rapidfuzz`."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
     return rapidfuzz.distance
 
 
