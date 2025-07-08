@@ -36,7 +36,7 @@ def test__stream_no_reasoning(model: str) -> None:
     assert isinstance(result_chunk, GenerationChunk)
     assert result_chunk.text
     # No separate reasoning_content
-    assert "reasoning_content" not in result_chunk.generation_info
+    assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -55,12 +55,12 @@ def test__stream_with_reasoning(model: str) -> None:
     assert isinstance(result_chunk, GenerationChunk)
     assert result_chunk.text
     # Should have extracted reasoning into generation_info
-    assert "reasoning_content" in result_chunk.generation_info
-    assert len(result_chunk.generation_info["reasoning_content"]) > 0
+    assert "reasoning_content" in result_chunk.generation_info  # type: ignore[operator]
+    assert len(result_chunk.generation_info["reasoning_content"]) > 0  # type: ignore[index]
     # And neither the visible nor the hidden portion contains <think> tags
     assert "<think>" not in result_chunk.text and "</think>" not in result_chunk.text
-    assert "<think>" not in result_chunk.generation_info["reasoning_content"]
-    assert "</think>" not in result_chunk.generation_info["reasoning_content"]
+    assert "<think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
+    assert "</think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
 
 
 async def test_astream_text_tokens() -> None:
@@ -86,7 +86,7 @@ async def test__astream_no_reasoning(model: str) -> None:
 
     assert isinstance(result_chunk, GenerationChunk)
     assert result_chunk.text
-    assert "reasoning_content" not in result_chunk.generation_info
+    assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -104,8 +104,8 @@ async def test__astream_with_reasoning(model: str) -> None:
 
     assert isinstance(result_chunk, GenerationChunk)
     assert result_chunk.text
-    assert "reasoning_content" in result_chunk.generation_info
-    assert len(result_chunk.generation_info["reasoning_content"]) > 0
+    assert "reasoning_content" in result_chunk.generation_info  # type: ignore[operator]
+    assert len(result_chunk.generation_info["reasoning_content"]) > 0  # type: ignore[index]
 
 
 async def test_abatch() -> None:
