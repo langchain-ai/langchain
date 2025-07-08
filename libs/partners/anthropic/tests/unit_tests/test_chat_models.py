@@ -343,7 +343,6 @@ def function() -> Callable:
         """Dummy function.
 
         Args:
-        ----
             arg1: foo
             arg2: one of 'bar', 'baz'
 
