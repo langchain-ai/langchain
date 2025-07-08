@@ -479,7 +479,7 @@ class Chroma(VectorStore):
                             "Try filtering complex metadata using "
                             "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
                     raise e
             if empty_ids:
                 images_without_metadatas = [b64_texts[j] for j in empty_ids]
@@ -566,7 +566,7 @@ class Chroma(VectorStore):
                             "Try filtering complex metadata from the document using "
                             "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
                     raise e
             if empty_ids:
                 texts_without_metadatas = [texts[j] for j in empty_ids]

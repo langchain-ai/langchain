@@ -787,7 +787,7 @@ def test_collection_none_after_delete(
         _ = vectorstore._collection
     with pytest.raises(Exception, match="does not exist"):
         vectorstore._client.get_collection("test_collection")
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         vectorstore.similarity_search("foo")
 
 
