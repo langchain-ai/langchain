@@ -212,6 +212,11 @@ def test_character_text_splitting_args() -> None:
     """Test invalid arguments."""
     with pytest.raises(ValueError):
         CharacterTextSplitter(chunk_size=2, chunk_overlap=4)
+    for invalid_size in (0, -1):
+        with pytest.raises(ValueError):
+            CharacterTextSplitter(chunk_size=invalid_size)
+    with pytest.raises(ValueError):
+        CharacterTextSplitter(chunk_size=2, chunk_overlap=-1)
 
 
 def test_merge_splits() -> None:
