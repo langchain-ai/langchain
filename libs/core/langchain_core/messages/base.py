@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import ContentBlock
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -23,7 +24,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: Union[str, list[Union[str, dict]]]
+    content: Union[str, list[Union[str, ContentBlock, dict]]]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
