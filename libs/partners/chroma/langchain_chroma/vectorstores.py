@@ -288,7 +288,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        create_collection_if_not_exists: Optional[bool] = True,
+        create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT002
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -398,10 +398,10 @@ class Chroma(VectorStore):
         """
         return self._collection.query(
             query_texts=query_texts,
-            query_embeddings=query_embeddings,  # type: ignore
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
             n_results=n_results,
-            where=where,  # type: ignore
-            where_document=where_document,  # type: ignore
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
             **kwargs,
         )
 
@@ -438,7 +438,7 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -468,8 +468,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=images_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -525,7 +525,7 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
 
         embeddings = None
         texts = list(texts)
@@ -555,8 +555,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=texts_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -575,13 +575,13 @@ class Chroma(VectorStore):
                 )
                 ids_without_metadatas = [ids[j] for j in empty_ids]
                 self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,  # type: ignore
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
                     documents=texts_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
             self._collection.upsert(
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=texts,
                 ids=ids,
             )
@@ -591,7 +591,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[Document]:
         """Run similarity search with Chroma.
@@ -617,7 +617,7 @@ class Chroma(VectorStore):
         self,
         embedding: list[float],
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -647,7 +647,7 @@ class Chroma(VectorStore):
         self,
         embedding: list[float],
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
@@ -678,7 +678,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
@@ -720,7 +720,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, np.ndarray]]:
@@ -805,7 +805,7 @@ class Chroma(VectorStore):
         self,
         uri: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[Document]:
         """Search for similar images based on the given image URI.
@@ -849,7 +849,7 @@ class Chroma(VectorStore):
         self,
         uri: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for similar images based on the given image URI.
@@ -895,7 +895,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -946,7 +946,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -1042,7 +1042,7 @@ class Chroma(VectorStore):
         if include is not None:
             kwargs["include"] = include
 
-        return self._collection.get(**kwargs)  # type: ignore
+        return self._collection.get(**kwargs)  # type: ignore[arg-type, return-value]
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their IDs.
@@ -1087,7 +1087,6 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    # type: ignore
     def update_documents(self, ids: list[str], documents: list[Document]) -> None:
         """Update a document in the collection.
 
@@ -1108,20 +1107,20 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
-            self._collection._client,
+            self._collection._client,  # noqa: SLF001
             "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            self._collection._client,
+            self._collection._client,  # noqa: SLF001
             "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=self._collection._client,
+                api=self._collection._client,  # noqa: SLF001
                 ids=ids,
-                metadatas=metadata,  # type: ignore
+                metadatas=metadata,  # type: ignore[arg-type]
                 documents=text,
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
             ):
                 self._collection.update(
                     ids=batch[0],
@@ -1132,9 +1131,9 @@ class Chroma(VectorStore):
         else:
             self._collection.update(
                 ids=ids,
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=text,
-                metadatas=metadata,  # type: ignore
+                metadatas=metadata,  # type: ignore[arg-type]
             )
 
     @classmethod
@@ -1185,25 +1184,25 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
         if hasattr(
-            chroma_collection._client,
+            chroma_collection._client,  # noqa: SLF001
             "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            chroma_collection._client,
+            chroma_collection._client,  # noqa: SLF001
             "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=chroma_collection._client,
+                api=chroma_collection._client,  # noqa: SLF001
                 ids=ids,
-                metadatas=metadatas,  # type: ignore
+                metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,
             ):
                 chroma_collection.add_texts(
                     texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,  # type: ignore
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
                     ids=batch[0],
                 )
         else:

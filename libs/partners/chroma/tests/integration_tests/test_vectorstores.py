@@ -28,8 +28,8 @@ class MyEmbeddingFunction:
     def __init__(self, fak: Fak):
         self.fak = fak
 
-    def __call__(self, input: Embeddable) -> list[list[float]]:
-        texts = cast(list[str], input)
+    def __call__(self, input_: Embeddable) -> list[list[float]]:
+        texts = cast(list[str], input_)
         return self.fak.embed_documents(texts=texts)
 
 
@@ -439,7 +439,7 @@ def test_chroma_update_document() -> None:
         embedding=embedding,
         ids=[document_id],
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -456,7 +456,7 @@ def test_chroma_update_document() -> None:
     output = docsearch.similarity_search(updated_content, k=1)
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -496,7 +496,7 @@ def test_chroma_update_document_with_id() -> None:
         documents=[original_doc],
         embedding=embedding,
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -517,7 +517,7 @@ def test_chroma_update_document_with_id() -> None:
     output = docsearch.similarity_search(updated_content, k=1)
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -619,9 +619,9 @@ def test_chroma_large_batch() -> None:
     embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore[arg-type]
     )
-    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -647,9 +647,9 @@ def test_chroma_large_batch_update() -> None:
     embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore[arg-type]
     )
-    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
@@ -685,7 +685,7 @@ def test_chroma_legacy_batching() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=MyEmbeddingFunction,  # type: ignore
+        embedding_function=MyEmbeddingFunction,  # type: ignore[arg-type]
     )
     docs = ["This is a test document"] * 100
     db = Chroma.from_texts(
