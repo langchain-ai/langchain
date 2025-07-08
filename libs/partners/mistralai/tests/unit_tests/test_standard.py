@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import (  # type: ignore[import-not-found]
