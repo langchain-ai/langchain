@@ -47,6 +47,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
         """
+        if chunk_size <= 0:
+            msg = f"chunk_size must be > 0, got {chunk_size}"
+            raise ValueError(msg)
+        if chunk_overlap < 0:
+            msg = f"chunk_overlap must be >= 0, got {chunk_overlap}"
+            raise ValueError(msg)
         if chunk_overlap > chunk_size:
             msg = (
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
