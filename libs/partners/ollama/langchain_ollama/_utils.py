@@ -16,7 +16,9 @@ def validate_model(client: Client, model_name: str) -> None:
     """
     try:
         response = client.list()
-        model_names: list[str] = [model["name"] for model in response["models"]]
+
+        model_names: list[str] = [model["model"] for model in response["models"]]
+
         if not any(
             model_name == m or m.startswith(f"{model_name}:") for m in model_names
         ):
@@ -27,10 +29,7 @@ def validate_model(client: Client, model_name: str) -> None:
             )
             raise ValueError(msg)
     except ConnectError as e:
-        msg = (
-            "Connection to Ollama failed. Please make sure Ollama is running "
-            f"and accessible at {client._client.base_url}. "
-        )
+        msg = "Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"  # noqa: E501
         raise ValueError(msg) from e
     except ResponseError as e:
         msg = (
