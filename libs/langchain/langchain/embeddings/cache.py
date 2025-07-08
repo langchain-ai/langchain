@@ -80,7 +80,7 @@ def _value_serializer(value: Sequence[float]) -> bytes:
 
 def _value_deserializer(serialized_value: bytes) -> list[float]:
     """Deserialize a value."""
-    return cast(list[float], json.loads(serialized_value.decode()))
+    return cast("list[float]", json.loads(serialized_value.decode()))
 
 
 # The warning is global; track emission, so it appears only once.
@@ -192,7 +192,7 @@ class CacheBackedEmbeddings(Embeddings):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]],
+            "list[list[float]]",
             vectors,
         )  # Nones should have been resolved by now
 
@@ -230,7 +230,7 @@ class CacheBackedEmbeddings(Embeddings):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]],
+            "list[list[float]]",
             vectors,
         )  # Nones should have been resolved by now
 

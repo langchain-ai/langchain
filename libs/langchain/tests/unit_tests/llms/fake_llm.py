@@ -53,7 +53,7 @@ class FakeLLM(LLM):
 
     @property
     def _get_next_response_in_sequence(self) -> str:
-        queries = cast(Mapping, self.queries)
+        queries = cast("Mapping", self.queries)
         response = queries[list(queries.keys())[self.response_index]]
         self.response_index = self.response_index + 1
         return response

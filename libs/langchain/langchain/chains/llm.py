@@ -145,7 +145,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -172,7 +172,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
