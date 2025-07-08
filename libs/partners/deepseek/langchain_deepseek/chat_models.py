@@ -218,7 +218,13 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    def _get_request_payload(self, input_, *, stop=None, **kwargs):
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
