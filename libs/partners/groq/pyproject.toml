@@ -46,6 +46,7 @@ target-version = "py39"
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
+    "B",      # flake8-bugbear
     "ASYNC",  # flake8-async
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
