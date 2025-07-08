@@ -198,6 +198,7 @@ ignore = [
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
 ]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true

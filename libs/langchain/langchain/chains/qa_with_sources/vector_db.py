@@ -77,7 +77,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "
             "please use `from langchain.chains import RetrievalQAWithSourcesChain`",
-            stacklevel=2,
+            stacklevel=5,
         )
         return values
 

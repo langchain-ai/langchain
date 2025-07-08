@@ -95,6 +95,7 @@ ignore = [
     "D107",    # Missing docstring in __init__
     "UP007",   # pyupgrade: non-pep604-annotation-union
 ]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.coverage.run]
 omit = ["tests/*"]

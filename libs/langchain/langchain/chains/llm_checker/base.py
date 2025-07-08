@@ -112,7 +112,7 @@ class LLMCheckerChain(Chain):
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
                 "Please instantiate with question_to_checked_assertions_chain "
                 "or using the from_llm class method.",
-                stacklevel=2,
+                stacklevel=5,
             )
             if (
                 "question_to_checked_assertions_chain" not in values

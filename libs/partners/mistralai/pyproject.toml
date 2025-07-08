@@ -104,6 +104,7 @@ ignore = [
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.coverage.run]
 omit = ["tests/*"]
