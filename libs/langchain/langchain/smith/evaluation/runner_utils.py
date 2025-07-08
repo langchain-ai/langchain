@@ -160,9 +160,9 @@ class EvalError(dict):
     def __getattr__(self, name: str) -> Any:
         try:
             return self[name]
-        except KeyError:
+        except KeyError as e:
             msg = f"'EvalError' object has no attribute '{name}'"
-            raise AttributeError(msg) from None
+            raise AttributeError(msg) from e
 
 
 def _wrap_in_chain_factory(

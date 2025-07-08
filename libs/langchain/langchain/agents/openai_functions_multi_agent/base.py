@@ -100,6 +100,9 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
     )
 
 
+_NOT_SET = object()
+
+
 @deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """Agent driven by OpenAIs function powered API.
@@ -263,9 +266,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
-            content="You are a helpful AI assistant.",
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> BasePromptTemplate:
         """Create prompt for this agent.
@@ -280,8 +281,13 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             A prompt template to pass into this agent.
         """
         _prompts = extra_prompt_messages or []
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
-        messages = [system_message] if system_message else []
+        messages = [system_message_] if system_message_ else []
 
         messages.extend(
             [
@@ -299,9 +305,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(  # noqa: B008
-            content="You are a helpful AI assistant.",
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools.
@@ -315,9 +319,14 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 Default is a default system message.
             kwargs: Additional arguments.
         """
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            system_message=system_message_,
         )
         return cls(  # type: ignore[call-arg]
             llm=llm,
