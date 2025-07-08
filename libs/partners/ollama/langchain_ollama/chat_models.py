@@ -1,5 +1,7 @@
 """Ollama chat models."""
 
+from __future__ import annotations
+
 import json
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
@@ -74,7 +76,9 @@ def _get_usage_metadata_from_generation_info(
 
 
 def _parse_json_string(
-    json_string: str, raw_tool_call: dict[str, Any], skip: bool
+    json_string: str,
+    raw_tool_call: dict[str, Any],
+    skip: bool,  # noqa: FBT001
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
@@ -148,16 +152,19 @@ def _get_tool_calls_from_response(
 ) -> list[ToolCall]:
     """Get tool calls from ollama response."""
     tool_calls = []
-    if "message" in response:
-        if raw_tool_calls := response["message"].get("tool_calls"):
-            for tc in raw_tool_calls:
-                tool_calls.append(
-                    tool_call(
-                        id=str(uuid4()),
-                        name=tc["function"]["name"],
-                        args=_parse_arguments_from_tool_call(tc) or {},
-                    )
+    if "message" in response and (
+        raw_tool_calls := response["message"].get("tool_calls")
+    ):
+        tool_calls.extend(
+            [
+                tool_call(
+                    id=str(uuid4()),
+                    name=tc["function"]["name"],
+                    args=_parse_arguments_from_tool_call(tc) or {},
                 )
+                for tc in raw_tool_calls
+            ]
+        )
     return tool_calls
 
 
@@ -178,13 +185,11 @@ def _get_image_from_data_content_block(block: dict) -> str:
     if block["type"] == "image":
         if block["source_type"] == "base64":
             return block["data"]
-        else:
-            error_message = "Image data only supported through in-line base64 format."
-            raise ValueError(error_message)
-
-    else:
-        error_message = f"Blocks of type {block['type']} not supported."
+        error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
+
+    error_message = f"Blocks of type {block['type']} not supported."
+    raise ValueError(error_message)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -459,7 +464,7 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients. 
+    """Additional kwargs to pass to the httpx clients.
     These arguments are passed to both synchronous and async clients.
     Use sync_client_kwargs and async_client_kwargs to pass different arguments
     to synchronous and asynchronous clients.
@@ -496,7 +501,8 @@ class ChatOllama(BaseChatModel):
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            msg = "`stop` found in both the input and default params."
+            raise ValueError(msg)
         if self.stop is not None:
             stop = self.stop
 
@@ -584,7 +590,8 @@ class ChatOllama(BaseChatModel):
                 role = "tool"
                 tool_call_id = message.tool_call_id
             else:
-                raise ValueError("Received unsupported message type for Ollama.")
+                msg = "Received unsupported message type for Ollama."
+                raise ValueError(msg)
 
             content = ""
             images = []
@@ -608,10 +615,11 @@ class ChatOllama(BaseChatModel):
                         ):
                             image_url = temp_image_url["url"]
                         else:
-                            raise ValueError(
+                            msg = (
                                 "Only string image_url or dict with string 'url' "
                                 "inside content parts are supported."
                             )
+                            raise ValueError(msg)
 
                         image_url_components = image_url.split(",")
                         # Support data:image/jpeg;base64,<image> format
@@ -624,22 +632,24 @@ class ChatOllama(BaseChatModel):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
-                        raise ValueError(
+                        msg = (
                             "Unsupported message content type. "
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            # Should convert to ollama.Message once role includes tool, and tool_call_id is in Message # noqa: E501
-            msg: dict = {
+                        raise ValueError(msg)
+            # Should convert to ollama.Message once role includes tool,
+            # and tool_call_id is in Message
+            msg_: dict = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
             if tool_calls:
-                msg["tool_calls"] = tool_calls
+                msg_["tool_calls"] = tool_calls
             if tool_call_id:
-                msg["tool_call_id"] = tool_call_id
-            ollama_messages.append(msg)
+                msg_["tool_call_id"] = tool_call_id
+            ollama_messages.append(msg_)
 
         return ollama_messages
 
@@ -677,7 +687,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -693,7 +703,8 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
 
         return final_chunk
 
@@ -702,7 +713,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -718,7 +729,8 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
 
         return final_chunk
 
@@ -908,7 +920,7 @@ class ChatOllama(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -923,7 +935,7 @@ class ChatOllama(BaseChatModel):
                 is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
-        """  # noqa: E501
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
@@ -1180,14 +1192,16 @@ class ChatOllama(BaseChatModel):
         """  # noqa: E501, D301
         _ = kwargs.pop("strict", None)
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             formatted_tool = convert_to_openai_tool(schema)
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
@@ -1222,10 +1236,11 @@ class ChatOllama(BaseChatModel):
             )
         elif method == "json_schema":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             if is_pydantic_schema:
                 schema = cast(TypeBaseModel, schema)
                 if issubclass(schema, BaseModelV1):
@@ -1259,10 +1274,11 @@ class ChatOllama(BaseChatModel):
                 )
                 output_parser = JsonOutputParser()
         else:
-            raise ValueError(
+            msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling', "
                 f"'json_schema', or 'json_mode'. Received: '{method}'"
             )
+            raise ValueError(msg)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
