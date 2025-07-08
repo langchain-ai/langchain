@@ -38,7 +38,7 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = True
+    reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
