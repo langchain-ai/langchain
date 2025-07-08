@@ -149,7 +149,7 @@ class HuggingFacePipeline(BaseLLM):
                 )
                 raise ValueError(msg)
 
-            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            err_msg = f"Backend: {backend} {IMPORT_ERROR.format(f'optimum[{backend}]')}"
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 

@@ -288,7 +288,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT002
+        create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -1186,16 +1186,16 @@ class Chroma(VectorStore):
         else:
             ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
         if hasattr(
-            chroma_collection._client,  # noqa: SLF001
+            chroma_collection._client,
             "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            chroma_collection._client,  # noqa: SLF001
+            chroma_collection._client,
             "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=chroma_collection._client,  # noqa: SLF001
+                api=chroma_collection._client,
                 ids=ids,
                 metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,

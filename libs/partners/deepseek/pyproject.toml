@@ -94,6 +94,7 @@ ignore = [
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
     "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
