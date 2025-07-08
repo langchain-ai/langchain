@@ -1,5 +1,7 @@
 from datetime import datetime
-from time import sleep
+
+import pytest
+from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers.datetime import DatetimeOutputParser
 
@@ -39,12 +41,5 @@ def test_datetime_output_parser_parse() -> None:
     )
 
     # Test invalid input
-    try:
-        sleep(0.001)
-        datestr = date.strftime(parser.format)
-        result = parser.parse(datestr)
-        assert result == date
-        msg = "Should have raised AssertionError"
-        raise AssertionError(msg)
-    except AssertionError:
-        pass
+    with pytest.raises(OutputParserException):
+        parser.parse("Invalid date string")

@@ -3,6 +3,7 @@
 from typing import Any
 
 import pandas as pd
+import pytest
 from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
@@ -20,22 +21,14 @@ parser = PandasDataFrameOutputParser(dataframe=df)
 
 # Test Invalid Column
 def test_pandas_output_parser_col_no_array() -> None:
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("column:num_legs")
-        msg = "Should have raised OutputParserException"
-        raise AssertionError(msg)
-    except OutputParserException:
-        assert True
 
 
 # Test Column with invalid array (above DataFrame max index)
 def test_pandas_output_parser_col_oob() -> None:
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("row:10")
-        msg = "Should have raised OutputParserException"
-        raise AssertionError(msg)
-    except OutputParserException:
-        assert True
 
 
 # Test Column with array [x]
@@ -55,12 +48,8 @@ def test_pandas_output_parser_col_multi_elem() -> None:
 
 # Test Row with invalid row entry
 def test_pandas_output_parser_row_no_array() -> None:
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("row:5")
-        msg = "Should have raised OutputParserException"
-        raise AssertionError(msg)
-    except OutputParserException:
-        assert True
 
 
 # Test Row with valid row entry
@@ -72,12 +61,8 @@ def test_pandas_output_parser_row_first() -> None:
 
 # Test Row with invalid col entry
 def test_pandas_output_parser_row_no_column() -> None:
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("row:1[num_legs]")
-        msg = "Should have raised OutputParserException"
-        raise AssertionError(msg)
-    except OutputParserException:
-        assert True
 
 
 # Test Row with valid col entry
@@ -114,12 +99,8 @@ def test_pandas_output_parser_special_ops() -> None:
 
 
 def test_pandas_output_parser_invalid_special_op() -> None:
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("riemann_sum:chicken")
-        msg = "Should have raised OutputParserException"
-        raise AssertionError(msg)
-    except OutputParserException:
-        assert True
 
 
 def test_pandas_output_parser_output_type() -> None:
