@@ -4,50 +4,50 @@ import warnings
 from typing import Any, Literal, Union
 
 from pydantic import TypeAdapter, ValidationError
-from typing_extensions import Required, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 
 # Text and annotations
 class UrlCitation(TypedDict, total=False):
     """Citation from a URL."""
 
-    type: Required[Literal["url_citation"]]
+    type: Literal["url_citation"]
 
-    url: Required[str]
+    url: str
     """Source URL."""
 
-    title: str
+    title: NotRequired[str]
     """Source title."""
 
-    cited_text: str
+    cited_text: NotRequired[str]
     """Text from the source that is being cited."""
 
-    start_index: int
+    start_index: NotRequired[int]
     """Start index of the response text for which the annotation applies."""
 
-    end_index: int
+    end_index: NotRequired[int]
     """End index of the response text for which the annotation applies."""
 
 
 class DocumentCitation(TypedDict, total=False):
     """Annotation for data from a document."""
 
-    type: Required[Literal["document_citation"]]
+    type: Literal["document_citation"]
 
-    title: str
+    title: NotRequired[str]
     """Source title."""
 
-    cited_text: str
+    cited_text: NotRequired[str]
     """Text from the source that is being cited."""
 
-    start_index: int
+    start_index: NotRequired[int]
     """Start index of the response text for which the annotation applies."""
 
-    end_index: int
+    end_index: NotRequired[int]
     """End index of the response text for which the annotation applies."""
 
 
-class NonStandardAnnotation(TypedDict):
+class NonStandardAnnotation(TypedDict, total=False):
     """Provider-specific annotation format."""
 
     type: Literal["non_standard_annotation"]
@@ -59,11 +59,13 @@ class NonStandardAnnotation(TypedDict):
 class TextContentBlock(TypedDict, total=False):
     """Content block for text output."""
 
-    type: Required[Literal["text"]]
+    type: Literal["text"]
     """Type of the content block."""
-    text: Required[str]
+    text: str
     """Block text."""
-    annotations: list[Union[UrlCitation, DocumentCitation, NonStandardAnnotation]]
+    annotations: NotRequired[
+        list[Union[UrlCitation, DocumentCitation, NonStandardAnnotation]]
+    ]
     """Citations and other annotations."""
 
 
@@ -75,9 +77,9 @@ class ToolCallContentBlock(TypedDict, total=False):
     message's ``tool_calls`` attribute.
     """
 
-    type: Required[Literal["tool_call"]]
+    type: Literal["tool_call"]
     """Type of the content block."""
-    id: Required[str]
+    id: str
     """Tool call ID."""
 
 
@@ -85,9 +87,9 @@ class ToolCallContentBlock(TypedDict, total=False):
 class ReasoningContentBlock(TypedDict, total=False):
     """Content block for reasoning output."""
 
-    type: Required[Literal["reasoning"]]
+    type: Literal["reasoning"]
     """Type of the content block."""
-    reasoning: str
+    reasoning: NotRequired[str]
     """Reasoning text."""
 
 
@@ -95,51 +97,51 @@ class ReasoningContentBlock(TypedDict, total=False):
 class BaseDataContentBlock(TypedDict, total=False):
     """Base class for data content blocks."""
 
-    mime_type: str
+    mime_type: NotRequired[str]
     """MIME type of the content block (if needed)."""
 
 
 class URLContentBlock(BaseDataContentBlock):
     """Content block for data from a URL."""
 
-    type: Required[Literal["image", "audio", "file"]]
+    type: Literal["image", "audio", "file"]
     """Type of the content block."""
-    source_type: Required[Literal["url"]]
+    source_type: Literal["url"]
     """Source type (url)."""
-    url: Required[str]
+    url: str
     """URL for data."""
 
 
 class Base64ContentBlock(BaseDataContentBlock):
     """Content block for inline data from a base64 string."""
 
-    type: Required[Literal["image", "audio", "file"]]
+    type: Literal["image", "audio", "file"]
     """Type of the content block."""
-    source_type: Required[Literal["base64"]]
+    source_type: Literal["base64"]
     """Source type (base64)."""
-    data: Required[str]
+    data: str
     """Data as a base64 string."""
 
 
 class PlainTextContentBlock(BaseDataContentBlock):
     """Content block for plain text data (e.g., from a document)."""
 
-    type: Required[Literal["file"]]
+    type: Literal["file"]
     """Type of the content block."""
-    source_type: Required[Literal["text"]]
+    source_type: Literal["text"]
     """Source type (text)."""
-    text: Required[str]
+    text: str
     """Text data."""
 
 
-class IDContentBlock(BaseDataContentBlock):
+class IDContentBlock(TypedDict):
     """Content block for data specified by an identifier."""
 
-    type: Required[Literal["image", "audio", "file"]]
+    type: Literal["image", "audio", "file"]
     """Type of the content block."""
-    source_type: Required[Literal["id"]]
+    source_type: Literal["id"]
     """Source type (id)."""
-    id: Required[str]
+    id: str
     """Identifier for data source."""
 
 
@@ -154,7 +156,7 @@ _DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataConten
 
 
 # Non-standard
-class NonStandardContentBlock(TypedDict):
+class NonStandardContentBlock(TypedDict, total=False):
     """Content block provider-specific data.
 
     This block contains data for which there is not yet a standard type.
