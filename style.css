@@ -1,0 +1,440 @@
+/* Atari-style retro game CSS */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(45deg, #0f0f23, #1a1a2e);
+    font-family: 'Orbitron', monospace;
+    color: #00ff00;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #ff6b35;
+    text-shadow: 
+        0 0 10px #ff6b35,
+        0 0 20px #ff6b35,
+        0 0 30px #ff6b35;
+    margin-bottom: 15px;
+    letter-spacing: 3px;
+}
+
+.score-display {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(0, 255, 0, 0.1);
+    border: 2px solid #00ff00;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+.score-display span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.robux-display {
+    background: linear-gradient(45deg, #4c1d95, #7c3aed) !important;
+    padding: 5px 10px !important;
+    border-radius: 8px !important;
+    border: 2px solid #a855f7 !important;
+    box-shadow: 
+        0 0 15px rgba(168, 85, 247, 0.5),
+        inset 0 0 10px rgba(255, 255, 255, 0.1) !important;
+    animation: robux-glow 2s ease-in-out infinite;
+}
+
+@keyframes robux-glow {
+    0%, 100% { 
+        box-shadow: 
+            0 0 15px rgba(168, 85, 247, 0.5),
+            inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    50% { 
+        box-shadow: 
+            0 0 25px rgba(168, 85, 247, 0.8),
+            inset 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+button {
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    border: 2px solid #ffaa00;
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+button:hover {
+    background: linear-gradient(45deg, #f7931e, #ff6b35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    text-shadow: 0 0 5px #fff;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#gameCanvas {
+    border: 3px solid #00ff00;
+    border-radius: 10px;
+    background: #001122;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 0, 0.3),
+        inset 0 0 20px rgba(0, 0, 0, 0.5);
+    margin-bottom: 15px;
+    cursor: crosshair;
+}
+
+.instructions {
+    text-align: center;
+    background: rgba(255, 107, 53, 0.1);
+    border: 2px solid #ff6b35;
+    border-radius: 10px;
+    padding: 15px;
+    max-width: 800px;
+    margin-top: 10px;
+}
+
+.instructions p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #ffaa00;
+    font-weight: 400;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 3px solid #00ff00;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    box-shadow: 
+        0 0 30px rgba(0, 255, 0, 0.5),
+        inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+    color: #ff6b35;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-shadow: 0 0 10px #ff6b35;
+}
+
+.modal-content ul {
+    list-style: none;
+    margin-bottom: 20px;
+}
+
+.modal-content li {
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid #00ff00;
+    border-radius: 5px;
+    color: #fff;
+    line-height: 1.4;
+}
+
+.modal-content li strong {
+    color: #ffaa00;
+}
+
+#close-help {
+    display: block;
+    margin: 0 auto;
+    width: 120px;
+}
+
+/* Robux Shop Styles */
+.robux-shop {
+    background: linear-gradient(135deg, #4c1d95, #1e1b4b) !important;
+    border: 3px solid #a855f7 !important;
+    box-shadow: 
+        0 0 40px rgba(168, 85, 247, 0.8),
+        inset 0 0 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.robux-shop h2 {
+    color: #a855f7 !important;
+    text-shadow: 0 0 15px #a855f7 !important;
+}
+
+.shop-offer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 2px solid #7c3aed;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.offer-icon {
+    font-size: 3rem;
+    animation: offer-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes offer-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.offer-text h3 {
+    color: #fbbf24;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.offer-text p {
+    color: #e5e7eb;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.offer-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #a855f7;
+    text-shadow: 0 0 10px #a855f7;
+}
+
+.shop-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.premium-btn {
+    background: linear-gradient(45deg, #a855f7, #7c3aed) !important;
+    border: 2px solid #fbbf24 !important;
+    color: #000 !important;
+    font-weight: 900 !important;
+    padding: 12px 25px !important;
+    font-size: 1.1rem !important;
+    text-shadow: none !important;
+    box-shadow: 
+        0 0 20px rgba(168, 85, 247, 0.6),
+        0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    animation: premium-glow 2s ease-in-out infinite;
+}
+
+.premium-btn:hover {
+    background: linear-gradient(45deg, #7c3aed, #a855f7) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 
+        0 0 30px rgba(168, 85, 247, 0.8),
+        0 6px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+@keyframes premium-glow {
+    0%, 100% { 
+        box-shadow: 
+            0 0 20px rgba(168, 85, 247, 0.6),
+            0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    50% { 
+        box-shadow: 
+            0 0 30px rgba(168, 85, 247, 0.9),
+            0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.shop-footer {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.shop-footer small {
+    color: #fbbf24;
+    font-weight: 600;
+    animation: urgent-blink 1s ease-in-out infinite;
+}
+
+@keyframes urgent-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Robux Reward Styles */
+.robux-reward {
+    background: linear-gradient(135deg, #059669, #065f46) !important;
+    border: 3px solid #10b981 !important;
+    box-shadow: 
+        0 0 40px rgba(16, 185, 129, 0.8),
+        inset 0 0 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.robux-reward h2 {
+    color: #10b981 !important;
+    text-shadow: 0 0 15px #10b981 !important;
+}
+
+.reward-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #059669;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.reward-icon {
+    font-size: 4rem;
+    animation: reward-sparkle 1s ease-in-out infinite;
+}
+
+@keyframes reward-sparkle {
+    0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        text-shadow: 0 0 10px #fbbf24;
+    }
+    50% { 
+        transform: scale(1.1) rotate(5deg);
+        text-shadow: 0 0 20px #fbbf24, 0 0 30px #fbbf24;
+    }
+}
+
+.reward-text h3 {
+    color: #fbbf24;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.reward-text p {
+    color: #e5e7eb;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Game-specific styles for canvas elements */
+.game-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Responsive design */
+@media (max-width: 850px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+        max-width: 800px;
+    }
+    
+    .score-display {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Pixelated cursor effect */
+body {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* Retro glow animations */
+@keyframes retro-glow {
+    0%, 100% { 
+        text-shadow: 
+            0 0 5px currentColor,
+            0 0 10px currentColor,
+            0 0 15px currentColor;
+    }
+    50% { 
+        text-shadow: 
+            0 0 2px currentColor,
+            0 0 5px currentColor,
+            0 0 8px currentColor;
+    }
+}
+
+h1 {
+    animation: retro-glow 2s ease-in-out infinite;
+}

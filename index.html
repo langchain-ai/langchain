@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow Some Mushrooms</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>🍄 GROW SOME MUSHROOMS 🍄</h1>
+            <div class="score-display">
+                <span>Level: <span id="level">1</span></span>
+                <span>Score: <span id="score">0</span></span>
+                <span>Spores: <span id="spores">10</span></span>
+                <span class="robux-display">💎 Robux: <span id="robux">50</span></span>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <button id="reset-btn">Reset Level</button>
+            <button id="help-btn">Help</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="instructions">
+            <p>🎯 Aim and click to launch spores! Grow mushrooms on fertile soil patches!</p>
+            <p>💡 Avoid rocks and water. Hit multiple soil patches to create mushroom colonies!</p>
+        </div>
+
+        <div id="help-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>How to Play</h2>
+                <ul>
+                    <li>🎯 <strong>Aim:</strong> Move your mouse to aim the slingshot</li>
+                    <li>🚀 <strong>Launch:</strong> Click to launch a spore</li>
+                    <li>🍄 <strong>Grow:</strong> Spores that land on brown soil patches will grow into mushrooms</li>
+                    <li>🪨 <strong>Obstacles:</strong> Avoid gray rocks - they'll destroy your spores</li>
+                    <li>💧 <strong>Water:</strong> Blue water patches will wash away spores</li>
+                    <li>🏆 <strong>Goal:</strong> Grow mushrooms on all soil patches to advance</li>
+                    <li>⭐ <strong>Bonus:</strong> Chain reactions create mushroom colonies for extra points!</li>
+                    <li>💎 <strong>Robux:</strong> Spend premium currency for special advantages at key moments!</li>
+                </ul>
+                <button id="close-help">Got it!</button>
+            </div>
+        </div>
+
+        <div id="robux-shop-modal" class="modal hidden">
+            <div class="modal-content robux-shop">
+                <h2>💎 Premium Shop</h2>
+                <div class="shop-offer" id="shop-offer">
+                    <div class="offer-icon">🚀</div>
+                    <div class="offer-text">
+                        <h3 id="offer-title">Extra Spores</h3>
+                        <p id="offer-description">Get 3 additional spores to complete this challenging level!</p>
+                        <div class="offer-price">💎 <span id="offer-cost">25</span> Robux</div>
+                    </div>
+                </div>
+                <div class="shop-buttons">
+                    <button id="buy-offer" class="premium-btn">Buy Now</button>
+                    <button id="close-shop">No Thanks</button>
+                </div>
+                <div class="shop-footer">
+                    <small>⚡ Limited time offer! This deal won't appear again this level.</small>
+                </div>
+            </div>
+        </div>
+
+        <div id="robux-reward-modal" class="modal hidden">
+            <div class="modal-content robux-reward">
+                <h2>🏆 Level Complete!</h2>
+                <div class="reward-display">
+                    <div class="reward-icon">💎</div>
+                    <div class="reward-text">
+                        <h3>Robux Reward!</h3>
+                        <p>Excellent mushroom growing! You earned <span id="reward-amount">10</span> Robux!</p>
+                    </div>
+                </div>
+                <button id="claim-reward" class="premium-btn">Claim Reward</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
