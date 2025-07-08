@@ -20,18 +20,21 @@ def validate_model(client: Client, model_name: str) -> None:
         if not any(
             model_name == m or m.startswith(f"{model_name}:") for m in model_names
         ):
-            raise ValueError(
+            msg = (
                 f"Model `{model_name}` not found in Ollama. Please pull the "
                 f"model (using `ollama pull {model_name}`) or specify a valid "
                 f"model name. Available local models: {', '.join(model_names)}"
             )
+            raise ValueError(msg)
     except ConnectError as e:
-        raise ValueError(
+        msg = (
             "Connection to Ollama failed. Please make sure Ollama is running "
             f"and accessible at {client._client.base_url}. "
-        ) from e
+        )
+        raise ValueError(msg) from e
     except ResponseError as e:
-        raise ValueError(
+        msg = (
             "Received an error from the Ollama API. "
             "Please check your Ollama server logs."
-        ) from e
+        )
+        raise ValueError(msg) from e
