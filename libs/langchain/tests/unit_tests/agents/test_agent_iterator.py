@@ -305,7 +305,7 @@ def test_agent_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            pytest.fail("Unexpected output structure")
 
 
 async def test_agent_async_iterator_output_structure() -> None:
@@ -321,7 +321,7 @@ async def test_agent_async_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            pytest.fail("Unexpected output structure")
 
 
 def test_agent_iterator_empty_input() -> None:
