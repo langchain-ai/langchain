@@ -183,7 +183,7 @@ def _get_in_memory_vectorstore() -> type[VectorStore]:
         "Using InMemoryVectorStore as the default vectorstore."
         "This memory store won't persist data. You should explicitly"
         "specify a vectorstore when using VectorstoreIndexCreator",
-        stacklevel=3,
+        stacklevel=2,
     )
     return InMemoryVectorStore
 

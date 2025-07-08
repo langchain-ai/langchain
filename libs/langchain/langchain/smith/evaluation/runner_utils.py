@@ -350,7 +350,7 @@ def _validate_example_inputs_for_language_model(
         except InputFormatError:
             try:
                 _get_messages(first_example.inputs or {})
-            except InputFormatError as e:
+            except InputFormatError as err2:
                 msg = (
                     "Example inputs do not match language model input format. "
                     "Expected a dictionary with messages or a single prompt."
@@ -359,7 +359,7 @@ def _validate_example_inputs_for_language_model(
                     " to convert the example.inputs to a compatible format"
                     " for the llm or chat model you wish to evaluate."
                 )
-                raise InputFormatError(msg) from e
+                raise InputFormatError(msg) from err2
 
 
 def _validate_example_inputs_for_chain(

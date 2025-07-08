@@ -418,7 +418,8 @@ class ChatGroq(BaseChatModel):
                 warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
                     {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
+                    Please confirm that {field_name} is what you intended.""",
+                    stacklevel=2,
                 )
                 extra[field_name] = values.pop(field_name)
 

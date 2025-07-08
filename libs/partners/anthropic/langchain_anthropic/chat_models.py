@@ -314,7 +314,7 @@ def _format_messages(
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
-    for i, message in enumerate(merged_messages):
+    for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
@@ -496,7 +496,7 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
-        warnings.warn(message)
+        warnings.warn(message, stacklevel=2)
         raise e
     raise
 
@@ -1558,7 +1558,7 @@ class ChatAnthropic(BaseChatModel):
             "generated. Consider disabling `thinking` or adjust your prompt to ensure "
             "the tool is called."
         )
-        warnings.warn(thinking_admonition)
+        warnings.warn(thinking_admonition, stacklevel=2)
         llm = self.bind_tools(
             [schema],
             ls_structured_output_format={
@@ -2120,7 +2120,7 @@ def _make_message_chunk_from_anthropic_event(
         )
     ):
         if coerce_content_to_string:
-            warnings.warn("Received unexpected tool content block.")
+            warnings.warn("Received unexpected tool content block.", stacklevel=2)
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
         if event.content_block.type == "tool_use":

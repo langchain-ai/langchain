@@ -1210,6 +1210,5 @@ def test_search_result_top_level() -> None:
 
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")
-    llm._async_client  # Instantiates lazily
     _ = asyncio.run(llm.ainvoke("Hello"))
     _ = asyncio.run(llm.ainvoke("Hello"))

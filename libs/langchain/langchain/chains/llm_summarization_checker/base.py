@@ -118,7 +118,7 @@ class LLMSummarizationCheckerChain(Chain):
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
                 "deprecated. Please instantiate with"
                 " sequential_chain argument or using the from_llm class method.",
-                stacklevel=5,
+                stacklevel=2,
             )
             if "sequential_chain" not in values and values["llm"] is not None:
                 values["sequential_chain"] = _load_sequential_chain(

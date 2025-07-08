@@ -177,7 +177,7 @@ class LLMMathChain(Chain):
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
                 "class method.",
-                stacklevel=5,
+                stacklevel=2,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 prompt = values.get("prompt", PROMPT)

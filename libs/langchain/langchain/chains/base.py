@@ -255,7 +255,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
-                stacklevel=4,
+                stacklevel=2,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values

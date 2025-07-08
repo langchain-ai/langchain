@@ -60,6 +60,7 @@ target-version = "py39"
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
+    "B",      # flake8-bugbear
     "ASYNC",  # flake8-async
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
@@ -110,7 +111,6 @@ ignore = [
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
-
 ]
 
 [tool.coverage.run]

@@ -115,12 +115,12 @@ class HuggingFacePipeline(BaseLLM):
             )
             from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-            raise ValueError(msg)
+            raise ValueError(msg) from e
 
         _model_kwargs = model_kwargs.copy() if model_kwargs else {}
         if device_map is not None:

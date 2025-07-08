@@ -74,7 +74,7 @@ class NatBotChain(Chain):
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
                 "class method.",
-                stacklevel=5,
+                stacklevel=2,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
