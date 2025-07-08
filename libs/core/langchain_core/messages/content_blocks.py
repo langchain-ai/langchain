@@ -7,6 +7,93 @@ from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict
 
 
+# Text and annotations
+class UrlCitation(TypedDict, total=False):
+    """Citation from a URL."""
+
+    type: Literal["url_citation"]
+
+    url: str
+    """Source URL."""
+
+    title: NotRequired[str]
+    """Source title."""
+
+    cited_text: NotRequired[str]
+    """Text from the source that is being cited."""
+
+    start_index: NotRequired[int]
+    """Start index of the response text for which the annotation applies."""
+
+    end_index: NotRequired[int]
+    """End index of the response text for which the annotation applies."""
+
+
+class DocumentCitation(TypedDict, total=False):
+    """Annotation for data from a document."""
+
+    type: Literal["document_citation"]
+
+    title: NotRequired[str]
+    """Source title."""
+
+    cited_text: NotRequired[str]
+    """Text from the source that is being cited."""
+
+    start_index: NotRequired[int]
+    """Start index of the response text for which the annotation applies."""
+
+    end_index: NotRequired[int]
+    """End index of the response text for which the annotation applies."""
+
+
+class NonStandardAnnotation(TypedDict, total=False):
+    """Provider-specific annotation format."""
+
+    type: Literal["non_standard_annotation"]
+    """Type of the content block."""
+    value: dict[str, Any]
+    """Provider-specific annotation data."""
+
+
+class TextContentBlock(TypedDict, total=False):
+    """Content block for text output."""
+
+    type: Literal["text"]
+    """Type of the content block."""
+    text: str
+    """Block text."""
+    annotations: NotRequired[
+        list[Union[UrlCitation, DocumentCitation, NonStandardAnnotation]]
+    ]
+    """Citations and other annotations."""
+
+
+# Tool calls
+class ToolCallContentBlock(TypedDict, total=False):
+    """Content block for tool calls.
+
+    These are references to a :class:`~langchain_core.messages.tool.ToolCall` in the
+    message's ``tool_calls`` attribute.
+    """
+
+    type: Literal["tool_call"]
+    """Type of the content block."""
+    id: str
+    """Tool call ID."""
+
+
+# Reasoning
+class ReasoningContentBlock(TypedDict, total=False):
+    """Content block for reasoning output."""
+
+    type: Literal["reasoning"]
+    """Type of the content block."""
+    reasoning: NotRequired[str]
+    """Reasoning text."""
+
+
+# Multi-modal
 class BaseDataContentBlock(TypedDict, total=False):
     """Base class for data content blocks."""
 
@@ -66,6 +153,28 @@ DataContentBlock = Union[
 ]
 
 _DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
+
+
+# Non-standard
+class NonStandardContentBlock(TypedDict, total=False):
+    """Content block provider-specific data.
+
+    This block contains data for which there is not yet a standard type.
+    """
+
+    type: Literal["non_standard"]
+    """Type of the content block."""
+    value: dict[str, Any]
+    """Provider-specific data."""
+
+
+ContentBlock = Union[
+    TextContentBlock,
+    ToolCallContentBlock,
+    ReasoningContentBlock,
+    DataContentBlock,
+    NonStandardContentBlock,
+]
 
 
 def is_data_content_block(

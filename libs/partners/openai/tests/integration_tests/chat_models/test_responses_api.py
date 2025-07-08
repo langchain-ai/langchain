@@ -52,9 +52,11 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.response_metadata["service_tier"]
 
 
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
-def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, output_version="responses/v1")
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_web_search(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -141,13 +143,15 @@ async def test_web_search_async() -> None:
         assert tool_output["type"] == "web_search_call"
 
 
-@pytest.mark.flaky(retries=3, delay=1)
-def test_function_calling() -> None:
+@pytest.mark.default_cassette("test_function_calling.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_function_calling(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     def multiply(x: int, y: int) -> int:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     bound_llm = llm.bind_tools([multiply, {"type": "web_search_preview"}])
     ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
@@ -297,8 +301,8 @@ def test_function_calling_and_structured_output() -> None:
 
 @pytest.mark.default_cassette("test_reasoning.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
-def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
@@ -376,9 +380,9 @@ def test_file_search() -> None:
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
 def test_stream_reasoning_summary(
-    output_version: Literal["v0", "responses/v1"],
+    output_version: Literal["v0", "responses/v1", "v1"],
 ) -> None:
     llm = ChatOpenAI(
         model="o4-mini",
@@ -398,20 +402,39 @@ def test_stream_reasoning_summary(
     if output_version == "v0":
         reasoning = response_1.additional_kwargs["reasoning"]
         assert set(reasoning.keys()) == {"id", "type", "summary"}
-    else:
+        summary = reasoning["summary"]
+        assert isinstance(summary, list)
+        for block in summary:
+            assert isinstance(block, dict)
+            assert isinstance(block["type"], str)
+            assert isinstance(block["text"], str)
+            assert block["text"]
+    elif output_version == "responses/v1":
         reasoning = next(
             block
             for block in response_1.content
             if block["type"] == "reasoning"  # type: ignore[index]
         )
         assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
-    summary = reasoning["summary"]
-    assert isinstance(summary, list)
-    for block in summary:
-        assert isinstance(block, dict)
-        assert isinstance(block["type"], str)
-        assert isinstance(block["text"], str)
-        assert block["text"]
+        summary = reasoning["summary"]
+        assert isinstance(summary, list)
+        for block in summary:
+            assert isinstance(block, dict)
+            assert isinstance(block["type"], str)
+            assert isinstance(block["text"], str)
+            assert block["text"]
+    else:
+        # v1
+        total_reasoning_blocks = 0
+        for block in response_1.content:
+            if block["type"] == "reasoning":
+                total_reasoning_blocks += 1
+                assert isinstance(block["id"], str) and block["id"].startswith("rs_")
+                assert isinstance(block["reasoning"], str)
+                assert isinstance(block["index"], int)
+        assert (
+            total_reasoning_blocks > 1
+        )  # This query typically generates multiple reasoning blocks
 
     # Check we can pass back summaries
     message_2 = {"role": "user", "content": "Thank you."}
