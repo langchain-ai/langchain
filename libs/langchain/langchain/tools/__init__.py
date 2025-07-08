@@ -80,7 +80,6 @@ def __getattr__(name: str) -> Any:
             "`pip install -U langchain-community`.",
             stacklevel=2,
             category=LangChainDeprecationWarning,
-            stacklevel=2,
         )
 
     return getattr(tools, name)
