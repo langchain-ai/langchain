@@ -16,4 +16,3 @@ class TestChromaStandard(VectorStoreIntegrationTests):
             yield store
         finally:
             store.delete_collection()
-            pass
