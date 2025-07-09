@@ -49,7 +49,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         return _invoke(llm, input_, stream)
 
 
-def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
+def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:  # noqa: FBT001
     if stream:
         full = None
         for chunk in llm.stream(input_):

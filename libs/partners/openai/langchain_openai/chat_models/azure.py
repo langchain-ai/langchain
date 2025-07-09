@@ -5,12 +5,11 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Iterator
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import openai
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
@@ -26,12 +25,6 @@ logger = logging.getLogger(__name__)
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass = Union[dict[str, Any], type[_BM]]
 _DictOrPydantic = Union[dict, _BM]
-
-
-class _AllReturnType(TypedDict):
-    raw: BaseMessage
-    parsed: Optional[_DictOrPydantic]
-    parsing_error: Optional[BaseException]
 
 
 def _is_pydantic_class(obj: Any) -> bool:

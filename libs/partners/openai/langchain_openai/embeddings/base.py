@@ -21,7 +21,7 @@ def _process_batched_chunked_embeddings(
     tokens: list[Union[list[int], str]],
     batched_embeddings: list[list[float]],
     indices: list[int],
-    skip_empty: bool,
+    skip_empty: bool,  # noqa: FBT001
 ) -> list[Optional[list[float]]]:
     # for each text, this is the list of embeddings (list of list of floats)
     # corresponding to the chunks of the text
@@ -267,7 +267,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
                     {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
+                    Please confirm that {field_name} is what you intended.""",
+                    stacklevel=2,
                 )
                 extra[field_name] = values.pop(field_name)
 

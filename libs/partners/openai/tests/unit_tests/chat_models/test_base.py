@@ -326,7 +326,7 @@ class MockSyncContextManager:
 
 GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
 {"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
-{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"，"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":","}}]}
 {"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4f60\u53ef\u4ee5"}}]}
 {"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u53eb\u6211"}}]}
 {"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"AI"}}]}
@@ -339,12 +339,7 @@ GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","cr
 @pytest.fixture
 def mock_glm4_completion() -> list:
     list_chunk_data = GLM4_STREAM_META.split("\n")
-    result_list = []
-    for msg in list_chunk_data:
-        if msg != "[DONE]":
-            result_list.append(json.loads(msg))
-
-    return result_list
+    return [json.loads(msg) for msg in list_chunk_data if msg != "[DONE]"]
 
 
 async def test_glm4_astream(mock_glm4_completion: list) -> None:
@@ -360,7 +355,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
 
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
-        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+        async for chunk in llm.astream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -385,7 +380,7 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
 
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
-        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+        for chunk in llm.stream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -402,7 +397,7 @@ DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"
 {"choices":[{"delta":{"content":"Deep","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
 {"choices":[{"delta":{"content":"Seek","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
 {"choices":[{"delta":{"content":" Chat","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
-{"choices":[{"delta":{"content":"，","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":",","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
 {"choices":[{"delta":{"content":"一个","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
 {"choices":[{"delta":{"content":"由","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
 {"choices":[{"delta":{"content":"深度","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
@@ -420,12 +415,7 @@ DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"
 @pytest.fixture
 def mock_deepseek_completion() -> list[dict]:
     list_chunk_data = DEEPSEEK_STREAM_DATA.split("\n")
-    result_list = []
-    for msg in list_chunk_data:
-        if msg != "[DONE]":
-            result_list.append(json.loads(msg))
-
-    return result_list
+    return [json.loads(msg) for msg in list_chunk_data if msg != "[DONE]"]
 
 
 async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
@@ -440,7 +430,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
     usage_chunk = mock_deepseek_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
-        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+        async for chunk in llm.astream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -464,7 +454,7 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     usage_chunk = mock_deepseek_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
-        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+        for chunk in llm.stream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -488,12 +478,7 @@ OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":
 @pytest.fixture
 def mock_openai_completion() -> list[dict]:
     list_chunk_data = OPENAI_STREAM_DATA.split("\n")
-    result_list = []
-    for msg in list_chunk_data:
-        if msg != "[DONE]":
-            result_list.append(json.loads(msg))
-
-    return result_list
+    return [json.loads(msg) for msg in list_chunk_data if msg != "[DONE]"]
 
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
@@ -508,7 +493,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
     usage_chunk = mock_openai_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
-        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+        async for chunk in llm.astream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -532,7 +517,7 @@ def test_openai_stream(mock_openai_completion: list) -> None:
     usage_chunk = mock_openai_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
-        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+        for chunk in llm.stream("你的名字叫什么?只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
@@ -805,7 +790,7 @@ class MakeASandwich(BaseModel):
     ],
 )
 @pytest.mark.parametrize("strict", [True, False, None])
-def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:
+def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:  # noqa: FBT001
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.bind_tools(
@@ -822,8 +807,8 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 def test_with_structured_output(
     schema: Union[type, dict[str, Any], None],
     method: Literal["function_calling", "json_mode", "json_schema"],
-    include_raw: bool,
-    strict: Optional[bool],
+    include_raw: bool,  # noqa: FBT001
+    strict: Optional[bool],  # noqa: FBT001
 ) -> None:
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
@@ -1044,7 +1029,8 @@ def test__convert_to_openai_response_format() -> None:
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
 @pytest.mark.parametrize("strict", [True, None])
 def test_structured_output_strict(
-    method: Literal["function_calling", "json_schema"], strict: Optional[bool]
+    method: Literal["function_calling", "json_schema"],
+    strict: Optional[bool],  # noqa: FBT001
 ) -> None:
     """Test to verify structured output with strict=True."""
     llm = ChatOpenAI(model="gpt-4o-2024-08-06")
@@ -1167,8 +1153,8 @@ def test_structured_output_old_model() -> None:
     with pytest.warns(match="Cannot use method='json_schema'"):
         llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
     # assert tool calling was used instead of json_schema
-    assert "tools" in llm.steps[0].kwargs  # type: ignore
-    assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+    assert "tools" in llm.steps[0].kwargs  # type: ignore[attr-defined]
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore[attr-defined]
 
 
 def test_structured_outputs_parser() -> None:

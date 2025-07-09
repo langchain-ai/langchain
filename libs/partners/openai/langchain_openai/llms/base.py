@@ -282,6 +282,8 @@ class BaseOpenAI(BaseLLM):
         Args:
             prompts: The prompts to pass into the model.
             stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for callbacks.
+            kwargs: Additional keyword arguments to pass to the model.
 
         Returns:
             The full LLM output.
@@ -483,7 +485,7 @@ class BaseOpenAI(BaseLLM):
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python < 3.8
-        if sys.version_info[1] < 8:
+        if sys.version_info[1] < 8:  # noqa: YTT203
             return super().get_num_tokens(text)
 
         model_name = self.tiktoken_model_name or self.model_name

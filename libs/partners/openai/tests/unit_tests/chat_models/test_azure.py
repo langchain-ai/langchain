@@ -80,8 +80,8 @@ def test_structured_output_old_model() -> None:
         ).with_structured_output(Output)
 
     # assert tool calling was used instead of json_schema
-    assert "tools" in llm.steps[0].kwargs  # type: ignore
-    assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+    assert "tools" in llm.steps[0].kwargs  # type: ignore[attr-defined]
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore[attr-defined]
 
 
 def test_max_completion_tokens_in_payload() -> None:

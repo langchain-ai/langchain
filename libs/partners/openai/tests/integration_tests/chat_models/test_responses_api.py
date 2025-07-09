@@ -334,7 +334,7 @@ def test_stateful_api() -> None:
         "what's my name", previous_response_id=response.response_metadata["id"]
     )
     assert isinstance(second_response.content, list)
-    assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore
+    assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore[index]
 
 
 def test_route_from_model_kwargs() -> None:

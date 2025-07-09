@@ -369,7 +369,7 @@ def _convert_delta_to_message_chunk(
         )
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
-    return default_class(content=content, id=id_)  # type: ignore
+    return default_class(content=content, id=id_)  # type: ignore[call-arg]
 
 
 def _update_token_usage(
@@ -396,7 +396,7 @@ def _update_token_usage(
             k: _update_token_usage(overall_token_usage.get(k, 0), v)
             for k, v in new_usage.items()
         }
-    warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+    warnings.warn(f"Unexpected type for token usage: {type(new_usage)}", stacklevel=3)
     return new_usage
 
 
@@ -410,7 +410,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             "langchain-openai==0.3. To use `with_structured_output` with this model, "
             'specify `method="function_calling"`.'
         )
-        warnings.warn(message)
+        warnings.warn(message, stacklevel=3)
         raise e
     if "Invalid schema for response_format" in e.message:
         message = (
@@ -420,7 +420,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             "See supported schemas: "
             "https://platform.openai.com/docs/guides/structured-outputs#supported-schemas"
         )
-        warnings.warn(message)
+        warnings.warn(message, stacklevel=3)
         raise e
     raise
 
@@ -432,12 +432,6 @@ class _FunctionCall(TypedDict):
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
 _DictOrPydantic = Union[dict, _BM]
-
-
-class _AllReturnType(TypedDict):
-    raw: BaseMessage
-    parsed: Optional[_DictOrPydantic]
-    parsing_error: Optional[BaseException]
 
 
 class BaseChatOpenAI(BaseChatModel):
@@ -677,7 +671,7 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """o1 models only allow temperature=1."""
         model = values.get("model_name") or values.get("model") or ""
         if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
@@ -987,7 +981,9 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
 
     def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
+        self,
+        stream_usage: Optional[bool] = None,  # noqa: FBT001
+        **kwargs: Any,
     ) -> bool:
         """Determine whether to include usage metadata in streaming output.
 
@@ -1026,7 +1022,8 @@ class BaseChatOpenAI(BaseChatModel):
             if self.include_response_headers:
                 warnings.warn(
                     "Cannot currently include response headers when response_format is "
-                    "specified."
+                    "specified.",
+                    stacklevel=2,
                 )
             payload.pop("stream")
             response_stream = self.root_client.beta.chat.completions.stream(**payload)
@@ -1093,7 +1090,8 @@ class BaseChatOpenAI(BaseChatModel):
             if self.include_response_headers:
                 warnings.warn(
                     "Cannot currently include response headers when response_format is "
-                    "specified."
+                    "specified.",
+                    stacklevel=2,
                 )
             payload.pop("stream")
             try:
@@ -1251,7 +1249,8 @@ class BaseChatOpenAI(BaseChatModel):
             if self.include_response_headers:
                 warnings.warn(
                     "Cannot currently include response headers when response_format is "
-                    "specified."
+                    "specified.",
+                    stacklevel=2,
                 )
             payload.pop("stream")
             response_stream = self.root_async_client.beta.chat.completions.stream(
@@ -1322,7 +1321,8 @@ class BaseChatOpenAI(BaseChatModel):
             if self.include_response_headers:
                 warnings.warn(
                     "Cannot currently include response headers when response_format is "
-                    "specified."
+                    "specified.",
+                    stacklevel=2,
                 )
             payload.pop("stream")
             try:
@@ -1433,7 +1433,7 @@ class BaseChatOpenAI(BaseChatModel):
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python 3.7 or below
-        if sys.version_info[1] <= 7:
+        if sys.version_info[1] <= 7:  # noqa: YTT203
             return super().get_token_ids(text)
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
@@ -1464,9 +1464,10 @@ class BaseChatOpenAI(BaseChatModel):
         # TODO: Count bound tools as part of input.
         if tools is not None:
             warnings.warn(
-                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
+                stacklevel=2,
             )
-        if sys.version_info[1] <= 7:
+        if sys.version_info[1] <= 7:  # noqa: YTT203
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
         if model.startswith("gpt-3.5-turbo-0301"):
@@ -1519,7 +1520,8 @@ class BaseChatOpenAI(BaseChatModel):
                         elif val["type"] == "file":
                             warnings.warn(
                                 "Token counts for file inputs are not supported. "
-                                "Ignoring file inputs."
+                                "Ignoring file inputs.",
+                                stacklevel=2,
                             )
                         else:
                             msg = f"Unrecognized content block type\n\n{val}"
@@ -1545,7 +1547,7 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
+            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -1601,7 +1603,7 @@ class BaseChatOpenAI(BaseChatModel):
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]  # noqa: PYI051
         ] = None,
         strict: Optional[bool] = None,
         parallel_tool_calls: Optional[bool] = None,
@@ -1840,7 +1842,8 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received a Pydantic BaseModel V1 schema. This is not supported by "
                     'method="json_schema". Please use method="function_calling" '
                     "or specify schema via JSON Schema or Pydantic V2 BaseModel. "
-                    'Overriding to method="function_calling".'
+                    'Overriding to method="function_calling".',
+                    stacklevel=2,
                 )
                 method = "function_calling"
             # Check for incompatible model
@@ -1855,7 +1858,8 @@ class BaseChatOpenAI(BaseChatModel):
                     f"see supported models here: "
                     f"https://platform.openai.com/docs/guides/structured-outputs#supported-models. "  # noqa: E501
                     "To fix this warning, set `method='function_calling'. "
-                    "Overriding to method='function_calling'."
+                    "Overriding to method='function_calling'.",
+                    stacklevel=2,
                 )
                 method = "function_calling"
 
@@ -3762,7 +3766,7 @@ def _convert_responses_chunk_to_generation_chunk(
     current_sub_index: int,  # index of content block in output item
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    has_reasoning: bool = False,
+    has_reasoning: bool = False,  # noqa: FBT001, FBT002
     output_version: Literal["v0", "responses/v1"] = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:

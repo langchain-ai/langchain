@@ -68,7 +68,7 @@ def test_chat_openai_model() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_chat_openai_system_message(use_responses_api: bool) -> None:
+def test_chat_openai_system_message(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test ChatOpenAI wrapper with system message."""
     chat = ChatOpenAI(use_responses_api=use_responses_api, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     system_message = SystemMessage(content="You are to chat with the user.")
@@ -110,7 +110,7 @@ def test_chat_openai_multiple_completions() -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_chat_openai_streaming(use_responses_api: bool) -> None:
+def test_chat_openai_streaming(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
@@ -206,7 +206,7 @@ async def test_async_chat_openai_bind_functions() -> None:
 
 @pytest.mark.scheduled
 @pytest.mark.parametrize("use_responses_api", [False, True])
-async def test_openai_abatch_tags(use_responses_api: bool) -> None:
+async def test_openai_abatch_tags(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, use_responses_api=use_responses_api)  # type: ignore[call-arg]
 
@@ -273,7 +273,7 @@ def test_stream() -> None:
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
 
-    async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:
+    async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:  # noqa: FBT001
         full: Optional[BaseMessageChunk] = None
         chunks_with_token_counts = 0
         chunks_with_response_metadata = 0
@@ -447,7 +447,7 @@ def test_tool_use() -> None:
             gathered = message
             first = False
         else:
-            gathered = gathered + message  # type: ignore
+            gathered = gathered + message  # type: ignore[assignment]
     assert isinstance(gathered, AIMessageChunk)
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
@@ -463,7 +463,7 @@ def test_tool_use() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_manual_tool_call_msg(use_responses_api: bool) -> None:
+def test_manual_tool_call_msg(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(
         model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
@@ -504,12 +504,12 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
         ),
         ToolMessage("sally_green_hair", tool_call_id="foo"),
     ]
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         llm_with_tool.invoke(msgs)
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_bind_tools_tool_choice(use_responses_api: bool) -> None:
+def test_bind_tools_tool_choice(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(
         model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
@@ -574,7 +574,7 @@ def test_openai_proxy() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_openai_response_headers(use_responses_api: bool) -> None:
+def test_openai_response_headers(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(
         include_response_headers=True, use_responses_api=use_responses_api
@@ -598,7 +598,7 @@ def test_openai_response_headers(use_responses_api: bool) -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-async def test_openai_response_headers_async(use_responses_api: bool) -> None:
+async def test_openai_response_headers_async(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(
         include_response_headers=True, use_responses_api=use_responses_api
@@ -686,7 +686,7 @@ def test_image_token_counting_png() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_tool_calling_strict(use_responses_api: bool) -> None:
+def test_tool_calling_strict(use_responses_api: bool) -> None:  # noqa: FBT001
     """Test tool calling with strict=True.
 
     Responses API appears to have fewer constraints on schema when strict=True.
@@ -719,7 +719,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
     # Test stream
     full: Optional[BaseMessageChunk] = None
     for chunk in model_with_tools.stream(query):
-        full = chunk if full is None else full + chunk  # type: ignore
+        full = chunk if full is None else full + chunk  # type: ignore[assignment]
     assert isinstance(full, AIMessage)
     _validate_tool_call_message(full)
 
@@ -736,7 +736,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
 def test_structured_output_strict(
     model: str,
     method: Literal["function_calling", "json_schema"],
-    use_responses_api: bool,
+    use_responses_api: bool,  # noqa: FBT001
 ) -> None:
     """Test to verify structured output with strict=True."""
     from pydantic import BaseModel as BaseModelProper
@@ -775,7 +775,9 @@ def test_structured_output_strict(
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
 def test_nested_structured_output_strict(
-    model: str, method: Literal["json_schema"], use_responses_api: bool
+    model: str,
+    method: Literal["json_schema"],
+    use_responses_api: bool,  # noqa: FBT001
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
     from typing import TypedDict
@@ -817,7 +819,8 @@ def test_nested_structured_output_strict(
     ],
 )
 def test_json_schema_openai_format(
-    strict: bool, method: Literal["json_schema", "function_calling"]
+    strict: bool,  # noqa: FBT001
+    method: Literal["json_schema", "function_calling"],
 ) -> None:
     """Test we can pass in OpenAI schema format specifying strict."""
     llm = ChatOpenAI(model="gpt-4o-mini")
@@ -960,7 +963,7 @@ def test_prediction_tokens() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_stream_o_series(use_responses_api: bool) -> None:
+def test_stream_o_series(use_responses_api: bool) -> None:  # noqa: FBT001
     list(
         ChatOpenAI(model="o3-mini", use_responses_api=use_responses_api).stream(
             "how are you"
@@ -969,7 +972,7 @@ def test_stream_o_series(use_responses_api: bool) -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-async def test_astream_o_series(use_responses_api: bool) -> None:
+async def test_astream_o_series(use_responses_api: bool) -> None:  # noqa: FBT001
     async for _ in ChatOpenAI(
         model="o3-mini", use_responses_api=use_responses_api
     ).astream("how are you"):
@@ -1016,7 +1019,7 @@ async def test_astream_response_format() -> None:
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize("use_max_completion_tokens", [True, False])
-def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
+def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:  # noqa: FBT001
     if use_max_completion_tokens:
         kwargs: dict = {"max_completion_tokens": MAX_TOKEN_COUNT}
     else:

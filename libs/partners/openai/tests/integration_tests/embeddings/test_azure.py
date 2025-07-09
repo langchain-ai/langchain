@@ -16,7 +16,6 @@ DEPLOYMENT_NAME = os.environ.get(
     "AZURE_OPENAI_DEPLOYMENT_NAME",
     os.environ.get("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME", ""),
 )
-print
 
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
@@ -111,7 +110,7 @@ def test_azure_openai_embedding_with_empty_string() -> None:
             api_key=OPENAI_API_KEY,
             azure_endpoint=OPENAI_API_BASE,
             azure_deployment=DEPLOYMENT_NAME,
-        )  # type: ignore
+        )
         .embeddings.create(input="", model="text-embedding-ada-002")
         .data[0]
         .embedding

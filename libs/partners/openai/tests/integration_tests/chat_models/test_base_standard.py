@@ -123,7 +123,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         _ = model.invoke([message])
 
 
-def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
+def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:  # noqa: FBT001
     if stream:
         full = None
         for chunk in llm.stream(input_):

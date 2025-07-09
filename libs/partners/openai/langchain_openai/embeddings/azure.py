@@ -20,7 +20,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         To access AzureOpenAI embedding models you'll need to create an Azure account,
         get an API key, and install the `langchain-openai` integration package.
 
-        You’ll need to have an Azure OpenAI instance deployed.
+        You'll need to have an Azure OpenAI instance deployed.
         You can deploy a version on Azure Portal following this
         [guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal).
 

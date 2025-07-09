@@ -32,7 +32,6 @@ def test_embed_documents_with_custom_chunk_size() -> None:
 
         result = embeddings.embed_documents(texts, chunk_size=custom_chunk_size)
         _, tokens, __ = embeddings._tokenize(texts, custom_chunk_size)
-        mock_create.call_args
         mock_create.assert_any_call(input=tokens[0:3], **embeddings._invocation_params)
         mock_create.assert_any_call(input=tokens[3:4], **embeddings._invocation_params)
 
@@ -52,7 +51,6 @@ def test_embed_documents_with_custom_chunk_size_no_check_ctx_length() -> None:
 
         result = embeddings.embed_documents(texts, chunk_size=custom_chunk_size)
 
-        mock_create.call_args
         mock_create.assert_any_call(input=texts[0:3], **embeddings._invocation_params)
         mock_create.assert_any_call(input=texts[3:4], **embeddings._invocation_params)
 

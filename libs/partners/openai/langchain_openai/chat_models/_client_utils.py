@@ -9,6 +9,7 @@ Logic is largely replicated from openai._base_client.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 from functools import lru_cache
 from typing import Any, Optional
@@ -23,10 +24,8 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
         if self.is_closed:
             return
 
-        try:
+        with contextlib.suppress(Exception):
             self.close()
-        except Exception:  # noqa: S110
-            pass
 
 
 class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
@@ -36,11 +35,9 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         if self.is_closed:
             return
 
-        try:
-            # TODO(someday): support non asyncio runtimes here
+        # TODO(someday): support non asyncio runtimes here
+        with contextlib.suppress(Exception):
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:  # noqa: S110
-            pass
 
 
 def _build_sync_httpx_client(

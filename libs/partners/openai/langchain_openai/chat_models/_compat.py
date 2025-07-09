@@ -70,7 +70,8 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
 def _convert_to_v03_ai_message(
-    message: AIMessage, has_reasoning: bool = False
+    message: AIMessage,
+    has_reasoning: bool = False,  # noqa: FBT001, FBT002
 ) -> AIMessage:
     """Mutate an AIMessage to the old-style v0.3 format."""
     if isinstance(message.content, list):
