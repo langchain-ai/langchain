@@ -65,7 +65,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
             similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
         if np.isnan(similarity).all():
-            msg = "Nan values found, please remove the nan values and try again"
+            msg = "NaN values found, please remove the NaN values and try again"
             raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
