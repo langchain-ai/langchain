@@ -235,11 +235,13 @@ def load(
 
     def _load(obj: Any) -> Any:
         if isinstance(obj, dict):
-            # Need to revive leaf nodes before reviving this node
             loaded_obj = {k: _load(v) for k, v in obj.items()}
             return reviver(loaded_obj)
         if isinstance(obj, list):
             return [_load(o) for o in obj]
+        if isinstance(obj, str):
+        # 🪄 Wrap plain strings into a dict and pass to reviver
+            return reviver({"lc": 1, "type": "secret", "id": [obj]})
         return obj
 
     return _load(obj)
