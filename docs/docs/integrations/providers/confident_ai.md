@@ -80,7 +80,7 @@ from deepeval.test_case import LLMTestCase
 from deepeval.dataset import EvaluationDataset, Golden
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval import assert_test
-from test_langgraph import my_llm_app
+from main import my_llm_app
  
  
 dataset = EvaluationDataset()
@@ -104,7 +104,7 @@ from deepeval.dataset import EvaluationDataset
 from deepeval.test_case import LLMTestCase
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval import evaluate
-from test_langgraph import my_llm_app
+from main import my_llm_app
  
 dataset = EvaluationDataset()
 dataset.pull(alias="your-dataset-alias") # Pull dataset from Confident AI
