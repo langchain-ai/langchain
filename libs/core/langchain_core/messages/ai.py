@@ -8,6 +8,7 @@ from typing import Any, Literal, Optional, Union, cast
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
+from langchain_core.messages import ContentBlock
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -178,7 +179,7 @@ class AIMessage(BaseMessage):
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, ContentBlock, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 

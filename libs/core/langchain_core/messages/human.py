@@ -2,6 +2,7 @@
 
 from typing import Any, Literal, Union
 
+from langchain_core.messages import ContentBlock
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
@@ -41,7 +42,7 @@ class HumanMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "human"."""
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self, content: Union[str, list[Union[str, ContentBlock, dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg.
 

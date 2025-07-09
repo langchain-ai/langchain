@@ -1,18 +1,20 @@
 import base64
 import json
 import re
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 import pytest
-from typing_extensions import override
+from typing_extensions import TypeGuard, override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
+    ReasoningContentBlock,
     SystemMessage,
+    TextContentBlock,
     ToolCall,
     ToolMessage,
 )
@@ -1457,3 +1459,32 @@ def test_get_buffer_string_with_empty_content() -> None:
     expected = "Human: \nAI: \nSystem: "
     actual = get_buffer_string(messages)
     assert actual == expected
+
+
+def is_reasoning_block(block: Mapping[str, Any]) -> TypeGuard[ReasoningContentBlock]:
+    """Check if a block is a ReasoningContentBlock."""
+    return block.get("type") == "reasoning"
+
+
+def is_text_block(block: Mapping[str, Any]) -> TypeGuard[TextContentBlock]:
+    """Check if a block is a TextContentBlock."""
+    return block.get("type") == "text"
+
+
+def test_typing() -> None:
+    """Test typing on things"""
+    message = AIMessage(
+        content="Hello",
+    )
+    if isinstance(message.content, str):
+        # This should not raise an error
+        message.content = message.content + " world"
+    elif isinstance(message.content, list):
+        all_contents = []
+        for block in message.content:
+            if isinstance(block, dict):
+                block = cast("dict", block)
+                if is_text_block(block):
+                    all_contents.append(block["text"])
+                if is_reasoning_block(block):
+                    all_contents.append(block.get("reasoning", "foo"))
