@@ -146,7 +146,6 @@ DEPRECATED_LOOKUP = {
     "Neo4jVector": "langchain_community.vectorstores",
     "NeuralDBClientVectorStore": "langchain_community.vectorstores",
     "NeuralDBVectorStore": "langchain_community.vectorstores",
-    "NEuralDBVectorStore": "langchain_community.vectorstores",
     "OpenSearchVectorSearch": "langchain_community.vectorstores",
     "PGEmbedding": "langchain_community.vectorstores",
     "PGVector": "langchain_community.vectorstores",
