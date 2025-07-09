@@ -37,7 +37,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     k: int = 4
     """The maximum number of documents to retrieve in a given call."""
 
-    other_score_keys: list[str] = []
+    other_score_keys: list[str] = Field(default_factory=list)
     """Other keys in the metadata to factor into the score, e.g. 'importance'."""
 
     default_salience: Optional[float] = None
