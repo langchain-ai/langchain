@@ -229,8 +229,8 @@ def test_agent_iterator_properties_and_setters() -> None:
 
     assert isinstance(agent_iter, AgentExecutorIterator)
     assert isinstance(agent_iter.inputs, dict)
-    assert isinstance(agent_iter.callbacks, type(None))
-    assert isinstance(agent_iter.tags, type(None))
+    assert agent_iter.callbacks is None
+    assert agent_iter.tags is None
     assert isinstance(agent_iter.agent_executor, AgentExecutor)
 
     agent_iter.inputs = "New input"  # type: ignore[assignment]
