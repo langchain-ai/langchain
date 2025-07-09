@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional, Union
 
 from langchain.agents import AgentOutputParser
@@ -24,13 +26,13 @@ def extract_action_details(text: str) -> tuple[Optional[str], Optional[str]]:
 
 class FakeOutputParser(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        action, input = extract_action_details(text)
+        action, input_ = extract_action_details(text)
 
         if action:
-            log = f"\nInvoking: `{action}` with `{input}"
+            log = f"\nInvoking: `{action}` with `{input_}"
 
-            return AgentAction(tool=action, tool_input=(input or ""), log=log)
-        elif "Final Answer" in text:
+            return AgentAction(tool=action, tool_input=(input_ or ""), log=log)
+        if "Final Answer" in text:
             return AgentFinish({"output": text}, text)
 
         return AgentAction(

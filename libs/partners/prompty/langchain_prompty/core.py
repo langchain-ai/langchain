@@ -110,24 +110,20 @@ class Prompty(BaseModel):
         return json.dumps(d)
 
     @staticmethod
-    def normalize(attribute: Any, parent: Path, env_error: bool = True) -> Any:
+    def normalize(attribute: Any, parent: Path, env_error: bool = True) -> Any:  # noqa: FBT001, FBT002
         if isinstance(attribute, str):
             attribute = attribute.strip()
             if attribute.startswith("${") and attribute.endswith("}"):
                 variable = attribute[2:-1].split(":")
-                if variable[0] in os.environ.keys():
+                if variable[0] in os.environ:
                     return os.environ[variable[0]]
-                else:
-                    if len(variable) > 1:
-                        return variable[1]
-                    else:
-                        if env_error:
-                            raise ValueError(
-                                f"Variable {variable[0]} not found in environment"
-                            )
-                        else:
-                            return ""
-            elif (
+                if len(variable) > 1:
+                    return variable[1]
+                if env_error:
+                    msg = f"Variable {variable[0]} not found in environment"
+                    raise ValueError(msg)
+                return ""
+            if (
                 attribute.startswith("file:")
                 and Path(parent / attribute.split(":")[1]).exists()
             ):
@@ -135,13 +131,12 @@ class Prompty(BaseModel):
                     items = json.load(f)
                     if isinstance(items, list):
                         return [Prompty.normalize(value, parent) for value in items]
-                    elif isinstance(items, dict):
+                    if isinstance(items, dict):
                         return {
                             key: Prompty.normalize(value, parent)
                             for key, value in items.items()
                         }
-                    else:
-                        return items
+                    return items
             else:
                 return attribute
         elif isinstance(attribute, list):
@@ -167,11 +162,9 @@ def param_hoisting(
 
     Returns:
         The merged dictionary.
+
     """
-    if top_key:
-        new_dict = {**top[top_key]} if top_key in top else {}
-    else:
-        new_dict = {**top}
+    new_dict = ({**top[top_key]} if top_key in top else {}) if top_key else {**top}
     for key, value in bottom.items():
         if key not in new_dict:
             new_dict[key] = value
@@ -208,7 +201,7 @@ class InvokerFactory:
     _executors: dict[str, type[Invoker]] = {}
     _processors: dict[str, type[Invoker]] = {}
 
-    def __new__(cls) -> InvokerFactory:
+    def __new__(cls) -> InvokerFactory:  # noqa: PYI034
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             # Add NOOP invokers
@@ -220,7 +213,7 @@ class InvokerFactory:
 
     def register(
         self,
-        type: Literal["renderer", "parser", "executor", "processor"],
+        type: Literal["renderer", "parser", "executor", "processor"],  # noqa: A002
         name: str,
         invoker: type[Invoker],
     ) -> None:
@@ -233,7 +226,8 @@ class InvokerFactory:
         elif type == "processor":
             self._processors[name] = invoker
         else:
-            raise ValueError(f"Invalid type {type}")
+            msg = f"Invalid type {type}"
+            raise ValueError(msg)
 
     def register_renderer(self, name: str, renderer_class: Any) -> None:
         self.register("renderer", name, renderer_class)
@@ -249,21 +243,21 @@ class InvokerFactory:
 
     def __call__(
         self,
-        type: Literal["renderer", "parser", "executor", "processor"],
+        type_: Literal["renderer", "parser", "executor", "processor"],
         name: str,
         prompty: Prompty,
         data: BaseModel,
     ) -> Any:
-        if type == "renderer":
+        if type_ == "renderer":
             return self._renderers[name](prompty)(data)
-        elif type == "parser":
+        if type_ == "parser":
             return self._parsers[name](prompty)(data)
-        elif type == "executor":
+        if type_ == "executor":
             return self._executors[name](prompty)(data)
-        elif type == "processor":
+        if type_ == "processor":
             return self._processors[name](prompty)(data)
-        else:
-            raise ValueError(f"Invalid type {type}")
+        msg = f"Invalid type {type_}"
+        raise ValueError(msg)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -296,7 +290,8 @@ class Frontmatter:
 
     @classmethod
     def read_file(cls, path: str) -> dict[str, Any]:
-        """Reads file at path and returns dict with separated frontmatter.
+        """Read file at path and returns dict with separated frontmatter.
+
         See read() for more info on dict return value.
         """
         with open(path, encoding="utf-8") as file:
@@ -305,7 +300,7 @@ class Frontmatter:
 
     @classmethod
     def read(cls, string: str) -> dict[str, Any]:
-        """Returns dict with separated frontmatter from string.
+        """Return dict with separated frontmatter from string.
 
         Returned dict keys:
         - attributes: extracted YAML attributes in dict form.

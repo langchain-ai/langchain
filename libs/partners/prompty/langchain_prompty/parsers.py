@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import re
 from typing import Union
@@ -40,28 +42,25 @@ class PromptyChatParser(Invoker):
 
     def inline_image(self, image_item: str) -> str:
         # pass through if it's a url or base64 encoded
-        if image_item.startswith("http") or image_item.startswith("data"):
+        if image_item.startswith(("http", "data")):
             return image_item
         # otherwise, it's a local file - need to base64 encode it
-        else:
-            image_path = self.path / image_item
-            with open(image_path, "rb") as f:
-                base64_image = base64.b64encode(f.read()).decode("utf-8")
+        image_path = self.path / image_item
+        with open(image_path, "rb") as f:
+            base64_image = base64.b64encode(f.read()).decode("utf-8")
 
-            if image_path.suffix == ".png":
-                return f"data:image/png;base64,{base64_image}"
-            elif image_path.suffix == ".jpg":
-                return f"data:image/jpeg;base64,{base64_image}"
-            elif image_path.suffix == ".jpeg":
-                return f"data:image/jpeg;base64,{base64_image}"
-            else:
-                raise ValueError(
-                    f"Invalid image format {image_path.suffix} - currently only .png "
-                    "and .jpg / .jpeg are supported."
-                )
+        if image_path.suffix == ".png":
+            return f"data:image/png;base64,{base64_image}"
+        if image_path.suffix == ".jpg" or image_path.suffix == ".jpeg":
+            return f"data:image/jpeg;base64,{base64_image}"
+        msg = (
+            f"Invalid image format {image_path.suffix} - currently only .png "
+            "and .jpg / .jpeg are supported."
+        )
+        raise ValueError(msg)
 
     def parse_content(self, content: str) -> Union[str, list]:
-        """for parsing inline images"""
+        """For parsing inline images."""
         # regular expression to parse markdown images
         image = r"(?P<alt>!\[[^\]]*\])\((?P<filename>.*?)(?=\"|\))\)"
         matches = re.findall(image, content, flags=re.MULTILINE)
@@ -98,12 +97,12 @@ class PromptyChatParser(Invoker):
                             {"type": "text", "text": content_chunks[i].strip()}
                         )
             return content_items
-        else:
-            return content
+        return content
 
     def invoke(self, data: BaseModel) -> BaseModel:
         if not isinstance(data, SimpleModel):
-            raise ValueError("data must be an instance of SimpleModel")
+            msg = "data must be an instance of SimpleModel"
+            raise ValueError(msg)
         messages = []
         separator = r"(?i)^\s*#?\s*(" + "|".join(self.roles) + r")\s*:\s*\n"
 
@@ -123,7 +122,8 @@ class PromptyChatParser(Invoker):
             chunks.pop()
 
         if len(chunks) % 2 != 0:
-            raise ValueError("Invalid prompt format")
+            msg = "Invalid prompt format"
+            raise ValueError(msg)
 
         # create messages
         for i in range(0, len(chunks), 2):

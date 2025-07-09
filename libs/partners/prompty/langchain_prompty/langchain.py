@@ -29,7 +29,6 @@ def create_chat_prompt(
             )  # type: ignore[arg-type]
         )
         lc_p = ChatPromptTemplate.from_messages(lc_messages)
-        lc_p = lc_p.partial(**p.inputs)
-        return lc_p
+        return lc_p.partial(**p.inputs)
 
     return RunnableLambda(runnable_chat_lambda)

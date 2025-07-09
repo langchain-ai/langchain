@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import traceback
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from .core import (
     Frontmatter,
@@ -23,6 +25,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
     Returns:
         The Prompty object.
+
     """
     file_path = Path(prompt_path)
     if not file_path.is_absolute():
@@ -46,7 +49,8 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
     try:
         model = ModelSettings(**attributes.pop("model"))
     except Exception as e:
-        raise ValueError(f"Error in model settings: {e}")
+        msg = f"Error in model settings: {e}"
+        raise ValueError(msg) from e
 
     # pull template settings
     try:
@@ -60,7 +64,8 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
         else:
             template = TemplateSettings(type="mustache", parser="prompty")
     except Exception as e:
-        raise ValueError(f"Error in template loader: {e}")
+        msg = f"Error in template loader: {e}"
+        raise ValueError(msg) from e
 
     # formalize inputs and outputs
     if "inputs" in attributes:
@@ -69,7 +74,8 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
                 k: PropertySettings(**v) for (k, v) in attributes.pop("inputs").items()
             }
         except Exception as e:
-            raise ValueError(f"Error in inputs: {e}")
+            msg = f"Error in inputs: {e}"
+            raise ValueError(msg) from e
     else:
         inputs = {}
     if "outputs" in attributes:
@@ -78,7 +84,8 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
                 k: PropertySettings(**v) for (k, v) in attributes.pop("outputs").items()
             }
         except Exception as e:
-            raise ValueError(f"Error in outputs: {e}")
+            msg = f"Error in outputs: {e}"
+            raise ValueError(msg) from e
     else:
         outputs = {}
 
@@ -120,7 +127,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
 def prepare(
     prompt: Prompty,
-    inputs: dict[str, Any] = {},
+    inputs: Optional[dict[str, Any]] = None,
 ) -> Any:
     """Prepare the inputs for the prompty.
 
@@ -130,7 +137,10 @@ def prepare(
 
     Returns:
         The prepared inputs.
+
     """
+    if inputs is None:
+        inputs = {}
     invoker = InvokerFactory()
 
     inputs = param_hoisting(inputs, prompt.sample)
@@ -160,16 +170,15 @@ def prepare(
 
     if isinstance(result, SimpleModel):
         return result.item
-    else:
-        return result
+    return result
 
 
 def run(
     prompt: Prompty,
     content: Union[dict, list, str],
-    configuration: dict[str, Any] = {},
-    parameters: dict[str, Any] = {},
-    raw: bool = False,
+    configuration: Optional[dict[str, Any]] = None,
+    parameters: Optional[dict[str, Any]] = None,
+    raw: bool = False,  # noqa: FBT001, FBT002
 ) -> Any:
     """Run the prompty.
 
@@ -182,7 +191,12 @@ def run(
 
     Returns:
         The result of running the prompty.
+
     """
+    if parameters is None:
+        parameters = {}
+    if configuration is None:
+        configuration = {}
     invoker = InvokerFactory()
 
     if configuration != {}:
@@ -213,16 +227,15 @@ def run(
 
     if isinstance(result, SimpleModel):
         return result.item
-    else:
-        return result
+    return result
 
 
 def execute(
     prompt: Union[str, Prompty],
-    configuration: dict[str, Any] = {},
-    parameters: dict[str, Any] = {},
-    inputs: dict[str, Any] = {},
-    raw: bool = False,
+    configuration: Optional[dict[str, Any]] = None,
+    parameters: Optional[dict[str, Any]] = None,
+    inputs: Optional[dict[str, Any]] = None,
+    raw: bool = False,  # noqa: FBT001, FBT002
     connection: str = "default",
 ) -> Any:
     """Execute a prompty.
@@ -238,8 +251,14 @@ def execute(
 
     Returns:
         The result of executing the prompty.
-    """
 
+    """
+    if inputs is None:
+        inputs = {}
+    if parameters is None:
+        parameters = {}
+    if configuration is None:
+        configuration = {}
     if isinstance(prompt, str):
         prompt = load(prompt, connection)
 
@@ -247,6 +266,4 @@ def execute(
     content = prepare(prompt, inputs)
 
     # run LLM model
-    result = run(prompt, content, configuration, parameters, raw)
-
-    return result
+    return run(prompt, content, configuration, parameters, raw)
