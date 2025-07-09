@@ -89,7 +89,10 @@ class EnsembleRetriever(BaseRetriever):
 
     @override
     def invoke(
-        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import CallbackManager
 
@@ -123,7 +126,10 @@ class EnsembleRetriever(BaseRetriever):
 
     @override
     async def ainvoke(
-        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import AsyncCallbackManager
 
@@ -145,7 +151,9 @@ class EnsembleRetriever(BaseRetriever):
         )
         try:
             result = await self.arank_fusion(
-                input, run_manager=run_manager, config=config
+                input,
+                run_manager=run_manager,
+                config=config,
             )
         except Exception as e:
             await run_manager.on_retriever_error(e)
@@ -218,7 +226,8 @@ class EnsembleRetriever(BaseRetriever):
             retriever.invoke(
                 query,
                 patch_config(
-                    config, callbacks=run_manager.get_child(tag=f"retriever_{i + 1}")
+                    config,
+                    callbacks=run_manager.get_child(tag=f"retriever_{i + 1}"),
                 ),
             )
             for i, retriever in enumerate(self.retrievers)
@@ -263,7 +272,7 @@ class EnsembleRetriever(BaseRetriever):
                     ),
                 )
                 for i, retriever in enumerate(self.retrievers)
-            ]
+            ],
         )
 
         # Enforce that retrieved docs are Documents for each list in retriever_docs
@@ -277,7 +286,8 @@ class EnsembleRetriever(BaseRetriever):
         return self.weighted_reciprocal_rank(retriever_docs)
 
     def weighted_reciprocal_rank(
-        self, doc_lists: list[list[Document]]
+        self,
+        doc_lists: list[list[Document]],
     ) -> list[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.

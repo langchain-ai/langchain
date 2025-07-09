@@ -76,7 +76,9 @@ class SelfAskWithSearchChain(AgentExecutor):
         self,
         llm: BaseLanguageModel,
         search_chain: Union[
-            GoogleSerperAPIWrapper, SearchApiAPIWrapper, SerpAPIWrapper
+            GoogleSerperAPIWrapper,
+            SearchApiAPIWrapper,
+            SerpAPIWrapper,
         ],
         **kwargs: Any,
     ):
@@ -92,7 +94,9 @@ class SelfAskWithSearchChain(AgentExecutor):
 
 
 def create_self_ask_with_search_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: BasePromptTemplate,
 ) -> Runnable:
     """Create an agent that uses self-ask with search prompting.
 
@@ -180,7 +184,7 @@ def create_self_ask_with_search_agent(
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"

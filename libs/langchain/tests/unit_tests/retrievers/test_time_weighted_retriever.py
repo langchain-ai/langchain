@@ -40,7 +40,10 @@ class MockVectorStore(VectorStore):
         return list(texts)
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         return []
 
@@ -75,7 +78,8 @@ class MockVectorStore(VectorStore):
 def time_weighted_retriever() -> TimeWeightedVectorStoreRetriever:
     vectorstore = MockVectorStore()
     return TimeWeightedVectorStoreRetriever(
-        vectorstore=vectorstore, memory_stream=_get_example_memories()
+        vectorstore=vectorstore,
+        memory_stream=_get_example_memories(),
     )
 
 
@@ -98,7 +102,9 @@ def test_get_combined_score(
     expected_hours_passed = 2.5
     current_time = datetime(2023, 4, 14, 14, 30)
     combined_score = time_weighted_retriever._get_combined_score(
-        document, vector_salience, current_time
+        document,
+        vector_salience,
+        current_time,
     )
     expected_score = (
         1.0 - time_weighted_retriever.decay_rate
@@ -114,7 +120,7 @@ def test_get_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 
@@ -126,7 +132,7 @@ async def test_aget_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 

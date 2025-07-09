@@ -56,7 +56,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
         destinations = [f"{r['name']}: {r['description']}" for r in retriever_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_RETRIEVAL_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,
@@ -75,12 +75,15 @@ class MultiRetrievalQAChain(MultiRouteChain):
             _default_chain = default_chain
         elif default_retriever:
             _default_chain = RetrievalQA.from_llm(
-                llm, prompt=default_prompt, retriever=default_retriever
+                llm,
+                prompt=default_prompt,
+                retriever=default_retriever,
             )
         else:
             prompt_template = DEFAULT_TEMPLATE.replace("input", "query")
             prompt = PromptTemplate(
-                template=prompt_template, input_variables=["history", "query"]
+                template=prompt_template,
+                input_variables=["history", "query"],
             )
             if default_chain_llm is None:
                 msg = (

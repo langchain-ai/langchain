@@ -47,12 +47,12 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                 else:
                     # otherwise it returns a json object
                     _tool_input = json.loads(function_call["arguments"], strict=False)
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = (
                     f"Could not parse tool input: {function_call} because "
                     f"the `arguments` is not valid JSON."
                 )
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
 
             # HACK HACK HACK:
             # The code that encodes tool input into Open AI uses a special variable
@@ -75,11 +75,15 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             )
 
         return AgentFinish(
-            return_values={"output": message.content}, log=str(message.content)
+            return_values={"output": message.content},
+            log=str(message.content),
         )
 
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self,
+        result: list[Generation],
+        *,
+        partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"

@@ -95,7 +95,10 @@ class GenericFakeChatModel(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
         chat_result = self._generate(
-            messages, stop=stop, run_manager=run_manager, **kwargs
+            messages,
+            stop=stop,
+            run_manager=run_manager,
+            **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
             msg = (
@@ -123,7 +126,7 @@ class GenericFakeChatModel(BaseChatModel):
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(id=message.id, content=token)
+                    message=AIMessageChunk(id=message.id, content=token),
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
@@ -144,9 +147,9 @@ class GenericFakeChatModel(BaseChatModel):
                                         id=message.id,
                                         content="",
                                         additional_kwargs={
-                                            "function_call": {fkey: fvalue_chunk}
+                                            "function_call": {fkey: fvalue_chunk},
                                         },
-                                    )
+                                    ),
                                 )
                                 if run_manager:
                                     run_manager.on_llm_new_token(
@@ -160,7 +163,7 @@ class GenericFakeChatModel(BaseChatModel):
                                     id=message.id,
                                     content="",
                                     additional_kwargs={"function_call": {fkey: fvalue}},
-                                )
+                                ),
                             )
                             if run_manager:
                                 run_manager.on_llm_new_token(
@@ -171,8 +174,10 @@ class GenericFakeChatModel(BaseChatModel):
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
-                            id=message.id, content="", additional_kwargs={key: value}
-                        )
+                            id=message.id,
+                            content="",
+                            additional_kwargs={key: value},
+                        ),
                     )
                     if run_manager:
                         run_manager.on_llm_new_token(

@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 import pytest
 from langchain_core.language_models import BaseChatModel

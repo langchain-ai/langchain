@@ -62,7 +62,10 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         self.answer_reached = False
 
     def on_llm_start(
-        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
         self.answer_reached = False

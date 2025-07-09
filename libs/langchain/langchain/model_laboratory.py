@@ -61,7 +61,9 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: list[BaseLLM], prompt: Optional[PromptTemplate] = None
+        cls,
+        llms: list[BaseLLM],
+        prompt: Optional[PromptTemplate] = None,
     ) -> ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 

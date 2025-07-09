@@ -197,7 +197,8 @@ class ConstitutionalChain(Chain):
 
     @classmethod
     def get_principles(
-        cls, names: Optional[list[str]] = None
+        cls,
+        names: Optional[list[str]] = None,
     ) -> list[ConstitutionalPrinciple]:
         if names is None:
             return list(PRINCIPLES.values())

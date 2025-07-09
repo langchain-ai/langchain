@@ -88,7 +88,7 @@ def create_stuff_documents_chain(
 
     return (
         RunnablePassthrough.assign(**{document_variable_name: format_docs}).with_config(
-            run_name="format_inputs"
+            run_name="format_inputs",
         )
         | prompt
         | llm
@@ -147,7 +147,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """LLM chain which is called with the formatted document string,
     along with any other inputs."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
+        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT,
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     document_variable_name: str
@@ -243,7 +243,10 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return self.llm_chain._get_num_tokens(prompt)
 
     def combine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM.
 
@@ -261,7 +264,10 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return self.llm_chain.predict(callbacks=callbacks, **inputs), {}
 
     async def acombine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Async stuff all documents into one prompt and pass to LLM.
 

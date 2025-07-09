@@ -79,6 +79,6 @@ class TransformChain(Chain):
             return await self.atransform_cb(inputs)
         self._log_once(
             "TransformChain's atransform is not provided, falling"
-            " back to synchronous transform"
+            " back to synchronous transform",
         )
         return self.transform_cb(inputs)

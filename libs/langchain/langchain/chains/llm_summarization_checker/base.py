@@ -117,7 +117,8 @@ class LLMSummarizationCheckerChain(Chain):
             warnings.warn(
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
                 "deprecated. Please instantiate with"
-                " sequential_chain argument or using the from_llm class method."
+                " sequential_chain argument or using the from_llm class method.",
+                stacklevel=5,
             )
             if "sequential_chain" not in values and values["llm"] is not None:
                 values["sequential_chain"] = _load_sequential_chain(
@@ -159,7 +160,8 @@ class LLMSummarizationCheckerChain(Chain):
         chain_input = original_input
         while not all_true and count < self.max_checks:
             output = self.sequential_chain(
-                {"summary": chain_input}, callbacks=_run_manager.get_child()
+                {"summary": chain_input},
+                callbacks=_run_manager.get_child(),
             )
             count += 1
 

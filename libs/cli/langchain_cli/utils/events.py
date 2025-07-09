@@ -20,7 +20,7 @@ def create_events(events: list[EventDict]) -> Optional[Any]:
                     "properties": event.get("properties"),
                 }
                 for event in events
-            ]
+            ],
         }
 
         conn = http.client.HTTPSConnection("app.firstpartyhq.com")

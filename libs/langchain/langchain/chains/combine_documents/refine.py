@@ -91,7 +91,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     initial_response_name: str
     """The variable name to format the initial response in when refining."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=_get_default_document_prompt
+        default_factory=_get_default_document_prompt,
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     return_intermediate_steps: bool = False
@@ -150,7 +150,10 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     def combine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain.
 
@@ -175,7 +178,10 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         return self._construct_result(refine_steps, res)
 
     async def acombine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Async combine by mapping a first chain over all, then stuffing
          into a final chain.
@@ -214,13 +220,15 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         }
 
     def _construct_initial_inputs(
-        self, docs: list[Document], **kwargs: Any
+        self,
+        docs: list[Document],
+        **kwargs: Any,
     ) -> dict[str, Any]:
         base_info = {"page_content": docs[0].page_content}
         base_info.update(docs[0].metadata)
         document_info = {k: base_info[k] for k in self.document_prompt.input_variables}
         base_inputs: dict = {
-            self.document_variable_name: self.document_prompt.format(**document_info)
+            self.document_variable_name: self.document_prompt.format(**document_info),
         }
         return {**base_inputs, **kwargs}
 

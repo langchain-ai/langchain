@@ -18,7 +18,8 @@ class YamlOutputParser(BaseOutputParser[T]):
     pydantic_object: type[T]
     """The pydantic model to parse."""
     pattern: re.Pattern = re.compile(
-        r"^```(?:ya?ml)?(?P<yaml>[^`]*)", re.MULTILINE | re.DOTALL
+        r"^```(?:ya?ml)?(?P<yaml>[^`]*)",
+        re.MULTILINE | re.DOTALL,
     )
     """Regex pattern to match yaml code blocks
     within triple backticks with optional yaml or yml prefix."""

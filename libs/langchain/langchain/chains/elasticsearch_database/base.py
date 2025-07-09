@@ -109,7 +109,7 @@ class ElasticsearchDatabaseChain(Chain):
             [
                 "Mapping for index {}:\n{}".format(index, mappings[index]["mappings"])
                 for index in mappings
-            ]
+            ],
         )
 
     def _search(self, indices: list[str], query: str) -> str:
@@ -142,7 +142,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
             intermediate_steps.append(
-                es_cmd
+                es_cmd,
             )  # output: elasticsearch dsl generation (no checker)
             intermediate_steps.append({"es_cmd": es_cmd})  # input: ES search
             result = self._search(indices=indices, query=es_cmd)

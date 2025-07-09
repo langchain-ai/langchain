@@ -12,7 +12,7 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<1.0.0,>=0.5.0"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = [
     "langchain-core",
     "langchain-text-splitters",
@@ -83,7 +83,7 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
-select = ["D"]
+select = ["D"] # global select for pydocstyle
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]

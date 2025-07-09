@@ -87,7 +87,7 @@ def create_tool_calling_agent(
             messages will be passed in here.
     """
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"
@@ -102,7 +102,7 @@ def create_tool_calling_agent(
 
     return (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
+            agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"]),
         )
         | prompt
         | llm_with_tools

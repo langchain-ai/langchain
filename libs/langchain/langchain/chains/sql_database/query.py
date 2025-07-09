@@ -121,7 +121,7 @@ def create_sql_query_chain(
     else:
         prompt_to_use = PROMPT
     if {"input", "top_k", "table_info"}.difference(
-        prompt_to_use.input_variables + list(prompt_to_use.partial_variables)
+        prompt_to_use.input_variables + list(prompt_to_use.partial_variables),
     ):
         msg = (
             f"Prompt must have input variables: 'input', 'top_k', "

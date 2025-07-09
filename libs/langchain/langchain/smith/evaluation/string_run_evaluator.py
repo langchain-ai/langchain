@@ -231,7 +231,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else output
+            else output,
         }
 
     def __call__(self, example: Example) -> dict[str, str]:
@@ -283,7 +283,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     def _prepare_output(self, output: dict[str, Any]) -> dict[str, Any]:
         evaluation_result = EvaluationResult(
-            key=self.name, comment=output.get("reasoning"), **output
+            key=self.name,
+            comment=output.get("reasoning"),
+            **output,
         )
         if RUN_KEY in output:
             # TODO: Not currently surfaced. Update
@@ -354,7 +356,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """Evaluate an example."""
         try:
             result = await self.acall(
-                {"run": run, "example": example}, include_run_info=True
+                {"run": run, "example": example},
+                include_run_info=True,
             )
             return self._prepare_evaluator_output(result)
         except Exception as e:
@@ -405,7 +408,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             run_mapper: StringRunMapper = LLMStringRunMapper()
         elif run_type == "chain":
             run_mapper = ChainStringRunMapper(
-                input_key=input_key, prediction_key=prediction_key
+                input_key=input_key,
+                prediction_key=prediction_key,
             )
         else:
             msg = f"Unsupported run type {run_type}. Expected one of 'llm' or 'chain'."

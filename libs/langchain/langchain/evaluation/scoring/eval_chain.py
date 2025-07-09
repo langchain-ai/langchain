@@ -175,7 +175,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
-        default_factory=ScoreStringResultOutputParser
+        default_factory=ScoreStringResultOutputParser,
     )
     normalize_by: Optional[float] = None
     """The value to normalize the score by, if specified."""
@@ -262,7 +262,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         if not (hasattr(llm, "model_name") and not llm.model_name.startswith("gpt-4")):
             logger.warning(
                 "This chain was only tested with GPT-4. \
-Performance may be significantly worse with other models."
+Performance may be significantly worse with other models.",
             )
 
         expected_input_vars = {"prediction", "input", "criteria"}

@@ -6,14 +6,17 @@ import pkgutil
 
 
 def generate_raw_migrations(
-    from_package: str, to_package: str, filter_by_all: bool = False
+    from_package: str,
+    to_package: str,
+    filter_by_all: bool = False,  # noqa: FBT001, FBT002
 ) -> list[tuple[str, str]]:
     """Scan the `langchain` package and generate migrations for all modules."""
     package = importlib.import_module(from_package)
 
     items = []
     for _importer, modname, _ispkg in pkgutil.walk_packages(
-        package.__path__, package.__name__ + "."
+        package.__path__,
+        package.__name__ + ".",
     ):
         try:
             module = importlib.import_module(modname)
@@ -34,33 +37,35 @@ def generate_raw_migrations(
                     obj = getattr(module, name, None)
                 except ImportError:
                     continue
-                if obj and (inspect.isclass(obj) or inspect.isfunction(obj)):
-                    if obj.__module__.startswith(to_package):
-                        items.append(
-                            (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
-                        )
+                if (
+                    obj
+                    and (inspect.isclass(obj) or inspect.isfunction(obj))
+                    and obj.__module__.startswith(to_package)
+                ):
+                    items.append(
+                        (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}"),
+                    )
 
         if not filter_by_all:
             # Iterate over all members of the module
             for name, obj in inspect.getmembers(module):
                 # Check if it's a class or function
-                if inspect.isclass(obj) or inspect.isfunction(obj):
-                    # Check if the module name of the obj starts with
-                    # 'langchain_community'
-                    if obj.__module__.startswith(to_package):
-                        items.append(
-                            (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
-                        )
+                # Check if the module name of the obj starts with
+                # 'langchain_community'
+                if inspect.isclass(obj) or (
+                    inspect.isfunction(obj) and obj.__module__.startswith(to_package)
+                ):
+                    items.append(
+                        (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}"),
+                    )
 
     return items
 
 
 def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
-    """This code will look at all the top level modules in langchain_community.
+    """Look at all the top level modules in langchain_community.
 
-    It'll attempt to import everything from each __init__ file
-
-    for example,
+    Attempt to import everything from each ``__init__`` file. For example,
 
     langchain_community/
         chat_models/
@@ -74,10 +79,10 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
 
     Each tuple will contain the fully qualified path of the class / function to where
     its logic is defined
-    (e.g., langchain_community.chat_models.xyz_implementation.ver2.XYZ)
+    (e.g., ``langchain_community.chat_models.xyz_implementation.ver2.XYZ``)
     and the second tuple will contain the path
     to importing it from the top level namespaces
-    (e.g., langchain_community.chat_models.XYZ)
+    (e.g., ``langchain_community.chat_models.XYZ``)
     """
     package = importlib.import_module(pkg)
 
@@ -98,7 +103,7 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
                     top_level_import = f"{module_name}.{name}"
                     # Append the tuple with original and top-level paths
                     items.append(
-                        (f"{original_module}.{original_name}", top_level_import)
+                        (f"{original_module}.{original_name}", top_level_import),
                     )
 
     # Handle the package itself (root level)
@@ -106,7 +111,8 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
 
     # Only iterate through top-level modules/packages
     for _finder, modname, ispkg in pkgutil.iter_modules(
-        package.__path__, package.__name__ + "."
+        package.__path__,
+        package.__name__ + ".",
     ):
         if ispkg:
             try:
@@ -119,11 +125,15 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
 
 
 def generate_simplified_migrations(
-    from_package: str, to_package: str, filter_by_all: bool = True
+    from_package: str,
+    to_package: str,
+    filter_by_all: bool = True,  # noqa: FBT001, FBT002
 ) -> list[tuple[str, str]]:
     """Get all the raw migrations, then simplify them if possible."""
     raw_migrations = generate_raw_migrations(
-        from_package, to_package, filter_by_all=filter_by_all
+        from_package,
+        to_package,
+        filter_by_all=filter_by_all,
     )
     top_level_simplifications = generate_top_level_imports(to_package)
     top_level_dict = dict(top_level_simplifications)
