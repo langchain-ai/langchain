@@ -6,7 +6,7 @@ from langchain_core.language_models.llms import (
 )
 
 __all__ = [
-    "BaseLanguageModel",
-    "BaseLLM",
     "LLM",
+    "BaseLLM",
+    "BaseLanguageModel",
 ]

@@ -96,7 +96,7 @@ from langchain.smith.evaluation import (
 )
 
 __all__ = [
+    "RunEvalConfig",
     "arun_on_dataset",
     "run_on_dataset",
-    "RunEvalConfig",
 ]

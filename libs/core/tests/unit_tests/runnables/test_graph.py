@@ -86,10 +86,12 @@ def test_trim_multi_edge() -> None:
     graph.add_edge(a, last)
     graph.add_edge(start, last)
 
-    graph.trim_first_node()  # should not remove __start__ since it has 2 outgoing edges
+    # trim_first_node() should not remove __start__ since it has 2 outgoing edges
+    graph.trim_first_node()
     assert graph.first_node() is start
 
-    graph.trim_last_node()  # should not remove the __end__ node since it has 2 incoming edges
+    # trim_last_node() should not remove __end__ since it has 2 incoming edges
+    graph.trim_last_node()
     assert graph.last_node() is last
 
 

@@ -14,7 +14,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 def test_PairwiseStringResultOutputParser_parse() -> None:
     output_parser = ScoreStringResultOutputParser()
-    text = """This answer is really good. 
+    text = """This answer is really good.
 Rating: [[10]]"""
     got = output_parser.parse(text)
     want = {
@@ -24,12 +24,12 @@ Rating: [[10]]"""
     assert got.get("reasoning") == want["reasoning"]
     assert got.get("score") == want["score"]
 
-    text = """This answer is really good. 
+    text = """This answer is really good.
 Rating: 10"""
     with pytest.raises(ValueError):
         output_parser.parse(text)
 
-    text = """This answer is really good. 
+    text = """This answer is really good.
 Rating: [[0]]"""
     # Not in range [1, 10]
     with pytest.raises(ValueError):

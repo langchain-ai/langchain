@@ -55,13 +55,12 @@ def _load_question_to_checked_assertions_chain(
         check_assertions_chain,
         revised_answer_chain,
     ]
-    question_to_checked_assertions_chain = SequentialChain(
+    return SequentialChain(
         chains=chains,  # type: ignore[arg-type]
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
     )
-    return question_to_checked_assertions_chain
 
 
 @deprecated(
@@ -112,7 +111,8 @@ class LLMCheckerChain(Chain):
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
                 "Please instantiate with question_to_checked_assertions_chain "
-                "or using the from_llm class method."
+                "or using the from_llm class method.",
+                stacklevel=5,
             )
             if (
                 "question_to_checked_assertions_chain" not in values
@@ -122,7 +122,8 @@ class LLMCheckerChain(Chain):
                     _load_question_to_checked_assertions_chain(
                         values["llm"],
                         values.get(
-                            "create_draft_answer_prompt", CREATE_DRAFT_ANSWER_PROMPT
+                            "create_draft_answer_prompt",
+                            CREATE_DRAFT_ANSWER_PROMPT,
                         ),
                         values.get("list_assertions_prompt", LIST_ASSERTIONS_PROMPT),
                         values.get("check_assertions_prompt", CHECK_ASSERTIONS_PROMPT),
@@ -159,7 +160,8 @@ class LLMCheckerChain(Chain):
         question = inputs[self.input_key]
 
         output = self.question_to_checked_assertions_chain(
-            {"question": question}, callbacks=_run_manager.get_child()
+            {"question": question},
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: output["revised_statement"]}
 
