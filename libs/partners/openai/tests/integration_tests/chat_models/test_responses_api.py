@@ -1,5 +1,7 @@
 """Test Responses API usage."""
 
+from __future__ import annotations
+
 import json
 import os
 from typing import Annotated, Any, Literal, Optional, cast
@@ -144,7 +146,7 @@ async def test_web_search_async() -> None:
 @pytest.mark.flaky(retries=3, delay=1)
 def test_function_calling() -> None:
     def multiply(x: int, y: int) -> int:
-        """return x * y"""
+        """Return x * y."""
         return x * y
 
     llm = ChatOpenAI(model=MODEL_NAME)
@@ -277,7 +279,7 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
 
 def test_function_calling_and_structured_output() -> None:
     def multiply(x: int, y: int) -> int:
-        """return x * y"""
+        """Return x * y."""
         return x * y
 
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)

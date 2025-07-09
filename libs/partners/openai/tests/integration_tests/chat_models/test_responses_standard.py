@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests for Responses API"""
+"""Standard LangChain interface tests for Responses API."""
 
 from pathlib import Path
 from typing import cast
@@ -31,7 +31,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
@@ -55,5 +55,4 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         for chunk in llm.stream(input_):
             full = full + chunk if full else chunk  # type: ignore[operator]
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))

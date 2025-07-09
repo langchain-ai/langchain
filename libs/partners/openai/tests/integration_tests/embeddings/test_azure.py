@@ -63,7 +63,7 @@ def test_azure_openai_embedding_documents_chunk_size() -> None:
     # Max 2048 chunks per batch on Azure OpenAI embeddings
     assert embedding.chunk_size == 2048
     assert len(output) == 20
-    assert all([len(out) == 1536 for out in output])
+    assert all(len(out) == 1536 for out in output)
 
 
 @pytest.mark.scheduled
@@ -100,7 +100,6 @@ async def test_azure_openai_embedding_async_query() -> None:
 @pytest.mark.scheduled
 def test_azure_openai_embedding_with_empty_string() -> None:
     """Test openai embeddings with empty string."""
-
     document = ["", "abc"]
     embedding = _get_embeddings()
     output = embedding.embed_documents(document)

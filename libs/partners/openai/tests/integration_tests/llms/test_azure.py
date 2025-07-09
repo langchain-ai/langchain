@@ -98,7 +98,7 @@ async def test_openai_ainvoke(llm: AzureOpenAI) -> None:
 @pytest.mark.scheduled
 def test_openai_invoke(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
 
 

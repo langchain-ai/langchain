@@ -1,5 +1,4 @@
-"""
-This module converts between AIMessage output formats for the Responses API.
+"""Converts between AIMessage output formats for the Responses API.
 
 ChatOpenAI v0.3 stores reasoning and tool outputs in AIMessage.additional_kwargs:
 
@@ -16,7 +15,11 @@ ChatOpenAI v0.3 stores reasoning and tool outputs in AIMessage.additional_kwargs
                 "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
             },
             "tool_outputs": [
-                {"type": "web_search_call", "id": "websearch_123", "status": "completed"}
+                {
+                    "type": "web_search_call",
+                    "id": "websearch_123",
+                    "status": "completed",
+                }
             ],
             "refusal": "I cannot assist with that.",
         },
@@ -54,7 +57,9 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 
 For backwards compatibility, this module provides functions to convert between the
 old and new formats. The functions are used internally by ChatOpenAI.
-"""  # noqa: E501
+"""
+
+from __future__ import annotations
 
 import json
 from typing import Union

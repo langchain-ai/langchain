@@ -41,10 +41,10 @@ def _stream_response_to_generation_chunk(
         return GenerationChunk(text="")
     return GenerationChunk(
         text=stream_response["choices"][0]["text"] or "",
-        generation_info=dict(
-            finish_reason=stream_response["choices"][0].get("finish_reason", None),
-            logprobs=stream_response["choices"][0].get("logprobs", None),
-        ),
+        generation_info={
+            "finish_reason": stream_response["choices"][0].get("finish_reason", None),
+            "logprobs": stream_response["choices"][0].get("logprobs", None),
+        },
     )
 
 
@@ -80,7 +80,7 @@ class BaseOpenAI(BaseLLM):
     openai_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(
         alias="organization",
@@ -98,7 +98,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
         None."""
     logit_bias: Optional[dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
@@ -116,25 +116,25 @@ class BaseOpenAI(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
+    """Optional httpx.Client. Only used for sync invocations. Must specify
         http_async_client as well if you'd like a custom client for async invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
@@ -147,18 +147,20 @@ class BaseOpenAI(BaseLLM):
     def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        values = _build_model_kwargs(values, all_required_field_names)
-        return values
+        return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n < 1:
-            raise ValueError("n must be at least 1.")
+            msg = "n must be at least 1."
+            raise ValueError(msg)
         if self.streaming and self.n > 1:
-            raise ValueError("Cannot stream results when n > 1.")
+            msg = "Cannot stream results when n > 1."
+            raise ValueError(msg)
         if self.streaming and self.best_of > 1:
-            raise ValueError("Cannot stream results when best_of > 1.")
+            msg = "Cannot stream results when best_of > 1."
+            raise ValueError(msg)
 
         client_params: dict = {
             "api_key": (
@@ -288,6 +290,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 response = openai.generate(["Tell me a joke."])
+
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -302,7 +305,8 @@ class BaseOpenAI(BaseLLM):
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
-                    raise ValueError("Cannot stream results with multiple prompts.")
+                    msg = "Cannot stream results with multiple prompts."
+                    raise ValueError(msg)
 
                 generation: Optional[GenerationChunk] = None
                 for chunk in self._stream(_prompts[0], stop, run_manager, **kwargs):
@@ -311,7 +315,8 @@ class BaseOpenAI(BaseLLM):
                     else:
                         generation += chunk
                 if generation is None:
-                    raise ValueError("Generation is empty after streaming.")
+                    msg = "Generation is empty after streaming."
+                    raise ValueError(msg)
                 choices.append(
                     {
                         "text": generation.text,
@@ -369,7 +374,8 @@ class BaseOpenAI(BaseLLM):
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
-                    raise ValueError("Cannot stream results with multiple prompts.")
+                    msg = "Cannot stream results with multiple prompts."
+                    raise ValueError(msg)
 
                 generation: Optional[GenerationChunk] = None
                 async for chunk in self._astream(
@@ -380,7 +386,8 @@ class BaseOpenAI(BaseLLM):
                     else:
                         generation += chunk
                 if generation is None:
-                    raise ValueError("Generation is empty after streaming.")
+                    msg = "Generation is empty after streaming."
+                    raise ValueError(msg)
                 choices.append(
                     {
                         "text": generation.text,
@@ -417,15 +424,13 @@ class BaseOpenAI(BaseLLM):
             params["stop"] = stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
-                raise ValueError(
-                    "max_tokens set to -1 not supported for multiple inputs."
-                )
+                msg = "max_tokens set to -1 not supported for multiple inputs."
+                raise ValueError(msg)
             params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
-        sub_prompts = [
+        return [
             prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
-        return sub_prompts
 
     def create_llm_result(
         self,
@@ -445,10 +450,10 @@ class BaseOpenAI(BaseLLM):
                 [
                     Generation(
                         text=choice["text"],
-                        generation_info=dict(
-                            finish_reason=choice.get("finish_reason"),
-                            logprobs=choice.get("logprobs"),
-                        ),
+                        generation_info={
+                            "finish_reason": choice.get("finish_reason"),
+                            "logprobs": choice.get("logprobs"),
+                        },
                     )
                     for choice in sub_choices
                 ]
@@ -466,7 +471,7 @@ class BaseOpenAI(BaseLLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return {"model_name": self.model_name, **self._default_params}
 
     @property
     def _llm_type(self) -> str:
@@ -507,6 +512,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -543,7 +549,7 @@ class BaseOpenAI(BaseLLM):
         if "ft-" in modelname:
             modelname = modelname.split(":")[0]
 
-        context_size = model_token_mapping.get(modelname, None)
+        context_size = model_token_mapping.get(modelname)
 
         if context_size is None:
             raise ValueError(
@@ -571,6 +577,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -689,7 +696,7 @@ class OpenAI(BaseOpenAI):
 
     @property
     def _invocation_params(self) -> dict[str, Any]:
-        return {**{"model": self.model_name}, **super()._invocation_params}
+        return {"model": self.model_name, **super()._invocation_params}
 
     @property
     def lc_secrets(self) -> dict[str, str]:

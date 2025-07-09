@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 import base64
 from pathlib import Path
@@ -66,7 +66,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4o-mini", stream_usage=True)
@@ -129,8 +129,7 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         for chunk in llm.stream(input_):
             full = full + chunk if full else chunk  # type: ignore[operator]
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))
 
 
 @pytest.mark.skip()  # Test either finishes in 5 seconds or 5 minutes.

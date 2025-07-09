@@ -131,7 +131,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         alias="api_version",
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
-    
+
     Set to "2023-05-15" by default if env variable `OPENAI_API_VERSION` is not set.
     """
     azure_ad_token: Optional[SecretStr] = Field(
@@ -171,19 +171,21 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
                 self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`). "
                 )
+                raise ValueError(msg)
             if self.deployment:
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, if `deployment` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
+                raise ValueError(msg)
         client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,

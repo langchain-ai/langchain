@@ -64,8 +64,7 @@ ignore_missing_imports = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+
 
 [tool.ruff.format]
 docstring-code-format = true

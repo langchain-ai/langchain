@@ -1,5 +1,7 @@
 """Test ChatOpenAI chat model."""
 
+from __future__ import annotations
+
 import base64
 import json
 from collections.abc import AsyncIterator
@@ -223,7 +225,7 @@ def test_openai_invoke() -> None:
         service_tier="flex",  # Also test service_tier
     )
 
-    result = llm.invoke("Hello", config=dict(tags=["foo"]))
+    result = llm.invoke("Hello", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
     # assert no response headers if include_response_headers is not set
@@ -255,11 +257,12 @@ def test_stream() -> None:
         if chunk.response_metadata:
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with metadata. "
             "AIMessageChunk aggregation can add these metadata. Check that "
             "this is behaving properly."
         )
+        raise AssertionError(msg)
     assert isinstance(aggregate, AIMessageChunk)
     assert aggregate.usage_metadata is not None
     assert aggregate.usage_metadata["input_tokens"] > 0
@@ -284,20 +287,22 @@ async def test_astream() -> None:
                 chunks_with_response_metadata += 1
         assert isinstance(full, AIMessageChunk)
         if chunks_with_response_metadata != 1:
-            raise AssertionError(
+            msg = (
                 "Expected exactly one chunk with metadata. "
                 "AIMessageChunk aggregation can add these metadata. Check that "
                 "this is behaving properly."
             )
+            raise AssertionError(msg)
         assert full.response_metadata.get("finish_reason") is not None
         assert full.response_metadata.get("model_name") is not None
         if expect_usage:
             if chunks_with_token_counts != 1:
-                raise AssertionError(
+                msg = (
                     "Expected exactly one chunk with token counts. "
                     "AIMessageChunk aggregation adds counts. Check that "
                     "this is behaving properly."
                 )
+                raise AssertionError(msg)
             assert full.usage_metadata is not None
             assert full.usage_metadata["input_tokens"] > 0
             assert full.usage_metadata["output_tokens"] > 0
@@ -401,14 +406,14 @@ async def test_async_response_metadata_streaming() -> None:
 
 
 class GenerateUsername(BaseModel):
-    "Get a username based on someone's name and hair color."
+    """Get a username based on someone's name and hair color."""
 
     name: str
     hair_color: str
 
 
 class MakeASandwich(BaseModel):
-    "Make a sandwich given a list of ingredients."
+    """Make a sandwich given a list of ingredients."""
 
     bread_type: str
     cheese_type: str
@@ -536,7 +541,7 @@ def test_disable_parallel_tool_calling() -> None:
 @pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
-        """A Person"""
+        """A Person."""
 
         name: str
         age: int
@@ -553,7 +558,7 @@ def test_openai_proxy() -> None:
     chat_openai = ChatOpenAI(openai_proxy="http://localhost:8080")
     mounts = chat_openai.client._client._client._mounts
     assert len(mounts) == 1
-    for key, value in mounts.items():
+    for value in mounts.values():
         proxy = value._pool._proxy_url.origin
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
@@ -561,7 +566,7 @@ def test_openai_proxy() -> None:
 
     async_client_mounts = chat_openai.async_client._client._client._mounts
     assert len(async_client_mounts) == 1
-    for key, value in async_client_mounts.items():
+    for value in async_client_mounts.values():
         proxy = value._pool._proxy_url.origin
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
@@ -734,7 +739,6 @@ def test_structured_output_strict(
     use_responses_api: bool,
 ) -> None:
     """Test to verify structured output with strict=True."""
-
     from pydantic import BaseModel as BaseModelProper
     from pydantic import Field as FieldProper
 
@@ -774,7 +778,6 @@ def test_nested_structured_output_strict(
     model: str, method: Literal["json_schema"], use_responses_api: bool
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
-
     from typing import TypedDict
 
     llm = ChatOpenAI(model=model, temperature=0, use_responses_api=use_responses_api)

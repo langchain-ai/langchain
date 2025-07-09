@@ -1,5 +1,7 @@
 """Test AzureChatOpenAI wrapper."""
 
+from __future__ import annotations
+
 import json
 import os
 from typing import Any, Optional
@@ -173,7 +175,6 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
-
     full: Optional[BaseMessageChunk] = None
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
@@ -185,7 +186,6 @@ async def test_openai_astream(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 async def test_openai_abatch(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from AzureChatOpenAI."""
-
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
         assert isinstance(token.content, str)
@@ -194,7 +194,6 @@ async def test_openai_abatch(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 async def test_openai_abatch_tags(llm: AzureChatOpenAI) -> None:
     """Test batch tokens from AzureChatOpenAI."""
-
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
     )
@@ -205,7 +204,6 @@ async def test_openai_abatch_tags(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 def test_openai_batch(llm: AzureChatOpenAI) -> None:
     """Test batch tokens from AzureChatOpenAI."""
-
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
         assert isinstance(token.content, str)
@@ -214,7 +212,6 @@ def test_openai_batch(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
     """Test invoke tokens from AzureChatOpenAI."""
-
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
@@ -223,8 +220,7 @@ async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
 @pytest.mark.scheduled
 def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     """Test invoke tokens from AzureChatOpenAI."""
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
 
