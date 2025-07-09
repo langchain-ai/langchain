@@ -107,7 +107,7 @@ class RecursiveJsonSplitter:
     def split_json(
         self,
         json_data: dict[str, Any],
-        convert_lists: bool = False,
+        convert_lists: bool = False,  # noqa: FBT001,FBT002
     ) -> list[dict[str, Any]]:
         """Splits JSON into a list of JSON chunks."""
         if convert_lists:
@@ -123,8 +123,8 @@ class RecursiveJsonSplitter:
     def split_text(
         self,
         json_data: dict[str, Any],
-        convert_lists: bool = False,
-        ensure_ascii: bool = True,
+        convert_lists: bool = False,  # noqa: FBT001,FBT002
+        ensure_ascii: bool = True,  # noqa: FBT001,FBT002
     ) -> list[str]:
         """Splits JSON into a list of JSON formatted strings."""
         chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
@@ -135,8 +135,8 @@ class RecursiveJsonSplitter:
     def create_documents(
         self,
         texts: list[dict[str, Any]],
-        convert_lists: bool = False,
-        ensure_ascii: bool = True,
+        convert_lists: bool = False,  # noqa: FBT001,FBT002
+        ensure_ascii: bool = True,  # noqa: FBT001,FBT002
         metadatas: Optional[list[dict[Any, Any]]] = None,
     ) -> list[Document]:
         """Create documents from a list of json objects (Dict)."""
