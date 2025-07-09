@@ -8,7 +8,7 @@ from typing_extensions import NotRequired, TypedDict
 
 
 # Text and annotations
-class UrlCitation(TypedDict, total=False):
+class UrlCitation(TypedDict):
     """Citation from a URL."""
 
     type: Literal["url_citation"]
@@ -29,7 +29,7 @@ class UrlCitation(TypedDict, total=False):
     """End index of the response text for which the annotation applies."""
 
 
-class DocumentCitation(TypedDict, total=False):
+class DocumentCitation(TypedDict):
     """Annotation for data from a document."""
 
     type: Literal["document_citation"]
@@ -47,7 +47,7 @@ class DocumentCitation(TypedDict, total=False):
     """End index of the response text for which the annotation applies."""
 
 
-class NonStandardAnnotation(TypedDict, total=False):
+class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
     type: Literal["non_standard_annotation"]
@@ -56,7 +56,7 @@ class NonStandardAnnotation(TypedDict, total=False):
     """Provider-specific annotation data."""
 
 
-class TextContentBlock(TypedDict, total=False):
+class TextContentBlock(TypedDict):
     """Content block for text output."""
 
     type: Literal["text"]
@@ -70,7 +70,7 @@ class TextContentBlock(TypedDict, total=False):
 
 
 # Tool calls
-class ToolCallContentBlock(TypedDict, total=False):
+class ToolCallContentBlock(TypedDict):
     """Content block for tool calls.
 
     These are references to a :class:`~langchain_core.messages.tool.ToolCall` in the
@@ -84,7 +84,7 @@ class ToolCallContentBlock(TypedDict, total=False):
 
 
 # Reasoning
-class ReasoningContentBlock(TypedDict, total=False):
+class ReasoningContentBlock(TypedDict):
     """Content block for reasoning output."""
 
     type: Literal["reasoning"]
@@ -94,7 +94,7 @@ class ReasoningContentBlock(TypedDict, total=False):
 
 
 # Multi-modal
-class BaseDataContentBlock(TypedDict, total=False):
+class BaseDataContentBlock(TypedDict):
     """Base class for data content blocks."""
 
     mime_type: NotRequired[str]
@@ -134,7 +134,7 @@ class PlainTextContentBlock(BaseDataContentBlock):
     """Text data."""
 
 
-class IDContentBlock(TypedDict):
+class IDContentBlock(BaseDataContentBlock):
     """Content block for data specified by an identifier."""
 
     type: Literal["image", "audio", "file"]
