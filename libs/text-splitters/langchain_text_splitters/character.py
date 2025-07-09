@@ -10,7 +10,10 @@ class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
     def __init__(
-        self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        is_separator_regex: bool = False,  # noqa: FBT001,FBT002
+        **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
@@ -25,7 +28,9 @@ class CharacterTextSplitter(TextSplitter):
         )
 
         # 2. Initial split (keep separator if requested)
-        splits = _split_text_with_regex(text, sep_pattern, self._keep_separator)
+        splits = _split_text_with_regex(
+            text, sep_pattern, keep_separator=self._keep_separator
+        )
 
         # 3. Detect zero-width lookaround so we never re-insert it
         lookaround_prefixes = ("(?=", "(?<!", "(?<=", "(?!")
@@ -45,7 +50,7 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
+    text: str, separator: str, *, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
@@ -81,8 +86,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[list[str]] = None,
-        keep_separator: Union[bool, Literal["start", "end"]] = True,
-        is_separator_regex: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,  # noqa: FBT001,FBT002
+        is_separator_regex: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -107,7 +112,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 break
 
         _separator = separator if self._is_separator_regex else re.escape(separator)
-        splits = _split_text_with_regex(text, _separator, self._keep_separator)
+        splits = _split_text_with_regex(
+            text, _separator, keep_separator=self._keep_separator
+        )
 
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
