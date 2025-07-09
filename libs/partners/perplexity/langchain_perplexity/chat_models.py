@@ -183,7 +183,8 @@ class ChatPerplexity(BaseChatModel):
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
+                msg = f"Found {field_name} supplied twice."
+                raise ValueError(msg)
             if field_name not in all_required_field_names:
                 logger.warning(
                     f"""WARNING! {field_name} is not a default parameter.
@@ -194,10 +195,11 @@ class ChatPerplexity(BaseChatModel):
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
-            raise ValueError(
+            msg = (
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
+            raise ValueError(msg)
 
         values["model_kwargs"] = extra
         return values
@@ -213,11 +215,12 @@ class ChatPerplexity(BaseChatModel):
                 base_url="https://api.perplexity.ai",
             )
         except AttributeError:
-            raise ValueError(
+            msg = (
                 "`openai` has no `ChatCompletion` attribute, this is likely "
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+            raise ValueError(msg) from None
         return self
 
     @property
@@ -240,7 +243,8 @@ class ChatPerplexity(BaseChatModel):
         elif isinstance(message, AIMessage):
             message_dict = {"role": "assistant", "content": message.content}
         else:
-            raise TypeError(f"Got unknown type {message}")
+            msg = f"Got unknown type {message}"
+            raise TypeError(msg)
         return message_dict
 
     def _create_message_dicts(
@@ -249,7 +253,8 @@ class ChatPerplexity(BaseChatModel):
         params = dict(self._invocation_params)
         if stop is not None:
             if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
+                msg = "`stop` found in both the input and default params."
+                raise ValueError(msg)
             params["stop"] = stop
         message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -270,18 +275,17 @@ class ChatPerplexity(BaseChatModel):
 
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
-        elif role == "assistant" or default_class == AIMessageChunk:
+        if role == "assistant" or default_class == AIMessageChunk:
             return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
-        elif role == "system" or default_class == SystemMessageChunk:
+        if role == "system" or default_class == SystemMessageChunk:
             return SystemMessageChunk(content=content)
-        elif role == "function" or default_class == FunctionMessageChunk:
+        if role == "function" or default_class == FunctionMessageChunk:
             return FunctionMessageChunk(content=content, name=_dict["name"])
-        elif role == "tool" or default_class == ToolMessageChunk:
+        if role == "tool" or default_class == ToolMessageChunk:
             return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
-        elif role or default_class == ChatMessageChunk:
+        if role or default_class == ChatMessageChunk:
             return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
-        else:
-            return default_class(content=content)  # type: ignore[call-arg]
+        return default_class(content=content)  # type: ignore[call-arg]
 
     def _stream(
         self,
@@ -409,8 +413,9 @@ class ChatPerplexity(BaseChatModel):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
+
         Currently, Perplexity only supports "json_schema" method for structured output
-        as per their official documentation: https://docs.perplexity.ai/guides/structured-outputs
+        as per their official documentation: https://docs.perplexity.ai/guides/structured-outputs.
 
         Args:
             schema:
@@ -456,10 +461,11 @@ class ChatPerplexity(BaseChatModel):
             method = "json_schema"
         if method == "json_schema":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is not 'json_schema'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             is_pydantic_schema = _is_pydantic_class(schema)
             response_format = convert_to_json_schema(schema)
             llm = self.bind(
@@ -478,10 +484,9 @@ class ChatPerplexity(BaseChatModel):
                 else JsonOutputParser()
             )
         else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected 'json_schema' Received:\
+            msg = f"Unrecognized method argument. Expected 'json_schema' Received:\
                     '{method}'"
-            )
+            raise ValueError(msg)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
@@ -492,5 +497,4 @@ class ChatPerplexity(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser
