@@ -42,7 +42,7 @@ class TestCosineSimilarity:
         """Test cosine similarity with zero vector."""
         x: list[list[float]] = [[0, 0, 0]]
         y: list[list[float]] = [[1, 2, 3]]
-        with pytest.raises(ValueError, match="Nan values found"):
+        with pytest.raises(ValueError, match="NaN values found"):
             _cosine_similarity(x, y)
 
     def test_multiple_vectors(self) -> None:
@@ -114,7 +114,7 @@ class TestCosineSimilarity:
         # Create vectors that would result in NaN/inf in similarity calculation
         x: list[list[float]] = [[0, 0]]  # Zero vector
         y: list[list[float]] = [[0, 0]]  # Zero vector
-        with pytest.raises(ValueError, match="Nan values found"):
+        with pytest.raises(ValueError, match="NaN values found"):
             _cosine_similarity(x, y)
 
     def test_large_values(self) -> None:
