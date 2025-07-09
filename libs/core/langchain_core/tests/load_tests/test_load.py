@@ -1,6 +1,7 @@
 import pytest
 from langchain_core.load.load import load
 
+
 @pytest.mark.requires("openai", "langchain_openai")
 def test_load_secrets_map_on_string_values():
     obj = {"api_key": "__MY_SECRET__"}

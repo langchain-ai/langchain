@@ -240,7 +240,7 @@ def load(
         if isinstance(obj, list):
             return [_load(o) for o in obj]
         if isinstance(obj, str):
-        # 🪄 Wrap plain strings into a dict and pass to reviver
+            # 🪄 Wrap plain strings into a dict and pass to reviver
             return reviver({"lc": 1, "type": "secret", "id": [obj]})
         return obj
 

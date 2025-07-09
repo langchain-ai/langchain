@@ -2282,7 +2282,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore[arg-type]
 
     with pytest.raises(
         ValueError,
@@ -2303,7 +2305,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore[arg-type]
 
 
 def test_tool_uninjected_tool_call_id() -> None:
@@ -2322,7 +2326,9 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
+    ) == ToolMessage(
+        0, tool_call_id="zap"
+    )  # type: ignore[arg-type]
 
 
 def test_tool_return_output_mixin() -> None:

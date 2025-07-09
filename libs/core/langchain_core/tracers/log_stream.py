@@ -467,9 +467,11 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                     {
                         "op": "add",
                         "path": f"/logs/{index}/end_time",
-                        "value": run.end_time.isoformat(timespec="milliseconds")
-                        if run.end_time is not None
-                        else None,
+                        "value": (
+                            run.end_time.isoformat(timespec="milliseconds")
+                            if run.end_time is not None
+                            else None
+                        ),
                     },
                 ]
             )
@@ -500,9 +502,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             {
                 "op": "add",
                 "path": f"/logs/{index}/streamed_output/-",
-                "value": chunk.message
-                if isinstance(chunk, ChatGenerationChunk)
-                else token,
+                "value": (
+                    chunk.message if isinstance(chunk, ChatGenerationChunk) else token
+                ),
             },
         )
 
