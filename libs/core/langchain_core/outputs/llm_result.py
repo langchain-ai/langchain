@@ -97,3 +97,5 @@ class LLMResult(BaseModel):
             self.generations == other.generations
             and self.llm_output == other.llm_output
         )
+
+    __hash__ = None  # type: ignore[assignment]

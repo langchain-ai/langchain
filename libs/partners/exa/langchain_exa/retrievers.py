@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
@@ -75,17 +77,16 @@ class ExaSearchRetriever(BaseRetriever):
     @classmethod
     def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
-        values = initialize_client(values)
-        return values
+        return initialize_client(values)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
-        response = self.client.search_and_contents(  # type: ignore[misc]
+        response = self.client.search_and_contents(  # type: ignore[call-overload]
             query,
             num_results=self.k,
             text=self.text_contents_options,
-            highlights=self.highlights,  # type: ignore
+            highlights=self.highlights,
             include_domains=self.include_domains,
             exclude_domains=self.exclude_domains,
             start_crawl_date=self.start_crawl_date,
@@ -96,7 +97,7 @@ class ExaSearchRetriever(BaseRetriever):
             livecrawl=self.livecrawl,
             summary=self.summary,
             type=self.type,
-        )
+        )  # type: ignore[call-overload, misc]
 
         results = response.results
 

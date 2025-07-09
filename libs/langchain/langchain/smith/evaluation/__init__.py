@@ -61,8 +61,8 @@ from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorCh
 
 __all__ = [
     "InputFormatError",
+    "RunEvalConfig",
+    "StringRunEvaluatorChain",
     "arun_on_dataset",
     "run_on_dataset",
-    "StringRunEvaluatorChain",
-    "RunEvalConfig",
 ]

@@ -23,12 +23,14 @@ Ollama will start as a background service automatically, if this is disabled, ru
 ollama serve
 ```
 
-After starting ollama, run `ollama pull <model_checkpoint>` to download a model 
-from the [Ollama model library](https://ollama.ai/library).
+After starting ollama, run `ollama pull <name-of-model>` to download a model from the [Ollama model library](https://ollama.ai/library):
 
 ```bash
 ollama pull llama3.1
 ```
+
+- This will download the default tagged version of the model. Typically, the default points to the latest, smallest sized-parameter model.
+- To view all pulled (downloaded) models, use `ollama list`
 
 We're now ready to install the `langchain-ollama` partner package and run a model.
 

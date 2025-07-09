@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 from langchain_core.embeddings import Embeddings
 from langchain_tests.unit_tests.embeddings import EmbeddingsUnitTests

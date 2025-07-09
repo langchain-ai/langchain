@@ -1,4 +1,5 @@
-from typing import Any, Dict, Iterator, List, Optional
+from collections.abc import Iterator
+from typing import Any, Optional
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -40,13 +41,13 @@ class ChatParrotLink(BaseChatModel):
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     timeout: Optional[int] = None
-    stop: Optional[List[str]] = None
+    stop: Optional[list[str]] = None
     max_retries: int = 2
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -91,8 +92,8 @@ class ChatParrotLink(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -156,7 +157,7 @@ class ChatParrotLink(BaseChatModel):
         return "echoing-chat-model-advanced"
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Return a dictionary of identifying parameters.
 
         This information is used by the LangChain callback system, which

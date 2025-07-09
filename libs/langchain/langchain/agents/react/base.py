@@ -53,12 +53,12 @@ class ReActDocstoreAgent(Agent):
         validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 2:
-            raise ValueError(f"Exactly two tools must be specified, but got {tools}")
+            msg = f"Exactly two tools must be specified, but got {tools}"
+            raise ValueError(msg)
         tool_names = {tool.name for tool in tools}
         if tool_names != {"Lookup", "Search"}:
-            raise ValueError(
-                f"Tool names should be Lookup and Search, got {tool_names}"
-            )
+            msg = f"Tool names should be Lookup and Search, got {tool_names}"
+            raise ValueError(msg)
 
     @property
     def observation_prefix(self) -> str:
@@ -96,14 +96,14 @@ class DocstoreExplorer:
         if isinstance(result, Document):
             self.document = result
             return self._summary
-        else:
-            self.document = None
-            return result
+        self.document = None
+        return result
 
     def lookup(self, term: str) -> str:
         """Lookup a term in document (if saved)."""
         if self.document is None:
-            raise ValueError("Cannot lookup without a successful search first")
+            msg = "Cannot lookup without a successful search first"
+            raise ValueError(msg)
         if term.lower() != self.lookup_str:
             self.lookup_str = term.lower()
             self.lookup_index = 0
@@ -112,11 +112,10 @@ class DocstoreExplorer:
         lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
         if len(lookups) == 0:
             return "No Results"
-        elif self.lookup_index >= len(lookups):
+        if self.lookup_index >= len(lookups):
             return "No More Results"
-        else:
-            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
-            return f"{result_prefix} {lookups[self.lookup_index]}"
+        result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+        return f"{result_prefix} {lookups[self.lookup_index]}"
 
     @property
     def _summary(self) -> str:
@@ -125,7 +124,8 @@ class DocstoreExplorer:
     @property
     def _paragraphs(self) -> list[str]:
         if self.document is None:
-            raise ValueError("Cannot get paragraphs without a document")
+            msg = "Cannot get paragraphs without a document"
+            raise ValueError(msg)
         return self.document.page_content.split("\n\n")
 
 
@@ -147,10 +147,12 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
         validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 1:
-            raise ValueError(f"Exactly one tool must be specified, but got {tools}")
+            msg = f"Exactly one tool must be specified, but got {tools}"
+            raise ValueError(msg)
         tool_names = {tool.name for tool in tools}
         if tool_names != {"Play"}:
-            raise ValueError(f"Tool name should be Play, got {tool_names}")
+            msg = f"Tool name should be Play, got {tool_names}"
+            raise ValueError(msg)
 
 
 @deprecated(

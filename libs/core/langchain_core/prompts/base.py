@@ -44,7 +44,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -197,8 +197,8 @@ class BasePromptTemplate(
         self,
         inner_input: typing.Dict,  # noqa: UP006
     ) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return await self.aformat_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(

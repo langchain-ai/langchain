@@ -1,4 +1,4 @@
-from typing import Literal, Type
+from typing import Literal
 
 from langchain_core.tools import BaseTool
 
@@ -6,7 +6,7 @@ from langchain_tests.integration_tests import ToolsIntegrationTests
 from langchain_tests.unit_tests import ToolsUnitTests
 
 
-class ParrotMultiplyTool(BaseTool):  # type: ignore
+class ParrotMultiplyTool(BaseTool):
     name: str = "ParrotMultiplyTool"
     description: str = (
         "Multiply two numbers like a parrot. Parrots always add eighty for their matey."
@@ -16,7 +16,7 @@ class ParrotMultiplyTool(BaseTool):  # type: ignore
         return a * b + 80
 
 
-class ParrotMultiplyArtifactTool(BaseTool):  # type: ignore
+class ParrotMultiplyArtifactTool(BaseTool):
     name: str = "ParrotMultiplyArtifactTool"
     description: str = (
         "Multiply two numbers like a parrot. Parrots always add eighty for their matey."
@@ -29,7 +29,7 @@ class ParrotMultiplyArtifactTool(BaseTool):  # type: ignore
 
 class TestParrotMultiplyToolUnit(ToolsUnitTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
     @property
@@ -41,8 +41,7 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
 
     @property
     def tool_invoke_params_example(self) -> dict:
-        """
-        Returns a dictionary representing the "args" of an example tool call.
+        """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
         have {"name", "id", "args"} keys.
@@ -52,7 +51,7 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
 
 class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
     @property
@@ -64,8 +63,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
 
     @property
     def tool_invoke_params_example(self) -> dict:
-        """
-        Returns a dictionary representing the "args" of an example tool call.
+        """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
         have {"name", "id", "args"} keys.
@@ -75,7 +73,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
 
 class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
     @property
-    def tool_constructor(self) -> Type[ParrotMultiplyArtifactTool]:
+    def tool_constructor(self) -> type[ParrotMultiplyArtifactTool]:
         return ParrotMultiplyArtifactTool
 
     @property
@@ -87,8 +85,7 @@ class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
 
     @property
     def tool_invoke_params_example(self) -> dict:
-        """
-        Returns a dictionary representing the "args" of an example tool call.
+        """Returns a dictionary representing the "args" of an example tool call.
 
         This should NOT be a ToolCall dict - i.e. it should not
         have {"name", "id", "args"} keys.

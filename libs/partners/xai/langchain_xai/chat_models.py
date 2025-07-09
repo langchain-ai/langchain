@@ -54,7 +54,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            xAI API key. If not passed in will be read from env var `XAI_API_KEY`.
+            xAI API key. If not passed in will be read from env var ``XAI_API_KEY``.
 
     Instantiate:
         .. code-block:: python
@@ -214,7 +214,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
     Live Search:
-        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`_
+        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`__
         feature that enables Grok to ground its answers using results from web searches.
 
         .. code-block:: python
@@ -261,7 +261,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 'token_logprobs': [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047]
             }
 
-
     Response metadata
         .. code-block:: python
 
@@ -292,7 +291,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     )
     """xAI API key.
 
-    Automatically read from env variable `XAI_API_KEY` if not provided.
+    Automatically read from env variable ``XAI_API_KEY`` if not provided.
     """
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
@@ -310,8 +309,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example,
-            {"xai_api_key": "XAI_API_KEY"}
+        For example, ``{"xai_api_key": "XAI_API_KEY"}``
         """
         return {"xai_api_key": "XAI_API_KEY"}
 
@@ -484,31 +482,29 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
-                    Uses xAI's `tool-calling features <https://docs.x.ai/docs/guides/function-calling>`_.
-                - "json_schema":
-                    Uses xAI's `structured output feature <https://docs.x.ai/docs/guides/structured-outputs>`_.
-                - "json_mode":
+                - ``'function_calling'``:
+                    Uses xAI's `tool-calling features <https://docs.x.ai/docs/guides/function-calling>`__.
+                - ``'json_schema'``:
+                    Uses xAI's `structured output feature <https://docs.x.ai/docs/guides/structured-outputs>`__.
+                - ``'json_mode'``:
                     Uses xAI's JSON mode feature.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If ``False`` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If ``True``
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             strict:
-
-                - True:
+                - ``True``:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to
-                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
-                - False:
+                    The input schema will also be validated according to `this schema <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
+                - ``False``:
                     Input schema will not be validated and model output will not be
                     validated.
-                - None:
+                - ``None``:
                     ``strict`` argument will not be passed to the model.
 
             kwargs: Additional keyword args aren't supported.
@@ -516,13 +512,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is ``True``, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

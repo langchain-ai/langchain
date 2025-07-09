@@ -22,7 +22,8 @@ class FakeMemory(BaseMemory):
         return ["baz"]
 
     def load_memory_variables(
-        self, inputs: Optional[dict[str, Any]] = None
+        self,
+        inputs: Optional[dict[str, Any]] = None,
     ) -> dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
@@ -58,8 +59,7 @@ class FakeChain(Chain):
     ) -> dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
-        else:
-            return {"baz": "bar"}
+        return {"baz": "bar"}
 
 
 def test_bad_inputs() -> None:

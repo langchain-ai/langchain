@@ -20,7 +20,7 @@ def format_log_to_messages(
     for action, observation in intermediate_steps:
         thoughts.append(AIMessage(content=action.log))
         human_message = HumanMessage(
-            content=template_tool_response.format(observation=observation)
+            content=template_tool_response.format(observation=observation),
         )
         thoughts.append(human_message)
     return thoughts

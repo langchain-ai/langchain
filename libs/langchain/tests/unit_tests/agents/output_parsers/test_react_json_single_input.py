@@ -18,7 +18,9 @@ def test_action() -> None:
 """
     output = parser.invoke(_input)
     expected_output = AgentAction(
-        tool="search", tool_input="what is the temperature in SF?", log=_input
+        tool="search",
+        tool_input="what is the temperature in SF?",
+        log=_input,
     )
     assert output == expected_output
 
@@ -30,6 +32,7 @@ def test_finish() -> None:
 Final Answer: The temperature is 100"""
     output = parser.invoke(_input)
     expected_output = AgentFinish(
-        return_values={"output": "The temperature is 100"}, log=_input
+        return_values={"output": "The temperature is 100"},
+        log=_input,
     )
     assert output == expected_output

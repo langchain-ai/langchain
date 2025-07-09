@@ -13,7 +13,8 @@ from langchain.evaluation.qa.generate_prompt import PROMPT
 from langchain.output_parsers.regex import RegexParser
 
 _QA_OUTPUT_PARSER = RegexParser(
-    regex=r"QUESTION: (.*?)\n+ANSWER: (.*)", output_keys=["query", "answer"]
+    regex=r"QUESTION: (.*?)\n+ANSWER: (.*)",
+    output_keys=["query", "answer"],
 )
 
 

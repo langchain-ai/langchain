@@ -50,12 +50,12 @@ class SelfAskWithSearchAgent(Agent):
         validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 1:
-            raise ValueError(f"Exactly one tool must be specified, but got {tools}")
+            msg = f"Exactly one tool must be specified, but got {tools}"
+            raise ValueError(msg)
         tool_names = {tool.name for tool in tools}
         if tool_names != {"Intermediate Answer"}:
-            raise ValueError(
-                f"Tool name should be Intermediate Answer, got {tool_names}"
-            )
+            msg = f"Tool name should be Intermediate Answer, got {tool_names}"
+            raise ValueError(msg)
 
     @property
     def observation_prefix(self) -> str:
@@ -76,7 +76,9 @@ class SelfAskWithSearchChain(AgentExecutor):
         self,
         llm: BaseLanguageModel,
         search_chain: Union[
-            GoogleSerperAPIWrapper, SearchApiAPIWrapper, SerpAPIWrapper
+            GoogleSerperAPIWrapper,
+            SearchApiAPIWrapper,
+            SerpAPIWrapper,
         ],
         **kwargs: Any,
     ):
@@ -92,7 +94,9 @@ class SelfAskWithSearchChain(AgentExecutor):
 
 
 def create_self_ask_with_search_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: BasePromptTemplate,
 ) -> Runnable:
     """Create an agent that uses self-ask with search prompting.
 
@@ -180,21 +184,22 @@ def create_self_ask_with_search_agent(
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     if len(tools) != 1:
-        raise ValueError("This agent expects exactly one tool")
-    tool = list(tools)[0]
+        msg = "This agent expects exactly one tool"
+        raise ValueError(msg)
+    tool = next(iter(tools))
     if tool.name != "Intermediate Answer":
-        raise ValueError(
-            "This agent expects the tool to be named `Intermediate Answer`"
-        )
+        msg = "This agent expects the tool to be named `Intermediate Answer`"
+        raise ValueError(msg)
 
     llm_with_stop = llm.bind(stop=["\nIntermediate answer:"])
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(
                 x["intermediate_steps"],
@@ -208,4 +213,3 @@ def create_self_ask_with_search_agent(
         | llm_with_stop
         | SelfAskOutputParser()
     )
-    return agent

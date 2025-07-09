@@ -60,8 +60,6 @@ class ChatGeneration(Generation):
                 if isinstance(block, dict) and "text" in block:
                     text = block["text"]
                     break
-        else:
-            pass
         self.text = text
         return self
 

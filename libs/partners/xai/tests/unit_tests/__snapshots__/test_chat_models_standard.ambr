@@ -10,6 +10,7 @@
       'max_retries': 2,
       'max_tokens': 100,
       'model_name': 'grok-beta',
+      'output_version': 'v0',
       'request_timeout': 60.0,
       'stop': list([
       ]),

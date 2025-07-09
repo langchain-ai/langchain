@@ -70,11 +70,12 @@ def StreamlitCallbackHandler(
             from langchain_community.callbacks.streamlit.streamlit_callback_handler import (  # noqa: E501
                 StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
             )
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "To use the StreamlitCallbackHandler, please install "
                 "langchain-community with `pip install langchain-community`."
             )
+            raise ImportError(msg) from e
 
         return _InternalStreamlitCallbackHandler(
             parent_container,

@@ -84,7 +84,8 @@ def test_json_equality_evaluator_evaluate_strings_equal(
     prediction = '{"a": 1}'
     reference = '{"a": 1}'
     result = json_equality_evaluator.evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result == {"score": True}
 
@@ -95,7 +96,8 @@ def test_json_equality_evaluator_evaluate_strings_not_equal(
     prediction = '{"a": 1}'
     reference = '{"a": 2}'
     result = json_equality_evaluator.evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result == {"score": False}
 
@@ -166,7 +168,7 @@ def test_json_equality_evaluator_evaluate_lists_permutation_invariant() -> None:
         "["
         + ",".join(
             [f'{{"a": {i + 1}, "b": {i + 2}}}' for i in range(999)]
-            + ['{"a": 1000, "b": 1001}']
+            + ['{"a": 1000, "b": 1001}'],
         )
         + "]"
     )

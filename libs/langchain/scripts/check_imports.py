@@ -1,3 +1,12 @@
+"""
+Quickly verify that a list of Python files can be loaded by the Python interpreter
+without raising any errors. Ran before running more expensive tests. Useful in
+Makefiles.
+
+If loading a file fails, the script prints the problematic filename and the detailed
+error traceback.
+"""
+
 import random
 import string
 import sys
@@ -10,7 +19,8 @@ if __name__ == "__main__":
     for file in files:
         try:
             module_name = "".join(
-                random.choice(string.ascii_letters) for _ in range(20)
+                random.choice(string.ascii_letters)  # noqa: S311
+                for _ in range(20)
             )
             SourceFileLoader(module_name, file).load_module()
         except Exception:

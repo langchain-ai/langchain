@@ -54,7 +54,7 @@ async def test_memory_async() -> None:
     memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
     await memory.asave_context({"input": "bar"}, {"output": "foo"})
     assert await memory.aload_memory_variables({}) == {
-        "foo": "Human: bar\nAssistant: foo"
+        "foo": "Human: bar\nAssistant: foo",
     }
 
 

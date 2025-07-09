@@ -386,92 +386,93 @@ def _get_aiter(*, use_tool_calls: bool = False) -> Any:
     return input_iter
 
 
-def test_partial_json_output_parser() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls=use_tool_calls)
-        chain = input_iter | JsonOutputToolsParser()
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+def test_partial_json_output_parser(*, use_tool_calls: bool) -> None:
+    input_iter = _get_iter(use_tool_calls=use_tool_calls)
+    chain = input_iter | JsonOutputToolsParser()
 
-        actual = list(chain.stream(None))
-        expected: list = [[]] + [
-            [{"type": "NameCollector", "args": chunk}]
-            for chunk in EXPECTED_STREAMED_JSON
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [
+        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
+
+
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+async def test_partial_json_output_parser_async(*, use_tool_calls: bool) -> None:
+    input_iter = _get_aiter(use_tool_calls=use_tool_calls)
+    chain = input_iter | JsonOutputToolsParser()
+
+    actual = [p async for p in chain.astream(None)]
+    expected: list = [[]] + [
+        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
+
+
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+def test_partial_json_output_parser_return_id(*, use_tool_calls: bool) -> None:
+    input_iter = _get_iter(use_tool_calls=use_tool_calls)
+    chain = input_iter | JsonOutputToolsParser(return_id=True)
+
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [
+        [
+            {
+                "type": "NameCollector",
+                "args": chunk,
+                "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
+            }
         ]
-        assert actual == expected
+        for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
 
 
-async def test_partial_json_output_parser_async() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
-        chain = input_iter | JsonOutputToolsParser()
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
+    input_iter = _get_iter(use_tool_calls=use_tool_calls)
+    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
-        actual = [p async for p in chain.astream(None)]
-        expected: list = [[]] + [
-            [{"type": "NameCollector", "args": chunk}]
-            for chunk in EXPECTED_STREAMED_JSON
-        ]
-        assert actual == expected
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    assert actual == expected
 
 
-def test_partial_json_output_parser_return_id() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls=use_tool_calls)
-        chain = input_iter | JsonOutputToolsParser(return_id=True)
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+async def test_partial_json_output_parser_key_async(*, use_tool_calls: bool) -> None:
+    input_iter = _get_aiter(use_tool_calls=use_tool_calls)
 
-        actual = list(chain.stream(None))
-        expected: list = [[]] + [
-            [
-                {
-                    "type": "NameCollector",
-                    "args": chunk,
-                    "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-                }
-            ]
-            for chunk in EXPECTED_STREAMED_JSON
-        ]
-        assert actual == expected
+    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+
+    actual = [p async for p in chain.astream(None)]
+    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    assert actual == expected
 
 
-def test_partial_json_output_key_parser() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls=use_tool_calls)
-        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+def test_partial_json_output_key_parser_first_only(*, use_tool_calls: bool) -> None:
+    input_iter = _get_iter(use_tool_calls=use_tool_calls)
 
-        actual = list(chain.stream(None))
-        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
-        assert actual == expected
+    chain = input_iter | JsonOutputKeyToolsParser(
+        key_name="NameCollector", first_tool_only=True
+    )
 
-
-async def test_partial_json_output_parser_key_async() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
-
-        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
-
-        actual = [p async for p in chain.astream(None)]
-        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
-        assert actual == expected
+    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
 
-def test_partial_json_output_key_parser_first_only() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls=use_tool_calls)
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+async def test_partial_json_output_parser_key_async_first_only(
+    *,
+    use_tool_calls: bool,
+) -> None:
+    input_iter = _get_aiter(use_tool_calls=use_tool_calls)
 
-        chain = input_iter | JsonOutputKeyToolsParser(
-            key_name="NameCollector", first_tool_only=True
-        )
+    chain = input_iter | JsonOutputKeyToolsParser(
+        key_name="NameCollector", first_tool_only=True
+    )
 
-        assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
-
-
-async def test_partial_json_output_parser_key_async_first_only() -> None:
-    for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
-
-        chain = input_iter | JsonOutputKeyToolsParser(
-            key_name="NameCollector", first_tool_only=True
-        )
-
-        assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
 class Person(BaseModel):

@@ -2650,6 +2650,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -4124,6 +4126,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -5629,6 +5633,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -7009,6 +7015,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -8525,6 +8533,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -9950,6 +9960,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -11374,6 +11386,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -12840,6 +12854,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({

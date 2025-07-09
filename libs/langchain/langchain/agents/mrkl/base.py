@@ -104,7 +104,7 @@ class ZeroShotAgent(Agent):
         tool_strings = render_text_description(list(tools))
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        template = f"{prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{suffix}"
         if input_variables:
             return PromptTemplate(template=template, input_variables=input_variables)
         return PromptTemplate.from_template(template)
@@ -162,15 +162,17 @@ class ZeroShotAgent(Agent):
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         validate_tools_single_input(cls.__name__, tools)
         if len(tools) == 0:
-            raise ValueError(
+            msg = (
                 f"Got no tools for {cls.__name__}. At least one tool must be provided."
             )
+            raise ValueError(msg)
         for tool in tools:
             if tool.description is None:
-                raise ValueError(
+                msg = (
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
+                raise ValueError(msg)
         super()._validate_tools(tools)
 
 
@@ -184,7 +186,10 @@ class MRKLChain(AgentExecutor):
 
     @classmethod
     def from_chains(
-        cls, llm: BaseLanguageModel, chains: list[ChainConfig], **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        chains: list[ChainConfig],
+        **kwargs: Any,
     ) -> AgentExecutor:
         """User-friendly way to initialize the MRKL chain.
 

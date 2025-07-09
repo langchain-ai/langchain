@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "LabelStudioCallbackHandler",
     "LabelStudioMode",
     "get_default_label_configs",
-    "LabelStudioCallbackHandler",
 ]

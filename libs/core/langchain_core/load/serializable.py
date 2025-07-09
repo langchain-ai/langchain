@@ -355,19 +355,19 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     Returns:
         SerializedNotImplemented
     """
-    _id: list[str] = []
+    id_: list[str] = []
     try:
         if hasattr(obj, "__name__"):
-            _id = [*obj.__module__.split("."), obj.__name__]
+            id_ = [*obj.__module__.split("."), obj.__name__]
         elif hasattr(obj, "__class__"):
-            _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
+            id_ = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
         logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,
         "type": "not_implemented",
-        "id": _id,
+        "id": id_,
         "repr": None,
     }
     with contextlib.suppress(Exception):

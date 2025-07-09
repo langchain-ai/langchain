@@ -44,8 +44,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "create_kv_docstore",
-    "create_lc_store",
     "EncoderBackedStore",
     "InMemoryByteStore",
     "InMemoryStore",
@@ -54,4 +52,6 @@ __all__ = [
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
+    "create_kv_docstore",
+    "create_lc_store",
 ]

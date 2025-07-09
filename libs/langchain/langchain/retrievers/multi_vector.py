@@ -49,12 +49,16 @@ class MultiVectorRetriever(BaseRetriever):
         if byte_store is not None:
             docstore = create_kv_docstore(byte_store)
         elif docstore is None:
-            raise Exception("You must pass a `byte_store` parameter.")
+            msg = "You must pass a `byte_store` parameter."
+            raise ValueError(msg)
         values["docstore"] = docstore
         return values
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Get documents relevant to a query.
         Args:
@@ -65,12 +69,14 @@ class MultiVectorRetriever(BaseRetriever):
         """
         if self.search_type == SearchType.mmr:
             sub_docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
+                query,
+                **self.search_kwargs,
             )
         elif self.search_type == SearchType.similarity_score_threshold:
             sub_docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query,
+                    **self.search_kwargs,
                 )
             )
             sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
@@ -86,7 +92,10 @@ class MultiVectorRetriever(BaseRetriever):
         return [d for d in docs if d is not None]
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """Asynchronously get documents relevant to a query.
         Args:
@@ -97,18 +106,21 @@ class MultiVectorRetriever(BaseRetriever):
         """
         if self.search_type == SearchType.mmr:
             sub_docs = await self.vectorstore.amax_marginal_relevance_search(
-                query, **self.search_kwargs
+                query,
+                **self.search_kwargs,
             )
         elif self.search_type == SearchType.similarity_score_threshold:
             sub_docs_and_similarities = (
                 await self.vectorstore.asimilarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query,
+                    **self.search_kwargs,
                 )
             )
             sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
         else:
             sub_docs = await self.vectorstore.asimilarity_search(
-                query, **self.search_kwargs
+                query,
+                **self.search_kwargs,
             )
 
         # We do this to maintain the order of the ids that are returned

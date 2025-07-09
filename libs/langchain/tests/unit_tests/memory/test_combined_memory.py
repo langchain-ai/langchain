@@ -7,7 +7,7 @@ import pytest
 from langchain.memory import CombinedMemory, ConversationBufferMemory
 
 
-@pytest.fixture()
+@pytest.fixture
 def example_memory() -> list[ConversationBufferMemory]:
     example_1 = ConversationBufferMemory(memory_key="foo")
     example_2 = ConversationBufferMemory(memory_key="bar")
@@ -21,7 +21,8 @@ def test_basic_functionality(example_memory: list[ConversationBufferMemory]) -> 
     assert combined_memory.memory_variables == ["foo", "bar"]
     assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
     combined_memory.save_context(
-        {"input": "Hello there"}, {"output": "Hello, how can I help you?"}
+        {"input": "Hello there"},
+        {"output": "Hello, how can I help you?"},
     )
     assert combined_memory.load_memory_variables({}) == {
         "foo": "Human: Hello there\nAI: Hello, how can I help you?",

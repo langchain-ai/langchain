@@ -2,6 +2,7 @@ import json
 from typing import Any, Callable, Optional, Union
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -47,13 +48,14 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         else:
             try:
                 from rapidfuzz import distance as rfd
-            except ImportError:
-                raise ImportError(
+            except ImportError as e:
+                msg = (
                     "The default string_distance operator for the "
                     " JsonEditDistanceEvaluator requires installation of "
                     "the rapidfuzz package. "
                     "Please install it with `pip install rapidfuzz`."
                 )
+                raise ImportError(msg) from e
             self._string_distance = rfd.DamerauLevenshtein.normalized_distance
         if canonicalize is not None:
             self._canonicalize = canonicalize
@@ -81,6 +83,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             return parse_json_markdown(node)
         return node
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,

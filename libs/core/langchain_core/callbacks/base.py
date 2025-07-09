@@ -243,9 +243,10 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running.
 
-        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
-            you're implementing a handler for a chat model,
-            you should use on_chat_model_start instead.
+        .. ATTENTION::
+            This method is called for non-chat models (regular LLMs). If you're
+            implementing a handler for a chat model, you should use
+            ``on_chat_model_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
@@ -271,7 +272,7 @@ class CallbackManagerMixin:
         """Run when a chat model starts running.
 
         **ATTENTION**: This method is called for chat models. If you're implementing
-            a handler for a non-chat model, you should use on_llm_start instead.
+        a handler for a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -490,9 +491,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when LLM starts running.
 
-        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
-            you're implementing a handler for a chat model,
-            you should use on_chat_model_start instead.
+        .. ATTENTION::
+            This method is called for non-chat models (regular LLMs). If you're
+            implementing a handler for a chat model, you should use
+            ``on_chat_model_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
@@ -518,7 +520,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when a chat model starts running.
 
         **ATTENTION**: This method is called for chat models. If you're implementing
-            a handler for a non-chat model, you should use on_llm_start instead.
+        a handler for a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -1069,8 +1071,10 @@ class BaseCallbackManager(CallbackManagerMixin):
             tags (list[str]): The tags to remove.
         """
         for tag in tags:
-            self.tags.remove(tag)
-            self.inheritable_tags.remove(tag)
+            if tag in self.tags:
+                self.tags.remove(tag)
+            if tag in self.inheritable_tags:
+                self.inheritable_tags.remove(tag)
 
     def add_metadata(
         self,
@@ -1094,8 +1098,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             keys (list[str]): The keys to remove.
         """
         for key in keys:
-            self.metadata.pop(key)
-            self.inheritable_metadata.pop(key)
+            self.metadata.pop(key, None)
+            self.inheritable_metadata.pop(key, None)
 
 
 Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]

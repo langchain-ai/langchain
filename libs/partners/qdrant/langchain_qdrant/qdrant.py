@@ -191,14 +191,14 @@ class QdrantVectorStore(VectorStore):
         """Initialize a new instance of `QdrantVectorStore`.
 
         Example:
-        .. code-block:: python
-        qdrant = Qdrant(
-            client=client,
-            collection_name="my-collection",
-            embedding=OpenAIEmbeddings(),
-            retrieval_mode=RetrievalMode.HYBRID,
-            sparse_embedding=FastEmbedSparse(),
-        )
+            .. code-block:: python
+            qdrant = Qdrant(
+                client=client,
+                collection_name="my-collection",
+                embedding=OpenAIEmbeddings(),
+                retrieval_mode=RetrievalMode.HYBRID,
+                sparse_embedding=FastEmbedSparse(),
+            )
         """
         if validate_embeddings:
             self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
@@ -230,7 +230,7 @@ class QdrantVectorStore(VectorStore):
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            QdrantClient: An instance of `QdrantClient`.
+            QdrantClient: An instance of ``QdrantClient``.
         """
         return self._client
 
@@ -239,10 +239,10 @@ class QdrantVectorStore(VectorStore):
         """Get the dense embeddings instance that is being used.
 
         Raises:
-            ValueError: If embeddings are `None`.
+            ValueError: If embeddings are ``None``.
 
         Returns:
-            Embeddings: An instance of `Embeddings`.
+            Embeddings: An instance of ``Embeddings``.
         """
         if self._embeddings is None:
             raise ValueError(
@@ -255,10 +255,10 @@ class QdrantVectorStore(VectorStore):
         """Get the sparse embeddings instance that is being used.
 
         Raises:
-            ValueError: If sparse embeddings are `None`.
+            ValueError: If sparse embeddings are ``None``.
 
         Returns:
-            SparseEmbeddings: An instance of `SparseEmbeddings`.
+            SparseEmbeddings: An instance of ``SparseEmbeddings``.
         """
         if self._sparse_embeddings is None:
             raise ValueError(
@@ -302,7 +302,7 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of `QdrantVectorStore` from a list of texts.
+        """Construct an instance of ``QdrantVectorStore`` from a list of texts.
 
         This is a user-friendly interface that:
         1. Creates embeddings, one for each text
@@ -382,11 +382,11 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of `QdrantVectorStore` from an existing collection
+        """Construct an instance of ``QdrantVectorStore`` from an existing collection
         without adding any data.
 
         Returns:
-            QdrantVectorStore: A new instance of `QdrantVectorStore`.
+            QdrantVectorStore: A new instance of ``QdrantVectorStore``.
         """
         client = QdrantClient(
             location=location,
@@ -660,7 +660,6 @@ class QdrantVectorStore(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
-
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -911,16 +910,16 @@ class QdrantVectorStore(VectorStore):
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale [0, 1]."""
+        """Normalize the distance to a score on a scale ``[0, 1]``."""
         return (distance + 1.0) / 2.0
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
-        The 'correct' relevance function
-        may differ depending on a few things, including:
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
+        The "correct" relevance function may differ depending on a few things,
+        including:
+        - The distance / similarity metric used by the VectorStore
+        - The scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - Embedding dimensionality
         - etc.
         """
 
@@ -1039,9 +1038,10 @@ class QdrantVectorStore(VectorStore):
             dense_embeddings = self.embeddings.embed_documents(list(texts))
             sparse_embeddings = self.sparse_embeddings.embed_documents(list(texts))
 
-            assert len(dense_embeddings) == len(
-                sparse_embeddings
-            ), "Mismatched length between dense and sparse embeddings."
+            if len(dense_embeddings) != len(sparse_embeddings):
+                raise ValueError(
+                    "Mismatched length between dense and sparse embeddings."
+                )
 
             return [
                 {
@@ -1128,7 +1128,8 @@ class QdrantVectorStore(VectorStore):
                     "set `force_recreate` to `True`."
                 )
 
-        assert vector_config is not None, "VectorParams is None"
+        if vector_config is None:
+            raise ValueError("VectorParams is None")
 
         if isinstance(dense_embeddings, Embeddings):
             vector_size = len(dense_embeddings.embed_documents(["dummy_text"])[0])

@@ -22,8 +22,8 @@ api_spec = {
                         "description": "Limit the number of results",
                     },
                 ],
-            }
-        }
+            },
+        },
     },
 }
 

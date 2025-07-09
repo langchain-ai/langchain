@@ -1,10 +1,13 @@
-name: Check `langchain-core` version equality
+name: Check `core` Version Equality
 
 on:
   pull_request:
     paths:
       - 'libs/core/pyproject.toml'
       - 'libs/core/langchain_core/version.py'
+
+permissions:
+  contents: read
 
 jobs:
   check_version_equality:

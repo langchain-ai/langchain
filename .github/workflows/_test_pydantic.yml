@@ -17,6 +17,9 @@ on:
         type: string
         description: "Pydantic version to test."
 
+permissions:
+  contents: read
+
 env:
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"

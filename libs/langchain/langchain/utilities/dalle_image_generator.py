@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "DallEAPIWrapper": "langchain_community.utilities.dalle_image_generator"
+    "DallEAPIWrapper": "langchain_community.utilities.dalle_image_generator",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

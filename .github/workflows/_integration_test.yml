@@ -1,4 +1,4 @@
-name: Integration tests
+name: Integration Tests
 
 on:
   workflow_dispatch:
@@ -11,6 +11,9 @@ on:
         required: true
         type: string
         description: "Python version to use"
+
+permissions:
+  contents: read
 
 env:
   UV_FROZEN: "true"

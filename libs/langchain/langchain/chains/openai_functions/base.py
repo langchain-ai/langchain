@@ -31,13 +31,13 @@ from langchain.chains.structured_output.base import (
 )
 
 __all__ = [
-    "get_openai_output_parser",
-    "create_openai_fn_runnable",
-    "create_structured_output_runnable",  # deprecated
-    "create_openai_fn_chain",  # deprecated
-    "create_structured_output_chain",  # deprecated
     "PYTHON_TO_JSON_TYPES",  # backwards compatibility
     "convert_to_openai_function",  # backwards compatibility
+    "create_openai_fn_chain",  # deprecated
+    "create_openai_fn_runnable",
+    "create_structured_output_chain",  # deprecated
+    "create_structured_output_runnable",  # deprecated
+    "get_openai_output_parser",
 ]
 
 
@@ -123,7 +123,8 @@ def create_openai_fn_chain(
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        msg = "Need to pass in at least one function. Received zero."
+        raise ValueError(msg)
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
     llm_kwargs: dict[str, Any] = {
@@ -131,7 +132,7 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -139,11 +140,12 @@ def create_openai_fn_chain(
         output_key=output_key,
         **kwargs,
     )
-    return llm_chain
 
 
 @deprecated(
-    since="0.1.1", removal="1.0", alternative="ChatOpenAI.with_structured_output"
+    since="0.1.1",
+    removal="1.0",
+    alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(
     output_schema: Union[dict[str, Any], type[BaseModel]],
@@ -220,7 +222,8 @@ def create_structured_output_chain(
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_chain(
         [function],

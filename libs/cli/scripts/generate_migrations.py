@@ -1,9 +1,9 @@
-# type: ignore
 """Script to generate migrations for the migration script."""
 
 import json
 import os
 import pkgutil
+from typing import Optional
 
 import click
 
@@ -19,9 +19,8 @@ from langchain_cli.namespaces.migrate.generate.partner import (
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """Migration scripts management."""
-    pass
 
 
 @cli.command()
@@ -45,12 +44,17 @@ def cli():
 )
 @click.option(
     "--format",
+    "format_",
     type=click.Choice(["json", "grit"], case_sensitive=False),
     default="json",
     help="The output format for the migration script (json or grit).",
 )
 def generic(
-    pkg1: str, pkg2: str, output: str, filter_by_all: bool, format: str
+    pkg1: str,
+    pkg2: str,
+    output: str,
+    filter_by_all: bool,  # noqa: FBT001
+    format_: str,
 ) -> None:
     """Generate a migration script."""
     click.echo("Migration script generated.")
@@ -62,9 +66,9 @@ def generic(
         name = f"{pkg1}_to_{pkg2}"
 
     if output is None:
-        output = f"{name}.json" if format == "json" else f"{name}.grit"
+        output = f"{name}.json" if format_ == "json" else f"{name}.grit"
 
-    if format == "json":
+    if format_ == "json":
         dumped = json.dumps(migrations, indent=2, sort_keys=True)
     else:
         dumped = dump_migrations_as_grit(name, migrations)
@@ -73,7 +77,7 @@ def generic(
         f.write(dumped)
 
 
-def handle_partner(pkg: str, output: str = None):
+def handle_partner(pkg: str, output: Optional[str] = None) -> None:
     migrations = get_migrations_for_partner_package(pkg)
     # Run with python 3.9+
     name = pkg.removeprefix("langchain_")
@@ -100,7 +104,7 @@ def partner(pkg: str, output: str) -> None:
 @click.argument("json_file")
 def json_to_grit(json_file: str) -> None:
     """Generate a Grit migration from an old JSON migration file."""
-    with open(json_file, "r") as f:
+    with open(json_file) as f:
         migrations = json.load(f)
     name = os.path.basename(json_file).removesuffix(".json").removesuffix(".grit")
     data = dump_migrations_as_grit(name, migrations)

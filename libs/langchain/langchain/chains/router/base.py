@@ -43,7 +43,9 @@ class RouterChain(Chain, ABC):
         return Route(result["destination"], result["next_inputs"])
 
     async def aroute(
-        self, inputs: dict[str, Any], callbacks: Callbacks = None
+        self,
+        inputs: dict[str, Any],
+        callbacks: Callbacks = None,
     ) -> Route:
         result = await self.acall(inputs, callbacks=callbacks)
         return Route(result["destination"], result["next_inputs"])
@@ -59,7 +61,7 @@ class MultiRouteChain(Chain):
     default_chain: Chain
     """Default chain to use when none of the destination chains are suitable."""
     silent_errors: bool = False
-    """If True, use default_chain when an invalid destination name is provided. 
+    """If True, use default_chain when an invalid destination name is provided.
     Defaults to False."""
 
     model_config = ConfigDict(
@@ -93,20 +95,20 @@ class MultiRouteChain(Chain):
         route = self.router_chain.route(inputs, callbacks=callbacks)
 
         _run_manager.on_text(
-            str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
+            str(route.destination) + ": " + str(route.next_inputs),
+            verbose=self.verbose,
         )
         if not route.destination:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
-        elif route.destination in self.destination_chains:
+        if route.destination in self.destination_chains:
             return self.destination_chains[route.destination](
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
-        elif self.silent_errors:
+        if self.silent_errors:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
-        else:
-            raise ValueError(
-                f"Received invalid destination chain name '{route.destination}'"
-            )
+        msg = f"Received invalid destination chain name '{route.destination}'"
+        raise ValueError(msg)
 
     async def _acall(
         self,
@@ -118,21 +120,23 @@ class MultiRouteChain(Chain):
         route = await self.router_chain.aroute(inputs, callbacks=callbacks)
 
         await _run_manager.on_text(
-            str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
+            str(route.destination) + ": " + str(route.next_inputs),
+            verbose=self.verbose,
         )
         if not route.destination:
             return await self.default_chain.acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
-        elif route.destination in self.destination_chains:
+        if route.destination in self.destination_chains:
             return await self.destination_chains[route.destination].acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
-        elif self.silent_errors:
+        if self.silent_errors:
             return await self.default_chain.acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
-        else:
-            raise ValueError(
-                f"Received invalid destination chain name '{route.destination}'"
-            )
+        msg = f"Received invalid destination chain name '{route.destination}'"
+        raise ValueError(msg)

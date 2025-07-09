@@ -14,6 +14,8 @@ from langchain_openai import (
     OpenAIEmbeddings,
 )
 
+AZURE_AD_TOKEN = "secret-api-key"  # noqa: S105
+
 
 def test_chat_openai_secrets() -> None:
     o = ChatOpenAI(openai_api_key="foo")  # type: ignore[call-arg]
@@ -37,7 +39,7 @@ def test_azure_chat_openai_secrets() -> None:
     o = AzureChatOpenAI(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",  # type: ignore[arg-type]
+        azure_ad_token=AZURE_AD_TOKEN,  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)
@@ -49,7 +51,7 @@ def test_azure_openai_secrets() -> None:
     o = AzureOpenAI(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",  # type: ignore[arg-type]
+        azure_ad_token=AZURE_AD_TOKEN,  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)
@@ -61,7 +63,7 @@ def test_azure_openai_embeddings_secrets() -> None:
     o = AzureOpenAIEmbeddings(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",  # type: ignore[arg-type]
+        azure_ad_token=AZURE_AD_TOKEN,  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)
@@ -77,7 +79,7 @@ def test_azure_openai_api_key_is_secret_string(model_class: type) -> None:
     model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
-        azure_ad_token="secret-ad-token",
+        azure_ad_token=AZURE_AD_TOKEN,
         api_version="version",
     )
     assert isinstance(model.openai_api_key, SecretStr)
@@ -115,7 +117,7 @@ def test_azure_openai_api_key_masked_when_passed_via_constructor(
     model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
-        azure_ad_token="secret-ad-token",
+        azure_ad_token=AZURE_AD_TOKEN,
         api_version="version",
     )
     print(model.openai_api_key, end="")  # noqa: T201
@@ -139,11 +141,11 @@ def test_azure_openai_uses_actual_secret_value_from_secretstr(
     model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
-        azure_ad_token="secret-ad-token",
+        azure_ad_token=AZURE_AD_TOKEN,
         api_version="version",
     )
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
-    assert cast(SecretStr, model.azure_ad_token).get_secret_value() == "secret-ad-token"
+    assert cast(SecretStr, model.azure_ad_token).get_secret_value() == AZURE_AD_TOKEN
 
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
@@ -195,7 +197,7 @@ def test_azure_serialized_secrets(model_class: type) -> None:
     assert serialized["kwargs"]["openai_api_key"]["id"] == ["AZURE_OPENAI_API_KEY"]
 
     model = model_class(
-        azure_ad_token="secret-token", api_version="foo", azure_endpoint="foo"
+        azure_ad_token=AZURE_AD_TOKEN, api_version="foo", azure_endpoint="foo"
     )
     serialized = dumpd(model)
     assert serialized["kwargs"]["azure_ad_token"]["id"] == ["AZURE_OPENAI_AD_TOKEN"]

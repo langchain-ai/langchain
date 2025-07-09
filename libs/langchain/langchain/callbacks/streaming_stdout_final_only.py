@@ -25,8 +25,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     def check_if_answer_reached(self) -> bool:
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
-        else:
-            return self.last_tokens == self.answer_prefix_tokens
+        return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
         self,
@@ -63,7 +62,10 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         self.answer_reached = False
 
     def on_llm_start(
-        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
         self.answer_reached = False

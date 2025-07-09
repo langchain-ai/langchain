@@ -105,7 +105,7 @@ class Qdrant(VectorStore):
 
         if embeddings is None and embedding_function is None:
             raise ValueError(
-                "`embeddings` value can't be None. Pass `Embeddings` instance."
+                "`embeddings` value can't be None. Pass `embeddings` instance."
             )
 
         if embeddings is not None and embedding_function is not None:
@@ -161,7 +161,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -196,7 +196,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -1669,10 +1669,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
                 raise QdrantException(
@@ -1829,11 +1830,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
 
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:

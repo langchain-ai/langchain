@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -23,7 +23,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(
         self,
-        separators: Optional[List[str]] = None,
+        separators: Optional[list[str]] = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         **kwargs: Any,
@@ -39,7 +39,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap, **kwargs)
         self._separators = separators or []
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split text into chunks.
 
         This method splits the text into chunks by:
@@ -94,5 +94,4 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
         self._separators = separators
-        chunks = super().split_text(text)
-        return chunks
+        return super().split_text(text)

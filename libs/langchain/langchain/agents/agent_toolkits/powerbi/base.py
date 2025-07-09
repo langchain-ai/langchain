@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "create_pbi_agent": "langchain_community.agent_toolkits.powerbi.base"
+    "create_pbi_agent": "langchain_community.agent_toolkits.powerbi.base",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

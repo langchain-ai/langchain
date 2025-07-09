@@ -21,6 +21,8 @@ class NonBoolObj:
     def __repr__(self) -> str:
         return self.__class__.__name__
 
+    __hash__ = None  # type: ignore[assignment]
+
 
 def test_simple_serialization() -> None:
     class Foo(Serializable):
@@ -99,6 +101,8 @@ def test__is_field_useful() -> None:
 
         def __eq__(self, other: object) -> bool:
             return self  # type: ignore[return-value]
+
+        __hash__ = None  # type: ignore[assignment]
 
     default_x = ArrayObj()
     default_y = NonBoolObj()

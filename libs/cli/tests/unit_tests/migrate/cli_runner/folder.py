@@ -34,12 +34,12 @@ class Folder:
                 files.append(cls.from_structure(path))
             else:
                 files.append(
-                    File(path.name, path.read_text(encoding="utf-8").splitlines())
+                    File(path.name, path.read_text(encoding="utf-8").splitlines()),
                 )
 
         return Folder(name, *files)
 
-    def __eq__(self, __value: object) -> bool:
+    def __eq__(self, __value: object, /) -> bool:
         if isinstance(__value, File):
             return False
 

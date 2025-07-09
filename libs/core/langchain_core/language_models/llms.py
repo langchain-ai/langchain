@@ -94,10 +94,10 @@ def create_base_retry_decorator(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    _logging = before_sleep_log(logger, logging.WARNING)
+    logging_ = before_sleep_log(logger, logging.WARNING)
 
     def _before_sleep(retry_state: RetryCallState) -> None:
-        _logging(retry_state)
+        logging_(retry_state)
         if run_manager:
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
@@ -120,7 +120,7 @@ def create_base_retry_decorator(
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     retry_instance: retry_base = retry_if_exception_type(error_types[0])
     for error in error_types[1:]:
-        retry_instance = retry_instance | retry_if_exception_type(error)
+        retry_instance |= retry_if_exception_type(error)
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
@@ -130,7 +130,7 @@ def create_base_retry_decorator(
     )
 
 
-def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
+def _resolve_cache(*, cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     """Resolve the cache."""
     if isinstance(cache, BaseCache):
         llm_cache = cache
@@ -156,7 +156,7 @@ def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
 def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
@@ -177,7 +177,7 @@ def get_prompts(
     missing_prompt_idxs = []
     existing_prompts = {}
 
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = llm_cache.lookup(prompt, llm_string)
@@ -192,7 +192,7 @@ def get_prompts(
 async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
 ) -> tuple[dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
@@ -212,7 +212,7 @@ async def aget_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -225,7 +225,7 @@ async def aget_prompts(
 
 
 def update_cache(
-    cache: Union[BaseCache, bool, None],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -248,7 +248,7 @@ def update_cache(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -258,7 +258,7 @@ def update_cache(
 
 
 async def aupdate_cache(
-    cache: Union[BaseCache, bool, None],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
     existing_prompts: dict[int, list],
     llm_string: str,
     missing_prompt_idxs: list[int],
@@ -281,7 +281,7 @@ async def aupdate_cache(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -880,8 +880,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 **(metadata or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
             }
-        else:
-            pass
         if (
             isinstance(callbacks, list)
             and callbacks
@@ -1137,8 +1135,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 **(metadata or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
             }
-        else:
-            pass
         # Create callback managers
         if isinstance(callbacks, list) and (
             isinstance(callbacks[0], (list, BaseCallbackManager))
@@ -1357,8 +1353,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        _stop = None if stop is None else list(stop)
-        return self(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return self(text, stop=stop_, **kwargs)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @override
@@ -1370,8 +1366,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        _stop = None if stop is None else list(stop)
-        content = self(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        content = self(text, stop=stop_, **kwargs)
         return AIMessage(content=content)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
@@ -1379,8 +1375,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        _stop = None if stop is None else list(stop)
-        return await self._call_async(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return await self._call_async(text, stop=stop_, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
@@ -1392,8 +1388,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        _stop = None if stop is None else list(stop)
-        content = await self._call_async(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        content = await self._call_async(text, stop=stop_, **kwargs)
         return AIMessage(content=content)
 
     def __str__(self) -> str:
@@ -1427,9 +1423,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ValueError: If the file path is not a string or Path object.
 
         Example:
-        .. code-block:: python
 
-            llm.save(file_path="path/llm.yaml")
+            .. code-block:: python
+
+                llm.save(file_path="path/llm.yaml")
         """
         # Convert file to Path object.
         save_path = Path(file_path)

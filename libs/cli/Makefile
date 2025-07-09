@@ -22,7 +22,7 @@ lint lint_diff lint_package lint_tests:
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff check --fix $(PYTHON_FILES)
 
 test tests: _test _e2e_test
 

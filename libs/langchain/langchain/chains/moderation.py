@@ -45,7 +45,9 @@ class OpenAIModerationChain(Chain):
     def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+            values,
+            "openai_api_key",
+            "OPENAI_API_KEY",
         )
         openai_organization = get_from_dict_or_env(
             values,
@@ -70,11 +72,12 @@ class OpenAIModerationChain(Chain):
                 values["client"] = openai.OpenAI(api_key=openai_api_key)
                 values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
 
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+            raise ImportError(msg) from e
         return values
 
     @property
@@ -94,16 +97,12 @@ class OpenAIModerationChain(Chain):
         return [self.output_key]
 
     def _moderate(self, text: str, results: Any) -> str:
-        if self.openai_pre_1_0:
-            condition = results["flagged"]
-        else:
-            condition = results.flagged
+        condition = results["flagged"] if self.openai_pre_1_0 else results.flagged
         if condition:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
                 raise ValueError(error_str)
-            else:
-                return error_str
+            return error_str
         return text
 
     def _call(

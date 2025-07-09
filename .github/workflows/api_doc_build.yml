@@ -1,4 +1,4 @@
-name: API docs build
+name: API Docs Build
 
 on:
   workflow_dispatch:
@@ -56,7 +56,7 @@ jobs:
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
-      - name: Setup python ${{ env.PYTHON_VERSION }}
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         id: setup-python
         with:
@@ -68,7 +68,7 @@ jobs:
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
-      - name: Move libs with script
+      - name: Move libs
         run: python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

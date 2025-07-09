@@ -12,8 +12,8 @@ from langchain_huggingface.llms import (
 
 __all__ = [
     "ChatHuggingFace",
-    "HuggingFaceEndpointEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceEndpoint",
+    "HuggingFaceEndpointEmbeddings",
     "HuggingFacePipeline",
 ]

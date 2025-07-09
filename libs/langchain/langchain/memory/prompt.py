@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = """You are an assistant to a human, powered by a large language model trained by OpenAI.
@@ -16,7 +15,7 @@ Current conversation:
 {history}
 Last line:
 Human: {input}
-You:"""
+You:"""  # noqa: E501
 
 ENTITY_MEMORY_CONVERSATION_TEMPLATE = PromptTemplate(
     input_variables=["entities", "history", "input"],
@@ -43,7 +42,7 @@ Current summary:
 New lines of conversation:
 {new_lines}
 
-New summary:"""
+New summary:"""  # noqa: E501
 SUMMARY_PROMPT = PromptTemplate(
     input_variables=["summary", "new_lines"], template=_DEFAULT_SUMMARIZER_TEMPLATE
 )
@@ -81,7 +80,7 @@ Conversation history (for reference only):
 Last line of conversation (for extraction):
 Human: {input}
 
-Output:"""
+Output:"""  # noqa: E501
 ENTITY_EXTRACTION_PROMPT = PromptTemplate(
     input_variables=["history", "input"], template=_DEFAULT_ENTITY_EXTRACTION_TEMPLATE
 )
@@ -102,7 +101,7 @@ Existing summary of {entity}:
 
 Last line of conversation:
 Human: {input}
-Updated summary:"""
+Updated summary:"""  # noqa: E501
 
 ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
     input_variables=["entity", "summary", "history", "input"],
@@ -128,7 +127,7 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "Person #1: It's a secret military base in Nevada.\n"
     "AI: What do you know about Nevada?\n"
     "Last line of conversation:\n"
-    "Person #1: It's a state in the US. It's also the number 1 producer of gold in the US.\n\n"
+    "Person #1: It's a state in the US. It's also the number 1 producer of gold in the US.\n\n"  # noqa: E501
     f"Output: (Nevada, is a, state){KG_TRIPLE_DELIMITER}(Nevada, is in, US)"
     f"{KG_TRIPLE_DELIMITER}(Nevada, is the number 1 producer of, gold)\n"
     "END OF EXAMPLE\n\n"
@@ -145,12 +144,12 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "EXAMPLE\n"
     "Conversation history:\n"
     "Person #1: What do you know about Descartes?\n"
-    "AI: Descartes was a French philosopher, mathematician, and scientist who lived in the 17th century.\n"
-    "Person #1: The Descartes I'm referring to is a standup comedian and interior designer from Montreal.\n"
-    "AI: Oh yes, He is a comedian and an interior designer. He has been in the industry for 30 years. His favorite food is baked bean pie.\n"
+    "AI: Descartes was a French philosopher, mathematician, and scientist who lived in the 17th century.\n"  # noqa: E501
+    "Person #1: The Descartes I'm referring to is a standup comedian and interior designer from Montreal.\n"  # noqa: E501
+    "AI: Oh yes, He is a comedian and an interior designer. He has been in the industry for 30 years. His favorite food is baked bean pie.\n"  # noqa: E501
     "Last line of conversation:\n"
-    "Person #1: Oh huh. I know Descartes likes to drive antique scooters and play the mandolin.\n"
-    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"
+    "Person #1: Oh huh. I know Descartes likes to drive antique scooters and play the mandolin.\n"  # noqa: E501
+    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"  # noqa: E501
     "END OF EXAMPLE\n\n"
     "Conversation history (for reference only):\n"
     "{history}"

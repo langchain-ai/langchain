@@ -52,9 +52,8 @@ class CustomPersister:
         # If cassette path is already Path this is a no-op
         cassette_path = Path(cassette_path)
         if not cassette_path.is_file():
-            raise CassetteNotFoundError(
-                f"Cassette file {cassette_path} does not exist."
-            )
+            msg = f"Cassette file {cassette_path} does not exist."
+            raise CassetteNotFoundError(msg)
         with cassette_path.open(mode="rb") as f:
             data = f.read()
         deser = serializer.deserialize(data)

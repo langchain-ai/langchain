@@ -7,7 +7,9 @@ TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 
 
 def generate_example(
-    examples: list[dict], llm: BaseLanguageModel, prompt_template: PromptTemplate
+    examples: list[dict],
+    llm: BaseLanguageModel,
+    prompt_template: PromptTemplate,
 ) -> str:
     """Return another example given a list of examples for a prompt."""
     prompt = FewShotPromptTemplate(

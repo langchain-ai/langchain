@@ -263,23 +263,23 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         Returns:
             The parsed JSON object.
         """
-        _result = super().parse_result(result)
+        result_ = super().parse_result(result)
         if self.args_only:
             if hasattr(self.pydantic_schema, "model_validate_json"):
-                pydantic_args = self.pydantic_schema.model_validate_json(_result)
+                pydantic_args = self.pydantic_schema.model_validate_json(result_)
             else:
-                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore[attr-defined]
+                pydantic_args = self.pydantic_schema.parse_raw(result_)  # type: ignore[attr-defined]
         else:
-            fn_name = _result["name"]
-            _args = _result["arguments"]
+            fn_name = result_["name"]
+            args = result_["arguments"]
             if isinstance(self.pydantic_schema, dict):
                 pydantic_schema = self.pydantic_schema[fn_name]
             else:
                 pydantic_schema = self.pydantic_schema
             if issubclass(pydantic_schema, BaseModel):
-                pydantic_args = pydantic_schema.model_validate_json(_args)
+                pydantic_args = pydantic_schema.model_validate_json(args)
             elif issubclass(pydantic_schema, BaseModelV1):
-                pydantic_args = pydantic_schema.parse_raw(_args)
+                pydantic_args = pydantic_schema.parse_raw(args)
             else:
                 msg = f"Unsupported pydantic schema: {pydantic_schema}"
                 raise ValueError(msg)

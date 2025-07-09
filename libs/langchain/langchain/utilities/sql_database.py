@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "truncate_word",
     "SQLDatabase",
+    "truncate_word",
 ]

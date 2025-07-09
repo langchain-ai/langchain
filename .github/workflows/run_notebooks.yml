@@ -1,4 +1,4 @@
-name: Run notebooks
+name: Run Notebooks
 
 on:
   workflow_dispatch:
@@ -13,6 +13,9 @@ on:
         default: 'all'
   schedule:
     - cron: '0 13 * * *'
+
+permissions:
+  contents: read
 
 env:
   UV_FROZEN: "true"

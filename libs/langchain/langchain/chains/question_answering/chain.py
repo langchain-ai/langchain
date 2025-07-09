@@ -29,13 +29,16 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
@@ -65,6 +68,7 @@ def _load_map_rerank_chain(
 
 def _load_stuff_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: Optional[BasePromptTemplate] = None,
     document_variable_name: str = "context",
     verbose: Optional[bool] = None,
@@ -93,6 +97,7 @@ def _load_stuff_chain(
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: Optional[BasePromptTemplate] = None,
     combine_prompt: Optional[BasePromptTemplate] = None,
     combine_document_variable_name: str = "summaries",
@@ -138,10 +143,11 @@ def _load_map_reduce_chain(
     if collapse_prompt is None:
         collapse_chain = None
         if collapse_llm is not None:
-            raise ValueError(
+            msg = (
                 "collapse_llm provided, but collapse_prompt was not: please "
                 "provide one or stop providing collapse_llm."
             )
+            raise ValueError(msg)
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
@@ -175,6 +181,7 @@ def _load_map_reduce_chain(
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: Optional[BasePromptTemplate] = None,
     refine_prompt: Optional[BasePromptTemplate] = None,
     document_variable_name: str = "context_str",
@@ -189,7 +196,7 @@ def _load_refine_chain(
         question_prompt or refine_prompts.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
     _refine_prompt = refine_prompt or refine_prompts.REFINE_PROMPT_SELECTOR.get_prompt(
-        llm
+        llm,
     )
     initial_chain = LLMChain(
         llm=llm,
@@ -224,10 +231,10 @@ def _load_refine_chain(
     message=(
         "This class is deprecated. See the following migration guides for replacements "
         "based on `chain_type`:\n"
-        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"  # noqa: E501
-        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"  # noqa: E501
-        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"  # noqa: E501
-        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"  # noqa: E501
+        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"
+        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"
+        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"
+        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"
         "\nSee also guides on retrieval and question-answering here: "
         "https://python.langchain.com/docs/how_to/#qa-with-rag"
     ),
@@ -235,7 +242,7 @@ def _load_refine_chain(
 def load_qa_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,
+    verbose: Optional[bool] = None,  # noqa: FBT001
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
@@ -259,10 +266,14 @@ def load_qa_chain(
         "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
-        raise ValueError(
+        msg = (
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
+        raise ValueError(msg)
     return loader_mapping[chain_type](
-        llm, verbose=verbose, callback_manager=callback_manager, **kwargs
+        llm,
+        verbose=verbose,
+        callback_manager=callback_manager,
+        **kwargs,
     )

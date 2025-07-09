@@ -29,8 +29,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "POWERBI_PREFIX",
-    "POWERBI_SUFFIX",
     "POWERBI_CHAT_PREFIX",
     "POWERBI_CHAT_SUFFIX",
+    "POWERBI_PREFIX",
+    "POWERBI_SUFFIX",
 ]

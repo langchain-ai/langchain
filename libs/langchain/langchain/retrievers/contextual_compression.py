@@ -38,15 +38,18 @@ class ContextualCompressionRetriever(BaseRetriever):
             Sequence of relevant documents
         """
         docs = self.base_retriever.invoke(
-            query, config={"callbacks": run_manager.get_child()}, **kwargs
+            query,
+            config={"callbacks": run_manager.get_child()},
+            **kwargs,
         )
         if docs:
             compressed_docs = self.base_compressor.compress_documents(
-                docs, query, callbacks=run_manager.get_child()
+                docs,
+                query,
+                callbacks=run_manager.get_child(),
             )
             return list(compressed_docs)
-        else:
-            return []
+        return []
 
     async def _aget_relevant_documents(
         self,
@@ -64,12 +67,15 @@ class ContextualCompressionRetriever(BaseRetriever):
             List of relevant documents
         """
         docs = await self.base_retriever.ainvoke(
-            query, config={"callbacks": run_manager.get_child()}, **kwargs
+            query,
+            config={"callbacks": run_manager.get_child()},
+            **kwargs,
         )
         if docs:
             compressed_docs = await self.base_compressor.acompress_documents(
-                docs, query, callbacks=run_manager.get_child()
+                docs,
+                query,
+                callbacks=run_manager.get_child(),
             )
             return list(compressed_docs)
-        else:
-            return []
+        return []

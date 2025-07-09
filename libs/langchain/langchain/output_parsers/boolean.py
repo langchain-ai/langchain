@@ -28,22 +28,25 @@ class BooleanOutputParser(BaseOutputParser[bool]):
         }
         if self.true_val.upper() in truthy:
             if self.false_val.upper() in truthy:
-                raise ValueError(
+                msg = (
                     f"Ambiguous response. Both {self.true_val} and {self.false_val} "
                     f"in received: {text}."
                 )
+                raise ValueError(msg)
             return True
-        elif self.false_val.upper() in truthy:
+        if self.false_val.upper() in truthy:
             if self.true_val.upper() in truthy:
-                raise ValueError(
+                msg = (
                     f"Ambiguous response. Both {self.true_val} and {self.false_val} "
                     f"in received: {text}."
                 )
+                raise ValueError(msg)
             return False
-        raise ValueError(
+        msg = (
             f"BooleanOutputParser expected output value to include either "
             f"{self.true_val} or {self.false_val}. Received {text}."
         )
+        raise ValueError(msg)
 
     @property
     def _type(self) -> str:

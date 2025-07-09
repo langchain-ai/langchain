@@ -19,7 +19,7 @@ from langchain.chains.llm import LLMChain
     message=(
         "This class is deprecated and will be removed in langchain 1.0. "
         "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"
     ),
     removal="1.0",
 )
@@ -197,12 +197,12 @@ class ConstitutionalChain(Chain):
 
     @classmethod
     def get_principles(
-        cls, names: Optional[list[str]] = None
+        cls,
+        names: Optional[list[str]] = None,
     ) -> list[ConstitutionalPrinciple]:
         if names is None:
             return list(PRINCIPLES.values())
-        else:
-            return [PRINCIPLES[name] for name in names]
+        return [PRINCIPLES[name] for name in names]
 
     @classmethod
     def from_llm(

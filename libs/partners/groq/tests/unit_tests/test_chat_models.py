@@ -244,9 +244,9 @@ def test_chat_groq_invalid_streaming_params() -> None:
 
 
 def test_chat_groq_secret() -> None:
-    """Test that secret is not printed"""
-    secret = "secretKey"
-    not_secret = "safe"
+    """Test that secret is not printed."""
+    secret = "secretKey"  # noqa: S105
+    not_secret = "safe"  # noqa: S105
     llm = ChatGroq(model="foo", api_key=secret, model_kwargs={"not_secret": not_secret})  # type: ignore[call-arg, arg-type]
     stringified = str(llm)
     assert not_secret in stringified
@@ -255,7 +255,7 @@ def test_chat_groq_secret() -> None:
 
 @pytest.mark.filterwarnings("ignore:The function `loads` is in beta")
 def test_groq_serialization() -> None:
-    """Test that ChatGroq can be successfully serialized and deserialized"""
+    """Test that ChatGroq can be successfully serialized and deserialized."""
     api_key1 = "top secret"
     api_key2 = "topest secret"
     llm = ChatGroq(model="foo", api_key=api_key1, temperature=0.5)  # type: ignore[call-arg, arg-type]

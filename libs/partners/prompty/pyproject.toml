@@ -31,7 +31,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<1.0.0,>=0.1.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["types-pyyaml<7.0.0.0,>=6.0.12.20240311", "langchain-core"]
 typing = [
     "mypy<1.0,>=0.991",
@@ -49,7 +49,7 @@ langchain = { path = "../../langchain", editable = true }
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
+select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", ]
 
 [tool.mypy]
@@ -65,3 +65,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

@@ -28,4 +28,4 @@ from langchain.evaluation.scoring.eval_chain import (
     ScoreStringEvalChain,
 )
 
-__all__ = ["ScoreStringEvalChain", "LabeledScoreStringEvalChain"]
+__all__ = ["LabeledScoreStringEvalChain", "ScoreStringEvalChain"]

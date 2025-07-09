@@ -9,7 +9,7 @@ pytest.importorskip(modname="langchain_openai")
 
 def test_generate_migrations() -> None:
     migrations = get_migrations_for_partner_package("langchain_openai")
-    assert migrations == [
+    if migrations != [
         ("langchain_community.llms.openai.OpenAI", "langchain_openai.OpenAI"),
         ("langchain_community.llms.openai.AzureOpenAI", "langchain_openai.AzureOpenAI"),
         (
@@ -43,4 +43,6 @@ def test_generate_migrations() -> None:
             "langchain_openai.AzureChatOpenAI",
         ),
         ("langchain_community.chat_models.ChatOpenAI", "langchain_openai.ChatOpenAI"),
-    ]
+    ]:
+        msg = "Migrations do not match expected result"
+        raise ValueError(msg)

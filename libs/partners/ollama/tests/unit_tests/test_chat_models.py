@@ -4,6 +4,7 @@ import json
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from httpx import Client, Request, Response
@@ -11,6 +12,8 @@ from langchain_core.messages import ChatMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import ChatOllama, _parse_arguments_from_tool_call
+
+MODEL_NAME = "llama3.1"
 
 
 class TestChatOllama(ChatModelUnitTests):
@@ -20,7 +23,7 @@ class TestChatOllama(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama3-groq-tool-use"}
+        return {"model": MODEL_NAME}
 
 
 def test__parse_arguments_from_tool_call() -> None:
@@ -48,8 +51,7 @@ def test_arbitrary_roles_accepted_in_chatmessages(
     monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
 
     llm = ChatOllama(
-        base_url="http://whocares:11434",
-        model="granite3.2",
+        model=MODEL_NAME,
         verbose=True,
         format=None,
     )
@@ -64,3 +66,20 @@ def test_arbitrary_roles_accepted_in_chatmessages(
     ]
 
     llm.invoke(messages)
+
+
+@patch("langchain_ollama.chat_models.validate_model")
+def test_validate_model_on_init(mock_validate_model: Any) -> None:
+    """Test that the model is validated on initialization when requested."""
+    # Test that validate_model is called when validate_model_on_init=True
+    ChatOllama(model=MODEL_NAME, validate_model_on_init=True)
+    mock_validate_model.assert_called_once()
+    mock_validate_model.reset_mock()
+
+    # Test that validate_model is NOT called when validate_model_on_init=False
+    ChatOllama(model=MODEL_NAME, validate_model_on_init=False)
+    mock_validate_model.assert_not_called()
+
+    # Test that validate_model is NOT called by default
+    ChatOllama(model=MODEL_NAME)
+    mock_validate_model.assert_not_called()

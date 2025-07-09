@@ -135,11 +135,11 @@ docs = vectorstore.similarity_search(query)
 
 Many vectorstores support search parameters to be passed with the `similarity_search` method. See the documentation for the specific vectorstore you are using to see what parameters are supported.
 As an example [Pinecone](https://python.langchain.com/api_reference/pinecone/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.similarity_search) several parameters that are important general concepts:
-Many vectorstores support [the `k`](/docs/integrations/vectorstores/pinecone/#query-directly), which controls the number of Documents to return, and `filter`, which allows for filtering documents by metadata.
+Many vectorstores support [the `k`](/docs/integrations/vectorstores/pinecone/#query-directly), which controls the number of documents to return, and `filter`, which allows for filtering documents by metadata.
 
-- `query (str) – Text to look up documents similar to.`
-- `k (int) – Number of Documents to return. Defaults to 4.`
-- `filter (dict | None) – Dictionary of argument(s) to filter on metadata`
+- `query (str) - Text to look up documents similar to.`
+- `k (int) - Number of documents to return. Defaults to 4.`
+- `filter (dict | None) - Dictionary of argument(s) to filter on metadata`
 
 :::info[Further reading]
 

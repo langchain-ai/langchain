@@ -102,7 +102,8 @@ class PromptyChatParser(Invoker):
             return content
 
     def invoke(self, data: BaseModel) -> BaseModel:
-        assert isinstance(data, SimpleModel)
+        if not isinstance(data, SimpleModel):
+            raise ValueError("data must be an instance of SimpleModel")
         messages = []
         separator = r"(?i)^\s*#?\s*(" + "|".join(self.roles) + r")\s*:\s*\n"
 

@@ -1,4 +1,4 @@
-"""Test MistralAI Embedding"""
+"""Test MistralAI Embedding."""
 
 from langchain_mistralai import MistralAIEmbeddings
 
