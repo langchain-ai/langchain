@@ -101,7 +101,7 @@ def test_character_text_splitter_longer_words() -> None:
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -123,7 +123,7 @@ def test_character_text_splitter_keep_separator_regex(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_start(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the start of each chunk.
@@ -145,7 +145,7 @@ def test_character_text_splitter_keep_separator_regex_start(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_end(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the end of each chunk.
@@ -167,7 +167,7 @@ def test_character_text_splitter_keep_separator_regex_end(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -338,7 +338,9 @@ def test_iterative_text_splitter_discard_separator() -> None:
     ]
 
 
-def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> list[str]:
+def __test_iterative_text_splitter(
+    *, chunk_size: int, keep_separator: bool
+) -> list[str]:
     chunk_size += 1 if keep_separator else 0
 
     splitter = RecursiveCharacterTextSplitter(
@@ -3574,6 +3576,7 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 )
 def test_character_text_splitter_chunk_size_effect(
     separator: str,
+    *,
     is_regex: bool,
     text: str,
     chunk_size: int,

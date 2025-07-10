@@ -542,12 +542,13 @@ class BaseChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
-        http_async_client as well if you'd like a custom client for async invocations.
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+        ``http_async_client`` as well if you'd like a custom client for async
+        invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
-        http_client as well if you'd like a custom client for sync invocations."""
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
@@ -588,8 +589,8 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     service_tier: Optional[str] = None
-    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
-    for users of OpenAI's scale tier service.
+    """Latency tier for request. Options are ``'auto'``, ``'default'``, or ``'flex'``.
+    Relevant for users of OpenAI's scale tier service.
     """
 
     store: Optional[bool] = None
@@ -600,8 +601,8 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     truncation: Optional[str] = None
-    """Truncation strategy (Responses API). Can be ``"auto"`` or ``"disabled"``
-    (default). If ``"auto"``, model may drop input items from the middle of the
+    """Truncation strategy (Responses API). Can be ``'auto'`` or ``'disabled'``
+    (default). If ``'auto'``, model may drop input items from the middle of the
     message sequence to fit the context window.
 
     .. versionadded:: 0.3.24
@@ -1451,7 +1452,7 @@ class BaseChatOpenAI(BaseChatModel):
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+        """Calculate num tokens for ``gpt-3.5-turbo`` and ``gpt-4`` with ``tiktoken`` package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
         image tokens if you are specifying the image as a base64 string, and you must
@@ -1459,14 +1460,13 @@ class BaseChatOpenAI(BaseChatModel):
         as a URL. If these aren't installed image inputs will be ignored in token
         counting.
 
-        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+        `OpenAI reference <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb>`__
 
         Args:
             messages: The message inputs to tokenize.
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
-        """
+        """  # noqa: E501
         # TODO: Count bound tools as part of input.
         if tools is not None:
             warnings.warn(
@@ -2036,13 +2036,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         max_retries: Optional[int]
             Max number of retries.
         api_key: Optional[str]
-            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            var ``OPENAI_ORG_ID``.
 
         See full list of supported init args and their descriptions in the params section.
 

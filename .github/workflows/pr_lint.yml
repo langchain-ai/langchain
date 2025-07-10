@@ -1,0 +1,64 @@
+name: PR Title Lint
+
+permissions:
+  pull-requests: read
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  lint-pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+            release
+          scopes: |
+            core
+            cli
+            langchain
+            standard-tests
+            docs
+            anthropic
+            chroma
+            deepseek
+            exa
+            fireworks
+            groq
+            huggingface
+            mistralai
+            nomic
+            ollama
+            openai
+            perplexity
+            prompty
+            qdrant
+            xai
+          requireScope: false
+          disallowScopes: |
+            release
+            [A-Z]+
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
+          ignoreLabels: |
+            ignore-lint-pr-title
