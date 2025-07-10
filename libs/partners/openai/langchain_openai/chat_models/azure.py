@@ -76,13 +76,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             Max number of retries.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            var ``OPENAI_ORG_ID``.
         model: Optional[str]
             The name of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g. "gpt-4", "gpt-35-turbo", etc.
+            counting. Does not affect completion. E.g. ``'gpt-4'``, ``'gpt-35-turbo'``, etc.
         model_version: Optional[str]
             The version of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g., "0125", "0125-preview", etc.
+            counting. Does not affect completion. E.g., ``'0125'``, ``'0125-preview'``, etc.
 
     See full list of supported init args and their descriptions in the params section.
 

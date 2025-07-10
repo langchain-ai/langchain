@@ -29,6 +29,9 @@ _DictOrPydantic = Union[dict, _BM]
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
+    Refer to `xAI's documentation <https://docs.x.ai/docs/api-reference#chat-completions>`__
+    for more nuanced details on the API's behavior and supported parameters.
+
     Setup:
         Install ``langchain-xai`` and set environment variable ``XAI_API_KEY``.
 
@@ -42,7 +45,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         model: str
             Name of model to use.
         temperature: float
-            Sampling temperature.
+            Sampling temperature between ``0`` and ``2``. Higher values mean more random completions,
+            while lower values (like ``0.2``) mean more focused and deterministic completions.
+            (Default: ``1``.)
         max_tokens: Optional[int]
             Max number of tokens to generate.
         logprobs: Optional[bool]
@@ -89,7 +94,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 content="J'adore la programmation.",
                 response_metadata={
                     'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
-                    'model_name': 'grok-beta',
+                    'model_name': 'grok-4',
                     'system_fingerprint': None,
                     'finish_reason': 'stop',
                     'logprobs': None
@@ -113,7 +118,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             content=' programm' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
             content='ation' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
             content='.' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='' response_metadata={'finish_reason': 'stop', 'model_name': 'grok-beta'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='' response_metadata={'finish_reason': 'stop', 'model_name': 'grok-4'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
 
 
     Async:
@@ -133,7 +138,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 content="J'adore la programmation.",
                 response_metadata={
                     'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
-                    'model_name': 'grok-beta',
+                    'model_name': 'grok-4',
                     'system_fingerprint': None,
                     'finish_reason': 'stop',
                     'logprobs': None
@@ -146,7 +151,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             from pydantic import BaseModel, Field
 
-            llm = ChatXAI(model="grok-beta")
+            llm = ChatXAI(model="grok-4")
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
@@ -275,7 +280,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     'prompt_tokens': 19,
                     'total_tokens': 23
                     },
-                'model_name': 'grok-beta',
+                'model_name': 'grok-4',
                 'system_fingerprint': None,
                 'finish_reason': 'stop',
                 'logprobs': None
@@ -283,7 +288,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     """  # noqa: E501
 
-    model_name: str = Field(alias="model")
+    model_name: str = Field(default="grok-4", alias="model")
     """Model name to use."""
     xai_api_key: Optional[SecretStr] = Field(
         alias="api_key",
