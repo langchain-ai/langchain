@@ -569,10 +569,14 @@ def test_mcp_builtin_zdr() -> None:
     _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
-@pytest.mark.vcr()
-def test_image_generation_streaming() -> None:
+@pytest.mark.default_cassette("test_image_generation_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_image_generation_streaming(output_version: str) -> None:
     """Test image generation streaming."""
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version=output_version
+    )
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
@@ -619,15 +623,35 @@ def test_image_generation_streaming() -> None:
     # At the moment, the streaming API does not pick up annotations fully.
     # So the following check is commented out.
     # _check_response(complete_ai_message)
-    tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
-    assert set(tool_output.keys()).issubset(expected_keys)
+    if output_version == "v0":
+        assert complete_ai_message.additional_kwargs["tool_outputs"]
+        tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    elif output_version == "responses/v1":
+        tool_output = next(
+            block
+            for block in complete_ai_message.content
+            if block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        # v1
+        standard_keys = {"type", "source_type", "data", "id", "status", "index"}
+        tool_output = next(
+            block for block in complete_ai_message.content if block["type"] == "image"
+        )
+        assert set(standard_keys).issubset(tool_output.keys())
 
 
-@pytest.mark.vcr()
-def test_image_generation_multi_turn() -> None:
+@pytest.mark.default_cassette("test_image_generation_multi_turn.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_image_generation_multi_turn(output_version: str) -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version=output_version
+    )
     # Test invocation
     tool = {
         "type": "image_generation",
@@ -644,9 +668,37 @@ def test_image_generation_multi_turn() -> None:
     ]
     ai_message = llm_with_tools.invoke(chat_history)
     _check_response(ai_message)
-    tool_output = ai_message.additional_kwargs["tool_outputs"][0]
 
-    # Example tool output for an image
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    if output_version == "v0":
+        tool_output = ai_message.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    elif output_version == "responses/v1":
+        tool_output = next(
+            block
+            for block in ai_message.content
+            if block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        standard_keys = {"type", "source_type", "data", "id", "status"}
+        tool_output = next(
+            block for block in ai_message.content if block["type"] == "image"
+        )
+        assert set(standard_keys).issubset(tool_output.keys())
+
+    # Example tool output for an image (v0)
     # {
     #     "background": "opaque",
     #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
@@ -661,20 +713,6 @@ def test_image_generation_multi_turn() -> None:
     #     "type": "image_generation_call",
     #     "result": # base64 encode image data
     # }
-
-    expected_keys = {
-        "id",
-        "background",
-        "output_format",
-        "quality",
-        "result",
-        "revised_prompt",
-        "size",
-        "status",
-        "type",
-    }
-
-    assert set(tool_output.keys()).issubset(expected_keys)
 
     chat_history.extend(
         [
@@ -693,5 +731,20 @@ def test_image_generation_multi_turn() -> None:
 
     ai_message2 = llm_with_tools.invoke(chat_history)
     _check_response(ai_message2)
-    tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
-    assert set(tool_output2.keys()).issubset(expected_keys)
+
+    if output_version == "v0":
+        tool_output = ai_message2.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    elif output_version == "responses/v1":
+        tool_output = next(
+            block
+            for block in ai_message2.content
+            if block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        standard_keys = {"type", "source_type", "data", "id", "status"}
+        tool_output = next(
+            block for block in ai_message2.content if block["type"] == "image"
+        )
+        assert set(standard_keys).issubset(tool_output.keys())
