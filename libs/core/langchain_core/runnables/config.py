@@ -43,7 +43,16 @@ class EmptyDict(TypedDict, total=False):
 class RunnableConfig(BaseModel):
     """Configuration for a Runnable."""
     
-    # 新增配置版本管理功能
+    # 原有核心字段 - 必须保留
+    tags: List[str] = Field(default=[], description="标签列表")
+    metadata: Dict = Field(default={}, description="元数据")
+    callbacks: Optional[BaseCallbackManager] = Field(default=None, description="回调管理器")
+    run_name: Optional[str] = Field(default=None, description="运行名称")
+    max_concurrency: Optional[int] = Field(default=None, description="最大并发数")
+    recursion_limit: int = Field(default=DEFAULT_RECURSION_LIMIT, description="递归限制")
+    configurable: Dict = Field(default={}, description="可配置参数")
+
+    # 新增配置版本管理功能 - 保留已有修改
     config_version: str = Field(default="1.0", description="配置版本标识")
     version_history: List[Dict] = Field(default_factory=list, description="配置版本历史记录")
     
