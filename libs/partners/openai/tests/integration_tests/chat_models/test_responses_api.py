@@ -181,8 +181,13 @@ class FooDict(TypedDict):
     response: str
 
 
-def test_parsed_pydantic_schema() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+@pytest.mark.default_cassette("test_parsed_pydantic_schema.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_parsed_pydantic_schema(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version=output_version
+    )
     response = llm.invoke("how are ya", response_format=Foo)
     parsed = Foo(**json.loads(response.text()))
     assert parsed == response.additional_kwargs["parsed"]
