@@ -67,7 +67,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             from langchain_xai import ChatXAI
 
             llm = ChatXAI(
-                model="grok-beta",
+                model="grok-4",
                 temperature=0,
                 max_tokens=None,
                 timeout=None,
@@ -227,7 +227,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             from langchain_xai import ChatXAI
 
             llm = ChatXAI(
-                model="grok-3-latest",
+                model="grok-4",
                 search_parameters={
                     "mode": "auto",
                     # Example optional parameters below:
