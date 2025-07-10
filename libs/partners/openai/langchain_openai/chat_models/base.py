@@ -3889,7 +3889,17 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        content.append({"annotations": [annotation], "index": current_index})
+        if output_version == "v1":
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "annotations": [annotation],
+                    "index": current_index
+                }
+            )
+        else:
+            content.append({"annotations": [annotation], "index": current_index})
     elif chunk.type == "response.output_text.done":
         if output_version == "v1":
             content.append(
