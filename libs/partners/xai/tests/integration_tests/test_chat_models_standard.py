@@ -17,11 +17,11 @@ rate_limiter = InMemoryRateLimiter(
     requests_per_second=0.5,
 )
 
-MODEL_NAME = "grok-4"
-
+MODEL_NAME = "grok-3-mini"
 # Not using Grok 4 since it doesn't support reasoning params (effort) or returns
 # reasoning content.
-REASONING_MODEL_NAME = "grok-3-mini"
+
+CITATIONS_MODEL_NAME = "grok-3"
 
 
 class TestXAIStandard(ChatModelIntegrationTests):
@@ -32,7 +32,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "grok-3",
+            "model": MODEL_NAME,
             "rate_limiter": rate_limiter,
             "stream_usage": True,
         }
@@ -41,7 +41,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatXAI(
-        model=REASONING_MODEL_NAME,
+        model=MODEL_NAME,
         reasoning_effort="low",
     )
     response = chat_model.invoke("What is 3^3?")
@@ -58,7 +58,7 @@ def test_reasoning_content() -> None:
 
 def test_web_search() -> None:
     llm = ChatXAI(
-        model=MODEL_NAME,
+        model=CITATIONS_MODEL_NAME,
         search_parameters={"mode": "auto", "max_search_results": 3},
     )
 

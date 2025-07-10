@@ -151,7 +151,19 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         `Certain xAI models <https://docs.x.ai/docs/models#model-pricing>`__ support reasoning,
         which allows the model to provide reasoning content along with the response.
 
-        Reasoning content is returned under the ``additional_kwargs`` field of the AIMessage or AIMessageChunk.
+        If provided, reasoning content is returned under the ``additional_kwargs`` field of the
+        AIMessage or AIMessageChunk.
+
+        If supported, reasoning effort can be specified in the model constructor's ``extra_body``
+        argument, which will control the amount of reasoning the model does. The value can be one of
+        ``'low'`` or ``'high'``.
+
+        .. code-block:: python
+
+            model = ChatXAI(
+                model="grok-3-mini",
+                extra_body={"reasoning_effort": "high"},
+            )
 
         .. note::
             As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
@@ -314,6 +326,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
             llm.invoke("Provide me a digest of world news in the last 24 hours.")
+
+        .. note::
+            `Citations <https://docs.x.ai/docs/guides/live-search#returning-citations>`__
+            are only available in `Grok 3 <https://docs.x.ai/docs/models/grok-3>`__.
 
     Token usage:
         .. code-block:: python
