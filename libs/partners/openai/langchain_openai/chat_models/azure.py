@@ -138,7 +138,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             AIMessage(
                 content="J'adore programmer.",
-                usage_metadata={"input_tokens": 28, "output_tokens": 6, "total_tokens": 34},
+                usage_metadata={
+                    "input_tokens": 28,
+                    "output_tokens": 6,
+                    "total_tokens": 34,
+                },
                 response_metadata={
                     "token_usage": {
                         "completion_tokens": 6,
@@ -184,8 +188,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
             AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(
+                content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
+            )
+            AIMessageChunk(
+                content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
+            )
             AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(
                 content="",
@@ -294,7 +302,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: Optional[int] = Field(
+                    description="How funny the joke is, from 1 to 10"
+                )
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -930,7 +940,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     )
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -961,7 +973,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     )
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, method="function_calling"
                 )
@@ -990,7 +1004,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     justification: str
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1022,7 +1038,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     ]
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
