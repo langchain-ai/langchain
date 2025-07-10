@@ -28,6 +28,7 @@ def get_migrations_for_partner_package(pkg_name: str) -> list[tuple[str, str]]:
 
     Returns:
         List of 2-tuples containing old and new import paths.
+
     """
     package = importlib.import_module(pkg_name)
     classes_ = find_subclasses_in_module(
@@ -46,9 +47,8 @@ def get_migrations_for_partner_package(pkg_name: str) -> list[tuple[str, str]]:
 
     old_paths = community_classes + imports_for_pkg
 
-    migrations = [
+    return [
         (f"{module}.{item}", f"{pkg_name}.{item}")
         for module, item in old_paths
         if item in classes_
     ]
-    return migrations

@@ -75,34 +75,36 @@ class LocalFileStore(ByteStore):
             Path: The full path for the given key.
         """
         if not re.match(r"^[a-zA-Z0-9_.\-/]+$", key):
-            raise InvalidKeyException(f"Invalid characters in key: {key}")
+            msg = f"Invalid characters in key: {key}"
+            raise InvalidKeyException(msg)
         full_path = os.path.abspath(self.root_path / key)
         common_path = os.path.commonpath([str(self.root_path), full_path])
         if common_path != str(self.root_path):
-            raise InvalidKeyException(
+            msg = (
                 f"Invalid key: {key}. Key should be relative to the full path."
                 f"{self.root_path} vs. {common_path} and full path of {full_path}"
             )
+            raise InvalidKeyException(msg)
 
         return Path(full_path)
 
-    def _mkdir_for_store(self, dir: Path) -> None:
+    def _mkdir_for_store(self, dir_path: Path) -> None:
         """Makes a store directory path (including parents) with specified permissions
 
         This is needed because `Path.mkdir()` is restricted by the current `umask`,
         whereas the explicit `os.chmod()` used here is not.
 
         Args:
-            dir: (Path) The store directory to make
+            dir_path: (Path) The store directory to make
 
         Returns:
             None
         """
-        if not dir.exists():
-            self._mkdir_for_store(dir.parent)
-            dir.mkdir(exist_ok=True)
+        if not dir_path.exists():
+            self._mkdir_for_store(dir_path.parent)
+            dir_path.mkdir(exist_ok=True)
             if self.chmod_dir is not None:
-                os.chmod(dir, self.chmod_dir)
+                os.chmod(dir_path, self.chmod_dir)
 
     def mget(self, keys: Sequence[str]) -> list[Optional[bytes]]:
         """Get the values associated with the given keys.

@@ -71,10 +71,9 @@ def create_extraction_chain_pydantic(
         [
             ("system", system_message),
             ("user", "{input}"),
-        ]
+        ],
     )
     functions = [convert_pydantic_to_openai_function(p) for p in pydantic_schemas]
     tools = [{"type": "function", "function": d} for d in functions]
     model = llm.bind(tools=tools)
-    chain = prompt | model | PydanticToolsParser(tools=pydantic_schemas)
-    return chain
+    return prompt | model | PydanticToolsParser(tools=pydantic_schemas)

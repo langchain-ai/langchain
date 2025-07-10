@@ -423,7 +423,7 @@ def test_trim_messages_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="first",
         allow_partial=True,
     )
@@ -441,7 +441,7 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="last",
         allow_partial=True,
     )

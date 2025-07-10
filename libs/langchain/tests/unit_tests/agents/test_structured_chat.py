@@ -21,10 +21,10 @@ def get_action_and_input(text: str) -> tuple[str, str]:
     output = output_parser.parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    elif isinstance(output, AgentFinish):
+    if isinstance(output, AgentFinish):
         return output.return_values["output"], output.log
-    else:
-        raise ValueError("Unexpected output type")
+    msg = "Unexpected output type"
+    raise ValueError(msg)
 
 
 def test_parse_with_language() -> None:
@@ -121,7 +121,7 @@ class TestCreatePrompt:
     # Test: Output should be a ChatPromptTemplate with sys and human messages.
     def test_create_prompt_output(self) -> None:
         prompt = StructuredChatAgent.create_prompt(
-            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
+            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)],
         )
 
         assert isinstance(prompt, ChatPromptTemplate)
@@ -132,7 +132,7 @@ class TestCreatePrompt:
     # Test: Format with a single tool.
     def test_system_message_single_tool(self) -> None:
         prompt: Any = StructuredChatAgent.create_prompt(
-            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
+            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)],
         )
         actual = prompt.messages[0].prompt.format()
 
@@ -176,7 +176,7 @@ class TestCreatePrompt:
 
             Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
             Thought:
-            """  # noqa: E501
+            """,  # noqa: E501
         ).strip()
 
         assert actual == expected
@@ -197,7 +197,7 @@ class TestCreatePrompt:
             [
                 Tool(name="foo", description="Test tool FOO", func=lambda x: x),
                 Tool(name="bar", description="Test tool BAR", func=lambda x: x),
-            ]
+            ],
         )
 
         actual = prompt.messages[0].prompt.format()
@@ -243,7 +243,7 @@ class TestCreatePrompt:
 
             Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
             Thought:
-            """  # noqa: E501
+            """,  # noqa: E501
         ).strip()
 
         assert actual == expected

@@ -31,6 +31,6 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "CollectionStore",
     "EmbeddingStore",
-    "QueryResult",
     "PGEmbedding",
+    "QueryResult",
 ]

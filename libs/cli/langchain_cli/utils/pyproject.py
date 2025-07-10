@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,8 @@ def _get_dep_inline_table(path: Path) -> InlineTable:
 
 
 def add_dependencies_to_pyproject_toml(
-    pyproject_toml: Path, local_editable_dependencies: Iterable[tuple[str, Path]]
+    pyproject_toml: Path,
+    local_editable_dependencies: Iterable[tuple[str, Path]],
 ) -> None:
     """Add dependencies to pyproject.toml."""
     with open(pyproject_toml, encoding="utf-8") as f:
@@ -23,14 +25,15 @@ def add_dependencies_to_pyproject_toml(
             {
                 name: _get_dep_inline_table(loc.relative_to(pyproject_toml.parent))
                 for name, loc in local_editable_dependencies
-            }
+            },
         )
     with open(pyproject_toml, "w", encoding="utf-8") as f:
         dump(pyproject, f)
 
 
 def remove_dependencies_from_pyproject_toml(
-    pyproject_toml: Path, local_editable_dependencies: Iterable[str]
+    pyproject_toml: Path,
+    local_editable_dependencies: Iterable[str],
 ) -> None:
     """Remove dependencies from pyproject.toml."""
     with open(pyproject_toml, encoding="utf-8") as f:
@@ -38,9 +41,7 @@ def remove_dependencies_from_pyproject_toml(
         # tomlkit types aren't amazing - treat as Dict instead
         dependencies = pyproject["tool"]["poetry"]["dependencies"]
         for name in local_editable_dependencies:
-            try:
+            with contextlib.suppress(KeyError):
                 del dependencies[name]
-            except KeyError:
-                pass
     with open(pyproject_toml, "w", encoding="utf-8") as f:
         dump(pyproject, f)

@@ -24,8 +24,8 @@ class MarkdownHeaderTextSplitter:
     def __init__(
         self,
         headers_to_split_on: list[tuple[str, str]],
-        return_each_line: bool = False,
-        strip_headers: bool = True,
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
@@ -121,10 +121,9 @@ class MarkdownHeaderTextSplitter:
                 elif stripped_line.startswith("~~~"):
                     in_code_block = True
                     opening_fence = "~~~"
-            else:
-                if stripped_line.startswith(opening_fence):
-                    in_code_block = False
-                    opening_fence = ""
+            elif stripped_line.startswith(opening_fence):
+                in_code_block = False
+                opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
@@ -207,11 +206,10 @@ class MarkdownHeaderTextSplitter:
         # aggregate these into chunks based on common metadata
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
-        else:
-            return [
-                Document(page_content=chunk["content"], metadata=chunk["metadata"])
-                for chunk in lines_with_metadata
-            ]
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in lines_with_metadata
+        ]
 
 
 class LineType(TypedDict):
@@ -281,8 +279,8 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     def __init__(
         self,
         headers_to_split_on: Union[list[tuple[str, str]], None] = None,
-        return_each_line: bool = False,
-        strip_headers: bool = True,
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
     ):
         """Initialize the text splitter with header splitting and formatting options.
 

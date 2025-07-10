@@ -23,7 +23,7 @@ class TestChatOllama(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama3-groq-tool-use"}
+        return {"model": MODEL_NAME}
 
 
 def test__parse_arguments_from_tool_call() -> None:
@@ -51,7 +51,6 @@ def test_arbitrary_roles_accepted_in_chatmessages(
     monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
 
     llm = ChatOllama(
-        base_url="http://whocares:11434",
         model=MODEL_NAME,
         verbose=True,
         format=None,

@@ -44,18 +44,20 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
         if isinstance(dialogue_turn, BaseMessage):
             if len(dialogue_turn.content) > 0:
                 role_prefix = _ROLE_MAP.get(
-                    dialogue_turn.type, f"{dialogue_turn.type}: "
+                    dialogue_turn.type,
+                    f"{dialogue_turn.type}: ",
                 )
                 buffer += f"\n{role_prefix}{dialogue_turn.content}"
         elif isinstance(dialogue_turn, tuple):
             human = "Human: " + dialogue_turn[0]
             ai = "Assistant: " + dialogue_turn[1]
-            buffer += "\n" + "\n".join([human, ai])
+            buffer += f"\n{human}\n{ai}"
         else:
-            raise ValueError(
+            msg = (
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
+            raise ValueError(msg)
     return buffer
 
 
@@ -108,7 +110,8 @@ class BaseConversationalRetrievalChain(Chain):
         return ["question", "chat_history"]
 
     def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         return InputType
 
@@ -120,9 +123,9 @@ class BaseConversationalRetrievalChain(Chain):
         """
         _output_keys = [self.output_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         if self.return_generated_question:
-            _output_keys = _output_keys + ["generated_question"]
+            _output_keys = [*_output_keys, "generated_question"]
         return _output_keys
 
     @abstractmethod
@@ -148,7 +151,9 @@ class BaseConversationalRetrievalChain(Chain):
         if chat_history_str:
             callbacks = _run_manager.get_child()
             new_question = self.question_generator.run(
-                question=question, chat_history=chat_history_str, callbacks=callbacks
+                question=question,
+                chat_history=chat_history_str,
+                callbacks=callbacks,
             )
         else:
             new_question = question
@@ -168,7 +173,9 @@ class BaseConversationalRetrievalChain(Chain):
                 new_inputs["question"] = new_question
             new_inputs["chat_history"] = chat_history_str
             answer = self.combine_docs_chain.run(
-                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+                input_documents=docs,
+                callbacks=_run_manager.get_child(),
+                **new_inputs,
             )
             output[self.output_key] = answer
 
@@ -200,7 +207,9 @@ class BaseConversationalRetrievalChain(Chain):
         if chat_history_str:
             callbacks = _run_manager.get_child()
             new_question = await self.question_generator.arun(
-                question=question, chat_history=chat_history_str, callbacks=callbacks
+                question=question,
+                chat_history=chat_history_str,
+                callbacks=callbacks,
             )
         else:
             new_question = question
@@ -221,7 +230,9 @@ class BaseConversationalRetrievalChain(Chain):
                 new_inputs["question"] = new_question
             new_inputs["chat_history"] = chat_history_str
             answer = await self.combine_docs_chain.arun(
-                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+                input_documents=docs,
+                callbacks=_run_manager.get_child(),
+                **new_inputs,
             )
             output[self.output_key] = answer
 
@@ -233,7 +244,8 @@ class BaseConversationalRetrievalChain(Chain):
 
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
-            raise ValueError("Chain not saveable when `get_chat_history` is not None.")
+            msg = "Chain not saveable when `get_chat_history` is not None."
+            raise ValueError(msg)
         super().save(file_path)
 
 
@@ -372,7 +384,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         num_docs = len(docs)
 
         if self.max_tokens_limit and isinstance(
-            self.combine_docs_chain, StuffDocumentsChain
+            self.combine_docs_chain,
+            StuffDocumentsChain,
         ):
             tokens = [
                 self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)
@@ -394,7 +407,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     ) -> list[Document]:
         """Get docs."""
         docs = self.retriever.invoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -407,7 +421,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     ) -> list[Document]:
         """Get docs."""
         docs = await self.retriever.ainvoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -418,7 +433,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         condense_question_llm: Optional[BaseLanguageModel] = None,
         combine_docs_chain_kwargs: Optional[dict] = None,
         callbacks: Callbacks = None,
@@ -488,7 +503,8 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
-            "please use `from langchain.chains import ConversationalRetrievalChain`"
+            "please use `from langchain.chains import ConversationalRetrievalChain`",
+            stacklevel=4,
         )
         return values
 
@@ -503,7 +519,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         full_kwargs = {**self.search_kwargs, **vectordbkwargs}
         return self.vectorstore.similarity_search(
-            question, k=self.top_k_docs_for_context, **full_kwargs
+            question,
+            k=self.top_k_docs_for_context,
+            **full_kwargs,
         )
 
     async def _aget_docs(
@@ -514,7 +532,8 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("ChatVectorDBChain does not support async")
+        msg = "ChatVectorDBChain does not support async"
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_llm(
@@ -536,7 +555,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
             **combine_docs_chain_kwargs,
         )
         condense_question_chain = LLMChain(
-            llm=llm, prompt=condense_question_prompt, callbacks=callbacks
+            llm=llm,
+            prompt=condense_question_prompt,
+            callbacks=callbacks,
         )
         return cls(
             vectorstore=vectorstore,
