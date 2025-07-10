@@ -49,7 +49,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             while lower values (like ``0.2``) mean more focused and deterministic completions.
             (Default: ``1``.)
         max_tokens: Optional[int]
-            Max number of tokens to generate.
+            Max number of tokens to generate. Refer to your `model's documentation <https://docs.x.ai/docs/models#model-pricing>`__
+            for the maximum number of tokens it can generate.
         logprobs: Optional[bool]
             Whether to return logprobs.
 
@@ -146,7 +147,22 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 id='run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0',
                 usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
 
-    Tool calling:
+    Reasoning:
+        `Certain xAI models <https://docs.x.ai/docs/models#model-pricing>`__ support reasoning,
+        which allows the model to provide reasoning content along with the response.
+
+        Reasoning content is returned under the ``additional_kwargs`` field of the AIMessage or AIMessageChunk.
+
+        .. note::
+            As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
+            `Grok 3 Mini <https://docs.x.ai/docs/models/grok-3-mini>`__.
+
+        .. note::
+            Note that in `Grok 4 <https://docs.x.ai/docs/models/grok-4-0709>`__, as of 2025-07-10,
+            reasoning is not exposed in ``reasoning_content`` (other than initial ``'Thinking...'`` text),
+            reasoning cannot be disabled, and the ``reasoning_effort`` cannot be specified.
+
+    Tool calling / function calling:
         .. code-block:: python
 
             from pydantic import BaseModel, Field
@@ -173,7 +189,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
             ai_msg.tool_calls
 
-
         .. code-block:: python
 
             [
@@ -190,6 +205,67 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     'type': 'tool_call'
                 }
             ]
+
+        .. note::
+            With stream response, the tool / function call will be returned in whole in a
+            single chunk, instead of being streamed across chunks.
+
+        Tool choice can be controlled by setting the ``tool_choice`` parameter in the model
+        constructor's ``extra_body`` argument. For example, to disable tool / function calling:
+        .. code-block:: python
+
+            llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
+
+        To require that the model always calls a tool / function, set ``tool_choice`` to ``'required'``:
+
+        .. code-block:: python
+
+            llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
+
+        To specify a tool / function to call, set ``tool_choice`` to the name of the tool / function:
+
+        .. code-block:: python
+
+            from pydantic import BaseModel, Field
+
+            llm = ChatXAI(
+                model="grok-4",
+                extra_body={
+                    "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
+                },
+            )
+
+            class GetWeather(BaseModel):
+                \"\"\"Get the current weather in a given location\"\"\"
+
+                location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+
+
+            class GetPopulation(BaseModel):
+                \"\"\"Get the current population in a given location\"\"\"
+
+                location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke(
+                "Which city is bigger: LA or NY?",
+            )
+            ai_msg.tool_calls
+
+        The resulting tool call would be:
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+            'args': {'location': 'Los Angeles, CA'},
+            'id': 'call_81668711',
+            'type': 'tool_call'}]
+
+    Parallel tool calling / parallel function calling:
+        By default, parallel tool / function calling is enabled, so you can process
+        multiple function calls in one request/response cycle. When two or more tool calls
+        are required, all of the tool call requests will be included in the response body.
 
     Structured output:
         .. code-block:: python
