@@ -34,6 +34,21 @@ if TYPE_CHECKING:
 class Tool(BaseTool):
     """用于简单操作的Tool实现。"""
     
+    # 显式设置func和coroutine属性
+    def __init__(
+        self,
+        name: str,
+        func: Optional[Callable],
+        description: str,
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name=name, func=func, description=description, **kwargs)
+        # 确保func属性被正确设置
+        self.func = func
+        # 确保coroutine属性被正确设置
+        self.coroutine = coroutine
+
     def _run(
         self,
         *args: Any,
@@ -175,13 +190,6 @@ class Tool(BaseTool):
             *args, config=config, run_manager=run_manager, **kwargs
         )
 
-    # TODO: this is for backwards compatibility, remove in future
-    def __init__(
-        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
-    ) -> None:
-        """Initialize tool."""
-        super().__init__(name=name, func=func, description=description, **kwargs)
-
     @classmethod
     def from_function(
         cls,
@@ -195,26 +203,11 @@ class Tool(BaseTool):
         ] = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
-        """Initialize tool from a function.
-
-        Args:
-            func: The function to create the tool from.
-            name: The name of the tool.
-            description: The description of the tool.
-            return_direct: Whether to return the output directly. Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
-            coroutine: The asynchronous version of the function. Defaults to None.
-            kwargs: Additional arguments to pass to the tool.
-
-        Returns:
-            The tool.
-
-        Raises:
-            ValueError: If the function is not provided.
-        """
+        """Initialize tool from a function."""
         if func is None and coroutine is None:
             msg = "Function and/or coroutine must be provided"
             raise ValueError(msg)
+        # 确保在创建实例时传递func和coroutine参数
         return cls(
             name=name,
             func=func,
