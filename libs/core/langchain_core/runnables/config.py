@@ -10,8 +10,9 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 
+from pydantic import Field, BaseModel
 from typing_extensions import ParamSpec, TypedDict
 
 from langchain_core.runnables.utils import (
