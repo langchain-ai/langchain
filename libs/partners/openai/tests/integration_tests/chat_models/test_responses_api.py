@@ -55,7 +55,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
-def test_web_search(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     first_response = llm.invoke(
         "What was a positive news story from today?",
@@ -112,7 +112,10 @@ def test_web_search(output_version: Literal["v0", "responses/v1", "v1"]) -> None
     for msg in [first_response, full, response]:
         assert isinstance(msg, AIMessage)
         block_types = [block["type"] for block in msg.content]  # type: ignore[index]
-        assert block_types == ["web_search_call", "text"]
+        if output_version == "responses/v1":
+            assert block_types == ["web_search_call", "text"]
+        else:
+            assert block_types == ["non_standard", "text"]
 
 
 @pytest.mark.flaky(retries=3, delay=1)
