@@ -2126,7 +2126,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             AIMessageChunk(content="", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
             AIMessageChunk(content="J", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
-            AIMessageChunk(content="'adore", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(
+                content="'adore", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
+            )
             AIMessageChunk(content=" la", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
             AIMessageChunk(
                 content=" programmation", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
@@ -2182,7 +2184,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "logprobs": None,
                 },
                 id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
-                usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
+                usage_metadata={
+                    "input_tokens": 31,
+                    "output_tokens": 5,
+                    "total_tokens": 36,
+                },
             )
 
     .. dropdown:: Tool calling
@@ -2299,7 +2305,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             tool = {"type": "web_search_preview"}
             llm_with_tools = llm.bind_tools([tool])
 
-            response = llm_with_tools.invoke("What was a positive news story from today?")
+            response = llm_with_tools.invoke(
+                "What was a positive news story from today?"
+            )
             response.content
 
         .. code-block:: python
@@ -2346,7 +2354,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             second_response = llm.invoke(
-                "What is my name?", previous_response_id=response.response_metadata["id"]
+                "What is my name?",
+                previous_response_id=response.response_metadata["id"],
             )
             second_response.text()
 
@@ -2424,7 +2433,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: Optional[int] = Field(
+                    description="How funny the joke is, from 1 to 10"
+                )
 
 
             structured_llm = llm.with_structured_output(Joke)
