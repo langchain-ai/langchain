@@ -132,6 +132,13 @@ class BaseStreamEvent(TypedDict):
 
         `.astream_events(..., {"metadata": {"foo": "bar"}})`.
     """
+    
+    # 新增配置版本管理字段
+    config_version: NotRequired[str]
+    """Version identifier for the configuration used in this runnable execution.
+    
+    Used for tracking and rolling back configurations.
+    """
 
     parent_ids: Sequence[str]
     """A list of the parent IDs associated with this event.

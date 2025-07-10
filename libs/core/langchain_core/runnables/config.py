@@ -39,57 +39,30 @@ class EmptyDict(TypedDict, total=False):
     """Empty dict type."""
 
 
-class RunnableConfig(TypedDict, total=False):
+class RunnableConfig(BaseModel):
     """Configuration for a Runnable."""
-
-    tags: list[str]
-    """
-    Tags for this call and any sub-calls (eg. a Chain calling an LLM).
-    You can use these to filter calls.
-    """
-
-    metadata: dict[str, Any]
-    """
-    Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
-    Keys should be strings, values should be JSON-serializable.
-    """
-
-    callbacks: Callbacks
-    """
-    Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
-    Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
-    """
-
-    run_name: str
-    """
-    Name for the tracer run for this call. Defaults to the name of the class.
-    """
-
-    max_concurrency: Optional[int]
-    """
-    Maximum number of parallel calls to make. If not provided, defaults to
-    ThreadPoolExecutor's default.
-    """
-
-    recursion_limit: int
-    """
-    Maximum number of times a call can recurse. If not provided, defaults to 25.
-    """
-
-    configurable: dict[str, Any]
-    """
-    Runtime values for attributes previously made configurable on this Runnable,
-    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made
-    configurable.
-    """
-
-    run_id: Optional[uuid.UUID]
-    """
-    Unique identifier for the tracer run for this call. If not provided, a new UUID
-        will be generated.
-    """
-
+    
+    # 新增配置版本管理功能
+    config_version: str = Field(default="1.0", description="配置版本标识")
+    version_history: List[Dict] = Field(default_factory=list, description="配置版本历史记录")
+    
+    def create_snapshot(self) -> None:
+        """创建配置快照"""
+        snapshot = self.dict(exclude={"version_history"})
+        self.version_history.append({
+            "timestamp": datetime.now(),
+            "version": self.config_version,
+            "snapshot": snapshot
+        })
+    
+    def rollback(self, version: str) -> bool:
+        """回滚到指定版本"""
+        for entry in reversed(self.version_history):
+            if entry["version"] == version:
+                for key, value in entry["snapshot"].items():
+                    setattr(self, key, value)
+                return True
+        return False
 
 CONFIG_KEYS = [
     "tags",

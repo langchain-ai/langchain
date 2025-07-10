@@ -89,6 +89,7 @@ class Tool(BaseTool):
             raise ToolException(msg)
         return tuple(all_args), {}
 
+    @override
     def _run(
         self,
         *args: Any,
@@ -100,6 +101,11 @@ class Tool(BaseTool):
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
+            
+            # 传递完整的执行上下文
+            if run_manager and signature(self.func).parameters.get("run_manager"):
+                kwargs["run_manager"] = run_manager
+            
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
@@ -117,6 +123,11 @@ class Tool(BaseTool):
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
+            
+            # 传递完整的执行上下文
+            if run_manager and signature(self.coroutine).parameters.get("run_manager"):
+                kwargs["run_manager"] = run_manager
+            
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
             return await self.coroutine(*args, **kwargs)
