@@ -291,8 +291,8 @@ def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
 
     for tool_call in message.tool_calls:
         if id_ := tool_call.get("id"):
-            tool_callblock: ToolCallContentBlock = {"type": "tool_call", "id": id_}
-            message.content.append(tool_callblock)
+            tool_call_block: ToolCallContentBlock = {"type": "tool_call", "id": id_}
+            message.content.append(tool_call_block)
 
     if "tool_calls" in message.additional_kwargs:
         _ = message.additional_kwargs.pop("tool_calls")
@@ -413,7 +413,18 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
                     "source_type": "base64",
                     "data": result,
                 }
-                for extra_key in ("id", "status"):
+                if output_format := block.get("output_format"):
+                    new_block["mime_type"] = f"image/{output_format}"
+                for extra_key in (
+                    "id",
+                    "index",
+                    "status",
+                    "background",
+                    "output_format",
+                    "quality",
+                    "revised_prompt",
+                    "size",
+                ):
                     if extra_key in block:
                         new_block[extra_key] = block[extra_key]
                 yield new_block
@@ -421,11 +432,11 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
             elif block_type == "function_call":
                 new_block: ToolCallContentBlock = {
                     "type": "tool_call",
-                    "id": block["call_id"],
+                    "id": block.get("call_id", ""),
                 }
                 if "id" in block:
                     new_block["item_id"] = block["id"]
-                for extra_key in ("arguments", "name"):
+                for extra_key in ("arguments", "name", "index"):
                     if extra_key in block:
                         new_block[extra_key] = block[extra_key]
                 yield new_block

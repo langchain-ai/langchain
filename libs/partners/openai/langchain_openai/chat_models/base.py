@@ -3793,6 +3793,24 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
     elif output_version == "v1":
         message = _convert_to_v1_from_responses(message)
+        if response.tools and any(
+            tool.type == "image_generation" for tool in response.tools
+        ):
+            # Get mime_time from tool definition and add to image generations
+            # if missing (primarily for tracing purposes).
+            image_generation_call = next(
+                tool for tool in response.tools if tool.type == "image_generation"
+            )
+            if image_generation_call.output_format:
+                mime_type = f"image/{image_generation_call.output_format}"
+                for block in message.content:
+                    # OK to mutate output message
+                    if (
+                        block.get("type") == "image"
+                        and block["source_type"] == "base64"
+                        and "mime_type" not in block
+                    ):
+                        block["mime_type"] = mime_type
     else:
         pass
     return ChatResult(generations=[ChatGeneration(message=message)])
