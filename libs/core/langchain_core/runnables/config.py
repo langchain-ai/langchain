@@ -199,7 +199,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.get("configurable", {}).items():
+    for key, value in empty.configurable.items():
         if (
             not key.startswith("__")
             and isinstance(value, (str, int, float, bool))
