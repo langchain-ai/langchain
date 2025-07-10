@@ -482,10 +482,16 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         block = blocks[i]
 
         # Ordinary block – just yield a shallow copy
-        if block.get("type") != "reasoning" or "reasoning" not in block:
+        if block.get("type") != "reasoning":
             yield dict(block)
             i += 1
             continue
+        elif "reasoning" not in block:
+            yield {**block, "summary": []}
+            i += 1
+            continue
+        else:
+            pass
 
         summary: list[dict[str, str]] = [
             {"type": "summary_text", "text": block.get("reasoning", "")}

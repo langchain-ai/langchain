@@ -455,9 +455,15 @@ def test_stream_reasoning_summary(
     assert isinstance(response_2, AIMessage)
 
 
+@pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
-def test_code_interpreter() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_code_interpreter(
+    output_version: Literal["v0", "responses/v1", "v1"],
+) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
     )
@@ -467,14 +473,26 @@ def test_code_interpreter() -> None:
     }
     response = llm_with_tools.invoke([input_message])
     _check_response(response)
-    tool_outputs = response.additional_kwargs["tool_outputs"]
-    assert tool_outputs
-    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+    if output_version == "v0":
+        tool_outputs = [
+            item
+            for item in response.additional_kwargs["tool_outputs"]
+            if item["type"] == "code_interpreter_call"
+        ]
+    elif output_version == "responses/v1":
+        tool_outputs = [
+            item for item in response.content if item["type"] == "code_interpreter_call"
+        ]
+    else:
+        # v1
+        tool_outputs = [
+            item["value"] for item in response.content if item["type"] == "non_standard"
+        ]
+        assert tool_outputs[0]["type"] == "code_interpreter_call"
+    assert len(tool_outputs) == 1
 
     # Test streaming
     # Use same container
-    tool_outputs = response.additional_kwargs["tool_outputs"]
-    assert len(tool_outputs) == 1
     container_id = tool_outputs[0]["container_id"]
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": container_id}]
@@ -485,9 +503,22 @@ def test_code_interpreter() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    tool_outputs = full.additional_kwargs["tool_outputs"]
+    if output_version == "v0":
+        tool_outputs = [
+            item
+            for item in response.additional_kwargs["tool_outputs"]
+            if item["type"] == "code_interpreter_call"
+        ]
+    elif output_version == "responses/v1":
+        tool_outputs = [
+            item for item in response.content if item["type"] == "code_interpreter_call"
+        ]
+    else:
+        tool_outputs = [
+            item["value"] for item in response.content if item["type"] == "non_standard"
+        ]
+        assert tool_outputs[0]["type"] == "code_interpreter_call"
     assert tool_outputs
-    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
 
     # Test we can pass back in
     next_message = {"role": "user", "content": "Please add more comments to the code."}
