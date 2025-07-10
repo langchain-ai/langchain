@@ -46,7 +46,9 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         arrow = "-" * int(round(progress * self.ncols) - 1) + ">"
         spaces = " " * (self.ncols - len(arrow))
         end = "" if self.counter < self.total else self.end_with
-        print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end=end)  # noqa: T201
+        print(
+            f"\r[{arrow + spaces}] {self.counter}/{self.total}", end=end
+        )  # noqa: T201
 
     def on_chain_error(
         self,

@@ -28,10 +28,8 @@ class RegexDictParser(BaseOutputParser[dict[str, str]]):
             specific_regex = self.regex_pattern.format(re.escape(expected_format))
             matches = re.findall(specific_regex, text)
             if not matches:
-                msg = (
-                    f"No match found for output key: {output_key} with expected format \
+                msg = f"No match found for output key: {output_key} with expected format \
                         {expected_format} on text {text}"
-                )
                 raise ValueError(msg)
             if len(matches) > 1:
                 msg = f"Multiple matches found for output key: {output_key} with \

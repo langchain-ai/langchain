@@ -142,7 +142,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         )
 
 
-def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noqa: FBT001
+def _invoke(
+    llm: ChatAnthropic, input_: list, stream: bool
+) -> AIMessage:  # noqa: FBT001
     if stream:
         full = None
         for chunk in llm.stream(input_):

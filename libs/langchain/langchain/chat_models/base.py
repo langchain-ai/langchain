@@ -589,9 +589,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                 queued_declarative_operations.append((name, args, kwargs))
                 return _ConfigurableModel(
                     default_config=dict(self._default_config),
-                    configurable_fields=list(self._configurable_fields)
-                    if isinstance(self._configurable_fields, list)
-                    else self._configurable_fields,
+                    configurable_fields=(
+                        list(self._configurable_fields)
+                        if isinstance(self._configurable_fields, list)
+                        else self._configurable_fields
+                    ),
                     config_prefix=self._config_prefix,
                     queued_declarative_operations=queued_declarative_operations,
                 )
@@ -650,9 +652,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
-            configurable_fields=list(self._configurable_fields)
-            if isinstance(self._configurable_fields, list)
-            else self._configurable_fields,
+            configurable_fields=(
+                list(self._configurable_fields)
+                if isinstance(self._configurable_fields, list)
+                else self._configurable_fields
+            ),
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )

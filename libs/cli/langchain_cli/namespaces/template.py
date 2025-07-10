@@ -140,7 +140,9 @@ def serve(
 
 
 @package_cli.command()
-def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:  # noqa: A001
+def list(
+    contains: Annotated[Optional[str], typer.Argument()] = None,
+) -> None:  # noqa: A001
     """List all or search for available templates."""
     from langchain_cli.utils.github import list_packages
 

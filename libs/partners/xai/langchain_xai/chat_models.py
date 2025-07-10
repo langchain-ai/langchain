@@ -420,9 +420,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
         if hasattr(response, "citations"):
-            rtn.generations[0].message.additional_kwargs["citations"] = (
-                response.citations
-            )
+            rtn.generations[0].message.additional_kwargs[
+                "citations"
+            ] = response.citations
 
         return rtn
 

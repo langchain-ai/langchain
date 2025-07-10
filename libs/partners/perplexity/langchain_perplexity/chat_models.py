@@ -207,9 +207,9 @@ class ChatPerplexity(BaseChatModel):
         """Validate that api key and python package exists in environment."""
         try:
             self.client = openai.OpenAI(
-                api_key=self.pplx_api_key.get_secret_value()
-                if self.pplx_api_key
-                else None,
+                api_key=(
+                    self.pplx_api_key.get_secret_value() if self.pplx_api_key else None
+                ),
                 base_url="https://api.perplexity.ai",
             )
         except AttributeError:

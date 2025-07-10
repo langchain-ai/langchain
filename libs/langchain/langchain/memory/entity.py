@@ -353,7 +353,9 @@ class SQLiteEntityStore(BaseEntityStore):
         """Retrieves a value, safely quoting the table name."""
         # `?` placeholder is used for the value to prevent SQL injection
         # Ignore S608 since we validate for malicious table/session names in `__init__`
-        query = f'SELECT value FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        query = (
+            f'SELECT value FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        )
         cursor = self._execute_query(query, (key,))
         result = cursor.fetchone()
         return result[0] if result is not None else default
