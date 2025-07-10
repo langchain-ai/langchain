@@ -10,20 +10,20 @@ toward using the updated module paths.
 """
 
 from typing import TYPE_CHECKING, Any
+
 from langchain._api import create_importer
+
 
 if TYPE_CHECKING:
     from langchain_community.tools import JsonGetValueTool, JsonListKeysTool
     from langchain_community.tools.json.tool import JsonSpec
 
-# Mapping of deprecated imports to their updated module paths.
 DEPRECATED_LOOKUP = {
     "JsonSpec": "langchain_community.tools.json.tool",
     "JsonListKeysTool": "langchain_community.tools",
     "JsonGetValueTool": "langchain_community.tools",
 }
 
-# Create a dynamic importer for resolving deprecated attributes.
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 

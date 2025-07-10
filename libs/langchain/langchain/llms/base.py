@@ -10,8 +10,8 @@ Exports:
     - BaseLanguageModel: Base class for core language model implementations
 """
 
-# Backwards compatibility.
 from langchain_core.language_models import BaseLanguageModel
+
 from langchain_core.language_models.llms import (
     LLM,
     BaseLLM,
