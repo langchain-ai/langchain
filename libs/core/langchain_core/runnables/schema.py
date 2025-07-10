@@ -166,6 +166,11 @@ class StandardStreamEvent(BaseStreamEvent):
     """The name of the Runnable that generated the event."""
 
 
+# 添加StreamEvent类型别名
+StreamEvent = StandardStreamEvent
+"""Alias for StandardStreamEvent to maintain backward compatibility."""
+
+
 class CustomStreamEvent(BaseStreamEvent):
     """Custom stream event created by the user.
 
@@ -179,3 +184,12 @@ class CustomStreamEvent(BaseStreamEvent):
     """User defined name for the event."""
     data: Any
     """The data associated with the event. Free form and can be anything."""
+
+# 更新导出列表
+__all__ = [
+    "EventData", 
+    "BaseStreamEvent", 
+    "StandardStreamEvent", 
+    "CustomStreamEvent",
+    "StreamEvent"  # 添加StreamEvent到导出列表
+]
