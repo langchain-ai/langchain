@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from inspect import signature
+import time
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -98,17 +99,23 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
+        
+        # 增加消息优先级检查
+        if hasattr(config, 'message_priority') and config.message_priority == 'low':
+            if hasattr(self, 'throttle_low_priority'):
+                time.sleep(self.throttle_low_priority)
+            
+        # 增加消息过期检查
+        if hasattr(config, 'message_expiry') and config.message_expiry < time.time():
+            raise ValueError("Message has expired")
+            
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
-            
-            # 传递完整的执行上下文
-            if run_manager and signature(self.func).parameters.get("run_manager"):
-                kwargs["run_manager"] = run_manager
-            
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
+        
         msg = "Tool does not support sync invocation."
         raise NotImplementedError(msg)
 

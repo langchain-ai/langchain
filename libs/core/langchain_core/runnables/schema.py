@@ -181,4 +181,23 @@ class CustomStreamEvent(BaseStreamEvent):
     """The data associated with the event. Free form and can be anything."""
 
 
+class StreamEvent(TypedDict):
+    """Schema for a stream event."""
+
+    event: str
+    """The type of event this is."""
+    
+    name: str
+    """The name of the runnable that generated this event."""
+    
+    tags: list[str]
+    """Any tags associated with the runnable that generated this event."""
+    
+    version: str
+    """The version of the schema used for this event."""
+    
+    data: EventData
+    """The data associated with this event."""
+
+
 StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
