@@ -1205,7 +1205,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
+    max_tokens: Optional[int] = Field(default=None, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -1342,6 +1342,23 @@ class ChatAnthropic(BaseChatModel):
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
+        """Validate max_tokens."""
+        if values.get("max_tokens") is None:
+            if "claude-opus-4" in values.get("model"):
+                print('hello')
+                values["max_tokens"] = 32000
+            elif values.get("model") in ["claude-sonnet-4", "claude-3-7-sonnet"]:
+                values["max_tokens"] = 64000
+            elif values.get("model") in ["claude-3-5-sonnet", "claude-3-5-haiku"]:
+                values["max_tokens"] = 8192
+            # leaves us with "claude-3-5-opus", "claude-3-haiku"
+            else:
+                values["max_tokens"] = 1024
+        return values
 
     @model_validator(mode="before")
     @classmethod
