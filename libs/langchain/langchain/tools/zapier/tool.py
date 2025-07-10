@@ -8,11 +8,8 @@ in the `langchain_community.tools` package.
 Developers using older import paths will continue to function, while LangChain
 internally redirects access to the newer, supported module structure.
 """
-
 from typing import TYPE_CHECKING, Any
-
 from langchain._api import create_importer
-
 
 if TYPE_CHECKING:
     from langchain_community.tools import ZapierNLAListActions, ZapierNLARunAction
@@ -23,7 +20,6 @@ DEPRECATED_LOOKUP = {
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
-
 
 def __getattr__(name: str) -> Any:
     """
@@ -39,7 +35,6 @@ def __getattr__(name: str) -> Any:
         Any: The resolved attribute from the appropriate updated module.
     """
     return _import_attribute(name)
-
 
 __all__ = [
     "ZapierNLAListActions",
