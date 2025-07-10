@@ -38,7 +38,7 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = True
+    reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
@@ -272,8 +272,11 @@ class OllamaLLM(BaseLLM):
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
                     text=stream_resp.get("response", ""),
                     generation_info=(
@@ -294,6 +297,12 @@ class OllamaLLM(BaseLLM):
             msg = "No data received from Ollama stream."
             raise ValueError(msg)
 
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
+
         return final_chunk
 
     def _stream_with_aggregation(
@@ -305,8 +314,11 @@ class OllamaLLM(BaseLLM):
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
                     text=stream_resp.get("response", ""),
                     generation_info=(
@@ -326,6 +338,12 @@ class OllamaLLM(BaseLLM):
         if final_chunk is None:
             msg = "No data received from Ollama stream."
             raise ValueError(msg)
+
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
 
         return final_chunk
 
@@ -374,10 +392,11 @@ class OllamaLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 additional_kwargs = {}
-                if thinking_content := stream_resp.get("thinking"):
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
                 chunk = GenerationChunk(
@@ -404,10 +423,11 @@ class OllamaLLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 additional_kwargs = {}
-                if thinking_content := stream_resp.get("thinking"):
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
                 chunk = GenerationChunk(
