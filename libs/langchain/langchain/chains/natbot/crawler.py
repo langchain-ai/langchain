@@ -271,7 +271,7 @@ class Crawler:
                 cursor = layout_node_index.index(index)
                 # TODO replace this with proper cursoring, ignoring the fact this is
                 # O(n^2) for the moment
-            except:  # noqa: E722
+            except ValueError:
                 continue
 
             if node_name in black_listed_elements:

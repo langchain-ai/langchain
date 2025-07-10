@@ -31,9 +31,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: Union[bool, Literal["start", "end"]] = False,
-        add_start_index: bool = False,
-        strip_whitespace: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
+        add_start_index: bool = False,  # noqa: FBT001,FBT002
+        strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
         """Create a new TextSplitter.
 

@@ -1,4 +1,4 @@
-name: Run notebooks
+name: Run Notebooks
 
 on:
   workflow_dispatch:
