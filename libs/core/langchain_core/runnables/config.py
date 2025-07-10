@@ -12,7 +12,7 @@ from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 
-from pydantic import Field, DictStrAny, BaseModel
+from pydantic import Field, BaseModel
 from typing_extensions import ParamSpec, TypedDict
 
 from langchain_core.runnables.utils import (
