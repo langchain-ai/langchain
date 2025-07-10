@@ -3,76 +3,56 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
-import warnings
-from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypeVar, Union, cast
+import uuid
+from datetime import datetime
+from typing import Any, Awaitable, Callable, Dict, Generator, Iterable, Iterator, List, Optional, ParamSpec, Sequence, TypeVar, Union, cast
+import warnings
+from pydantic import BaseModel, Field
 
-from pydantic import Field, BaseModel
-from typing_extensions import ParamSpec, TypedDict
+from libs.core.langchain_core.callbacks.base import BaseCallbackManager
+from libs.core.langchain_core.callbacks.manager import AsyncCallbackManager, AsyncCallbackManagerForChainRun, CallbackManager, CallbackManagerForChainRun
+from libs.core.langchain_core.runnables.utils import Input, Output, accepts_config, accepts_run_manager
 
-from langchain_core.runnables.utils import (
-    Input,
-    Output,
-    accepts_config,
-    accepts_run_manager,
-)
-
-if TYPE_CHECKING:
-    from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
-    from langchain_core.callbacks.manager import (
-        AsyncCallbackManager,
-        AsyncCallbackManagerForChainRun,
-        CallbackManager,
-        CallbackManagerForChainRun,
-    )
-else:
-    # Pydantic validates through typed dicts, but
-    # the callbacks need forward refs updated
-    Callbacks = Optional[Union[list, Any]]
-
-
-class EmptyDict(TypedDict, total=False):
-    """Empty dict type."""
-
-
+# 显式声明所有需要的字段（根据CONFIG_KEYS）
 class RunnableConfig(BaseModel):
     """Configuration for a Runnable."""
     
-    # 原有核心字段 - 必须保留
-    tags: List[str] = Field(default=[], description="标签列表")
-    metadata: Dict = Field(default={}, description="元数据")
-    callbacks: Optional[BaseCallbackManager] = Field(default=None, description="回调管理器")
-    run_name: Optional[str] = Field(default=None, description="运行名称")
-    max_concurrency: Optional[int] = Field(default=None, description="最大并发数")
-    recursion_limit: int = Field(default=DEFAULT_RECURSION_LIMIT, description="递归限制")
-    configurable: Dict = Field(default={}, description="可配置参数")
-
-    # 新增配置版本管理功能 - 保留已有修改
-    config_version: str = Field(default="1.0", description="配置版本标识")
-    version_history: List[Dict] = Field(default_factory=list, description="配置版本历史记录")
+    # 基础字段声明
+    tags: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    callbacks: Optional[Union[list, Any]] = None
+    run_name: Optional[str] = None
+    max_concurrency: Optional[int] = None
+    recursion_limit: int = Field(default=25)
+    configurable: Dict[str, Any] = Field(default_factory=dict)
+    run_id: Optional[uuid.UUID] = None
     
-    def create_snapshot(self) -> None:
-        """创建配置快照"""
-        snapshot = self.dict(exclude={"version_history"})
-        self.version_history.append({
-            "timestamp": datetime.now(),
-            "version": self.config_version,
-            "snapshot": snapshot
-        })
+    # 版本管理功能
+    config_version: str = Field(default="1.0")
+    version_history: List[Dict] = Field(default_factory=list)
     
-    def rollback(self, version: str) -> bool:
-        """回滚到指定版本"""
-        for entry in reversed(self.version_history):
-            if entry["version"] == version:
-                for key, value in entry["snapshot"].items():
-                    setattr(self, key, value)
-                return True
-        return False
+    # 安全属性访问方法（符合Pydantic规范）
+    def get(self, key: str, default: Any = None) -> Any:
+        """安全获取属性值（替代字典.get）"""
+        return getattr(self, key, default)
+    
+    def pop(self, key: str, default: Any = None) -> Any:
+        """安全移除属性（替代字典.pop）"""
+        value = self.get(key, default)
+        if hasattr(self, key):
+            delattr(self, key)
+        return value
+    
+    # 支持类似字典的索引操作（新增方法）
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+    
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
 
 CONFIG_KEYS = [
     "tags",
@@ -312,14 +292,7 @@ def patch_config(
 
 
 def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
-    """Merge multiple configs into one.
-
-    Args:
-        *configs (Optional[RunnableConfig]): The configs to merge.
-
-    Returns:
-        RunnableConfig: The merged config.
-    """
+    """Merge multiple configs into one."""
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
     # because both dicts are the same type
@@ -341,7 +314,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                 }
             elif key == "callbacks":
                 base_callbacks = base.get("callbacks")
-                these_callbacks = config["callbacks"]
+                these_callbacks = config.get("callbacks")
                 # callbacks can be either None, list[handler] or manager
                 # so merging two callbacks values has 6 cases
                 if isinstance(these_callbacks, list):
@@ -368,12 +341,12 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                         # base_callbacks is also a manager
                         base["callbacks"] = base_callbacks.merge(these_callbacks)
             elif key == "recursion_limit":
-                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
-                    base["recursion_limit"] = config["recursion_limit"]
-            elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
-                base[key] = config[key].copy()  # type: ignore[literal-required]
+                if config.get("recursion_limit") != DEFAULT_RECURSION_LIMIT:
+                    base["recursion_limit"] = config.get("recursion_limit")
+            elif key in COPIABLE_KEYS and config.get(key) is not None:  # type: ignore[literal-required]
+                base[key] = config.get(key).copy()  # type: ignore[literal-required]
             else:
-                base[key] = config[key] or base.get(key)  # type: ignore[literal-required]
+                base[key] = config.get(key) or base.get(key)  # type: ignore[literal-required]
     return base
 
 
