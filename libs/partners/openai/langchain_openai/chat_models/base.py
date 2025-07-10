@@ -3895,7 +3895,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     "type": "text",
                     "text": "",
                     "annotations": [annotation],
-                    "index": current_index
+                    "index": current_index,
                 }
             )
         else:

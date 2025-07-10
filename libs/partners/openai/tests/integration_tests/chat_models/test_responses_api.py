@@ -184,7 +184,9 @@ class FooDict(TypedDict):
 @pytest.mark.default_cassette("test_parsed_pydantic_schema.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
-def test_parsed_pydantic_schema(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+def test_parsed_pydantic_schema(
+    output_version: Literal["v0", "responses/v1", "v1"],
+) -> None:
     llm = ChatOpenAI(
         model=MODEL_NAME, use_responses_api=True, output_version=output_version
     )
@@ -458,9 +460,7 @@ def test_stream_reasoning_summary(
 @pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
-def test_code_interpreter(
-    output_version: Literal["v0", "responses/v1", "v1"],
-) -> None:
+def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
