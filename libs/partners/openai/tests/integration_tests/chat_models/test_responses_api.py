@@ -370,20 +370,25 @@ def test_computer_calls() -> None:
 
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
     }
-    response = llm.invoke("What is deep research by OpenAI?", tools=[tool])
+
+    input_message = {"role": "user", "content": "What is deep research by OpenAI?"}
+    response = llm.invoke([input_message], tools=[tool])
     _check_response(response)
 
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream("What is deep research by OpenAI?", tools=[tool]):
+    for chunk in llm.stream([input_message], tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
+
+    next_message = {"role": "user", "content": "Thank you."}
+    _ = llm.invoke([input_message, full, next_message])
 
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
