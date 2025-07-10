@@ -3,56 +3,93 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
+import warnings
+from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-import uuid
-from datetime import datetime
-from typing import Any, Awaitable, Callable, Dict, Generator, Iterable, Iterator, List, Optional, ParamSpec, Sequence, TypeVar, Union, cast
-import warnings
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
-from libs.core.langchain_core.callbacks.base import BaseCallbackManager
-from libs.core.langchain_core.callbacks.manager import AsyncCallbackManager, AsyncCallbackManagerForChainRun, CallbackManager, CallbackManagerForChainRun
-from libs.core.langchain_core.runnables.utils import Input, Output, accepts_config, accepts_run_manager
+from typing_extensions import ParamSpec, TypedDict
 
-# 显式声明所有需要的字段（根据CONFIG_KEYS）
-class RunnableConfig(BaseModel):
+from langchain_core.runnables.utils import (
+    Input,
+    Output,
+    accepts_config,
+    accepts_run_manager,
+)
+
+if TYPE_CHECKING:
+    from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
+    from langchain_core.callbacks.manager import (
+        AsyncCallbackManager,
+        AsyncCallbackManagerForChainRun,
+        CallbackManager,
+        CallbackManagerForChainRun,
+    )
+else:
+    # Pydantic validates through typed dicts, but
+    # the callbacks need forward refs updated
+    Callbacks = Optional[Union[list, Any]]
+
+
+class EmptyDict(TypedDict, total=False):
+    """Empty dict type."""
+
+
+class RunnableConfig(TypedDict, total=False):
     """Configuration for a Runnable."""
-    
-    # 基础字段声明
-    tags: List[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    callbacks: Optional[Union[list, Any]] = None
-    run_name: Optional[str] = None
-    max_concurrency: Optional[int] = None
-    recursion_limit: int = Field(default=25)
-    configurable: Dict[str, Any] = Field(default_factory=dict)
-    run_id: Optional[uuid.UUID] = None
-    
-    # 版本管理功能
-    config_version: str = Field(default="1.0")
-    version_history: List[Dict] = Field(default_factory=list)
-    
-    # 安全属性访问方法（符合Pydantic规范）
-    def get(self, key: str, default: Any = None) -> Any:
-        """安全获取属性值（替代字典.get）"""
-        return getattr(self, key, default)
-    
-    def pop(self, key: str, default: Any = None) -> Any:
-        """安全移除属性（替代字典.pop）"""
-        value = self.get(key, default)
-        if hasattr(self, key):
-            delattr(self, key)
-        return value
-    
-    # 支持类似字典的索引操作（新增方法）
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
-    
-    def __setitem__(self, key: str, value: Any) -> None:
-        setattr(self, key, value)
+
+    tags: list[str]
+    """
+    Tags for this call and any sub-calls (eg. a Chain calling an LLM).
+    You can use these to filter calls.
+    """
+
+    metadata: dict[str, Any]
+    """
+    Metadata for this call and any sub-calls (eg. a Chain calling an LLM).
+    Keys should be strings, values should be JSON-serializable.
+    """
+
+    callbacks: Callbacks
+    """
+    Callbacks for this call and any sub-calls (eg. a Chain calling an LLM).
+    Tags are passed to all callbacks, metadata is passed to handle*Start callbacks.
+    """
+
+    run_name: str
+    """
+    Name for the tracer run for this call. Defaults to the name of the class.
+    """
+
+    max_concurrency: Optional[int]
+    """
+    Maximum number of parallel calls to make. If not provided, defaults to
+    ThreadPoolExecutor's default.
+    """
+
+    recursion_limit: int
+    """
+    Maximum number of times a call can recurse. If not provided, defaults to 25.
+    """
+
+    configurable: dict[str, Any]
+    """
+    Runtime values for attributes previously made configurable on this Runnable,
+    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
+    Check .output_schema() for a description of the attributes that have been made
+    configurable.
+    """
+
+    run_id: Optional[uuid.UUID]
+    """
+    Unique identifier for the tracer run for this call. If not provided, a new UUID
+        will be generated.
+    """
+
 
 CONFIG_KEYS = [
     "tags",
@@ -188,7 +225,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.configurable.items():
+    for key, value in empty.get("configurable", {}).items():
         if (
             not key.startswith("__")
             and isinstance(value, (str, int, float, bool))
@@ -292,7 +329,14 @@ def patch_config(
 
 
 def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
-    """Merge multiple configs into one."""
+    """Merge multiple configs into one.
+
+    Args:
+        *configs (Optional[RunnableConfig]): The configs to merge.
+
+    Returns:
+        RunnableConfig: The merged config.
+    """
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
     # because both dicts are the same type
@@ -314,7 +358,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                 }
             elif key == "callbacks":
                 base_callbacks = base.get("callbacks")
-                these_callbacks = config.get("callbacks")
+                these_callbacks = config["callbacks"]
                 # callbacks can be either None, list[handler] or manager
                 # so merging two callbacks values has 6 cases
                 if isinstance(these_callbacks, list):
@@ -341,12 +385,12 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                         # base_callbacks is also a manager
                         base["callbacks"] = base_callbacks.merge(these_callbacks)
             elif key == "recursion_limit":
-                if config.get("recursion_limit") != DEFAULT_RECURSION_LIMIT:
-                    base["recursion_limit"] = config.get("recursion_limit")
-            elif key in COPIABLE_KEYS and config.get(key) is not None:  # type: ignore[literal-required]
-                base[key] = config.get(key).copy()  # type: ignore[literal-required]
+                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
+                    base["recursion_limit"] = config["recursion_limit"]
+            elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
+                base[key] = config[key].copy()  # type: ignore[literal-required]
             else:
-                base[key] = config.get(key) or base.get(key)  # type: ignore[literal-required]
+                base[key] = config[key] or base.get(key)  # type: ignore[literal-required]
     return base
 
 
