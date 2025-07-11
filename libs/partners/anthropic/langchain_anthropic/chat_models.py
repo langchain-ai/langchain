@@ -1350,15 +1350,13 @@ class ChatAnthropic(BaseChatModel):
         if values.get("max_tokens") is None and values.get("model"):
             if "claude-opus-4" in values.get("model", ""):
                 values["max_tokens"] = 32000
-            elif (
-                "claude-sonnet-4" in values.get("model", "")
-                or "claude-3-7-sonnet" in values.get("model", "")
-            ):
+            elif "claude-sonnet-4" in values.get(
+                "model", ""
+            ) or "claude-3-7-sonnet" in values.get("model", ""):
                 values["max_tokens"] = 64000
-            elif (
-                "claude-3-5-sonnet" in values.get("model", "")
-                or "claude-3-5-haiku" in values.get("model", "")
-            ):
+            elif "claude-3-5-sonnet" in values.get(
+                "model", ""
+            ) or "claude-3-5-haiku" in values.get("model", ""):
                 values["max_tokens"] = 8192
             # leaves us with "claude-3-5-opus", "claude-3-haiku"
             else:
