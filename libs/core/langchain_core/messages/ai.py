@@ -213,30 +213,22 @@ class AIMessage(BaseMessage):
         otherwise, does best-effort parsing to standard types.
         """
         blocks: list[types.ContentBlock] = []
-        if isinstance(self.content, str):
-            if self.content:
-                blocks.append({"type": "text", "text": self.content})
+        content = [self.content] if isinstance(self.content, str) else self.content
+        for item in content:
+            if isinstance(item, str):
+                blocks.append({"type": "text", "text": item})
+
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    msg = (
+                        f"Non-standard content block type '{item_type}'. Ensure "
+                        "the model supports `output_version='v1'` or higher and "
+                        "that this attribute is set on initialization."
+                    )
+                    raise ValueError(msg)
             else:
                 pass
-
-        elif isinstance(self.content, list):
-            for item in self.content:
-                if isinstance(item, str):
-                    blocks.append({"type": "text", "text": item})
-
-                elif isinstance(item, dict):
-                    item_type = item.get("type")
-                    if item_type not in types.KNOWN_BLOCK_TYPES:
-                        msg = (
-                            f"Non-standard content block type '{item_type}'. Ensure "
-                            "the model supports `output_version='v1'` or higher and "
-                            "that this attribute is set on initialization."
-                        )
-                        raise ValueError(msg)
-                else:
-                    pass
-        else:
-            pass
 
         # Add from tool_calls if missing from content
         content_tool_call_ids = {

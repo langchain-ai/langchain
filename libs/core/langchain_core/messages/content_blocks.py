@@ -156,7 +156,7 @@ _DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataConten
 
 
 # Non-standard
-class NonStandardContentBlock(TypedDict, total=False):
+class NonStandardContentBlock(TypedDict):
     """Content block provider-specific data.
 
     This block contains data for which there is not yet a standard type.
