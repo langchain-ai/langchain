@@ -70,14 +70,7 @@ import json
 from collections.abc import Iterable
 from typing import Any, Union, cast
 
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    DocumentCitation,
-    NonStandardAnnotation,
-    UrlCitation,
-    is_data_content_block,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
@@ -318,30 +311,30 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
 
 
 # v1 / Responses
-def _convert_annotation_to_v1(
-    annotation: dict[str, Any],
-) -> Union[UrlCitation, DocumentCitation, NonStandardAnnotation]:
+def _convert_annotation_to_v1(annotation: dict[str, Any]) -> dict[str, Any]:
     annotation_type = annotation.get("type")
 
     if annotation_type == "url_citation":
-        url_citation: UrlCitation = {"type": "url_citation", "url": annotation["url"]}
-        for field in ("title", "start_index", "end_index"):
+        url_citation = {}
+        for field in ("end_index", "start_index", "title"):
             if field in annotation:
                 url_citation[field] = annotation[field]
+        url_citation["type"] = "url_citation"
+        url_citation["url"] = annotation["url"]
         return url_citation
 
     elif annotation_type == "file_citation":
-        document_citation: DocumentCitation = {"type": "document_citation"}
+        document_citation = {"type": "document_citation"}
         if "filename" in annotation:
             document_citation["title"] = annotation["filename"]
         for field in ("file_id", "index"):  # OpenAI-specific
             if field in annotation:
-                document_citation[field] = annotation[field]  # type: ignore[literal-required]
+                document_citation[field] = annotation[field]
         return document_citation
 
     # TODO: standardise container_file_citation?
     else:
-        non_standard_annotation: NonStandardAnnotation = {
+        non_standard_annotation = {
             "type": "non_standard_annotation",
             "value": annotation,
         }
@@ -472,7 +465,9 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
             continue
         elif "reasoning" not in block and "summary" not in block:
             # {"type": "reasoning", "id": "rs_..."}
-            yield {**block, "summary": []}
+            oai_format = {**block, "summary": []}
+            oai_format["type"] = oai_format.pop("type", "reasoning")
+            yield oai_format
             i += 1
             continue
         else:
@@ -497,6 +492,7 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
 
         merged = dict(common)
         merged["summary"] = summary
+        merged["type"] = merged.pop("type", "reasoning")
         yield merged
 
 
