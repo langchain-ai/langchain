@@ -311,14 +311,19 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     does not properly support streaming.
     """
 
-    output_version: str = "v0"
+    output_version: Optional[Literal["v0", "v1"]] = Field(default="v0")
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
     in a backwards-compatible way.
 
-    All chat models currently support the default of ``"v0"``. Chat model subclasses
-    can override with (customizable) supported values.
+    Supported values:
+    - ``'v0'``: Original format with mixed content and tool calls in additional_kwargs.
+    - ``'v1'``: Standardized format using a list of typed ContentBlock dicts.
+
+    Chat model subclasses can override with (customizable) supported values.
+
+    ``'v1'`` is recommended for new applications.
 
     .. versionadded:: 0.3.68
     """
