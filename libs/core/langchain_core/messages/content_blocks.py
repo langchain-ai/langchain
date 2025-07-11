@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Literal, Union
 
 from pydantic import TypeAdapter, ValidationError
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 
 # Text and annotations
@@ -175,6 +175,23 @@ ContentBlock = Union[
     DataContentBlock,
     NonStandardContentBlock,
 ]
+
+
+def _extract_typedict_type_values(union_type: Any) -> set[str]:
+    """Extract the values of the 'type' field from a TypedDict union type."""
+    result: set[str] = set()
+    for value in get_args(union_type):
+        annotation = value.__annotations__["type"]
+        if get_origin(annotation) is Literal:
+            result.update(get_args(annotation))
+        else:
+            msg = f"{value} 'type' is not a Literal"
+            raise ValueError(msg)
+    return result
+
+
+# {"text", "tool_call", "reasoning", "non_standard", "image", "audio", "file"}
+KNOWN_BLOCK_TYPES = _extract_typedict_type_values(ContentBlock)
 
 
 def is_data_content_block(

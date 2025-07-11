@@ -226,28 +226,12 @@ class AIMessage(BaseMessage):
 
                 elif isinstance(item, dict):
                     item_type = item.get("type")
-                    if item_type == "text":
-                        blocks.append(cast("types.TextContentBlock", item))
-                    elif item_type == "tool_call":
-                        blocks.append(cast("types.ToolCallContentBlock", item))
-                    elif item_type == "reasoning":
-                        blocks.append(cast("types.ReasoningContentBlock", item))
-                    elif item_type == "non_standard":
-                        blocks.append(cast("types.NonStandardContentBlock", item))
-                    elif source_type := item.get("source_type"):
-                        if source_type == "url":
-                            blocks.append(cast("types.URLContentBlock", item))
-                        elif source_type == "base64":
-                            blocks.append(cast("types.Base64ContentBlock", item))
-                        elif source_type == "text":
-                            blocks.append(cast("types.PlainTextContentBlock", item))
-                        elif source_type == "id":
-                            blocks.append(cast("types.IDContentBlock", item))
-                        else:
-                            msg = f"Unknown source_type {source_type} in content block."
-                            raise ValueError(msg)
-                    else:
-                        msg = f"Unknown content block type {item_type}."
+                    if item_type not in types.KNOWN_BLOCK_TYPES:
+                        msg = (
+                            f"Non-standard content block type '{item_type}'. Ensure "
+                            "the model supports `output_version='v1'` or higher and "
+                            "that this attribute is set on initialization."
+                        )
                         raise ValueError(msg)
                 else:
                     pass
