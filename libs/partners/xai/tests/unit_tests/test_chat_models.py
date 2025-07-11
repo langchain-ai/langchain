@@ -15,10 +15,12 @@ from langchain_openai.chat_models.base import (
 
 from langchain_xai import ChatXAI
 
+MODEL_NAME = "grok-4"
+
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatXAI(model="grok-beta")
+    ChatXAI(model=MODEL_NAME)
 
 
 def test_xai_model_param() -> None:
@@ -34,7 +36,7 @@ def test_chat_xai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
         ChatXAI(
-            model="grok-beta",
+            model=MODEL_NAME,
             max_tokens=10,
             streaming=True,
             temperature=0,
@@ -45,17 +47,17 @@ def test_chat_xai_invalid_streaming_params() -> None:
 def test_chat_xai_extra_kwargs() -> None:
     """Test extra kwargs to chat xai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatXAI(model="grok-beta", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatXAI(model="grok-beta", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatXAI(model="grok-beta", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+        ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
 
 def test_function_dict_to_message_function_message() -> None:

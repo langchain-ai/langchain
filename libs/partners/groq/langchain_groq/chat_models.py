@@ -395,10 +395,10 @@ class ChatGroq(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional ``httpx.Client``."""
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
-        http_client as well if you'd like a custom client for sync invocations."""
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
 
     model_config = ConfigDict(
         populate_by_name=True,
