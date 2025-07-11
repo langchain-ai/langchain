@@ -16,7 +16,11 @@ ChatOpenAI v0.3 stores reasoning and tool outputs in AIMessage.additional_kwargs
                 "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
             },
             "tool_outputs": [
-                {"type": "web_search_call", "id": "websearch_123", "status": "completed"}
+                {
+                    "type": "web_search_call",
+                    "id": "websearch_123",
+                    "status": "completed",
+                }
             ],
             "refusal": "I cannot assist with that.",
         },
