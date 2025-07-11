@@ -132,6 +132,13 @@ class BaseStreamEvent(TypedDict):
 
         `.astream_events(..., {"metadata": {"foo": "bar"}})`.
     """
+    
+    # 新增配置版本管理字段
+    config_version: NotRequired[str]
+    """Version identifier for the configuration used in this runnable execution.
+    
+    Used for tracking and rolling back configurations.
+    """
 
     parent_ids: Sequence[str]
     """A list of the parent IDs associated with this event.
@@ -159,6 +166,11 @@ class StandardStreamEvent(BaseStreamEvent):
     """The name of the Runnable that generated the event."""
 
 
+# 添加StreamEvent类型别名
+StreamEvent = StandardStreamEvent
+"""Alias for StandardStreamEvent to maintain backward compatibility."""
+
+
 class CustomStreamEvent(BaseStreamEvent):
     """Custom stream event created by the user.
 
@@ -173,5 +185,11 @@ class CustomStreamEvent(BaseStreamEvent):
     data: Any
     """The data associated with the event. Free form and can be anything."""
 
-
-StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
+# 更新导出列表
+__all__ = [
+    "EventData", 
+    "BaseStreamEvent", 
+    "StandardStreamEvent", 
+    "CustomStreamEvent",
+    "StreamEvent"  # 添加StreamEvent到导出列表
+]

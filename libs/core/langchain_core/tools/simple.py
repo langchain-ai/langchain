@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from inspect import signature
+import time
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,13 +32,58 @@ if TYPE_CHECKING:
 
 
 class Tool(BaseTool):
-    """Tool that takes in function or coroutine directly."""
+    """用于简单操作的Tool实现。"""
+    
+    # 显式设置func和coroutine属性
+    def __init__(
+        self,
+        name: str,
+        func: Optional[Callable],
+        description: str,
+        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name=name, func=func, description=description, **kwargs)
+        # 确保func属性被正确设置
+        self.func = func
+        # 确保coroutine属性被正确设置
+        self.coroutine = coroutine
 
-    description: str = ""
-    func: Optional[Callable[..., str]]
-    """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[str]]] = None
-    """The asynchronous version of the function."""
+    def _run(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """使用工具。"""
+        if self.args_schema is not None and not isinstance(kwargs, dict):
+            raise ValueError(
+                "当提供args_schema时，kwargs必须是字典类型"
+            )
+        try:
+            return self.func(*args, **kwargs)
+        except Exception as e:
+            error_msg = (
+                f"{e.__class__.__name__} 在调用工具 {self.name} 时发生错误: {e}"
+            )
+            raise ToolException(error_msg) from e
+
+    async def _arun(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """使用工具。"""
+        if self.args_schema is not None and not isinstance(kwargs, dict):
+            raise ValueError(
+                "当提供args_schema时，kwargs必须是字典类型"
+            )
+        try:
+            return await self.coroutine(*args, **kwargs)
+        except Exception as e:
+            error_msg = (
+                f"{e.__class__.__name__} 在调用工具 {self.name} 时发生错误: {e}"
+            )
+            raise ToolException(error_msg) from e
 
     # --- Runnable ---
 
@@ -89,6 +135,7 @@ class Tool(BaseTool):
             raise ToolException(msg)
         return tuple(all_args), {}
 
+    @override
     def _run(
         self,
         *args: Any,
@@ -97,12 +144,23 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
+        
+        # 增加消息优先级检查
+        if hasattr(config, 'message_priority') and config.message_priority == 'low':
+            if hasattr(self, 'throttle_low_priority'):
+                time.sleep(self.throttle_low_priority)
+            
+        # 增加消息过期检查
+        if hasattr(config, 'message_expiry') and config.message_expiry < time.time():
+            raise ValueError("Message has expired")
+            
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
+        
         msg = "Tool does not support sync invocation."
         raise NotImplementedError(msg)
 
@@ -117,6 +175,11 @@ class Tool(BaseTool):
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
+            
+            # 传递完整的执行上下文
+            if run_manager and signature(self.coroutine).parameters.get("run_manager"):
+                kwargs["run_manager"] = run_manager
+            
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
             return await self.coroutine(*args, **kwargs)
@@ -126,13 +189,6 @@ class Tool(BaseTool):
         return await super()._arun(
             *args, config=config, run_manager=run_manager, **kwargs
         )
-
-    # TODO: this is for backwards compatibility, remove in future
-    def __init__(
-        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
-    ) -> None:
-        """Initialize tool."""
-        super().__init__(name=name, func=func, description=description, **kwargs)
 
     @classmethod
     def from_function(
@@ -147,26 +203,11 @@ class Tool(BaseTool):
         ] = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
-        """Initialize tool from a function.
-
-        Args:
-            func: The function to create the tool from.
-            name: The name of the tool.
-            description: The description of the tool.
-            return_direct: Whether to return the output directly. Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
-            coroutine: The asynchronous version of the function. Defaults to None.
-            kwargs: Additional arguments to pass to the tool.
-
-        Returns:
-            The tool.
-
-        Raises:
-            ValueError: If the function is not provided.
-        """
+        """Initialize tool from a function."""
         if func is None and coroutine is None:
             msg = "Function and/or coroutine must be provided"
             raise ValueError(msg)
+        # 确保在创建实例时传递func和coroutine参数
         return cls(
             name=name,
             func=func,

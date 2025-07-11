@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from langchain_core.messages.base import (
         BaseMessage,
         BaseMessageChunk,
-        merge_content,
         message_to_dict,
         messages_to_dict,
     )
@@ -60,6 +59,9 @@ if TYPE_CHECKING:
         message_chunk_to_message,
         messages_from_dict,
         trim_messages,
+        # 新增消息优先级和过期时间支持
+        set_message_priority,
+        check_message_expiration,
     )
 
 __all__ = (
