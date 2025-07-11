@@ -359,7 +359,9 @@ def convert_to_messages(
     Returns:
         list of messages (BaseMessages).
     """
-    # Import here to avoid circular imports
+    if isinstance(messages, dict) and "messages" in messages:
+        messages = messages["messages"]
+    
     from langchain_core.prompt_values import PromptValue
 
     if isinstance(messages, PromptValue):

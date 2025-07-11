@@ -1457,3 +1457,23 @@ def test_get_buffer_string_with_empty_content() -> None:
     expected = "Human: \nAI: \nSystem: "
     actual = get_buffer_string(messages)
     assert actual == expected
+
+def test_convert_to_messages_dict_input() -> None:
+    """Test convert_to_messages with dict input containing 'messages' key."""
+    from langchain_core.messages import HumanMessage, AIMessage
+    from langchain_core.messages.utils import convert_to_messages
+    
+    messages_dict = {
+        "messages": [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!")
+        ]
+    }
+    
+    result = convert_to_messages(messages_dict)
+    
+    assert len(result) == 2
+    assert isinstance(result[0], HumanMessage)
+    assert isinstance(result[1], AIMessage)
+    assert result[0].content == "Hello"
+    assert result[1].content == "Hi there!"
