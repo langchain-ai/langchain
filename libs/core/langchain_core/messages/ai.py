@@ -8,6 +8,7 @@ from typing import Any, Literal, Optional, Union, cast
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -195,6 +196,55 @@ class AIMessage(BaseMessage):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def beta_content(self) -> list[types.ContentBlock]:
+        """Return the content as a list of standard ContentBlocks.
+
+        To use this property, the corresponding chat model must support
+        ``output_version="v1"`` or higher:
+
+        .. code-block:: python
+
+            from langchain.chat_models import init_chat_model
+
+            llm = init_chat_model("...", output_version="v1")
+
+        otherwise, does best-effort parsing to standard types.
+        """
+        blocks: list[types.ContentBlock] = []
+        content = [self.content] if isinstance(self.content, str) else self.content
+        for item in content:
+            if isinstance(item, str):
+                blocks.append({"type": "text", "text": item})
+
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    msg = (
+                        f"Non-standard content block type '{item_type}'. Ensure "
+                        "the model supports `output_version='v1'` or higher and "
+                        "that this attribute is set on initialization."
+                    )
+                    raise ValueError(msg)
+            else:
+                pass
+
+        # Add from tool_calls if missing from content
+        content_tool_call_ids = {
+            block.get("id")
+            for block in self.content
+            if isinstance(block, dict) and block.get("type") == "tool_call"
+        }
+        for tool_call in self.tool_calls:
+            if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                tool_call_block: types.ToolCallContentBlock = {
+                    "type": "tool_call",
+                    "id": id_,
+                }
+                blocks.append(tool_call_block)
+
+        return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
