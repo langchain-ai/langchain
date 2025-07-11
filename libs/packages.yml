@@ -690,3 +690,6 @@ packages:
 - name: langchain-greennode
   path: libs/greennode
   repo: greennode-ai/langchain-greennode
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi
