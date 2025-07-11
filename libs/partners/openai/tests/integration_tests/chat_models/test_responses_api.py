@@ -472,6 +472,7 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         "content": "Write and run code to answer the question: what is 3^3?",
     }
     response = llm_with_tools.invoke([input_message])
+    assert isinstance(response, AIMessage)
     _check_response(response)
     if output_version == "v0":
         tool_outputs = [
@@ -481,12 +482,16 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         ]
     elif output_version == "responses/v1":
         tool_outputs = [
-            item for item in response.content if item["type"] == "code_interpreter_call"
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
         ]
     else:
         # v1
         tool_outputs = [
-            item["value"] for item in response.content if item["type"] == "non_standard"
+            item["value"]
+            for item in response.beta_content
+            if item["type"] == "non_standard"
         ]
         assert tool_outputs[0]["type"] == "code_interpreter_call"
     assert len(tool_outputs) == 1
@@ -511,11 +516,15 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         ]
     elif output_version == "responses/v1":
         tool_outputs = [
-            item for item in response.content if item["type"] == "code_interpreter_call"
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
         ]
     else:
         tool_outputs = [
-            item["value"] for item in response.content if item["type"] == "non_standard"
+            item["value"]
+            for item in response.beta_content
+            if item["type"] == "non_standard"
         ]
         assert tool_outputs[0]["type"] == "code_interpreter_call"
     assert tool_outputs
@@ -675,14 +684,16 @@ def test_image_generation_streaming(output_version: str) -> None:
         tool_output = next(
             block
             for block in complete_ai_message.content
-            if block["type"] == "image_generation_call"
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
         )
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
         # v1
         standard_keys = {"type", "source_type", "data", "id", "status", "index"}
         tool_output = next(
-            block for block in complete_ai_message.content if block["type"] == "image"
+            block
+            for block in complete_ai_message.beta_content
+            if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -711,6 +722,7 @@ def test_image_generation_multi_turn(output_version: str) -> None:
         {"role": "user", "content": "Draw a random short word in green font."}
     ]
     ai_message = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message, AIMessage)
     _check_response(ai_message)
 
     expected_keys = {
@@ -732,13 +744,13 @@ def test_image_generation_multi_turn(output_version: str) -> None:
         tool_output = next(
             block
             for block in ai_message.content
-            if block["type"] == "image_generation_call"
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
         )
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
         standard_keys = {"type", "source_type", "data", "id", "status"}
         tool_output = next(
-            block for block in ai_message.content if block["type"] == "image"
+            block for block in ai_message.beta_content if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -774,6 +786,7 @@ def test_image_generation_multi_turn(output_version: str) -> None:
     )
 
     ai_message2 = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message2, AIMessage)
     _check_response(ai_message2)
 
     if output_version == "v0":
@@ -783,12 +796,12 @@ def test_image_generation_multi_turn(output_version: str) -> None:
         tool_output = next(
             block
             for block in ai_message2.content
-            if block["type"] == "image_generation_call"
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
         )
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
         standard_keys = {"type", "source_type", "data", "id", "status"}
         tool_output = next(
-            block for block in ai_message2.content if block["type"] == "image"
+            block for block in ai_message2.beta_content if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
