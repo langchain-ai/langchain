@@ -1349,7 +1349,6 @@ class ChatAnthropic(BaseChatModel):
         """Validate max_tokens."""
         if values.get("max_tokens") is None:
             if "claude-opus-4" in values.get("model"):
-                print('hello')
                 values["max_tokens"] = 32000
             elif values.get("model") in ["claude-sonnet-4", "claude-3-7-sonnet"]:
                 values["max_tokens"] = 64000
