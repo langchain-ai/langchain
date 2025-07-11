@@ -78,6 +78,12 @@ const config = {
         },
       }),
     }),
+    [
+      "@docusaurus/plugin-google-tag-manager",
+      {
+        containerId: "GTM-MH4VTX4V",
+      },
+    ],
   ],
 
   presets: [
