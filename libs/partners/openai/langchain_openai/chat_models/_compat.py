@@ -68,26 +68,9 @@ formats. The functions are used internally by ChatOpenAI.
 
 import json
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import Any, Union, cast
 
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    DocumentCitation,
-    NonStandardAnnotation,
-    ReasoningContentBlock,
-    UrlCitation,
-    is_data_content_block,
-)
-
-if TYPE_CHECKING:
-    from langchain_core.messages import (
-        Base64ContentBlock,
-        NonStandardContentBlock,
-        ReasoningContentBlock,
-        TextContentBlock,
-        ToolCallContentBlock,
-    )
+from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
@@ -284,15 +267,13 @@ def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
     """Mutate a Chat Completions message to v1 format."""
     if isinstance(message.content, str):
         if message.content:
-            block: TextContentBlock = {"type": "text", "text": message.content}
-            message.content = [block]
+            message.content = [{"type": "text", "text": message.content}]
         else:
             message.content = []
 
     for tool_call in message.tool_calls:
         if id_ := tool_call.get("id"):
-            tool_call_block: ToolCallContentBlock = {"type": "tool_call", "id": id_}
-            message.content.append(tool_call_block)
+            message.content.append({"type": "tool_call", "id": id_})
 
     if "tool_calls" in message.additional_kwargs:
         _ = message.additional_kwargs.pop("tool_calls")
@@ -330,37 +311,37 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
 
 
 # v1 / Responses
-def _convert_annotation_to_v1(
-    annotation: dict[str, Any],
-) -> Union[UrlCitation, DocumentCitation, NonStandardAnnotation]:
+def _convert_annotation_to_v1(annotation: dict[str, Any]) -> dict[str, Any]:
     annotation_type = annotation.get("type")
 
     if annotation_type == "url_citation":
-        new_annotation: UrlCitation = {"type": "url_citation", "url": annotation["url"]}
-        for field in ("title", "start_index", "end_index"):
+        url_citation = {}
+        for field in ("end_index", "start_index", "title"):
             if field in annotation:
-                new_annotation[field] = annotation[field]
-        return new_annotation
+                url_citation[field] = annotation[field]
+        url_citation["type"] = "url_citation"
+        url_citation["url"] = annotation["url"]
+        return url_citation
 
     elif annotation_type == "file_citation":
-        new_annotation: DocumentCitation = {"type": "document_citation"}
+        document_citation = {"type": "document_citation"}
         if "filename" in annotation:
-            new_annotation["title"] = annotation["filename"]
+            document_citation["title"] = annotation["filename"]
         for field in ("file_id", "index"):  # OpenAI-specific
             if field in annotation:
-                new_annotation[field] = annotation[field]
-        return new_annotation
+                document_citation[field] = annotation[field]
+        return document_citation
 
     # TODO: standardise container_file_citation?
     else:
-        new_annotation: NonStandardAnnotation = {
+        non_standard_annotation = {
             "type": "non_standard_annotation",
             "value": annotation,
         }
-    return new_annotation
+        return non_standard_annotation
 
 
-def _explode_reasoning(block: dict[str, Any]) -> Iterable[ReasoningContentBlock]:
+def _explode_reasoning(block: dict[str, Any]) -> Iterable[dict[str, Any]]:
     if block.get("type") != "reasoning" or "summary" not in block:
         yield block
         return
@@ -383,7 +364,7 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[ReasoningContentBlock]
         new_block["reasoning"] = part.get("text", "")
         if idx == 0:
             new_block.update(first_only)
-        yield cast(ReasoningContentBlock, new_block)
+        yield new_block
 
 
 def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
@@ -393,6 +374,8 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
 
     def _iter_blocks() -> Iterable[dict[str, Any]]:
         for block in message.content:
+            if not isinstance(block, dict):
+                continue
             block_type = block.get("type")
 
             if block_type == "text":
@@ -408,11 +391,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
             elif block_type == "image_generation_call" and (
                 result := block.get("result")
             ):
-                new_block: Base64ContentBlock = {
-                    "type": "image",
-                    "source_type": "base64",
-                    "data": result,
-                }
+                new_block = {"type": "image", "source_type": "base64", "data": result}
                 if output_format := block.get("output_format"):
                     new_block["mime_type"] = f"image/{output_format}"
                 for extra_key in (
@@ -430,10 +409,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
                 yield new_block
 
             elif block_type == "function_call":
-                new_block: ToolCallContentBlock = {
-                    "type": "tool_call",
-                    "id": block.get("call_id", ""),
-                }
+                new_block = {"type": "tool_call", "id": block.get("call_id", "")}
                 if "id" in block:
                     new_block["item_id"] = block["id"]
                 for extra_key in ("arguments", "name", "index"):
@@ -442,10 +418,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
                 yield new_block
 
             else:
-                new_block: NonStandardContentBlock = {
-                    "type": "non_standard",
-                    "value": block,
-                }
+                new_block = {"type": "non_standard", "value": block}
                 if "index" in new_block["value"]:
                     new_block["index"] = new_block["value"].pop("index")
                 yield new_block
@@ -485,13 +458,16 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
     while i < n:
         block = blocks[i]
 
-        # Ordinary block – just yield a shallow copy
-        if block.get("type") != "reasoning":
+        # Skip non-reasoning blocks or blocks already in Responses format
+        if block.get("type") != "reasoning" or "summary" in block:
             yield dict(block)
             i += 1
             continue
-        elif "reasoning" not in block:
-            yield {**block, "summary": []}
+        elif "reasoning" not in block and "summary" not in block:
+            # {"type": "reasoning", "id": "rs_..."}
+            oai_format = {**block, "summary": []}
+            oai_format["type"] = oai_format.pop("type", "reasoning")
+            yield oai_format
             i += 1
             continue
         else:
@@ -516,6 +492,7 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
 
         merged = dict(common)
         merged["summary"] = summary
+        merged["type"] = merged.pop("type", "reasoning")
         yield merged
 
 

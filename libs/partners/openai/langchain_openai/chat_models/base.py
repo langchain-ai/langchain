@@ -3803,7 +3803,7 @@ def _construct_lc_result_from_responses_api(
             )
             if image_generation_call.output_format:
                 mime_type = f"image/{image_generation_call.output_format}"
-                for block in message.content:
+                for block in message.beta_content:  # type: ignore[assignment]
                     # OK to mutate output message
                     if (
                         block.get("type") == "image"
@@ -3895,7 +3895,7 @@ def _convert_responses_chunk_to_generation_chunk(
                     "type": "text",
                     "text": "",
                     "annotations": [annotation],
-                    "index": current_index
+                    "index": current_index,
                 }
             )
         else:
@@ -4009,7 +4009,7 @@ def _convert_responses_chunk_to_generation_chunk(
                 }
             )
         else:
-            block = {"type": "reasoning", "reasoning": ""}
+            block: dict = {"type": "reasoning", "reasoning": ""}
             if chunk.summary_index > 0:
                 _advance(chunk.output_index, chunk.summary_index)
                 block["id"] = chunk.item_id
@@ -4050,7 +4050,7 @@ def _convert_responses_chunk_to_generation_chunk(
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
         )
     elif output_version == "v1":
-        message = _convert_to_v1_from_responses(message)
+        message = cast(AIMessageChunk, _convert_to_v1_from_responses(message))
     else:
         pass
     return (

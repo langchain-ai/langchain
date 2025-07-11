@@ -2563,7 +2563,7 @@ def test_convert_to_v1_from_chat_completions(
             ),
             AIMessage(
                 [
-                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc123", "summary": []},
                     {
                         "type": "reasoning",
                         "id": "abc234",
