@@ -142,11 +142,15 @@ def test_validate_max_tokens() -> None:
     assert llm.max_tokens == 1024
 
     # Test that existing max_tokens values are preserved
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test")
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test"
+    )
     assert llm.max_tokens == 2048
 
     # Test that explicitly set max_tokens values are preserved
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test")
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test"
+    )
     assert llm.max_tokens == 4096
 
 
@@ -190,7 +194,6 @@ def test_anthropic_initialization() -> None:
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
-
 
 
 def test__format_output() -> None:
