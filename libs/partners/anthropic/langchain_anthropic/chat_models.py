@@ -1347,7 +1347,7 @@ class ChatAnthropic(BaseChatModel):
     @classmethod
     def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
         """Validate max_tokens."""
-        if values.get("max_tokens") is None:
+        if values.get("max_tokens") is None and values.get("model"):
             if "claude-opus-4" in values.get("model"):
                 values["max_tokens"] = 32000
             elif values.get("model") in ["claude-sonnet-4", "claude-3-7-sonnet"]:
