@@ -409,7 +409,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
         return self.invoke(
             inputs,
-            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None}),
+            cast("RunnableConfig", {k: v for k, v in config.items() if v is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
@@ -459,7 +459,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         }
         return await self.ainvoke(
             inputs,
-            cast(RunnableConfig, {k: v for k, v in config.items() if k is not None}),
+            cast("RunnableConfig", {k: v for k, v in config.items() if k is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
