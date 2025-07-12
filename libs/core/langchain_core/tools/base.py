@@ -94,14 +94,16 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
-    """Extract description from an Annotated type.
+    """Extract description from an Annotated type, handling stringized annotations (PEP 563)."""
+    # Handle stringized annotation (from __future__ import annotations)
+    if isinstance(arg_type, str):
+        try:
+            # Evaluate the string annotation in the context of typing and builtins
+            import typing, builtins
 
-    Args:
-        arg_type: The type to extract description from.
-
-    Returns:
-        The description string if found, None otherwise.
-    """
+            arg_type = eval(arg_type, {**vars(typing), **vars(builtins)})
+        except Exception:
+            return None
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
         for annotation in annotated_args[1:]:
@@ -954,7 +956,9 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                    self._run
+                    if self.__class__._arun is BaseTool._arun
+                    else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
