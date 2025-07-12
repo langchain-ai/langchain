@@ -100,6 +100,7 @@ def _get_annotation_description(arg_type: type) -> str | None:
         try:
             # Evaluate the string annotation in the context of typing and builtins
             import typing, builtins
+
             arg_type = eval(arg_type, {**vars(typing), **vars(builtins)})
         except Exception:
             return None
@@ -955,7 +956,9 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                    self._run
+                    if self.__class__._arun is BaseTool._arun
+                    else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
