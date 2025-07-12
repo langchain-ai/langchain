@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import typing
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -15,6 +16,7 @@ from typing import (
 
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -324,7 +326,12 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    @deprecated("0.3.61", alternative="asdict", removal="1.0")
+    @override
+    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+        return self.asdict()
+
+    def asdict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
         """Return dictionary representation of output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
