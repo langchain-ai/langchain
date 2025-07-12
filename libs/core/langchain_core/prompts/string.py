@@ -135,7 +135,7 @@ def mustache_template_vars(
             and key != "."
             and section_depth == 0
         ):
-            variables.add(key.split(".")[0])
+            variables.add(key)
         if type_ in {"section", "inverted section"}:
             section_depth += 1
     return variables

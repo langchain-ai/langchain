@@ -117,7 +117,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     assert prompt.format(obj={"bar": "foo", "foo": "bar"}, foo="baz") == (
         "This foo is a bar test baz."
     )
-    assert prompt.input_variables == ["foo", "obj"]
+    assert prompt.input_variables == ["foo", "obj.bar", "obj.foo"]
     if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_0"
