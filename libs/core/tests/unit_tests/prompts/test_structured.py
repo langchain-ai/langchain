@@ -124,7 +124,7 @@ def test_structured_prompt_template_format() -> None:
         [("human", "hi {{person.name}}")], schema={}, template_format="mustache"
     )
     assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
-    assert prompt.input_variables == ["person"]
+    assert prompt.input_variables == ["person.name"]
     assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
         HumanMessage("hi foo")
     ]

@@ -1,7 +1,8 @@
 """Test mustache_template_vars and get_template_variables functions."""
 
 import pytest
-from langchain_core.prompts.string import get_template_variables, mustache_template_vars
+
+from langchain_core.prompts.string import mustache_template_vars
 from langchain_core.utils.mustache import ChevronError
 
 
