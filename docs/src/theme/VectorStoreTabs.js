@@ -56,7 +56,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "PGVector",
             label: "PGVector",
-            text: `from langchain_postgres import PGVector\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVector(\n    embeddings=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://...",\n)`,
+            text: `from langchain_postgres import PGVectorStore\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVectorStore(\n    embeddings=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://langchain:langchain@localhost:6024/langchain",\n    use_jsonb=True,\n)`,
             packageName: "langchain-postgres",
             default: false,
         },
@@ -77,33 +77,33 @@ export default function VectorStoreTabs(props) {
     ];
 
     const modelOptions = tabItems
-    .filter((item) => !item.shouldHide)
-    .map((item) => ({
-      value: item.value,
-      label: item.label,
-      text: item.text,
-      packageName: item.packageName,
-    }));
+        .filter((item) => !item.shouldHide)
+        .map((item) => ({
+            value: item.value,
+            label: item.label,
+            text: item.text,
+            packageName: item.packageName,
+        }));
 
-const selectedOption = modelOptions.find(
-  (option) => option.value === selectedModel
-);
+    const selectedOption = modelOptions.find(
+        (option) => option.value === selectedModel
+    );
 
-return (
-    <div>
-      <CustomDropdown
-        selectedOption={selectedOption}
-        options={modelOptions}
-        onSelect={setSelectedModel}
-        modelType="vectorstore"
-      />
+    return (
+        <div>
+            <CustomDropdown
+                selectedOption={selectedOption}
+                options={modelOptions}
+                onSelect={setSelectedModel}
+                modelType="vectorstore"
+            />
 
-      <CodeBlock language="bash">
-        {`pip install -qU ${selectedOption.packageName}`}
-      </CodeBlock>
-      <CodeBlock language="python">
-        {selectedOption.text}
-      </CodeBlock>
-    </div>
-  );
-  }
+            <CodeBlock language="bash">
+                {`pip install -qU ${selectedOption.packageName}`}
+            </CodeBlock>
+            <CodeBlock language="python">
+                {selectedOption.text}
+            </CodeBlock>
+        </div>
+    );
+}
