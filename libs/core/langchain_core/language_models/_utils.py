@@ -123,7 +123,7 @@ def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
                     # Subset to (PDF) files and audio, as most relevant chat models
                     # support images in OAI format (and some may not yet support the
                     # standard data block format)
-                    and block.get("type") in ("file", "input_audio")
+                    and block.get("type") in {"file", "input_audio"}
                     and _is_openai_data_block(block)
                 ):
                     if formatted_message is message:

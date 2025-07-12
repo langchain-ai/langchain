@@ -1,9 +1,9 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: 🤔 Question or Problem
-    about: Ask a question or ask about a problem in GitHub Discussions.
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/q-a
+  - name: 🤔 Question
+    about: Ask a question in the LangChain forums
+    url: https://forum.langchain.com/c/help/langchain/14
   - name: Feature Request
     url: https://www.github.com/langchain-ai/langchain/discussions/categories/ideas
     about: Suggest a feature or an idea

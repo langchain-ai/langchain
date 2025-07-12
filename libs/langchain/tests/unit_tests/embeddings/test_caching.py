@@ -1,5 +1,6 @@
 """Embeddings tests."""
 
+import contextlib
 import hashlib
 import importlib
 import warnings
@@ -17,7 +18,8 @@ class MockEmbeddings(Embeddings):
         embeddings: list[list[float]] = []
         for text in texts:
             if text == "RAISE_EXCEPTION":
-                raise ValueError("Simulated embedding failure")
+                msg = "Simulated embedding failure"
+                raise ValueError(msg)
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
@@ -32,7 +34,9 @@ def cache_embeddings() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace"
+        embeddings,
+        store,
+        namespace="test_namespace",
     )
 
 
@@ -42,7 +46,10 @@ def cache_embeddings_batch() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace", batch_size=3
+        embeddings,
+        store,
+        namespace="test_namespace",
+        batch_size=3,
     )
 
 
@@ -74,10 +81,8 @@ def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
 def test_embed_documents_batch(cache_embeddings_batch: CacheBackedEmbeddings) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         cache_embeddings_batch.embed_documents(texts)
-    except ValueError:
-        pass
     keys = list(cache_embeddings_batch.document_embedding_store.yield_keys())
     # only the first batch of three embeddings should exist
     assert len(keys) == 3
@@ -121,10 +126,8 @@ async def test_aembed_documents_batch(
 ) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         await cache_embeddings_batch.aembed_documents(texts)
-    except ValueError:
-        pass
     keys = [
         key
         async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()
@@ -157,7 +160,10 @@ def test_blake2b_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="blake2b"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="blake2b",
     )
 
     text = "blake"
@@ -173,7 +179,10 @@ def test_sha256_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha256"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha256",
     )
 
     text = "foo"
@@ -189,7 +198,10 @@ def test_sha512_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha512"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha512",
     )
 
     text = "foo"

@@ -194,7 +194,7 @@ class IsLocalDict(ast.NodeVisitor):
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id == self.name
             and node.func.attr == "get"
-            and len(node.args) in (1, 2)
+            and len(node.args) in {1, 2}
             and isinstance(node.args[0], ast.Constant)
             and isinstance(node.args[0].value, str)
         ):

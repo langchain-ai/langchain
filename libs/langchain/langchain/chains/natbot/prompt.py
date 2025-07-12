@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """
@@ -115,7 +114,7 @@ CURRENT BROWSER CONTENT:
 <text id=10>7:00 PM</text>
 <text id=11>2 people</text>
 <input id=12 alt="Location, Restaurant, or Cuisine"></input>
-<button id=13>Let’s go</button>
+<button id=13>Let's go</button>
 <text id=14>It looks like you're in Peninsula. Not correct?</text>
 <button id=15>Get current location</button>
 <button id=16>Next</button>
@@ -137,7 +136,7 @@ OBJECTIVE: {objective}
 CURRENT URL: {url}
 PREVIOUS COMMAND: {previous_command}
 YOUR COMMAND:
-"""
+"""  # noqa: E501
 PROMPT = PromptTemplate(
     input_variables=["browser_content", "url", "previous_command", "objective"],
     template=_PROMPT_TEMPLATE,

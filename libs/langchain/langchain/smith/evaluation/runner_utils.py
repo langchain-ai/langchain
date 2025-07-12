@@ -98,10 +98,8 @@ class TestResult(dict):
         to_drop = [
             col
             for col in df.columns
-            if col.startswith("inputs.")
-            or col.startswith("outputs.")
+            if col.startswith(("inputs.", "outputs.", "reference"))
             or col in {"input", "output"}
-            or col.startswith("reference")
         ]
         return df.describe(include="all").drop(to_drop, axis=1)
 
@@ -110,10 +108,11 @@ class TestResult(dict):
         try:
             import pandas as pd
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "Pandas is required to convert the results to a dataframe."
                 " to install pandas, run `pip install pandas`."
-            ) from e
+            )
+            raise ImportError(msg) from e
 
         indices = []
         records = []
@@ -134,7 +133,7 @@ class TestResult(dict):
             if "reference" in result:
                 if isinstance(result["reference"], dict):
                     r.update(
-                        {f"reference.{k}": v for k, v in result["reference"].items()}
+                        {f"reference.{k}": v for k, v in result["reference"].items()},
                     )
                 else:
                     r["reference"] = result["reference"]
@@ -144,7 +143,7 @@ class TestResult(dict):
                     "error": result.get("Error"),
                     "execution_time": result["execution_time"],
                     "run_id": result.get("run_id"),
-                }
+                },
             )
             records.append(r)
             indices.append(example_id)
@@ -161,8 +160,9 @@ class EvalError(dict):
     def __getattr__(self, name: str) -> Any:
         try:
             return self[name]
-        except KeyError:
-            raise AttributeError(f"'EvalError' object has no attribute '{name}'")
+        except KeyError as e:
+            msg = f"'EvalError' object has no attribute '{name}'"
+            raise AttributeError(msg) from e
 
 
 def _wrap_in_chain_factory(
@@ -176,7 +176,7 @@ def _wrap_in_chain_factory(
         chain_class = chain.__class__.__name__
         if llm_or_chain_factory.memory is not None:
             memory_class = chain.memory.__class__.__name__
-            raise ValueError(
+            msg = (
                 "Cannot directly evaluate a chain with stateful memory."
                 " To evaluate this chain, pass in a chain constructor"
                 " that initializes fresh memory each time it is called."
@@ -189,14 +189,15 @@ def _wrap_in_chain_factory(
                 "(memory=new_memory, ...)\n\n"
                 f'run_on_dataset("{dataset_name}", chain_constructor, ...)'
             )
+            raise ValueError(msg)
         return lambda: chain
-    elif isinstance(llm_or_chain_factory, BaseLanguageModel):
+    if isinstance(llm_or_chain_factory, BaseLanguageModel):
         return llm_or_chain_factory
-    elif isinstance(llm_or_chain_factory, Runnable):
+    if isinstance(llm_or_chain_factory, Runnable):
         # Memory may exist here, but it's not elegant to check all those cases.
         lcf = llm_or_chain_factory
         return lambda: lcf
-    elif callable(llm_or_chain_factory):
+    if callable(llm_or_chain_factory):
         if is_traceable_function(llm_or_chain_factory):
             runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
             return lambda: runnable_
@@ -214,15 +215,14 @@ def _wrap_in_chain_factory(
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
-        elif is_traceable_function(cast(Callable, _model)):
+        if is_traceable_function(cast(Callable, _model)):
             runnable_ = as_runnable(cast(Callable, _model))
             return lambda: runnable_
-        elif not isinstance(_model, Runnable):
+        if not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
             return lambda: RunnableLambda(constructor)
-        else:
-            # Typical correct case
-            return constructor
+        # Typical correct case
+        return constructor
     return llm_or_chain_factory
 
 
@@ -238,23 +238,24 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
         InputFormatError: If the input format is invalid.
     """
     if not inputs:
-        raise InputFormatError("Inputs should not be empty.")
+        msg = "Inputs should not be empty."
+        raise InputFormatError(msg)
 
     prompts = []
     if "prompt" in inputs:
         if not isinstance(inputs["prompt"], str):
-            raise InputFormatError(
-                f"Expected string for 'prompt', got {type(inputs['prompt']).__name__}"
-            )
+            msg = f"Expected string for 'prompt', got {type(inputs['prompt']).__name__}"
+            raise InputFormatError(msg)
         prompts = [inputs["prompt"]]
     elif "prompts" in inputs:
         if not isinstance(inputs["prompts"], list) or not all(
             isinstance(i, str) for i in inputs["prompts"]
         ):
-            raise InputFormatError(
+            msg = (
                 "Expected list of strings for 'prompts',"
                 f" got {type(inputs['prompts']).__name__}"
             )
+            raise InputFormatError(msg)
         prompts = inputs["prompts"]
     elif len(inputs) == 1:
         prompt_ = next(iter(inputs.values()))
@@ -263,17 +264,15 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
         elif isinstance(prompt_, list) and all(isinstance(i, str) for i in prompt_):
             prompts = prompt_
         else:
-            raise InputFormatError(f"LLM Run expects string prompt input. Got {inputs}")
+            msg = f"LLM Run expects string prompt input. Got {inputs}"
+            raise InputFormatError(msg)
     else:
-        raise InputFormatError(
-            f"LLM Run expects 'prompt' or 'prompts' in inputs. Got {inputs}"
-        )
+        msg = f"LLM Run expects 'prompt' or 'prompts' in inputs. Got {inputs}"
+        raise InputFormatError(msg)
     if len(prompts) == 1:
         return prompts[0]
-    else:
-        raise InputFormatError(
-            f"LLM Run expects single prompt input. Got {len(prompts)} prompts."
-        )
+    msg = f"LLM Run expects single prompt input. Got {len(prompts)} prompts."
+    raise InputFormatError(msg)
 
 
 class ChatModelInput(TypedDict):
@@ -298,7 +297,8 @@ def _get_messages(inputs: dict[str, Any]) -> dict:
         InputFormatError: If the input format is invalid.
     """
     if not inputs:
-        raise InputFormatError("Inputs should not be empty.")
+        msg = "Inputs should not be empty."
+        raise InputFormatError(msg)
     input_copy = inputs.copy()
     if "messages" in inputs:
         input_copy["input"] = input_copy.pop("messages")
@@ -313,16 +313,17 @@ def _get_messages(inputs: dict[str, Any]) -> dict:
         if len(raw_messages) == 1:
             input_copy["input"] = messages_from_dict(raw_messages[0])
         else:
-            raise InputFormatError(
+            msg = (
                 "Batch messages not supported. Please provide a"
                 " single list of messages."
             )
+            raise InputFormatError(msg)
         return input_copy
-    else:
-        raise InputFormatError(
-            f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
-            f" input. Got {inputs}"
-        )
+    msg = (
+        f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
+        f" input. Got {inputs}"
+    )
+    raise InputFormatError(msg)
 
 
 ## Shared data validation utilities
@@ -336,20 +337,21 @@ def _validate_example_inputs_for_language_model(
             isinstance(prompt_input, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_input)
         ):
-            raise InputFormatError(
+            msg = (
                 "When using an input_mapper to prepare dataset example inputs"
                 " for an LLM or chat model, the output must a single string or"
                 " a list of chat messages."
                 f"\nGot: {prompt_input} of type {type(prompt_input)}."
             )
+            raise InputFormatError(msg)
     else:
         try:
             _get_prompt(first_example.inputs or {})
         except InputFormatError:
             try:
                 _get_messages(first_example.inputs or {})
-            except InputFormatError:
-                raise InputFormatError(
+            except InputFormatError as err2:
+                msg = (
                     "Example inputs do not match language model input format. "
                     "Expected a dictionary with messages or a single prompt."
                     f" Got: {first_example.inputs}"
@@ -357,6 +359,7 @@ def _validate_example_inputs_for_language_model(
                     " to convert the example.inputs to a compatible format"
                     " for the llm or chat model you wish to evaluate."
                 )
+                raise InputFormatError(msg) from err2
 
 
 def _validate_example_inputs_for_chain(
@@ -369,16 +372,18 @@ def _validate_example_inputs_for_chain(
         first_inputs = input_mapper(first_example.inputs or {})
         missing_keys = set(chain.input_keys).difference(first_inputs)
         if not isinstance(first_inputs, dict):
-            raise InputFormatError(
+            msg = (
                 "When using an input_mapper to prepare dataset example"
                 " inputs for a chain, the mapped value must be a dictionary."
                 f"\nGot: {first_inputs} of type {type(first_inputs)}."
             )
+            raise InputFormatError(msg)
         if missing_keys:
-            raise InputFormatError(
+            msg = (
                 "Missing keys after loading example using input_mapper."
                 f"\nExpected: {chain.input_keys}. Got: {first_inputs.keys()}"
             )
+            raise InputFormatError(msg)
     else:
         first_inputs = first_example.inputs
         missing_keys = set(chain.input_keys).difference(first_inputs)
@@ -387,13 +392,14 @@ def _validate_example_inputs_for_chain(
             # Refrain from calling to validate.
             pass
         elif missing_keys:
-            raise InputFormatError(
+            msg = (
                 "Example inputs missing expected chain input keys."
                 " Please provide an input_mapper to convert the example.inputs"
                 " to a compatible format for the chain you wish to evaluate."
                 f"Expected: {chain.input_keys}. "
                 f"Got: {first_inputs.keys()}"
             )
+            raise InputFormatError(msg)
 
 
 def _validate_example_inputs(
@@ -456,7 +462,7 @@ def _determine_input_key(
         if run_inputs and input_key not in run_inputs:
             logger.warning(
                 f"Input key {input_key} not in chain's specified"
-                f" input keys {run_inputs}. Evaluation behavior may be undefined."
+                f" input keys {run_inputs}. Evaluation behavior may be undefined.",
             )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
@@ -464,7 +470,7 @@ def _determine_input_key(
         logger.warning(
             f"Chain expects multiple input keys: {run_inputs},"
             f" Evaluator is likely to fail. Evaluation behavior may be undefined."
-            " Specify an input_key in the RunEvalConfig to avoid this warning."
+            " Specify an input_key in the RunEvalConfig to avoid this warning.",
         )
 
     return input_key
@@ -480,7 +486,7 @@ def _determine_prediction_key(
         if run_outputs and prediction_key not in run_outputs:
             logger.warning(
                 f"Prediction key {prediction_key} not in chain's specified"
-                f" output keys {run_outputs}. Evaluation behavior may be undefined."
+                f" output keys {run_outputs}. Evaluation behavior may be undefined.",
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
@@ -488,7 +494,7 @@ def _determine_prediction_key(
         logger.warning(
             f"Chain expects multiple output keys: {run_outputs},"
             f" Evaluation behavior may be undefined. Specify a prediction_key"
-            " in the RunEvalConfig to avoid this warning."
+            " in the RunEvalConfig to avoid this warning.",
         )
     return prediction_key
 
@@ -500,12 +506,13 @@ def _determine_reference_key(
     if config.reference_key:
         reference_key = config.reference_key
         if example_outputs and reference_key not in example_outputs:
-            raise ValueError(
+            msg = (
                 f"Reference key {reference_key} not in Dataset"
                 f" example outputs: {example_outputs}"
             )
+            raise ValueError(msg)
     elif example_outputs and len(example_outputs) == 1:
-        reference_key = list(example_outputs)[0]
+        reference_key = next(iter(example_outputs))
     else:
         reference_key = None
     return reference_key
@@ -544,15 +551,17 @@ def _construct_run_evaluator(
         # Assume we can decorate
         return run_evaluator_dec(eval_config)
     else:
-        raise ValueError(f"Unknown evaluator type: {type(eval_config)}")
+        msg = f"Unknown evaluator type: {type(eval_config)}"
+        raise ValueError(msg)
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
-            raise ValueError(
+            msg = (
                 f"Must specify reference_key in smith_eval.RunEvalConfig to use"
                 f" evaluator of type {eval_type_tag} with"
                 f" dataset with multiple output keys: {example_outputs}."
             )
+            raise ValueError(msg)
         run_evaluator = smith_eval.StringRunEvaluatorChain.from_run_and_data_type(
             evaluator_,
             run_type,
@@ -563,18 +572,18 @@ def _construct_run_evaluator(
             tags=[eval_type_tag],
         )
     elif isinstance(evaluator_, PairwiseStringEvaluator):
-        raise NotImplementedError(
+        msg = (
             f"Run evaluator for {eval_type_tag} is not implemented."
             " PairwiseStringEvaluators compare the outputs of two different models"
             " rather than the output of a single model."
             " Did you mean to use a StringEvaluator instead?"
             "\nSee: https://python.langchain.com/docs/guides/evaluation/string/"
         )
+        raise NotImplementedError(msg)
 
     else:
-        raise NotImplementedError(
-            f"Run evaluator for {eval_type_tag} is not implemented"
-        )
+        msg = f"Run evaluator for {eval_type_tag} is not implemented"
+        raise NotImplementedError(msg)
     return run_evaluator
 
 
@@ -611,10 +620,13 @@ def _load_run_evaluators(
     input_key, prediction_key, reference_key = None, None, None
     if config.evaluators or (
         config.custom_evaluators
-        and any([isinstance(e, StringEvaluator) for e in config.custom_evaluators])
+        and any(isinstance(e, StringEvaluator) for e in config.custom_evaluators)
     ):
         input_key, prediction_key, reference_key = _get_keys(
-            config, run_inputs, run_outputs, example_outputs
+            config,
+            run_inputs,
+            run_outputs,
+            example_outputs,
         )
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
@@ -641,15 +653,16 @@ def _load_run_evaluators(
                     input_key=input_key,
                     prediction_key=prediction_key,
                     reference_key=reference_key,
-                )
+                ),
             )
         elif callable(custom_evaluator):
             run_evaluators.append(run_evaluator_dec(custom_evaluator))
         else:
-            raise ValueError(
+            msg = (
                 f"Unsupported custom evaluator: {custom_evaluator}."
                 f" Expected RunEvaluator or StringEvaluator."
             )
+            raise ValueError(msg)
 
     return run_evaluators
 
@@ -683,41 +696,45 @@ async def _arun_llm(
     """
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if (
-            isinstance(prompt_or_messages, str)
-            or isinstance(prompt_or_messages, list)
+        if isinstance(prompt_or_messages, str) or (
+            isinstance(prompt_or_messages, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             return await llm.ainvoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
-        else:
-            raise InputFormatError(
-                "Input mapper returned invalid format"
-                f" {prompt_or_messages}"
-                "\nExpected a single string or list of chat messages."
-            )
+        msg = (
+            "Input mapper returned invalid format"
+            f" {prompt_or_messages}"
+            "\nExpected a single string or list of chat messages."
+        )
+        raise InputFormatError(msg)
 
-    else:
-        try:
-            prompt = _get_prompt(inputs)
-            llm_output: Union[str, BaseMessage] = await llm.ainvoke(
-                prompt,
-                config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
-                ),
-            )
-        except InputFormatError:
-            llm_inputs = _get_messages(inputs)
-            llm_output = await llm.ainvoke(
-                **llm_inputs,
-                config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
-                ),
-            )
+    try:
+        prompt = _get_prompt(inputs)
+        llm_output: Union[str, BaseMessage] = await llm.ainvoke(
+            prompt,
+            config=RunnableConfig(
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
+            ),
+        )
+    except InputFormatError:
+        llm_inputs = _get_messages(inputs)
+        llm_output = await llm.ainvoke(
+            **llm_inputs,
+            config=RunnableConfig(
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
+            ),
+        )
     return llm_output
 
 
@@ -742,12 +759,16 @@ async def _arun_chain(
         output = await chain.ainvoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
@@ -801,7 +822,7 @@ async def _arun_llm_or_chain(
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\n{repr(e)}"
+            f"\n{e!r}",
         )
         result = EvalError(Error=e)
     return result
@@ -837,30 +858,34 @@ def _run_llm(
     # Most of this is legacy code; we could probably remove a lot of it.
     if input_mapper is not None:
         prompt_or_messages = input_mapper(inputs)
-        if (
-            isinstance(prompt_or_messages, str)
-            or isinstance(prompt_or_messages, list)
+        if isinstance(prompt_or_messages, str) or (
+            isinstance(prompt_or_messages, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
             llm_output: Union[str, BaseMessage] = llm.invoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         else:
-            raise InputFormatError(
+            msg = (
                 "Input mapper returned invalid format: "
                 f" {prompt_or_messages}"
                 "\nExpected a single string or list of chat messages."
             )
+            raise InputFormatError(msg)
     else:
         try:
             llm_prompts = _get_prompt(inputs)
             llm_output = llm.invoke(
                 llm_prompts,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         except InputFormatError:
@@ -893,12 +918,16 @@ def _run_chain(
         output = chain.invoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = chain.invoke(inputs_, config=runnable_config)
     return output
@@ -954,7 +983,7 @@ def _run_llm_or_chain(
         logger.warning(
             f"{chain_or_llm} failed for example {example.id} "
             f"with inputs {example.inputs}"
-            f"\nError Type: {error_type}, Message: {e}"
+            f"\nError Type: {error_type}, Message: {e}",
         )
         result = EvalError(Error=e)
     return result
@@ -974,7 +1003,8 @@ def _prepare_eval_run(
 
     examples = list(client.list_examples(dataset_id=dataset.id, as_of=dataset_version))
     if not examples:
-        raise ValueError(f"Dataset {dataset_name} has no example rows.")
+        msg = f"Dataset {dataset_name} has no example rows."
+        raise ValueError(msg)
     modified_at = [ex.modified_at for ex in examples if ex.modified_at]
     # Should always be defined in practice when fetched,
     # but the typing permits None
@@ -1007,10 +1037,11 @@ run_on_dataset(
     project_name="{project_name} - {uid}", # Update since {project_name} already exists
 )
 """
-        raise ValueError(
+        msg = (
             f"Test project {project_name} already exists. Please use a different name:"
             f"\n\n{example_msg}"
         )
+        raise ValueError(msg) from e
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
     print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"
@@ -1082,9 +1113,7 @@ class _DatasetRunContainer:
                         project_id=self.project.id,
                     )
                 except Exception as e:
-                    logger.error(
-                        f"Error running batch evaluator {repr(evaluator)}: {e}"
-                    )
+                    logger.error(f"Error running batch evaluator {evaluator!r}: {e}")
         return aggregate_feedback
 
     def _collect_metrics(self) -> tuple[dict[str, _RowResult], dict[str, Run]]:
@@ -1096,7 +1125,7 @@ class _DatasetRunContainer:
                     eval_results = callback.logged_eval_results
                     for (_, example_id), v in eval_results.items():
                         all_eval_results.setdefault(str(example_id), {}).update(
-                            {"feedback": v}
+                            {"feedback": v},
                         )
                 elif isinstance(callback, LangChainTracer):
                     run = callback.latest_run
@@ -1111,7 +1140,7 @@ class _DatasetRunContainer:
                             "execution_time": execution_time,
                             "run_id": run_id,
                             "run": run,
-                        }
+                        },
                     )
                     all_runs[str(callback.example_id)] = run
         return cast(dict[str, _RowResult], all_eval_results), all_runs
@@ -1134,21 +1163,26 @@ class _DatasetRunContainer:
             aggregate_metrics=aggregate_feedback,
         )
 
-    def finish(self, batch_results: list, verbose: bool = False) -> TestResult:
+    def finish(
+        self,
+        batch_results: list,
+        verbose: bool = False,  # noqa: FBT001,FBT002
+    ) -> TestResult:
         results = self._collect_test_results(batch_results)
         if verbose:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
             except Exception as e:
-                logger.debug(f"Failed to print aggregate feedback: {repr(e)}")
+                logger.debug(f"Failed to print aggregate feedback: {e!r}")
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
-                self.project.id, end_time=datetime.now(timezone.utc)
+                self.project.id,
+                end_time=datetime.now(timezone.utc),
             )
         except Exception as e:
-            logger.debug(f"Failed to close project: {repr(e)}")
+            logger.debug(f"Failed to close project: {e!r}")
         return results
 
     @classmethod
@@ -1188,7 +1222,10 @@ class _DatasetRunContainer:
             run_metadata["revision_id"] = revision_id
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
-            wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
+            wrapped_model,
+            examples,
+            evaluation,
+            dataset.data_type or DataType.kv,
         )
         _validate_example_inputs(examples[0], wrapped_model, input_mapper)
         progress_bar = progress.ProgressBarCallback(len(examples))
@@ -1242,7 +1279,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         display(aggregate_results)
     else:
         formatted_string = aggregate_results.to_string(
-            float_format=lambda x: f"{x:.2f}", justify="right"
+            float_format=lambda x: f"{x:.2f}",
+            justify="right",
         )
         print("\n Experiment Results:")  # noqa: T201
         print(formatted_string)  # noqa: T201
@@ -1401,7 +1439,7 @@ def run_on_dataset(
                     ),
                     container.examples,
                     container.configs,
-                )
+                ),
             )
 
     return container.finish(batch_results, verbose=verbose)
@@ -1516,5 +1554,6 @@ or LangSmith's `RunEvaluator` classes.
 """  # noqa: E501
 run_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING
 arun_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING.replace(
-    "run_on_dataset(", "await arun_on_dataset("
+    "run_on_dataset(",
+    "await arun_on_dataset(",
 )

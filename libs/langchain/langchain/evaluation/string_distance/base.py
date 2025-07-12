@@ -10,6 +10,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.utils import pre_init
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -28,11 +29,12 @@ def _load_rapidfuzz() -> Any:
     """
     try:
         import rapidfuzz
-    except ImportError:
-        raise ImportError(
+    except ImportError as e:
+        msg = (
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
             "Please install it with `pip install rapidfuzz`."
         )
+        raise ImportError(msg) from e
     return rapidfuzz.distance
 
 
@@ -104,7 +106,7 @@ class _RapidFuzzChainMixin(Chain):
         return result
 
     @staticmethod
-    def _get_metric(distance: str, normalize_score: bool = False) -> Callable:
+    def _get_metric(distance: str, *, normalize_score: bool = False) -> Callable:
         """
         Get the distance metric function based on the distance type.
 
@@ -128,15 +130,15 @@ class _RapidFuzzChainMixin(Chain):
             StringDistance.INDEL: rf_distance.Indel,
         }
         if distance not in module_map:
-            raise ValueError(
+            msg = (
                 f"Invalid distance metric: {distance}"
                 f"\nMust be one of: {list(StringDistance)}"
             )
+            raise ValueError(msg)
         module = module_map[distance]
         if normalize_score:
             return module.normalized_distance
-        else:
-            return module.distance
+        return module.distance
 
     @property
     def metric(self) -> Callable:
@@ -147,7 +149,8 @@ class _RapidFuzzChainMixin(Chain):
             Callable: The distance metric function.
         """
         return _RapidFuzzChainMixin._get_metric(
-            self.distance, normalize_score=self.normalize_score
+            self.distance,
+            normalize_score=self.normalize_score,
         )
 
     def compute_metric(self, a: str, b: str) -> float:
@@ -258,6 +261,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -293,6 +297,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -369,7 +374,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
     async def _acall(
@@ -389,7 +394,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
     def _evaluate_string_pairs(

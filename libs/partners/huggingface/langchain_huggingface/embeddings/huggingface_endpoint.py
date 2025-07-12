@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import Any, Optional
 
@@ -27,6 +29,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 task="feature-extraction",
                 huggingfacehub_api_token="my-api-key",
             )
+
     """
 
     client: Any = None  #: :meta private:
@@ -35,7 +38,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     provider: Optional[str] = None
     """Name of the provider to use for inference with the model specified in
-        ``repo_id``. e.g. "sambanova". if not specified, defaults to HF Inference API. 
+        ``repo_id``. e.g. "sambanova". if not specified, defaults to HF Inference API.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     repo_id: Optional[str] = None
     """Huggingfacehub repository id, for backward compatibility."""
@@ -87,18 +90,20 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             )
 
             if self.task not in VALID_TASKS:
-                raise ValueError(
+                msg = (
                     f"Got invalid task {self.task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
+                raise ValueError(msg)
             self.client = client
             self.async_client = async_client
 
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+            raise ImportError(msg) from e
         return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -109,6 +114,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
@@ -125,6 +131,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
@@ -142,9 +149,9 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embeddings for the text.
+
         """
-        response = self.embed_documents([text])[0]
-        return response
+        return self.embed_documents([text])[0]
 
     async def aembed_query(self, text: str) -> list[float]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
@@ -154,6 +161,6 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embeddings for the text.
+
         """
-        response = (await self.aembed_documents([text]))[0]
-        return response
+        return (await self.aembed_documents([text]))[0]

@@ -32,7 +32,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key=None
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key=None,
     )
     ranked_documents = ensemble_retriever.invoke("_")
 
@@ -54,7 +56,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key=None
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key=None,
     )
     ranked_documents = ensemble_retriever.invoke("_")
 
@@ -77,7 +81,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key="id"
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key="id",
     )
     ranked_documents = ensemble_retriever.invoke("_")
 
