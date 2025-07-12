@@ -79,7 +79,9 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         text_contents_options: Optional[  # noqa: FBT001
             Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
+        highlights: Optional[
+            Union[HighlightsContentsOptions, bool]
+        ] = None,  # noqa: FBT001
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
@@ -160,7 +162,9 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         text_contents_options: Optional[  # noqa: FBT001
             Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
+        highlights: Optional[
+            Union[HighlightsContentsOptions, bool]
+        ] = None,  # noqa: FBT001
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,

@@ -70,9 +70,9 @@ class TestChatOllama(ChatModelIntegrationTests):
                 final_tool_calls.extend(chunk.tool_calls)
 
         assert tool_chunk_found, "Tool streaming did not produce any tool_call_chunks."
-        assert len(final_tool_calls) == 1, (
-            f"Expected 1 final tool call, but got {len(final_tool_calls)}"
-        )
+        assert (
+            len(final_tool_calls) == 1
+        ), f"Expected 1 final tool call, but got {len(final_tool_calls)}"
 
         final_tool_call = final_tool_calls[0]
         assert final_tool_call["name"] == "get_current_weather"
@@ -114,9 +114,9 @@ class TestChatOllama(ChatModelIntegrationTests):
                 final_tool_calls.extend(chunk.tool_calls)
 
         assert tool_chunk_found, "Tool streaming did not produce any tool_call_chunks."
-        assert len(final_tool_calls) == 1, (
-            f"Expected 1 final tool call, but got {len(final_tool_calls)}"
-        )
+        assert (
+            len(final_tool_calls) == 1
+        ), f"Expected 1 final tool call, but got {len(final_tool_calls)}"
 
         final_tool_call = final_tool_calls[0]
         assert final_tool_call["name"] == "get_current_weather"
