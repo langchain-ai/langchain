@@ -94,14 +94,15 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
-    """Extract description from an Annotated type.
-
-    Args:
-        arg_type: The type to extract description from.
-
-    Returns:
-        The description string if found, None otherwise.
-    """
+    """Extract description from an Annotated type, handling stringized annotations (PEP 563)."""
+    # Handle stringized annotation (from __future__ import annotations)
+    if isinstance(arg_type, str):
+        try:
+            # Evaluate the string annotation in the context of typing and builtins
+            import typing, builtins
+            arg_type = eval(arg_type, {**vars(typing), **vars(builtins)})
+        except Exception:
+            return None
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
         for annotation in annotated_args[1:]:

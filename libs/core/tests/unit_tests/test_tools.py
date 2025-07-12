@@ -2685,3 +2685,36 @@ def test_tool_args_schema_with_annotated_type() -> None:
             "type": "array",
         }
     }
+
+
+def test_tool_annotated_descriptions_pep563() -> None:
+    import sys
+    if sys.version_info < (3, 7):
+        # __future__ annotations not available
+        return
+    # Simulate a function with stringized annotations as would occur with PEP 563
+    ns = {}
+    exec(
+        'from __future__ import annotations\n'
+        'from typing import Annotated\n'
+        'from langchain_core.tools import tool\n'
+        'def foo(bar: Annotated[str, "this is the bar"], baz: Annotated[int, "this is the baz"]) -> str:\n'
+        '    """The foo.\n\n    Returns:\n        The bar only.\n    """\n'
+        '    return bar\n'
+        'foo1 = tool(foo)\n',
+        ns,
+    )
+    foo1 = ns["foo1"]
+    import inspect
+    from langchain_core.tools.base import _schema
+    args_schema = _schema(foo1.args_schema)
+    assert args_schema == {
+        "title": "foo",
+        "type": "object",
+        "description": inspect.getdoc(ns["foo"]),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string", "description": "this is the bar"},
+            "baz": {"title": "Baz", "type": "integer", "description": "this is the baz"},
+        },
+        "required": ["bar", "baz"],
+    }
