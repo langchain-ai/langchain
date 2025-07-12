@@ -1,0 +1,28 @@
+include README.md
+include LICENSE
+include SYSTEM_OVERVIEW.md
+include Ticket_Broker_UI_Slide_Deck.md
+include install.sh
+include example_analysis.py
+include setup.py
+include MANIFEST.in
+
+recursive-include ticket_broker *.py
+recursive-include ticket_broker *.md
+recursive-include ticket_broker *.txt
+recursive-include ticket_broker *.example
+recursive-include ticket_broker *.json
+recursive-include ticket_broker *.yaml
+recursive-include ticket_broker *.yml
+
+include ticket_broker/.env.example
+include ticket_broker/requirements.txt
+include ticket_broker/README.md
+
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .git*
