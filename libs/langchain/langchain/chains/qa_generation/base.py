@@ -83,8 +83,7 @@ class QAGenerationChain(Chain):
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> QAGenerationChain:
-        """
-        Create a QAGenerationChain from a language model.
+        """Create a QAGenerationChain from a language model.
 
         Args:
             llm: a language model

@@ -1,5 +1,7 @@
-"""Constitutional principles from https://arxiv.org/pdf/2212.08073.pdf (Bai et al. 2022)
-UnifiedObjectives v0.2 principles ("uo-*") adapted from https://examine.dev/docs/Unified_objectives.pdf (Samwald et al. 2023)
+"""Constitutional principles.
+
+Constitutional principles from https://arxiv.org/pdf/2212.08073.pdf (Bai et al. 2022)
+UnifiedObjectives v0.2 principles ("uo-*") adapted from https://examine.dev/docs/Unified_objectives.pdf (Samwald et al. 2023).
 """
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple

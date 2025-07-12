@@ -441,7 +441,8 @@ class ConversationEntityMemory(BaseChatMemory):
         return ["entities", self.chat_history_key]
 
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
-        """
+        """Load memory variables.
+
         Returns chat history and all generated entities with summaries if available,
         and updates or clears the recent entity cache.
 
@@ -449,7 +450,6 @@ class ConversationEntityMemory(BaseChatMemory):
         summaries are generated, so the entity cache values may be empty if no entity
         descriptions are generated yet.
         """
-
         # Create an LLMChain for predicting entity names from the recent chat history:
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
 
@@ -506,13 +506,11 @@ class ConversationEntityMemory(BaseChatMemory):
         }
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
-        """
-        Save context from this conversation history to the entity store.
+        """Save context from this conversation history to the entity store.
 
         Generates a summary for each entity in the entity cache by prompting
         the model, and saves these summaries to the entity store.
         """
-
         super().save_context(inputs, outputs)
 
         if self.input_key is None:

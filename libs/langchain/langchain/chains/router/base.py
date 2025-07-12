@@ -29,8 +29,7 @@ class RouterChain(Chain, ABC):
         return ["destination", "next_inputs"]
 
     def route(self, inputs: dict[str, Any], callbacks: Callbacks = None) -> Route:
-        """
-        Route inputs to a destination chain.
+        """Route inputs to a destination chain.
 
         Args:
             inputs: inputs to the chain

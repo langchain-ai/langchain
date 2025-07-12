@@ -192,8 +192,9 @@ def get_parser(
     """Return a parser for the query language.
 
     Args:
-        allowed_comparators: Optional[Sequence[Comparator]]
-        allowed_operators: Optional[Sequence[Operator]]
+        allowed_comparators: The allowed comparators.
+        allowed_operators: The allowed operators.
+        allowed_attributes: The allowed attributes.
 
     Returns:
         Lark parser for the query language.

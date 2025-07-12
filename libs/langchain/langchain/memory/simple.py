@@ -4,7 +4,9 @@ from langchain_core.memory import BaseMemory
 
 
 class SimpleMemory(BaseMemory):
-    """Simple memory for storing context or other information that shouldn't
+    """Simple Memory.
+
+    Simple memory for storing context or other information that shouldn't
     ever change between prompts.
     """
 

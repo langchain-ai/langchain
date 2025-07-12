@@ -108,7 +108,7 @@ def test_no_more_changes_to_proxy_community() -> None:
 
 
 def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
-    """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP
+    """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP.
 
     This variable is located in the global namespace of a Python file.
 
