@@ -169,8 +169,11 @@ def _wrap_in_chain_factory(
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     dataset_name: str = "<my_dataset>",
 ) -> MCF:
-    """Forgive the user if they pass in a chain without memory instead of a chain
-    factory. It's a common mistake. Raise a more helpful error message as well."""
+    """Wrap in a chain factory.
+
+    Forgive the user if they pass in a chain without memory instead of a chain
+    factory. It's a common mistake. Raise a more helpful error message as well.
+    """
     if isinstance(llm_or_chain_factory, Chain):
         chain = llm_or_chain_factory
         chain_class = chain.__class__.__name__
@@ -234,6 +237,7 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
 
     Returns:
         A string prompt.
+
     Raises:
         InputFormatError: If the input format is invalid.
     """
@@ -293,6 +297,7 @@ def _get_messages(inputs: dict[str, Any]) -> dict:
 
     Returns:
         A list of chat messages.
+
     Raises:
         InputFormatError: If the input format is invalid.
     """
@@ -607,11 +612,15 @@ def _load_run_evaluators(
     run_inputs: Optional[list[str]],
     run_outputs: Optional[list[str]],
 ) -> list[RunEvaluator]:
-    """
-    Load run evaluators from a configuration.
+    """Load run evaluators from a configuration.
 
     Args:
         config: Configuration for the run evaluators.
+        run_type: The type of run.
+        data_type: The type of dataset used in the run.
+        example_outputs: The example outputs.
+        run_inputs: The input keys for the run.
+        run_outputs: The output keys for the run.
 
     Returns:
         A list of run evaluators.
@@ -687,9 +696,11 @@ async def _arun_llm(
         tags: Optional tags to add to the run.
         callbacks: Optional callbacks to use during the run.
         input_mapper: Optional function to map inputs to the expected format.
+        metadata: Optional metadata to add to the run.
 
     Returns:
         The LLMResult or ChatResult.
+
     Raises:
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
@@ -785,9 +796,8 @@ async def _arun_llm_or_chain(
 
     Args:
         example: The example to run.
+        config: The configuration for the run.
         llm_or_chain_factory: The Chain or language model constructor to run.
-        tags: Optional tags to add to the run.
-        callbacks: Optional callbacks to use during the run.
         input_mapper: Optional function to map the input to the expected format.
 
     Returns:
@@ -840,8 +850,7 @@ def _run_llm(
     input_mapper: Optional[Callable[[dict], Any]] = None,
     metadata: Optional[dict[str, Any]] = None,
 ) -> Union[str, BaseMessage]:
-    """
-    Run the language model on the example.
+    """Run the language model on the example.
 
     Args:
         llm: The language model to run.
@@ -849,8 +858,11 @@ def _run_llm(
         callbacks: The callbacks to use during the run.
         tags: Optional tags to add to the run.
         input_mapper: function to map to the inputs dictionary from an Example
+        metadata: Optional metadata to add to the run.
+
     Returns:
         The LLMResult or ChatResult.
+
     Raises:
         ValueError: If the LLM type is unsupported.
         InputFormatError: If the input format is invalid.
@@ -940,14 +952,13 @@ def _run_llm_or_chain(
     llm_or_chain_factory: MCF,
     input_mapper: Optional[Callable[[dict], Any]] = None,
 ) -> Union[dict, str, LLMResult, ChatResult]:
-    """
-    Run the Chain or language model synchronously.
+    """Run the Chain or language model synchronously.
 
     Args:
         example: The example to run.
+        config: The configuration for the run.
         llm_or_chain_factory: The Chain or language model constructor to run.
-        tags: Optional tags to add to the run.
-        callbacks: Optional callbacks to use during the run.
+        input_mapper: Optional function to map the input to the expected format.
 
     Returns:
         Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:

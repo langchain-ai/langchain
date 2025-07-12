@@ -89,7 +89,7 @@ class LocalFileStore(ByteStore):
         return Path(full_path)
 
     def _mkdir_for_store(self, dir_path: Path) -> None:
-        """Makes a store directory path (including parents) with specified permissions
+        """Makes a store directory path (including parents) with specified permissions.
 
         This is needed because `Path.mkdir()` is restricted by the current `umask`,
         whereas the explicit `os.chmod()` used here is not.

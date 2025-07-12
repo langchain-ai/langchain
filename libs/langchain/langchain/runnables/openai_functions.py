@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 
 
 class OpenAIFunction(TypedDict):
-    """A function description for ChatOpenAI"""
+    """A function description for ChatOpenAI."""
 
     name: str
     """The name of the function."""
