@@ -15,7 +15,7 @@ body:
       Do **NOT** use this to ask usage questions or reporting issues with your code.
       
       If you have usage questions or need help solving some problem, 
-      please use [GitHub Discussions](https://github.com/langchain-ai/langchain/discussions).
+      please use the [LangChain Forum](https://forum.langchain.com/).
       
       If you're in the wrong place, here are some helpful links to find a better
       place to ask your question:
@@ -23,7 +23,7 @@ body:
       [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
       [API Reference](https://python.langchain.com/api_reference/),
       [GitHub search](https://github.com/langchain-ai/langchain),
-      [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
+      [LangChain Forum](https://forum.langchain.com/),
       [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
       [LangChain ChatBot](https://chat.langchain.com/)
 - type: input

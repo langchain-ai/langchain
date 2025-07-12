@@ -9,7 +9,7 @@ body:
         
         Use this to report bugs in LangChain. 
         
-        If you're not certain that your issue is due to a bug in LangChain, please use [GitHub Discussions](https://github.com/langchain-ai/langchain/discussions)
+        If you're not certain that your issue is due to a bug in LangChain, please use the [LangChain Forum](https://forum.langchain.com/)
         to ask for help with your issue.
         
         Relevant links to check before filing a bug report to see if your issue has already been reported, fixed or
@@ -18,7 +18,7 @@ body:
         [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
         [API Reference](https://python.langchain.com/api_reference/),
         [GitHub search](https://github.com/langchain-ai/langchain),
-        [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
+        [LangChain Forum](https://forum.langchain.com/),
         [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
         [LangChain ChatBot](https://chat.langchain.com/)
   - type: checkboxes
