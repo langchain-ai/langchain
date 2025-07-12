@@ -213,7 +213,11 @@ class AIMessage(BaseMessage):
         otherwise, does best-effort parsing to standard types.
         """
         blocks: list[types.ContentBlock] = []
-        content = [self.content] if isinstance(self.content, str) else self.content
+        content = (
+            [self.content]
+            if isinstance(self.content, str) and self.content
+            else self.content
+        )
         for item in content:
             if isinstance(item, str):
                 blocks.append({"type": "text", "text": item})
@@ -227,6 +231,7 @@ class AIMessage(BaseMessage):
                         "that this attribute is set on initialization."
                     )
                     raise ValueError(msg)
+                blocks.append(cast("types.ContentBlock", item))
             else:
                 pass
 
