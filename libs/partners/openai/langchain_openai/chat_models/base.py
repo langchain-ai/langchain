@@ -1870,11 +1870,12 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            
+
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             base_url = (
                 getattr(self, "openai_api_base", "")
-                or getattr(self, "api_base", "") or ""
+                or getattr(self, "api_base", "")
+                or ""
             ).lower()
             # The Azure-Hosted Models routes to this function
             # so we need to set the tool_choice to required
