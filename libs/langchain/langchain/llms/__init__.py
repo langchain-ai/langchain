@@ -1,6 +1,6 @@
-"""
-**LLM** classes provide
-access to the large language model (**LLM**) APIs and services.
+"""**LLMs**.
+
+**LLM** classes provide access to the large language model (**LLM**) APIs and services.
 
 **Class hierarchy:**
 

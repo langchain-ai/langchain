@@ -52,7 +52,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
     ) -> str:
         """Get format instructions for the output parser.
 
-        example:
+        Example:
         ```python
         from langchain.output_parsers.structured import (
             StructuredOutputParser, ResponseSchema

@@ -149,9 +149,8 @@ select = [
     "ASYNC",  # flake8-async
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
+    "COM",    # flake8-commas
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -182,14 +181,6 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -197,21 +188,24 @@ ignore = [
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
+
+    # TODO rules
+    "D1", # Missing docstring
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]
-"!langchain/indexes/vectorstore.py" = ["D"]
-
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
+    "D1",     # Missing docstring
     "S101",   # Tests need assertions
     "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access in tests
+]
+"scripts/**/*.py" = [
+    "D1", # Missing docstring
 ]
 "langchain/chains/constitutional_ai/principles.py" = [
     "E501", # Line too long
