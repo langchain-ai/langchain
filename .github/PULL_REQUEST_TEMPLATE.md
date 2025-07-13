@@ -12,7 +12,7 @@ Thank you for contributing to LangChain!
         - core, cli, langchain, standard-tests, docs, anthropic, chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant, xai
 
 - [ ] **PR message**: ***Delete this entire checklist*** and replace with
-    - **Description:** a description of the change
+    - **Description:** a description of the change. Include a [closing keyword](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) if applicable.
     - **Issue:** the issue # it fixes, if applicable
     - **Dependencies:** any dependencies required for this change
     - **Twitter handle:** if your PR gets announced, and you'd like a mention, we'll gladly shout you out!
