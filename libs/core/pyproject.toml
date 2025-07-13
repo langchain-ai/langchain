@@ -15,9 +15,13 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.68"
+dynamic = ["version"]
 description = "Building applications with LLMs through composability"
 readme = "README.md"
+
+[tool.pdm.version]
+source="file"
+path="langchain_core/version.py"
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"

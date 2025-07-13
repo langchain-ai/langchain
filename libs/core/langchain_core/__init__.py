@@ -8,19 +8,15 @@ No third-party integrations are defined here. The dependencies are kept purposef
 very lightweight.
 """
 
-from importlib import metadata
-
 from langchain_core._api import (
     surface_langchain_beta_warnings,
     surface_langchain_deprecation_warnings,
 )
+from langchain_core.version import __version__
 
-try:
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
-del metadata  # optional, avoids polluting the results of dir(__package__)
+__all__ = [
+    "__version__",
+]
 
 surface_langchain_deprecation_warnings()
 surface_langchain_beta_warnings()
