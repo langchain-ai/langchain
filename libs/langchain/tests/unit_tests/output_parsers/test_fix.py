@@ -147,7 +147,7 @@ def test_output_fixing_parser_output_type(
 
 
 @pytest.mark.parametrize(
-    "completion,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
@@ -184,7 +184,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
 
 
 @pytest.mark.parametrize(
-    "completion,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",

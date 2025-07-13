@@ -39,5 +39,5 @@ def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
 @pytest.mark.requires("numexpr")
 def test_error(fake_llm_math_chain: LLMMathChain) -> None:
     """Test question that raises error."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="unknown format from LLM: foo"):
         fake_llm_math_chain.run("foo")

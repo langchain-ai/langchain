@@ -428,11 +428,19 @@ def test_incremental_fails_with_bad_source_ids(
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(
             loader,
@@ -466,7 +474,11 @@ async def test_aincremental_fails_with_bad_source_ids(
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
@@ -475,7 +487,11 @@ async def test_aincremental_fails_with_bad_source_ids(
             cleanup="incremental",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
