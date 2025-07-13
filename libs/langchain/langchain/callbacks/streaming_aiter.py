@@ -7,7 +7,7 @@ from typing import Any, Literal, Union, cast
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
 
-# TODO If used by two LLM runs in parallel this won't work as expected
+# TODO: If used by two LLM runs in parallel this won't work as expected
 
 
 class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
@@ -44,7 +44,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
     async def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         self.done.set()
 
-    # TODO implement the other methods
+    # TODO: implement the other methods
 
     async def aiter(self) -> AsyncIterator[str]:
         while not self.queue.empty() or not self.done.is_set():
