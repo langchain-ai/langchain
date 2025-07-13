@@ -715,26 +715,26 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """
         return (await self.aformat_prompt(**kwargs)).to_string()
 
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Format prompt. Should return a PromptValue.
+    def format_prompt(self, **kwargs: Any) -> ChatPromptValue:
+        """Format prompt. Should return a ChatPromptValue.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            PromptValue.
+            ChatPromptValue.
         """
         messages = self.format_messages(**kwargs)
         return ChatPromptValue(messages=messages)
 
-    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
-        """Async format prompt. Should return a PromptValue.
+    async def aformat_prompt(self, **kwargs: Any) -> ChatPromptValue:
+        """Async format prompt. Should return a ChatPromptValue.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            PromptValue.
+            ChatPromptValue.
         """
         messages = await self.aformat_messages(**kwargs)
         return ChatPromptValue(messages=messages)
