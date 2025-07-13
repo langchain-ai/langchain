@@ -11,12 +11,11 @@ dependencies = [
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
-    "packaging<25,>=23.2",
     "typing-extensions>=4.7",
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.68"
+version = "0.3.68b0"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -39,6 +38,7 @@ dev = [
     "grandalf<1.0,>=0.8",
 ]
 test = [
+    "packaging<26,>=23.2",
     "pytest<9,>=8",
     "freezegun<2.0.0,>=1.2.2",
     "pytest-mock<4.0.0,>=3.10.0",
