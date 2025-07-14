@@ -60,7 +60,7 @@ python main.py
 ### View traces in the Observatory
 On the Confident AI dashboard, go to Observatory > Traces and click on the latest trace. 
 
-![Confident AI Observatory](https://github.com/spike-spiegel-21/confident-docs/blob/mayank/img/public/img/Screenshot%202025-07-09%20at%204.38.13%E2%80%AFPM.png?raw=true)
+![Confident AI Observatory]([https://github.com/spike-spiegel-21/confident-docs/blob/mayank/img/public/img/Screenshot%202025-07-09%20at%204.38.13%E2%80%AFPM.png?raw=true](https://raw.githubusercontent.com/spike-spiegel-21/confident-docs/refs/heads/mayank/img/public/img/langgraph_trace.png))
 
 
 ## Run end-to-end evals on your agent
