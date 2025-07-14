@@ -12,11 +12,9 @@ from langchain_core._api import (
     surface_langchain_beta_warnings,
     surface_langchain_deprecation_warnings,
 )
-from langchain_core.version import __version__
+from langchain_core.version import VERSION
 
-__all__ = [
-    "__version__",
-]
+__version__ = VERSION
 
 surface_langchain_deprecation_warnings()
 surface_langchain_beta_warnings()
