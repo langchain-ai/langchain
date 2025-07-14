@@ -10,6 +10,10 @@ if TYPE_CHECKING:
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
+    def has_index(seq, i):
+        """Return True if `seq[i]` would succeed, False otherwise."""
+        return -len(seq) <= i < len(seq)     # works for lists, tuples, strings, NumPy arrays …
+
     components = path.split("/")
     if components[0] != "#":
         msg = (
@@ -18,13 +22,15 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         )
         raise ValueError(msg)
     out = schema
+    current_searching_path = "#"
     for component in components[1:]:
+        current_searching_path = current_searching_path + "/" + component
         if component in out:
             out = out[component]
-        elif component.isdigit() and int(component) in out:
+        elif component.isdigit() and (int(component) in out or has_index(out, int(component))):
             out = out[int(component)]
         else:
-            msg = f"Reference '{path}' not found."
+            msg = f"Reference '{current_searching_path}' in '{path}' not found."
             raise KeyError(msg)
     return deepcopy(out)
 
