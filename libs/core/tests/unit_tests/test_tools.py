@@ -2713,9 +2713,7 @@ def test_tool_annotated_descriptions_pep563() -> None:
     )
     foo1 = ns["foo1"]
     import inspect
-    from langchain_core.tools.base import _schema
-
-    args_schema = _schema(foo1.args_schema)
+    args_schema = foo1.args_schema.model_json_schema()
     assert args_schema == {
         "title": "foo",
         "type": "object",

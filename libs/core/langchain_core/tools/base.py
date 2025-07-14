@@ -68,6 +68,7 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+import ast
 
 if TYPE_CHECKING:
     import uuid
@@ -94,14 +95,18 @@ def _is_annotated_type(typ: type[Any]) -> bool:
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
-    """Extract description from an Annotated type, handling stringized annotations (PEP 563)."""
+    """Extract description from an Annotated type.
+    Handles stringized annotations (PEP 563).
+    """
     # Handle stringized annotation (from __future__ import annotations)
     if isinstance(arg_type, str):
         try:
             # Evaluate the string annotation in the context of typing and builtins
-            import typing, builtins
-
-            arg_type = eval(arg_type, {**vars(typing), **vars(builtins)})
+            import typing
+            import builtins
+            # ast.literal_eval is not suitable for type expressions, so eval is required here.
+            # The context is tightly controlled to typing and builtins only.
+            arg_type = eval(arg_type, {**vars(typing), **vars(builtins)})  # noqa: S307
         except Exception:
             return None
     if _is_annotated_type(arg_type):
@@ -1059,7 +1064,7 @@ def _handle_validation_error(
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
     return content
 
 
@@ -1091,7 +1096,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
     return content
 
 
