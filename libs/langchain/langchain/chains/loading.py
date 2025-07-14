@@ -713,10 +713,10 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
         msg = "File type must be json or yaml"

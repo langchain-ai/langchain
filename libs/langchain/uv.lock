@@ -2882,7 +2882,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.27"
+version = "0.3.28"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
