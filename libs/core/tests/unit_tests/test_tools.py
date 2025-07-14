@@ -2657,7 +2657,7 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "type": "tool_call",
     }
 
-    assert tool.invoke(tool_call.get("args") or {}) == "good"
+    assert tool.invoke(tool_call.get("args", {})) == "good"
     assert tool_call == {
         "name": "sample_tool",
         "args": {"foo": 2},
