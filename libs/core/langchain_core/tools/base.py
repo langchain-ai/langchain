@@ -435,7 +435,7 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
-ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+ArgsSchema = Union[BaseModel, dict[str, Any]]
 
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
