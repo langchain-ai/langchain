@@ -12,6 +12,7 @@ dependencies = [
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
     "typing-extensions>=4.7",
+    "packaging>=23.2",
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
@@ -38,7 +39,6 @@ dev = [
     "grandalf<1.0,>=0.8",
 ]
 test = [
-    "packaging<26,>=23.2",
     "pytest<9,>=8",
     "freezegun<2.0.0,>=1.2.2",
     "pytest-mock<4.0.0,>=3.10.0",
