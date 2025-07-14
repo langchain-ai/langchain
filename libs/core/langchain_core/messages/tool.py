@@ -209,7 +209,7 @@ class ToolCall(TypedDict):
 def tool_call(
     *,
     name: str,
-    args: dict[str, Any],
+    args: Optional[dict[str, Any]],
     id: Optional[str],  # noqa: A002
 ) -> ToolCall:
     """Create a tool call.
