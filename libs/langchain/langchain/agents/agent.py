@@ -209,10 +209,10 @@ class BaseSingleActionAgent(BaseModel):
             raise NotImplementedError(msg)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -352,10 +352,10 @@ class BaseMultiActionAgent(BaseModel):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

@@ -1008,7 +1008,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13" }]
 test = [
     { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -1072,7 +1072,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
+lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13" }]
 test = [{ name = "langchain-core", editable = "." }]
 test-integration = []
 typing = [
@@ -1098,7 +1098,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "." },
-    { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
+    { name = "ruff", specifier = ">=0.12.2,<0.13" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
