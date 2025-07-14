@@ -461,8 +461,9 @@ def _determine_input_key(
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             logger.warning(
-                "Input key {input_key} not in chain's specified input keys %s. "
+                "Input key %s not in chain's specified input keys %s. "
                 "Evaluation behavior may be undefined.",
+                input_key,
                 run_inputs,
             )
     elif run_inputs and len(run_inputs) == 1:
@@ -1186,7 +1187,7 @@ class _DatasetRunContainer:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
             except Exception as e:
-                logger.debug("Failed to print aggregate feedback: ", e, exc_info=True)
+                logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
