@@ -37,7 +37,7 @@ def test_selector_add_example(selector: LengthBasedExampleSelector) -> None:
     selector.add_example(new_example)
     short_question = "Short question?"
     output = selector.select_examples({"question": short_question})
-    assert output == EXAMPLES + [new_example]
+    assert output == [*EXAMPLES, new_example]
 
 
 def test_selector_trims_one_example(selector: LengthBasedExampleSelector) -> None:

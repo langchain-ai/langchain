@@ -441,7 +441,7 @@ def test_basic_sandboxing_with_jinja2() -> None:
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
-        assert prompt.format() == []
+        prompt.format()
 
 
 @pytest.mark.requires("jinja2")
@@ -509,7 +509,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
     input_variables: list = []
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -526,7 +526,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
     """Test error is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
     input_variables = ["foo", "bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables: {'bar'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -543,7 +543,9 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
     input_variables = ["bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match="Missing variables: {'foo'} Extra variables: {'bar'}"
+    ):
         PromptTemplate(
             input_variables=input_variables,
             template=template,

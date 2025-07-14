@@ -445,9 +445,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 raise ValueError(msg)
             prompt = []
             for tmpl in template:
-                if (
-                    isinstance(tmpl, str)
-                    or isinstance(tmpl, dict)
+                if isinstance(tmpl, str) or (
+                    isinstance(tmpl, dict)
                     and "text" in tmpl
                     and set(tmpl.keys()) <= {"type", "text"}
                 ):
@@ -472,16 +471,18 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     img_template = cast("_ImageTemplateParam", tmpl)["image_url"]
                     input_variables = []
                     if isinstance(img_template, str):
-                        vars = get_template_variables(img_template, template_format)
-                        if vars:
-                            if len(vars) > 1:
+                        variables = get_template_variables(
+                            img_template, template_format
+                        )
+                        if variables:
+                            if len(variables) > 1:
                                 msg = (
                                     "Only one format variable allowed per image"
-                                    f" template.\nGot: {vars}"
+                                    f" template.\nGot: {variables}"
                                     f"\nFrom: {tmpl}"
                                 )
                                 raise ValueError(msg)
-                            input_variables = [vars[0]]
+                            input_variables = [variables[0]]
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables,
@@ -524,7 +525,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     raise ValueError(msg)
             return cls(prompt=prompt, **kwargs)
         msg = f"Invalid template: {template}"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @classmethod
     def from_template_file(
@@ -544,6 +545,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             A new instance of this class.
         """
         template = Path(template_file).read_text()
+        # TODO: .read_text(encoding="utf-8") for v0.4
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -945,7 +947,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 ])
 
         """
-        _messages = [
+        messages_ = [
             _convert_to_message_template(message, template_format)
             for message in messages
         ]
@@ -954,7 +956,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         input_vars: set[str] = set()
         optional_variables: set[str] = set()
         partial_vars: dict[str, Any] = {}
-        for _message in _messages:
+        for _message in messages_:
             if isinstance(_message, MessagesPlaceholder) and _message.optional:
                 partial_vars[_message.variable_name] = []
                 optional_variables.add(_message.variable_name)
@@ -969,7 +971,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             "partial_variables": partial_vars,
             **kwargs,
         }
-        cast("type[ChatPromptTemplate]", super()).__init__(messages=_messages, **kwargs)
+        cast("type[ChatPromptTemplate]", super()).__init__(messages=messages_, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
@@ -1000,17 +1002,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         if isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other]).partial(
+            return ChatPromptTemplate(messages=[*self.messages, other]).partial(
                 **partials
             )
         if isinstance(other, (list, tuple)):
-            _other = ChatPromptTemplate.from_messages(other)
-            return ChatPromptTemplate(messages=self.messages + _other.messages).partial(
+            other_ = ChatPromptTemplate.from_messages(other)
+            return ChatPromptTemplate(messages=self.messages + other_.messages).partial(
                 **partials
             )
         if isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt]).partial(
+            return ChatPromptTemplate(messages=[*self.messages, prompt]).partial(
                 **partials
             )
         msg = f"Unsupported operand type for +: {type(other)}"
@@ -1052,9 +1054,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 if message.variable_name not in input_types:
                     input_types[message.variable_name] = list[AnyMessage]
         if "partial_variables" in values:
-            input_vars = input_vars - set(values["partial_variables"])
+            input_vars -= set(values["partial_variables"])
         if optional_variables:
-            input_vars = input_vars - optional_variables
+            input_vars -= optional_variables
         if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
                 msg = (
@@ -1337,11 +1339,11 @@ def _create_template_from_message_type(
     Raises:
         ValueError: If unexpected message type.
     """
-    if message_type in ("human", "user"):
+    if message_type in {"human", "user"}:
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
             template, template_format=template_format
         )
-    elif message_type in ("ai", "assistant"):
+    elif message_type in {"ai", "assistant"}:
         message = AIMessagePromptTemplate.from_template(
             cast("str", template), template_format=template_format
         )
@@ -1416,13 +1418,13 @@ def _convert_to_message_template(
         ValueError: If 2-tuple does not have 2 elements.
     """
     if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
-        _message: Union[
+        message_: Union[
             BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate
         ] = message
     elif isinstance(message, BaseMessage):
-        _message = message
+        message_ = message
     elif isinstance(message, str):
-        _message = _create_template_from_message_type(
+        message_ = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
     elif isinstance(message, (tuple, dict)):
@@ -1439,11 +1441,11 @@ def _convert_to_message_template(
             raise ValueError(msg)
         message_type_str, template = message
         if isinstance(message_type_str, str):
-            _message = _create_template_from_message_type(
+            message_ = _create_template_from_message_type(
                 message_type_str, template, template_format=template_format
             )
         else:
-            _message = message_type_str(
+            message_ = message_type_str(
                 prompt=PromptTemplate.from_template(
                     cast("str", template), template_format=template_format
                 )
@@ -1452,7 +1454,7 @@ def _convert_to_message_template(
         msg = f"Unsupported message type: {type(message)}"
         raise NotImplementedError(msg)
 
-    return _message
+    return message_
 
 
 # For backwards compat:

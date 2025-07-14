@@ -30,7 +30,8 @@ def test_mset_and_mget(file_store: LocalFileStore) -> None:
 
 
 @pytest.mark.parametrize(
-    "chmod_dir_s, chmod_file_s", [("777", "666"), ("770", "660"), ("700", "600")]
+    "chmod_dir_s, chmod_file_s",
+    [("777", "666"), ("770", "660"), ("700", "600")],
 )
 def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
     chmod_dir = int(chmod_dir_s, base=8)
@@ -42,7 +43,9 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
         # as the root path
         temp_dir = os.path.join(temp_dir, "store_dir")
         file_store = LocalFileStore(
-            temp_dir, chmod_dir=chmod_dir, chmod_file=chmod_file
+            temp_dir,
+            chmod_dir=chmod_dir,
+            chmod_file=chmod_file,
         )
 
         # Set values for keys

@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from itertools import islice
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -19,6 +19,9 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
+
+if TYPE_CHECKING:
+    import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -37,27 +40,22 @@ class BaseEntityStore(BaseModel, ABC):
     @abstractmethod
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get entity value from store."""
-        pass
 
     @abstractmethod
     def set(self, key: str, value: Optional[str]) -> None:
         """Set entity value in store."""
-        pass
 
     @abstractmethod
     def delete(self, key: str) -> None:
         """Delete entity value from store."""
-        pass
 
     @abstractmethod
     def exists(self, key: str) -> bool:
         """Check if entity exists in store."""
-        pass
 
     @abstractmethod
     def clear(self) -> None:
         """Delete all entities from store."""
-        pass
 
 
 @deprecated(
@@ -117,18 +115,21 @@ class UpstashRedisEntityStore(BaseEntityStore):
     ):
         try:
             from upstash_redis import Redis
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
         try:
             self.redis_client = Redis(url=url, token=token)
-        except Exception:
-            logger.error("Upstash Redis instance could not be initiated.")
+        except Exception as exc:
+            error_msg = "Upstash Redis instance could not be initiated"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from exc
 
         self.session_id = session_id
         self.key_prefix = key_prefix
@@ -153,8 +154,9 @@ class UpstashRedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
         )
+        return None
 
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
@@ -165,7 +167,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
     def clear(self) -> None:
         def scan_and_delete(cursor: int) -> int:
             cursor, keys_to_delete = self.redis_client.scan(
-                cursor, f"{self.full_key_prefix}:*"
+                cursor,
+                f"{self.full_key_prefix}:*",
             )
             self.redis_client.delete(*keys_to_delete)
             return cursor
@@ -208,21 +211,23 @@ class RedisEntityStore(BaseEntityStore):
     ):
         try:
             import redis
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
         try:
             from langchain_community.utilities.redis import get_client
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import langchain_community.utilities.redis.get_client. "
                 "Please install it with `pip install langchain-community`."
             )
+            raise ImportError(msg) from e
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
@@ -252,8 +257,9 @@ class RedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
         )
+        return None
 
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
@@ -269,7 +275,8 @@ class RedisEntityStore(BaseEntityStore):
                 yield batch
 
         for keybatch in batched(
-            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"), 500
+            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"),
+            500,
         ):
             self.redis_client.delete(*keybatch)
 
@@ -283,7 +290,7 @@ class RedisEntityStore(BaseEntityStore):
     ),
 )
 class SQLiteEntityStore(BaseEntityStore):
-    """SQLite-backed Entity store"""
+    """SQLite-backed Entity store with safe query construction."""
 
     session_id: str = "default"
     table_name: str = "memory_store"
@@ -301,14 +308,21 @@ class SQLiteEntityStore(BaseEntityStore):
         *args: Any,
         **kwargs: Any,
     ):
+        super().__init__(*args, **kwargs)
         try:
             import sqlite3
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import sqlite3 python package. "
                 "Please install it with `pip install sqlite3`."
             )
-        super().__init__(*args, **kwargs)
+            raise ImportError(msg) from e
+
+        # Basic validation to prevent obviously malicious table/session names
+        if not table_name.isidentifier() or not session_id.isidentifier():
+            # Since we validate here, we can safely suppress the S608 bandit warning
+            msg = "Table name and session ID must be valid Python identifiers."
+            raise ValueError(msg)
 
         self.conn = sqlite3.connect(db_file)
         self.session_id = session_id
@@ -319,62 +333,61 @@ class SQLiteEntityStore(BaseEntityStore):
     def full_table_name(self) -> str:
         return f"{self.table_name}_{self.session_id}"
 
+    def _execute_query(self, query: str, params: tuple = ()) -> "sqlite3.Cursor":
+        """Executes a query with proper connection handling."""
+        with self.conn:
+            return self.conn.execute(query, params)
+
     def _create_table_if_not_exists(self) -> None:
+        """Creates the entity table if it doesn't exist, using safe quoting."""
+        # Use standard SQL double quotes for the table name identifier
         create_table_query = f"""
-            CREATE TABLE IF NOT EXISTS {self.full_table_name} (
+            CREATE TABLE IF NOT EXISTS "{self.full_table_name}" (
                 key TEXT PRIMARY KEY,
                 value TEXT
             )
         """
-        with self.conn:
-            self.conn.execute(create_table_query)
+        self._execute_query(create_table_query)
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        query = f"""
-            SELECT value
-            FROM {self.full_table_name}
-            WHERE key = ?
-        """
-        cursor = self.conn.execute(query, (key,))
+        """Retrieves a value, safely quoting the table name."""
+        # `?` placeholder is used for the value to prevent SQL injection
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
+        query = f'SELECT value FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        cursor = self._execute_query(query, (key,))
         result = cursor.fetchone()
-        if result is not None:
-            value = result[0]
-            return value
-        return default
+        return result[0] if result is not None else default
 
     def set(self, key: str, value: Optional[str]) -> None:
+        """Inserts or replaces a value, safely quoting the table name."""
         if not value:
             return self.delete(key)
-        query = f"""
-            INSERT OR REPLACE INTO {self.full_table_name} (key, value)
-            VALUES (?, ?)
-        """
-        with self.conn:
-            self.conn.execute(query, (key, value))
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
+        query = (
+            "INSERT OR REPLACE INTO "  # noqa: S608
+            f'"{self.full_table_name}" (key, value) VALUES (?, ?)'
+        )
+        self._execute_query(query, (key, value))
+        return None
 
     def delete(self, key: str) -> None:
-        query = f"""
-            DELETE FROM {self.full_table_name}
-            WHERE key = ?
-        """
-        with self.conn:
-            self.conn.execute(query, (key,))
+        """Deletes a key-value pair, safely quoting the table name."""
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
+        query = f'DELETE FROM "{self.full_table_name}" WHERE key = ?'  # noqa: S608
+        self._execute_query(query, (key,))
 
     def exists(self, key: str) -> bool:
-        query = f"""
-            SELECT 1
-            FROM {self.full_table_name}
-            WHERE key = ?
-            LIMIT 1
-        """
-        cursor = self.conn.execute(query, (key,))
-        result = cursor.fetchone()
-        return result is not None
+        """Checks for the existence of a key, safely quoting the table name."""
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
+        query = f'SELECT 1 FROM "{self.full_table_name}" WHERE key = ? LIMIT 1'  # noqa: S608
+        cursor = self._execute_query(query, (key,))
+        return cursor.fetchone() is not None
 
     def clear(self) -> None:
+        # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f"""
             DELETE FROM {self.full_table_name}
-        """
+        """  # noqa: S608
         with self.conn:
             self.conn.execute(query)
 

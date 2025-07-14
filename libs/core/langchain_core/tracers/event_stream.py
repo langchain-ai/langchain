@@ -740,7 +740,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
 async def _astream_events_implementation_v1(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     include_names: Optional[Sequence[str]] = None,
@@ -773,7 +773,7 @@ async def _astream_events_implementation_v1(
     run_log = RunLog(state=None)  # type: ignore[arg-type]
     encountered_start_event = False
 
-    _root_event_filter = _RootEventFilter(
+    root_event_filter = _RootEventFilter(
         include_names=include_names,
         include_types=include_types,
         include_tags=include_tags,
@@ -789,14 +789,14 @@ async def _astream_events_implementation_v1(
 
     async for log in _astream_log_implementation(
         runnable,
-        input,
+        value,
         config=config,
         stream=stream,
         diff=True,
         with_streamed_output_list=True,
         **kwargs,
     ):
-        run_log = run_log + log
+        run_log += log
 
         if not encountered_start_event:
             # Yield the start event for the root runnable.
@@ -810,12 +810,12 @@ async def _astream_events_implementation_v1(
                 tags=root_tags,
                 metadata=root_metadata,
                 data={
-                    "input": input,
+                    "input": value,
                 },
                 parent_ids=[],  # Not supported in v1
             )
 
-            if _root_event_filter.include_event(event, state["type"]):
+            if root_event_filter.include_event(event, state["type"]):
                 yield event
 
         paths = {
@@ -901,7 +901,7 @@ async def _astream_events_implementation_v1(
                 data=data,
                 parent_ids=[],  # Not supported in v1
             )
-            if _root_event_filter.include_event(event, state["type"]):
+            if root_event_filter.include_event(event, state["type"]):
                 yield event
 
     state = run_log.state
@@ -918,13 +918,13 @@ async def _astream_events_implementation_v1(
         },
         parent_ids=[],  # Not supported in v1
     )
-    if _root_event_filter.include_event(event, state["type"]):
+    if root_event_filter.include_event(event, state["type"]):
         yield event
 
 
 async def _astream_events_implementation_v2(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     include_names: Optional[Sequence[str]] = None,
@@ -955,7 +955,7 @@ async def _astream_events_implementation_v2(
     if callbacks is None:
         config["callbacks"] = [event_streamer]
     elif isinstance(callbacks, list):
-        config["callbacks"] = callbacks + [event_streamer]
+        config["callbacks"] = [*callbacks, event_streamer]
     elif isinstance(callbacks, BaseCallbackManager):
         callbacks = callbacks.copy()
         callbacks.add_handler(event_streamer, inherit=True)
@@ -972,7 +972,7 @@ async def _astream_events_implementation_v2(
     async def consume_astream() -> None:
         try:
             # if astream also calls tap_output_aiter this will be a no-op
-            async with aclosing(runnable.astream(input, config, **kwargs)) as stream:
+            async with aclosing(runnable.astream(value, config, **kwargs)) as stream:
                 async for _ in event_streamer.tap_output_aiter(run_id, stream):
                     # All the content will be picked up
                     pass
@@ -993,7 +993,7 @@ async def _astream_events_implementation_v2(
                 # chain are not available until the entire input is consumed.
                 # As a temporary solution, we'll modify the input to be the input
                 # that was passed into the chain.
-                event["data"]["input"] = input
+                event["data"]["input"] = value
                 first_event_run_id = event["run_id"]
                 yield event
                 continue

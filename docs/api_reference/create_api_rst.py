@@ -663,6 +663,7 @@ def main(dirs: Optional[list] = None) -> None:
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
             if dir_ not in ("cli", "partners", "packages.yml")
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / dir_)
         ]
         dirs += [
             dir_
