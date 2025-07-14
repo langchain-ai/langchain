@@ -100,14 +100,11 @@ def _get_annotation_description(arg_type: type) -> str | None:
     # Handle stringized annotation (from __future__ import annotations)
     if isinstance(arg_type, str):
         try:
-            # Evaluate the string annotation in the context of typing and builtins
-            import typing
-            import builtins
             # ast.literal_eval is not suitable for type expressions, so eval is required here.
             # The context is tightly controlled to typing and builtins only.
             arg_type = eval(
                 arg_type, {**vars(typing), **vars(builtins)}
-            )  # noqa: S307
+            )
         except Exception:
             return None
     if _is_annotated_type(arg_type):
