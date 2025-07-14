@@ -152,6 +152,7 @@ select = [
     "COM",    # flake8-commas
     "D",      # pydocstyle
     "DOC",    # pydoclint
+    "DTZ",    # flake8-datetimez
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -216,6 +217,11 @@ pyupgrade.keep-runtime-typing = true
 ]
 "langchain/chains/constitutional_ai/principles.py" = [
     "E501", # Line too long
+]
+"**/retrievers/*time_weighted_retriever.py" = [
+    "DTZ001", # Use of non timezone-aware datetime
+    "DTZ005", # Use of non timezone-aware datetime
+    "DTZ006", # Use of non timezone-aware datetime
 ]
 
 [tool.coverage.run]
