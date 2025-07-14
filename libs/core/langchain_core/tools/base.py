@@ -24,50 +24,94 @@ from typing import (
     get_type_hints,
 )
 
+import builtins
+import inspect
+import textwrap
+import warnings
+from contextlib import nullcontext
+from functools import lru_cache, wraps
+from types import GenericAlias
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
+import typing
+import builtins
+
+import pydantic
+from packaging import version
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     PydanticDeprecationWarning,
-    SkipValidation,
-    ValidationError,
-    model_validator,
-    validate_arguments,
+    RootModel,
+    root_validator,
+)
+from pydantic import (
+    create_model as _create_model_base,
+)
+from pydantic.fields import FieldInfo as FieldInfoV2
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMode,
+    JsonSchemaValue,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
-from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import override
+from pydantic.v1 import create_model as create_model_v1
+from pydantic.v1.fields import ModelField
+from typing_extensions import deprecated, override
 
-from langchain_core._api import deprecated
-from langchain_core.callbacks import (
-    AsyncCallbackManager,
-    BaseCallbackManager,
-    CallbackManager,
-    Callbacks,
+from langchain_core._api import beta_decorator
+from langchain_core.load.serializable import (
+    Serializable,
+    SerializedConstructor,
+    SerializedNotImplemented,
 )
-from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
-from langchain_core.runnables import (
+from langchain_core.runnables.config import (
     RunnableConfig,
-    RunnableSerializable,
+    acall_func_with_variable_args,
+    call_func_with_variable_args,
     ensure_config,
+    get_async_callback_manager_for_config,
+    get_callback_manager_for_config,
+    get_config_list,
+    get_executor_for_config,
+    merge_configs,
     patch_config,
     run_in_executor,
+    set_config_context,
 )
-from langchain_core.runnables.config import set_config_context
-from langchain_core.runnables.utils import coro_with_context
-from langchain_core.utils.function_calling import (
-    _parse_google_docstring,
-    _py_38_safe_origin,
+from langchain_core.runnables.graph import Graph
+from langchain_core.runnables.utils import (
+    AddableDict,
+    AnyConfigurableField,
+    ConfigurableField,
+    ConfigurableFieldSpec,
+    Input,
+    Output,
+    accepts_config,
+    accepts_run_manager,
+    coro_with_context,
+    gated_coro,
+    gather_with_concurrency,
+    get_function_first_arg_dict_keys,
+    get_function_nonlocals,
+    get_lambda_source,
+    get_unique_config_specs,
+    indent_lines_after_first,
+    is_async_callable,
+    is_async_generator,
 )
-from langchain_core.utils.pydantic import (
-    TypeBaseModel,
-    _create_subset_model,
-    get_fields,
-    is_basemodel_subclass,
-    is_pydantic_v1_subclass,
-    is_pydantic_v2_subclass,
-)
+from langchain_core.utils.aiter import aclosing, atee, py_anext
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     import uuid
@@ -101,8 +145,6 @@ def _get_annotation_description(arg_type: type) -> str | None:
     # Handle stringized annotation (from __future__ import annotations)
     if isinstance(arg_type, str):
         try:
-            import typing
-            import builtins
             # ast.literal_eval is not suitable for type expressions, so eval is required here.
             # The context is tightly controlled to typing and builtins only.
             arg_type = eval(
