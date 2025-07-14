@@ -1,34 +1,62 @@
+<div align="center">
+
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/static/img/logo-dark.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-light.svg">
   <img alt="LangChain Logo" src="docs/static/img/logo-dark.svg" width="80%">
 </picture>
 
-<div>
-<br>
+<br><br>
+
+<!-- Badges -->
+<a href="https://github.com/langchain-ai/langchain/releases">
+  <img src="https://img.shields.io/github/release/langchain-ai/langchain?style=flat-square" alt="Release Notes" />
+</a>
+<a href="https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml">
+  <img src="https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg" alt="CI" />
+</a>
+<a href="https://opensource.org/licenses/MIT">
+  <img src="https://img.shields.io/pypi/l/langchain-core?style=flat-square" alt="License" />
+</a>
+<a href="https://pypistats.org/packages/langchain-core">
+  <img src="https://img.shields.io/pypi/dm/langchain-core?style=flat-square" alt="Downloads" />
+</a>
+<a href="https://star-history.com/#langchain-ai/langchain">
+  <img src="https://img.shields.io/github/stars/langchain-ai/langchain?style=flat-square" alt="Stars" />
+</a>
+<a href="https://github.com/langchain-ai/langchain/issues">
+  <img src="https://img.shields.io/github/issues-raw/langchain-ai/langchain?style=flat-square" alt="Issues" />
+</a>
+<a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain">
+  <img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode&style=flat-square" alt="Open in Dev Containers" />
+</a>
+<a href="https://codespaces.new/langchain-ai/langchain">
+  <img src="https://github.com/codespaces/badge.svg" title="Open in Github Codespace" width="150" height="20">
+</a>
+<a href="https://twitter.com/langchainai">
+  <img src="https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI" alt="Twitter" />
+</a>
+<a href="https://codspeed.io/langchain-ai/langchain">
+  <img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Benchmark" />
+</a>
+
 </div>
 
-[![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/releases)
-[![CI](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml)
-[![PyPI - License](https://img.shields.io/pypi/l/langchain-core?style=flat-square)](https://opensource.org/licenses/MIT)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-core?style=flat-square)](https://pypistats.org/packages/langchain-core)
-[![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=flat-square)](https://star-history.com/#langchain-ai/langchain)
-[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/issues)
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode&style=flat-square)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
-[<img src="https://github.com/codespaces/badge.svg" title="Open in Github Codespace" width="150" height="20">](https://codespaces.new/langchain-ai/langchain)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
-[![CodSpeed Badge](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/langchain-ai/langchain)
+<br><br>
 
 > [!NOTE]
 > Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-LangChain is a framework for building LLM-powered applications. It helps you chain
-together interoperable components and third-party integrations to simplify AI
-application development —  all while future-proofing decisions as the underlying
-technology evolves.
+LangChain is a framework for building LLM-powered applications. It helps developers 
+chain together interoperable components and third-party tools — simplifying AI 
+development while ensuring flexibility as the underlying technology evolves.
 
 ```bash
+# Install the latest LangChain release
 pip install -U langchain
+
+# Or install with integrations (e.g. OpenAI, Pinecone)
+pip install langchain[openai,pinecone]
 ```
 
 To learn more about LangChain, check out
@@ -51,7 +79,7 @@ experiments to find the best choice for your application’s needs. As the indus
 frontier evolves, adapt quickly — LangChain’s abstractions keep you moving without
 losing momentum.
 
-## LangChain’s ecosystem
+## LangChain’s Ecosystem
 While the LangChain framework can be used standalone, it also integrates seamlessly
 with any LangChain product, giving developers a full suite of tools when building LLM
 applications. 
@@ -72,7 +100,7 @@ running, stateful workflows. Discover, reuse, configure, and share agents across
 teams — and iterate quickly with visual prototyping in
 [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/).
 
-## Additional resources
+## Additional Resources
 - [Tutorials](https://python.langchain.com/docs/tutorials/): Simple walkthroughs with
 guided examples on getting started with LangChain.
 - [How-to Guides](https://python.langchain.com/docs/how_to/): Quick, actionable code
