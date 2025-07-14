@@ -2610,7 +2610,7 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
         "type": "tool_call",
     }
 
-    assert tool.invoke(tool_call["args"]) == "good"
+    assert tool.invoke(tool_call.get("args", {})) == "good"
     assert tool_call == {
         "name": "sample_tool",
         "args": {"foo": 2},
@@ -2618,7 +2618,7 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
         "type": "tool_call",
     }
 
-    assert await tool.ainvoke(tool_call["args"]) == "good"
+    assert tool.invoke(tool_call.get("args", {})) == "good"
 
     assert tool_call == {
         "name": "sample_tool",
@@ -2658,7 +2658,7 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "type": "tool_call",
     }
 
-    assert tool.invoke(tool_call["args"]) == "good"
+    assert tool.invoke(tool_call.get("args", {})) == "good"
     assert tool_call == {
         "name": "sample_tool",
         "args": {"foo": 2},

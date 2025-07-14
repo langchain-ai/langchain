@@ -1001,8 +1001,15 @@
         ''',
         'properties': dict({
           'args': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Args',
-            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -2433,8 +2440,15 @@
         ''',
         'properties': dict({
           'args': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
             'title': 'Args',
-            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([

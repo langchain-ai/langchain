@@ -1109,7 +1109,12 @@ def _prep_run_args(
     config = ensure_config(config)
     if _is_tool_call(value):
         tool_call_id: Optional[str] = cast("ToolCall", value)["id"]
-        tool_input: Union[str, dict] = cast("ToolCall", value)["args"].copy()
+        args = cast("ToolCall", value)["args"]
+        tool_input: Union[str, dict] = (
+            args.copy()
+            if isinstance(args, dict)
+            else (args if args is not None else {})
+        )
     else:
         tool_call_id = None
         tool_input = cast("Union[str, dict]", value)
