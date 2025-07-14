@@ -195,7 +195,7 @@ class ToolCall(TypedDict):
 
     name: str
     """The name of the tool to be called."""
-    args: dict[str, Any]
+    args: Optional[dict[str, Any]]
     """The arguments to the tool call."""
     id: Optional[str]
     """An identifier associated with the tool call.

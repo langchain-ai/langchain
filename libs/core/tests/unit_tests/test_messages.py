@@ -160,7 +160,9 @@ def test_message_chunks() -> None:
             create_tool_call_chunk(name="tool1", args="", id="1", index=0)
         ],
     )
-    assert ai_msg_chunk.tool_calls == [create_tool_call(name="tool1", args={}, id="1")]
+    assert ai_msg_chunk.tool_call_chunks == [
+        create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+    ]
 
     # Test token usage
     left = AIMessageChunk(
@@ -455,9 +457,9 @@ def test_message_chunk_to_message() -> None:
         tool_calls=[
             create_tool_call(name="tool1", args={"a": 1}, id="1"),
             create_tool_call(name="tool2", args={}, id="2"),
+            create_tool_call(name="tool3", args=None, id="3"),
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
             create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
