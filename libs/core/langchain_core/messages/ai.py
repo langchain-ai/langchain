@@ -355,7 +355,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = {} if not chunk["args"] else parse_partial_json(chunk["args"])  # type: ignore[arg-type]
+                args_ = {} if not chunk["args"] else parse_partial_json(chunk["args"])
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
