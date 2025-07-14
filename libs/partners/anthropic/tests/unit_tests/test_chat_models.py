@@ -1075,4 +1075,6 @@ def test_mcp_tracing() -> None:
 
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
-    assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+    assert (
+        payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"
+    )  # noqa: S105

@@ -310,9 +310,7 @@ class Crawler:
             ancestor_node_key = (
                 None
                 if not ancestor_exception
-                else str(anchor_id)
-                if is_ancestor_of_anchor
-                else str(button_id)
+                else str(anchor_id) if is_ancestor_of_anchor else str(button_id)
             )
             ancestor_node = (
                 None
@@ -351,7 +349,8 @@ class Crawler:
             if node_value[index] >= 0:
                 element_node_value = strings[node_value[index]]
                 if (
-                    element_node_value == "|"
+                    element_node_value
+                    == "|"
                     # commonly used as a separator, does not add much context - lets
                     # save ourselves some token space
                 ):

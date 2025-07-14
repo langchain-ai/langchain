@@ -963,7 +963,9 @@ class ChatOllama(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any"], bool]
+        ] = None,  # noqa: PYI051
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.

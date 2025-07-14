@@ -438,7 +438,9 @@ def _render_mermaid_using_api(
             # If we get a server error (5xx), retry
             if 500 <= response.status_code < 600 and attempt < max_retries:
                 # Exponential backoff with jitter
-                sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
+                sleep_time = (
+                    retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())
+                )  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)
                 continue
 
@@ -452,7 +454,9 @@ def _render_mermaid_using_api(
         except (requests.RequestException, requests.Timeout) as e:
             if attempt < max_retries:
                 # Exponential backoff with jitter
-                sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
+                sleep_time = (
+                    retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())
+                )  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)
             else:
                 msg = (

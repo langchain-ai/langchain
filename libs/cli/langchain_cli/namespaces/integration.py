@@ -125,7 +125,12 @@ def new(
 
         # poetry install
         subprocess.run(
-            ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
+            [
+                "poetry",
+                "install",
+                "--with",
+                "lint,test,typing,test_integration",
+            ],  # noqa: S607
             cwd=destination_dir,
         )
     else:
@@ -143,9 +148,11 @@ def new(
         else:
             dst_paths = [Path.cwd() / p for p in dst]
             dst_paths = [
-                p / f"{replacements['__package_name_short_snake__']}.ipynb"
-                if not p.suffix
-                else p
+                (
+                    p / f"{replacements['__package_name_short_snake__']}.ipynb"
+                    if not p.suffix
+                    else p
+                )
                 for p in dst_paths
             ]
 

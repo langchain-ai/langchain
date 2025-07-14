@@ -1911,9 +1911,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(invoke_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(invoke_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
             invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -1930,9 +1930,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(stream_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(stream_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
             stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -1987,9 +1987,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(ainvoke_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(ainvoke_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
         assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
             ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
@@ -2006,9 +2006,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(astream_callback.options) == 1, (
-            "Expected on_chat_model_start to be called once"
-        )
+        assert (
+            len(astream_callback.options) == 1
+        ), "Expected on_chat_model_start to be called once"
 
         assert isinstance(astream_callback.options[0], dict)
         assert isinstance(
