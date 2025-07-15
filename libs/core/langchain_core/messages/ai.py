@@ -140,8 +140,8 @@ class UsageMetadata(TypedDict):
     """Breakdown of input token counts."""
     output_token_details: NotRequired["OutputTokenDetails"]
     """Breakdown of output token counts."""
-    num_search_queries: NotRequired[int]
-    """Number of search queries performed."""
+    # num_search_queries: NotRequired[int]
+    # # """Number of search queries performed."""
 
 
 class AIMessage(BaseMessage):
