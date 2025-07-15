@@ -78,6 +78,12 @@ const config = {
         },
       }),
     }),
+    [
+      "@docusaurus/plugin-google-tag-manager",
+      {
+        containerId: "GTM-MH4VTX4V",
+      },
+    ],
   ],
 
   presets: [
@@ -313,15 +319,6 @@ const config = {
         contextualSearch: false,
       },
     }),
-
-  scripts: [
-    baseUrl + "js/google_analytics.js",
-    {
-      src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
-      async: true,
-    },
-  ],
-
   customFields: {
     supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
