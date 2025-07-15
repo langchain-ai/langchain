@@ -459,14 +459,14 @@ def add_usage(
                 output_tokens=0,
                 total_tokens=5,
                 input_token_details=InputTokenDetails(cache_read=3),
-                num_search_queries=2
+
             )
             right = UsageMetadata(
                 input_tokens=0,
                 output_tokens=10,
                 total_tokens=10,
                 output_token_details=OutputTokenDetails(reasoning=4),
-                num_search_queries=1
+                
             )
 
             add_usage(left, right)
@@ -481,7 +481,7 @@ def add_usage(
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=3),
                 output_token_details=OutputTokenDetails(reasoning=4),
-                num_search_queries=3
+                
             )
 
     """
@@ -519,14 +519,14 @@ def subtract_usage(
                 output_tokens=10,
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=4),
-                num_search_queries=3
+                
             )
             right = UsageMetadata(
                 input_tokens=3,
                 output_tokens=8,
                 total_tokens=11,
                 output_token_details=OutputTokenDetails(reasoning=4),
-                num_search_queries=1
+                
             )
 
             subtract_usage(left, right)
@@ -541,7 +541,7 @@ def subtract_usage(
                 total_tokens=4,
                 input_token_details=InputTokenDetails(cache_read=4),
                 output_token_details=OutputTokenDetails(reasoning=0),
-                num_search_queries=2
+                
             )
 
     """
