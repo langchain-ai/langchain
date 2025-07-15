@@ -54,7 +54,7 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
     num_search_queries = token_usage.get("num_search_queries", 0)
-    
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
