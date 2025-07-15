@@ -56,6 +56,7 @@ class Reviver:
         additional_import_mappings: Optional[
             dict[tuple[str, ...], tuple[str, ...]]
         ] = None,
+        *,
         ignore_unserializable_fields: bool = False,
     ) -> None:
         """Initialize the reviver.
@@ -196,6 +197,7 @@ def loads(
             Defaults to None.
         ignore_unserializable_fields: Whether to ignore unserializable fields.
             Defaults to False.
+
     Returns:
         Revived LangChain objects.
     """
@@ -206,7 +208,7 @@ def loads(
             valid_namespaces,
             secrets_from_env,
             additional_import_mappings,
-            ignore_unserializable_fields,
+            ignore_unserializable_fields=ignore_unserializable_fields,
         ),
     )
 
@@ -240,6 +242,7 @@ def load(
             Defaults to None.
         ignore_unserializable_fields: Whether to ignore unserializable fields.
             Defaults to False.
+
     Returns:
         Revived LangChain objects.
     """
@@ -248,7 +251,7 @@ def load(
         valid_namespaces,
         secrets_from_env,
         additional_import_mappings,
-        ignore_unserializable_fields,
+        ignore_unserializable_fields=ignore_unserializable_fields,
     )
 
     def _load(obj: Any) -> Any:
