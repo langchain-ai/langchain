@@ -174,7 +174,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         run_manager.on_chain_end(outputs)
 
         if include_run_info:
@@ -228,7 +228,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         await run_manager.on_chain_end(outputs)
 
         if include_run_info:
