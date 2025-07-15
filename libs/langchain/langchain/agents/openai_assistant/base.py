@@ -649,7 +649,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 )
             return actions
         run_info = json.dumps(run.dict(), indent=2)
-        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info}"
         raise ValueError(msg)
 
     def _wait_for_run(self, run_id: str, thread_id: str) -> Any:
@@ -802,7 +802,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 )
             return actions
         run_info = json.dumps(run.dict(), indent=2)
-        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
+        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info}"
         raise ValueError(msg)
 
     async def _await_for_run(self, run_id: str, thread_id: str) -> Any:
