@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Dict, Any
 
 
 def _retrieve_ref(path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
