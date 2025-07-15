@@ -9,35 +9,27 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
-    """Return the schema fragment pointed to by an internal ``$ref``.
+    """Return the fragment referenced by an internal ``$ref``.
 
-    This supports the subset of JSON-Pointer used by JSON-Schema where every
-    reference **must** be a URI fragment (i.e. it starts with ``#``).  Each
-    “/”-separated token identifies either:
+    The subset of *JSON Pointer* used by JSON-Schema requires every reference
+    to be a URI-fragment (it **must** start with ``#``).  Each “/”-separated
+    token then selects either:
 
-    * a **mapping key** when the current node is a ``dict``; or
+    * a **mapping key** when the current node is a ``dict``; or  
     * a **zero-based list index** when the current node is a ``list``.
 
-    Parameters
-    ----------
-    path :
-        The reference exactly as it appears in the schema
-        (e.g. ``"#/properties/name"``). **Must** start with ``#``.
-    schema :
-        The document-root schema object inside which *path* is resolved.
-        This object is **never** mutated.
+    Args:
+        path: The reference exactly as it appears in the schema
+            (for example ``"#/properties/name"``).  Must start with ``#``.
+        schema: The document-root schema object inside which *path* is resolved.
+            This object is **never** mutated.
 
-    Returns
-    -------
-    dict
-        A **deep copy** of the schema fragment located at *path*.
+    Returns:
+        dict: A **deep copy** of the schema fragment located at *path*.
 
-    Raises
-    ------
-    ValueError
-        If *path* does **not** start with ``#``.
-    KeyError
-        If any token cannot be resolved.
+    Raises:
+        ValueError: If *path* does **not** start with ``#``.
+        KeyError: If any token cannot be resolved.
     """
     tokens = path.split("/")
 
@@ -65,13 +57,13 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         if token.isdigit() and isinstance(node, list):
             idx = int(token)
             if idx >= len(node):
-                msg = f"Index {idx} out of range while resolving {path!r}"
+                msg = "Index " + str(idx) + " out of range while resolving " + str(path)
                 raise KeyError(msg)
             node = node[idx]
             continue
 
         # ---------------------------------------------------------------------- #
-        msg = f"Unable to resolve token {token!r} in {path!r}"
+        msg = "Unable to resolve token " + str(token) + " in " + str(path)
         raise KeyError(msg)
 
     # Hand back a deep copy so callers can mutate safely.
