@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator, Mapping
 from operator import itemgetter
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, TypeVar, Union
 
 import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -51,10 +51,10 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     """Create usage metadata from token usage dict.
-    
+
     Args:
         token_usage: Dictionary containing token usage information from the API response
-        
+
     Returns:
         UsageMetadata with token counts and optionally num_search_queries
     """
@@ -68,7 +68,7 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
         output_tokens=output_tokens,
         total_tokens=total_tokens,
     )
-    
+
     # Only add num_search_queries if it exists in the token_usage
     # Don't default to 0 since it's a NotRequired field
     if "num_search_queries" in token_usage:
@@ -170,12 +170,12 @@ class ChatPerplexity(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[SecretStr] = Field(
+    pplx_api_key: SecretStr | None = Field(
         default_factory=secret_from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
-    request_timeout: Optional[Union[float, tuple[float, float]]] = Field(
+    request_timeout: Union[float, tuple[float, float]] | None = Field(
         None, alias="timeout"
     )
     """Timeout for requests to PerplexityChat completion API. Default is None."""
@@ -183,7 +183,7 @@ class ChatPerplexity(BaseChatModel):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -261,7 +261,7 @@ class ChatPerplexity(BaseChatModel):
         return message_dict
 
     def _create_message_dicts(
-        self, messages: list[BaseMessage], stop: Optional[list[str]]
+        self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = dict(self._invocation_params)
         if stop is not None:
@@ -303,8 +303,8 @@ class ChatPerplexity(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -317,7 +317,7 @@ class ChatPerplexity(BaseChatModel):
             messages=message_dicts, stream=True, **params
         )
         first_chunk = True
-        prev_total_usage: Optional[UsageMetadata] = None
+        prev_total_usage: UsageMetadata | None = None
 
         added_model_name: bool = False
         for chunk in stream_resp:
@@ -327,7 +327,7 @@ class ChatPerplexity(BaseChatModel):
             if total_usage := chunk.get("usage"):
                 lc_total_usage = _create_usage_metadata(total_usage)
                 if prev_total_usage:
-                    usage_metadata: Optional[UsageMetadata] = subtract_usage(
+                    usage_metadata: UsageMetadata | None = subtract_usage(
                         lc_total_usage, prev_total_usage
                     )
                 else:
@@ -374,8 +374,8 @@ class ChatPerplexity(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
@@ -418,11 +418,11 @@ class ChatPerplexity(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal["json_schema"] = "json_schema",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
