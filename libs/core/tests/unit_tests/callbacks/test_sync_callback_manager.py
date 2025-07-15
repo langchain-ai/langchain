@@ -18,8 +18,8 @@ def test_remove_handler() -> None:
 def test_merge_preserves_handler_distinction() -> None:
     """Test that merging managers preserves the distinction between handlers.
 
-    This test verifies the correct behavior of the BaseCallbackManager.merge() 
-    method. When two managers are merged, their handlers and 
+    This test verifies the correct behavior of the BaseCallbackManager.merge()
+    method. When two managers are merged, their handlers and
     inheritable_handlers should be combined independently.
     """
     h1 = BaseCallbackHandler()
