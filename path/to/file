@@ -1,0 +1,24 @@
+# File changes (if any)
+class BaseCallbackManager:
+def __init__(self, handlers=None, inheritable_handlers=None):
+self.handlers = handlers or []
+self.inheritable_handlers = inheritable_handlers or []
+
+def merge(self, other):
+# Correct implementation
+combined_handlers = self.handlers + other.handlers
+combined_inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+return BaseCallbackManager(handlers=combined_handlers, inheritable_handlers=combined_inheritable_handlers)
+
+# Unit test to verify the fix
+def test_merge_separation():
+h1 = object()
+h2 = object()
+ih1 = object()
+ih2 = object()
+m1 = BaseCallbackManager(handlers=[h1], inheritable_handlers=[ih1])
+m2 = BaseCallbackManager(handlers=[h2], inheritable_handlers=[ih2])
+merged = m1.merge(m2)
+assert set(merged.handlers) == {h1, h2}
+assert set(merged.inheritable_handlers) == {ih1, ih2}
+assert set(merged.handlers) != set(merged.inheritable_handlers)
