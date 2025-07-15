@@ -50,17 +50,31 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+    """Create usage metadata from token usage dict.
+    
+    Args:
+        token_usage: Dictionary containing token usage information from the API response
+        
+    Returns:
+        UsageMetadata with token counts and optionally num_search_queries
+    """
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
-    num_search_queries = token_usage.get("num_search_queries", 0)
 
-    return UsageMetadata(
+    # Create base usage metadata with required fields
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
-        num_search_queries=num_search_queries,
     )
+    
+    # Only add num_search_queries if it exists in the token_usage
+    # Don't default to 0 since it's a NotRequired field
+    if "num_search_queries" in token_usage:
+        usage_metadata["num_search_queries"] = token_usage["num_search_queries"]
+
+    return usage_metadata
 
 
 class ChatPerplexity(BaseChatModel):

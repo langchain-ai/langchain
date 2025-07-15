@@ -122,29 +122,24 @@ class UsageMetadata(TypedDict):
                 "output_token_details": {
                     "audio": 10,
                     "reasoning": 200,
-                }
+                },
+                "num_search_queries": 3,
             }
 
     .. versionchanged:: 0.3.9
 
         Added ``input_token_details`` and ``output_token_details``.
     """
-
     input_tokens: int
-    """Count of input (or prompt) tokens. Sum of all input token types."""
+    """Count of input (or prompt) tokens."""
     output_tokens: int
-    """Count of output (or completion) tokens. Sum of all output token types."""
+    """Count of output (or completion) tokens."""
     total_tokens: int
-    """Total token count. Sum of input_tokens + output_tokens."""
-    input_token_details: NotRequired[InputTokenDetails]
-    """Breakdown of input token counts.
-
-    Does *not* need to sum to full input token count. Does *not* need to have all keys.
-    """
-    output_token_details: NotRequired[OutputTokenDetails]
-    """Breakdown of output token counts.
-    Does *not* need to sum to full output token count. Does *not* need to have all keys.
-    """
+    """Total token count."""
+    input_token_details: NotRequired["InputTokenDetails"]
+    """Breakdown of input token counts."""
+    output_token_details: NotRequired["OutputTokenDetails"]
+    """Breakdown of output token counts."""
     num_search_queries: NotRequired[int]
     """Number of search queries performed."""
 
@@ -463,13 +458,15 @@ def add_usage(
                 input_tokens=5,
                 output_tokens=0,
                 total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3)
+                input_token_details=InputTokenDetails(cache_read=3),
+                num_search_queries=2
             )
             right = UsageMetadata(
                 input_tokens=0,
                 output_tokens=10,
                 total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
+                num_search_queries=1
             )
 
             add_usage(left, right)
@@ -483,7 +480,8 @@ def add_usage(
                 output_tokens=10,
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
+                num_search_queries=3
             )
 
     """
@@ -520,13 +518,15 @@ def subtract_usage(
                 input_tokens=5,
                 output_tokens=10,
                 total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4)
+                input_token_details=InputTokenDetails(cache_read=4),
+                num_search_queries=3
             )
             right = UsageMetadata(
                 input_tokens=3,
                 output_tokens=8,
                 total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
+                num_search_queries=1
             )
 
             subtract_usage(left, right)
@@ -540,7 +540,8 @@ def subtract_usage(
                 output_tokens=2,
                 total_tokens=4,
                 input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0)
+                output_token_details=OutputTokenDetails(reasoning=0),
+                num_search_queries=2
             )
 
     """
