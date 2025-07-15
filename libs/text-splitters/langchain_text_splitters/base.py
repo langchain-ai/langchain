@@ -316,6 +316,7 @@ class Language(str, Enum):
     HASKELL = "haskell"
     ELIXIR = "elixir"
     POWERSHELL = "powershell"
+    VISUALBASIC6 = "visualbasic6"
 
 
 @dataclass(frozen=True)
