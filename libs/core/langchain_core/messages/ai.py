@@ -123,8 +123,8 @@ class UsageMetadata(TypedDict):
                     "audio": 10,
                     "reasoning": 200,
                 },
-                "num_search_queries": 3,
             }
+    
 
     .. versionchanged:: 0.3.9
 
