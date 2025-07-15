@@ -143,9 +143,10 @@ class UsageMetadata(TypedDict):
     """
     output_token_details: NotRequired[OutputTokenDetails]
     """Breakdown of output token counts.
-
     Does *not* need to sum to full output token count. Does *not* need to have all keys.
     """
+    num_search_queries: NotRequired[int]
+    """Number of search queries performed."""
 
 
 class AIMessage(BaseMessage):
