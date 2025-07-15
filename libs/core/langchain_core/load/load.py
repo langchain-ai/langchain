@@ -113,12 +113,12 @@ class Reviver:
             and value.get("type") == "not_implemented"
             and value.get("id") is not None
         ):
+            if self.ignore_unserializable_fields:
+                return None
             msg = (
                 "Trying to load an object that doesn't implement "
                 f"serialization: {value}"
             )
-            if self.ignore_unserializable_fields:
-                return None
             raise NotImplementedError(msg)
 
         if (
