@@ -89,20 +89,20 @@ const config = {
           editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
-            [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
+            [require("@docusaurus/remark-plugin-npm2yarn"), {sync: true}],
           ],
           async sidebarItemsGenerator({
-            defaultSidebarItemsGenerator,
-            ...args
-          }) {
+                                        defaultSidebarItemsGenerator,
+                                        ...args
+                                      }) {
             const sidebarItems = await defaultSidebarItemsGenerator(args);
             sidebarItems.forEach((subItem) => {
               // This allows breaking long sidebar labels into multiple lines
               // by inserting a zero-width space after each slash.
               if (
-                "label" in subItem &&
-                subItem.label &&
-                subItem.label.includes("/")
+                  "label" in subItem &&
+                  subItem.label &&
+                  subItem.label.includes("/")
               ) {
                 // eslint-disable-next-line no-param-reassign
                 subItem.label = subItem.label.replace(/\//g, "/\u200B");
@@ -120,15 +120,10 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
-      }),
-    ],
-    [
-      '@docusaurus/preset-classic',
-      {
         googleTagManager: {
           containerId: "GTM-MH4VTX4V",
         },
-      },
+      }),
     ],
   ],
 
