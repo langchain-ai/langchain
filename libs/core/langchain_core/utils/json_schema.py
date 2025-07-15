@@ -9,24 +9,75 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-def _retrieve_ref(path: str, schema: dict) -> dict:
-    components = path.split("/")
-    if components[0] != "#":
-        msg = (
-            "ref paths are expected to be URI fragments, meaning they should start "
-            "with #."
-        )
-        raise ValueError(msg)
-    out = schema
-    for component in components[1:]:
-        if component in out:
-            out = out[component]
-        elif component.isdigit() and int(component) in out:
-            out = out[int(component)]
+def _retrieve_ref(path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Resolve an internal JSON-Schema “$ref” (JSON Pointer) and return the
+    referenced schema fragment **as a deep copy**.
+
+    $ref pointers in JSON Schema follow the same rules as RFC 6901 JSON Pointer:
+        https://datatracker.ietf.org/doc/html/rfc6901
+
+    The function supports the subset of JSON Pointer used by JSON-Schema:
+    every reference is a URI-fragment (it begins with “#”) and each path
+    segment, separated by “/”, identifies either
+
+    * a **mapping key** when the current node is a ``dict``; or  
+    * a **zero-based list index** when the current node is a ``list``.
+
+    Examples
+    --------
+    ``#/properties/address``               – selects a dict key  
+    ``#/items/2/properties/name``          – selects a list index then a key  
+
+    Parameters
+    ----------
+    path
+        The ``$ref`` value exactly as written in the schema (e.g.
+        ``"#/properties/foo/anyOf/1"``).  Must start with “#”.
+    schema
+        The root schema object inside which the reference should be resolved.
+        It is **never mutated**; the return value is a detached copy.
+
+    Returns
+    -------
+    dict
+        The schema fragment located at *path*, copied deeply so callers may
+        modify it without affecting the original document.
+
+    Raises
+    ------
+    ValueError
+        If *path* does **not** start with “#”.
+    KeyError
+        If any segment cannot be resolved―either a mapping key is missing or
+        a list index is out of range.
+    """
+    # Break the URI fragment into its individual tokens
+    tokens = path.split("/")
+
+    # Per JSON-Schema spec, internal references must be URI fragments
+    if tokens[0] != "#":
+        raise ValueError("Reference paths must be URI fragments starting with '#'.")
+
+    node: Any = schema  # begin at the document root
+
+    # Walk the tokens one by one, drilling down the schema structure
+    for token in tokens[1:]:
+        if isinstance(node, dict) and token in node:
+            # -- Mapping lookup --------------------------------------------------
+            node = node[token]
+        elif token.isdigit() and isinstance(node, list):
+            # -- Sequence index --------------------------------------------------
+            idx = int(token)
+            if idx >= len(node):
+                raise KeyError(f"Index {idx} out of range while resolving {path!r}")
+            node = node[idx]
         else:
-            msg = f"Reference '{path}' not found."
-            raise KeyError(msg)
-    return deepcopy(out)
+            # -- Neither dict key nor list index matched -------------------------
+            raise KeyError(f"Unable to resolve token {token!r} in {path!r}")
+
+    # Hand back a deep copy so callers can tweak the fragment safely
+    return deepcopy(node)
 
 
 def _dereference_refs_helper(
