@@ -82,6 +82,7 @@ jobs:
             cli
             langchain
             standard-tests
+            text-splitters
             docs
             anthropic
             chroma

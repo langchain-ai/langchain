@@ -2797,6 +2797,5 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
 
 def test_default_is_v2() -> None:
     """Test that we default to version="v2"."""
-
     signature = inspect.signature(Runnable.astream_events)
     assert signature.parameters["version"].default == "v2"
