@@ -77,13 +77,7 @@ const config = {
           ],
         },
       }),
-    }),
-    [
-      "@docusaurus/plugin-google-tag-manager",
-      {
-        containerId: "GTM-MH4VTX4V",
-      },
-    ],
+    })
   ],
 
   presets: [
@@ -127,6 +121,14 @@ const config = {
           customCss: require.resolve("./src/css/custom.css"),
         },
       }),
+    ],
+    [
+      '@docusaurus/preset-classic',
+      {
+        googleTagManager: {
+          containerId: "GTM-MH4VTX4V",
+        },
+      },
     ],
   ],
 
