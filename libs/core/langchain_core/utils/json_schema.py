@@ -7,77 +7,74 @@ from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Dict, Any
 
+def _retrieve_ref(path: str, schema: dict) -> dict:
+    """Return the schema fragment pointed to by an internal ``$ref``.
 
-def _retrieve_ref(path: str, schema: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Resolve an internal JSON-Schema “$ref” (JSON Pointer) and return the
-    referenced schema fragment **as a deep copy**.
+    This supports the subset of JSON-Pointer used by JSON-Schema where every
+    reference **must** be a URI fragment (i.e. it starts with ``#``).  Each
+    “/”-separated token identifies either:
 
-    $ref pointers in JSON Schema follow the same rules as RFC 6901 JSON Pointer:
-        https://datatracker.ietf.org/doc/html/rfc6901
-
-    The function supports the subset of JSON Pointer used by JSON-Schema:
-    every reference is a URI-fragment (it begins with “#”) and each path
-    segment, separated by “/”, identifies either
-
-    * a **mapping key** when the current node is a ``dict``; or  
+    * a **mapping key** when the current node is a ``dict``; or
     * a **zero-based list index** when the current node is a ``list``.
-
-    Examples
-    --------
-    ``#/properties/address``               – selects a dict key  
-    ``#/items/2/properties/name``          – selects a list index then a key  
 
     Parameters
     ----------
-    path
-        The ``$ref`` value exactly as written in the schema (e.g.
-        ``"#/properties/foo/anyOf/1"``).  Must start with “#”.
-    schema
-        The root schema object inside which the reference should be resolved.
-        It is **never mutated**; the return value is a detached copy.
+    path :
+        The reference exactly as it appears in the schema
+        (e.g. ``"#/properties/name"``). **Must** start with ``#``.
+    schema :
+        The document-root schema object inside which *path* is resolved.
+        This object is **never** mutated.
 
     Returns
     -------
     dict
-        The schema fragment located at *path*, copied deeply so callers may
-        modify it without affecting the original document.
+        A **deep copy** of the schema fragment located at *path*.
 
     Raises
     ------
     ValueError
-        If *path* does **not** start with “#”.
+        If *path* does **not** start with ``#``.
     KeyError
-        If any segment cannot be resolved―either a mapping key is missing or
-        a list index is out of range.
+        If any token cannot be resolved.
     """
-    # Break the URI fragment into its individual tokens
     tokens = path.split("/")
 
-    # Per JSON-Schema spec, internal references must be URI fragments
+    # All internal JSON-Schema references must be URI fragments.
     if tokens[0] != "#":
-        raise ValueError("Reference paths must be URI fragments starting with '#'.")
+        raise ValueError(
+            "ref paths are expected to be URI fragments, meaning they should "
+            "start with '#'.",
+        )
 
-    node: Any = schema  # begin at the document root
+    node: Any = schema  # start at the document root
 
-    # Walk the tokens one by one, drilling down the schema structure
     for token in tokens[1:]:
-        if isinstance(node, dict) and token in node:
-            # -- Mapping lookup --------------------------------------------------
-            node = node[token]
-        elif token.isdigit() and isinstance(node, list):
-            # -- Sequence index --------------------------------------------------
+        # ----- Mapping lookup -------------------------------------------------- #
+        if isinstance(node, dict):
+            if token in node:
+                node = node[token]
+                continue
+            # Numeric token may reference an int key stored in the mapping.
+            if token.isdigit() and (int_token := int(token)) in node:
+                node = node[int_token]
+                continue
+
+        # ----- Sequence index -------------------------------------------------- #
+        if token.isdigit() and isinstance(node, list):
             idx = int(token)
             if idx >= len(node):
-                raise KeyError(f"Index {idx} out of range while resolving {path!r}")
+                msg = f"Index {idx} out of range while resolving {path!r}"
+                raise KeyError(msg)
             node = node[idx]
-        else:
-            # -- Neither dict key nor list index matched -------------------------
-            raise KeyError(f"Unable to resolve token {token!r} in {path!r}")
+            continue
 
-    # Hand back a deep copy so callers can tweak the fragment safely
+        # ---------------------------------------------------------------------- #
+        msg = f"Unable to resolve token {token!r} in {path!r}"
+        raise KeyError(msg)
+
+    # Hand back a deep copy so callers can mutate safely.
     return deepcopy(node)
 
 
