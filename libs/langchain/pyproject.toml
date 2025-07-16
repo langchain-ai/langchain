@@ -152,12 +152,14 @@ select = [
     "COM",    # flake8-commas
     "D",      # pydocstyle
     "DOC",    # pydoclint
+    "DTZ",    # flake8-datetimez
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
     "FA",     # flake8-future-annotations
     "FBT",    # flake8-boolean-trap
     "FLY",    # flake8-flynt
+    "G",      # flake8-logging-format
     "I",      # isort
     "ICN",    # flake8-import-conventions
     "INT",    # flake8-gettext
@@ -165,6 +167,7 @@ select = [
     "PGH",    # pygrep-hooks
     "PIE",    # flake8-pie
     "PERF",   # flake8-perf
+    "PTH",    # flake8-use-pathlib
     "PYI",    # flake8-pyi
     "Q",      # flake8-quotes
     "RET",    # flake8-return
@@ -215,6 +218,11 @@ pyupgrade.keep-runtime-typing = true
 ]
 "langchain/chains/constitutional_ai/principles.py" = [
     "E501", # Line too long
+]
+"**/retrievers/*time_weighted_retriever.py" = [
+    "DTZ001", # Use of non timezone-aware datetime
+    "DTZ005", # Use of non timezone-aware datetime
+    "DTZ006", # Use of non timezone-aware datetime
 ]
 
 [tool.coverage.run]
