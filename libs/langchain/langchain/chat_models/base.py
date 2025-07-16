@@ -120,6 +120,7 @@ def init_chat_model(
             - 'nvidia'              -> langchain-nvidia-ai-endpoints
             - 'xai'                 -> langchain-xai
             - 'perplexity'          -> langchain-perplexity
+            - 'gigachat'            -> langchain-gigachat
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -134,6 +135,7 @@ def init_chat_model(
             - 'deepseek...'                     -> 'deepseek'
             - 'grok...'                         -> 'xai'
             - 'sonar...'                        -> 'perplexity'
+            - 'GigaChat...'                     -> 'gigachat'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -459,6 +461,11 @@ def _init_chat_model_helper(
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
+    if model_provider == "gigachat":
+        _check_pkg("langchain_gigachat")
+        from langchain_gigachat import GigaChat
+
+        return GigaChat(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
         f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
@@ -487,6 +494,7 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
+    "gigachat"
 }
 
 
@@ -511,6 +519,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "xai"
     if model_name.startswith("sonar"):
         return "perplexity"
+    if model_name.startswith("GigaChat"):
+        return "gigachat"
     return None
 
 
