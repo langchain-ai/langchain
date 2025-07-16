@@ -732,7 +732,7 @@ class ChatHuggingFace(BaseChatModel):
 
         if _is_huggingface_pipeline(self.llm):
             prompt_messages = [
-                self._convert_input(input).to_messages() for input in inputs
+                self._convert_input(input_).to_messages() for input_ in inputs
             ]
 
             llm_inputs = list(map(self._to_chat_prompt, prompt_messages))
@@ -740,13 +740,12 @@ class ChatHuggingFace(BaseChatModel):
             llm_results = self.llm._generate(prompts=llm_inputs)
             chat_result = self._to_chat_result(llm_results)
             return [gen.message for gen in chat_result.generations]
-        else:
-            return super().batch(
-                inputs=inputs,
-                config=config,
-                return_exceptions=return_exceptions,
-                **kwargs,
-            )
+        return super().batch(
+            inputs=inputs,
+            config=config,
+            return_exceptions=return_exceptions,
+            **kwargs,
+        )
 
     def _to_chat_prompt(
         self,
