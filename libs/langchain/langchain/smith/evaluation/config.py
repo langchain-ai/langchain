@@ -1,6 +1,7 @@
 """Configuration for run evaluators."""
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -20,7 +21,8 @@ from langchain.evaluation.string_distance.base import (
 )
 
 RUN_EVALUATOR_LIKE = Callable[
-    [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
+    [Run, Optional[Example]],
+    Union[EvaluationResult, EvaluationResults, dict],
 ]
 BATCH_EVALUATOR_LIKE = Callable[
     [Sequence[Run], Optional[Sequence[Example]]],
@@ -45,7 +47,7 @@ class EvalConfig(BaseModel):
 
     evaluator_type: EvaluatorType
 
-    def get_kwargs(self) -> Dict[str, Any]:
+    def get_kwargs(self) -> dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
 
         Returns
@@ -56,9 +58,7 @@ class EvalConfig(BaseModel):
         """
         kwargs = {}
         for field, val in self:
-            if field == "evaluator_type":
-                continue
-            elif val is None:
+            if field == "evaluator_type" or val is None:
                 continue
             kwargs[field] = val
         return kwargs
@@ -78,7 +78,7 @@ class SingleKeyEvalConfig(EvalConfig):
     """The key from the traced run's inputs dictionary to use to represent the
     input. If not provided, it will be inferred automatically."""
 
-    def get_kwargs(self) -> Dict[str, Any]:
+    def get_kwargs(self) -> dict[str, Any]:
         kwargs = super().get_kwargs()
         # Filer out the keys that are not needed for the evaluator.
         for key in ["reference_key", "prediction_key", "input_key"]:
@@ -121,7 +121,7 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[
+    evaluators: list[
         Union[
             SINGLE_EVAL_CONFIG_TYPE,
             CUSTOM_EVALUATOR_TYPE,
@@ -132,11 +132,11 @@ class RunEvalConfig(BaseModel):
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
     as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
     given evaluator
-    (e.g., 
+    (e.g.,
     :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
-    custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
+    custom_evaluators: Optional[list[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
-    batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
+    batch_evaluators: Optional[list[BATCH_EVALUATOR_LIKE]] = None
     """Evaluators that run on an aggregate/batch level.
 
     These generate 1 or more metrics that are assigned to the full test run.
@@ -177,7 +177,9 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
 
         def __init__(
-            self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
+            self,
+            criteria: Optional[CRITERIA_TYPE] = None,
+            **kwargs: Any,
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
@@ -197,7 +199,9 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
 
         def __init__(
-            self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
+            self,
+            criteria: Optional[CRITERIA_TYPE] = None,
+            **kwargs: Any,
         ) -> None:
             super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 

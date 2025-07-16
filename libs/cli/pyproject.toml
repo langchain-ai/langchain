@@ -1,63 +1,108 @@
-[tool.poetry]
-name = "langchain-cli"
-version = "0.0.35"
-description = "CLI for interacting with LangChain"
-authors = ["Erick Friis <erick@langchain.dev>"]
-readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.urls]
+[project]
+authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "typer[all]<1.0.0,>=0.9.0",
+    "gitpython<4,>=3",
+    "langserve[all]>=0.0.51",
+    "uvicorn<1.0,>=0.23",
+    "tomlkit>=0.12",
+    "gritql<1.0.0,>=0.2.0",
+]
+name = "langchain-cli"
+version = "0.0.36"
+description = "CLI for interacting with LangChain"
+readme = "README.md"
+
+[project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-cli%3D%3D0%22&expanded=true"
+repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-typer = { extras = ["all"], version = "^0.9.0" }
-gitpython = "^3"
-langserve = { extras = ["all"], version = ">=0.0.51" }
-uvicorn = ">=0.23,<1.0"
-tomlkit = ">=0.12"
-gritql = "^0.2.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
-pytest-watch = "^4.2.0"
+[dependency-groups]
+dev = ["pytest<8.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<2.0.0,>=1.13.0"]
+test = ["langchain-core", "langchain"]
+typing = ["langchain"]
+test_integration = []
 
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
-mypy = "^1.13.0"
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain = { path = "../langchain", editable = true }
 
-[tool.poetry.group.test.dependencies]
-langchain = {path = "../langchain", develop = true}
-
-[tool.poetry.group.typing.dependencies]
-langchain = {path = "../langchain", develop = true}
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.extras]
-# For langserve
-serve = []
+[tool.ruff]
+target-version = "py39"
+exclude = [
+    "langchain_cli/integration_template",
+    "langchain_cli/package_template",
+    "langchain_cli/project_template",
+]
 
 [tool.ruff.lint]
 select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
+    "A",      # flake8-builtins
+    "B",      # flake8-bugbear
+    "ARG",    # flake8-unused-arguments
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "DOC",    # pydoclint
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "N",      # pep8-naming
+    "PT",     # flake8-pytest-style
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
 ]
+ignore = [
+    "D100",    # pydocstyle: Missing docstring in public module
+    "D101",    # pydocstyle: Missing docstring in public class
+    "D102",    # pydocstyle: Missing docstring in public method
+    "D103",    # pydocstyle: Missing docstring in public function
+    "D104",    # pydocstyle: Missing docstring in public package
+    "D105",    # pydocstyle: Missing docstring in magic method
+    "D107",    # pydocstyle: Missing docstring in __init__
+    "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "COM812",  # Messes with the formatter
+]
+pyupgrade.keep-runtime-typing = true
 
 [tool.mypy]
 exclude = [
-  "langchain_cli/integration_template",
-  "langchain_cli/package_template",
+    "langchain_cli/integration_template",
+    "langchain_cli/package_template",
 ]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

@@ -9,8 +9,10 @@ export default function EmbeddingTabs(props) {
       hideOpenai,
       azureOpenaiParams,
       hideAzureOpenai,
-      googleParams,
-      hideGoogle,
+      googleGenAIParams,
+      hideGoogleGenAI,
+      googleVertexAIParams,
+      hideGoogleVertexAI,
       awsParams,
       hideAws,
       huggingFaceParams,
@@ -27,6 +29,8 @@ export default function EmbeddingTabs(props) {
       hideNvidia,
       voyageaiParams,
       hideVoyageai,
+      ibmParams,
+      hideIBM,
       fakeEmbeddingParams,
       hideFakeEmbedding,
       customVarName,
@@ -36,7 +40,8 @@ export default function EmbeddingTabs(props) {
     const azureParamsOrDefault =
       azureOpenaiParams ??
       `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
-    const googleParamsOrDefault = googleParams ?? `model="text-embedding-004"`;
+    const googleGenAIParamsOrDefault = googleGenAIParams ?? `model="models/embedding-001"`;
+    const googleVertexAIParamsOrDefault = googleVertexAIParams ?? `model="text-embedding-004"`;
     const awsParamsOrDefault = awsParams ?? `model_id="amazon.titan-embed-text-v2:0"`;
     const huggingFaceParamsOrDefault = huggingFaceParams ?? `model_name="sentence-transformers/all-mpnet-base-v2"`;
     const ollamaParamsOrDefault = ollamaParams ?? `model="llama3"`;
@@ -45,6 +50,8 @@ export default function EmbeddingTabs(props) {
     const nomicsParamsOrDefault = nomicParams ?? `model="nomic-embed-text-v1.5"`;
     const nvidiaParamsOrDefault = nvidiaParams ?? `model="NV-Embed-QA"`;
     const voyageaiParamsOrDefault = voyageaiParams ?? `model="voyage-3"`;
+    const ibmParamsOrDefault = ibmParams ?? 
+      `\n    model_id="ibm/slate-125m-english-rtrvr",\n    url="https://us-south.ml.cloud.ibm.com",\n    project_id="<WATSONX PROJECT_ID>",\n`;
     const fakeEmbeddingParamsOrDefault = fakeEmbeddingParams ?? `size=4096`;
 
     const embeddingVarName = customVarName ?? "embeddings";
@@ -69,13 +76,22 @@ export default function EmbeddingTabs(props) {
         shouldHide: hideAzureOpenai,
       },
       {
-        value: "Google",
-        label: "Google",
-        text: `from langchain_google_vertexai import VertexAIEmbeddings\n\n${embeddingVarName} = VertexAIEmbeddings(${googleParamsOrDefault})`,
+        value: "GoogleGenAI",
+        label: "Google Gemini",
+        text: `from langchain_google_genai import GoogleGenerativeAIEmbeddings\n\n${embeddingVarName} = GoogleGenerativeAIEmbeddings(${googleGenAIParamsOrDefault})`,
+        apiKeyName: "GOOGLE_API_KEY",
+        packageName: "langchain-google-genai",
+        default: false,
+        shouldHide: hideGoogleGenAI,
+      },
+      {
+        value: "GoogleVertexAI",
+        label: "Google Vertex",
+        text: `from langchain_google_vertexai import VertexAIEmbeddings\n\n${embeddingVarName} = VertexAIEmbeddings(${googleVertexAIParamsOrDefault})`,
         apiKeyName: undefined,
         packageName: "langchain-google-vertexai",
         default: false,
-        shouldHide: hideGoogle,
+        shouldHide: hideGoogleVertexAI,
       },
       {
         value: "AWS",
@@ -148,6 +164,15 @@ export default function EmbeddingTabs(props) {
         packageName: "langchain-voyageai",
         default: false,
         shouldHide: hideVoyageai,
+      },
+      {
+        value: "IBM",
+        label: "IBM watsonx",
+        text: `from langchain_ibm import WatsonxEmbeddings\n\n${embeddingVarName} = WatsonxEmbeddings(${ibmParamsOrDefault})`,
+        apiKeyName: "WATSONX_APIKEY",
+        packageName: "langchain-ibm",
+        default: false,
+        shouldHide: hideIBM,
       },
       {
         value: "Fake",

@@ -7,12 +7,6 @@ repos:
       entry: make -C libs/core format
       files: ^libs/core/
       pass_filenames: false
-    - id: community
-      name: format community
-      language: system
-      entry: make -C libs/community format
-      files: ^libs/community/
-      pass_filenames: false
     - id: langchain
       name: format langchain
       language: system
@@ -97,12 +91,6 @@ repos:
       entry: make -C libs/partners/openai format
       files: ^libs/partners/openai/
       pass_filenames: false
-    - id: pinecone
-      name: format partners/pinecone
-      language: system
-      entry: make -C libs/partners/pinecone format
-      files: ^libs/partners/pinecone/
-      pass_filenames: false
     - id: prompty
       name: format partners/prompty
       language: system
@@ -114,12 +102,6 @@ repos:
       language: system
       entry: make -C libs/partners/qdrant format
       files: ^libs/partners/qdrant/
-      pass_filenames: false
-    - id: voyageai
-      name: format partners/voyageai
-      language: system
-      entry: make -C libs/partners/voyageai format
-      files: ^libs/partners/voyageai/
       pass_filenames: false
     - id: root
       name: format docs, cookbook

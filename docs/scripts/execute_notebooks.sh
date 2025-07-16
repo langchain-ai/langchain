@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Read the list of notebooks to skip from the JSON file
-SKIP_NOTEBOOKS=$(python -c "import json; print('\n'.join(json.load(open('docs/notebooks_no_execution.json'))))")
+SKIP_NOTEBOOKS=$(uv run python -c "import json; print('\n'.join(json.load(open('docs/notebooks_no_execution.json'))))")
 
 # Get the working directory or specific notebook file from the input parameter
 WORKING_DIRECTORY=$1
@@ -13,7 +13,7 @@ execute_notebook() {
     total="$3"
     echo "Starting execution of $file ($index/$total)"
     start_time=$(date +%s)
-    if ! output=$(time poetry run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
+    if ! output=$(time uv run --group dev --group test jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
         end_time=$(date +%s)
         execution_time=$((end_time - start_time))
         echo "Error in $file. Execution time: $execution_time seconds"

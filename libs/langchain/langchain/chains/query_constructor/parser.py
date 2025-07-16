@@ -1,6 +1,7 @@
 import datetime
 import warnings
-from typing import Any, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union
 
 from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
@@ -10,12 +11,12 @@ try:
     from lark import Lark, Transformer, v_args
 except ImportError:
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
         """Dummy decorator for when lark is not installed."""
         return lambda _: None
 
-    Transformer = object  # type: ignore
-    Lark = object  # type: ignore
+    Transformer = object  # type: ignore[assignment,misc]
+    Lark = object  # type: ignore[assignment,misc]
 
 from langchain_core.structured_query import (
     Comparator,
@@ -94,38 +95,44 @@ class QueryTransformer(Transformer):
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
             if self.allowed_attributes and args[0] not in self.allowed_attributes:
-                raise ValueError(
+                msg = (
                     f"Received invalid attributes {args[0]}. Allowed attributes are "
                     f"{self.allowed_attributes}"
                 )
+                raise ValueError(msg)
             return Comparison(comparator=func, attribute=args[0], value=args[1])
-        elif len(args) == 1 and func in (Operator.AND, Operator.OR):
+        if len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(operator=func, arguments=args)
+        return Operation(operator=func, arguments=args)
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):
-            if self.allowed_comparators is not None:
-                if func_name not in self.allowed_comparators:
-                    raise ValueError(
-                        f"Received disallowed comparator {func_name}. Allowed "
-                        f"comparators are {self.allowed_comparators}"
-                    )
+            if (
+                self.allowed_comparators is not None
+                and func_name not in self.allowed_comparators
+            ):
+                msg = (
+                    f"Received disallowed comparator {func_name}. Allowed "
+                    f"comparators are {self.allowed_comparators}"
+                )
+                raise ValueError(msg)
             return Comparator(func_name)
-        elif func_name in set(Operator):
-            if self.allowed_operators is not None:
-                if func_name not in self.allowed_operators:
-                    raise ValueError(
-                        f"Received disallowed operator {func_name}. Allowed operators"
-                        f" are {self.allowed_operators}"
-                    )
+        if func_name in set(Operator):
+            if (
+                self.allowed_operators is not None
+                and func_name not in self.allowed_operators
+            ):
+                msg = (
+                    f"Received disallowed operator {func_name}. Allowed operators"
+                    f" are {self.allowed_operators}"
+                )
+                raise ValueError(msg)
             return Operator(func_name)
-        else:
-            raise ValueError(
-                f"Received unrecognized function {func_name}. Valid functions are "
-                f"{list(Operator) + list(Comparator)}"
-            )
+        msg = (
+            f"Received unrecognized function {func_name}. Valid functions are "
+            f"{list(Operator) + list(Comparator)}"
+        )
+        raise ValueError(msg)
 
     def args(self, *items: Any) -> tuple:
         return items
@@ -150,11 +157,12 @@ class QueryTransformer(Transformer):
     def date(self, item: Any) -> ISO8601Date:
         item = str(item).strip("\"'")
         try:
-            datetime.datetime.strptime(item, "%Y-%m-%d")
+            datetime.datetime.strptime(item, "%Y-%m-%d")  # noqa: DTZ007
         except ValueError:
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
-                "(YYYY-MM-DD)."
+                "(YYYY-MM-DD).",
+                stacklevel=3,
             )
         return {"date": item, "type": "date"}
 
@@ -165,11 +173,10 @@ class QueryTransformer(Transformer):
             datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S%z")
         except ValueError:
             try:
-                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")
-            except ValueError:
-                raise ValueError(
-                    "Datetime values are expected to be in ISO 8601 format."
-                )
+                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")  # noqa: DTZ007
+            except ValueError as e:
+                msg = "Datetime values are expected to be in ISO 8601 format."
+                raise ValueError(msg) from e
         return {"datetime": item, "type": "datetime"}
 
     def string(self, item: Any) -> str:
@@ -193,9 +200,8 @@ def get_parser(
     """
     # QueryTransformer is None when Lark cannot be imported.
     if QueryTransformer is None:
-        raise ImportError(
-            "Cannot import lark, please install it with 'pip install lark'."
-        )
+        msg = "Cannot import lark, please install it with 'pip install lark'."
+        raise ImportError(msg)
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

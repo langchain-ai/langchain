@@ -120,11 +120,11 @@ def beta(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -143,7 +143,7 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast(T, obj)
+                return cast("T", obj)
 
         elif isinstance(obj, property):
             # note(erick): this block doesn't seem to be used?
@@ -156,33 +156,41 @@ def beta(
             class _BetaProperty(property):
                 """A beta property."""
 
-                def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+                def __init__(
+                    self,
+                    fget: Union[Callable[[Any], Any], None] = None,
+                    fset: Union[Callable[[Any, Any], None], None] = None,
+                    fdel: Union[Callable[[Any], None], None] = None,
+                    doc: Union[str, None] = None,
+                ) -> None:
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
 
-                def __get__(self, instance, owner=None):
+                def __get__(
+                    self, instance: Any, owner: Union[type, None] = None
+                ) -> Any:
                     if instance is not None or owner is not None:
                         emit_warning()
                     return self.fget(instance)
 
-                def __set__(self, instance, value):
+                def __set__(self, instance: Any, value: Any) -> None:
                     if instance is not None:
                         emit_warning()
                     return self.fset(instance, value)
 
-                def __delete__(self, instance):
+                def __delete__(self, instance: Any) -> None:
                     if instance is not None:
                         emit_warning()
                     return self.fdel(instance)
 
-                def __set_name__(self, owner, set_name):
+                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:  # noqa: ARG001
                 """Finalize the property."""
                 return _BetaProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
@@ -209,7 +217,7 @@ def beta(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return cast(T, wrapper)
+                return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n") or ""
         components = [message, addendum]
@@ -217,10 +225,8 @@ def beta(
         new_doc = f".. beta::\n   {details}\n\n{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast(T, finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return beta
 

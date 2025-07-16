@@ -1,4 +1,4 @@
-import langchain_core.tracers.schemas as schemas
+from langchain_core.tracers import schemas
 from langchain_core.tracers.schemas import __all__ as schemas_all
 
 
@@ -22,6 +22,5 @@ def test_public_api() -> None:
 
     # Assert that the object is actually present in the schema module
     for module_name in expected_all:
-        assert (
-            hasattr(schemas, module_name) and getattr(schemas, module_name) is not None
-        )
+        assert hasattr(schemas, module_name)
+        assert getattr(schemas, module_name) is not None

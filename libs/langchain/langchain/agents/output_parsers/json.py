@@ -5,7 +5,7 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers.json import parse_json_markdown
+from langchain_core.utils.json import parse_json_markdown
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -49,12 +49,13 @@ class JSONAgentOutputParser(AgentOutputParser):
                 response = response[0]
             if response["action"] == "Final Answer":
                 return AgentFinish({"output": response["action_input"]}, text)
-            else:
-                return AgentAction(
-                    response["action"], response.get("action_input", {}), text
-                )
+            action_input = response.get("action_input", {})
+            if action_input is None:
+                action_input = {}
+            return AgentAction(response["action"], action_input, text)
         except Exception as e:
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

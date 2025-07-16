@@ -3,41 +3,46 @@
 This guide walks through how to run the repository locally and check in your first code.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
-## Dependency Management: Poetry and other env/dependency managers
+## Dependency Management: `uv` and other env/dependency managers
 
-This project utilizes [Poetry](https://python-poetry.org/) v1.7.1+ as a dependency manager.
+This project utilizes [uv](https://docs.astral.sh/uv/) v0.5+ as a dependency manager.
 
-❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
-
-Install Poetry: **[documentation on how to install it](https://python-poetry.org/docs/#installation)**.
-
-❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, after installing Poetry,
-tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
+Install `uv`: **[documentation on how to install it](https://docs.astral.sh/uv/getting-started/installation/)**.
 
 ## Different packages
 
 This repository contains multiple packages:
 - `langchain-core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
-- `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
-- `langchain-experimental`: Components and chains that are experimental, either in the sense that the techniques are novel and still being tested, or they require giving the LLM more access than would be possible in most production systems.
 - Partner integrations: Partner packages in `libs/partners` that are independently version controlled.
+
+:::note
+
+Some LangChain packages live outside the monorepo, see for example
+[langchain-community](https://github.com/langchain-ai/langchain-community) for various
+third-party integrations and
+[langchain-experimental](https://github.com/langchain-ai/langchain-experimental) for
+abstractions that are experimental (either in the sense that the techniques are novel
+and still being tested, or they require giving the LLM more access than would be
+possible in most production systems).
+
+:::
 
 Each of these has its own development environment. Docs are run from the top-level makefile, but development
 is split across separate test & release flows.
 
-For this quickstart, start with langchain-community:
+For this quickstart, start with `langchain`:
 
 ```bash
-cd libs/community
+cd libs/langchain
 ```
 
 ## Local Development Dependencies
 
-Install langchain-community development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
+Install development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
 ```bash
-poetry install --with lint,typing,test,test_integration
+uv sync
 ```
 
 Then verify dependency installation:
@@ -45,12 +50,6 @@ Then verify dependency installation:
 ```bash
 make test
 ```
-
-If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running
-Poetry v1.6.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
-If you are still seeing this bug on v1.6.1+, you may also try disabling "modern installation"
-(`poetry config installer.modern-installation false`) and re-installing requirements.
-See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
 ## Testing
 
@@ -73,21 +72,12 @@ make docker_tests
 
 There are also [integration tests and code-coverage](../testing.mdx) available.
 
-### Only develop langchain_core or langchain_community
+### Developing langchain_core
 
-If you are only developing `langchain_core` or `langchain_community`, you can simply install the dependencies for the respective projects and run tests:
+If you are only developing `langchain_core`, you can simply install the dependencies for the project and run tests:
 
 ```bash
 cd libs/core
-poetry install --with test
-make test
-```
-
-Or:
-
-```bash
-cd libs/community
-poetry install --with test
 make test
 ```
 
@@ -179,7 +169,7 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 `langchain-core` and partner packages **do not use** optional dependencies in this way.
 
-You'll notice that `pyproject.toml` and `poetry.lock` are **not** touched when you add optional dependencies below.
+You'll notice that `pyproject.toml` and `uv.lock` are **not** touched when you add optional dependencies below.
 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
@@ -196,18 +186,10 @@ test makes use of lightweight fixtures to test the logic of the code.
 
 ## Adding a Jupyter Notebook
 
-If you are adding a Jupyter Notebook example, you'll want to install the optional `dev` dependencies.
-
-To install dev dependencies:
+If you are adding a Jupyter Notebook example, you'll want to run with `test` dependencies:
 
 ```bash
-poetry install --with dev
+uv run --group test jupyter notebook
 ```
 
-Launch a notebook:
-
-```bash
-poetry run jupyter notebook
-```
-
-When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
+When you run `uv sync`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.

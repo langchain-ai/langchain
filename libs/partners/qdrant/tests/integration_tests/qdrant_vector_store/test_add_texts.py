@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Union
+from typing import Union
 
 import pytest
 from langchain_core.documents import Document
@@ -118,7 +118,7 @@ def test_qdrant_add_texts_stores_ids(
     batch_size: int,
 ) -> None:
     """Test end to end Qdrant.add_texts stores provided ids."""
-    ids: List[Union[str, int]] = [
+    ids: list[Union[str, int]] = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
         432,
         432145435,

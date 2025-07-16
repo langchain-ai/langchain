@@ -1,21 +1,29 @@
+"""Parsers for list output."""
+
 from __future__ import annotations
 
 import csv
 import re
 from abc import abstractmethod
 from collections import deque
-from collections.abc import AsyncIterator, Iterator
 from io import StringIO
-from typing import Optional as Optional
-from typing import TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar, Union
+
+from typing_extensions import override
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
 T = TypeVar("T")
 
 
-def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
+def droplastn(
+    iter: Iterator[T],  # noqa: A002
+    n: int,
+) -> Iterator[T]:
     """Drop the last n elements of an iterator.
 
     Args:
@@ -61,6 +69,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         """
         raise NotImplementedError
 
+    @override
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[list[str]]:
@@ -71,9 +80,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -93,6 +103,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         for part in self.parse(buffer):
             yield [part]
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[list[str]]:
@@ -103,9 +114,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -124,9 +136,6 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         # yield the last part
         for part in self.parse(buffer):
             yield [part]
-
-
-ListOutputParser.model_rebuild()
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):
@@ -186,6 +195,7 @@ class NumberedListOutputParser(ListOutputParser):
     pattern: str = r"\d+\.\s([^\n]+)"
     """The pattern to match a numbered list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a numbered list with each item on a new line. "

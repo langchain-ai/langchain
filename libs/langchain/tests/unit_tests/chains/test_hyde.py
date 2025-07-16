@@ -1,6 +1,6 @@
 """Test HyDE."""
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import numpy as np
 from langchain_core.callbacks.manager import (
@@ -18,11 +18,11 @@ from langchain.chains.hyde.prompts import PROMPT_MAP
 class FakeEmbeddings(Embeddings):
     """Fake embedding class for tests."""
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Return random floats."""
         return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Return random floats."""
         return list(np.random.uniform(0, 1, 10))
 
@@ -34,8 +34,8 @@ class FakeLLM(BaseLLM):
 
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -43,8 +43,8 @@ class FakeLLM(BaseLLM):
 
     async def _agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -64,7 +64,9 @@ def test_hyde_from_llm() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(), FakeEmbeddings(), key
+            FakeLLM(),
+            FakeEmbeddings(),
+            key,
         )
         embedding.embed_query("foo")
 
@@ -73,6 +75,8 @@ def test_hyde_from_llm_with_multiple_n() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(n=8), FakeEmbeddings(), key
+            FakeLLM(n=8),
+            FakeEmbeddings(),
+            key,
         )
         embedding.embed_query("foo")

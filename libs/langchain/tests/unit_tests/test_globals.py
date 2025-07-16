@@ -17,9 +17,9 @@ def test_no_warning() -> None:
         get_verbose()
         set_verbose(False)
         core_get_debug()
-        core_set_debug(False)
+        core_set_debug(value=False)
         core_get_verbose()
-        core_set_verbose(False)
+        core_set_verbose(value=False)
 
 
 def test_debug_is_settable_directly() -> None:
@@ -56,16 +56,16 @@ def test_debug_is_settable_directly() -> None:
 def test_debug_is_settable_via_setter() -> None:
     from langchain_core.callbacks.manager import _get_debug
 
-    from langchain import globals
+    from langchain import globals as langchain_globals
 
-    previous_value = globals._debug
+    previous_value = langchain_globals._debug
     previous_fn_reading = _get_debug()
     assert previous_value == previous_fn_reading
 
     # Flip the value of the flag.
     set_debug(not previous_value)
 
-    new_value = globals._debug
+    new_value = langchain_globals._debug
     new_fn_reading = _get_debug()
 
     try:
@@ -115,17 +115,17 @@ def test_verbose_is_settable_directly() -> None:
 
 
 def test_verbose_is_settable_via_setter() -> None:
-    from langchain import globals
+    from langchain import globals as langchain_globals
     from langchain.chains.base import _get_verbosity
 
-    previous_value = globals._verbose
+    previous_value = langchain_globals._verbose
     previous_fn_reading = _get_verbosity()
     assert previous_value == previous_fn_reading
 
     # Flip the value of the flag.
     set_verbose(not previous_value)
 
-    new_value = globals._verbose
+    new_value = langchain_globals._verbose
     new_fn_reading = _get_verbosity()
 
     try:

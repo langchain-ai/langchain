@@ -9,7 +9,7 @@ sessions.
 
 import warnings
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
@@ -23,7 +23,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 DEFAULT_HISTORY_TEMPLATE = """
 Current date and time: {current_time}.
 
-Potentially relevant timestamped excerpts of previous conversations (you 
+Potentially relevant timestamped excerpts of previous conversations (you
 do not need to use these if irrelevant):
 {previous_history}
 
@@ -109,8 +109,8 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore
-    _timestamps: List[datetime] = PrivateAttr(default_factory=list)
+    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore[assignment]
+    _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property
     def memory_retriever(self) -> VectorStoreRetrieverMemory:
@@ -120,7 +120,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         self._memory_retriever = VectorStoreRetrieverMemory(retriever=self.retriever)
         return self._memory_retriever
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history and memory buffer."""
         try:
             with warnings.catch_warnings():
@@ -131,18 +131,18 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             previous_history = ""
         current_history = super().load_memory_variables(inputs)
         template = SystemMessagePromptTemplate.from_template(
-            self.previous_history_template
+            self.previous_history_template,
         )
         messages = [
             template.format(
                 previous_history=previous_history,
                 current_time=datetime.now().astimezone().strftime(TIMESTAMP_FORMAT),
-            )
+            ),
         ]
         messages.extend(current_history[self.memory_key])
         return {self.memory_key: messages}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer. Pruned."""
         BaseChatMemory.save_context(self, inputs, outputs)
         self._timestamps.append(datetime.now().astimezone())
@@ -166,8 +166,8 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         while len(buffer) > 0:
             self._pop_and_store_interaction(buffer)
 
-    def _pop_and_store_interaction(self, buffer: List[BaseMessage]) -> None:
-        input = buffer.pop(0)
+    def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:
+        input_ = buffer.pop(0)
         output = buffer.pop(0)
         timestamp = self._timestamps.pop(0).strftime(TIMESTAMP_FORMAT)
         # Split AI output into smaller chunks to avoid creating documents
@@ -175,10 +175,10 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         ai_chunks = self._split_long_ai_text(str(output.content))
         for index, chunk in enumerate(ai_chunks):
             self.memory_retriever.save_context(
-                {"Human": f"<{timestamp}/00> {str(input.content)}"},
+                {"Human": f"<{timestamp}/00> {input_.content!s}"},
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 
-    def _split_long_ai_text(self, text: str) -> List[str]:
+    def _split_long_ai_text(self, text: str) -> list[str]:
         splitter = RecursiveCharacterTextSplitter(chunk_size=self.split_chunk_size)
         return [chunk.page_content for chunk in splitter.create_documents([text])]

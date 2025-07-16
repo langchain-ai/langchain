@@ -11,11 +11,13 @@ import pytest as pytest
 
 from langchain_fireworks import Fireworks
 
+_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+
 
 def test_fireworks_call() -> None:
     """Test simple call to fireworks."""
     llm = Fireworks(
-        model="accounts/fireworks/models/mixtral-8x7b-instruct",
+        model=_MODEL,
         temperature=0.2,
         max_tokens=250,
     )
@@ -29,7 +31,7 @@ def test_fireworks_call() -> None:
 async def test_fireworks_acall() -> None:
     """Test simple call to fireworks."""
     llm = Fireworks(
-        model="accounts/fireworks/models/mixtral-8x7b-instruct",
+        model=_MODEL,
         temperature=0.2,
         max_tokens=250,
     )
@@ -43,7 +45,7 @@ async def test_fireworks_acall() -> None:
 
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token, str)
@@ -51,7 +53,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token, str)
@@ -59,7 +61,7 @@ async def test_astream() -> None:
 
 async def test_abatch() -> None:
     """Test streaming tokens from Fireworks."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -68,7 +70,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from Fireworks."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -79,7 +81,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from Fireworks."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -88,7 +90,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from Fireworks."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
@@ -96,7 +98,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from Fireworks."""
-    llm = Fireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+    llm = Fireworks(model=_MODEL)
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)

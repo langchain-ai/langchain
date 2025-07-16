@@ -4,24 +4,14 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypedDict,
-    TypeVar,
-    Union,
-)
+from collections.abc import AsyncIterator, Awaitable, Iterator
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 import openai
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -34,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM]]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class _AllReturnType(TypedDict):
@@ -77,7 +67,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Key init args — client params:
         api_version: str
-            Azure OpenAI API version to use. See more on the different versions here:
+            Azure OpenAI REST API version to use (distinct from the version of the
+            underlying model). See more on the different versions here:
             https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
@@ -85,13 +76,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             Max number of retries.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            var ``OPENAI_ORG_ID``.
         model: Optional[str]
             The name of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g. "gpt-4", "gpt-35-turbo", etc.
+            counting. Does not affect completion. E.g. ``'gpt-4'``, ``'gpt-35-turbo'``, etc.
         model_version: Optional[str]
             The version of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g., "0125", "0125-preview", etc.
+            counting. Does not affect completion. E.g., ``'0125'``, ``'0125-preview'``, etc.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -147,7 +138,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             AIMessage(
                 content="J'adore programmer.",
-                usage_metadata={"input_tokens": 28, "output_tokens": 6, "total_tokens": 34},
+                usage_metadata={
+                    "input_tokens": 28,
+                    "output_tokens": 6,
+                    "total_tokens": 34,
+                },
                 response_metadata={
                     "token_usage": {
                         "completion_tokens": 6,
@@ -183,7 +178,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -193,8 +188,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
             AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(
+                content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
+            )
+            AIMessageChunk(
+                content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
+            )
             AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
             AIMessageChunk(
                 content="",
@@ -303,7 +302,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: Optional[int] = Field(
+                    description="How funny the joke is, from 1 to 10"
+                )
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -547,7 +548,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Used for tracing and token counting. Does NOT affect completion.
     """
 
-    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    disabled_params: Optional[dict[str, Any]] = Field(default=None)
     """Parameters of the OpenAI client or chat.completions endpoint that should be 
     disabled for the given model.
 
@@ -570,12 +571,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {
             "openai_api_key": "AZURE_OPENAI_API_KEY",
             "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
@@ -643,7 +644,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
@@ -669,7 +673,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             **{"azure_deployment": self.deployment_name},
@@ -681,14 +685,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return "azure-openai-chat"
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         return {
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -707,7 +711,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
+        generation_info: Optional[dict] = None,
     ) -> ChatResult:
         chat_result = super()._create_chat_result(response, generation_info)
 
@@ -741,6 +745,24 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
         return chat_result
+
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            return super()._stream_responses(*args, **kwargs)
+        else:
+            return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            async for chunk in super()._astream_responses(*args, **kwargs):
+                yield chunk
+        else:
+            async for chunk in super()._astream(*args, **kwargs):
+                yield chunk
 
     def with_structured_output(
         self,
@@ -815,8 +837,52 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 Note: ``strict`` can only be non-null if ``method`` is
                 ``"json_schema"`` or ``"function_calling"``.
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that:
 
-            kwargs: Additional keyword args aren't supported.
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": None,
+                            "parsed": None,
+                        }
+
+            kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -841,6 +907,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. versionchanged:: 0.3.0
 
             ``method`` default changed from "function_calling" to "json_schema".
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
+
+        .. versionchanged:: 0.3.21
+            Pass ``kwargs`` through to the model.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
@@ -868,7 +940,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     )
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -899,7 +973,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     )
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, method="function_calling"
                 )
@@ -928,7 +1004,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     justification: str
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -960,7 +1038,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     ]
 
 
-                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                llm = AzureChatOpenAI(
+                    azure_deployment="...", model="gpt-4o", temperature=0
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(

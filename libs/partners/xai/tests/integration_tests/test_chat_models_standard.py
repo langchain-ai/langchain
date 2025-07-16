@@ -1,11 +1,10 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional, Type
+from typing import Optional
 
-import pytest  # type: ignore[import-not-found]
 from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from langchain_core.tools import BaseTool
 from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
     ChatModelIntegrationTests,  # type: ignore[import-not-found]
 )
@@ -19,41 +18,59 @@ rate_limiter = InMemoryRateLimiter(
 )
 
 
+# Not using Grok 4 since it doesn't support reasoning params (effort) or returns
+# reasoning content.
+
+
 class TestXAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatXAI
 
     @property
     def chat_model_params(self) -> dict:
+        # TODO: bump to test new Grok once they implement other features
         return {
-            "model": "grok-beta",
+            "model": "grok-3",
             "rate_limiter": rate_limiter,
+            "stream_usage": True,
         }
 
-    @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return "tool_name"
 
-    @pytest.mark.xfail(reason="Not yet supported.")
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
+def test_reasoning_content() -> None:
+    """Test reasoning content."""
+    chat_model = ChatXAI(
+        model="grok-3-mini",
+        reasoning_effort="low",
+    )
+    response = chat_model.invoke("What is 3^3?")
+    assert response.content
+    assert response.additional_kwargs["reasoning_content"]
 
-    @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_tool_message_error_status(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        super().test_tool_message_error_status(model, my_adder_tool)
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in chat_model.stream("What is 3^3?"):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
 
-    @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_structured_few_shot_examples(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        super().test_structured_few_shot_examples(model, my_adder_tool)
 
-    @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_tool_message_histories_string_content(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        super().test_tool_message_histories_string_content(model, my_adder_tool)
+def test_web_search() -> None:
+    llm = ChatXAI(
+        model="grok-3",
+        search_parameters={"mode": "auto", "max_search_results": 3},
+    )
+
+    # Test invoke
+    response = llm.invoke("Provide me a digest of world news in the last 24 hours.")
+    assert response.content
+    assert response.additional_kwargs["citations"]
+    assert len(response.additional_kwargs["citations"]) <= 3
+
+    # Test streaming
+    full = None
+    for chunk in llm.stream("Provide me a digest of world news in the last 24 hours."):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["citations"]
+    assert len(full.additional_kwargs["citations"]) <= 3

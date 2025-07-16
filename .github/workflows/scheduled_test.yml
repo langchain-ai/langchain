@@ -1,4 +1,4 @@
-name: Scheduled tests
+name: Scheduled Tests
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
@@ -12,9 +12,14 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 
+permissions:
+  contents: read
+
 env:
   POETRY_VERSION: "1.8.4"
-  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/deepseek", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  UV_FROZEN: "true"
+  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  POETRY_LIBS: ("libs/partners/google-vertexai" "libs/partners/google-genai" "libs/partners/aws")
 
 jobs:
   compute-matrix:
@@ -79,13 +84,20 @@ jobs:
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }} with poetry
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
         uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: langchain/${{ matrix.working-directory }}
           cache-key: scheduled
+
+      - name: Set up Python ${{ matrix.python-version }} + uv
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        uses: "./langchain/.github/actions/uv_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
@@ -100,16 +112,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install dependencies
+      - name: Install dependencies (poetry)
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           cd langchain/${{ matrix.working-directory }}
           poetry install --with=test_integration,test
 
+      - name: Install dependencies (uv)
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        run: |
+          echo "Running scheduled tests, installing dependencies with uv..."
+          cd langchain/${{ matrix.working-directory }}
+          uv sync --group test --group test_integration
+
       - name: Run integration tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -122,11 +144,13 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests
@@ -138,7 +162,7 @@ jobs:
             langchain/libs/partners/google-vertexai \
             langchain/libs/partners/aws
 
-      - name: Ensure the tests did not create any additional files
+      - name: Ensure tests did not create additional files
         working-directory: langchain
         run: |
           set -eu

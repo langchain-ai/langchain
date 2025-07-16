@@ -1,4 +1,5 @@
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -36,9 +37,10 @@ class SelfAskOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         last_line = text.split("\n")[-1]
-        if not any([follow in last_line for follow in self.followups]):
+        if not any(follow in last_line for follow in self.followups):
             if self.finish_string not in last_line:
-                raise OutputParserException(f"Could not parse output: {text}")
+                msg = f"Could not parse output: {text}"
+                raise OutputParserException(msg)
             return AgentFinish({"output": last_line[len(self.finish_string) :]}, text)
 
         after_colon = text.split(":")[-1].strip()

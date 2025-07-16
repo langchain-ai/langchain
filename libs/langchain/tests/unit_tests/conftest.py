@@ -1,10 +1,43 @@
 """Configuration for unit tests."""
 
+from collections.abc import Iterator, Sequence
 from importlib import util
-from typing import Dict, Sequence
 
 import pytest
+from blockbuster import blockbuster_ctx
 from pytest import Config, Function, Parser
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[None]:
+    with blockbuster_ctx("langchain") as bb:
+        bb.functions["io.TextIOWrapper.read"].can_block_in(
+            "langchain/__init__.py",
+            "<module>",
+        )
+
+        for func in ["os.stat", "os.path.abspath"]:
+            (
+                bb.functions[func]
+                .can_block_in("langchain_core/runnables/base.py", "__repr__")
+                .can_block_in(
+                    "langchain_core/beta/runnables/context.py",
+                    "aconfig_with_context",
+                )
+            )
+
+        for func in ["os.stat", "io.TextIOWrapper.read"]:
+            bb.functions[func].can_block_in(
+                "langsmith/client.py",
+                "_default_retry_config",
+            )
+
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in(
+                "freezegun/api.py",
+                "_get_cached_module_attributes",
+            )
+        yield
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -47,7 +80,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
-    required_pkgs_info: Dict[str, bool] = {}
+    required_pkgs_info: dict[str, bool] = {}
 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False
@@ -59,7 +92,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 item.add_marker(skip_community)
 
     if only_extended and only_core:
-        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+        msg = "Cannot specify both `--only-extended` and `--only-core`."
+        raise ValueError(msg)
 
     for item in items:
         requires_marker = item.get_closest_marker("requires")
@@ -92,11 +126,11 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                         # If the package is not installed, we immediately break
                         # and mark the test as skipped.
                         item.add_marker(
-                            pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
+                            pytest.mark.skip(reason=f"Requires pkg: `{pkg}`"),
                         )
                         break
         else:
             if only_extended:
                 item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test.")
+                    pytest.mark.skip(reason="Skipping not an extended test."),
                 )

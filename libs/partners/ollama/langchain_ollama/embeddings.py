@@ -1,6 +1,8 @@
 """Ollama embeddings models."""
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -11,6 +13,8 @@ from pydantic import (
     model_validator,
 )
 from typing_extensions import Self
+
+from ._utils import validate_model
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -95,7 +99,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     Embed multiple texts:
         .. code-block:: python
 
-             input_texts = ["Document 1...", "Document 2..."]
+            input_texts = ["Document 1...", "Document 2..."]
             vectors = embed.embed_documents(input_texts)
             print(len(vectors))
             # The first 3 coordinates for the first vector
@@ -110,7 +114,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             vector = await embed.aembed_query(input_text)
-           print(vector[:3])
+            print(vector[:3])
 
             # multiple:
             # await embed.aembed_documents(input_texts)
@@ -123,20 +127,38 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     model: str
     """Model name to use."""
 
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in ollama locally on initialization."""
+
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client. 
-    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """Additional kwargs to pass to the httpx clients.
+    These arguments are passed to both synchronous and async clients.
+    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+    to synchronous and asynchronous clients.
     """
 
-    _client: Client = PrivateAttr(default=None)  # type: ignore
+    async_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the httpx
+    AsyncClient.
+
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    """
+
+    sync_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
+
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
+    """
+
+    _client: Optional[Client] = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
+    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
@@ -164,6 +186,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """The number of GPUs to use. On macOS it defaults to 1 to
     enable metal support, 0 to disable."""
 
+    keep_alive: Optional[int] = None
+    """controls how long the model will stay loaded into memory
+    following the request (default: 5m)
+    """
+
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
     By default, Ollama will detect this for optimal performance.
@@ -183,7 +210,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[List[str]] = None
+    stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -206,7 +233,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     )
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Ollama."""
         return {
             "mirostat": self.mirostat,
@@ -228,28 +255,51 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
-        self._client = Client(host=self.base_url, **client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+
+        sync_client_kwargs = client_kwargs
+        if self.sync_client_kwargs:
+            sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
+
+        async_client_kwargs = client_kwargs
+        if self.async_client_kwargs:
+            async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+
+        self._client = Client(host=self.base_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
-        embedded_docs = self._client.embed(
-            self.model, texts, options=self._default_params
+        if not self._client:
+            msg = (
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
+            )
+            raise ValueError(msg)
+        return self._client.embed(
+            self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
-        return embedded_docs
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
-        embedded_docs = (await self._async_client.embed(self.model, texts))[
-            "embeddings"
-        ]
-        return embedded_docs
+        if not self._async_client:
+            msg = (
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
+            )
+            raise ValueError(msg)
+        return (
+            await self._async_client.embed(
+                self.model, texts, keep_alive=self.keep_alive
+            )
+        )["embeddings"]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return (await self.aembed_documents([text]))[0]

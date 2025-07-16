@@ -1,11 +1,10 @@
-name: API docs build
+name: API Docs Build
 
 on:
   workflow_dispatch:
   schedule:
     - cron:  '0 13 * * *'
 env:
-  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -27,7 +26,20 @@ jobs:
         id: get-unsorted-repos
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.packages[].repo' langchain/libs/packages.yml
+          cmd: |
+            yq '
+              .packages[]
+              | select(
+                  (
+                    (.repo | test("^langchain-ai/"))
+                    and
+                    (.repo != "langchain-ai/langchain")
+                  )
+                  or
+                  (.include_in_api_ref // false)
+                )
+              | .repo
+            ' langchain/libs/packages.yml
 
       - name: Parse YAML and checkout repos
         env:
@@ -39,28 +51,24 @@ jobs:
           
           # Checkout each unique repository that is in langchain-ai org
           for repo in $REPOS; do
-            if [[ "$repo" != "langchain-ai/langchain" && "$repo" == langchain-ai/* ]]; then
-              REPO_NAME=$(echo $repo | cut -d'/' -f2)
-              echo "Checking out $repo to $REPO_NAME"
-              git clone --depth 1 https://github.com/$repo.git $REPO_NAME
-            fi
+            REPO_NAME=$(echo $repo | cut -d'/' -f2)
+            echo "Checking out $repo to $REPO_NAME"
+            git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./langchain/.github/actions/poetry_setup"
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          cache-key: api-docs
-          working-directory: langchain
 
       - name: Install initial py deps
         working-directory: langchain
         run: |
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
-          
-      - name: Move libs with script
+
+      - name: Move libs
         run: python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

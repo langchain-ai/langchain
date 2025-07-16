@@ -103,14 +103,7 @@ See [MLflow LangChain Integration](/docs/integrations/providers/mlflow_tracking)
 
 SQLDatabase
 -----------
-You can connect to Databricks SQL using the SQLDatabase wrapper of LangChain.
-```
-from langchain.sql_database import SQLDatabase
-
-db = SQLDatabase.from_databricks(catalog="samples", schema="nyctaxi")
-```
-
-See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/langchain.html#databricks-sql-agent) for how to connect Databricks SQL with your LangChain Agent as a powerful querying tool.
+To connect to Databricks SQL or query structured data, see the [Databricks structured retriever tool documentation](https://docs.databricks.com/en/generative-ai/agent-framework/structured-retrieval-tools.html#table-query-tool) and to create an agent using the above created SQL UDF see [Databricks UC Integration](https://docs.unitycatalog.io/ai/integrations/langchain/).
 
 Open Models
 -----------

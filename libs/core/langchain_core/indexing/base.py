@@ -1,15 +1,20 @@
+"""Base classes for indexing."""
+
 from __future__ import annotations
 
 import abc
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from langchain_core._api import beta
-from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.documents import Document
 
 
 class RecordManager(ABC):
@@ -249,9 +254,7 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring
-        the structure is initialized.
-        """
+        """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
 
     def get_time(self) -> float:
         """Get the current server time as a high resolution timestamp!"""
@@ -627,7 +630,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
 
     async def aget(
@@ -653,7 +656,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
         return await run_in_executor(
             None,

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.prompts.prompt import PromptTemplate
@@ -15,7 +16,7 @@ from langchain.chains.llm import LLMChain
 class ModelLaboratory:
     """A utility to experiment with and compare the performance of different models."""
 
-    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
+    def __init__(self, chains: Sequence[Chain], names: Optional[list[str]] = None):
         """Initialize the ModelLaboratory with chains to experiment with.
 
         Args:
@@ -33,24 +34,26 @@ class ModelLaboratory:
         """
         for chain in chains:
             if not isinstance(chain, Chain):
-                raise ValueError(
+                msg = (
                     "ModelLaboratory should now be initialized with Chains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
                 )
+                raise ValueError(msg)
             if len(chain.input_keys) != 1:
-                raise ValueError(
+                msg = (
                     "Currently only support chains with one input variable, "
                     f"got {chain.input_keys}"
                 )
+                raise ValueError(msg)
             if len(chain.output_keys) != 1:
-                raise ValueError(
+                msg = (
                     "Currently only support chains with one output variable, "
                     f"got {chain.output_keys}"
                 )
-        if names is not None:
-            if len(names) != len(chains):
-                raise ValueError("Length of chains does not match length of names.")
+        if names is not None and len(names) != len(chains):
+            msg = "Length of chains does not match length of names."
+            raise ValueError(msg)
         self.chains = chains
         chain_range = [str(i) for i in range(len(self.chains))]
         self.chain_colors = get_color_mapping(chain_range)
@@ -58,7 +61,9 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: List[BaseLLM], prompt: Optional[PromptTemplate] = None
+        cls,
+        llms: list[BaseLLM],
+        prompt: Optional[PromptTemplate] = None,
     ) -> ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 
@@ -88,10 +93,7 @@ class ModelLaboratory:
         """
         print(f"\033[1mInput:\033[0m\n{text}\n")  # noqa: T201
         for i, chain in enumerate(self.chains):
-            if self.names is not None:
-                name = self.names[i]
-            else:
-                name = str(chain)
+            name = self.names[i] if self.names is not None else str(chain)
             print_text(name, end="\n")
             output = chain.run(text)
             print_text(output, color=self.chain_colors[str(i)], end="\n\n")
