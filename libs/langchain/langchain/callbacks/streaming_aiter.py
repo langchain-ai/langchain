@@ -26,7 +26,10 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.done = asyncio.Event()
 
     async def on_llm_start(
-        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         # If two calls are made in a row, this resets the state
         self.done.clear()

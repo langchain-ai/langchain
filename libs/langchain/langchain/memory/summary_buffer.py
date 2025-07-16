@@ -51,14 +51,16 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         buffer = self.chat_memory.messages
         if self.moving_summary_buffer != "":
             first_messages: list[BaseMessage] = [
-                self.summary_message_cls(content=self.moving_summary_buffer)
+                self.summary_message_cls(content=self.moving_summary_buffer),
             ]
             buffer = first_messages + buffer
         if self.return_messages:
             final_buffer: Any = buffer
         else:
             final_buffer = get_buffer_string(
-                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+                buffer,
+                human_prefix=self.human_prefix,
+                ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: final_buffer}
 
@@ -67,14 +69,16 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         buffer = await self.chat_memory.aget_messages()
         if self.moving_summary_buffer != "":
             first_messages: list[BaseMessage] = [
-                self.summary_message_cls(content=self.moving_summary_buffer)
+                self.summary_message_cls(content=self.moving_summary_buffer),
             ]
             buffer = first_messages + buffer
         if self.return_messages:
             final_buffer: Any = buffer
         else:
             final_buffer = get_buffer_string(
-                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+                buffer,
+                human_prefix=self.human_prefix,
+                ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: final_buffer}
 
@@ -84,10 +88,11 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
@@ -96,7 +101,9 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         self.prune()
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Asynchronously save context from this conversation to buffer."""
         await super().asave_context(inputs, outputs)
@@ -112,7 +119,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
             self.moving_summary_buffer = self.predict_new_summary(
-                pruned_memory, self.moving_summary_buffer
+                pruned_memory,
+                self.moving_summary_buffer,
             )
 
     async def aprune(self) -> None:
@@ -125,7 +133,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
             self.moving_summary_buffer = await self.apredict_new_summary(
-                pruned_memory, self.moving_summary_buffer
+                pruned_memory,
+                self.moving_summary_buffer,
             )
 
     def clear(self) -> None:

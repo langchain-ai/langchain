@@ -31,15 +31,13 @@ LangChain is partnered with [huntr by Protect AI](https://huntr.com/) to provide
 a bounty program for our open source projects. 
 
 Please report security vulnerabilities associated with the LangChain 
-open source projects by visiting the following link:
-
-[https://huntr.com/bounties/disclose/](https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true)
+open source projects [here](https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true).
 
 Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
 2) The [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure) monorepo structure.
-3) The [Best practices](#best-practices) above to
+3) The [Best Practices](#best-practices) above to
    understand what we consider to be a security vulnerability vs. developer
    responsibility.
 
@@ -64,7 +62,7 @@ All out of scope targets defined by huntr as well as:
   bounties. This includes the following directories
   - libs/langchain/langchain/tools
   - libs/community/langchain_community/tools
-  - Please review the [best practices](#best-practices)
+  - Please review the [Best Practices](#best-practices)
     for more details, but generally tools interact with the real world. Developers are
     expected to understand the security implications of their code and are responsible
     for the security of their tools.
