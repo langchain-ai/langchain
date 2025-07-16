@@ -51,38 +51,38 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 def _create_usage_metadata(token_usage: dict) -> tuple[UsageMetadata, dict[str, Any]]:
     """Create usage metadata and non-token metadata from token usage data.
-    
+
     Returns a tuple of (UsageMetadata, response_metadata_dict).
     """
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
-    
+
     output_token_details: OutputTokenDetails = {}
     if "reasoning_tokens" in token_usage:
         output_token_details["reasoning"] = token_usage["reasoning_tokens"]
-    
+
     if "citation_tokens" in token_usage:
-        output_token_details["citation"] = token_usage["citation_tokens"]
-    
+        output_token_details["citation"] = token_usage["citation_tokens"]  # type: ignore[typeddict-unknown-key]
+
     usage_metadata_dict = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": total_tokens,
     }
-    
+
     if output_token_details:
         usage_metadata_dict["output_token_details"] = output_token_details
-    
-    usage_metadata = UsageMetadata(**usage_metadata_dict)
-    
+
+    usage_metadata = UsageMetadata(**usage_metadata_dict)  # type: ignore[typeddict-item]
+
     response_metadata = {}
     if "num_search_queries" in token_usage:
         response_metadata["num_search_queries"] = token_usage["num_search_queries"]
-    
+
     if "search_context_size" in token_usage:
         response_metadata["search_context_size"] = token_usage["search_context_size"]
-    
+
     return usage_metadata, response_metadata
 
 
@@ -362,7 +362,7 @@ class ChatPerplexity(BaseChatModel):
             if (model_name := chunk.get("model")) and not added_model_name:
                 generation_info["model_name"] = model_name
                 added_model_name = True
-            
+
             # Add usage response metadata to generation info
             if usage_response_metadata:
                 generation_info.update(usage_response_metadata)
