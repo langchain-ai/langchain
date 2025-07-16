@@ -49,7 +49,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-def _is_pydantic_class(obj: Any) -> bool:
+def _is_pydantic_class(obj: Any) -> bool:  # noqa: F811
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
@@ -769,9 +769,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
             except openai.APIStatusError as e:
                 if e.status_code == 405:  # Method Not Allowed
                     logger.warning(
-                        "Azure OpenAI does not support the Responses API for this deployment. "
-                        "Falling back to Chat Completions API. To avoid this warning, set "
-                        "use_responses_api=False or upgrade to a supported API version."
+                        "Azure OpenAI does not support the Responses API for this "
+                        "deployment. Falling back to Chat Completions API. To avoid "
+                        "this warning, set  use_responses_api=False or upgrade to a "
+                        "supported API version."
                     )
                     return super()._stream(*args, **kwargs)
                 raise
@@ -789,9 +790,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
             except openai.APIStatusError as e:
                 if e.status_code == 405:  # Method Not Allowed
                     logger.warning(
-                        "Azure OpenAI does not support the Responses API for this deployment. "
-                        "Falling back to Chat Completions API. To avoid this warning, set "
-                        "use_responses_api=False or upgrade to a supported API version."
+                        "Azure OpenAI does not support the Responses API for this "
+                        "deployment. Falling back to Chat Completions API. To avoid "
+                        "this warning, set  use_responses_api=False or upgrade to a "
+                        "supported API version."
                     )
                     async for chunk in super()._astream(*args, **kwargs):
                         yield chunk
@@ -814,10 +816,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        
+
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        
+
         if "response_format" in payload:
             if self.include_response_headers:
                 warnings.warn(
@@ -836,8 +838,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     response = self.root_client.responses.parse(**payload)
                 else:
                     if self.include_response_headers:
-                        raw_response = self.root_client.with_raw_response.responses.create(
-                            **payload
+                        raw_response = (
+                            self.root_client.with_raw_response.responses.create(
+                                **payload
+                            )
                         )
                         response = raw_response.parse()
                         generation_info = {"headers": dict(raw_response.headers)}
@@ -852,14 +856,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             except openai.APIStatusError as e:
                 if e.status_code == 405:  # Method Not Allowed
                     logger.warning(
-                        "Azure OpenAI does not support the Responses API for this deployment. "
-                        "Falling back to Chat Completions API. To avoid this warning, set "
-                        "use_responses_api=False or upgrade to a supported API version."
+                        "Azure OpenAI does not support the Responses API for this "
+                        "deployment. Falling back to Chat Completions API. To avoid "
+                        "this warning, set  use_responses_api=False or upgrade to a "
+                        "supported API version."
                     )
                     # Fall through to regular chat completions
                 else:
                     raise
-        
+
         # Regular chat completions API
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
@@ -882,10 +887,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        
+
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        
+
         if "response_format" in payload:
             if self.include_response_headers:
                 warnings.warn(
@@ -906,15 +911,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     response = await self.root_async_client.responses.parse(**payload)
                 else:
                     if self.include_response_headers:
-                        raw_response = (
-                            await self.root_async_client.with_raw_response.responses.create(
-                                **payload
-                            )
+                        raw_response = await self.root_async_client.with_raw_response.responses.create(  # noqa: E501
+                            **payload
                         )
                         response = raw_response.parse()
                         generation_info = {"headers": dict(raw_response.headers)}
                     else:
-                        response = await self.root_async_client.responses.create(**payload)
+                        response = await self.root_async_client.responses.create(
+                            **payload
+                        )
                 return _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
@@ -924,14 +929,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             except openai.APIStatusError as e:
                 if e.status_code == 405:  # Method Not Allowed
                     logger.warning(
-                        "Azure OpenAI does not support the Responses API for this deployment. "
-                        "Falling back to Chat Completions API. To avoid this warning, set "
-                        "use_responses_api=False or upgrade to a supported API version."
+                        "Azure OpenAI does not support the Responses API for this "
+                        "deployment. Falling back to Chat Completions API. To avoid "
+                        "this warning, set use_responses_api=False or upgrade to a "
+                        "supported API version."
                     )
                     # Fall through to regular chat completions
                 else:
                     raise
-        
+
         # Regular chat completions API
         if self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
