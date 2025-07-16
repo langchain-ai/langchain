@@ -494,7 +494,7 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
-    "gigachat"
+    "gigachat",
 }
 
 
