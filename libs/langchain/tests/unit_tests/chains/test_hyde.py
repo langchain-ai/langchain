@@ -64,7 +64,9 @@ def test_hyde_from_llm() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(), FakeEmbeddings(), key
+            FakeLLM(),
+            FakeEmbeddings(),
+            key,
         )
         embedding.embed_query("foo")
 
@@ -73,6 +75,8 @@ def test_hyde_from_llm_with_multiple_n() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(n=8), FakeEmbeddings(), key
+            FakeLLM(n=8),
+            FakeEmbeddings(),
+            key,
         )
         embedding.embed_query("foo")

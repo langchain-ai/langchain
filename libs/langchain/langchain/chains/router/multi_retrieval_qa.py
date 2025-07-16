@@ -48,14 +48,15 @@ class MultiRetrievalQAChain(MultiRouteChain):
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         if default_prompt and not default_retriever:
-            raise ValueError(
+            msg = (
                 "`default_retriever` must be specified if `default_prompt` is "
                 "provided. Received only `default_prompt`."
             )
+            raise ValueError(msg)
         destinations = [f"{r['name']}: {r['description']}" for r in retriever_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_RETRIEVAL_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,
@@ -74,15 +75,18 @@ class MultiRetrievalQAChain(MultiRouteChain):
             _default_chain = default_chain
         elif default_retriever:
             _default_chain = RetrievalQA.from_llm(
-                llm, prompt=default_prompt, retriever=default_retriever
+                llm,
+                prompt=default_prompt,
+                retriever=default_retriever,
             )
         else:
             prompt_template = DEFAULT_TEMPLATE.replace("input", "query")
             prompt = PromptTemplate(
-                template=prompt_template, input_variables=["history", "query"]
+                template=prompt_template,
+                input_variables=["history", "query"],
             )
             if default_chain_llm is None:
-                raise NotImplementedError(
+                msg = (
                     "conversation_llm must be provided if default_chain is not "
                     "specified. This API has been changed to avoid instantiating "
                     "default LLMs on behalf of users."
@@ -90,6 +94,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
                     "from langchain_openai import ChatOpenAI\n"
                     "llm = ChatOpenAI()"
                 )
+                raise NotImplementedError(msg)
             _default_chain = ConversationChain(
                 llm=default_chain_llm,
                 prompt=prompt,

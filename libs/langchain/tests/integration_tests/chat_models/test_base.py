@@ -31,9 +31,9 @@ async def test_init_chat_model_chain() -> None:
     chain = prompt | model_with_config
     output = chain.invoke({"input": "bar"})
     assert isinstance(output, AIMessage)
-    events = []
-    async for event in chain.astream_events({"input": "bar"}, version="v2"):
-        events.append(event)
+    events = [
+        event async for event in chain.astream_events({"input": "bar"}, version="v2")
+    ]
     assert events
 
 

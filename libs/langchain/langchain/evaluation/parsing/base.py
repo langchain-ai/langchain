@@ -5,6 +5,7 @@ from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -49,6 +50,7 @@ class JsonValidityEvaluator(StringEvaluator):
     def evaluation_name(self) -> str:
         return "json_validity"
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,
@@ -132,6 +134,7 @@ class JsonEqualityEvaluator(StringEvaluator):
             return parse_json_markdown(string)
         return string
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,

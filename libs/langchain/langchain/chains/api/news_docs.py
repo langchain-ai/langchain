@@ -1,4 +1,3 @@
-# flake8: noqa
 NEWS_DOCS = """API documentation:
 Endpoint: https://newsapi.org
 Top headlines /v2/top-headlines
@@ -29,4 +28,4 @@ Response object
     content | string | The unformatted content of the article, where available. This is truncated to 200 chars.
 
 Use page size: 2
-"""
+"""  # noqa: E501
