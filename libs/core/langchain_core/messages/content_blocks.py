@@ -1,7 +1,7 @@
 """Types for content blocks."""
 
 import warnings
-from typing import Any, Literal, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
@@ -69,6 +69,26 @@ class TextContentBlock(TypedDict):
     """Citations and other annotations."""
 
 
+def make_text_block(
+    text: str, annotations: Optional[list[dict[str, Any]]] = None
+) -> dict[str, Any]:
+    """Return a dict matching TextContentBlock.
+
+    {
+        "type": "text",
+        "text": <text>,
+        "annotations": [ ... ]  # optional
+    }
+    """
+    block: dict[str, Any] = {
+        "type": "text",
+        "text": text,
+    }
+    if annotations is not None:
+        block["annotations"] = annotations
+    return block
+
+
 # Tool calls
 class ToolCallContentBlock(TypedDict):
     """Content block for tool calls.
@@ -83,6 +103,22 @@ class ToolCallContentBlock(TypedDict):
     """Tool call ID."""
 
 
+def make_tool_call_block(
+    tool_call_id: str,
+) -> dict[str, Any]:
+    """Return a dict matching ToolCallContentBlock.
+
+    {
+        "type": "tool_call",
+        "id": <tool_call_id>
+    }
+    """
+    return {
+        "type": "tool_call",
+        "id": tool_call_id,
+    }
+
+
 # Reasoning
 class ReasoningContentBlock(TypedDict):
     """Content block for reasoning output."""
@@ -91,6 +127,22 @@ class ReasoningContentBlock(TypedDict):
     """Type of the content block."""
     reasoning: NotRequired[str]
     """Reasoning text."""
+
+
+def make_reasoning_block(
+    reasoning: Optional[str] = None,
+) -> dict[str, Any]:
+    """Return a dict matching ReasoningContentBlock.
+
+    {
+        "type": "reasoning",
+        "reasoning": <reasoning>  # optional
+    }
+    """
+    block: dict[str, Any] = {"type": "reasoning"}
+    if reasoning is not None:
+        block["reasoning"] = reasoning
+    return block
 
 
 # Multi-modal
@@ -112,6 +164,30 @@ class URLContentBlock(BaseDataContentBlock):
     """URL for data."""
 
 
+def make_url_content_block(
+    url: str,
+    mime_type: Optional[str] = None,
+    type_: Literal["image", "audio", "file"] = "file",
+) -> dict[str, Any]:
+    """Return a dict matching URLContentBlock.
+
+    {
+        "type": <type>,
+        "source_type": "url",
+        "url": <url>,
+        "mime_type": <mime_type>  # optional
+    }
+    """
+    block: dict[str, Any] = {
+        "type": type_,
+        "source_type": "url",
+        "url": url,
+    }
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    return block
+
+
 class Base64ContentBlock(BaseDataContentBlock):
     """Content block for inline data from a base64 string."""
 
@@ -121,6 +197,30 @@ class Base64ContentBlock(BaseDataContentBlock):
     """Source type (base64)."""
     data: str
     """Data as a base64 string."""
+
+
+def make_base64_content_block(
+    data: str,
+    mime_type: Optional[str] = None,
+    type_: Literal["image", "audio", "file"] = "file",
+) -> dict[str, Any]:
+    """Return a dict matching Base64ContentBlock.
+
+    {
+        "type": <type>,
+        "source_type": "base64",
+        "data": <base64_data>,
+        "mime_type": <mime_type>  # optional
+    }
+    """
+    block: dict[str, Any] = {
+        "type": type_,
+        "source_type": "base64",
+        "data": data,
+    }
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    return block
 
 
 class PlainTextContentBlock(BaseDataContentBlock):
@@ -134,6 +234,29 @@ class PlainTextContentBlock(BaseDataContentBlock):
     """Text data."""
 
 
+def make_plain_text_content_block(
+    text: str,
+    mime_type: Optional[str] = None,
+) -> dict[str, Any]:
+    """Return a dict matching PlainTextContentBlock.
+
+    {
+        "type": "file",
+        "source_type": "text",
+        "text": <text>,
+        "mime_type": <mime_type>  # optional
+    }
+    """
+    block: dict[str, Any] = {
+        "type": "file",
+        "source_type": "text",
+        "text": text,
+    }
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    return block
+
+
 class IDContentBlock(BaseDataContentBlock):
     """Content block for data specified by an identifier."""
 
@@ -143,6 +266,30 @@ class IDContentBlock(BaseDataContentBlock):
     """Source type (id)."""
     id: str
     """Identifier for data source."""
+
+
+def make_id_content_block(
+    id_: str,
+    mime_type: Optional[str] = None,
+    type_: Literal["image", "audio", "file"] = "file",
+) -> dict[str, Any]:
+    """Return a dict matching IDContentBlock.
+
+    {
+        "type": <type>,
+        "source_type": "id",
+        "id": <id>,
+        "mime_type": <mime_type>  # optional
+    }
+    """
+    block: dict[str, Any] = {
+        "type": type_,
+        "source_type": "id",
+        "id": id_,
+    }
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    return block
 
 
 DataContentBlock = Union[
@@ -166,6 +313,20 @@ class NonStandardContentBlock(TypedDict):
     """Type of the content block."""
     value: dict[str, Any]
     """Provider-specific data."""
+
+
+def make_non_standard_content_block(value: dict[str, Any]) -> dict[str, Any]:
+    """Return a dict matching NonStandardContentBlock.
+
+    {
+        "type": "non_standard",
+        "value": <value>
+    }
+    """
+    return {
+        "type": "non_standard",
+        "value": value,
+    }
 
 
 ContentBlock = Union[
