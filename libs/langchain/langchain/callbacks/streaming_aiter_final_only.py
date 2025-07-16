@@ -24,8 +24,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     def check_if_answer_reached(self) -> bool:
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
-        else:
-            return self.last_tokens == self.answer_prefix_tokens
+        return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
         self,
@@ -62,7 +61,10 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.answer_reached = False
 
     async def on_llm_start(
-        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         # If two calls are made in a row, this resets the state
         self.done.clear()

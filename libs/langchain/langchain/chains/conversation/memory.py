@@ -34,12 +34,12 @@ def __getattr__(name: str) -> Any:
 # This is only for backwards compatibility.
 
 __all__ = [
-    "ConversationSummaryBufferMemory",
-    "ConversationSummaryMemory",
-    "ConversationKGMemory",
+    "CombinedMemory",
+    "ConversationBufferMemory",
     "ConversationBufferWindowMemory",
     "ConversationEntityMemory",
-    "ConversationBufferMemory",
-    "CombinedMemory",
+    "ConversationKGMemory",
     "ConversationStringBufferMemory",
+    "ConversationSummaryBufferMemory",
+    "ConversationSummaryMemory",
 ]

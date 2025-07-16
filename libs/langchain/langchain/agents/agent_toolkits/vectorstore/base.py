@@ -35,7 +35,7 @@ def create_vectorstore_agent(
     toolkit: VectorStoreToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     agent_executor_kwargs: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
@@ -128,7 +128,7 @@ def create_vectorstore_router_agent(
     toolkit: VectorStoreRouterToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = ROUTER_PREFIX,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     agent_executor_kwargs: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:

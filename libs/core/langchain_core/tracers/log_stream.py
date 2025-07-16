@@ -130,6 +130,8 @@ class RunLogPatch:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RunLogPatch) and self.ops == other.ops
 
+    __hash__ = None  # type: ignore[assignment]
+
 
 class RunLog(RunLogPatch):
     """Run log."""
@@ -173,6 +175,8 @@ class RunLog(RunLogPatch):
             return False
         # Then compare that the ops are the same
         return super().__eq__(other)
+
+    __hash__ = None  # type: ignore[assignment]
 
 
 T = TypeVar("T")
@@ -694,7 +698,7 @@ async def _astream_log_implementation(
         else:
             state = RunLog(state=None)  # type: ignore[arg-type]
             async for log in stream:
-                state = state + log
+                state += log
                 yield state
     finally:
         # Wait for the runnable to finish, if not cancelled (eg. by break)

@@ -22,7 +22,7 @@ from langchain.memory.prompt import SUMMARY_PROMPT
     removal="1.0",
     message=(
         "Refer here for how to incorporate summaries of conversation history: "
-        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501
+        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"
     ),
 )
 class SummarizerMixin(BaseModel):
@@ -35,7 +35,9 @@ class SummarizerMixin(BaseModel):
     summary_message_cls: type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
-        self, messages: list[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -47,7 +49,9 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
     async def apredict_new_summary(
-        self, messages: list[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
         new_lines = get_buffer_string(
             messages,
@@ -90,7 +94,8 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
         for i in range(0, len(obj.chat_memory.messages), summarize_step):
             obj.buffer = obj.predict_new_summary(
-                obj.chat_memory.messages[i : i + summarize_step], obj.buffer
+                obj.chat_memory.messages[i : i + summarize_step],
+                obj.buffer,
             )
         return obj
 
@@ -116,17 +121,19 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
         self.buffer = self.predict_new_summary(
-            self.chat_memory.messages[-2:], self.buffer
+            self.chat_memory.messages[-2:],
+            self.buffer,
         )
 
     def clear(self) -> None:
