@@ -21,6 +21,8 @@ class NonBoolObj:
     def __repr__(self) -> str:
         return self.__class__.__name__
 
+    __hash__ = None  # type: ignore[assignment]
+
 
 def test_simple_serialization() -> None:
     class Foo(Serializable):
@@ -99,6 +101,8 @@ def test__is_field_useful() -> None:
 
         def __eq__(self, other: object) -> bool:
             return self  # type: ignore[return-value]
+
+        __hash__ = None  # type: ignore[assignment]
 
     default_x = ArrayObj()
     default_y = NonBoolObj()
@@ -228,3 +232,47 @@ def test_serialization_with_pydantic() -> None:
 def test_serialization_with_generation() -> None:
     generation = Generation(text="hello-world")
     assert dumpd(generation)["kwargs"] == {"text": "hello-world", "type": "Generation"}
+
+
+def test_serialization_with_ignore_unserializable_fields() -> None:
+    data = {
+        "messages": [
+            [
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": ["langchain", "schema", "messages", "AIMessage"],
+                    "kwargs": {
+                        "content": "Call tools to get entity details",
+                        "response_metadata": {
+                            "other_field": "foo",
+                            "create_date": {
+                                "lc": 1,
+                                "type": "not_implemented",
+                                "id": ["datetime", "datetime"],
+                                "repr": "datetime.datetime(2025, 7, 15, 13, 14, 0, 000000, tzinfo=datetime.timezone.utc)",  # noqa: E501
+                            },
+                        },
+                        "type": "ai",
+                        "id": "00000000-0000-0000-0000-000000000000",
+                    },
+                },
+            ]
+        ]
+    }
+    ser = dumpd(data)
+    deser = load(ser, ignore_unserializable_fields=True)
+    assert deser == {
+        "messages": [
+            [
+                AIMessage(
+                    id="00000000-0000-0000-0000-000000000000",
+                    content="Call tools to get entity details",
+                    response_metadata={
+                        "other_field": "foo",
+                        "create_date": None,
+                    },
+                )
+            ]
+        ]
+    }

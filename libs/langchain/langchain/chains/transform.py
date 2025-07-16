@@ -77,9 +77,8 @@ class TransformChain(Chain):
     ) -> dict[str, Any]:
         if self.atransform_cb is not None:
             return await self.atransform_cb(inputs)
-        else:
-            self._log_once(
-                "TransformChain's atransform is not provided, falling"
-                " back to synchronous transform"
-            )
-            return self.transform_cb(inputs)
+        self._log_once(
+            "TransformChain's atransform is not provided, falling"
+            " back to synchronous transform",
+        )
+        return self.transform_cb(inputs)

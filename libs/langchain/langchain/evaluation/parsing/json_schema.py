@@ -1,6 +1,7 @@
 from typing import Any, Union
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -44,11 +45,12 @@ class JsonSchemaEvaluator(StringEvaluator):
         super().__init__()
         try:
             import jsonschema  # noqa: F401
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "The JsonSchemaEvaluator requires the jsonschema package."
                 " Please install it with `pip install jsonschema`."
             )
+            raise ImportError(msg) from e
 
     @property
     def requires_input(self) -> bool:
@@ -68,9 +70,9 @@ class JsonSchemaEvaluator(StringEvaluator):
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(node, str):
             return parse_json_markdown(node)
-        elif hasattr(node, "schema") and callable(getattr(node, "schema")):
+        if hasattr(node, "schema") and callable(node.schema):
             # Pydantic model
-            return getattr(node, "schema")()
+            return node.schema()
         return node
 
     def _validate(self, prediction: Any, schema: Any) -> dict:
@@ -84,6 +86,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         except ValidationError as e:
             return {"score": False, "reasoning": repr(e)}
 
+    @override
     def _evaluate_strings(
         self,
         prediction: Union[str, Any],

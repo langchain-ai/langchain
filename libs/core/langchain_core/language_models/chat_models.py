@@ -300,9 +300,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     defer to ``invoke()``/``ainvoke()``.
 
     - If True, will always bypass streaming case.
-    - If "tool_calling", will bypass streaming case only when the model is called
-      with a ``tools`` keyword argument.
+    - If ``'tool_calling'``, will bypass streaming case only when the model is called
+      with a ``tools`` keyword argument. In other words, LangChain will automatically
+      switch to non-streaming behavior (``invoke()``) only when the tools argument is
+      provided. This offers the best of both worlds.
     - If False (default), will always use streaming case if available.
+
+    The main reason for this flag is that code might be written using ``.stream()`` and
+    a user may want to swap out a given model for another model whose the implementation
+    does not properly support streaming.
     """
 
     @model_validator(mode="before")
@@ -1257,8 +1263,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Returns:
             The predicted output string.
         """
-        _stop = None if stop is None else list(stop)
-        result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        result = self([HumanMessage(content=text)], stop=stop_, **kwargs)
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
@@ -1273,17 +1279,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        _stop = None if stop is None else list(stop)
-        return self(messages, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return self(messages, stop=stop_, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        _stop = None if stop is None else list(stop)
+        stop_ = None if stop is None else list(stop)
         result = await self._call_async(
-            [HumanMessage(content=text)], stop=_stop, **kwargs
+            [HumanMessage(content=text)], stop=stop_, **kwargs
         )
         if isinstance(result.content, str):
             return result.content
@@ -1299,8 +1305,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        _stop = None if stop is None else list(stop)
-        return await self._call_async(messages, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return await self._call_async(messages, stop=stop_, **kwargs)
 
     @property
     @abstractmethod

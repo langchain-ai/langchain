@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following Elasticsearch indices:
@@ -17,7 +16,7 @@ Use the following format:
 
 Question: Question here
 ESQuery: Elasticsearch Query formatted as json
-"""
+"""  # noqa: E501
 
 DSL_PROMPT = PromptTemplate.from_template(DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX)
 
@@ -31,6 +30,6 @@ Answer: Final answer here
 
 Question: {input}
 Data: {data}
-Answer:"""
+Answer:"""  # noqa: E501
 
 ANSWER_PROMPT = PromptTemplate.from_template(DEFAULT_ANSWER_TEMPLATE)
