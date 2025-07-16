@@ -2,6 +2,7 @@ from functools import partial
 from inspect import isclass
 from typing import Any, Union, cast
 
+import pytest
 from pydantic import BaseModel
 
 from langchain_core.language_models import FakeListChatModel
@@ -128,3 +129,11 @@ def test_structured_prompt_template_format() -> None:
     assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
         HumanMessage("hi foo")
     ]
+
+
+def test_structured_prompt_template_empty_vars() -> None:
+    with pytest.raises(ValueError, match="empty tag"):
+        StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
+
+    with pytest.raises(ValueError, match="empty tag"):
+        StructuredPrompt([("human", "hi {}")], schema={}, template_format="f-string")
