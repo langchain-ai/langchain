@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any, Optional, cast
 
 from pydantic import Field
+from typing_extensions import override
 
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -29,6 +30,7 @@ class InMemoryDocumentIndex(DocumentIndex):
     store: dict[str, Document] = Field(default_factory=dict)
     top_k: int = 4
 
+    @override
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Upsert items into the index."""
         ok_ids = []
@@ -47,6 +49,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
+    @override
     def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by ID."""
         if ids is None:
@@ -64,10 +67,12 @@ class InMemoryDocumentIndex(DocumentIndex):
             succeeded=ok_ids, num_deleted=len(ok_ids), num_failed=0, failed=[]
         )
 
+    @override
     def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
         """Get by ids."""
         return [self.store[id_] for id_ in ids if id_ in self.store]
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:

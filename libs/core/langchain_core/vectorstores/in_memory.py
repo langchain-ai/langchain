@@ -155,7 +155,7 @@ class InMemoryVectorStore(VectorStore):
 
             [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
 
-    """  # noqa: E501
+    """
 
     def __init__(self, embedding: Embeddings) -> None:
         """Initialize with the given embedding function.
@@ -164,7 +164,7 @@ class InMemoryVectorStore(VectorStore):
             embedding: embedding function to use.
         """
         # TODO: would be nice to change to
-        # Dict[str, Document] at some point (will be a breaking change)
+        # dict[str, Document] at some point (will be a breaking change)
         self.store: dict[str, dict[str, Any]] = {}
         self.embedding = embedding
 
@@ -285,7 +285,7 @@ class InMemoryVectorStore(VectorStore):
         since="0.2.29",
         removal="1.0",
     )
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], /, **_kwargs: Any) -> UpsertResponse:
         """[DEPRECATED] Upsert documents into the store.
 
         Args:
@@ -319,7 +319,7 @@ class InMemoryVectorStore(VectorStore):
         removal="1.0",
     )
     async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
+        self, items: Sequence[Document], /, **_kwargs: Any
     ) -> UpsertResponse:
         """[DEPRECATED] Upsert documents into the store.
 
@@ -363,8 +363,7 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
         # get all docs with fixed order in list
         docs = list(self.store.values())
@@ -403,8 +402,8 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
+        **_kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for the most similar documents to the given embedding.
 
@@ -419,7 +418,7 @@ class InMemoryVectorStore(VectorStore):
         return [
             (doc, similarity)
             for doc, similarity, _ in self._similarity_search_with_score_by_vector(
-                embedding=embedding, k=k, filter=filter, **kwargs
+                embedding=embedding, k=k, filter=filter
             )
         ]
 
@@ -490,12 +489,14 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        *,
+        filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
-            **kwargs,
+            filter=filter,
         )
 
         try:
@@ -595,8 +596,8 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             A VectorStore object.
         """
-        _path: Path = Path(path)
-        with _path.open("r") as f:
+        path_: Path = Path(path)
+        with path_.open("r") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
@@ -608,7 +609,7 @@ class InMemoryVectorStore(VectorStore):
         Args:
             path: The path to dump the vector store to.
         """
-        _path: Path = Path(path)
-        _path.parent.mkdir(exist_ok=True, parents=True)
-        with _path.open("w") as f:
+        path_: Path = Path(path)
+        path_.parent.mkdir(exist_ok=True, parents=True)
+        with path_.open("w") as f:
             json.dump(dumpd(self.store), f, indent=2)

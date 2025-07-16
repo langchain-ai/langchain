@@ -65,8 +65,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -79,9 +77,11 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict:
     if isinstance(tool_schema, dict):
         return tool_schema
 
-    if hasattr(tool_schema, "model_json_schema"):
+    if issubclass(tool_schema, BaseModel):
         return tool_schema.model_json_schema()
-    return tool_schema.schema()
+    if issubclass(tool_schema, BaseModelV1):
+        return tool_schema.schema()
+    return {}
 
 
 def test_unnamed_decorator() -> None:
@@ -119,10 +119,10 @@ class _MockStructuredTool(BaseTool):
     args_schema: type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
-    async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    async def _arun(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         raise NotImplementedError
 
 
@@ -143,14 +143,16 @@ def test_misannotated_base_tool_raises_error() -> None:
         class _MisAnnotatedTool(BaseTool):
             name: str = "structured_api"
             # This would silently be ignored without the custom metaclass
-            args_schema: BaseModel = _MockSchema  # type: ignore
+            args_schema: BaseModel = _MockSchema  # type: ignore[assignment]
             description: str = "A Structured Tool"
 
-            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+            def _run(
+                self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            ) -> str:
                 return f"{arg1} {arg2} {arg3}"
 
             async def _arun(
-                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+                self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
             ) -> str:
                 raise NotImplementedError
 
@@ -163,11 +165,11 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
         args_schema: "type[BaseModel]" = _MockSchema
         description: str = "A Structured Tool"
 
-        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
         ) -> str:
             raise NotImplementedError
 
@@ -180,11 +182,11 @@ def test_subclass_annotated_base_tool_accepted() -> None:
         args_schema: type[_MockSchema] = _MockSchema
         description: str = "A Structured Tool"
 
-        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
         ) -> str:
             raise NotImplementedError
 
@@ -197,18 +199,18 @@ def test_decorator_with_specified_schema() -> None:
     """Test that manually specified schemata are passed through to the tool."""
 
     @tool(args_schema=_MockSchema)
-    def tool_func(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def tool_func(*, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
     @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
-    def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def tool_func_v1(*, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
-    assert tool_func_v1.args_schema == _MockSchemaV1
+    assert tool_func_v1.args_schema == cast("ArgsSchema", _MockSchemaV1)
 
 
 def test_decorated_function_schema_equivalent() -> None:
@@ -216,7 +218,7 @@ def test_decorated_function_schema_equivalent() -> None:
 
     @tool
     def structured_tool_input(
-        arg1: int, arg2: bool, arg3: Optional[dict] = None
+        *, arg1: int, arg2: bool, arg3: Optional[dict] = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
@@ -460,7 +462,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
         Args:
             bar: int
-            baz: List[str]
+            baz: list[str]
         """
         raise NotImplementedError
 
@@ -499,7 +501,7 @@ def test_structured_tool_lambda_multi_args_schema() -> None:
     tool = StructuredTool.from_function(
         name="tool",
         description="A tool",
-        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",  # type: ignore
+        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",
     )
     assert tool.args_schema is not None
     expected_args = {
@@ -542,8 +544,9 @@ def test_empty_args_decorator() -> None:
 def test_tool_from_function_with_run_manager() -> None:
     """Test run of tool when using run_manager."""
 
-    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Docstring
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:  # noqa: D417
+        """Docstring.
+
         Args:
             bar: str.
         """
@@ -560,7 +563,7 @@ def test_tool_from_function_with_run_manager() -> None:
 def test_structured_tool_from_function_with_run_manager() -> None:
     """Test args and schema of structured tool when using callbacks."""
 
-    def foo(
+    def foo(  # noqa: D417
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring.
@@ -750,16 +753,16 @@ class _FakeExceptionTool(BaseTool):
 
 
 def test_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = _tool.run({})
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -769,28 +772,28 @@ def test_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = await _tool.arun({})
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -800,15 +803,15 @@ async def test_async_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_structured_tool_from_function() -> None:
@@ -848,16 +851,16 @@ def test_structured_tool_from_function() -> None:
 def test_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -868,8 +871,8 @@ def test_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -882,6 +885,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -905,24 +909,24 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -933,8 +937,8 @@ async def test_async_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -947,6 +951,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -970,9 +975,9 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_optional_subset_model_rewrite() -> None:
@@ -1015,10 +1020,10 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
         }
 
     if expected is not None:
-        assert foo.invoke(inputs) == expected  # type: ignore
+        assert foo.invoke(inputs) == expected
     else:
         with pytest.raises(ValidationError):
-            foo.invoke(inputs)  # type: ignore
+            foo.invoke(inputs)
 
 
 def test_tool_pass_context() -> None:
@@ -1030,7 +1035,7 @@ def test_tool_pass_context() -> None:
         assert bar == "baz"
         return bar
 
-    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
 
 @pytest.mark.skipif(
@@ -1047,7 +1052,7 @@ async def test_async_tool_pass_context() -> None:
         return bar
 
     assert (
-        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
     )
 
 
@@ -1087,9 +1092,6 @@ class FooBase(BaseTool):
 
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
-
-
-FooBase.model_rebuild()
 
 
 class AFooBase(FooBase):
@@ -1147,7 +1149,7 @@ def test_tool_description() -> None:
         return bar
 
     foo1 = tool(foo)
-    assert foo1.description == "The foo."  # type: ignore
+    assert foo1.description == "The foo."
 
     foo2 = StructuredTool.from_function(foo)
     assert foo2.description == "The foo."
@@ -1164,7 +1166,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = _schema(foo1.args_schema)  # type: ignore
+    args_schema = _schema(foo1.args_schema)
     assert args_schema == {
         "title": "foo",
         "type": "object",
@@ -1178,7 +1180,7 @@ def test_tool_arg_descriptions() -> None:
 
     # Test parses docstring
     foo2 = tool(foo, parse_docstring=True)
-    args_schema = _schema(foo2.args_schema)  # type: ignore
+    args_schema = _schema(foo2.args_schema)
     expected = {
         "title": "foo",
         "description": "The foo.",
@@ -1192,7 +1194,7 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema == expected
 
     # Test parsing with run_manager does not raise error
-    def foo3(
+    def foo3(  # noqa: D417
         bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """The foo.
@@ -1204,7 +1206,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     as_tool = tool(foo3, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
@@ -1215,7 +1217,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
 
     def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
@@ -1223,7 +1225,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo5, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
 
 
@@ -1250,7 +1252,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == "The foo."
     assert args_schema["properties"] == expected["properties"]
 
@@ -1267,7 +1269,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo2, parse_docstring=True)
-    args_schema2 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema2 = _schema(as_tool.args_schema)
     assert args_schema2["description"] == "The foo. Additional description here."
     assert args_schema2["properties"] == expected["properties"]
 
@@ -1287,7 +1289,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo3, parse_docstring=True)
-    args_schema3 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema3 = _schema(as_tool.args_schema)
     args_schema3["title"] = "foo2"
     assert args_schema2 == args_schema3
 
@@ -1301,7 +1303,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema4 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema4 = _schema(as_tool.args_schema)
     assert args_schema4["description"] == "The foo."
     assert args_schema4["properties"] == {
         "bar": {"description": "The bar.", "title": "Bar", "type": "string"}
@@ -1309,7 +1311,7 @@ def test_docstring_parsing() -> None:
 
 
 def test_tool_invalid_docstrings() -> None:
-    """Test invalid docstrings"""
+    """Test invalid docstrings."""
 
     def foo3(bar: str, baz: int) -> str:
         """The foo."""
@@ -1320,14 +1322,14 @@ def test_tool_invalid_docstrings() -> None:
         Args:
             bar: The bar.
             baz: The baz.
-        """
+        """  # noqa: D205,D411
         return bar
 
     for func in {foo3, foo4}:
         with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
             _ = tool(func, parse_docstring=True)
 
-    def foo5(bar: str, baz: int) -> str:
+    def foo5(bar: str, baz: int) -> str:  # noqa: D417
         """The foo.
 
         Args:
@@ -1354,7 +1356,7 @@ def test_tool_annotated_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = _schema(foo1.args_schema)  # type: ignore
+    args_schema = _schema(foo1.args_schema)
     assert args_schema == {
         "title": "foo",
         "type": "object",
@@ -1397,14 +1399,17 @@ class _MockStructuredToolWithRawOutput(BaseTool):
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
-        self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        self,
+        arg1: int,
+        arg2: bool,  # noqa: FBT001
+        arg3: Optional[dict] = None,
     ) -> tuple[str, dict]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
 @tool("structured_api", response_format="content_and_artifact")
 def _mock_structured_tool_with_artifact(
-    arg1: int, arg2: bool, arg3: Optional[dict] = None
+    *, arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> tuple[str, dict]:
     """A Structured Tool."""
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
@@ -1851,11 +1856,14 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     )
 
     input_schema = tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
+
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1896,7 +1904,7 @@ def test_args_schema_explicitly_typed() -> None:
         # type ignoring here since we're allowing overriding a type
         # signature of pydantic.v1.BaseModel with pydantic.BaseModel
         # for pydantic 2!
-        args_schema: type[BaseModel] = Foo  # type: ignore[assignment]
+        args_schema: type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
@@ -1941,12 +1949,14 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast("BaseModel", foo_tool.args_schema)
-    args_json_schema = (
-        args_schema.model_json_schema()
-        if hasattr(args_schema, "model_json_schema")
-        else args_schema.schema()
-    )
+    args_schema = cast("type[BaseModel]", foo_tool.args_schema)
+    if issubclass(args_schema, BaseModel):
+        args_json_schema = args_schema.model_json_schema()
+    elif issubclass(args_schema, BaseModelV1):
+        args_json_schema = args_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1958,11 +1968,13 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    input_json_schema = (
-        input_schema.model_json_schema()
-        if hasattr(input_schema, "model_json_schema")
-        else input_schema.schema()
-    )
+    if issubclass(input_schema, BaseModel):
+        input_json_schema = input_schema.model_json_schema()
+    elif issubclass(input_schema, BaseModelV1):
+        input_json_schema = input_schema.schema()
+    else:
+        msg = "Unknown input schema type"
+        raise TypeError(msg)
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2018,7 +2030,6 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
@@ -2087,61 +2098,13 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     assert actual == expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
-def test__get_all_basemodel_annotations_v1() -> None:
-    A = TypeVar("A")
+def test_get_all_basemodel_annotations_aliases() -> None:
+    class CalculatorInput(BaseModel):
+        a: int = Field(description="first number", alias="A")
+        b: int = Field(description="second number")
 
-    class ModelA(BaseModel, Generic[A], extra="allow"):
-        a: A
-
-    class ModelB(ModelA[str]):
-        b: Annotated[ModelA[dict[str, Any]], "foo"]
-
-    class Mixin:
-        def foo(self) -> str:
-            return "foo"
-
-    class ModelC(Mixin, ModelB):
-        c: dict
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = get_all_basemodel_annotations(ModelC)
-    assert actual == expected
-
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = get_all_basemodel_annotations(ModelB)
-    assert actual == expected
-
-    expected = {"a": Any}
-    actual = get_all_basemodel_annotations(ModelA)
-    assert actual == expected
-
-    expected = {"a": int}
-    actual = get_all_basemodel_annotations(ModelA[int])
-    assert actual == expected
-
-    D = TypeVar("D", bound=Union[str, int])
-
-    class ModelD(ModelC, Generic[D]):
-        d: Optional[D]
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[str, int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD)
-    assert actual == expected
-
-    expected = {
-        "a": str,
-        "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
-        "d": Union[int, None],
-    }
-    actual = get_all_basemodel_annotations(ModelD[int])
-    assert actual == expected
+    actual = get_all_basemodel_annotations(CalculatorInput)
+    assert actual == {"a": int, "b": int}
 
 
 def test_tool_annotations_preserved() -> None:
@@ -2152,7 +2115,7 @@ def test_tool_annotations_preserved() -> None:
         """Tool docstring."""
         return "foo"
 
-    schema = my_tool.get_input_schema()  # type: ignore[attr-defined]
+    schema = my_tool.get_input_schema()
 
     func = my_tool.func  # type: ignore[attr-defined]
 
@@ -2215,7 +2178,6 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
@@ -2305,14 +2267,14 @@ def test_injected_arg_with_complex_type() -> None:
         """Tool that has an injected tool arg."""
         return foo.value
 
-    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
 
 
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     assert foo.invoke(
         {
@@ -2321,7 +2283,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
 
     with pytest.raises(
         ValueError,
@@ -2333,7 +2295,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     assert foo2.invoke(
         {
@@ -2342,14 +2304,14 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
 
 
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
@@ -2361,7 +2323,7 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
 
 
 def test_tool_return_output_mixin() -> None:
@@ -2371,6 +2333,9 @@ def test_tool_return_output_mixin() -> None:
 
         def __eq__(self, other: object) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
+
+        def __hash__(self) -> int:
+            return hash(self.x)
 
     @tool
     def foo(x: int) -> Bar:
@@ -2581,8 +2546,6 @@ def test_title_property_preserved() -> None:
 
     https://github.com/langchain-ai/langchain/issues/30456
     """
-    from typing import Any
-
     from langchain_core.tools import tool
 
     schema_to_be_extracted = {
@@ -2701,4 +2664,25 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "args": {"foo": 2},
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
+    }
+
+
+def test_tool_args_schema_with_annotated_type() -> None:
+    @tool
+    def test_tool(
+        query_fragments: Annotated[
+            list[str],
+            "A list of query fragments",
+        ],
+    ) -> list[str]:
+        """Search the Internet and retrieve relevant result items."""
+        return []
+
+    assert test_tool.args == {
+        "query_fragments": {
+            "description": "A list of query fragments",
+            "items": {"type": "string"},
+            "title": "Query Fragments",
+            "type": "array",
+        }
     }

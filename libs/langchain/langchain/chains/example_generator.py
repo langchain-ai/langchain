@@ -1,5 +1,3 @@
-from typing import List
-
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -9,7 +7,9 @@ TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 
 
 def generate_example(
-    examples: List[dict], llm: BaseLanguageModel, prompt_template: PromptTemplate
+    examples: list[dict],
+    llm: BaseLanguageModel,
+    prompt_template: PromptTemplate,
 ) -> str:
     """Return another example given a list of examples for a prompt."""
     prompt = FewShotPromptTemplate(

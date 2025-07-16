@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable, NamedTuple, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -83,7 +84,7 @@ class ZeroShotAgent(Agent):
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
 
@@ -103,7 +104,7 @@ class ZeroShotAgent(Agent):
         tool_strings = render_text_description(list(tools))
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        template = f"{prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{suffix}"
         if input_variables:
             return PromptTemplate(template=template, input_variables=input_variables)
         return PromptTemplate.from_template(template)
@@ -118,7 +119,7 @@ class ZeroShotAgent(Agent):
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.
@@ -143,7 +144,7 @@ class ZeroShotAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(  # type: ignore[misc]
+        llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,
@@ -161,15 +162,17 @@ class ZeroShotAgent(Agent):
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         validate_tools_single_input(cls.__name__, tools)
         if len(tools) == 0:
-            raise ValueError(
+            msg = (
                 f"Got no tools for {cls.__name__}. At least one tool must be provided."
             )
+            raise ValueError(msg)
         for tool in tools:
             if tool.description is None:
-                raise ValueError(
+                msg = (
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
+                raise ValueError(msg)
         super()._validate_tools(tools)
 
 
@@ -183,7 +186,10 @@ class MRKLChain(AgentExecutor):
 
     @classmethod
     def from_chains(
-        cls, llm: BaseLanguageModel, chains: List[ChainConfig], **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        chains: list[ChainConfig],
+        **kwargs: Any,
     ) -> AgentExecutor:
         """User-friendly way to initialize the MRKL chain.
 

@@ -1,4 +1,4 @@
-name: Scheduled tests
+name: Scheduled Tests
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
@@ -11,6 +11,9 @@ on:
         description: "Python version to use - defaults to 3.9 and 3.11 in matrix - example value: 3.9"
   schedule:
     - cron:  '0 13 * * *'
+
+permissions:
+  contents: read
 
 env:
   POETRY_VERSION: "1.8.4"
@@ -127,6 +130,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -157,7 +162,7 @@ jobs:
             langchain/libs/partners/google-vertexai \
             langchain/libs/partners/aws
 
-      - name: Ensure the tests did not create any additional files
+      - name: Ensure tests did not create additional files
         working-directory: langchain
         run: |
           set -eu

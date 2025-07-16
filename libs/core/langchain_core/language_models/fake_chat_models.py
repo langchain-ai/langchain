@@ -171,6 +171,7 @@ class FakeListChatModel(SimpleChatModel):
 class FakeChatModel(SimpleChatModel):
     """Fake Chat Model wrapper for testing purposes."""
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -180,6 +181,7 @@ class FakeChatModel(SimpleChatModel):
     ) -> str:
         return "fake response"
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],
@@ -224,6 +226,7 @@ class GenericFakeChatModel(BaseChatModel):
     into message chunks.
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -346,6 +349,7 @@ class ParrotFakeChatModel(BaseChatModel):
     * Chat model should be usable in both sync and async tests
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],

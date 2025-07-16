@@ -36,7 +36,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
@@ -995,7 +995,7 @@ class VectorStore(ABC):
                 search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
             )
         """
-        tags = kwargs.pop("tags", None) or [] + self._get_retriever_tags()
+        tags = kwargs.pop("tags", None) or [*self._get_retriever_tags()]
         return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)
 
 
@@ -1052,9 +1052,9 @@ class VectorStoreRetriever(BaseRetriever):
 
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
-        _kwargs = self.search_kwargs | kwargs
+        kwargs_ = self.search_kwargs | kwargs
 
-        ls_params = super()._get_ls_params(**_kwargs)
+        ls_params = super()._get_ls_params(**kwargs_)
         ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
 
         if self.vectorstore.embeddings:
@@ -1070,26 +1070,28 @@ class VectorStoreRetriever(BaseRetriever):
 
         return ls_params
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
-        _kwargs = self.search_kwargs | kwargs
+        kwargs_ = self.search_kwargs | kwargs
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **_kwargs)
+            docs = self.vectorstore.similarity_search(query, **kwargs_)
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **_kwargs
+                    query, **kwargs_
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(query, **_kwargs)
+            docs = self.vectorstore.max_marginal_relevance_search(query, **kwargs_)
         else:
             msg = f"search_type of {self.search_type} not allowed."
             raise ValueError(msg)
         return docs
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,
@@ -1097,19 +1099,19 @@ class VectorStoreRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> list[Document]:
-        _kwargs = self.search_kwargs | kwargs
+        kwargs_ = self.search_kwargs | kwargs
         if self.search_type == "similarity":
-            docs = await self.vectorstore.asimilarity_search(query, **_kwargs)
+            docs = await self.vectorstore.asimilarity_search(query, **kwargs_)
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 await self.vectorstore.asimilarity_search_with_relevance_scores(
-                    query, **_kwargs
+                    query, **kwargs_
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = await self.vectorstore.amax_marginal_relevance_search(
-                query, **_kwargs
+                query, **kwargs_
             )
         else:
             msg = f"search_type of {self.search_type} not allowed."

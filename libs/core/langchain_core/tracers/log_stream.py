@@ -17,7 +17,7 @@ from typing import (
     overload,
 )
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.load import dumps
@@ -84,7 +84,7 @@ class RunState(TypedDict):
     """Type of the object being run, eg. prompt, chain, llm, etc."""
 
     # Do we want tags/metadata on the root run? Client kinda knows it in most situations
-    # tags: List[str]
+    # tags: list[str]
 
     logs: dict[str, LogEntry]
     """Map of run names to sub-runs. If filters were supplied, this list will
@@ -130,6 +130,8 @@ class RunLogPatch:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RunLogPatch) and self.ops == other.ops
 
+    __hash__ = None  # type: ignore[assignment]
+
 
 class RunLog(RunLogPatch):
     """Run log."""
@@ -173,6 +175,8 @@ class RunLog(RunLogPatch):
             return False
         # Then compare that the ops are the same
         return super().__eq__(other)
+
+    __hash__ = None  # type: ignore[assignment]
 
 
 T = TypeVar("T")
@@ -580,7 +584,7 @@ def _get_standardized_outputs(
 @overload
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -593,7 +597,7 @@ def _astream_log_implementation(
 @overload
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -605,7 +609,7 @@ def _astream_log_implementation(
 
 async def _astream_log_implementation(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     stream: LogStreamCallbackHandler,
@@ -618,7 +622,7 @@ async def _astream_log_implementation(
     The implementation has been factored out (at least temporarily) as both
     astream_log and astream_events relies on it.
     """
-    import jsonpatch  # type: ignore[import]
+    import jsonpatch
 
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.tracers.log_stream import (
@@ -632,7 +636,7 @@ async def _astream_log_implementation(
     if callbacks is None:
         config["callbacks"] = [stream]
     elif isinstance(callbacks, list):
-        config["callbacks"] = callbacks + [stream]
+        config["callbacks"] = [*callbacks, stream]
     elif isinstance(callbacks, BaseCallbackManager):
         callbacks = callbacks.copy()
         callbacks.add_handler(stream, inherit=True)
@@ -651,13 +655,13 @@ async def _astream_log_implementation(
             prev_final_output: Optional[Output] = None
             final_output: Optional[Output] = None
 
-            async for chunk in runnable.astream(input, config, **kwargs):
+            async for chunk in runnable.astream(value, config, **kwargs):
                 prev_final_output = final_output
                 if final_output is None:
                     final_output = chunk
                 else:
                     try:
-                        final_output = final_output + chunk  # type: ignore
+                        final_output = final_output + chunk  # type: ignore[operator]
                     except TypeError:
                         prev_final_output = None
                         final_output = chunk
@@ -694,7 +698,7 @@ async def _astream_log_implementation(
         else:
             state = RunLog(state=None)  # type: ignore[arg-type]
             async for log in stream:
-                state = state + log
+                state += log
                 yield state
     finally:
         # Wait for the runnable to finish, if not cancelled (eg. by break)

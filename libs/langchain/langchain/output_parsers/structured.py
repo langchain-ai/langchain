@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.output_parsers.json import parse_and_check_json_markdown
@@ -27,23 +27,29 @@ class ResponseSchema(BaseModel):
 
 def _get_sub_string(schema: ResponseSchema) -> str:
     return line_template.format(
-        name=schema.name, description=schema.description, type=schema.type
+        name=schema.name,
+        description=schema.description,
+        type=schema.type,
     )
 
 
-class StructuredOutputParser(BaseOutputParser[Dict[str, Any]]):
+class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
     """Parse the output of an LLM call to a structured output."""
 
-    response_schemas: List[ResponseSchema]
+    response_schemas: list[ResponseSchema]
     """The schemas for the response."""
 
     @classmethod
     def from_response_schemas(
-        cls, response_schemas: List[ResponseSchema]
+        cls,
+        response_schemas: list[ResponseSchema],
     ) -> StructuredOutputParser:
         return cls(response_schemas=response_schemas)
 
-    def get_format_instructions(self, only_json: bool = False) -> str:
+    def get_format_instructions(
+        self,
+        only_json: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get format instructions for the output parser.
 
         example:
@@ -85,14 +91,13 @@ class StructuredOutputParser(BaseOutputParser[Dict[str, Any]]):
                 will be returned, without the introducing text. Defaults to False.
         """
         schema_str = "\n".join(
-            [_get_sub_string(schema) for schema in self.response_schemas]
+            [_get_sub_string(schema) for schema in self.response_schemas],
         )
         if only_json:
             return STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS.format(format=schema_str)
-        else:
-            return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
+        return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         expected_keys = [rs.name for rs in self.response_schemas]
         return parse_and_check_json_markdown(text, expected_keys)
 

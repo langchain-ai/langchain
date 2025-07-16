@@ -21,7 +21,9 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
     convert_to_messages,
+    convert_to_openai_image_block,
     get_buffer_string,
+    is_data_content_block,
     merge_content,
     message_chunk_to_message,
     message_to_dict,
@@ -175,6 +177,22 @@ def test_message_chunks() -> None:
     )
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right
+
+    # Test ID order of precedence
+    null_id = AIMessageChunk(content="", id=None)
+    default_id = AIMessageChunk(
+        content="", id="run-abc123"
+    )  # LangChain-assigned run ID
+    meaningful_id = AIMessageChunk(content="", id="msg_def456")  # provider-assigned ID
+
+    assert (null_id + default_id).id == "run-abc123"
+    assert (default_id + null_id).id == "run-abc123"
+
+    assert (null_id + meaningful_id).id == "msg_def456"
+    assert (meaningful_id + null_id).id == "msg_def456"
+
+    assert (default_id + meaningful_id).id == "msg_def456"
+    assert (meaningful_id + default_id).id == "msg_def456"
 
 
 def test_chat_message_chunks() -> None:
@@ -435,8 +453,8 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
-            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),
+            create_tool_call(name="tool2", args={}, id="2"),
         ],
         invalid_tool_calls=[
             create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
@@ -922,7 +940,7 @@ def test_tool_message_serdes() -> None:
 
 
 class BadObject:
-    """"""
+    pass
 
 
 def test_tool_message_ser_non_serializable() -> None:
@@ -1087,3 +1105,95 @@ def test_message_text() -> None:
         ).text()
         == ""
     )
+
+
+def test_is_data_content_block() -> None:
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        }
+    )
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "metadata": {"cache_control": {"type": "ephemeral"}},
+        }
+    )
+
+    assert not is_data_content_block(
+        {
+            "type": "text",
+            "text": "foo",
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+        }
+    )
+    assert not is_data_content_block(
+        {
+            "type": "image",
+            "source": "<base64 data>",
+        }
+    )
+
+
+def test_convert_to_openai_image_block() -> None:
+    input_block = {
+        "type": "image",
+        "source_type": "url",
+        "url": "https://...",
+        "cache_control": {"type": "ephemeral"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://..."},
+    }
+    result = convert_to_openai_image_block(input_block)
+    assert result == expected
+
+    input_block = {
+        "type": "image",
+        "source_type": "base64",
+        "data": "<base64 data>",
+        "mime_type": "image/jpeg",
+        "cache_control": {"type": "ephemeral"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/jpeg;base64,<base64 data>",
+        },
+    }
+    result = convert_to_openai_image_block(input_block)
+    assert result == expected

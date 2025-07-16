@@ -13,7 +13,11 @@ from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
-from langchain_core.indexing.api import IndexingException, _abatch, _HashedDocument
+from langchain_core.indexing.api import (
+    IndexingException,
+    _abatch,
+    _get_document_with_hash,
+)
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
@@ -45,7 +49,7 @@ def record_manager() -> InMemoryRecordManager:
     return record_manager
 
 
-@pytest_asyncio.fixture  # type: ignore
+@pytest_asyncio.fixture
 async def arecord_manager() -> InMemoryRecordManager:
     """Timestamped set fixture."""
     record_manager = InMemoryRecordManager(namespace="hello")
@@ -194,7 +198,7 @@ def test_index_simple_delete_full(
 
         doc_texts = {
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         }
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -284,7 +288,7 @@ async def test_aindex_simple_delete_full(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"mutated document 1", "This is another document."}
@@ -356,7 +360,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
     # and the vector store
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {
@@ -373,7 +377,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
         indexing_result = index(loader, record_manager, vector_store, cleanup="full")
         doc_texts = {
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         }
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -441,7 +445,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
     # and the vector store
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {
@@ -460,7 +464,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
         )
         doc_texts = {
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         }
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -659,7 +663,7 @@ def test_index_simple_delete_scoped_full(
         }
         doc_texts = {
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         }
         assert doc_texts == {
@@ -781,7 +785,7 @@ async def test_aindex_simple_delete_scoped_full(
         }
         doc_texts = {
             # Ignoring type since doc should be in the store and not a None
-            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content
             for uid in vector_store.store
         }
         assert doc_texts == {
@@ -901,7 +905,7 @@ async def test_ascoped_full_fails_with_bad_source_ids(
 def test_index_empty_doc_scoped_full(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
-    """Test Indexing with scoped_full strategy"""
+    """Test Indexing with scoped_full strategy."""
     loader = ToyLoader(
         documents=[
             Document(
@@ -1273,7 +1277,7 @@ def test_incremental_delete(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -1336,7 +1340,7 @@ def test_incremental_delete(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {
@@ -1383,7 +1387,7 @@ def test_incremental_delete_with_same_source(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -1418,7 +1422,7 @@ def test_incremental_delete_with_same_source(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {
@@ -1472,7 +1476,7 @@ def test_incremental_indexing_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1498,7 +1502,7 @@ def test_incremental_indexing_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1550,7 +1554,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1577,7 +1581,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1615,7 +1619,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1653,7 +1657,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
@@ -1690,7 +1694,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"changed 1", "changed 2", "3", "4"}
@@ -1733,7 +1737,7 @@ async def test_aincremental_delete(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -1796,7 +1800,7 @@ async def test_aincremental_delete(
 
     doc_texts = {
         # Ignoring type since doc should be in the store and not a None
-        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content
         for uid in vector_store.store
     }
     assert doc_texts == {
@@ -1882,7 +1886,7 @@ async def test_adeduplication(
     }
 
 
-def test_cleanup_with_different_batchsize(
+def test_full_cleanup_with_different_batchsize(
     record_manager: InMemoryRecordManager, vector_store: VectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
@@ -1919,7 +1923,55 @@ def test_cleanup_with_different_batchsize(
     }
 
 
-async def test_async_cleanup_with_different_batchsize(
+def test_incremental_cleanup_with_different_batchsize(
+    record_manager: InMemoryRecordManager, vector_store: VectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": str(d)},
+        )
+        for d in range(1000)
+    ]
+
+    assert index(
+        docs,
+        record_manager,
+        vector_store,
+        source_id_key="source",
+        cleanup="incremental",
+    ) == {
+        "num_added": 1000,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    docs = [
+        Document(
+            page_content="Different doc",
+            metadata={"source": str(d)},
+        )
+        for d in range(1001)
+    ]
+
+    assert index(
+        docs,
+        record_manager,
+        vector_store,
+        source_id_key="source",
+        cleanup="incremental",
+        cleanup_batch_size=17,
+    ) == {
+        "num_added": 1001,
+        "num_deleted": 1000,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+
+async def test_afull_cleanup_with_different_batchsize(
     arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
@@ -1948,6 +2000,54 @@ async def test_async_cleanup_with_different_batchsize(
 
     assert await aindex(
         docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
+    ) == {
+        "num_added": 1001,
+        "num_deleted": 1000,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+
+async def test_aincremental_cleanup_with_different_batchsize(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Check that we can clean up with different batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": str(d)},
+        )
+        for d in range(1000)
+    ]
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        vector_store,
+        source_id_key="source",
+        cleanup="incremental",
+    ) == {
+        "num_added": 1000,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    docs = [
+        Document(
+            page_content="Different doc",
+            metadata={"source": str(d)},
+        )
+        for d in range(1001)
+    ]
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        vector_store,
+        cleanup="incremental",
+        source_id_key="source",
+        cleanup_batch_size=17,
     ) == {
         "num_added": 1001,
         "num_deleted": 1000,
@@ -2125,7 +2225,7 @@ def test_indexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
 
@@ -2133,9 +2233,15 @@ def test_indexing_custom_batch_size(
 
     try:
         mock_add_documents = MagicMock()
-        vector_store.add_documents = mock_add_documents  # type: ignore
+        vector_store.add_documents = mock_add_documents  # type: ignore[method-assign]
 
-        index(docs, record_manager, vector_store, batch_size=batch_size)
+        index(
+            docs,
+            record_manager,
+            vector_store,
+            batch_size=batch_size,
+            key_encoder="sha256",
+        )
         args, kwargs = mock_add_documents.call_args
         doc_with_id = Document(
             id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
@@ -2143,7 +2249,7 @@ def test_indexing_custom_batch_size(
         assert args == ([doc_with_id],)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
     finally:
-        vector_store.add_documents = original  # type: ignore
+        vector_store.add_documents = original  # type: ignore[method-assign]
 
 
 async def test_aindexing_custom_batch_size(
@@ -2156,15 +2262,17 @@ async def test_aindexing_custom_batch_size(
             metadata={"source": "1"},
         ),
     ]
-    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+    ids = [_get_document_with_hash(doc, key_encoder="sha256").id for doc in docs]
 
     batch_size = 1
     mock_add_documents = AsyncMock()
     doc_with_id = Document(
         id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
     )
-    vector_store.aadd_documents = mock_add_documents  # type: ignore
-    await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+    vector_store.aadd_documents = mock_add_documents  # type: ignore[method-assign]
+    await aindex(
+        docs, arecord_manager, vector_store, batch_size=batch_size, key_encoder="sha256"
+    )
     args, kwargs = mock_add_documents.call_args
     assert args == ([doc_with_id],)
     assert kwargs == {"ids": ids, "batch_size": batch_size}

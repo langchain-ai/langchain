@@ -22,7 +22,6 @@ import re
 
 MIN_VERSION_LIBS = [
     "langchain-core",
-    "langchain-community",
     "langchain",
     "langchain-text-splitters",
     "numpy",
@@ -35,7 +34,6 @@ SKIP_IF_PULL_REQUEST = [
     "langchain-core",
     "langchain-text-splitters",
     "langchain",
-    "langchain-community",
 ]
 
 

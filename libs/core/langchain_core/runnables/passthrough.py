@@ -360,7 +360,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -371,14 +371,13 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         .. code-block:: python
 
             # This is a RunnableAssign
-            from typing import Dict
             from langchain_core.runnables.passthrough import (
                 RunnableAssign,
                 RunnableParallel,
             )
             from langchain_core.runnables.base import RunnableLambda
 
-            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+            def add_ten(x: dict[str, int]) -> dict[str, int]:
                 return {"added": x["input"] + 10}
 
             mapper = RunnableParallel(
@@ -456,9 +455,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             for name, field_info in map_output_schema.model_fields.items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            return create_model_v2(  # type: ignore[call-overload]
-                "RunnableAssignOutput", field_definitions=fields
-            )
+            return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
@@ -486,19 +483,19 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     def _invoke(
         self,
-        input: dict[str, Any],
+        value: dict[str, Any],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        if not isinstance(input, dict):
+        if not isinstance(value, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
             raise ValueError(msg)  # noqa: TRY004
 
         return {
-            **input,
+            **value,
             **self.mapper.invoke(
-                input,
+                value,
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             ),
@@ -515,19 +512,19 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     async def _ainvoke(
         self,
-        input: dict[str, Any],
+        value: dict[str, Any],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        if not isinstance(input, dict):
+        if not isinstance(value, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
             raise ValueError(msg)  # noqa: TRY004
 
         return {
-            **input,
+            **value,
             **await self.mapper.ainvoke(
-                input,
+                value,
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             ),
@@ -544,7 +541,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     def _transform(
         self,
-        input: Iterator[dict[str, Any]],
+        values: Iterator[dict[str, Any]],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -552,7 +549,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         # collect mapper keys
         mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
-        for_passthrough, for_map = safetee(input, 2, lock=threading.Lock())
+        for_passthrough, for_map = safetee(values, 2, lock=threading.Lock())
 
         # create map output stream
         map_output = self.mapper.transform(
@@ -569,7 +566,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
-                map_output,  # type: ignore
+                map_output,
                 None,
             )
             # consume passthrough stream
@@ -601,7 +598,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     async def _atransform(
         self,
-        input: AsyncIterator[dict[str, Any]],
+        values: AsyncIterator[dict[str, Any]],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -609,7 +606,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         # collect mapper keys
         mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
-        for_passthrough, for_map = atee(input, 2, lock=asyncio.Lock())
+        for_passthrough, for_map = atee(values, 2, lock=asyncio.Lock())
         # create map output stream
         map_output = self.mapper.atransform(
             for_map,
@@ -676,7 +673,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from dict[str, Any] inputs.
 
     RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
@@ -734,23 +731,23 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         return super().get_name(suffix, name=name)
 
-    def _pick(self, input: dict[str, Any]) -> Any:
-        if not isinstance(input, dict):
+    def _pick(self, value: dict[str, Any]) -> Any:
+        if not isinstance(value, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
             raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
-            return input.get(self.keys)
-        picked = {k: input.get(k) for k in self.keys if k in input}
+            return value.get(self.keys)
+        picked = {k: value.get(k) for k in self.keys if k in value}
         if picked:
             return AddableDict(picked)
         return None
 
     def _invoke(
         self,
-        input: dict[str, Any],
+        value: dict[str, Any],
     ) -> dict[str, Any]:
-        return self._pick(input)
+        return self._pick(value)
 
     @override
     def invoke(
@@ -763,9 +760,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     async def _ainvoke(
         self,
-        input: dict[str, Any],
+        value: dict[str, Any],
     ) -> dict[str, Any]:
-        return self._pick(input)
+        return self._pick(value)
 
     @override
     async def ainvoke(
@@ -778,9 +775,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     def _transform(
         self,
-        input: Iterator[dict[str, Any]],
+        chunks: Iterator[dict[str, Any]],
     ) -> Iterator[dict[str, Any]]:
-        for chunk in input:
+        for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
                 yield picked
@@ -798,9 +795,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     async def _atransform(
         self,
-        input: AsyncIterator[dict[str, Any]],
+        chunks: AsyncIterator[dict[str, Any]],
     ) -> AsyncIterator[dict[str, Any]]:
-        async for chunk in input:
+        async for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
                 yield picked

@@ -6,7 +6,7 @@ from langchain_astradb import AstraDBVectorStore
 from langchain_chroma import Chroma
 from langchain_community import vectorstores
 from langchain_core.vectorstores import VectorStore
-from langchain_couchbase import CouchbaseVectorStore
+from langchain_couchbase import CouchbaseSearchVectorStore
 from langchain_milvus import Milvus
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_pinecone import PineconeVectorStore
@@ -28,7 +28,7 @@ from_partners = [
     ("PineconeVectorStore", PineconeVectorStore),
     ("Milvus", Milvus),
     ("MongoDBAtlasVectorSearch", MongoDBAtlasVectorSearch),
-    ("CouchbaseVectorStore", CouchbaseVectorStore),
+    ("CouchbaseSearchVectorStore", CouchbaseSearchVectorStore),
 ]
 
 VECTORSTORE_TEMPLATE = """\
@@ -140,6 +140,17 @@ def get_vectorstore_table():
             "Local/Cloud": "Local",
             "IDs in add Documents": True,
         },
+        "openGauss": {
+            "Delete by ID": True,
+            "Filtering": True,
+            "similarity_search_by_vector": True,
+            "similarity_search_with_score": True,
+            "asearch": False,
+            "Passes Standard Tests": True,
+            "Multi Tenancy": False,
+            "Local/Cloud": "Local",
+            "IDs in add Documents": True,
+        },
         "QdrantVectorStore": {
             "Delete by ID": True,
             "Filtering": True,
@@ -179,12 +190,12 @@ def get_vectorstore_table():
             "similarity_search_by_vector": True,
             "similarity_search_with_score": True,
             "asearch": True,
-            "Passes Standard Tests": False,
+            "Passes Standard Tests": True,
             "Multi Tenancy": False,
             "Local/Cloud": "Local",
             "IDs in add Documents": True,
         },
-        "CouchbaseVectorStore": {
+        "CouchbaseSearchVectorStore": {
             "Delete by ID": True,
             "Filtering": True,
             "similarity_search_by_vector": True,

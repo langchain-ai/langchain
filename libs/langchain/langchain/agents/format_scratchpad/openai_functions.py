@@ -1,13 +1,14 @@
 import json
-from typing import List, Sequence, Tuple
+from collections.abc import Sequence
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 
 
 def _convert_agent_action_to_messages(
-    agent_action: AgentAction, observation: str
-) -> List[BaseMessage]:
+    agent_action: AgentAction,
+    observation: str,
+) -> list[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.
@@ -20,15 +21,16 @@ def _convert_agent_action_to_messages(
             the original tool invocation
     """
     if isinstance(agent_action, AgentActionMessageLog):
-        return list(agent_action.message_log) + [
-            _create_function_message(agent_action, observation)
+        return [
+            *list(agent_action.message_log),
+            _create_function_message(agent_action, observation),
         ]
-    else:
-        return [AIMessage(content=agent_action.log)]
+    return [AIMessage(content=agent_action.log)]
 
 
 def _create_function_message(
-    agent_action: AgentAction, observation: str
+    agent_action: AgentAction,
+    observation: str,
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
     Args:
@@ -54,8 +56,8 @@ def _create_function_message(
 
 
 def format_to_openai_function_messages(
-    intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[BaseMessage]:
+    intermediate_steps: Sequence[tuple[AgentAction, str]],
+) -> list[BaseMessage]:
     """Convert (AgentAction, tool output) tuples into FunctionMessages.
 
     Args:

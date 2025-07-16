@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 from packaging import version
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
@@ -361,8 +361,9 @@ def test_prompt_from_file() -> None:
 
 
 def test_prompt_from_file_with_partial_variables() -> None:
-    """Test prompt can be successfully constructed from a file
-    with partial variables.
+    """Test prompt from file with partial variables.
+
+    Test prompt can be successfully constructed from a file with partial variables.
     """
     # given
     template = "This is a {foo} test {bar}."
@@ -441,7 +442,7 @@ def test_basic_sandboxing_with_jinja2() -> None:
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
-        assert prompt.format() == []
+        prompt.format()
 
 
 @pytest.mark.requires("jinja2")
@@ -509,7 +510,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
     input_variables: list = []
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -526,7 +527,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
     """Test error is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
     input_variables = ["foo", "bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables: {'bar'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -543,7 +544,9 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
     input_variables = ["bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match="Missing variables: {'foo'} Extra variables: {'bar'}"
+    ):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -570,8 +573,8 @@ def test_prompt_invoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 async def test_prompt_ainvoke_with_metadata() -> None:
@@ -589,8 +592,8 @@ async def test_prompt_ainvoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 @pytest.mark.parametrize(

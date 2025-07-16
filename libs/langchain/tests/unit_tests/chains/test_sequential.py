@@ -1,6 +1,6 @@
 """Test pipeline functionality."""
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -18,24 +18,24 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 class FakeChain(Chain):
     """Fake Chain for testing purposes."""
 
-    input_variables: List[str]
-    output_variables: List[str]
+    input_variables: list[str]
+    output_variables: list[str]
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys this chain returns."""
         return self.input_variables
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Input keys this chain returns."""
         return self.output_variables
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]
@@ -44,9 +44,9 @@ class FakeChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]
@@ -84,7 +84,9 @@ def test_sequential_usage_memory() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     chain = SequentialChain(  # type: ignore[call-arg]
-        memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+        memory=memory,
+        chains=[chain_1, chain_2],
+        input_variables=["foo"],
     )
     output = chain({"foo": "123"})
     expected_output = {"baz": "123foofoo", "foo": "123", "zab": "rab"}
@@ -94,7 +96,9 @@ def test_sequential_usage_memory() -> None:
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(ValueError):
         SequentialChain(  # type: ignore[call-arg]
-            memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+            memory=memory,
+            chains=[chain_1, chain_2],
+            input_variables=["foo"],
         )
 
 
@@ -103,7 +107,9 @@ def test_sequential_internal_chain_use_memory() -> None:
     memory = ConversationBufferMemory(memory_key="bla")
     memory.save_context({"input": "yo"}, {"output": "ya"})
     chain_1 = FakeChain(
-        input_variables=["foo", "bla"], output_variables=["bar"], memory=memory
+        input_variables=["foo", "bla"],
+        output_variables=["bar"],
+        memory=memory,
     )
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
@@ -182,19 +188,25 @@ def test_simple_sequential_functionality() -> None:
 
 
 @pytest.mark.parametrize("isAsync", [False, True])
-async def test_simple_sequential_functionality_with_callbacks(isAsync: bool) -> None:
+async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) -> None:
     """Test simple sequential functionality."""
     handler_1 = FakeCallbackHandler()
     handler_2 = FakeCallbackHandler()
     handler_3 = FakeCallbackHandler()
     chain_1 = FakeChain(
-        input_variables=["foo"], output_variables=["bar"], callbacks=[handler_1]
+        input_variables=["foo"],
+        output_variables=["bar"],
+        callbacks=[handler_1],
     )
     chain_2 = FakeChain(
-        input_variables=["bar"], output_variables=["baz"], callbacks=[handler_2]
+        input_variables=["bar"],
+        output_variables=["baz"],
+        callbacks=[handler_2],
     )
     chain_3 = FakeChain(
-        input_variables=["jack"], output_variables=["baf"], callbacks=[handler_3]
+        input_variables=["jack"],
+        output_variables=["baf"],
+        callbacks=[handler_3],
     )
     chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
     if isAsync:

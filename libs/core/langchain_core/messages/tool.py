@@ -126,8 +126,6 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                         raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
-        else:
-            pass
 
         tool_call_id = values["tool_call_id"]
         if isinstance(tool_call_id, (UUID, int, float)):
@@ -146,9 +144,6 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.model_rebuild()
-
-
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     """Tool Message chunk."""
 
@@ -158,7 +153,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
                 msg = "Cannot concatenate ToolMessageChunks with different names."
@@ -211,7 +206,12 @@ class ToolCall(TypedDict):
     type: NotRequired[Literal["tool_call"]]
 
 
-def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
+def tool_call(
+    *,
+    name: str,
+    args: dict[str, Any],
+    id: Optional[str],  # noqa: A002
+) -> ToolCall:
     """Create a tool call.
 
     Args:
@@ -257,7 +257,7 @@ def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,
+    id: Optional[str] = None,  # noqa: A002
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
@@ -295,7 +295,7 @@ def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,
+    id: Optional[str] = None,  # noqa: A002
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
@@ -364,4 +364,4 @@ def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]
 def _merge_status(
     left: Literal["success", "error"], right: Literal["success", "error"]
 ) -> Literal["success", "error"]:
-    return "error" if "error" in (left, right) else "success"
+    return "error" if "error" in {left, right} else "success"

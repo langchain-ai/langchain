@@ -1,7 +1,10 @@
 """DeepSeek chat models."""
 
+from __future__ import annotations
+
+from collections.abc import Iterator
 from json import JSONDecodeError
-from typing import Any, Dict, Iterator, List, Literal, Optional, Type, TypeVar, Union
+from typing import Any, Literal, Optional, TypeVar, Union
 
 import openai
 from langchain_core.callbacks import (
@@ -19,8 +22,8 @@ from typing_extensions import Self
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
-_DictOrPydantic = Union[Dict, _BM]
+_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
+_DictOrPydantic = Union[dict, _BM]
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -162,11 +165,11 @@ class ChatDeepSeek(BaseChatOpenAI):
     model_name: str = Field(alias="model")
     """The name of the model"""
     api_key: Optional[SecretStr] = Field(
-        default_factory=secret_from_env("DEEPSEEK_API_KEY", default=None)
+        default_factory=secret_from_env("DEEPSEEK_API_KEY", default=None),
     )
     """DeepSeek API key"""
     api_base: str = Field(
-        default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE)
+        default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
     """DeepSeek API base URL"""
 
@@ -178,7 +181,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         return "chat-deepseek"
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids."""
         return {"api_key": "DEEPSEEK_API_KEY"}
 
@@ -187,7 +190,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
-            raise ValueError("If using default api base, DEEPSEEK_API_KEY must be set.")
+            msg = "If using default api base, DEEPSEEK_API_KEY must be set."
+            raise ValueError(msg)
         client_params: dict = {
             k: v
             for k, v in {
@@ -217,20 +221,21 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
+        generation_info: Optional[dict] = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, openai.BaseModel):
             return rtn
 
-        if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
-            rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                response.choices[0].message.reasoning_content  # type: ignore
-            )
+        choices = getattr(response, "choices", None)
+        if choices and hasattr(choices[0].message, "reasoning_content"):
+            rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
+                0
+            ].message.reasoning_content
         # Handle use via OpenRouter
-        elif hasattr(response.choices[0].message, "model_extra"):  # type: ignore
-            model_extra = response.choices[0].message.model_extra  # type: ignore
+        elif choices and hasattr(choices[0].message, "model_extra"):
+            model_extra = choices[0].message.model_extra
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
             ):
@@ -243,8 +248,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,
-        default_chunk_class: Type,
-        base_generation_info: Optional[Dict],
+        default_chunk_class: type,
+        base_generation_info: Optional[dict],
     ) -> Optional[ChatGenerationChunk]:
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
@@ -254,12 +259,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
-                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
+                if (
+                    reasoning_content := top.get("delta", {}).get("reasoning_content")
+                ) is not None:
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning_content
                     )
                 # Handle use via OpenRouter
-                elif reasoning := top.get("delta", {}).get("reasoning"):
+                elif (reasoning := top.get("delta", {}).get("reasoning")) is not None:
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning
                     )
@@ -268,38 +275,50 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         try:
             yield from super()._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             )
         except JSONDecodeError as e:
-            raise JSONDecodeError(
+            msg = (
                 "DeepSeek API returned an invalid response. "
-                "Please check the API status and try again.",
+                "Please check the API status and try again."
+            )
+            raise JSONDecodeError(
+                msg,
                 e.doc,
                 e.pos,
             ) from e
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
         try:
             return super()._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             )
         except JSONDecodeError as e:
-            raise JSONDecodeError(
+            msg = (
                 "DeepSeek API returned an invalid response. "
-                "Please check the API status and try again.",
+                "Please check the API status and try again."
+            )
+            raise JSONDecodeError(
+                msg,
                 e.doc,
                 e.pos,
             ) from e
@@ -309,7 +328,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         schema: Optional[_DictOrPydanticClass] = None,
         *,
         method: Literal[
-            "function_calling", "json_mode", "json_schema"
+            "function_calling",
+            "json_mode",
+            "json_schema",
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
@@ -336,7 +357,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             method: The method for steering model generation, one of:
 
                 - "function_calling":
-                    Uses DeekSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
+                    Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
                 - "json_mode":
                     Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
 
@@ -351,6 +372,13 @@ class ChatDeepSeek(BaseChatOpenAI):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+
+            strict:
+                Whether to enable strict schema adherence when generating the function
+                call. This parameter is included for compatibility with other chat
+                models, and if specified will be passed to the Chat Completions API
+                in accordance with the OpenAI API specification. However, the DeepSeek
+                API may ignore the parameter.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -371,5 +399,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         if method == "json_schema":
             method = "function_calling"
         return super().with_structured_output(
-            schema, method=method, include_raw=include_raw, strict=strict, **kwargs
+            schema,
+            method=method,
+            include_raw=include_raw,
+            strict=strict,
+            **kwargs,
         )

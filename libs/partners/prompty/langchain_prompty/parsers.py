@@ -1,6 +1,6 @@
 import base64
 import re
-from typing import Dict, List, Type, Union
+from typing import Union
 
 from langchain_core.messages import (
     AIMessage,
@@ -15,7 +15,7 @@ from .core import Invoker, Prompty, SimpleModel
 
 
 class RoleMap:
-    _ROLE_MAP: Dict[str, Type[BaseMessage]] = {
+    _ROLE_MAP: dict[str, type[BaseMessage]] = {
         "system": SystemMessage,
         "user": HumanMessage,
         "human": HumanMessage,
@@ -26,7 +26,7 @@ class RoleMap:
     ROLES = _ROLE_MAP.keys()
 
     @classmethod
-    def get_message_class(cls, role: str) -> Type[BaseMessage]:
+    def get_message_class(cls, role: str) -> type[BaseMessage]:
         return cls._ROLE_MAP[role]
 
 
@@ -60,7 +60,7 @@ class PromptyChatParser(Invoker):
                     "and .jpg / .jpeg are supported."
                 )
 
-    def parse_content(self, content: str) -> Union[str, List]:
+    def parse_content(self, content: str) -> Union[str, list]:
         """for parsing inline images"""
         # regular expression to parse markdown images
         image = r"(?P<alt>!\[[^\]]*\])\((?P<filename>.*?)(?=\"|\))\)"
@@ -102,7 +102,8 @@ class PromptyChatParser(Invoker):
             return content
 
     def invoke(self, data: BaseModel) -> BaseModel:
-        assert isinstance(data, SimpleModel)
+        if not isinstance(data, SimpleModel):
+            raise ValueError("data must be an instance of SimpleModel")
         messages = []
         separator = r"(?i)^\s*#?\s*(" + "|".join(self.roles) + r")\s*:\s*\n"
 
