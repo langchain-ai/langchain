@@ -3452,6 +3452,10 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
         # string, assume image_url
         output = {"type": "input_image", "image_url": message.content}
     computer_call_output["output"] = output
+    if "acknowledged_safety_checks" in message.additional_kwargs:
+        computer_call_output["acknowledged_safety_checks"] = message.additional_kwargs[
+            "acknowledged_safety_checks"
+        ]
     return computer_call_output
 
 

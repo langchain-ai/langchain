@@ -10,14 +10,13 @@ def test_datetime_output_parser_parse() -> None:
     parser = DatetimeOutputParser()
 
     # Test valid input
-    date = datetime.now()
+    date = datetime.now()  # noqa: DTZ005
     datestr = date.strftime(parser.format)
     result = parser.parse(datestr)
     assert result == date
 
     # Test valid input
     parser.format = "%Y-%m-%dT%H:%M:%S"
-    date = datetime.now()
     datestr = date.strftime(parser.format)
     result = parser.parse(datestr)
     assert (
@@ -31,7 +30,6 @@ def test_datetime_output_parser_parse() -> None:
 
     # Test valid input
     parser.format = "%H:%M:%S"
-    date = datetime.now()
     datestr = date.strftime(parser.format)
     result = parser.parse(datestr)
     assert (
