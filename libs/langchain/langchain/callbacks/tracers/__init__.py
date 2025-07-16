@@ -31,8 +31,8 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "ConsoleCallbackHandler",
     "FunctionCallbackHandler",
-    "LoggingCallbackHandler",
     "LangChainTracer",
     "LangChainTracerV1",
+    "LoggingCallbackHandler",
     "WandbTracer",
 ]

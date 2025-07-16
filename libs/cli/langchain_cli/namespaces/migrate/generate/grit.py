@@ -1,15 +1,11 @@
-from typing import List, Tuple
-
-
-def split_package(package: str) -> Tuple[str, str]:
-    """Split a package name into the containing package and the final name"""
+def split_package(package: str) -> tuple[str, str]:
+    """Split a package name into the containing package and the final name."""
     parts = package.split(".")
     return ".".join(parts[:-1]), parts[-1]
 
 
-def dump_migrations_as_grit(name: str, migration_pairs: List[Tuple[str, str]]):
+def dump_migrations_as_grit(name: str, migration_pairs: list[tuple[str, str]]) -> str:
     """Dump the migration pairs as a Grit file."""
-    output = "language python"
     remapped = ",\n".join(
         [
             f"""
@@ -21,10 +17,10 @@ def dump_migrations_as_grit(name: str, migration_pairs: List[Tuple[str, str]]):
             ]
             """
             for from_module, to_module in migration_pairs
-        ]
+        ],
     )
     pattern_name = f"langchain_migrate_{name}"
-    output = f"""
+    return f"""
 language python
 
 // This migration is generated automatically - do not manually edit this file
@@ -37,4 +33,3 @@ pattern {pattern_name}() {{
 // Add this for invoking directly
 {pattern_name}()
 """
-    return output

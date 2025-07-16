@@ -30,7 +30,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "INTERMEDIATE_STEPS_KEY",
-    "NeptuneSparqlQAChain",
     "SPARQL_GENERATION_TEMPLATE",
+    "NeptuneSparqlQAChain",
     "extract_sparql",
 ]

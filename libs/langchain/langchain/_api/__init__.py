@@ -19,10 +19,10 @@ from .deprecation import (
 from .module_import import create_importer
 
 __all__ = [
-    "deprecated",
     "LangChainDeprecationWarning",
+    "create_importer",
+    "deprecated",
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",
     "warn_deprecated",
-    "create_importer",
 ]

@@ -123,7 +123,8 @@ async def test_format_doc_with_metadata() -> None:
     """Test format doc on a valid document."""
     doc = Document(page_content="foo", metadata={"bar": "baz"})
     prompt = PromptTemplate(
-        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+        input_variables=["page_content", "bar"],
+        template="{page_content}, {bar}",
     )
     expected_output = "foo, baz"
     output = format_document(doc, prompt)
@@ -136,7 +137,8 @@ async def test_format_doc_missing_metadata() -> None:
     """Test format doc on a document with missing metadata."""
     doc = Document(page_content="foo")
     prompt = PromptTemplate(
-        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+        input_variables=["page_content", "bar"],
+        template="{page_content}, {bar}",
     )
     with pytest.raises(ValueError):
         format_document(doc, prompt)

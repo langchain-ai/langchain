@@ -84,7 +84,9 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
     ],
 )
 def test_spliting_answer_into_answer_and_sources(
-    text: str, answer: str, sources: str
+    text: str,
+    answer: str,
+    sources: str,
 ) -> None:
     qa_chain = QAWithSourcesChain.from_llm(FakeLLM())
     generated_answer, generated_sources = qa_chain._split_sources(text)

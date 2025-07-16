@@ -1,4 +1,4 @@
-"""Test Fireworks LLM"""
+"""Test Fireworks LLM."""
 
 from typing import cast
 
