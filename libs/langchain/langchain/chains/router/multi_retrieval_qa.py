@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
@@ -19,7 +20,7 @@ from langchain.chains.router.multi_retrieval_prompt import (
 )
 
 
-class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
+class MultiRetrievalQAChain(MultiRouteChain):
     """A multi-route chain that uses an LLM router chain to choose amongst retrieval
     qa chains."""
 
@@ -31,14 +32,14 @@ class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
     """Default chain to use when router doesn't map input to one of the destinations."""
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return ["result"]
 
     @classmethod
     def from_retrievers(
         cls,
         llm: BaseLanguageModel,
-        retriever_infos: List[Dict[str, Any]],
+        retriever_infos: list[dict[str, Any]],
         default_retriever: Optional[BaseRetriever] = None,
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,
@@ -47,14 +48,15 @@ class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         if default_prompt and not default_retriever:
-            raise ValueError(
+            msg = (
                 "`default_retriever` must be specified if `default_prompt` is "
                 "provided. Received only `default_prompt`."
             )
+            raise ValueError(msg)
         destinations = [f"{r['name']}: {r['description']}" for r in retriever_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_RETRIEVAL_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,
@@ -73,15 +75,18 @@ class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
             _default_chain = default_chain
         elif default_retriever:
             _default_chain = RetrievalQA.from_llm(
-                llm, prompt=default_prompt, retriever=default_retriever
+                llm,
+                prompt=default_prompt,
+                retriever=default_retriever,
             )
         else:
             prompt_template = DEFAULT_TEMPLATE.replace("input", "query")
             prompt = PromptTemplate(
-                template=prompt_template, input_variables=["history", "query"]
+                template=prompt_template,
+                input_variables=["history", "query"],
             )
             if default_chain_llm is None:
-                raise NotImplementedError(
+                msg = (
                     "conversation_llm must be provided if default_chain is not "
                     "specified. This API has been changed to avoid instantiating "
                     "default LLMs on behalf of users."
@@ -89,6 +94,7 @@ class MultiRetrievalQAChain(MultiRouteChain):  # type: ignore[override]
                     "from langchain_openai import ChatOpenAI\n"
                     "llm = ChatOpenAI()"
                 )
+                raise NotImplementedError(msg)
             _default_chain = ConversationChain(
                 llm=default_chain_llm,
                 prompt=prompt,

@@ -8,7 +8,6 @@ from abc import abstractmethod
 from collections.abc import (
     AsyncIterator,
     Iterator,
-    Mapping,  # noqa: F401 Needed by pydantic
     Sequence,
 )
 from functools import wraps
@@ -127,12 +126,12 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             config: The configuration to use. Defaults to None.
 
         Returns:
-            Tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
+            tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
             configuration.
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))
+            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
         return runnable, cast("RunnableConfig", config)
 
     @abstractmethod
@@ -179,16 +178,16 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         def invoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            input_: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return bound.invoke(input, config, **kwargs)
+                    return bound.invoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return bound.invoke(input, config, **kwargs)
+                return bound.invoke(input_, config, **kwargs)
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
@@ -222,16 +221,16 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         async def ainvoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            input_: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return await bound.ainvoke(input, config, **kwargs)
+                    return await bound.ainvoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return await bound.ainvoke(input, config, **kwargs)
+                return await bound.ainvoke(input_, config, **kwargs)
 
         coros = map(ainvoke, prepared, inputs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
@@ -388,7 +387,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         """Get the configuration specs for the RunnableConfigurableFields.
 
         Returns:
-            List[ConfigurableFieldSpec]: The configuration specs.
+            list[ConfigurableFieldSpec]: The configuration specs.
         """
         config_specs = []
 
@@ -462,9 +461,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 config,
             )
         return (self.default, config)
-
-
-RunnableConfigurableFields.model_rebuild()
 
 
 # Before Python 3.11 native StrEnum is not available
@@ -566,7 +562,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     self.which.name or self.which.id,
                     (
                         (v, v)
-                        for v in list(self.alternatives.keys()) + [self.default_key]
+                        for v in [*list(self.alternatives.keys()), self.default_key]
                     ),
                 )
                 _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)

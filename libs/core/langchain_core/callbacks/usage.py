@@ -8,14 +8,12 @@ from typing import Any, Optional
 
 from typing_extensions import override
 
-from langchain_core._api import beta
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 
-@beta()
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks AIMessage.usage_metadata.
 
@@ -58,6 +56,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     def __repr__(self) -> str:
         return str(self.usage_metadata)
 
+    @override
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
         # Check for usage_metadata (langchain-core >= 0.2.2)
@@ -89,7 +88,6 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 
 
 @contextmanager
-@beta()
 def get_usage_metadata_callback(
     name: str = "usage_metadata_callback",
 ) -> Generator[UsageMetadataCallbackHandler, None, None]:

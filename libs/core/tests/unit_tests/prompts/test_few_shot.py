@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -265,7 +266,7 @@ def test_prompt_jinja2_missing_input_variables(
     suffix = "Ending with {{ bar }}"
 
     # Test when missing in suffix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'bar'}"):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=suffix,
@@ -283,7 +284,7 @@ def test_prompt_jinja2_missing_input_variables(
     ).input_variables == ["bar"]
 
     # Test when missing in prefix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         FewShotPromptTemplate(
             input_variables=["bar"],
             suffix=suffix,
@@ -310,7 +311,7 @@ def test_prompt_jinja2_extra_input_variables(
     """Test error is raised when there are too many input variables."""
     prefix = "Starting with {{ foo }}"
     suffix = "Ending with {{ bar }}"
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables:"):
         FewShotPromptTemplate(
             input_variables=["bar", "foo", "extra", "thing"],
             suffix=suffix,
@@ -383,6 +384,7 @@ class AsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
+    @override
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
@@ -481,6 +483,7 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         raise NotImplementedError
 
+    @override
     async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 

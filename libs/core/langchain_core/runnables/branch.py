@@ -111,10 +111,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
         )
 
-        _branches = []
+        branches_ = []
 
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
+            if not isinstance(branch, (tuple, list)):
                 msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
@@ -130,10 +130,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             condition, runnable = branch
             condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
-            _branches.append((condition, runnable))
+            branches_.append((condition, runnable))
 
         super().__init__(
-            branches=_branches,
+            branches=branches_,
             default=default_,
         )  # type: ignore[call-arg]
 
@@ -196,6 +196,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise ValueError(msg)
         return specs
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -254,6 +255,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         run_manager.on_chain_end(output)
         return output
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -302,6 +304,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
         return output
 
+    @override
     def stream(
         self,
         input: Input,
@@ -359,7 +362,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -379,7 +382,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False
@@ -388,6 +391,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(final_output)
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -445,7 +449,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -465,7 +469,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False

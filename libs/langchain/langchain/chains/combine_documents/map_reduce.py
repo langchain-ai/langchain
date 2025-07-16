@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -112,28 +112,29 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Return the results of the map steps in the output."""
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+        self,
+        config: Optional[RunnableConfig] = None,
+    ) -> type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
                 "MapReduceDocumentsOutput",
                 **{
                     self.output_key: (str, None),
-                    "intermediate_steps": (List[str], None),
-                },  # type: ignore[call-overload]
+                    "intermediate_steps": (list[str], None),
+                },
             )
 
         return super().get_output_schema(config)
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         return _output_keys
 
     model_config = ConfigDict(
@@ -143,15 +144,16 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_reduce_chain(cls, values: Dict) -> Any:
+    def get_reduce_chain(cls, values: dict) -> Any:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
             if "reduce_documents_chain" in values:
-                raise ValueError(
+                msg = (
                     "Both `reduce_documents_chain` and `combine_document_chain` "
                     "cannot be provided at the same time. `combine_document_chain` "
                     "is deprecated, please only provide `reduce_documents_chain`"
                 )
+                raise ValueError(msg)
             combine_chain = values["combine_document_chain"]
             collapse_chain = values.get("collapse_document_chain")
             reduce_chain = ReduceDocumentsChain(
@@ -160,14 +162,13 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             )
             values["reduce_documents_chain"] = reduce_chain
             del values["combine_document_chain"]
-            if "collapse_document_chain" in values:
-                del values["collapse_document_chain"]
+            values.pop("collapse_document_chain", None)
 
         return values
 
     @model_validator(mode="before")
     @classmethod
-    def get_return_intermediate_steps(cls, values: Dict) -> Any:
+    def get_return_intermediate_steps(cls, values: dict) -> Any:
         """For backwards compatibility."""
         if "return_map_steps" in values:
             values["return_intermediate_steps"] = values["return_map_steps"]
@@ -176,26 +177,29 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     @model_validator(mode="before")
     @classmethod
-    def get_default_document_variable_name(cls, values: Dict) -> Any:
+    def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
-            raise ValueError("llm_chain must be provided")
+            msg = "llm_chain must be provided"
+            raise ValueError(msg)
 
         llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain input_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     @property
@@ -204,34 +208,33 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
             if self.reduce_documents_chain.collapse_documents_chain:
                 return self.reduce_documents_chain.collapse_documents_chain
-            else:
-                return self.reduce_documents_chain.combine_documents_chain
-        else:
-            raise ValueError(
-                f"`reduce_documents_chain` is of type "
-                f"{type(self.reduce_documents_chain)} so it does not have "
-                f"this attribute."
-            )
+            return self.reduce_documents_chain.combine_documents_chain
+        msg = (
+            f"`reduce_documents_chain` is of type "
+            f"{type(self.reduce_documents_chain)} so it does not have "
+            f"this attribute."
+        )
+        raise ValueError(msg)
 
     @property
     def combine_document_chain(self) -> BaseCombineDocumentsChain:
         """Kept for backward compatibility."""
         if isinstance(self.reduce_documents_chain, ReduceDocumentsChain):
             return self.reduce_documents_chain.combine_documents_chain
-        else:
-            raise ValueError(
-                f"`reduce_documents_chain` is of type "
-                f"{type(self.reduce_documents_chain)} so it does not have "
-                f"this attribute."
-            )
+        msg = (
+            f"`reduce_documents_chain` is of type "
+            f"{type(self.reduce_documents_chain)} so it does not have "
+            f"this attribute."
+        )
+        raise ValueError(msg)
 
     def combine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
@@ -249,7 +252,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for i, r in enumerate(map_results)
         ]
         result, extra_return_dict = self.reduce_documents_chain.combine_docs(
-            result_docs, token_max=token_max, callbacks=callbacks, **kwargs
+            result_docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         if self.return_intermediate_steps:
             intermediate_steps = [r[question_result_key] for r in map_results]
@@ -258,11 +264,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
 
     async def acombine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
@@ -270,7 +276,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         """
         map_results = await self.llm_chain.aapply(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         question_result_key = self.llm_chain.output_key
@@ -280,7 +286,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for i, r in enumerate(map_results)
         ]
         result, extra_return_dict = await self.reduce_documents_chain.acombine_docs(
-            result_docs, token_max=token_max, callbacks=callbacks, **kwargs
+            result_docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         if self.return_intermediate_steps:
             intermediate_steps = [r[question_result_key] for r in map_results]

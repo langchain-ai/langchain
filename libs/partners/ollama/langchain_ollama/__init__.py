@@ -3,7 +3,6 @@
 It provides infrastructure for interacting with the Ollama service.
 """
 
-
 from importlib import metadata
 
 from langchain_ollama.chat_models import ChatOllama
@@ -19,7 +18,7 @@ del metadata  # optional, avoids polluting the results of dir(__package__)
 
 __all__ = [
     "ChatOllama",
-    "OllamaLLM",
     "OllamaEmbeddings",
+    "OllamaLLM",
     "__version__",
 ]

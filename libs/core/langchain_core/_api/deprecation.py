@@ -23,6 +23,8 @@ from typing import (
     cast,
 )
 
+from pydantic.fields import FieldInfo
+from pydantic.v1.fields import FieldInfo as FieldInfoV1
 from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
@@ -152,7 +154,6 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import FieldInfoV1, FieldInfoV2
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -200,11 +201,11 @@ def deprecated(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -234,7 +235,7 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -246,7 +247,7 @@ def deprecated(
                     ),
                 )
 
-        elif isinstance(obj, FieldInfoV2):
+        elif isinstance(obj, FieldInfo):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -255,10 +256,10 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
-                    FieldInfoV2(
+                    FieldInfo(
                         default=obj.default,
                         default_factory=obj.default_factory,
                         description=new_doc,
@@ -315,7 +316,7 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the property."""
                 return cast(
                     "T",
@@ -395,10 +396,8 @@ def deprecated(
 """
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast("T", finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return deprecate
 
@@ -470,7 +469,7 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        _package = (
+        package_ = (
             package or name.split(".")[0].replace("_", "-")
             if "." in name
             else "LangChain"
@@ -484,14 +483,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {_package} {since}"
+            message += f" was deprecated in {package_} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
             alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == _package:
+            if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)

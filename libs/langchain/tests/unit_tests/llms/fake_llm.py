@@ -1,6 +1,7 @@
 """Fake LLM wrapper for testing purposes."""
 
-from typing import Any, Dict, List, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -18,9 +19,8 @@ class FakeLLM(LLM):
     @classmethod
     def check_queries_required(cls, values: dict) -> dict:
         if values.get("sequential_response") and not values.get("queries"):
-            raise ValueError(
-                "queries is required when sequential_response is set to True"
-            )
+            msg = "queries is required when sequential_response is set to True"
+            raise ValueError(msg)
         return values
 
     def get_num_tokens(self, text: str) -> int:
@@ -35,7 +35,7 @@ class FakeLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -45,11 +45,10 @@ class FakeLLM(LLM):
             return self.queries[prompt]
         if stop is None:
             return "foo"
-        else:
-            return "bar"
+        return "bar"
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         return {}
 
     @property

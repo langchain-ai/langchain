@@ -10,6 +10,8 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 from uuid import UUID
 
+from typing_extensions import override
+
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
@@ -45,6 +47,7 @@ async def test_inline_handlers_share_parent_context() -> None:
             """Initialize the handler."""
             self.run_inline = run_inline
 
+        @override
         async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
             """Update the callstack with the name of the callback."""
             some_var.set("on_llm_start")

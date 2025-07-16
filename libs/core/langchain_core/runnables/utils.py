@@ -6,6 +6,8 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import Mapping, Sequence
+from contextvars import Context
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -32,8 +34,6 @@ if TYPE_CHECKING:
         Awaitable,
         Coroutine,
         Iterable,
-        Mapping,
-        Sequence,
     )
 
     from langchain_core.runnables.schema import StreamEvent
@@ -75,7 +75,7 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
     return await asyncio.gather(*(gated_coro(semaphore, c) for c in coros))
 
 
-def accepts_run_manager(callable: Callable[..., Any]) -> bool:
+def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a run_manager argument.
 
     Args:
@@ -90,7 +90,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_config(callable: Callable[..., Any]) -> bool:
+def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a config argument.
 
     Args:
@@ -105,7 +105,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_context(callable: Callable[..., Any]) -> bool:
+def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a context argument.
 
     Args:
@@ -124,6 +124,26 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
 def asyncio_accepts_context() -> bool:
     """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
     return accepts_context(asyncio.create_task)
+
+
+def coro_with_context(
+    coro: Awaitable[Any], context: Context, *, create_task: bool = False
+) -> Awaitable[Any]:
+    """Await a coroutine with a context.
+
+    Args:
+        coro: The coroutine to await.
+        context: The context to use.
+        create_task: Whether to create a task. Defaults to False.
+
+    Returns:
+        The coroutine with the context.
+    """
+    if asyncio_accepts_context():
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
+    if create_task:
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
+    return coro
 
 
 class IsLocalDict(ast.NodeVisitor):
@@ -174,7 +194,7 @@ class IsLocalDict(ast.NodeVisitor):
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id == self.name
             and node.func.attr == "get"
-            and len(node.args) in (1, 2)
+            and len(node.args) in {1, 2}
             and isinstance(node.args[0], ast.Constant)
             and isinstance(node.args[0].value, str)
         ):
@@ -373,7 +393,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
         func: The function to check.
 
     Returns:
-        Optional[List[str]]: The keys of the first argument if it is a dict,
+        Optional[list[str]]: The keys of the first argument if it is a dict,
             None otherwise.
     """
     try:
@@ -417,7 +437,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         func: The function to check.
 
     Returns:
-        List[Any]: The nonlocal variables accessed by the function.
+        list[Any]: The nonlocal variables accessed by the function.
     """
     try:
         code = inspect.getsource(func)
@@ -515,7 +535,7 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co:
+    def __add__(self, x: _T_contra, /) -> _T_co:
         """Add the object to another object."""
 
 
@@ -662,7 +682,7 @@ def get_unique_config_specs(
         specs: The config specs.
 
     Returns:
-        List[ConfigurableFieldSpec]: The unique config specs.
+        list[ConfigurableFieldSpec]: The unique config specs.
 
     Raises:
         ValueError: If the runnable sequence contains conflicting config specs.
@@ -671,7 +691,7 @@ def get_unique_config_specs(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
     unique: list[ConfigurableFieldSpec] = []
-    for id, dupes in grouped:
+    for spec_id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
         if len(others) == 0 or all(o == first for o in others):
@@ -679,7 +699,7 @@ def get_unique_config_specs(
         else:
             msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {spec_id}: {[first, *others]}"
             )
             raise ValueError(msg)
     return unique
@@ -752,9 +772,8 @@ def is_async_generator(
         TypeGuard[Callable[..., AsyncIterator]: True if the function is
             an async generator, False otherwise.
     """
-    return (
-        inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return inspect.isasyncgenfunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -771,8 +790,7 @@ def is_async_callable(
         TypeGuard[Callable[..., Awaitable]: True if the function is async,
             False otherwise.
     """
-    return (
-        asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return asyncio.iscoroutinefunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

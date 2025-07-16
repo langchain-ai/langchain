@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
@@ -34,7 +34,8 @@ class BaseMessage(Serializable):
     """
 
     response_metadata: dict = Field(default_factory=dict)
-    """Response metadata. For example: response headers, logprobs, token counts."""
+    """Response metadata. For example: response headers, logprobs, token counts, model
+    name."""
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.
@@ -52,20 +53,13 @@ class BaseMessage(Serializable):
     model implementation.
     """
 
-    id: Optional[str] = None
+    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
     model_config = ConfigDict(
         extra="allow",
     )
-
-    @field_validator("id", mode="before")
-    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
-        """Coerce the id field to a string."""
-        if id_value is not None:
-            return str(id_value)
-        return id_value
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -108,8 +102,7 @@ class BaseMessage(Serializable):
             block
             for block in self.content
             if isinstance(block, str)
-            or block.get("type") == "text"
-            and isinstance(block.get("text"), str)
+            or (block.get("type") == "text" and isinstance(block.get("text"), str))
         ]
         return "".join(
             block if isinstance(block, str) else block["text"] for block in blocks
@@ -119,10 +112,13 @@ class BaseMessage(Serializable):
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
+        prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Get a pretty representation of the message.
 
         Args:
@@ -162,32 +158,31 @@ def merge_content(
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
             if isinstance(content, str):
-                merged = cast("str", merged) + content
+                merged += content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged] + content  # type: ignore
+                merged = [merged, *content]
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast("list", merged), content)  # type: ignore
+            merged = merge_lists(cast("list", merged), content)  # type: ignore[assignment]
         # If the first content is a list, and the second content is a string
+        # If the last element of the first content is a string
+        # Add the second content to the last element
+        elif merged and isinstance(merged[-1], str):
+            merged[-1] += content
+        # If second content is an empty string, treat as a no-op
+        elif content == "":
+            pass
         else:
-            # If the last element of the first content is a string
-            # Add the second content to the last element
-            if merged and isinstance(merged[-1], str):
-                merged[-1] += content
-            # If second content is an empty string, treat as a no-op
-            elif content == "":
-                pass
-            else:
-                # Otherwise, add the second content as a new element of the list
-                merged.append(content)
+            # Otherwise, add the second content as a new element of the list
+            merged.append(content)
     return merged
 
 
 class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         """Message chunks support concatenation with other message chunks.
 
         This functionality is useful to combine message chunks yielded from
@@ -213,7 +208,7 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
-            return self.__class__(  # type: ignore[call-arg]
+            return self.__class__(
                 id=self.id,
                 type=self.type,
                 content=merge_content(self.content, other.content),

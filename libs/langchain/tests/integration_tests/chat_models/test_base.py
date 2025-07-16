@@ -1,4 +1,4 @@
-from typing import Type, cast
+from typing import cast
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -31,16 +31,16 @@ async def test_init_chat_model_chain() -> None:
     chain = prompt | model_with_config
     output = chain.invoke({"input": "bar"})
     assert isinstance(output, AIMessage)
-    events = []
-    async for event in chain.astream_events({"input": "bar"}, version="v2"):
-        events.append(event)
+    events = [
+        event async for event in chain.astream_events({"input": "bar"}, version="v2")
+    ]
     assert events
 
 
 class TestStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        return cast(Type[BaseChatModel], init_chat_model)
+    def chat_model_class(self) -> type[BaseChatModel]:
+        return cast(type[BaseChatModel], init_chat_model)
 
     @property
     def chat_model_params(self) -> dict:

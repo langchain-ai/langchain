@@ -61,7 +61,7 @@ def get_tokenizer() -> Any:
     every time it is called.
     """
     try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import]
+        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
     except ImportError as e:
         msg = (
             "Could not import transformers python package. "
@@ -130,7 +130,7 @@ class BaseLanguageModel(
     )
 
     @field_validator("verbose", mode="before")
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:  # noqa: FBT001
         """If verbose is None, set it.
 
         This allows users to pass in None as verbose to access the global setting.

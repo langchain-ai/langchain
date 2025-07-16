@@ -1,13 +1,11 @@
 """Test transform chain."""
 
-from typing import Dict
-
 import pytest
 
 from langchain.chains.transform import TransformChain
 
 
-def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:
+def dummy_transform(inputs: dict[str, str]) -> dict[str, str]:
     """Transform a dummy input for tests."""
     outputs = inputs
     outputs["greeting"] = f"{inputs['first_name']} {inputs['last_name']} says hello"

@@ -11,7 +11,11 @@ class RemoveMessage(BaseMessage):
     type: Literal["remove"] = "remove"
     """The type of the message (used for serialization). Defaults to "remove"."""
 
-    def __init__(self, id: str, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        id: str,  # noqa: A002
+        **kwargs: Any,
+    ) -> None:
         """Create a RemoveMessage.
 
         Args:
@@ -26,6 +30,3 @@ class RemoveMessage(BaseMessage):
             raise ValueError(msg)
 
         super().__init__("", id=id, **kwargs)
-
-
-RemoveMessage.model_rebuild()

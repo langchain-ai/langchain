@@ -11,6 +11,7 @@
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import toml
@@ -104,7 +105,7 @@ def skip_private_members(app, what, name, obj, skip, options):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain Inc"
+copyright = f"{datetime.now().year}, LangChain Inc"
 author = "LangChain, Inc"
 
 html_favicon = "_static/img/brand/favicon.png"
@@ -275,3 +276,7 @@ if os.environ.get("READTHEDOCS", "") == "True":
     html_context["READTHEDOCS"] = True
 
 master_doc = "index"
+
+# If a signature’s length in characters exceeds 60,
+# each parameter within the signature will be displayed on an individual logical line
+maximum_signature_line_length = 60

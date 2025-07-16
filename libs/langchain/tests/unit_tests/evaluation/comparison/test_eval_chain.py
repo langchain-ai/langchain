@@ -24,7 +24,7 @@ def test_resolve_criteria_enum(criterion: Criteria) -> None:
 def test_resolve_criteria_list_enum() -> None:
     val = resolve_pairwise_criteria(list(Criteria))
     assert isinstance(val, dict)
-    assert set(val.keys()) == set(c.value for c in list(Criteria))
+    assert set(val.keys()) == {c.value for c in list(Criteria)}
 
 
 def test_PairwiseStringResultOutputParser_parse() -> None:

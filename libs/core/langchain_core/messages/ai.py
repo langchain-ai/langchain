@@ -36,6 +36,9 @@ from langchain_core.utils.usage import _dict_int_op
 logger = logging.getLogger(__name__)
 
 
+_LC_ID_PREFIX = "run-"
+
+
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
 
@@ -52,6 +55,8 @@ class InputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
+    May also hold extra provider-specific keys.
     """
 
     audio: int
@@ -191,6 +196,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
+    # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
     @classmethod
     def _backwards_compat_tool_calls(cls, values: dict) -> Any:
@@ -202,7 +208,7 @@ class AIMessage(BaseMessage):
             raw_tool_calls := values.get("additional_kwargs", {}).get("tool_calls")
         ):
             try:
-                if issubclass(cls, AIMessageChunk):  # type: ignore
+                if issubclass(cls, AIMessageChunk):
                     values["tool_call_chunks"] = default_tool_chunk_parser(
                         raw_tool_calls
                     )
@@ -235,6 +241,7 @@ class AIMessage(BaseMessage):
 
         return values
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the message.
 
@@ -275,16 +282,13 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.model_rebuild()
-
-
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """Message chunk from an AI."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization).
     Defaults to "AIMessageChunk"."""
 
@@ -369,7 +373,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return self
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
         if isinstance(other, (list, tuple)) and all(
@@ -419,11 +423,20 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    id = None
-    for id_ in [left.id] + [o.id for o in others]:
-        if id_:
-            id = id_
+    chunk_id = None
+    candidates = [left.id] + [o.id for o in others]
+    # first pass: pick the first non-run-* id
+    for id_ in candidates:
+        if id_ and not id_.startswith(_LC_ID_PREFIX):
+            chunk_id = id_
             break
+    else:
+        # second pass: no provider-assigned id found, just take the first non-null
+        for id_ in candidates:
+            if id_:
+                chunk_id = id_
+                break
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -431,7 +444,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
-        id=id,
+        id=chunk_id,
     )
 
 

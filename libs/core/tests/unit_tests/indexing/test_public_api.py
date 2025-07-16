@@ -3,7 +3,7 @@ from langchain_core.indexing import __all__
 
 def test_all() -> None:
     """Use to catch obvious breaking changes."""
-    assert __all__ == sorted(__all__, key=str.lower)
+    assert list(__all__) == sorted(__all__, key=str)
     assert set(__all__) == {
         "aindex",
         "DeleteResponse",

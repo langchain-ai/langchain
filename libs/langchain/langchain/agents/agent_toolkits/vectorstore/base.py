@@ -1,6 +1,6 @@
 """VectorStore agent."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks.base import BaseCallbackManager
@@ -35,8 +35,8 @@ def create_vectorstore_agent(
     toolkit: VectorStoreToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
-    verbose: bool = False,
-    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    verbose: bool = False,  # noqa: FBT001,FBT002
+    agent_executor_kwargs: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a VectorStore agent from an LLM and tools.
@@ -128,8 +128,8 @@ def create_vectorstore_router_agent(
     toolkit: VectorStoreRouterToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = ROUTER_PREFIX,
-    verbose: bool = False,
-    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    verbose: bool = False,  # noqa: FBT001,FBT002
+    agent_executor_kwargs: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a VectorStore router agent from an LLM and tools.

@@ -1,5 +1,6 @@
 import uuid
-from typing import Any, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
@@ -65,30 +66,31 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     If none, then the parent documents will be the raw documents passed in."""
 
     child_metadata_fields: Optional[Sequence[str]] = None
-    """Metadata fields to leave in child documents. If None, leave all parent document 
+    """Metadata fields to leave in child documents. If None, leave all parent document
         metadata.
     """
 
     def _split_docs_for_adding(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
+        *,
         add_to_docstore: bool = True,
-    ) -> Tuple[List[Document], List[Tuple[str, Document]]]:
+    ) -> tuple[list[Document], list[tuple[str, Document]]]:
         if self.parent_splitter is not None:
             documents = self.parent_splitter.split_documents(documents)
         if ids is None:
             doc_ids = [str(uuid.uuid4()) for _ in documents]
             if not add_to_docstore:
-                raise ValueError(
-                    "If ids are not passed in, `add_to_docstore` MUST be True"
-                )
+                msg = "If ids are not passed in, `add_to_docstore` MUST be True"
+                raise ValueError(msg)
         else:
             if len(documents) != len(ids):
-                raise ValueError(
+                msg = (
                     "Got uneven list of documents and ids. "
                     "If `ids` is provided, should be same length as `documents`."
                 )
+                raise ValueError(msg)
             doc_ids = ids
 
         docs = []
@@ -110,9 +112,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     def add_documents(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
-        add_to_docstore: bool = True,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
+        add_to_docstore: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
@@ -129,19 +131,27 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
         """
-        docs, full_docs = self._split_docs_for_adding(documents, ids, add_to_docstore)
+        docs, full_docs = self._split_docs_for_adding(
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
+        )
         self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
             self.docstore.mset(full_docs)
 
     async def aadd_documents(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
-        add_to_docstore: bool = True,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
+        add_to_docstore: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
-        docs, full_docs = self._split_docs_for_adding(documents, ids, add_to_docstore)
+        docs, full_docs = self._split_docs_for_adding(
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
+        )
         await self.vectorstore.aadd_documents(docs, **kwargs)
         if add_to_docstore:
             await self.docstore.amset(full_docs)

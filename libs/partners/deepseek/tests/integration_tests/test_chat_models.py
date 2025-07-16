@@ -1,6 +1,8 @@
 """Test ChatDeepSeek chat model."""
 
-from typing import Optional, Type
+from __future__ import annotations
+
+from typing import Optional
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -13,7 +15,7 @@ from langchain_deepseek.chat_models import ChatDeepSeek
 
 class TestChatDeepSeek(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[ChatDeepSeek]:
+    def chat_model_class(self) -> type[ChatDeepSeek]:
         return ChatDeepSeek
 
     @property
@@ -31,7 +33,9 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_tool_message_histories_list_content(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
+        self,
+        model: BaseChatModel,
+        my_adder_tool: BaseTool,
     ) -> None:
         super().test_tool_message_histories_list_content(model, my_adder_tool)
 
@@ -43,7 +47,7 @@ def test_reasoning_content() -> None:
     response = chat_model.invoke("What is 3^3?")
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
-    raise ValueError()
+    raise ValueError
 
 
 @pytest.mark.xfail(reason="Takes > 30s to run.")
