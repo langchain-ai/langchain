@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Iterator
 from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 import openai
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.language_models.chat_models import (
+    LangSmithParams,
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
@@ -18,7 +27,13 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Literal, Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models.base import (
+    BaseChatOpenAI,
+    _construct_lc_result_from_responses_api,
+    _handle_openai_bad_request,
+    _is_pydantic_class,
+    run_in_executor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -749,7 +764,17 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
-            return super()._stream_responses(*args, **kwargs)
+            try:
+                return super()._stream_responses(*args, **kwargs)
+            except openai.APIStatusError as e:
+                if e.status_code == 405:  # Method Not Allowed
+                    logger.warning(
+                        "Azure OpenAI does not support the Responses API for this deployment. "
+                        "Falling back to Chat Completions API. To avoid this warning, set "
+                        "use_responses_api=False or upgrade to a supported API version."
+                    )
+                    return super()._stream(*args, **kwargs)
+                raise
         else:
             return super()._stream(*args, **kwargs)
 
@@ -758,11 +783,165 @@ class AzureChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
-            async for chunk in super()._astream_responses(*args, **kwargs):
-                yield chunk
+            try:
+                async for chunk in super()._astream_responses(*args, **kwargs):
+                    yield chunk
+            except openai.APIStatusError as e:
+                if e.status_code == 405:  # Method Not Allowed
+                    logger.warning(
+                        "Azure OpenAI does not support the Responses API for this deployment. "
+                        "Falling back to Chat Completions API. To avoid this warning, set "
+                        "use_responses_api=False or upgrade to a supported API version."
+                    )
+                    async for chunk in super()._astream(*args, **kwargs):
+                        yield chunk
+                else:
+                    raise
         else:
             async for chunk in super()._astream(*args, **kwargs):
                 yield chunk
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Route to Chat Completions or Responses API with fallback for Azure."""
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+        
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        generation_info = None
+        
+        if "response_format" in payload:
+            if self.include_response_headers:
+                warnings.warn(
+                    "Cannot currently include response headers when response_format is "
+                    "specified."
+                )
+            payload.pop("stream")
+            try:
+                response = self.root_client.beta.chat.completions.parse(**payload)
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
+        elif self._use_responses_api(payload):
+            try:
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                    response = self.root_client.responses.parse(**payload)
+                else:
+                    if self.include_response_headers:
+                        raw_response = self.root_client.with_raw_response.responses.create(
+                            **payload
+                        )
+                        response = raw_response.parse()
+                        generation_info = {"headers": dict(raw_response.headers)}
+                    else:
+                        response = self.root_client.responses.create(**payload)
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            except openai.APIStatusError as e:
+                if e.status_code == 405:  # Method Not Allowed
+                    logger.warning(
+                        "Azure OpenAI does not support the Responses API for this deployment. "
+                        "Falling back to Chat Completions API. To avoid this warning, set "
+                        "use_responses_api=False or upgrade to a supported API version."
+                    )
+                    # Fall through to regular chat completions
+                else:
+                    raise
+        
+        # Regular chat completions API
+        if self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.client.create(**payload)
+        return self._create_chat_result(response, generation_info)
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Route to Chat Completions or Responses API with fallback for Azure."""
+        if self.streaming:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+        
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        generation_info = None
+        
+        if "response_format" in payload:
+            if self.include_response_headers:
+                warnings.warn(
+                    "Cannot currently include response headers when response_format is "
+                    "specified."
+                )
+            payload.pop("stream")
+            try:
+                response = await self.root_async_client.beta.chat.completions.parse(
+                    **payload
+                )
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
+        elif self._use_responses_api(payload):
+            try:
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                    response = await self.root_async_client.responses.parse(**payload)
+                else:
+                    if self.include_response_headers:
+                        raw_response = (
+                            await self.root_async_client.with_raw_response.responses.create(
+                                **payload
+                            )
+                        )
+                        response = raw_response.parse()
+                        generation_info = {"headers": dict(raw_response.headers)}
+                    else:
+                        response = await self.root_async_client.responses.create(**payload)
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            except openai.APIStatusError as e:
+                if e.status_code == 405:  # Method Not Allowed
+                    logger.warning(
+                        "Azure OpenAI does not support the Responses API for this deployment. "
+                        "Falling back to Chat Completions API. To avoid this warning, set "
+                        "use_responses_api=False or upgrade to a supported API version."
+                    )
+                    # Fall through to regular chat completions
+                else:
+                    raise
+        
+        # Regular chat completions API
+        if self.include_response_headers:
+            raw_response = await self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = await self.async_client.create(**payload)
+        return await run_in_executor(
+            None, self._create_chat_result, response, generation_info
+        )
 
     def with_structured_output(
         self,
