@@ -205,22 +205,14 @@ def test_perplexity_stream_includes_citations_and_search_results(
         "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
         "citations": ["example.com/a", "example.com/b"],
         "search_results": [
-            {
-                "title": "Mock result",
-                "url": "https://example.com/result",
-                "date": None,
-            }
+            {"title": "Mock result", "url": "https://example.com/result", "date": None}
         ],
     }
     mock_chunk_1 = {
         "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
         "citations": ["example.com/a", "example.com/b"],
         "search_results": [
-            {
-                "title": "Mock result",
-                "url": "https://example.com/result",
-                "date": None,
-            }
+            {"title": "Mock result", "url": "https://example.com/result", "date": None}
         ],
     }
     mock_chunks: list[dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
@@ -254,11 +246,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
     assert full.additional_kwargs == {
         "citations": ["example.com/a", "example.com/b"],
         "search_results": [
-            {
-                "title": "Mock result",
-                "url": "https://example.com/result",
-                "date": None,
-            }
+            {"title": "Mock result", "url": "https://example.com/result", "date": None}
         ],
     }
 
