@@ -25,6 +25,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "import_comet_llm_api",
     "CometTracer",
+    "import_comet_llm_api",
 ]

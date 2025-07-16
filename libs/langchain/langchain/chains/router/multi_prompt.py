@@ -21,7 +21,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
     removal="1.0",
     message=(
         "Please see migration guide here for recommended implementation: "
-        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"
     ),
 )
 class MultiPromptChain(MultiRouteChain):
@@ -157,7 +157,7 @@ class MultiPromptChain(MultiRouteChain):
         destinations = [f"{p['name']}: {p['description']}" for p in prompt_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,

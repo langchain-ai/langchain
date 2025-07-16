@@ -14,7 +14,7 @@ def setup_module() -> None:
     nltk.download("punkt_tab")
 
 
-@pytest.fixture()
+@pytest.fixture
 def spacy() -> Any:
     try:
         import spacy

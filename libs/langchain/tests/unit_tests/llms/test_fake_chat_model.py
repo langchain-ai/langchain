@@ -1,7 +1,5 @@
 """Tests for verifying that testing utility code works as expected."""
 
-import operator
-from functools import reduce
 from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -43,7 +41,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
@@ -53,7 +51,7 @@ async def test_generic_fake_chat_model_stream() -> None:
         _AnyIdAIMessageChunk(content="goodbye"),
     ]
 
-    chunks = [chunk for chunk in model.stream("meow")]
+    chunks = list(model.stream("meow"))
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
@@ -78,7 +76,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
     model = GenericFakeChatModel(messages=cycle([message]))
@@ -94,22 +92,29 @@ async def test_generic_fake_chat_model_stream() -> None:
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '{\n  "source_path": "foo"'}
+                "function_call": {"arguments": '{\n  "source_path": "foo"'},
             },
         ),
         AIMessageChunk(
-            id="a1", content="", additional_kwargs={"function_call": {"arguments": ","}}
+            id="a1",
+            content="",
+            additional_kwargs={"function_call": {"arguments": ","}},
         ),
         AIMessageChunk(
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
+                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
         ),
     ]
 
-    accumulate_chunks = reduce(operator.add, chunks)
+    accumulate_chunks = None
+    for chunk in chunks:
+        if accumulate_chunks is None:
+            accumulate_chunks = chunk
+        else:
+            accumulate_chunks += chunk
 
     assert accumulate_chunks == AIMessageChunk(
         id="a1",
@@ -119,7 +124,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
 
@@ -176,7 +181,7 @@ async def test_callback_handlers() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
     tokens: list[str] = []
@@ -184,7 +189,8 @@ async def test_callback_handlers() -> None:
     results = [
         chunk
         async for chunk in model.astream(
-            "meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}
+            "meow",
+            {"callbacks": [MyCustomAsyncHandler(tokens)]},
         )
     ]
     assert results == [

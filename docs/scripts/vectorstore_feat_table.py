@@ -190,7 +190,7 @@ def get_vectorstore_table():
             "similarity_search_by_vector": True,
             "similarity_search_with_score": True,
             "asearch": True,
-            "Passes Standard Tests": False,
+            "Passes Standard Tests": True,
             "Multi Tenancy": False,
             "Local/Cloud": "Local",
             "IDs in add Documents": True,
