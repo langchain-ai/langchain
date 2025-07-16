@@ -41,7 +41,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
@@ -76,7 +76,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
     model = GenericFakeChatModel(messages=cycle([message]))
@@ -92,17 +92,19 @@ async def test_generic_fake_chat_model_stream() -> None:
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '{\n  "source_path": "foo"'}
+                "function_call": {"arguments": '{\n  "source_path": "foo"'},
             },
         ),
         AIMessageChunk(
-            id="a1", content="", additional_kwargs={"function_call": {"arguments": ","}}
+            id="a1",
+            content="",
+            additional_kwargs={"function_call": {"arguments": ","}},
         ),
         AIMessageChunk(
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
+                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
         ),
     ]
@@ -122,7 +124,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
 
@@ -179,7 +181,7 @@ async def test_callback_handlers() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
     tokens: list[str] = []
@@ -187,7 +189,8 @@ async def test_callback_handlers() -> None:
     results = [
         chunk
         async for chunk in model.astream(
-            "meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}
+            "meow",
+            {"callbacks": [MyCustomAsyncHandler(tokens)]},
         )
     ]
     assert results == [

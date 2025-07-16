@@ -1,5 +1,7 @@
 """Ollama chat models."""
 
+from __future__ import annotations
+
 import json
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
@@ -74,7 +76,9 @@ def _get_usage_metadata_from_generation_info(
 
 
 def _parse_json_string(
-    json_string: str, raw_tool_call: dict[str, Any], skip: bool
+    json_string: str,
+    raw_tool_call: dict[str, Any],
+    skip: bool,  # noqa: FBT001
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
@@ -148,16 +152,19 @@ def _get_tool_calls_from_response(
 ) -> list[ToolCall]:
     """Get tool calls from ollama response."""
     tool_calls = []
-    if "message" in response:
-        if raw_tool_calls := response["message"].get("tool_calls"):
-            for tc in raw_tool_calls:
-                tool_calls.append(
-                    tool_call(
-                        id=str(uuid4()),
-                        name=tc["function"]["name"],
-                        args=_parse_arguments_from_tool_call(tc) or {},
-                    )
+    if "message" in response and (
+        raw_tool_calls := response["message"].get("tool_calls")
+    ):
+        tool_calls.extend(
+            [
+                tool_call(
+                    id=str(uuid4()),
+                    name=tc["function"]["name"],
+                    args=_parse_arguments_from_tool_call(tc) or {},
                 )
+                for tc in raw_tool_calls
+            ]
+        )
     return tool_calls
 
 
@@ -178,13 +185,11 @@ def _get_image_from_data_content_block(block: dict) -> str:
     if block["type"] == "image":
         if block["source_type"] == "base64":
             return block["data"]
-        else:
-            error_message = "Image data only supported through in-line base64 format."
-            raise ValueError(error_message)
-
-    else:
-        error_message = f"Blocks of type {block['type']} not supported."
+        error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
+
+    error_message = f"Blocks of type {block['type']} not supported."
+    raise ValueError(error_message)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -212,17 +217,17 @@ class ChatOllama(BaseChatModel):
             `supported models <https://ollama.com/search?c=thinking>`__.
 
             - ``True``: Enables reasoning mode. The model's reasoning process will be
-            captured and returned separately in the ``additional_kwargs`` of the
-            response message, under ``reasoning_content``. The main response
-            content will not include the reasoning tags.
+              captured and returned separately in the ``additional_kwargs`` of the
+              response message, under ``reasoning_content``. The main response
+              content will not include the reasoning tags.
             - ``False``: Disables reasoning mode. The model will not perform any reasoning,
-            and the response will not include any reasoning content.
+              and the response will not include any reasoning content.
             - ``None`` (Default): The model will use its default reasoning behavior. Note
-            however, if the model's default behavior *is* to perform reasoning, think tags
-            ()``<think>`` and ``</think>``) will be present within the main response content
-            unless you set ``reasoning`` to ``True``.
+              however, if the model's default behavior *is* to perform reasoning, think tags
+              (``<think>`` and ``</think>``) will be present within the main response content
+              unless you set ``reasoning`` to ``True``.
         temperature: float
-            Sampling temperature. Ranges from 0.0 to 1.0.
+            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         num_predict: Optional[int]
             Max number of tokens to generate.
 
@@ -338,7 +343,6 @@ class ChatOllama(BaseChatModel):
             '{"location": "Pune, India", "time_of_day": "morning"}'
 
     Tool Calling:
-
         .. code-block:: python
 
             from langchain_ollama import ChatOllama
@@ -357,6 +361,48 @@ class ChatOllama(BaseChatModel):
             'args': {'a': 45, 'b': 67},
             'id': '420c3f3b-df10-4188-945f-eb3abdb40622',
             'type': 'tool_call'}]
+
+    Thinking / Reasoning:
+        You can enable reasoning mode for models that support it by setting
+        the ``reasoning`` parameter to ``True`` in either the constructor or
+        the ``invoke``/``stream`` methods. This will enable the model to think
+        through the problem and return the reasoning process separately in the
+        ``additional_kwargs`` of the response message, under ``reasoning_content``.
+
+        If ``reasoning`` is set to ``None``, the model will use its default reasoning
+        behavior, and any reasoning content will *not* be captured under the
+        ``reasoning_content`` key, but will be present within the main response content
+        as think tags (``<think>`` and ``</think>``).
+
+        .. note::
+            This feature is only available for `models that support reasoning <https://ollama.com/search?c=thinking>`__.
+
+        .. code-block:: python
+
+            from langchain_ollama import ChatOllama
+
+            llm = ChatOllama(
+                model = "deepseek-r1:8b",
+                reasoning= True,
+            )
+
+            user_message = HumanMessage(content="how many r in the word strawberry?")
+            messages: List[Any] = [user_message]
+            llm.invoke(messages)
+
+            # or, on an invocation basis:
+
+            llm.invoke(messages, reasoning=True)
+            # or llm.stream(messages, reasoning=True)
+
+            # If not provided, the invocation will default to the ChatOllama reasoning
+            # param provided (None by default).
+
+        .. code-block:: python
+
+            AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
+
+
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
@@ -459,7 +505,7 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients. 
+    """Additional kwargs to pass to the httpx clients.
     These arguments are passed to both synchronous and async clients.
     Use sync_client_kwargs and async_client_kwargs to pass different arguments
     to synchronous and asynchronous clients.
@@ -496,7 +542,8 @@ class ChatOllama(BaseChatModel):
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            msg = "`stop` found in both the input and default params."
+            raise ValueError(msg)
         if self.stop is not None:
             stop = self.stop
 
@@ -584,7 +631,8 @@ class ChatOllama(BaseChatModel):
                 role = "tool"
                 tool_call_id = message.tool_call_id
             else:
-                raise ValueError("Received unsupported message type for Ollama.")
+                msg = "Received unsupported message type for Ollama."
+                raise ValueError(msg)
 
             content = ""
             images = []
@@ -608,10 +656,11 @@ class ChatOllama(BaseChatModel):
                         ):
                             image_url = temp_image_url["url"]
                         else:
-                            raise ValueError(
+                            msg = (
                                 "Only string image_url or dict with string 'url' "
                                 "inside content parts are supported."
                             )
+                            raise ValueError(msg)
 
                         image_url_components = image_url.split(",")
                         # Support data:image/jpeg;base64,<image> format
@@ -624,22 +673,24 @@ class ChatOllama(BaseChatModel):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
-                        raise ValueError(
+                        msg = (
                             "Unsupported message content type. "
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            # Should convert to ollama.Message once role includes tool, and tool_call_id is in Message # noqa: E501
-            msg: dict = {
+                        raise ValueError(msg)
+            # Should convert to ollama.Message once role includes tool,
+            # and tool_call_id is in Message
+            msg_: dict = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
             if tool_calls:
-                msg["tool_calls"] = tool_calls
+                msg_["tool_calls"] = tool_calls
             if tool_call_id:
-                msg["tool_call_id"] = tool_call_id
-            ollama_messages.append(msg)
+                msg_["tool_call_id"] = tool_call_id
+            ollama_messages.append(msg_)
 
         return ollama_messages
 
@@ -677,7 +728,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -693,7 +744,8 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
 
         return final_chunk
 
@@ -702,7 +754,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -718,7 +770,8 @@ class ChatOllama(BaseChatModel):
                     verbose=verbose,
                 )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
 
         return final_chunk
 
@@ -765,6 +818,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -783,7 +837,7 @@ class ChatOllama(BaseChatModel):
 
                 additional_kwargs = {}
                 if (
-                    self.reasoning
+                    reasoning
                     and "message" in stream_resp
                     and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
@@ -824,6 +878,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -842,7 +897,7 @@ class ChatOllama(BaseChatModel):
 
                 additional_kwargs = {}
                 if (
-                    self.reasoning
+                    reasoning
                     and "message" in stream_resp
                     and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
@@ -908,7 +963,7 @@ class ChatOllama(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -923,7 +978,7 @@ class ChatOllama(BaseChatModel):
                 is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
-        """  # noqa: E501
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
@@ -1180,14 +1235,16 @@ class ChatOllama(BaseChatModel):
         """  # noqa: E501, D301
         _ = kwargs.pop("strict", None)
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             formatted_tool = convert_to_openai_tool(schema)
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
@@ -1222,10 +1279,11 @@ class ChatOllama(BaseChatModel):
             )
         elif method == "json_schema":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             if is_pydantic_schema:
                 schema = cast(TypeBaseModel, schema)
                 if issubclass(schema, BaseModelV1):
@@ -1259,10 +1317,11 @@ class ChatOllama(BaseChatModel):
                 )
                 output_parser = JsonOutputParser()
         else:
-            raise ValueError(
+            msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling', "
                 f"'json_schema', or 'json_mode'. Received: '{method}'"
             )
+            raise ValueError(msg)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(

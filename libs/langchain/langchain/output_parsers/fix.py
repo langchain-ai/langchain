@@ -85,7 +85,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                 "instructions": self.parser.get_format_instructions(),
                                 "completion": completion,
                                 "error": repr(e),
-                            }
+                            },
                         )
                     except (NotImplementedError, AttributeError):
                         # Case: self.parser does not have get_format_instructions
@@ -93,7 +93,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             {
                                 "completion": completion,
                                 "error": repr(e),
-                            }
+                            },
                         )
 
         msg = "Failed to parse"
@@ -122,7 +122,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                 "instructions": self.parser.get_format_instructions(),
                                 "completion": completion,
                                 "error": repr(e),
-                            }
+                            },
                         )
                     except (NotImplementedError, AttributeError):
                         # Case: self.parser does not have get_format_instructions
@@ -130,7 +130,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             {
                                 "completion": completion,
                                 "error": repr(e),
-                            }
+                            },
                         )
 
         msg = "Failed to parse"

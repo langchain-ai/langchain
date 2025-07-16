@@ -132,7 +132,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 and you don't want to re-add them.
         """
         docs, full_docs = self._split_docs_for_adding(
-            documents, ids, add_to_docstore=add_to_docstore
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
         )
         self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
@@ -146,7 +148,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         **kwargs: Any,
     ) -> None:
         docs, full_docs = self._split_docs_for_adding(
-            documents, ids, add_to_docstore=add_to_docstore
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
         )
         await self.vectorstore.aadd_documents(docs, **kwargs)
         if add_to_docstore:

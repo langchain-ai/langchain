@@ -42,7 +42,7 @@ def _check_numpy() -> bool:
         "langchain will use a pure Python implementation for embedding distance "
         "operations, which may significantly impact performance, especially for large "
         "datasets. For optimal speed and efficiency, consider installing NumPy: "
-        "pip install numpy"
+        "pip install numpy",
     )
     return False
 
@@ -62,12 +62,12 @@ def _embedding_factory() -> Embeddings:
             from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
                 OpenAIEmbeddings,
             )
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import OpenAIEmbeddings. Please install the "
                 "OpenAIEmbeddings package using `pip install langchain-openai`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
     return OpenAIEmbeddings()
 
 
@@ -139,14 +139,14 @@ class _EmbeddingDistanceChainMixin(Chain):
         if isinstance(embeddings, tuple(types_)):
             try:
                 import tiktoken  # noqa: F401
-            except ImportError:
+            except ImportError as e:
                 msg = (
                     "The tiktoken library is required to use the default "
                     "OpenAI embeddings with embedding distance evaluators."
                     " Please either manually select a different Embeddings object"
                     " or install tiktoken using `pip install tiktoken`."
                 )
-                raise ImportError(msg)
+                raise ImportError(msg) from e
         return values
 
     model_config = ConfigDict(
@@ -202,13 +202,13 @@ class _EmbeddingDistanceChainMixin(Chain):
         """
         try:
             from langchain_community.utils.math import cosine_similarity
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "The cosine_similarity function is required to compute cosine distance."
                 " Please install the langchain-community package using"
                 " `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod
@@ -346,7 +346,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         vectors = self.embeddings.embed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [inputs["prediction"], inputs["reference"]],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -373,7 +373,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             [
                 inputs["prediction"],
                 inputs["reference"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -451,7 +451,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
 
 class PairwiseEmbeddingDistanceEvalChain(
-    _EmbeddingDistanceChainMixin, PairwiseStringEvaluator
+    _EmbeddingDistanceChainMixin,
+    PairwiseStringEvaluator,
 ):
     """Use embedding distances to score semantic difference between two predictions.
 
@@ -494,7 +495,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -521,7 +522,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()

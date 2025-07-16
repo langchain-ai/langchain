@@ -95,10 +95,13 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     X = np.array(X)
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
-        raise ValueError(
+        msg = (
             "Number of columns in X and Y must be the same. X has shape"
             f"{X.shape} "
             f"and Y has shape {Y.shape}."
+        )
+        raise ValueError(
+            msg,
         )
 
     X_norm = np.linalg.norm(X, axis=1)
@@ -301,7 +304,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        create_collection_if_not_exists: Optional[bool] = True,
+        create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -367,9 +370,12 @@ class Chroma(VectorStore):
     def _collection(self) -> chromadb.Collection:
         """Returns the underlying Chroma collection or throws an exception."""
         if self._chroma_collection is None:
-            raise ValueError(
+            msg = (
                 "Chroma collection not initialized. "
                 "Use `reset_collection` to re-create and initialize the collection. "
+            )
+            raise ValueError(
+                msg,
             )
         return self._chroma_collection
 
@@ -408,10 +414,10 @@ class Chroma(VectorStore):
         """
         return self._collection.query(
             query_texts=query_texts,
-            query_embeddings=query_embeddings,  # type: ignore
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
             n_results=n_results,
-            where=where,  # type: ignore
-            where_document=where_document,  # type: ignore
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
             **kwargs,
         )
 
@@ -448,11 +454,12 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
-            self._embedding_function, "embed_image"
+            self._embedding_function,
+            "embed_image",
         ):
             embeddings = self._embedding_function.embed_image(uris=uris)
         if metadatas:
@@ -477,8 +484,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=images_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -488,9 +495,8 @@ class Chroma(VectorStore):
                             "Try filtering complex metadata using "
                             "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
+                    raise e
             if empty_ids:
                 images_without_metadatas = [b64_texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
@@ -535,7 +541,7 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
 
         embeddings = None
         texts = list(texts)
@@ -565,8 +571,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=texts_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -576,9 +582,8 @@ class Chroma(VectorStore):
                             "Try filtering complex metadata from the document using "
                             "langchain_community.vectorstores.utils.filter_complex_metadata."
                         )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
+                    raise e
             if empty_ids:
                 texts_without_metadatas = [texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
@@ -586,13 +591,13 @@ class Chroma(VectorStore):
                 )
                 ids_without_metadatas = [ids[j] for j in empty_ids]
                 self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,  # type: ignore
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
                     documents=texts_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
             self._collection.upsert(
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=texts,
                 ids=ids,
             )
@@ -602,7 +607,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[Document]:
         """Run similarity search with Chroma.
@@ -617,7 +622,10 @@ class Chroma(VectorStore):
             List of documents most similar to the query text.
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter, **kwargs
+            query,
+            k,
+            filter=filter,
+            **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -625,7 +633,7 @@ class Chroma(VectorStore):
         self,
         embedding: list[float],
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -655,7 +663,7 @@ class Chroma(VectorStore):
         self,
         embedding: list[float],
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
@@ -686,7 +694,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
@@ -728,7 +736,7 @@ class Chroma(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, np.ndarray]]:
@@ -796,22 +804,24 @@ class Chroma(VectorStore):
 
         if distance == "cosine":
             return self._cosine_relevance_score_fn
-        elif distance == "l2":
+        if distance == "l2":
             return self._euclidean_relevance_score_fn
-        elif distance == "ip":
+        if distance == "ip":
             return self._max_inner_product_relevance_score_fn
-        else:
-            raise ValueError(
-                "No supported normalization function"
-                f" for distance metric of type: {distance}."
-                "Consider providing relevance_score_fn to Chroma constructor."
-            )
+        msg = (
+            "No supported normalization function"
+            f" for distance metric of type: {distance}."
+            "Consider providing relevance_score_fn to Chroma constructor."
+        )
+        raise ValueError(
+            msg,
+        )
 
     def similarity_search_by_image(
         self,
         uri: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[Document]:
         """Search for similar images based on the given image URI.
@@ -833,29 +843,29 @@ class Chroma(VectorStore):
             ValueError: If the embedding function does not support image embeddings.
         """
         if self._embedding_function is None or not hasattr(
-            self._embedding_function, "embed_image"
+            self._embedding_function,
+            "embed_image",
         ):
-            raise ValueError("The embedding function must support image embedding.")
+            msg = "The embedding function must support image embedding."
+            raise ValueError(msg)
 
         # Obtain image embedding
         # Assuming embed_image returns a single embedding
         image_embedding = self._embedding_function.embed_image(uris=[uri])
 
         # Perform similarity search based on the obtained embedding
-        results = self.similarity_search_by_vector(
+        return self.similarity_search_by_vector(
             embedding=image_embedding,
             k=k,
             filter=filter,
             **kwargs,
         )
 
-        return results
-
     def similarity_search_by_image_with_relevance_score(
         self,
         uri: str,
         k: int = DEFAULT_K,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for similar images based on the given image URI.
@@ -877,23 +887,23 @@ class Chroma(VectorStore):
             ValueError: If the embedding function does not support image embeddings.
         """
         if self._embedding_function is None or not hasattr(
-            self._embedding_function, "embed_image"
+            self._embedding_function,
+            "embed_image",
         ):
-            raise ValueError("The embedding function must support image embedding.")
+            msg = "The embedding function must support image embedding."
+            raise ValueError(msg)
 
         # Obtain image embedding
         # Assuming embed_image returns a single embedding
         image_embedding = self._embedding_function.embed_image(uris=[uri])
 
         # Perform similarity search based on the obtained embedding
-        results = self.similarity_search_by_vector_with_relevance_scores(
+        return self.similarity_search_by_vector_with_relevance_scores(
             embedding=image_embedding,
             k=k,
             filter=filter,
             **kwargs,
         )
-
-        return results
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -901,7 +911,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -944,8 +954,7 @@ class Chroma(VectorStore):
 
         candidates = _results_to_docs(results)
 
-        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
-        return selected_results
+        return [r for i, r in enumerate(candidates) if i in mmr_selected]
 
     def max_marginal_relevance_search(
         self,
@@ -953,7 +962,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[dict[str, str]] = None,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
         where_document: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> list[Document]:
@@ -982,8 +991,9 @@ class Chroma(VectorStore):
             ValueError: If the embedding function is not provided.
         """
         if self._embedding_function is None:
+            msg = "For MMR search, you must specify an embedding function on creation."
             raise ValueError(
-                "For MMR search, you must specify an embedding function on creation."
+                msg,
             )
 
         embedding = self._embedding_function.embed_query(query)
@@ -1048,7 +1058,7 @@ class Chroma(VectorStore):
         if include is not None:
             kwargs["include"] = include
 
-        return self._collection.get(**kwargs)  # type: ignore
+        return self._collection.get(**kwargs)  # type: ignore[arg-type, return-value]
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their IDs.
@@ -1078,7 +1088,9 @@ class Chroma(VectorStore):
         return [
             Document(page_content=doc, metadata=meta, id=doc_id)
             for doc, meta, doc_id in zip(
-                results["documents"], results["metadatas"], results["ids"]
+                results["documents"],
+                results["metadatas"],
+                results["ids"],
             )
             if doc is not None  # Filter out documents with None page_content
         ]
@@ -1092,7 +1104,6 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    # type: ignore
     def update_documents(self, ids: list[str], documents: list[Document]) -> None:
         """Update a document in the collection.
 
@@ -1106,24 +1117,27 @@ class Chroma(VectorStore):
         text = [document.page_content for document in documents]
         metadata = [document.metadata for document in documents]
         if self._embedding_function is None:
+            msg = "For update, you must specify an embedding function on creation."
             raise ValueError(
-                "For update, you must specify an embedding function on creation."
+                msg,
             )
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
-            self._collection._client, "get_max_batch_size"
+            self._collection._client,  # noqa: SLF001
+            "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            self._collection._client, "max_batch_size"
+            self._collection._client,  # noqa: SLF001
+            "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=self._collection._client,
+                api=self._collection._client,  # noqa: SLF001
                 ids=ids,
-                metadatas=metadata,  # type: ignore
+                metadatas=metadata,  # type: ignore[arg-type]
                 documents=text,
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
             ):
                 self._collection.update(
                     ids=batch[0],
@@ -1134,9 +1148,9 @@ class Chroma(VectorStore):
         else:
             self._collection.update(
                 ids=ids,
-                embeddings=embeddings,  # type: ignore
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=text,
-                metadatas=metadata,  # type: ignore
+                metadatas=metadata,  # type: ignore[arg-type]
             )
 
     @classmethod
@@ -1187,23 +1201,25 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
         if hasattr(
-            chroma_collection._client, "get_max_batch_size"
+            chroma_collection._client,
+            "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            chroma_collection._client, "max_batch_size"
+            chroma_collection._client,
+            "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
                 api=chroma_collection._client,
                 ids=ids,
-                metadatas=metadatas,  # type: ignore
+                metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,
             ):
                 chroma_collection.add_texts(
                     texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,  # type: ignore
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
                     ids=batch[0],
                 )
         else:

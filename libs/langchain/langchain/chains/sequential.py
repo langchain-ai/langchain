@@ -102,7 +102,7 @@ class SequentialChain(Chain):
     ) -> dict[str, str]:
         known_values = inputs.copy()
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        for i, chain in enumerate(self.chains):
+        for _i, chain in enumerate(self.chains):
             callbacks = _run_manager.get_child()
             outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
             known_values.update(outputs)
@@ -116,9 +116,11 @@ class SequentialChain(Chain):
         known_values = inputs.copy()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        for i, chain in enumerate(self.chains):
+        for _i, chain in enumerate(self.chains):
             outputs = await chain.acall(
-                known_values, return_only_outputs=True, callbacks=callbacks
+                known_values,
+                return_only_outputs=True,
+                callbacks=callbacks,
             )
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
@@ -181,12 +183,16 @@ class SimpleSequentialChain(Chain):
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
             _input = chain.run(
-                _input, callbacks=_run_manager.get_child(f"step_{i + 1}")
+                _input,
+                callbacks=_run_manager.get_child(f"step_{i + 1}"),
             )
             if self.strip_outputs:
                 _input = _input.strip()
             _run_manager.on_text(
-                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+                _input,
+                color=color_mapping[str(i)],
+                end="\n",
+                verbose=self.verbose,
             )
         return {self.output_key: _input}
 
@@ -200,11 +206,15 @@ class SimpleSequentialChain(Chain):
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
             _input = await chain.arun(
-                _input, callbacks=_run_manager.get_child(f"step_{i + 1}")
+                _input,
+                callbacks=_run_manager.get_child(f"step_{i + 1}"),
             )
             if self.strip_outputs:
                 _input = _input.strip()
             await _run_manager.on_text(
-                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+                _input,
+                color=color_mapping[str(i)],
+                end="\n",
+                verbose=self.verbose,
             )
         return {self.output_key: _input}

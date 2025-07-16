@@ -1,5 +1,7 @@
 """Ollama large language models."""
 
+from __future__ import annotations
+
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
@@ -36,7 +38,7 @@ class OllamaLLM(BaseLLM):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = True
+    reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
@@ -132,22 +134,22 @@ class OllamaLLM(BaseLLM):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients. 
+    """Additional kwargs to pass to the httpx clients.
     These arguments are passed to both synchronous and async clients.
     Use sync_client_kwargs and async_client_kwargs to pass different arguments
     to synchronous and asynchronous clients.
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before passing to the HTTPX 
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX
     AsyncClient.
-    
+
     For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
     """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
-    
+
     For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
@@ -168,7 +170,8 @@ class OllamaLLM(BaseLLM):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            msg = "`stop` found in both the input and default params."
+            raise ValueError(msg)
         if self.stop is not None:
             stop = self.stop
 
@@ -193,7 +196,7 @@ class OllamaLLM(BaseLLM):
             },
         )
 
-        params = {
+        return {
             "prompt": prompt,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
@@ -203,8 +206,6 @@ class OllamaLLM(BaseLLM):
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
         }
-
-        return params
 
     @property
     def _llm_type(self) -> str:
@@ -267,14 +268,17 @@ class OllamaLLM(BaseLLM):
         prompt: str,
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
-                    text=stream_resp["response"] if "response" in stream_resp else "",
+                    text=stream_resp.get("response", ""),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
@@ -290,7 +294,14 @@ class OllamaLLM(BaseLLM):
                         verbose=verbose,
                     )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
+
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
 
         return final_chunk
 
@@ -299,14 +310,17 @@ class OllamaLLM(BaseLLM):
         prompt: str,
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
-                    text=stream_resp["response"] if "response" in stream_resp else "",
+                    text=stream_resp.get("response", ""),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
@@ -322,7 +336,14 @@ class OllamaLLM(BaseLLM):
                         verbose=verbose,
                     )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
+
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
 
         return final_chunk
 
@@ -371,10 +392,11 @@ class OllamaLLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 additional_kwargs = {}
-                if thinking_content := stream_resp.get("thinking"):
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
                 chunk = GenerationChunk(
@@ -401,10 +423,11 @@ class OllamaLLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 additional_kwargs = {}
-                if thinking_content := stream_resp.get("thinking"):
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
                 chunk = GenerationChunk(

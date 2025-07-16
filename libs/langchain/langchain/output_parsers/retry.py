@@ -30,7 +30,7 @@ Please try again:"""
 
 NAIVE_RETRY_PROMPT = PromptTemplate.from_template(NAIVE_COMPLETION_RETRY)
 NAIVE_RETRY_WITH_ERROR_PROMPT = PromptTemplate.from_template(
-    NAIVE_COMPLETION_RETRY_WITH_ERROR
+    NAIVE_COMPLETION_RETRY_WITH_ERROR,
 )
 
 T = TypeVar("T")
@@ -118,7 +118,7 @@ class RetryOutputParser(BaseOutputParser[T]):
                         {
                             "prompt": prompt_value.to_string(),
                             "completion": completion,
-                        }
+                        },
                     )
 
         msg = "Failed to parse"
@@ -154,7 +154,7 @@ class RetryOutputParser(BaseOutputParser[T]):
                         {
                             "prompt": prompt_value.to_string(),
                             "completion": completion,
-                        }
+                        },
                     )
 
         msg = "Failed to parse"
@@ -191,7 +191,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Annotated[
         Union[
-            RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str], Any
+            RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str],
+            Any,
         ],
         SkipValidation(),
     ]
@@ -245,7 +246,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             "completion": completion,
                             "prompt": prompt_value.to_string(),
                             "error": repr(e),
-                        }
+                        },
                     )
 
         msg = "Failed to parse"
@@ -273,7 +274,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             "prompt": prompt_value.to_string(),
                             "completion": completion,
                             "error": repr(e),
-                        }
+                        },
                     )
 
         msg = "Failed to parse"

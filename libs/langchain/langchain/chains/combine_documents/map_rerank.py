@@ -92,7 +92,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     )
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         schema: dict[str, Any] = {
             self.output_key: (str, None),
@@ -170,7 +171,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     def combine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
@@ -194,7 +198,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         return self._process_results(docs, results)
 
     async def acombine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
@@ -224,7 +231,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     ) -> tuple[str, dict]:
         typed_results = cast(list[dict], results)
         sorted_res = sorted(
-            zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
+            zip(typed_results, docs),
+            key=lambda x: -int(x[0][self.rank_key]),
         )
         output, document = sorted_res[0]
         extra_info = {}

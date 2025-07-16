@@ -273,7 +273,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria"}
         prompt_ = prompt or PROMPT
@@ -529,7 +530,8 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCES

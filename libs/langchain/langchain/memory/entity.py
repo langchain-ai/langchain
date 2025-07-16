@@ -115,12 +115,12 @@ class UpstashRedisEntityStore(BaseEntityStore):
     ):
         try:
             from upstash_redis import Redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
@@ -146,7 +146,9 @@ class UpstashRedisEntityStore(BaseEntityStore):
             or default
             or ""
         )
-        logger.debug(f"Upstash Redis MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug(
+            "Upstash Redis MEM get '%s:%s': '%s'", self.full_key_prefix, key, res
+        )
         return res
 
     def set(self, key: str, value: Optional[str]) -> None:
@@ -154,7 +156,11 @@ class UpstashRedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            "Redis MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 
@@ -167,7 +173,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
     def clear(self) -> None:
         def scan_and_delete(cursor: int) -> int:
             cursor, keys_to_delete = self.redis_client.scan(
-                cursor, f"{self.full_key_prefix}:*"
+                cursor,
+                f"{self.full_key_prefix}:*",
             )
             self.redis_client.delete(*keys_to_delete)
             return cursor
@@ -210,23 +217,23 @@ class RedisEntityStore(BaseEntityStore):
     ):
         try:
             import redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
         try:
             from langchain_community.utilities.redis import get_client
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import langchain_community.utilities.redis.get_client. "
                 "Please install it with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
@@ -248,7 +255,7 @@ class RedisEntityStore(BaseEntityStore):
             or default
             or ""
         )
-        logger.debug(f"REDIS MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug("REDIS MEM get '%s:%s': '%s'", self.full_key_prefix, key, res)
         return res
 
     def set(self, key: str, value: Optional[str]) -> None:
@@ -256,7 +263,11 @@ class RedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            "REDIS MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 
@@ -274,7 +285,8 @@ class RedisEntityStore(BaseEntityStore):
                 yield batch
 
         for keybatch in batched(
-            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"), 500
+            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"),
+            500,
         ):
             self.redis_client.delete(*keybatch)
 
@@ -309,12 +321,12 @@ class SQLiteEntityStore(BaseEntityStore):
         super().__init__(*args, **kwargs)
         try:
             import sqlite3
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import sqlite3 python package. "
                 "Please install it with `pip install sqlite3`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         # Basic validation to prevent obviously malicious table/session names
         if not table_name.isidentifier() or not session_id.isidentifier():

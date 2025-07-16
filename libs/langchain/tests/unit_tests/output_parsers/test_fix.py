@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from datetime import timezone
 from typing import Any, Callable, Optional, TypeVar
 
 import pytest
@@ -38,7 +39,7 @@ class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterR
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
+            attemp_count_before_success=5,
         ),
     ],
 )
@@ -81,7 +82,7 @@ def test_output_fixing_parser_from_llm() -> None:
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
+            attemp_count_before_success=5,
         ),
     ],
 )
@@ -140,7 +141,8 @@ def test_output_fixing_parser_output_type(
     base_parser: BaseOutputParser,
 ) -> None:
     parser = OutputFixingParser[str](
-        parser=base_parser, retry_chain=RunnablePassthrough()
+        parser=base_parser,
+        retry_chain=RunnablePassthrough(),
     )
     assert parser.OutputType is base_parser.OutputType
 
@@ -150,17 +152,17 @@ def test_output_fixing_parser_output_type(
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
@@ -187,17 +189,17 @@ def test_output_fixing_parser_parse_with_retry_chain(
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )

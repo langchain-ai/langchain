@@ -1,5 +1,7 @@
 """Ollama embeddings models."""
 
+from __future__ import annotations
+
 from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -132,7 +134,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients. 
+    """Additional kwargs to pass to the httpx clients.
     These arguments are passed to both synchronous and async clients.
     Use sync_client_kwargs and async_client_kwargs to pass different arguments
     to synchronous and asynchronous clients.
@@ -271,14 +273,14 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
-            raise ValueError(
+            msg = (
                 "Ollama client is not initialized. "
                 "Please ensure Ollama is running and the model is loaded."
             )
-        embedded_docs = self._client.embed(
+            raise ValueError(msg)
+        return self._client.embed(
             self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
-        return embedded_docs
 
     def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
@@ -287,16 +289,16 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
-            raise ValueError(
+            msg = (
                 "Ollama client is not initialized. "
                 "Please ensure Ollama is running and the model is loaded."
             )
-        embedded_docs = (
+            raise ValueError(msg)
+        return (
             await self._async_client.embed(
                 self.model, texts, keep_alive=self.keep_alive
             )
         )["embeddings"]
-        return embedded_docs
 
     async def aembed_query(self, text: str) -> list[float]:
         """Embed query text."""

@@ -1,4 +1,3 @@
-# flake8: noqa
 TMDB_DOCS = """API documentation:
 Endpoint: https://api.themoviedb.org/3
 GET /search/movie
@@ -34,4 +33,4 @@ backdrop_path | string or null | optional
 popularity | number | optional
 vote_count | integer | optional
 video | boolean | optional
-vote_average | number | optional"""
+vote_average | number | optional"""  # noqa: E501

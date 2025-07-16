@@ -64,6 +64,9 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         # Ignore divide by zero errors run time warnings as those are handled below.
         with np.errstate(divide="ignore", invalid="ignore"):
             similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
+        if np.isnan(similarity).all():
+            msg = "NaN values found, please remove the NaN values and try again"
+            raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
 

@@ -147,7 +147,9 @@ class AgentExecutorIterator:
         self.iterations += 1
         self.time_elapsed = time.time() - self.start_time
         logger.debug(
-            f"Agent Iterations: {self.iterations} ({self.time_elapsed:.2f}s elapsed)"
+            "Agent Iterations: %s (%.2fs elapsed)",
+            self.iterations,
+            self.time_elapsed,
         )
 
     def make_final_outputs(
@@ -160,8 +162,10 @@ class AgentExecutorIterator:
 
         prepared_outputs = AddableDict(
             self.agent_executor.prep_outputs(
-                self.inputs, outputs, return_only_outputs=True
-            )
+                self.inputs,
+                outputs,
+                return_only_outputs=True,
+            ),
         )
         if self.include_run_info:
             prepared_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
@@ -187,7 +191,8 @@ class AgentExecutorIterator:
         )
         try:
             while self.agent_executor._should_continue(
-                self.iterations, self.time_elapsed
+                self.iterations,
+                self.time_elapsed,
             ):
                 # take the next step: this plans next action, executes it,
                 # yielding action and observation as they are generated
@@ -254,7 +259,8 @@ class AgentExecutorIterator:
         try:
             async with asyncio_timeout(self.agent_executor.max_execution_time):
                 while self.agent_executor._should_continue(
-                    self.iterations, self.time_elapsed
+                    self.iterations,
+                    self.time_elapsed,
                 ):
                     # take the next step: this plans next action, executes it,
                     # yielding action and observation as they are generated
@@ -272,11 +278,13 @@ class AgentExecutorIterator:
                         if self.yield_actions:
                             if isinstance(chunk, AgentAction):
                                 yield AddableDict(
-                                    actions=[chunk], messages=chunk.messages
+                                    actions=[chunk],
+                                    messages=chunk.messages,
                                 )
                             elif isinstance(chunk, AgentStep):
                                 yield AddableDict(
-                                    steps=[chunk], messages=chunk.messages
+                                    steps=[chunk],
+                                    messages=chunk.messages,
                                 )
 
                     # convert iterator output to format handled by _process_next_step
@@ -285,7 +293,8 @@ class AgentExecutorIterator:
                     self.update_iterations()
                     # decide if this is the final output
                     output = await self._aprocess_next_step_output(
-                        next_step, run_manager
+                        next_step,
+                        run_manager,
                     )
                     is_final = "intermediate_step" not in output
                     # yield the final output always
@@ -317,7 +326,7 @@ class AgentExecutorIterator:
         logger.debug("Processing output of Agent loop step")
         if isinstance(next_step_output, AgentFinish):
             logger.debug(
-                "Hit AgentFinish: _return -> on_chain_end -> run final output logic"
+                "Hit AgentFinish: _return -> on_chain_end -> run final output logic",
             )
             return self._return(next_step_output, run_manager=run_manager)
 
@@ -345,7 +354,7 @@ class AgentExecutorIterator:
         logger.debug("Processing output of async Agent loop step")
         if isinstance(next_step_output, AgentFinish):
             logger.debug(
-                "Hit AgentFinish: _areturn -> on_chain_end -> run final output logic"
+                "Hit AgentFinish: _areturn -> on_chain_end -> run final output logic",
             )
             return await self._areturn(next_step_output, run_manager=run_manager)
 
@@ -388,26 +397,34 @@ class AgentExecutorIterator:
         return await self._areturn(output, run_manager=run_manager)
 
     def _return(
-        self, output: AgentFinish, run_manager: CallbackManagerForChainRun
+        self,
+        output: AgentFinish,
+        run_manager: CallbackManagerForChainRun,
     ) -> AddableDict:
         """
         Return the final output of the iterator.
         """
         returned_output = self.agent_executor._return(
-            output, self.intermediate_steps, run_manager=run_manager
+            output,
+            self.intermediate_steps,
+            run_manager=run_manager,
         )
         returned_output["messages"] = output.messages
         run_manager.on_chain_end(returned_output)
         return self.make_final_outputs(returned_output, run_manager)
 
     async def _areturn(
-        self, output: AgentFinish, run_manager: AsyncCallbackManagerForChainRun
+        self,
+        output: AgentFinish,
+        run_manager: AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
         """
         Return the final output of the async iterator.
         """
         returned_output = await self.agent_executor._areturn(
-            output, self.intermediate_steps, run_manager=run_manager
+            output,
+            self.intermediate_steps,
+            run_manager=run_manager,
         )
         returned_output["messages"] = output.messages
         await run_manager.on_chain_end(returned_output)

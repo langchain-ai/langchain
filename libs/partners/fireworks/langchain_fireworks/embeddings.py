@@ -4,8 +4,6 @@ from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-# type: ignore
-
 
 class FireworksEmbeddings(BaseModel, Embeddings):
     """Fireworks embedding model integration.
@@ -78,7 +76,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         ),
     )
     """Fireworks API key.
-    
+
     Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
     model: str = "nomic-ai/nomic-embed-text-v1.5"

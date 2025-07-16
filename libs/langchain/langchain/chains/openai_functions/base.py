@@ -143,7 +143,9 @@ def create_openai_fn_chain(
 
 
 @deprecated(
-    since="0.1.1", removal="1.0", alternative="ChatOpenAI.with_structured_output"
+    since="0.1.1",
+    removal="1.0",
+    alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(
     output_schema: Union[dict[str, Any], type[BaseModel]],
@@ -220,7 +222,8 @@ def create_structured_output_chain(
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_chain(
         [function],

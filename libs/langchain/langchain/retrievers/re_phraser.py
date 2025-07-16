@@ -71,11 +71,13 @@ class RePhraseQueryRetriever(BaseRetriever):
             Relevant documents for re-phrased question
         """
         re_phrased_question = self.llm_chain.invoke(
-            query, {"callbacks": run_manager.get_child()}
+            query,
+            {"callbacks": run_manager.get_child()},
         )
-        logger.info(f"Re-phrased question: {re_phrased_question}")
+        logger.info("Re-phrased question: %s", re_phrased_question)
         return self.retriever.invoke(
-            re_phrased_question, config={"callbacks": run_manager.get_child()}
+            re_phrased_question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     async def _aget_relevant_documents(

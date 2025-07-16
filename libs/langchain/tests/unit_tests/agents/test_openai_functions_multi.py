@@ -35,7 +35,7 @@ class TestParseAIMessage:
         msg = AIMessage(
             content="LLM thoughts.",
             additional_kwargs={
-                "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'}
+                "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'},
             },
         )
         result = _parse_ai_message(msg)
@@ -59,7 +59,7 @@ class TestParseAIMessage:
         msg = AIMessage(
             content="LLM thoughts.",
             additional_kwargs={
-                "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'}
+                "function_call": {"name": "foo", "arguments": f'{{"actions": {act}}}'},
             },
         )
         result = _parse_ai_message(msg)

@@ -20,7 +20,7 @@ def _get_default_system_message() -> SystemMessage:
             "Do your best to answer the questions. "
             "Feel free to use any tools available to look up "
             "relevant information, only if necessary"
-        )
+        ),
     )
 
 
@@ -58,7 +58,9 @@ def create_conversational_retrieval_agent(
 
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(
-            memory_key=memory_key, llm=llm, max_token_limit=max_token_limit
+            memory_key=memory_key,
+            llm=llm,
+            max_token_limit=max_token_limit,
         )
     else:
         memory = ConversationTokenBufferMemory(

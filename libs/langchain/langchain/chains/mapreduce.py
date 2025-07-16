@@ -64,7 +64,7 @@ class MapReduceChain(Chain):
             **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
         )
         reduce_documents_chain = ReduceDocumentsChain(
-            combine_documents_chain=stuff_chain
+            combine_documents_chain=stuff_chain,
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
@@ -115,6 +115,7 @@ class MapReduceChain(Chain):
             self.combine_documents_chain.input_key: docs,
         }
         outputs = self.combine_documents_chain.run(
-            _inputs, callbacks=_run_manager.get_child()
+            _inputs,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: outputs}

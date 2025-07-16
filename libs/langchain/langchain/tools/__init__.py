@@ -78,6 +78,7 @@ def __getattr__(name: str) -> Any:
             f"`from langchain_community.tools import {name}`.\n\n"
             "To install langchain-community run "
             "`pip install -U langchain-community`.",
+            stacklevel=2,
             category=LangChainDeprecationWarning,
         )
 

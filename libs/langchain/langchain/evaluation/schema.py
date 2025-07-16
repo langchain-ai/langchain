@@ -120,16 +120,16 @@ class _EvalArgsMixin:
             ValueError: If the evaluator requires an input string but none is provided,
                 or if the evaluator requires a reference label but none is provided.
         """
-        if self.requires_input and input is None:
+        if self.requires_input and input_ is None:
             msg = f"{self.__class__.__name__} requires an input string."
             raise ValueError(msg)
-        if input is not None and not self.requires_input:
-            warn(self._skip_input_warning)
+        if input_ is not None and not self.requires_input:
+            warn(self._skip_input_warning, stacklevel=3)
         if self.requires_reference and reference is None:
             msg = f"{self.__class__.__name__} requires a reference string."
             raise ValueError(msg)
         if reference is not None and not self.requires_reference:
-            warn(self._skip_reference_warning)
+            warn(self._skip_reference_warning, stacklevel=3)
 
 
 class StringEvaluator(_EvalArgsMixin, ABC):
@@ -221,7 +221,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_strings(
-            prediction=prediction, reference=reference, input=input, **kwargs
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     async def aevaluate_strings(
@@ -244,7 +247,10 @@ class StringEvaluator(_EvalArgsMixin, ABC):
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_strings(
-            prediction=prediction, reference=reference, input=input, **kwargs
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
 

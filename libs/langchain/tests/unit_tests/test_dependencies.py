@@ -13,10 +13,10 @@ HERE = Path(__file__).parent
 PYPROJECT_TOML = HERE / "../../pyproject.toml"
 
 
-@pytest.fixture()
+@pytest.fixture
 def uv_conf() -> dict[str, Any]:
     """Load the pyproject.toml file."""
-    with open(PYPROJECT_TOML) as f:
+    with PYPROJECT_TOML.open() as f:
         return toml.load(f)
 
 
@@ -40,7 +40,7 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "langsmith",
             "pydantic",
             "requests",
-        ]
+        ],
     )
 
 
@@ -83,5 +83,5 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
             # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
             "cffi",
             "numpy",
-        ]
+        ],
     )

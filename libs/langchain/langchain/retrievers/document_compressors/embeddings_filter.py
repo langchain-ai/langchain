@@ -11,12 +11,12 @@ from pydantic import ConfigDict, Field
 def _get_similarity_function() -> Callable:
     try:
         from langchain_community.utils.math import cosine_similarity
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use please install langchain-community "
             "with `pip install langchain-community`."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
     return cosine_similarity
 
 
@@ -62,12 +62,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 _get_embeddings_from_stateful_docs,
                 get_stateful_documents,
             )
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             import numpy as np
@@ -76,7 +76,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             raise ImportError(msg) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
-            self.embeddings, stateful_documents
+            self.embeddings,
+            stateful_documents,
         )
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
@@ -85,7 +86,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
             similar_enough = np.where(
-                similarity[included_idxs] > self.similarity_threshold
+                similarity[included_idxs] > self.similarity_threshold,
             )
             included_idxs = included_idxs[similar_enough]
         for i in included_idxs:
@@ -104,12 +105,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 _aget_embeddings_from_stateful_docs,
                 get_stateful_documents,
             )
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             import numpy as np
@@ -118,7 +119,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             raise ImportError(msg) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = await _aget_embeddings_from_stateful_docs(
-            self.embeddings, stateful_documents
+            self.embeddings,
+            stateful_documents,
         )
         embedded_query = await self.embeddings.aembed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
@@ -127,7 +129,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
             similar_enough = np.where(
-                similarity[included_idxs] > self.similarity_threshold
+                similarity[included_idxs] > self.similarity_threshold,
             )
             included_idxs = included_idxs[similar_enough]
         for i in included_idxs:
