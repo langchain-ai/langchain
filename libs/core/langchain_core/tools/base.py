@@ -689,9 +689,7 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            return {
-                k: getattr(result, k) for k, v in result_dict.items()
-            }
+            return {k: getattr(result, k) for k, v in result_dict.items()}
         return tool_input
 
     @model_validator(mode="before")
