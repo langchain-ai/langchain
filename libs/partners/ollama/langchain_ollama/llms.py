@@ -1,13 +1,11 @@
 """Ollama large language models."""
 
+from __future__ import annotations
+
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
     Union,
 )
@@ -22,6 +20,8 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
+from ._utils import validate_model
+
 
 class OllamaLLM(BaseLLM):
     """OllamaLLM large language models.
@@ -32,11 +32,28 @@ class OllamaLLM(BaseLLM):
             from langchain_ollama import OllamaLLM
 
             model = OllamaLLM(model="llama3")
-            model.invoke("Come up with 10 names for a song about parrots")
+            print(model.invoke("Come up with 10 names for a song about parrots"))
     """
 
     model: str
     """Model name to use."""
+
+    reasoning: Optional[bool] = None
+    """Controls the reasoning/thinking mode for
+    `supported models <https://ollama.com/search?c=thinking>`__.
+
+    - ``True``: Enables reasoning mode. The model's reasoning process will be
+      captured and returned separately in the ``additional_kwargs`` of the
+      response message, under ``reasoning_content``. The main response
+      content will not include the reasoning tags.
+    - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+      and the response will not include any reasoning content.
+    - ``None`` (Default): The model will use its default reasoning behavior. If
+      the model performs reasoning, the ``<think>`` and ``</think>`` tags will
+      be present directly within the main response content."""
+
+    validate_model_on_init: bool = False
+    """Whether to validate the model exists in ollama locally on initialization."""
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -55,7 +72,7 @@ class OllamaLLM(BaseLLM):
 
     num_ctx: Optional[int] = None
     """Sets the size of the context window used to generate the
-    next token. (Default: 2048)	"""
+    next token. (Default: 2048)"""
 
     num_gpu: Optional[int] = None
     """The number of GPUs to use. On macOS it defaults to 1 to
@@ -84,7 +101,12 @@ class OllamaLLM(BaseLLM):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[List[str]] = None
+    seed: Optional[int] = None
+    """Sets the random number seed to use for generation. Setting this
+    to a specific number will make the model generate the same text for
+    the same prompt."""
+
+    stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -112,16 +134,31 @@ class OllamaLLM(BaseLLM):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client. 
-    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
+    """Additional kwargs to pass to the httpx clients.
+    These arguments are passed to both synchronous and async clients.
+    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+    to synchronous and asynchronous clients.
     """
 
-    _client: Client = PrivateAttr(default=None)  # type: ignore
+    async_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX
+    AsyncClient.
+
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    """
+
+    sync_client_kwargs: Optional[dict] = {}
+    """Additional kwargs to merge with client_kwargs before passing to the HTTPX Client.
+
+    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
+    """
+
+    _client: Optional[Client] = PrivateAttr(default=None)
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
+    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
     """
     The async client to use for making requests.
     """
@@ -129,12 +166,13 @@ class OllamaLLM(BaseLLM):
     def _generate_params(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
+            msg = "`stop` found in both the input and default params."
+            raise ValueError(msg)
+        if self.stop is not None:
             stop = self.stop
 
         options_dict = kwargs.pop(
@@ -150,6 +188,7 @@ class OllamaLLM(BaseLLM):
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
+                "seed": self.seed,
                 "stop": self.stop if stop is None else stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
@@ -157,17 +196,16 @@ class OllamaLLM(BaseLLM):
             },
         )
 
-        params = {
+        return {
             "prompt": prompt,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
+            "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
         }
-
-        return params
 
     @property
     def _llm_type(self) -> str:
@@ -175,7 +213,7 @@ class OllamaLLM(BaseLLM):
         return "ollama-llm"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -187,44 +225,60 @@ class OllamaLLM(BaseLLM):
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
-        self._client = Client(host=self.base_url, **client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+
+        sync_client_kwargs = client_kwargs
+        if self.sync_client_kwargs:
+            sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
+
+        async_client_kwargs = client_kwargs
+        if self.async_client_kwargs:
+            async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+
+        self._client = Client(host=self.base_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        if self.validate_model_on_init:
+            validate_model(self._client, self.model)
         return self
 
     async def _acreate_generate_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        async for part in await self._async_client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        ):  # type: ignore
-            yield part  # type: ignore
+        if self._async_client:
+            async for part in await self._async_client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
+            ):
+                yield part
 
     def _create_generate_stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        yield from self._client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        )  # type: ignore
+        if self._client:
+            yield from self._client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
+            )
 
     async def _astream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
-                    text=stream_resp["response"] if "response" in stream_resp else "",
+                    text=stream_resp.get("response", ""),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
@@ -240,23 +294,33 @@ class OllamaLLM(BaseLLM):
                         verbose=verbose,
                     )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
+
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
 
         return final_chunk
 
     def _stream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
+        thinking_content = ""
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                if stream_resp.get("thinking"):
+                    thinking_content += stream_resp["thinking"]
                 chunk = GenerationChunk(
-                    text=stream_resp["response"] if "response" in stream_resp else "",
+                    text=stream_resp.get("response", ""),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
@@ -272,14 +336,21 @@ class OllamaLLM(BaseLLM):
                         verbose=verbose,
                     )
         if final_chunk is None:
-            raise ValueError("No data received from Ollama stream.")
+            msg = "No data received from Ollama stream."
+            raise ValueError(msg)
+
+        if thinking_content:
+            if final_chunk.generation_info:
+                final_chunk.generation_info["thinking"] = thinking_content
+            else:
+                final_chunk.generation_info = {"thinking": thinking_content}
 
         return final_chunk
 
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -297,8 +368,8 @@ class OllamaLLM(BaseLLM):
 
     async def _agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -317,17 +388,26 @@ class OllamaLLM(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                additional_kwargs = {}
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+                    generation_info={
+                        "finish_reason": self.stop,
+                        **additional_kwargs,
+                        **(
+                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                        ),
+                    },
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -339,17 +419,26 @@ class OllamaLLM(BaseLLM):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                additional_kwargs = {}
+                if reasoning and (thinking_content := stream_resp.get("thinking")):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+                    generation_info={
+                        "finish_reason": self.stop,
+                        **additional_kwargs,
+                        **(
+                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                        ),
+                    },
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(

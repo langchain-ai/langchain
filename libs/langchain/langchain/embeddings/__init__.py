@@ -83,17 +83,17 @@ class HypotheticalDocumentEmbedder:
     def __init__(self, *args: Any, **kwargs: Any):
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead",
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
-        return H(*args, **kwargs)  # type: ignore
+        return H(*args, **kwargs)  # type: ignore[return-value]
 
     @classmethod
     def from_llm(cls, *args: Any, **kwargs: Any) -> Any:
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead",
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
@@ -187,8 +187,8 @@ __all__ = [
     "ErnieEmbeddings",
     "FakeEmbeddings",
     "FastEmbedEmbeddings",
-    "GooglePalmEmbeddings",
     "GPT4AllEmbeddings",
+    "GooglePalmEmbeddings",
     "GradientEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "HuggingFaceEmbeddings",

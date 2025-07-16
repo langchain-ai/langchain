@@ -3,17 +3,15 @@ from __future__ import annotations
 import copy
 import pathlib
 import re
+from collections.abc import Iterable, Sequence
 from io import StringIO
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
+    Literal,
     Optional,
-    Sequence,
-    Tuple,
     TypedDict,
+    Union,
     cast,
 )
 
@@ -30,7 +28,7 @@ class ElementType(TypedDict):
     url: str
     xpath: str
     content: str
-    metadata: Dict[str, str]
+    metadata: dict[str, str]
 
 
 class HTMLHeaderTextSplitter:
@@ -113,8 +111,8 @@ class HTMLHeaderTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
-        return_each_element: bool = False,
+        headers_to_split_on: list[tuple[str, str]],
+        return_each_element: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Initialize with headers to split on.
 
@@ -124,14 +122,15 @@ class HTMLHeaderTextSplitter:
             return_each_element: Whether to return each HTML
                 element as a separate Document. Defaults to False.
         """
+        # Sort headers by their numeric level so that h1 < h2 < h3...
         self.headers_to_split_on = sorted(
-            headers_to_split_on, key=lambda x: int(x[0][1])
+            headers_to_split_on, key=lambda x: int(x[0][1:])
         )
         self.header_mapping = dict(self.headers_to_split_on)
         self.header_tags = [tag for tag, _ in self.headers_to_split_on]
         self.return_each_element = return_each_element
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
         """Split the given text into a list of Document objects.
 
         Args:
@@ -144,7 +143,7 @@ class HTMLHeaderTextSplitter:
 
     def split_text_from_url(
         self, url: str, timeout: int = 10, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Fetch text content from a URL and split it into documents.
 
         Args:
@@ -163,50 +162,7 @@ class HTMLHeaderTextSplitter:
         response.raise_for_status()
         return self.split_text(response.text)
 
-    def _header_level(self, tag_name: str) -> int:
-        """Determine the heading level of a tag."""
-        if tag_name.lower() in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            return int(tag_name[1])
-        # Returns high level if it isn't a header
-        return 9999
-
-    def _dom_depth(self, element: Any) -> int:
-        """Determine the DOM depth of an element by counting its parents."""
-        depth = 0
-        for _ in element.parents:
-            depth += 1
-        return depth
-
-    def _get_elements(self, html_content: str) -> List[Any]:
-        """Parse HTML content and return a list of BeautifulSoup elements.
-
-        This helper function takes HTML content as input,
-        parses it using BeautifulSoup4, and returns all HTML elements
-        found in the document body. If no body tag exists,
-        it returns all elements in the full document.
-
-        Args:
-            html_content: Raw HTML content to be parsed.
-
-        Returns:
-            List[Any]: A list of BeautifulSoup elements found in the HTML document.
-
-        Raises:
-            ImportError: If the BeautifulSoup4 package is not installed.
-        """
-        try:
-            from bs4 import BeautifulSoup  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import BeautifulSoup/PageElement, \
-                    please install with `pip install \
-                    bs4`."
-            ) from e
-        soup = BeautifulSoup(html_content, "html.parser")
-        body = soup.body if soup.body else soup
-        return body.find_all()
-
-    def split_text_from_file(self, file: Any) -> List[Document]:
+    def split_text_from_file(self, file: Any) -> list[Document]:
         """Split HTML content from a file into a list of Document objects.
 
         Args:
@@ -216,109 +172,129 @@ class HTMLHeaderTextSplitter:
             A list of split Document objects.
         """
         if isinstance(file, str):
-            with open(file, "r", encoding="utf-8") as f:
+            with open(file, encoding="utf-8") as f:
                 html_content = f.read()
         else:
             html_content = file.read()
-        elements = self._get_elements(html_content)
-        documents: List[Document] = []
-        active_headers: Dict[str, Tuple[str, int, int]] = {}
-        current_chunk: List[str] = []
-        chunk_dom_depth = 0
+        return list(self._generate_documents(html_content))
 
-        def finalize_chunk() -> None:
-            if current_chunk:
-                final_meta = {
-                    key: content
-                    for key, (content, level, dom_depth) in active_headers.items()
-                    if chunk_dom_depth >= dom_depth
-                }
-                combined_text = "  \n".join(
-                    line for line in current_chunk if line.strip()
-                )
-                if combined_text.strip():
-                    documents.append(
-                        Document(page_content=combined_text, metadata=final_meta)
-                    )
-                current_chunk.clear()
+    def _generate_documents(self, html_content: str) -> Any:
+        """Private method that performs a DFS traversal over the DOM and yields.
 
-        for element in elements:
-            tag = element.name
+        Document objects on-the-fly. This approach maintains the same splitting
+        logic (headers vs. non-headers, chunking, etc.) while walking the DOM
+        explicitly in code.
+
+        Args:
+            html_content: The raw HTML content.
+
+        Yields:
+            Document objects as they are created.
+        """
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError as e:
+            msg = (
+                "Unable to import BeautifulSoup. Please install via `pip install bs4`."
+            )
+            raise ImportError(msg) from e
+
+        soup = BeautifulSoup(html_content, "html.parser")
+        body = soup.body if soup.body else soup
+
+        # Dictionary of active headers:
+        #   key = user-defined header name (e.g. "Header 1")
+        #   value = (header_text, level, dom_depth)
+        active_headers: dict[str, tuple[str, int, int]] = {}
+        current_chunk: list[str] = []
+
+        def finalize_chunk() -> Optional[Document]:
+            """Finalize the accumulated chunk into a single Document."""
+            if not current_chunk:
+                return None
+
+            final_text = "  \n".join(line for line in current_chunk if line.strip())
+            current_chunk.clear()
+            if not final_text.strip():
+                return None
+
+            final_meta = {k: v[0] for k, v in active_headers.items()}
+            return Document(page_content=final_text, metadata=final_meta)
+
+        # We'll use a stack for DFS traversal
+        stack = [body]
+        while stack:
+            node = stack.pop()
+            children = list(node.children)
+            from bs4.element import Tag
+
+            for child in reversed(children):
+                if isinstance(child, Tag):
+                    stack.append(child)
+
+            tag = getattr(node, "name", None)
             if not tag:
                 continue
-            text = " ".join(
-                t
-                for t in element.find_all(string=True, recursive=False)
-                if isinstance(t, str)
-            ).strip()
-            if not text:
+
+            text_elements = [
+                str(child).strip()
+                for child in node.find_all(string=True, recursive=False)
+            ]
+            node_text = " ".join(elem for elem in text_elements if elem)
+            if not node_text:
                 continue
 
-            level = self._header_level(tag)
-            dom_depth = self._dom_depth(element)
+            dom_depth = len(list(node.parents))
 
+            # If this node is one of our headers
             if tag in self.header_tags:
+                # If we're aggregating, finalize whatever chunk we had
                 if not self.return_each_element:
-                    finalize_chunk()
+                    doc = finalize_chunk()
+                    if doc:
+                        yield doc
 
-                # Remove headers at same or deeper level
+                # Determine numeric level (h1->1, h2->2, etc.)
+                try:
+                    level = int(tag[1:])
+                except ValueError:
+                    level = 9999
+
+                # Remove any active headers that are at or deeper than this new level
                 headers_to_remove = [
-                    key for key, (_, lvl, _) in active_headers.items() if lvl >= level
+                    k for k, (_, lvl, d) in active_headers.items() if lvl >= level
                 ]
                 for key in headers_to_remove:
                     del active_headers[key]
 
-                header_key = self.header_mapping[tag]
-                active_headers[header_key] = (text, level, dom_depth)
+                # Add/Update the active header
+                header_name = self.header_mapping[tag]
+                active_headers[header_name] = (node_text, level, dom_depth)
 
-                # Produce a document for the header itself
-                header_meta = {
-                    key: content
-                    for key, (content, lvl, dd) in active_headers.items()
-                    if dom_depth >= dd
-                }
-                documents.append(Document(page_content=text, metadata=header_meta))
-                # After encountering a header,
-                # no immediate content goes to current_chunk
-                # (if return_each_element is False, we wait for next content)
-                # (if return_each_element is True, we create docs per element anyway)
+                # Always yield a Document for the header
+                header_meta = {k: v[0] for k, v in active_headers.items()}
+                yield Document(page_content=node_text, metadata=header_meta)
+
             else:
-                # Non-header element logic
-                # Remove headers that don't apply if dom_depth < their dom_depth
-                headers_to_remove = [
-                    key for key, (_, _, dd) in active_headers.items() if dom_depth < dd
+                headers_out_of_scope = [
+                    k for k, (_, _, d) in active_headers.items() if dom_depth < d
                 ]
-                for key in headers_to_remove:
+                for key in headers_out_of_scope:
                     del active_headers[key]
 
                 if self.return_each_element:
-                    # Produce a doc for this element immediately
-                    element_meta = {
-                        key: content
-                        for key, (content, lvl, dd) in active_headers.items()
-                        if dom_depth >= dd
-                    }
-                    if text.strip():
-                        documents.append(
-                            Document(page_content=text, metadata=element_meta)
-                        )
+                    # Yield each element's text as its own Document
+                    meta = {k: v[0] for k, v in active_headers.items()}
+                    yield Document(page_content=node_text, metadata=meta)
                 else:
-                    # Accumulate content in current_chunk
-                    if text.strip():
-                        current_chunk.append(text)
-                        chunk_dom_depth = max(chunk_dom_depth, dom_depth)
+                    # Accumulate text in our chunk
+                    current_chunk.append(node_text)
 
+        # If we're aggregating and have leftover chunk, yield it
         if not self.return_each_element:
-            # finalize any remaining chunk
-            finalize_chunk()
-
-        # If no headers were found at all and return_each_element=False, behavior is:
-        # The entire content should be in one document.
-        # The logic above naturally handles it:
-        # If no recognized headers, we never split; we ended up just accumulating text
-        # in current_chunk and finalizing once at the end.
-
-        return documents
+            doc = finalize_chunk()
+            if doc:
+                yield doc
 
 
 class HTMLSectionSplitter:
@@ -329,8 +305,7 @@ class HTMLSectionSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: Optional[str] = None,
+        headers_to_split_on: list[tuple[str, str]],
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -339,23 +314,16 @@ class HTMLSectionSplitter:
             headers_to_split_on: list of tuples of headers we want to track mapped to
                 (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
                 h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2"].
-            xslt_path: path to xslt file for document transformation.
-            Uses a default if not passed.
-            Needed for html contents that using different format and layouts.
             **kwargs (Any): Additional optional arguments for customizations.
 
         """
         self.headers_to_split_on = dict(headers_to_split_on)
-
-        if xslt_path is None:
-            self.xslt_path = (
-                pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
-            ).absolute()
-        else:
-            self.xslt_path = pathlib.Path(xslt_path).absolute()
+        self.xslt_path = (
+            pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
+        ).absolute()
         self.kwargs = kwargs
 
-    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> list[Document]:
         """Split documents."""
         texts, metadatas = [], []
         for doc in documents:
@@ -367,7 +335,7 @@ class HTMLSectionSplitter:
 
         return text_splitter.split_documents(results)
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
         """Split HTML text string.
 
         Args:
@@ -376,8 +344,8 @@ class HTMLSectionSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> List[Document]:
+        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+    ) -> list[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -385,7 +353,7 @@ class HTMLSectionSplitter:
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
 
-                for key in chunk.metadata.keys():
+                for key in chunk.metadata:
                     if chunk.metadata[key] == "#TITLE#":
                         chunk.metadata[key] = metadata["Title"]
                 metadata = {**metadata, **chunk.metadata}
@@ -393,7 +361,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> list[dict[str, Optional[str]]]:
         """Split an HTML document into sections based on specified header tags.
 
         This method uses BeautifulSoup to parse the HTML content and divides it into
@@ -412,35 +380,32 @@ class HTMLSectionSplitter:
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
         try:
-            from bs4 import (
-                BeautifulSoup,  # type: ignore[import-untyped]
-                PageElement,
-            )
+            from bs4 import BeautifulSoup
+            from bs4.element import PageElement
         except ImportError as e:
-            raise ImportError(
-                "Unable to import BeautifulSoup/PageElement, \
+            msg = "Unable to import BeautifulSoup/PageElement, \
                     please install with `pip install \
                     bs4`."
-            ) from e
+            raise ImportError(msg) from e
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections: list[dict[str, str | None]] = []
 
-        headers = soup.find_all(["body"] + headers)  # type: ignore[assignment]
+        headers = soup.find_all(["body", *headers])  # type: ignore[assignment]
 
         for i, header in enumerate(headers):
             header_element = cast(PageElement, header)
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
-                section_content: List = []
+                section_content: list[str] = []
             else:
                 current_header = header_element.text.strip()
                 current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
-                if i + 1 < len(headers) and element == headers[i + 1]:
+                if i + 1 < len(headers) and element == headers[i + 1]:  # type: ignore[comparison-overlap]
                     break
                 if isinstance(element, str):
                     section_content.append(element)
@@ -476,19 +441,27 @@ class HTMLSectionSplitter:
         try:
             from lxml import etree
         except ImportError as e:
-            raise ImportError(
-                "Unable to import lxml, please install with `pip install lxml`."
-            ) from e
+            msg = "Unable to import lxml, please install with `pip install lxml`."
+            raise ImportError(msg) from e
         # use lxml library to parse html document and return xml ElementTree
-        parser = etree.HTMLParser()
-        tree = etree.parse(StringIO(html_content), parser)
+        # Create secure parsers to prevent XXE attacks
+        html_parser = etree.HTMLParser(no_network=True)
+        xslt_parser = etree.XMLParser(
+            resolve_entities=False, no_network=True, load_dtd=False
+        )
 
-        xslt_tree = etree.parse(self.xslt_path)
-        transform = etree.XSLT(xslt_tree)
+        # Apply XSLT access control to prevent file/network access
+        # DENY_ALL is a predefined access control that blocks all file/network access
+        # Type ignore needed due to incomplete lxml type stubs
+        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
+
+        tree = etree.parse(StringIO(html_content), html_parser)
+        xslt_tree = etree.parse(self.xslt_path, xslt_parser)
+        transform = etree.XSLT(xslt_tree, access_control=ac)
         result = transform(tree)
         return str(result)
 
-    def split_text_from_file(self, file: Any) -> List[Document]:
+    def split_text_from_file(self, file: Any) -> list[Document]:
         """Split HTML content from a file into a list of Document objects.
 
         Args:
@@ -560,6 +533,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         preserve_parent_metadata (bool): Whether to pass through parent document
             metadata to split documents when calling
             ``transform_documents/atransform_documents()``.
+        keep_separator (Union[bool, Literal["start", "end"]]): Whether separators
+            should be at the beginning of a chunk, at the end, or not at all.
 
     Example:
         .. code-block:: python
@@ -591,24 +566,25 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
+        headers_to_split_on: list[tuple[str, str]],
         *,
         max_chunk_size: int = 1000,
         chunk_overlap: int = 0,
-        separators: Optional[List[str]] = None,
-        elements_to_preserve: Optional[List[str]] = None,
+        separators: Optional[list[str]] = None,
+        elements_to_preserve: Optional[list[str]] = None,
         preserve_links: bool = False,
         preserve_images: bool = False,
         preserve_videos: bool = False,
         preserve_audio: bool = False,
-        custom_handlers: Optional[Dict[str, Callable[[Any], str]]] = None,
+        custom_handlers: Optional[dict[str, Callable[[Any], str]]] = None,
         stopword_removal: bool = False,
         stopword_lang: str = "english",
         normalize_text: bool = False,
-        external_metadata: Optional[Dict[str, str]] = None,
-        allowlist_tags: Optional[List[str]] = None,
-        denylist_tags: Optional[List[str]] = None,
+        external_metadata: Optional[dict[str, str]] = None,
+        allowlist_tags: Optional[list[str]] = None,
+        denylist_tags: Optional[list[str]] = None,
         preserve_parent_metadata: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
     ):
         """Initialize splitter."""
         try:
@@ -617,10 +593,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             self._BeautifulSoup = BeautifulSoup
             self._Tag = Tag
         except ImportError:
-            raise ImportError(
+            msg = (
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
             )
+            raise ImportError(msg)
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -636,6 +613,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._external_metadata = external_metadata or {}
         self._allowlist_tags = allowlist_tags
         self._preserve_parent_metadata = preserve_parent_metadata
+        self._keep_separator = keep_separator
         if allowlist_tags:
             self._allowlist_tags = list(
                 set(allowlist_tags + [header[0] for header in headers_to_split_on])
@@ -650,27 +628,30 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if separators:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
+                keep_separator=keep_separator,
                 chunk_size=max_chunk_size,
                 chunk_overlap=chunk_overlap,
             )
         else:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
+                keep_separator=keep_separator,
+                chunk_size=max_chunk_size,
+                chunk_overlap=chunk_overlap,
             )
 
         if self._stopword_removal:
             try:
-                import nltk  # type: ignore
-                from nltk.corpus import stopwords  # type: ignore
+                import nltk
 
                 nltk.download("stopwords")
-                self._stopwords = set(stopwords.words(self._stopword_lang))
+                self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
             except ImportError:
-                raise ImportError(
+                msg = (
                     "Could not import nltk. Please install it with 'pip install nltk'."
                 )
+                raise ImportError(msg)
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
         """Splits the provided HTML text into smaller chunks based on the configuration.
 
         Args:
@@ -693,7 +674,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Transform sequence of documents by splitting them."""
         transformed = []
         for doc in documents:
@@ -763,7 +744,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             soup (Any): Parsed HTML content using BeautifulSoup.
         """
         if self._allowlist_tags:
-            for tag in soup.find_all(True):
+            for tag in soup.find_all(name=True):
                 if tag.name not in self._allowlist_tags:
                     tag.decompose()
 
@@ -792,7 +773,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return text
 
-    def _process_html(self, soup: Any) -> List[Document]:
+    def _process_html(self, soup: Any) -> list[Document]:
         """Processes the HTML content using BeautifulSoup and splits it using headers.
 
         Args:
@@ -801,10 +782,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             List[Document]: A list of Document objects containing the split content.
         """
-        documents: List[Document] = []
-        current_headers: Dict[str, str] = {}
-        current_content: List[str] = []
-        preserved_elements: Dict[str, str] = {}
+        documents: list[Document] = []
+        current_headers: dict[str, str] = {}
+        current_content: list[str] = []
+        preserved_elements: dict[str, str] = {}
         placeholder_count: int = 0
 
         def _get_element_text(element: Any) -> str:
@@ -837,13 +818,13 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         elements = soup.find_all(recursive=False)
 
         def _process_element(
-            element: List[Any],
-            documents: List[Document],
-            current_headers: Dict[str, str],
-            current_content: List[str],
-            preserved_elements: Dict[str, str],
+            element: list[Any],
+            documents: list[Document],
+            current_headers: dict[str, str],
+            current_content: list[str],
+            preserved_elements: dict[str, str],
             placeholder_count: int,
-        ) -> Tuple[List[Document], Dict[str, str], List[str], Dict[str, str], int]:
+        ) -> tuple[list[Document], dict[str, str], list[str], dict[str, str], int]:
             for elem in element:
                 if elem.name.lower() in ["html", "body", "div", "main"]:
                     children = elem.find_all(recursive=False)
@@ -916,15 +897,17 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if current_content:
             documents.extend(
                 self._create_documents(
-                    current_headers, " ".join(current_content), preserved_elements
+                    current_headers,
+                    " ".join(current_content),
+                    preserved_elements,
                 )
             )
 
         return documents
 
     def _create_documents(
-        self, headers: dict, content: str, preserved_elements: dict
-    ) -> List[Document]:
+        self, headers: dict[str, str], content: str, preserved_elements: dict[str, str]
+    ) -> list[Document]:
         """Creates Document objects from the provided headers, content, and elements.
 
         Args:
@@ -945,12 +928,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 content, preserved_elements
             )
             return [Document(page_content=page_content, metadata=metadata)]
-        else:
-            return self._further_split_chunk(content, metadata, preserved_elements)
+        return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
-        self, content: str, metadata: dict, preserved_elements: dict
-    ) -> List[Document]:
+        self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]
+    ) -> list[Document]:
         """Further splits the content into smaller chunks.
 
         Args:
@@ -972,14 +954,15 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             if split_with_preserved.strip():
                 result.append(
                     Document(
-                        page_content=split_with_preserved.strip(), metadata=metadata
+                        page_content=split_with_preserved.strip(),
+                        metadata=metadata,
                     )
                 )
 
         return result
 
     def _reinsert_preserved_elements(
-        self, content: str, preserved_elements: dict
+        self, content: str, preserved_elements: dict[str, str]
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 

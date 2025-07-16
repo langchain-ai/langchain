@@ -99,7 +99,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
-  const [selectedModel, setSelectedModel] = useState("groq");
+  const [selectedModel, setSelectedModel] = useState("google_genai");
   const {
     overrideParams,
     customVarName,
@@ -108,13 +108,6 @@ export default function ChatModelTabs(props) {
   const llmVarName = customVarName ?? "model";
 
   const tabItems = [
-    {
-      value: "groq",
-      label: "Groq",
-      model: "llama3-8b-8192",
-      apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain[groq]",
-    },
     {
       value: "openai",
       label: "OpenAI",
@@ -143,6 +136,13 @@ ${llmVarName} = AzureChatOpenAI(
       packageName: "langchain[openai]",
     },
     {
+      value: "google_genai",
+      label: "Google Gemini",
+      model: "gemini-2.0-flash",
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain[google-genai]",
+    },
+    {
       value: "google_vertexai",
       label: "Google Vertex",
       model: "gemini-2.0-flash-001",
@@ -155,6 +155,13 @@ ${llmVarName} = AzureChatOpenAI(
       model: "anthropic.claude-3-5-sonnet-20240620-v1:0",
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain[aws]",
+    },
+    {
+      value: "groq",
+      label: "Groq",
+      model: "llama3-8b-8192",
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain[groq]",
     },
     {
       value: "cohere",
@@ -218,6 +225,13 @@ ${llmVarName} = ChatWatsonx(
       apiKeyName: "XAI_API_KEY",
       packageName: "langchain-xai",
     },
+    {
+      value: "perplexity",
+      label: "Perplexity",
+      model: "llama-3.1-sonar-small-128k-online",
+      apiKeyName: "PPLX_API_KEY",
+      packageName: "langchain-perplexity",
+    }
   ].map((item) => ({
     ...item,
     ...overrideParams?.[item.value],

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
@@ -20,25 +21,25 @@ def _get_client(
         ls_client = LangSmithClient(api_url, api_key=api_key)
         if hasattr(ls_client, "push_prompt") and hasattr(ls_client, "pull_prompt"):
             return ls_client
-        else:
-            from langchainhub import Client as LangChainHubClient
+        from langchainhub import Client as LangChainHubClient
 
-            return LangChainHubClient(api_url, api_key=api_key)
+        return LangChainHubClient(api_url, api_key=api_key)
     except ImportError:
         try:
             from langchainhub import Client as LangChainHubClient
 
             return LangChainHubClient(api_url, api_key=api_key)
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "Could not import langsmith or langchainhub (deprecated),"
                 "please install with `pip install langsmith`."
-            ) from e
+            )
+            raise ImportError(msg) from e
 
 
 def push(
     repo_full_name: str,
-    object: Any,
+    object: Any,  # noqa: A002
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
@@ -80,14 +81,13 @@ def push(
 
     # Then it's langchainhub
     manifest_json = dumps(object)
-    message = client.push(
+    return client.push(
         repo_full_name,
         manifest_json,
         parent_commit_hash=parent_commit_hash,
         new_repo_is_public=new_repo_is_public,
         new_repo_description=new_repo_description,
     )
-    return message
 
 
 def pull(
@@ -111,8 +111,7 @@ def pull(
 
     # Then it's langsmith
     if hasattr(client, "pull_prompt"):
-        response = client.pull_prompt(owner_repo_commit, include_model=include_model)
-        return response
+        return client.pull_prompt(owner_repo_commit, include_model=include_model)
 
     # Then it's langchainhub
     if hasattr(client, "pull_repo"):

@@ -11,12 +11,12 @@ This need motivates the concept of structured output, where models can be instru
 
 ## Key concepts 
 
-**(1) Schema definition:** The output structure is represented as a schema, which can be defined in several ways. 
-**(2) Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
+1. **Schema definition:** The output structure is represented as a schema, which can be defined in several ways.<br/>
+2. **Returning structured output:** The model is given this schema, and is instructed to return output that conforms to it.
 
 ## Recommended usage
 
-This pseudo-code illustrates the recommended workflow when using structured output.
+This pseudocode illustrates the recommended workflow when using structured output.
 LangChain provides a method, [`with_structured_output()`](/docs/how_to/structured_output/#the-with_structured_output-method), that automates the process of binding the schema to the [model](/docs/concepts/chat_models/) and parsing the output.
 This helper function is available for all model providers that support structured output. 
 
@@ -99,31 +99,21 @@ Here is an example of how to use JSON mode with OpenAI:
 
 ```python
 from langchain_openai import ChatOpenAI
-model = ChatOpenAI(model="gpt-4o", model_kwargs={ "response_format": { "type": "json_object" } })
+model = ChatOpenAI(model="gpt-4o").with_structured_output(method="json_mode")
 ai_msg = model.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
-ai_msg.content
-'\n{\n  "random_ints": [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]\n}'
-```
-
-One important point to flag: the model *still* returns a string, which needs to be parsed into a JSON object.
-This can, of course, simply use the `json` library or a JSON output parser if you need more advanced functionality.
-See this [how-to guide on the JSON output parser](/docs/how_to/output_parser_json) for more details.
-
-```python
-import json
-json_object = json.loads(ai_msg.content)
-{'random_ints': [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]}
+ai_msg
+{'random_ints': [45, 67, 12, 34, 89, 23, 78, 56, 90, 11]}
 ```
 
 ## Structured output method 
 
 There are a few challenges when producing structured output with the above methods: 
 
-(1) When tool calling is used, tool call arguments needs to be parsed from a dictionary back to the original schema.  
+1. When tool calling is used, tool call arguments needs to be parsed from a dictionary back to the original schema.<br/>  
 
-(2) In addition, the model needs to be instructed to *always* use the tool when we want to enforce structured output, which is a provider specific setting. 
+2. In addition, the model needs to be instructed to *always* use the tool when we want to enforce structured output, which is a provider specific setting.<br/> 
 
-(3) When JSON mode is used, the output needs to be parsed into a JSON object. 
+3. When JSON mode is used, the output needs to be parsed into a JSON object. 
 
 With these challenges in mind, LangChain provides a helper function (`with_structured_output()`) to streamline the process.
 

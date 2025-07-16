@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -49,7 +50,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_pairwise_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
+    criteria: Optional[Union[CRITERIA_TYPE, str, list[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -69,7 +70,7 @@ def resolve_pairwise_criteria(
             Criteria.DEPTH,
         ]
         return {k.value: _SUPPORTED_CRITERIA[k] for k in _default_criteria}
-    elif isinstance(criteria, Criteria):
+    if isinstance(criteria, Criteria):
         criteria_ = {criteria.value: _SUPPORTED_CRITERIA[criteria]}
     elif isinstance(criteria, str):
         if criteria in _SUPPORTED_CRITERIA:
@@ -86,16 +87,17 @@ def resolve_pairwise_criteria(
         }
     else:
         if not criteria:
-            raise ValueError(
+            msg = (
                 "Criteria cannot be empty. "
                 "Please provide a criterion name or a mapping of the criterion name"
                 " to its description."
             )
+            raise ValueError(msg)
         criteria_ = dict(criteria)
     return criteria_
 
 
-class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[override]
+class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
     """A parser for the output of the PairwiseStringEvalChain.
 
     Attributes:
@@ -113,7 +115,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[
         """
         return "pairwise_string_result"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
         Args:
@@ -132,11 +134,12 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[
             verdict = match.group(1)
 
         if not match or verdict not in {"A", "B", "C"}:
-            raise ValueError(
+            msg = (
                 f"Invalid output: {text}. "
                 "Output must contain a double bracketed string\
                  with the verdict 'A', 'B', or 'C'."
             )
+            raise ValueError(msg)
         # C means the models are tied. Return 'None' meaning no preference
         verdict_ = None if verdict == "C" else verdict
         score = {
@@ -151,7 +154,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):  # type: ignore[
         }
 
 
-class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):  # type: ignore[override]
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
@@ -184,7 +187,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain): 
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
-        default_factory=PairwiseStringResultOutputParser
+        default_factory=PairwiseStringResultOutputParser,
     )
 
     @classmethod
@@ -256,16 +259,17 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain): 
         if not hasattr(llm, "model_name") or not llm.model_name.startswith("gpt-4"):
             logger.warning(
                 "This chain was only tested with GPT-4. \
-Performance may be significantly worse with other models."
+Performance may be significantly worse with other models.",
             )
 
         expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}
         prompt_ = prompt or COMPARISON_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" if v else k for k, v in criteria_.items())
         criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""
@@ -275,7 +279,7 @@ Performance may be significantly worse with other models."
         self,
         prediction: str,
         prediction_b: str,
-        input: Optional[str],
+        input_: Optional[str],
         reference: Optional[str],
     ) -> dict:
         """Prepare the input for the chain.
@@ -283,21 +287,21 @@ Performance may be significantly worse with other models."
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str, optional): The input or task string.
+            input_ (str, optional): The input or task string.
             reference (str, optional): The reference string, if any.
 
         Returns:
             dict: The prepared input for the chain.
 
         """
-        input_ = {
+        input_dict = {
             "prediction": prediction,
             "prediction_b": prediction_b,
-            "input": input,
+            "input": input_,
         }
         if self.requires_reference:
-            input_["reference"] = reference
-        return input_
+            input_dict["reference"] = reference
+        return input_dict
 
     def _prepare_output(self, result: dict) -> dict:
         """Prepare the output."""
@@ -306,6 +310,7 @@ Performance may be significantly worse with other models."
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -314,8 +319,8 @@ Performance may be significantly worse with other models."
         input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -348,6 +353,7 @@ Performance may be significantly worse with other models."
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,
@@ -356,8 +362,8 @@ Performance may be significantly worse with other models."
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -391,7 +397,7 @@ Performance may be significantly worse with other models."
         return self._prepare_output(result)
 
 
-class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):  # type: ignore[override]
+class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs,
      with labeled preferences.
@@ -444,10 +450,11 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):  # type: ignore[o
         }
         prompt_ = prompt or COMPARISON_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_pairwise_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         criteria_str = CRITERIA_INSTRUCTIONS + criteria_str if criteria_str else ""

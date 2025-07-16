@@ -2650,6 +2650,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -3743,6 +3745,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -4123,6 +4126,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -5247,6 +5252,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -5627,6 +5633,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -7007,6 +7015,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -8142,6 +8152,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -8522,6 +8533,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -9947,6 +9960,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -10990,6 +11005,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -11370,6 +11386,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({
@@ -12455,6 +12473,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -12835,6 +12854,8 @@
                   }
           
           .. versionadded:: 0.3.9
+          
+          May also hold extra provider-specific keys.
         ''',
         'properties': dict({
           'audio': dict({

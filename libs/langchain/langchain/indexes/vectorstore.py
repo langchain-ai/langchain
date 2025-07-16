@@ -1,6 +1,6 @@
 """Vectorstore stubs for the indexing api."""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
@@ -33,7 +33,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore using the provided LLM.
@@ -48,16 +48,19 @@ class VectorStoreIndexWrapper(BaseModel):
             The result string from the RetrievalQA chain.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(**retriever_kwargs),
+            **kwargs,
         )
         return chain.invoke({chain.input_key: question})[chain.output_key]
 
@@ -65,7 +68,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Asynchronously query the vectorstore using the provided LLM.
@@ -80,16 +83,19 @@ class VectorStoreIndexWrapper(BaseModel):
             The asynchronous result string from the RetrievalQA chain.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(**retriever_kwargs),
+            **kwargs,
         )
         return (await chain.ainvoke({chain.input_key: question}))[chain.output_key]
 
@@ -97,7 +103,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and retrieve the answer along with sources.
@@ -112,16 +118,19 @@ class VectorStoreIndexWrapper(BaseModel):
             A dictionary containing the answer and source documents.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(**retriever_kwargs),
+            **kwargs,
         )
         return chain.invoke({chain.question_key: question})
 
@@ -129,7 +138,7 @@ class VectorStoreIndexWrapper(BaseModel):
         self,
         question: str,
         llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        retriever_kwargs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously query the vectorstore and retrieve the answer and sources.
@@ -144,34 +153,37 @@ class VectorStoreIndexWrapper(BaseModel):
             A dictionary containing the answer and source documents.
         """
         if llm is None:
-            raise NotImplementedError(
+            msg = (
                 "This API has been changed to require an LLM. "
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
                 "llm = OpenAI(temperature=0)"
             )
+            raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+            llm,
+            retriever=self.vectorstore.as_retriever(**retriever_kwargs),
+            **kwargs,
         )
         return await chain.ainvoke({chain.question_key: question})
 
 
-def _get_in_memory_vectorstore() -> Type[VectorStore]:
+def _get_in_memory_vectorstore() -> type[VectorStore]:
     """Get the InMemoryVectorStore."""
     import warnings
 
     try:
         from langchain_community.vectorstores.inmemory import InMemoryVectorStore
-    except ImportError:
-        raise ImportError(
-            "Please install langchain-community to use the InMemoryVectorStore."
-        )
+    except ImportError as e:
+        msg = "Please install langchain-community to use the InMemoryVectorStore."
+        raise ImportError(msg) from e
     warnings.warn(
         "Using InMemoryVectorStore as the default vectorstore."
         "This memory store won't persist data. You should explicitly"
-        "specify a vectorstore when using VectorstoreIndexCreator"
+        "specify a vectorstore when using VectorstoreIndexCreator",
+        stacklevel=3,
     )
     return InMemoryVectorStore
 
@@ -179,8 +191,8 @@ def _get_in_memory_vectorstore() -> Type[VectorStore]:
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
-    vectorstore_cls: Type[VectorStore] = Field(
-        default_factory=_get_in_memory_vectorstore
+    vectorstore_cls: type[VectorStore] = Field(
+        default_factory=_get_in_memory_vectorstore,
     )
     embedding: Embeddings
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
@@ -191,7 +203,7 @@ class VectorstoreIndexCreator(BaseModel):
         extra="forbid",
     )
 
-    def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+    def from_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from a list of loaders.
 
         Args:
@@ -205,7 +217,7 @@ class VectorstoreIndexCreator(BaseModel):
             docs.extend(loader.load())
         return self.from_documents(docs)
 
-    async def afrom_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+    async def afrom_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
         """Asynchronously create a vectorstore index from a list of loaders.
 
         Args:
@@ -216,11 +228,10 @@ class VectorstoreIndexCreator(BaseModel):
         """
         docs = []
         for loader in loaders:
-            async for doc in loader.alazy_load():
-                docs.append(doc)
+            docs.extend([doc async for doc in loader.alazy_load()])
         return await self.afrom_documents(docs)
 
-    def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
+    def from_documents(self, documents: list[Document]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from a list of documents.
 
         Args:
@@ -231,12 +242,15 @@ class VectorstoreIndexCreator(BaseModel):
         """
         sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = self.vectorstore_cls.from_documents(
-            sub_docs, self.embedding, **self.vectorstore_kwargs
+            sub_docs,
+            self.embedding,
+            **self.vectorstore_kwargs,
         )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)
 
     async def afrom_documents(
-        self, documents: List[Document]
+        self,
+        documents: list[Document],
     ) -> VectorStoreIndexWrapper:
         """Asynchronously create a vectorstore index from a list of documents.
 
@@ -248,6 +262,8 @@ class VectorstoreIndexCreator(BaseModel):
         """
         sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = await self.vectorstore_cls.afrom_documents(
-            sub_docs, self.embedding, **self.vectorstore_kwargs
+            sub_docs,
+            self.embedding,
+            **self.vectorstore_kwargs,
         )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)

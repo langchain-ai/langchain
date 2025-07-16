@@ -1,6 +1,6 @@
 """Test conversation chain and memory."""
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -28,7 +28,7 @@ class DummyLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -54,7 +54,7 @@ async def test_memory_async() -> None:
     memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
     await memory.asave_context({"input": "bar"}, {"output": "foo"})
     assert await memory.aload_memory_variables({}) == {
-        "foo": "Human: bar\nAssistant: foo"
+        "foo": "Human: bar\nAssistant: foo",
     }
 
 

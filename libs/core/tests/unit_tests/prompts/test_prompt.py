@@ -1,18 +1,20 @@
 """Test functionality related to prompts."""
 
+import re
 from typing import Any, Union
 from unittest import mock
 
-import pydantic
 import pytest
-from syrupy import SnapshotAssertion
+from packaging import version
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
-PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 
 
 def test_prompt_valid() -> None:
@@ -116,7 +118,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_0"
         )
@@ -143,7 +145,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_2"
         )
@@ -167,7 +169,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_3"
         )
@@ -205,7 +207,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_4"
         )
@@ -223,7 +225,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""  # noqa: W293
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_5"
         )
@@ -237,8 +239,8 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "properties": {"foo": {"default": None, "title": "Foo", "type": "object"}},
+    assert _normalize_schema(prompt.get_input_jsonschema()) == {
+        "properties": {"foo": {"title": "Foo", "type": "object"}},
         "title": "PromptInput",
         "type": "object",
     }
@@ -264,7 +266,10 @@ def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
     input_variables: list = []
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         PromptTemplate(
             input_variables=input_variables, template=template, validate_template=True
         )
@@ -275,7 +280,10 @@ def test_prompt_missing_input_variables() -> None:
 
 def test_prompt_empty_input_variable() -> None:
     """Test error is raised when empty string input variable."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from ['']"),
+    ):
         PromptTemplate(input_variables=[""], template="{}", validate_template=True)
 
 
@@ -283,7 +291,13 @@ def test_prompt_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {foo} test."
     input_variables = ["bar"]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Invalid prompt schema; "
+            "check for mismatched or missing input parameters from ['bar']"
+        ),
+    ):
         PromptTemplate(
             input_variables=input_variables, template=template, validate_template=True
         )
@@ -330,7 +344,7 @@ def test_prompt_invalid_template_format() -> None:
     """Test initializing a prompt with invalid template format."""
     template = "This is a {foo} test."
     input_variables = ["foo"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported template format: bar"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -347,8 +361,9 @@ def test_prompt_from_file() -> None:
 
 
 def test_prompt_from_file_with_partial_variables() -> None:
-    """Test prompt can be successfully constructed from a file
-    with partial variables.
+    """Test prompt from file with partial variables.
+
+    Test prompt can be successfully constructed from a file with partial variables.
     """
     # given
     template = "This is a {foo} test {bar}."
@@ -427,7 +442,7 @@ def test_basic_sandboxing_with_jinja2() -> None:
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
-        assert prompt.format() == []
+        prompt.format()
 
 
 @pytest.mark.requires("jinja2")
@@ -495,7 +510,7 @@ def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
     input_variables: list = []
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -512,7 +527,7 @@ def test_prompt_jinja2_extra_input_variables() -> None:
     """Test error is raised when there are too many input variables."""
     template = "This is a {{ foo }} test."
     input_variables = ["foo", "bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables: {'bar'}"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -529,7 +544,9 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {{ foo }} test."
     input_variables = ["bar"]
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning, match="Missing variables: {'foo'} Extra variables: {'bar'}"
+    ):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -556,8 +573,8 @@ def test_prompt_invoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 async def test_prompt_ainvoke_with_metadata() -> None:
@@ -575,12 +592,12 @@ async def test_prompt_ainvoke_with_metadata() -> None:
     )
     assert result.to_string() == "This is a bar test."
     assert len(tracer.traced_runs) == 1
-    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
-    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]
 
 
 @pytest.mark.parametrize(
-    "value, expected",
+    ("value", "expected"),
     [
         ("0", "0"),
         (0, "0"),

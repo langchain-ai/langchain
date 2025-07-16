@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -19,7 +19,7 @@ from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
     since="0.2.7",
     alternative=(
         "example in API reference with more detail: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"
     ),
     removal="1.0",
 )
@@ -66,7 +66,7 @@ class QAGenerationChain(Chain):
     llm_chain: LLMChain
     """LLM Chain that generates responses from user input and context."""
     text_splitter: TextSplitter = Field(
-        default=RecursiveCharacterTextSplitter(chunk_overlap=500)
+        default=RecursiveCharacterTextSplitter(chunk_overlap=500),
     )
     """Text splitter that splits the input into chunks."""
     input_key: str = "text"
@@ -103,21 +103,22 @@ class QAGenerationChain(Chain):
         raise NotImplementedError
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         return [self.output_key]
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, List]:
+    ) -> dict[str, list]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
         results = self.llm_chain.generate(
-            [{"text": d.page_content} for d in docs], run_manager=run_manager
+            [{"text": d.page_content} for d in docs],
+            run_manager=run_manager,
         )
         qa = [json.loads(res[0].text) for res in results.generations]
         return {self.output_key: qa}

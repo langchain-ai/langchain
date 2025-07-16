@@ -1,7 +1,8 @@
 """A simple progress bar for the console."""
 
 import threading
-from typing import Any, Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
@@ -12,15 +13,23 @@ from langchain_core.outputs import LLMResult
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
     """A simple progress bar for the console."""
 
-    def __init__(self, total: int, ncols: int = 50, **kwargs: Any):
+    def __init__(
+        self,
+        total: int,
+        ncols: int = 50,
+        end_with: str = "\n",
+        **kwargs: Any,
+    ):
         """Initialize the progress bar.
 
         Args:
             total: int, the total number of items to be processed.
             ncols: int, the character width of the progress bar.
+            end_with: str, last string to print after progress bar reaches end.
         """
         self.total = total
         self.ncols = ncols
+        self.end_with = end_with
         self.counter = 0
         self.lock = threading.Lock()
         self._print_bar()
@@ -36,7 +45,8 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         progress = self.counter / self.total
         arrow = "-" * int(round(progress * self.ncols) - 1) + ">"
         spaces = " " * (self.ncols - len(arrow))
-        print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end="")  # noqa: T201
+        end = "" if self.counter < self.total else self.end_with
+        print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end=end)  # noqa: T201
 
     def on_chain_error(
         self,
@@ -51,7 +61,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
 
     def on_chain_end(
         self,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

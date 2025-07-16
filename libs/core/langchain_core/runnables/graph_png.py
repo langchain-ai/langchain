@@ -1,3 +1,5 @@
+"""Helper class to draw a state graph into a PNG file."""
+
 from typing import Any, Optional
 
 from langchain_core.runnables.graph import Graph, LabelsDict
@@ -102,7 +104,7 @@ class PngDrawer:
         source: str,
         target: str,
         label: Optional[str] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Adds an edge to the graph.
 
@@ -133,7 +135,7 @@ class PngDrawer:
         :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
         try:
-            import pygraphviz as pgv  # type: ignore[import]
+            import pygraphviz as pgv  # type: ignore[import-not-found]
         except ImportError as exc:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
             raise ImportError(msg) from exc

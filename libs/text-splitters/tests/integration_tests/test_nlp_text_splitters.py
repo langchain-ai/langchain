@@ -14,13 +14,13 @@ def setup_module() -> None:
     nltk.download("punkt_tab")
 
 
-@pytest.fixture()
+@pytest.fixture
 def spacy() -> Any:
     try:
         import spacy
     except ImportError:
         pytest.skip("Spacy not installed.")
-    spacy.cli.download("en_core_web_sm")  # type: ignore
+    spacy.cli.download("en_core_web_sm")  # type: ignore[attr-defined,operator,unused-ignore]
     return spacy
 
 

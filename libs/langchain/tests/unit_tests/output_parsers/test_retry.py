@@ -1,7 +1,10 @@
 from datetime import datetime as dt
-from typing import Any, Callable, Dict, Optional, TypeVar
+from datetime import timezone
+from typing import Any, Callable, Optional, TypeVar
 
 import pytest
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 
@@ -10,8 +13,6 @@ from langchain.output_parsers.datetime import DatetimeOutputParser
 from langchain.output_parsers.retry import (
     NAIVE_RETRY_PROMPT,
     NAIVE_RETRY_WITH_ERROR_PROMPT,
-    BaseOutputParser,
-    OutputParserException,
     RetryOutputParser,
     RetryWithErrorOutputParser,
 )
@@ -69,7 +70,8 @@ async def test_retry_output_parser_aparse_with_prompt() -> None:
         legacy=False,
     )
     actual = await parser.aparse_with_prompt(
-        "completion", StringPromptValue(text="dummy")
+        "completion",
+        StringPromptValue(text="dummy"),
     )
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
@@ -153,7 +155,8 @@ async def test_retry_with_error_output_parser_aparse_with_prompt() -> None:
         legacy=False,
     )
     actual = await parser.aparse_with_prompt(
-        "completion", StringPromptValue(text="dummy")
+        "completion",
+        StringPromptValue(text="dummy"),
     )
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
@@ -202,23 +205,23 @@ def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
 
 
 @pytest.mark.parametrize(
-    "input,prompt,base_parser,retry_chain,expected",
+    "completion,prompt,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
-        )
+            dt(2024, 7, 8, tzinfo=timezone.utc),
+        ),
     ],
 )
 def test_retry_output_parser_parse_with_prompt_with_retry_chain(
-    input: str,
+    completion: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     parser = RetryOutputParser(
@@ -226,27 +229,27 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert parser.parse_with_prompt(input, prompt) == expected
+    assert parser.parse_with_prompt(completion, prompt) == expected
 
 
 @pytest.mark.parametrize(
-    "input,prompt,base_parser,retry_chain,expected",
+    "completion,prompt,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
-        )
+            dt(2024, 7, 8, tzinfo=timezone.utc),
+        ),
     ],
 )
 async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
-    input: str,
+    completion: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     # test
@@ -255,27 +258,27 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert (await parser.aparse_with_prompt(input, prompt)) == expected
+    assert (await parser.aparse_with_prompt(completion, prompt)) == expected
 
 
 @pytest.mark.parametrize(
-    "input,prompt,base_parser,retry_chain,expected",
+    "completion,prompt,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
-        )
+            dt(2024, 7, 8, tzinfo=timezone.utc),
+        ),
     ],
 )
 def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
-    input: str,
+    completion: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     # test
@@ -284,27 +287,27 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert parser.parse_with_prompt(input, prompt) == expected
+    assert parser.parse_with_prompt(completion, prompt) == expected
 
 
 @pytest.mark.parametrize(
-    "input,prompt,base_parser,retry_chain,expected",
+    "completion,prompt,base_parser,retry_chain,expected",
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
-        )
+            dt(2024, 7, 8, tzinfo=timezone.utc),
+        ),
     ],
 )
 async def test_retry_with_error_output_parser_aparse_with_prompt_with_retry_chain(
-    input: str,
+    completion: str,
     prompt: PromptValue,
     base_parser: BaseOutputParser[T],
-    retry_chain: Runnable[Dict[str, Any], str],
+    retry_chain: Runnable[dict[str, Any], str],
     expected: T,
 ) -> None:
     parser = RetryWithErrorOutputParser(
@@ -312,7 +315,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_with_retry_chai
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert (await parser.aparse_with_prompt(input, prompt)) == expected
+    assert (await parser.aparse_with_prompt(completion, prompt)) == expected
 
 
 def _extract_exception(

@@ -5,19 +5,18 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = [
-    "langsmith<0.4,>=0.1.125",
+    "langsmith>=0.3.45",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
-    "packaging<25,>=23.2",
     "typing-extensions>=4.7",
-    "pydantic<3.0.0,>=2.5.2; python_full_version < \"3.12.4\"",
-    "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
+    "packaging>=23.2",
+    "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.43"
+version = "0.3.69"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -27,14 +26,11 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = [
-    "ruff<1.0.0,>=0.9.2",
-]
+lint = ["ruff<0.13,>=0.12.2"]
 typing = [
-    "mypy<1.11,>=1.10",
+    "mypy<1.16,>=1.15",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-jinja2<3.0.0,>=2.11.9",
     "langchain-text-splitters",
 ]
 dev = [
@@ -54,9 +50,11 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster~=1.5.18",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
+    "pytest-benchmark",
+    "pytest-codspeed",
 ]
 test_integration = []
 
@@ -66,38 +64,65 @@ langchain-text-splitters = { path = "../text-splitters" }
 
 
 [tool.mypy]
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
-disallow_untyped_defs = "True"
-[[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
-ignore_missing_imports = true
+strict = "True"
+strict_bytes = "True"
+enable_error_code = "deprecated"
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = "False"
+warn_return_any = "False"
+
 
 [tool.ruff]
 target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "PTH", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TC", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "ANN401", "COM812", "UP007", "S110", "S112", "TC001", "TC002", "TC003"]
-flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+select = [ "ALL",]
+ignore = [
+    "C90", # McCabe complexity
+    "COM812", # Messes with the formatter
+    "FA100", # Can't activate since we exclude UP007 for now
+    "FIX002", # Line contains TODO
+    "ISC001", # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09", # Too many something (arg, statements, etc)
+    "RUF012", # Doesn't play well with Pydantic
+    "TC001", # Doesn't play well with Pydantic
+    "TC002", # Doesn't play well with Pydantic
+    "TC003", # Doesn't play well with Pydantic
+    "TD002", # Missing author in TODO
+    "TD003", # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+    "ERA",
+    "PLC0415",
+    "PLR2004",
+]
+unfixable = ["PLW1510",]
+
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pydocstyle.ignore-var-parameters = true
+pyupgrade.keep-runtime-typing = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
-
-[tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "S",]
-"scripts/**" = [ "S",]
+"langchain_core/utils/mustache.py" = [ "PLW0603",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
+"tests/**" = [ "D1", "S", "SLF",]
+"scripts/**" = [ "INP", "S",]
