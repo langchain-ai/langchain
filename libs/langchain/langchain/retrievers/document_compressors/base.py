@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from inspect import signature
 from typing import Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import (
     BaseDocumentCompressor,
     BaseDocumentTransformer,
@@ -32,20 +32,23 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
             if isinstance(_transformer, BaseDocumentCompressor):
                 accepts_callbacks = (
                     signature(_transformer.compress_documents).parameters.get(
-                        "callbacks"
+                        "callbacks",
                     )
                     is not None
                 )
                 if accepts_callbacks:
                     documents = _transformer.compress_documents(
-                        documents, query, callbacks=callbacks
+                        documents,
+                        query,
+                        callbacks=callbacks,
                     )
                 else:
                     documents = _transformer.compress_documents(documents, query)
             elif isinstance(_transformer, BaseDocumentTransformer):
                 documents = _transformer.transform_documents(documents)
             else:
-                raise ValueError(f"Got unexpected transformer type: {_transformer}")
+                msg = f"Got unexpected transformer type: {_transformer}"
+                raise ValueError(msg)
         return documents
 
     async def acompress_documents(
@@ -59,18 +62,21 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
             if isinstance(_transformer, BaseDocumentCompressor):
                 accepts_callbacks = (
                     signature(_transformer.acompress_documents).parameters.get(
-                        "callbacks"
+                        "callbacks",
                     )
                     is not None
                 )
                 if accepts_callbacks:
                     documents = await _transformer.acompress_documents(
-                        documents, query, callbacks=callbacks
+                        documents,
+                        query,
+                        callbacks=callbacks,
                     )
                 else:
                     documents = await _transformer.acompress_documents(documents, query)
             elif isinstance(_transformer, BaseDocumentTransformer):
                 documents = await _transformer.atransform_documents(documents)
             else:
-                raise ValueError(f"Got unexpected transformer type: {_transformer}")
+                msg = f"Got unexpected transformer type: {_transformer}"
+                raise ValueError(msg)
         return documents

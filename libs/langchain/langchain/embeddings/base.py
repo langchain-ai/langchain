@@ -2,7 +2,6 @@ import functools
 from importlib import util
 from typing import Any, Optional, Union
 
-from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
@@ -51,7 +50,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     """
     if ":" not in model_name:
         providers = _SUPPORTED_PROVIDERS
-        raise ValueError(
+        msg = (
             f"Invalid model format '{model_name}'.\n"
             f"Model name must be in format 'provider:model-name'\n"
             f"Example valid model strings:\n"
@@ -60,27 +59,33 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
             f"  - cohere:embed-english-v3.0\n"
             f"Supported providers: {providers}"
         )
+        raise ValueError(msg)
 
     provider, model = model_name.split(":", 1)
     provider = provider.lower().strip()
     model = model.strip()
 
     if provider not in _SUPPORTED_PROVIDERS:
-        raise ValueError(
+        msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
             f"{_get_provider_list()}"
         )
+        raise ValueError(msg)
     if not model:
-        raise ValueError("Model name cannot be empty")
+        msg = "Model name cannot be empty"
+        raise ValueError(msg)
     return provider, model
 
 
 def _infer_model_and_provider(
-    model: str, *, provider: Optional[str] = None
+    model: str,
+    *,
+    provider: Optional[str] = None,
 ) -> tuple[str, str]:
     if not model.strip():
-        raise ValueError("Model name cannot be empty")
+        msg = "Model name cannot be empty"
+        raise ValueError(msg)
     if provider is None and ":" in model:
         provider, model_name = _parse_model_string(model)
     else:
@@ -89,20 +94,22 @@ def _infer_model_and_provider(
 
     if not provider:
         providers = _SUPPORTED_PROVIDERS
-        raise ValueError(
+        msg = (
             "Must specify either:\n"
             "1. A model string in format 'provider:model-name'\n"
             "   Example: 'openai:text-embedding-3-small'\n"
             "2. Or explicitly set provider from: "
             f"{providers}"
         )
+        raise ValueError(msg)
 
     if provider not in _SUPPORTED_PROVIDERS:
-        raise ValueError(
+        msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
             f"{_get_provider_list()}"
         )
+        raise ValueError(msg)
     return provider, model_name
 
 
@@ -110,13 +117,13 @@ def _infer_model_and_provider(
 def _check_pkg(pkg: str) -> None:
     """Check if a package is installed."""
     if not util.find_spec(pkg):
-        raise ImportError(
+        msg = (
             f"Could not import {pkg} python package. "
             f"Please install it with `pip install {pkg}`"
         )
+        raise ImportError(msg)
 
 
-@beta()
 def init_embeddings(
     model: str,
     *,
@@ -174,9 +181,10 @@ def init_embeddings(
     """
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
-        raise ValueError(
+        msg = (
             f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
+        raise ValueError(msg)
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
     pkg = _SUPPORTED_PROVIDERS[provider]
@@ -186,43 +194,43 @@ def init_embeddings(
         from langchain_openai import OpenAIEmbeddings
 
         return OpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "azure_openai":
+    if provider == "azure_openai":
         from langchain_openai import AzureOpenAIEmbeddings
 
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "google_vertexai":
+    if provider == "google_vertexai":
         from langchain_google_vertexai import VertexAIEmbeddings
 
         return VertexAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "bedrock":
+    if provider == "bedrock":
         from langchain_aws import BedrockEmbeddings
 
         return BedrockEmbeddings(model_id=model_name, **kwargs)
-    elif provider == "cohere":
+    if provider == "cohere":
         from langchain_cohere import CohereEmbeddings
 
         return CohereEmbeddings(model=model_name, **kwargs)
-    elif provider == "mistralai":
+    if provider == "mistralai":
         from langchain_mistralai import MistralAIEmbeddings
 
         return MistralAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "huggingface":
+    if provider == "huggingface":
         from langchain_huggingface import HuggingFaceEmbeddings
 
         return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
-    elif provider == "ollama":
+    if provider == "ollama":
         from langchain_ollama import OllamaEmbeddings
 
         return OllamaEmbeddings(model=model_name, **kwargs)
-    else:
-        raise ValueError(
-            f"Provider '{provider}' is not supported.\n"
-            f"Supported providers and their required packages:\n"
-            f"{_get_provider_list()}"
-        )
+    msg = (
+        f"Provider '{provider}' is not supported.\n"
+        f"Supported providers and their required packages:\n"
+        f"{_get_provider_list()}"
+    )
+    raise ValueError(msg)
 
 
 __all__ = [
-    "init_embeddings",
     "Embeddings",  # This one is for backwards compatibility
+    "init_embeddings",
 ]

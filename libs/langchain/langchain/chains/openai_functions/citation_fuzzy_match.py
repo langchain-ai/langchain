@@ -88,23 +88,22 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
         Runnable that can be used to answer questions with citations.
     """
     if llm.bind_tools is BaseChatModel.bind_tools:
-        raise ValueError(
-            "Language model must implement bind_tools to use this function."
-        )
+        msg = "Language model must implement bind_tools to use this function."
+        raise ValueError(msg)
     prompt = ChatPromptTemplate(
         [
             SystemMessage(
                 "You are a world class algorithm to answer "
-                "questions with correct and exact citations."
+                "questions with correct and exact citations.",
             ),
             HumanMessagePromptTemplate.from_template(
                 "Answer question using the following context."
                 "\n\n{context}"
                 "\n\nQuestion: {question}"
                 "\n\nTips: Make sure to cite your sources, "
-                "and use the exact words from the context."
+                "and use the exact words from the context.",
             ),
-        ]
+        ],
     )
     return prompt | llm.with_structured_output(QuestionAnswer)
 
@@ -136,7 +135,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             content=(
                 "You are a world class algorithm to answer "
                 "questions with correct and exact citations."
-            )
+            ),
         ),
         HumanMessage(content="Answer question using the following context"),
         HumanMessagePromptTemplate.from_template("{context}"),
@@ -145,15 +144,14 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             content=(
                 "Tips: Make sure to cite your sources, "
                 "and use the exact words from the context."
-            )
+            ),
         ),
     ]
-    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type]
 
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
     )
-    return chain

@@ -13,13 +13,10 @@ from langchain.memory.buffer import ConversationBufferMemory
 
 @deprecated(
     since="0.2.7",
-    alternative=(
-        "RunnableWithMessageHistory: "
-        "https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
-    ),
+    alternative="langchain_core.runnables.history.RunnableWithMessageHistory",
     removal="1.0",
 )
-class ConversationChain(LLMChain):  # type: ignore[override, override]
+class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
 
     This class is deprecated in favor of ``RunnableWithMessageHistory``. Please refer
@@ -129,16 +126,18 @@ class ConversationChain(LLMChain):  # type: ignore[override, override]
         memory_keys = self.memory.memory_variables
         input_key = self.input_key
         if input_key in memory_keys:
-            raise ValueError(
+            msg = (
                 f"The input key {input_key} was also found in the memory keys "
                 f"({memory_keys}) - please provide keys that don't overlap."
             )
+            raise ValueError(msg)
         prompt_variables = self.prompt.input_variables
-        expected_keys = memory_keys + [input_key]
+        expected_keys = [*memory_keys, input_key]
         if set(expected_keys) != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but got {memory_keys} as inputs from "
                 f"memory, and {input_key} as the normal input key."
             )
+            raise ValueError(msg)
         return self

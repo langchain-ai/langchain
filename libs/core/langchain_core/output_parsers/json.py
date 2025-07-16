@@ -9,6 +9,8 @@ from typing import Annotated, Any, Optional, TypeVar, Union
 import jsonpatch  # type: ignore[import-untyped]
 import pydantic
 from pydantic import SkipValidation
+from pydantic.v1 import BaseModel
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -19,16 +21,9 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
-from langchain_core.utils.pydantic import IS_PYDANTIC_V1
 
-if IS_PYDANTIC_V1:
-    PydanticBaseModel = pydantic.BaseModel
-
-else:
-    from pydantic.v1 import BaseModel
-
-    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
+# Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -47,6 +42,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
+    @override
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
@@ -132,6 +128,6 @@ SimpleJsonOutputParser = JsonOutputParser
 __all__ = [
     "JsonOutputParser",
     "SimpleJsonOutputParser",  # For backwards compatibility
-    "parse_partial_json",  # For backwards compatibility
     "parse_and_check_json_markdown",  # For backwards compatibility
+    "parse_partial_json",  # For backwards compatibility
 ]

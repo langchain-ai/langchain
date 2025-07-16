@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "GuardrailsOutputParser": "langchain_community.output_parsers.rail_parser"
+    "GuardrailsOutputParser": "langchain_community.output_parsers.rail_parser",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -67,12 +67,15 @@ __all__ = [
     "DatetimeOutputParser",
     "EnumOutputParser",
     "GuardrailsOutputParser",
+    "JsonOutputKeyToolsParser",
+    "JsonOutputToolsParser",
     "ListOutputParser",
     "MarkdownListOutputParser",
     "NumberedListOutputParser",
     "OutputFixingParser",
     "PandasDataFrameOutputParser",
     "PydanticOutputParser",
+    "PydanticToolsParser",
     "RegexDictParser",
     "RegexParser",
     "ResponseSchema",
@@ -80,8 +83,5 @@ __all__ = [
     "RetryWithErrorOutputParser",
     "StructuredOutputParser",
     "XMLOutputParser",
-    "JsonOutputToolsParser",
-    "PydanticToolsParser",
-    "JsonOutputKeyToolsParser",
     "YamlOutputParser",
 ]

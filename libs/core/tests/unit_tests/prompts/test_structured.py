@@ -35,9 +35,6 @@ class FakeStructuredChatModel(FakeListChatModel):
         return "fake-messages-list-chat-model"
 
 
-FakeStructuredChatModel.model_rebuild()
-
-
 def test_structured_prompt_pydantic() -> None:
     class OutputSchema(BaseModel):
         name: str
@@ -54,7 +51,7 @@ def test_structured_prompt_pydantic() -> None:
 
     chain = prompt | model
 
-    assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=42)
+    assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=42)  # type: ignore[comparison-overlap]
 
 
 def test_structured_prompt_dict() -> None:
@@ -76,13 +73,13 @@ def test_structured_prompt_dict() -> None:
 
     chain = prompt | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}  # type: ignore[comparison-overlap]
 
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
 
     chain = loads(dumps(prompt)) | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}  # type: ignore[comparison-overlap]
 
 
 def test_structured_prompt_kwargs() -> None:
@@ -102,10 +99,10 @@ def test_structured_prompt_kwargs() -> None:
     )
     model = FakeStructuredChatModel(responses=[])
     chain = prompt | model
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
     chain = loads(dumps(prompt)) | model
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
 
     class OutputSchema(BaseModel):
         name: str
@@ -119,7 +116,7 @@ def test_structured_prompt_kwargs() -> None:
 
     chain = prompt | model
 
-    assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=7)
+    assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=7)  # type: ignore[comparison-overlap]
 
 
 def test_structured_prompt_template_format() -> None:

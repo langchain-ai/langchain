@@ -6,6 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import Mapping, Sequence
 from contextvars import Context
 from functools import lru_cache
 from inspect import signature
@@ -33,8 +34,6 @@ if TYPE_CHECKING:
         Awaitable,
         Coroutine,
         Iterable,
-        Mapping,
-        Sequence,
     )
 
     from langchain_core.runnables.schema import StreamEvent
@@ -76,7 +75,7 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
     return await asyncio.gather(*(gated_coro(semaphore, c) for c in coros))
 
 
-def accepts_run_manager(callable: Callable[..., Any]) -> bool:
+def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a run_manager argument.
 
     Args:
@@ -91,7 +90,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_config(callable: Callable[..., Any]) -> bool:
+def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a config argument.
 
     Args:
@@ -106,7 +105,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:
         return False
 
 
-def accepts_context(callable: Callable[..., Any]) -> bool:
+def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
     """Check if a callable accepts a context argument.
 
     Args:
@@ -195,7 +194,7 @@ class IsLocalDict(ast.NodeVisitor):
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id == self.name
             and node.func.attr == "get"
-            and len(node.args) in (1, 2)
+            and len(node.args) in {1, 2}
             and isinstance(node.args[0], ast.Constant)
             and isinstance(node.args[0].value, str)
         ):
@@ -692,7 +691,7 @@ def get_unique_config_specs(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
     unique: list[ConfigurableFieldSpec] = []
-    for id, dupes in grouped:
+    for spec_id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
         if len(others) == 0 or all(o == first for o in others):
@@ -700,7 +699,7 @@ def get_unique_config_specs(
         else:
             msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {spec_id}: {[first, *others]}"
             )
             raise ValueError(msg)
     return unique
@@ -773,9 +772,8 @@ def is_async_generator(
         TypeGuard[Callable[..., AsyncIterator]: True if the function is
             an async generator, False otherwise.
     """
-    return (
-        inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return inspect.isasyncgenfunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -792,8 +790,7 @@ def is_async_callable(
         TypeGuard[Callable[..., Awaitable]: True if the function is async,
             False otherwise.
     """
-    return (
-        asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")  # noqa: B004
+    return asyncio.iscoroutinefunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

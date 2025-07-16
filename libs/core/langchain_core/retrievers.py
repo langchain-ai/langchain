@@ -209,6 +209,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         return LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -253,13 +254,13 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_id=kwargs.pop("run_id", None),
         )
         try:
-            _kwargs = kwargs if self._expects_other_args else {}
+            kwargs_ = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = self._get_relevant_documents(
-                    input, run_manager=run_manager, **_kwargs
+                    input, run_manager=run_manager, **kwargs_
                 )
             else:
-                result = self._get_relevant_documents(input, **_kwargs)
+                result = self._get_relevant_documents(input, **kwargs_)
         except Exception as e:
             run_manager.on_retriever_error(e)
             raise
@@ -269,6 +270,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             )
             return result
 
+    @override
     async def ainvoke(
         self,
         input: str,
@@ -316,13 +318,13 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_id=kwargs.pop("run_id", None),
         )
         try:
-            _kwargs = kwargs if self._expects_other_args else {}
+            kwargs_ = kwargs if self._expects_other_args else {}
             if self._new_arg_supported:
                 result = await self._aget_relevant_documents(
-                    input, run_manager=run_manager, **_kwargs
+                    input, run_manager=run_manager, **kwargs_
                 )
             else:
-                result = await self._aget_relevant_documents(input, **_kwargs)
+                result = await self._aget_relevant_documents(input, **kwargs_)
         except Exception as e:
             await run_manager.on_retriever_error(e)
             raise

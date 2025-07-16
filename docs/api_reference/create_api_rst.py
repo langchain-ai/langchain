@@ -267,7 +267,7 @@ def _construct_doc(
 .. _{package_namespace}:
 
 ======================================
-{package_namespace.replace('_', '-')}: {package_version}
+{package_namespace.replace("_", "-")}: {package_version}
 ======================================
 
 .. automodule:: {package_namespace}
@@ -325,7 +325,7 @@ def _construct_doc(
 
         index_autosummary += f"""
 :ref:`{package_namespace}_{module}`
-{'^' * (len(package_namespace) + len(module) + 8)}
+{"^" * (len(package_namespace) + len(module) + 8)}
 """
 
         if classes:
@@ -364,7 +364,7 @@ def _construct_doc(
     
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if functions:
@@ -427,7 +427,7 @@ def _construct_doc(
 
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if deprecated_functions:
@@ -663,6 +663,7 @@ def main(dirs: Optional[list] = None) -> None:
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
             if dir_ not in ("cli", "partners", "packages.yml")
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / dir_)
         ]
         dirs += [
             dir_

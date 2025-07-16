@@ -40,6 +40,7 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
+from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -53,8 +54,11 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     convert_to_messages,
+    convert_to_openai_image_block,
+    is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -62,6 +66,7 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
+from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
@@ -101,6 +106,42 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         generations = []
 
     return generations
+
+
+def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Format messages for tracing in on_chat_model_start.
+
+    For backward compatibility, we update image content blocks to OpenAI Chat
+    Completions format.
+
+    Args:
+        messages: List of messages to format.
+
+    Returns:
+        List of messages formatted for tracing.
+    """
+    messages_to_trace = []
+    for message in messages:
+        message_to_trace = message
+        if isinstance(message.content, list):
+            for idx, block in enumerate(message.content):
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "image"
+                    and is_data_content_block(block)
+                    and block.get("source_type") != "id"
+                ):
+                    if message_to_trace is message:
+                        message_to_trace = message.model_copy()
+                        # Also shallow-copy content
+                        message_to_trace.content = list(message_to_trace.content)
+
+                    message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
+                        convert_to_openai_image_block(block)
+                    )
+        messages_to_trace.append(message_to_trace)
+
+    return messages_to_trace
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -259,9 +300,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     defer to ``invoke()``/``ainvoke()``.
 
     - If True, will always bypass streaming case.
-    - If "tool_calling", will bypass streaming case only when the model is called
-      with a ``tools`` keyword argument.
+    - If ``'tool_calling'``, will bypass streaming case only when the model is called
+      with a ``tools`` keyword argument. In other words, LangChain will automatically
+      switch to non-streaming behavior (``invoke()``) only when the tools argument is
+      provided. This offers the best of both worlds.
     - If False (default), will always use streaming case if available.
+
+    The main reason for this flag is that code might be written using ``.stream()`` and
+    a user may want to swap out a given model for another model whose the implementation
+    does not properly support streaming.
     """
 
     @model_validator(mode="before")
@@ -303,18 +350,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Get the output type for this runnable."""
         return AnyMessage
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        if isinstance(input, str):
-            return StringPromptValue(text=input)
-        if isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
         msg = (
-            f"Invalid input type {type(input)}. "
+            f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @override
     def invoke(
@@ -372,8 +419,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream
-        async_not_implemented = type(self)._astream == BaseChatModel._astream
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
+        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -439,40 +486,48 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 self._serialized,
-                [messages],
+                [_format_for_tracing(messages)],
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
                 run_id=config.pop("run_id", None),
                 batch_size=1,
             )
-            generation: Optional[ChatGenerationChunk] = None
+
+            chunks: list[ChatGenerationChunk] = []
 
             if self.rate_limiter:
                 self.rate_limiter.acquire(blocking=True)
 
             try:
-                for chunk in self._stream(messages, stop=stop, **kwargs):
+                input_messages = _normalize_messages(messages)
+                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+                for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
+                    chunks.append(chunk)
                     yield chunk.message
-                    if generation is None:
-                        generation = chunk
-                    else:
-                        generation += chunk
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
-                if generation:
-                    generations = [[generation], generations_with_error_metadata]
+                chat_generation_chunk = merge_chat_generation_chunks(chunks)
+                if chat_generation_chunk:
+                    generations = [
+                        [chat_generation_chunk],
+                        generations_with_error_metadata,
+                    ]
                 else:
                     generations = [generations_with_error_metadata]
-                run_manager.on_llm_error(e, response=LLMResult(generations=generations))  # type: ignore[arg-type]
+                run_manager.on_llm_error(
+                    e,
+                    response=LLMResult(generations=generations),  # type: ignore[arg-type]
+                )
                 raise
 
+            generation = merge_chat_generation_chunks(chunks)
             if generation is None:
                 err = ValueError("No generation chunks were returned")
                 run_manager.on_llm_error(err, response=LLMResult(generations=[]))
@@ -524,7 +579,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
-            [messages],
+            [_format_for_tracing(messages)],
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -535,28 +590,29 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
-        generation: Optional[ChatGenerationChunk] = None
+        chunks: list[ChatGenerationChunk] = []
+
         try:
+            input_messages = _normalize_messages(messages)
+            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
-                messages,
+                input_messages,
                 stop=stop,
                 **kwargs,
             ):
                 if chunk.message.id is None:
-                    chunk.message.id = f"run-{run_manager.run_id}"
+                    chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
                 )
+                chunks.append(chunk)
                 yield chunk.message
-                if generation is None:
-                    generation = chunk
-                else:
-                    generation += chunk
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
-            if generation:
-                generations = [[generation], generations_with_error_metadata]
+            chat_generation_chunk = merge_chat_generation_chunks(chunks)
+            if chat_generation_chunk:
+                generations = [[chat_generation_chunk], generations_with_error_metadata]
             else:
                 generations = [generations_with_error_metadata]
             await run_manager.on_llm_error(
@@ -565,7 +621,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             raise
 
-        if generation is None:
+        generation = merge_chat_generation_chunks(chunks)
+        if not generation:
             err = ValueError("No generation chunks were returned")
             await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
             raise err
@@ -703,9 +760,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             inheritable_metadata,
             self.metadata,
         )
+        messages_to_trace = [
+            _format_for_tracing(message_list) for message_list in messages
+        ]
         run_managers = callback_manager.on_chat_model_start(
             self._serialized,
-            messages,
+            messages_to_trace,
             invocation_params=params,
             options=options,
             name=run_name,
@@ -713,7 +773,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             batch_size=len(messages),
         )
         results = []
-        for i, m in enumerate(messages):
+        input_messages = [
+            _normalize_messages(message_list) for message_list in messages
+        ]
+        for i, m in enumerate(input_messages):
             try:
                 results.append(
                     self._generate_with_cache(
@@ -812,9 +875,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
 
+        messages_to_trace = [
+            _format_for_tracing(message_list) for message_list in messages
+        ]
         run_managers = await callback_manager.on_chat_model_start(
             self._serialized,
-            messages,
+            messages_to_trace,
             invocation_params=params,
             options=options,
             name=run_name,
@@ -822,6 +888,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=run_id,
         )
 
+        input_messages = [
+            _normalize_messages(message_list) for message_list in messages
+        ]
         results = await asyncio.gather(
             *[
                 self._agenerate_with_cache(
@@ -830,7 +899,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_manager=run_managers[i] if run_managers else None,
                     **kwargs,
                 )
-                for i, m in enumerate(messages)
+                for i, m in enumerate(input_messages)
             ],
             return_exceptions=True,
         )
@@ -949,7 +1018,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -965,7 +1034,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"run-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1021,7 +1090,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"run-{run_manager.run_id}"
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1037,7 +1106,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"run-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1141,7 +1210,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     async def _call_async(
         self,
@@ -1157,7 +1226,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         msg = "Unexpected generation type"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1194,12 +1263,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Returns:
             The predicted output string.
         """
-        _stop = None if stop is None else list(stop)
-        result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        result = self([HumanMessage(content=text)], stop=stop_, **kwargs)
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @override
@@ -1210,22 +1279,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        _stop = None if stop is None else list(stop)
-        return self(messages, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return self(messages, stop=stop_, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        _stop = None if stop is None else list(stop)
+        stop_ = None if stop is None else list(stop)
         result = await self._call_async(
-            [HumanMessage(content=text)], stop=_stop, **kwargs
+            [HumanMessage(content=text)], stop=stop_, **kwargs
         )
         if isinstance(result.content, str):
             return result.content
         msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
@@ -1236,8 +1305,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        _stop = None if stop is None else list(stop)
-        return await self._call_async(messages, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return await self._call_async(messages, stop=stop_, **kwargs)
 
     @property
     @abstractmethod
@@ -1391,7 +1460,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             PydanticToolsParser,
         )
 
-        if self.bind_tools is BaseChatModel.bind_tools:
+        if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 

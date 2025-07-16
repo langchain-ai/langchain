@@ -1,4 +1,5 @@
-from langchain_core.retrievers import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 
 class SequentialRetriever(BaseRetriever):
@@ -13,9 +14,8 @@ class SequentialRetriever(BaseRetriever):
     ) -> list[Document]:
         if self.response_index >= len(self.sequential_responses):
             return []
-        else:
-            self.response_index += 1
-            return self.sequential_responses[self.response_index - 1]
+        self.response_index += 1
+        return self.sequential_responses[self.response_index - 1]
 
     async def _aget_relevant_documents(  # type: ignore[override]
         self,

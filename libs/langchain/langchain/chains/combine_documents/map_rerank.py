@@ -9,7 +9,7 @@ from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.runnables.utils import create_model
+from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
@@ -24,7 +24,7 @@ from langchain.output_parsers.regex import RegexParser
     message=(
         "This class is deprecated. Please see the migration guide here for "
         "a recommended replacement: "
-        "https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain/"
     ),
 )
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
@@ -92,7 +92,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     )
 
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         schema: dict[str, Any] = {
             self.output_key: (str, None),
@@ -100,7 +101,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         if self.return_intermediate_steps:
             schema["intermediate_steps"] = (list[str], None)
         if self.metadata_keys:
-            schema.update({key: (Any, None) for key in self.metadata_keys})
+            schema.update(dict.fromkeys(self.metadata_keys, (Any, None)))
 
         return create_model("MapRerankOutput", **schema)
 
@@ -112,7 +113,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
-            _output_keys = _output_keys + ["intermediate_steps"]
+            _output_keys = [*_output_keys, "intermediate_steps"]
         if self.metadata_keys is not None:
             _output_keys += self.metadata_keys
         return _output_keys
@@ -122,21 +123,24 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """Validate that the combine chain outputs a dictionary."""
         output_parser = self.llm_chain.prompt.output_parser
         if not isinstance(output_parser, RegexParser):
-            raise ValueError(
+            msg = (
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
+            raise ValueError(msg)
         output_keys = output_parser.output_keys
         if self.rank_key not in output_keys:
-            raise ValueError(
+            msg = (
                 f"Got {self.rank_key} as key to rank on, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
+            raise ValueError(msg)
         if self.answer_key not in output_keys:
-            raise ValueError(
+            msg = (
                 f"Got {self.answer_key} as key to return, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="before")
@@ -144,27 +148,33 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     def get_default_document_variable_name(cls, values: dict) -> Any:
         """Get default document variable name, if not provided."""
         if "llm_chain" not in values:
-            raise ValueError("llm_chain must be provided")
+            msg = "llm_chain must be provided"
+            raise ValueError(msg)
 
         llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain input_variables"
                 )
+                raise ValueError(msg)
         else:
             if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
+                msg = (
                     f"document_variable_name {values['document_variable_name']} was "
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
+                raise ValueError(msg)
         return values
 
     def combine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
@@ -182,13 +192,16 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         results = self.llm_chain.apply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         return self._process_results(docs, results)
 
     async def acombine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Combine documents in a map rerank manner.
 
@@ -206,7 +219,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         """
         results = await self.llm_chain.aapply_and_parse(
             # FYI - this is parallelized and so it is fast.
-            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs],
+            [{self.document_variable_name: d.page_content, **kwargs} for d in docs],
             callbacks=callbacks,
         )
         return self._process_results(docs, results)
@@ -218,7 +231,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     ) -> tuple[str, dict]:
         typed_results = cast(list[dict], results)
         sorted_res = sorted(
-            zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
+            zip(typed_results, docs),
+            key=lambda x: -int(x[0][self.rank_key]),
         )
         output, document = sorted_res[0]
         extra_info = {}

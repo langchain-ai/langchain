@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import inspect
-import json  # type: ignore[import-not-found]
 import logging
 import os
 from collections.abc import AsyncIterator, Iterator, Mapping
@@ -26,8 +27,7 @@ VALID_TASKS = (
 
 
 class HuggingFaceEndpoint(LLM):
-    """
-    HuggingFace Endpoint.
+    """Hugging Face Endpoint. This works with any model that supports text generation (i.e. text completion) task.
 
     To use this class, you should have installed the ``huggingface_hub`` package, and
     the environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token,
@@ -67,13 +67,28 @@ class HuggingFaceEndpoint(LLM):
             )
             print(llm.invoke("What is Deep Learning?"))
 
+            # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
+            llm = HuggingFaceEndpoint(
+                repo_id="mistralai/Mistral-Nemo-Base-2407",
+                provider="novita",
+                max_new_tokens=100,
+                do_sample=False,
+                huggingfacehub_api_token="my-api-key"
+            )
+            print(llm.invoke("What is Deep Learning?"))
+
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
-    """Endpoint URL to use. If repo_id is not specified then this needs to given or 
+    """Endpoint URL to use. If repo_id is not specified then this needs to given or
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
+    provider: Optional[str] = None
+    """Name of the provider to use for inference with the model specified in `repo_id`.
+        e.g. "cerebras". if not specified, Defaults to "auto" i.e. the first of the
+        providers available for the model, sorted by the user's order in https://hf.co/settings/inference-providers.
+        available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     huggingfacehub_api_token: Optional[str] = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
@@ -120,8 +135,7 @@ class HuggingFaceEndpoint(LLM):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     task: Optional[str] = None
-    """Task to call the model with.
-    Should be a task that returns `generated_text` or `summary_text`."""
+    """Task to call the model with. Should be a task that returns `generated_text`."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -135,7 +149,8 @@ class HuggingFaceEndpoint(LLM):
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
+                msg = f"Found {field_name} supplied twice."
+                raise ValueError(msg)
             if field_name not in all_required_field_names:
                 logger.warning(
                     f"""WARNING! {field_name} is not default parameter.
@@ -146,10 +161,11 @@ class HuggingFaceEndpoint(LLM):
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
-            raise ValueError(
+            msg = (
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
+            raise ValueError(msg)
 
         values["model_kwargs"] = extra
 
@@ -173,53 +189,41 @@ class HuggingFaceEndpoint(LLM):
         repo_id = values.get("repo_id")
 
         if sum([bool(model), bool(endpoint_url), bool(repo_id)]) > 1:
-            raise ValueError(
+            msg = (
                 "Please specify either a `model` OR an `endpoint_url` OR a `repo_id`,"
                 "not more than one."
             )
+            raise ValueError(msg)
         values["model"] = (
             model or endpoint_url or repo_id or os.environ.get("HF_INFERENCE_ENDPOINT")
         )
         if not values["model"]:
-            raise ValueError(
+            msg = (
                 "Please specify a `model` or an `endpoint_url` or a `repo_id` for the "
                 "model."
             )
+            raise ValueError(msg)
         return values
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that package is installed and that the API token is valid."""
-        try:
-            from huggingface_hub import login  # type: ignore[import]
-
-        except ImportError:
-            raise ImportError(
-                "Could not import huggingface_hub python package. "
-                "Please install it with `pip install huggingface_hub`."
-            )
-
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
         )
 
-        if huggingfacehub_api_token is not None:
-            try:
-                login(token=huggingfacehub_api_token)
-            except Exception as e:
-                raise ValueError(
-                    "Could not authenticate with huggingface_hub. "
-                    "Please check your API token."
-                ) from e
-
-        from huggingface_hub import AsyncInferenceClient, InferenceClient
+        from huggingface_hub import (  # type: ignore[import]
+            AsyncInferenceClient,  # type: ignore[import]
+            InferenceClient,  # type: ignore[import]
+        )
 
         # Instantiate clients with supported kwargs
         sync_supported_kwargs = set(inspect.signature(InferenceClient).parameters)
         self.client = InferenceClient(
             model=self.model,
             timeout=self.timeout,
-            token=huggingfacehub_api_token,
+            api_key=huggingfacehub_api_token,
+            provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
@@ -231,14 +235,14 @@ class HuggingFaceEndpoint(LLM):
         self.async_client = AsyncInferenceClient(
             model=self.model,
             timeout=self.timeout,
-            token=huggingfacehub_api_token,
+            api_key=huggingfacehub_api_token,
+            provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
                 if key in async_supported_kwargs
             },
         )
-
         ignored_kwargs = (
             set(self.server_kwargs.keys())
             - sync_supported_kwargs
@@ -264,7 +268,7 @@ class HuggingFaceEndpoint(LLM):
             "repetition_penalty": self.repetition_penalty,
             "return_full_text": self.return_full_text,
             "truncate": self.truncate,
-            "stop_sequences": self.stop_sequences,
+            "stop": self.stop_sequences,
             "seed": self.seed,
             "do_sample": self.do_sample,
             "watermark": self.watermark,
@@ -276,8 +280,10 @@ class HuggingFaceEndpoint(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task},
-            **{"model_kwargs": _model_kwargs},
+            "endpoint_url": self.endpoint_url,
+            "task": self.task,
+            "provider": self.provider,
+            "model_kwargs": _model_kwargs,
         }
 
     @property
@@ -289,7 +295,7 @@ class HuggingFaceEndpoint(LLM):
         self, runtime_stop: Optional[list[str]], **kwargs: Any
     ) -> dict[str, Any]:
         params = {**self._default_params, **kwargs}
-        params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
+        params["stop"] = params["stop"] + (runtime_stop or [])
         return params
 
     def _call(
@@ -303,26 +309,24 @@ class HuggingFaceEndpoint(LLM):
         invocation_params = self._invocation_params(stop, **kwargs)
         if self.streaming:
             completion = ""
-            for chunk in self._stream(prompt, stop, run_manager, **invocation_params):
+            for chunk in self._stream(
+                prompt, run_manager=run_manager, **invocation_params
+            ):
                 completion += chunk.text
             return completion
-        else:
-            invocation_params["stop"] = invocation_params[
-                "stop_sequences"
-            ]  # porting 'stop_sequences' into the 'stop' argument
-            response = self.client.post(
-                json={"inputs": prompt, "parameters": invocation_params},
-                stream=False,
-                task=self.task,
-            )
-            response_text = json.loads(response.decode())[0]["generated_text"]
 
-            # Maybe the generation has stopped at one of the stop sequences:
-            # then we remove this stop sequence from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
-                if response_text[-len(stop_seq) :] == stop_seq:
-                    response_text = response_text[: -len(stop_seq)]
-            return response_text
+        response_text = self.client.text_generation(
+            prompt=prompt,
+            model=self.model,
+            **invocation_params,
+        )
+
+        # Maybe the generation has stopped at one of the stop sequences:
+        # then we remove this stop sequence from the end of the generated text
+        for stop_seq in invocation_params["stop"]:
+            if response_text[-len(stop_seq) :] == stop_seq:
+                response_text = response_text[: -len(stop_seq)]
+        return response_text
 
     async def _acall(
         self,
@@ -335,25 +339,24 @@ class HuggingFaceEndpoint(LLM):
         if self.streaming:
             completion = ""
             async for chunk in self._astream(
-                prompt, stop, run_manager, **invocation_params
+                prompt, run_manager=run_manager, **invocation_params
             ):
                 completion += chunk.text
             return completion
-        else:
-            invocation_params["stop"] = invocation_params["stop_sequences"]
-            response = await self.async_client.post(
-                json={"inputs": prompt, "parameters": invocation_params},
-                stream=False,
-                task=self.task,
-            )
-            response_text = json.loads(response.decode())[0]["generated_text"]
 
-            # Maybe the generation has stopped at one of the stop sequences:
-            # then remove this stop sequence from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
-                if response_text[-len(stop_seq) :] == stop_seq:
-                    response_text = response_text[: -len(stop_seq)]
-            return response_text
+        response_text = await self.async_client.text_generation(
+            prompt=prompt,
+            **invocation_params,
+            model=self.model,
+            stream=False,
+        )
+
+        # Maybe the generation has stopped at one of the stop sequences:
+        # then remove this stop sequence from the end of the generated text
+        for stop_seq in invocation_params["stop"]:
+            if response_text[-len(stop_seq) :] == stop_seq:
+                response_text = response_text[: -len(stop_seq)]
+        return response_text
 
     def _stream(
         self,
@@ -369,7 +372,7 @@ class HuggingFaceEndpoint(LLM):
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if stop_seq in response:
                     stop_seq_found = stop_seq
 
@@ -405,7 +408,7 @@ class HuggingFaceEndpoint(LLM):
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if stop_seq in response:
                     stop_seq_found = stop_seq
 

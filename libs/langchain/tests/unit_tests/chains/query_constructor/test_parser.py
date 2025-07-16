@@ -25,7 +25,7 @@ def test_parse_invalid_grammar(x: str) -> None:
 def test_parse_comparison() -> None:
     comp = 'gte("foo", 2)'
     expected = Comparison(comparator=Comparator.GTE, attribute="foo", value=2)
-    for input in (
+    for text in (
         comp,
         comp.replace('"', "'"),
         comp.replace(" ", ""),
@@ -34,7 +34,7 @@ def test_parse_comparison() -> None:
         comp.replace(",", ", "),
         comp.replace("2", "2.0"),
     ):
-        actual = DEFAULT_PARSER.parse(input)
+        actual = DEFAULT_PARSER.parse(text)
         assert expected == actual
 
 
@@ -43,7 +43,7 @@ def test_parse_operation() -> None:
     eq = Comparison(comparator=Comparator.EQ, attribute="foo", value="bar")
     lt = Comparison(comparator=Comparator.LT, attribute="baz", value=1995.25)
     expected = Operation(operator=Operator.AND, arguments=[eq, lt])
-    for input in (
+    for text in (
         op,
         op.replace('"', "'"),
         op.replace(" ", ""),
@@ -52,7 +52,7 @@ def test_parse_operation() -> None:
         op.replace(",", ", "),
         op.replace("25", "250"),
     ):
-        actual = DEFAULT_PARSER.parse(input)
+        actual = DEFAULT_PARSER.parse(text)
         assert expected == actual
 
 

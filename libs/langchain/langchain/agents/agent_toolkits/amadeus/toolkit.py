@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "AmadeusToolkit": "langchain_community.agent_toolkits.amadeus.toolkit"
+    "AmadeusToolkit": "langchain_community.agent_toolkits.amadeus.toolkit",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

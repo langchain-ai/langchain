@@ -50,7 +50,7 @@ class CustomAddTextsVectorstore(VectorStore):
         return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
-        return [self.store[id] for id in ids if id in self.store]
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @classmethod
     @override
@@ -96,7 +96,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
-        return [self.store[id] for id in ids if id in self.store]
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @classmethod
     @override
@@ -121,7 +121,9 @@ class CustomAddDocumentsVectorstore(VectorStore):
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
 def test_default_add_documents(vs_class: type[VectorStore]) -> None:
-    """Test that we can implement the upsert method of the CustomVectorStore
+    """Test default implementation of add_documents.
+
+    Test that we can implement the upsert method of the CustomVectorStore
     class without violating the Liskov Substitution Principle.
     """
     store = vs_class()

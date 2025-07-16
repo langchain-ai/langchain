@@ -5,7 +5,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain.runnables.openai_functions import OpenAIFunctionsRouter
 
@@ -31,19 +31,20 @@ class FakeChatOpenAI(BaseChatModel):
                             "function_call": {
                                 "name": "accept",
                                 "arguments": '{\n  "draft": "turtles"\n}',
-                            }
+                            },
                         },
-                    )
-                )
-            ]
+                    ),
+                ),
+            ],
         )
 
 
 def test_openai_functions_router(
-    snapshot: SnapshotAssertion, mocker: MockerFixture
+    snapshot: SnapshotAssertion,
+    mocker: MockerFixture,
 ) -> None:
     revise = mocker.Mock(
-        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!"
+        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!",
     )
     accept = mocker.Mock(side_effect=lambda kw: f"Accepted draft: {kw['draft']}!")
 

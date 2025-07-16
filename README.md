@@ -66,7 +66,7 @@ reliably handle complex tasks with LangGraph, our low-level agent orchestration
 framework. LangGraph offers customizable architecture, long-term memory, and
 human-in-the-loop workflows — and is trusted in production by companies like LinkedIn,
 Uber, Klarna, and GitLab.
-- [LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform) - Deploy
+- [LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/langgraph_platform/) - Deploy
 and scale agents effortlessly with a purpose-built deployment platform for long
 running, stateful workflows. Discover, reuse, configure, and share agents across
 teams — and iterate quickly with visual prototyping in
@@ -79,5 +79,6 @@ guided examples on getting started with LangChain.
 snippets for topics such as tool calling, RAG use cases, and more.
 - [Conceptual Guides](https://python.langchain.com/docs/concepts/): Explanations of key
 concepts behind the LangChain framework.
+- [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.

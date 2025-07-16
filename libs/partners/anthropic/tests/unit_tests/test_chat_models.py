@@ -1,18 +1,26 @@
 """Test chat model integration."""
 
-import os
-from typing import Any, Callable, Literal, cast
+from __future__ import annotations
 
+import os
+from typing import Any, Callable, Literal, Optional, cast
+from unittest.mock import MagicMock, patch
+
+import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _create_usage_metadata,
+    _format_image,
     _format_messages,
     _merge_messages,
     convert_to_anthropic_tool,
@@ -36,6 +44,22 @@ def test_initialization() -> None:
         assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+def test_anthropic_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm2 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    assert llm1._client._client is llm2._client._client
+
+    llm3 = ChatAnthropic(model="claude-3-5-sonnet-latest", base_url="foo")
+    assert llm1._client._client is not llm3._client._client
+
+    llm4 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=None)
+    assert llm1._client._client is llm4._client._client
+
+    llm5 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=3)
+    assert llm1._client._client is not llm5._client._client
 
 
 @pytest.mark.requires("anthropic")
@@ -165,7 +189,7 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
-            ]
+            ],
         ),
         ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
         ToolMessage(
@@ -212,7 +236,7 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
-            ]
+            ],
         ),
         HumanMessage(  # type: ignore[misc]
             [
@@ -244,7 +268,7 @@ def test__merge_messages() -> None:
                     "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},
-            ]
+            ],
         ),
     ]
     actual = _merge_messages(messages)
@@ -255,7 +279,7 @@ def test__merge_messages() -> None:
         ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
         ToolMessage(  # type: ignore[misc]
             content=[
-                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"}
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
             ],
             tool_call_id="2",
         ),
@@ -270,8 +294,8 @@ def test__merge_messages() -> None:
                     "is_error": False,
                 },
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
-            ]
-        )
+            ],
+        ),
     ]
     actual = _merge_messages(messages)
     assert expected == actual
@@ -288,7 +312,7 @@ def test__merge_messages_mutation() -> None:
     ]
     expected = [
         HumanMessage(  # type: ignore[misc]
-            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}],
         ),
     ]
     actual = _merge_messages(messages)
@@ -296,10 +320,16 @@ def test__merge_messages_mutation() -> None:
     assert messages == original_messages
 
 
+def test__format_image() -> None:
+    url = "dummyimage.com/600x400/000/fff"
+    with pytest.raises(ValueError):
+        _format_image(url)
+
+
 @pytest.fixture()
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):
-        """dummy function"""
+        """Dummy function."""
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
@@ -310,13 +340,13 @@ def pydantic() -> type[BaseModel]:
 @pytest.fixture()
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
             arg2: one of 'bar', 'baz'
-        """
-        pass
+
+        """  # noqa: D401
 
     return dummy_function
 
@@ -330,7 +360,7 @@ def dummy_tool() -> BaseTool:
     class DummyFunction(BaseTool):  # type: ignore[override]
         args_schema: type[BaseModel] = Schema
         name: str = "dummy_function"
-        description: str = "dummy function"
+        description: str = "Dummy function."
 
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             pass
@@ -342,7 +372,7 @@ def dummy_tool() -> BaseTool:
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "type": "object",
         "properties": {
             "arg1": {"description": "foo", "type": "integer"},
@@ -360,7 +390,7 @@ def json_schema() -> dict:
 def openai_function() -> dict:
     return {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -385,7 +415,7 @@ def test_convert_to_anthropic_tool(
 ) -> None:
     expected = {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -401,7 +431,7 @@ def test_convert_to_anthropic_tool(
     }
 
     for fn in (pydantic, function, dummy_tool, json_schema, expected, openai_function):
-        actual = convert_to_anthropic_tool(fn)  # type: ignore
+        actual = convert_to_anthropic_tool(fn)
         assert actual == expected
 
 
@@ -433,7 +463,7 @@ def test__format_messages_with_tool_calls() -> None:
                     "type": "base64",
                     "media_type": "image/jpeg",
                 },
-            }
+            },
         ],
         tool_call_id="3",
     )
@@ -450,7 +480,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "name": "bar",
                         "id": "1",
                         "input": {"baz": "buzz"},
-                    }
+                    },
                 ],
             },
             {
@@ -461,7 +491,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
             {
@@ -472,7 +502,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "name": "bar",
                         "id": "2",
                         "input": {"baz": "buzz"},
-                    }
+                    },
                 ],
             },
             {
@@ -488,7 +518,7 @@ def test__format_messages_with_tool_calls() -> None:
                                     "type": "base64",
                                     "media_type": "image/jpeg",
                                 },
-                            }
+                            },
                         ],
                         "tool_use_id": "2",
                         "is_error": False,
@@ -503,7 +533,7 @@ def test__format_messages_with_tool_calls() -> None:
                                     "type": "base64",
                                     "media_type": "image/jpeg",
                                 },
-                            }
+                            },
                         ],
                         "tool_use_id": "3",
                         "is_error": False,
@@ -551,7 +581,7 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -596,7 +626,7 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -648,7 +678,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -662,7 +692,7 @@ def test__format_messages_with_cache_control() -> None:
         SystemMessage(
             [
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
-            ]
+            ],
         ),
         HumanMessage(
             [
@@ -671,11 +701,11 @@ def test__format_messages_with_cache_control() -> None:
                     "type": "text",
                     "text": "foo",
                 },
-            ]
+            ],
         ),
     ]
     expected_system = [
-        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
     ]
     expected_messages = [
         {
@@ -684,11 +714,140 @@ def test__format_messages_with_cache_control() -> None:
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
                 {"type": "text", "text": "foo"},
             ],
-        }
+        },
     ]
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
     assert expected_messages == actual_messages
+
+    # Test standard multi-modal format
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "application/pdf",
+                    "data": "<base64 data>",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+
+def test__format_messages_with_citations() -> None:
+    input_messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "source_type": "text",
+                    "text": "The grass is green. The sky is blue.",
+                    "mime_type": "text/plain",
+                    "citations": {"enabled": True},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        ),
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/plain",
+                        "data": "The grass is green. The sky is blue.",
+                    },
+                    "citations": {"enabled": True},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        },
+    ]
+    actual_system, actual_messages = _format_messages(input_messages)
+    assert actual_system is None
+    assert actual_messages == expected_messages
+
+
+def test__format_messages_openai_image_format() -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Can you highlight the differences between these two images?",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,<base64 data>"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://<image url>"},
+            },
+        ],
+    )
+    actual_system, actual_messages = _format_messages([message])
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "Can you highlight the differences between these two images?"
+                    ),
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "<base64 data>",
+                    },
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": "https://<image url>",
+                    },
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
 
 
 def test__format_messages_with_multiple_system() -> None:
@@ -699,7 +858,7 @@ def test__format_messages_with_multiple_system() -> None:
         SystemMessage(
             [
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
-            ]
+            ],
         ),
     ]
     expected_system = [
@@ -723,7 +882,8 @@ def test_anthropic_api_key_is_secret_string() -> None:
 
 
 def test_anthropic_api_key_masked_when_passed_from_env(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
@@ -763,7 +923,7 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
 
 
 class GetWeather(BaseModel):
-    """Get the current weather in a given location"""
+    """Get the current weather in a given location."""
 
     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
@@ -774,14 +934,16 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         anthropic_api_key="secret-api-key",
     )
     chat_model_with_tools = chat_model.bind_tools(
-        [GetWeather], tool_choice={"type": "tool", "name": "GetWeather"}
+        [GetWeather],
+        tool_choice={"type": "tool", "name": "GetWeather"},
     )
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
     chat_model_with_tools = chat_model.bind_tools(
-        [GetWeather], tool_choice="GetWeather"
+        [GetWeather],
+        tool_choice="GetWeather",
     )
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
@@ -789,9 +951,128 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
-        "type": "auto"
+        "type": "auto",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
-        "type": "any"
+        "type": "any",
     }
+
+
+def test_optional_description() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    class SampleModel(BaseModel):
+        sample_field: str
+
+    _ = llm.with_structured_output(SampleModel.model_json_schema())
+
+
+def test_get_num_tokens_from_messages_passes_kwargs() -> None:
+    """Test that get_num_tokens_from_messages passes kwargs to the model."""
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    with patch.object(anthropic, "Client") as _Client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
+
+    assert (
+        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    )
+
+
+def test_usage_metadata_standardization() -> None:
+    class UsageModel(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+        cache_read_input_tokens: int = 3
+        cache_creation_input_tokens: int = 2
+
+    # Happy path
+    usage = UsageModel()
+    result = _create_usage_metadata(usage)
+    assert result["input_tokens"] == 15  # 10 + 3 + 2
+    assert result["output_tokens"] == 5
+    assert result["total_tokens"] == 20
+    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+
+    # Null input and output tokens
+    class UsageModelNulls(BaseModel):
+        input_tokens: Optional[int] = None
+        output_tokens: Optional[int] = None
+        cache_read_input_tokens: Optional[int] = None
+        cache_creation_input_tokens: Optional[int] = None
+
+    usage_nulls = UsageModelNulls()
+    result = _create_usage_metadata(usage_nulls)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+
+    # Test missing fields
+    class UsageModelMissing(BaseModel):
+        pass
+
+    usage_missing = UsageModelMissing()
+    result = _create_usage_metadata(usage_missing)
+    assert result["input_tokens"] == 0
+    assert result["output_tokens"] == 0
+    assert result["total_tokens"] == 0
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.chat_model_start_inputs: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+def test_mcp_tracing() -> None:
+    # Test we exclude sensitive information from traces
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.deepwiki.com/mcp",
+            "name": "deepwiki",
+            "authorization_token": "PLACEHOLDER",
+        },
+    ]
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        betas=["mcp-client-2025-04-04"],
+        mcp_servers=mcp_servers,
+    )
+
+    tracer = FakeTracer()
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Message:
+        return Message(
+            id="foo",
+            content=[TextBlock(type="text", text="bar")],
+            model="baz",
+            role="assistant",
+            stop_reason=None,
+            stop_sequence=None,
+            usage=Usage(input_tokens=2, output_tokens=1),
+            type="message",
+        )
+
+    mock_client.messages.create = mock_create
+    input_message = HumanMessage("Test query")
+    with patch.object(llm, "_client", mock_client):
+        _ = llm.invoke([input_message], config={"callbacks": [tracer]})
+
+    # Test headers are not traced
+    assert len(tracer.chat_model_start_inputs) == 1
+    assert "PLACEHOLDER" not in str(tracer.chat_model_start_inputs)
+
+    # Test headers are correctly propagated to request
+    payload = llm._get_request_payload([input_message])
+    assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
