@@ -208,7 +208,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
             {
                 "title": "Mock result",
                 "url": "https://example.com/result",
-                "date": "None",
+                "date": None,
             }
         ],
     }
@@ -219,7 +219,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
             {
                 "title": "Mock result",
                 "url": "https://example.com/result",
-                "date": "None",
+                "date": None,
             }
         ],
     }
@@ -243,7 +243,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
                 {
                     "title": "Mock result",
                     "url": "https://example.com/result",
-                    "date": "None",
+                    "date": None,
                 }
             ]
         else:
@@ -257,7 +257,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
             {
                 "title": "Mock result",
                 "url": "https://example.com/result",
-                "date": "None",
+                "date": None,
             }
         ],
     }
