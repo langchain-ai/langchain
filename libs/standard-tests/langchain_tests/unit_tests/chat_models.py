@@ -837,7 +837,7 @@ class ChatModelUnitTests(ChatModelTests):
         assert model is not None
 
     def test_model_param_name(self) -> None:
-        """Tests model initializatiokn with a model= parameter. This should pass for all
+        """Tests model initialization with a ``model=`` parameter. This should pass for all
         integrations.
 
         .. dropdown:: Troubleshooting
