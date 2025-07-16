@@ -1,7 +1,7 @@
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "<4.0,>=3.9"
+requires-python = ">=3.9"
 dependencies = []
 name = "langchain-monorepo"
 version = "0.0.1"
@@ -12,7 +12,7 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<1.0.0,>=0.5.0"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = [
     "langchain-core",
     "langchain-text-splitters",
@@ -30,8 +30,10 @@ test = [
     "langchain-chroma",
     "langchain-fireworks",
     "langchain-google-vertexai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/vertexai",
+    "langchain-google-genai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/genai",
     "langchain-groq",
     "langchain-mistralai",
+    "langchain-tavily",
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
     "langgraph",
@@ -55,7 +57,6 @@ test = [
 langchain-core = { path = "./libs/core", editable = true }
 langchain-text-splitters = { path = "./libs/text-splitters", editable = true }
 langchain-tests = { path = "./libs/standard-tests", editable = true }
-langchain-community = { path = "./libs/community", editable = true }
 langchain = { path = "./libs/langchain", editable = true }
 langchain-openai = { path = "./libs/partners/openai", editable = true }
 langchain-anthropic = { path = "./libs/partners/anthropic", editable = true }
@@ -82,7 +83,7 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
-select = ["D"]
+select = ["D"] # global select for pydocstyle
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]

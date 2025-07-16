@@ -88,7 +88,12 @@ class NoLock:
     async def __aenter__(self) -> None:
         """Do nothing."""
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Exception not handled."""
         return False
 
@@ -139,7 +144,7 @@ async def tee_peer(
             yield buffer.popleft()
     finally:
         async with lock:
-            # this peer is done – remove its buffer
+            # this peer is done - remove its buffer
             for idx, peer_buffer in enumerate(peers):  # pragma: no branch
                 if peer_buffer is buffer:
                     peers.pop(idx)
@@ -237,7 +242,12 @@ class Tee(Generic[T]):
         """Return the tee instance."""
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Close all child iterators."""
         await self.aclose()
         return False

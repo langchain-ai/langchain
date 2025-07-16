@@ -32,7 +32,7 @@ def main():
         cwd = "/".join(path.split("/")[:-1])
 
         subprocess.run(
-            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --fix .",
             cwd=cwd,
             shell=True,
             capture_output=True,
@@ -74,12 +74,13 @@ def main():
                 f.write("".join(file_lines))
 
         subprocess.run(
-            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --fix .",
             cwd=cwd,
             shell=True,
             capture_output=True,
             text=True,
         )
+
 
 if __name__ == "__main__":
     main()

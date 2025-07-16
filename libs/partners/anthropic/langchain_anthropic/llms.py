@@ -1,13 +1,11 @@
+from __future__ import annotations
+
 import re
 import warnings
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
     Optional,
 )
 
@@ -70,27 +68,26 @@ class _AnthropicCommon(BaseLanguageModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value from
-    ANTHROPIC_API_URL. If not set, the default value of 'https://api.anthropic.com' will
-    be used.
+    ``ANTHROPIC_API_URL``. If not set, the default value ``https://api.anthropic.com``
+    will be used.
     """
 
     anthropic_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
     count_tokens: Optional[Callable[[str], int]] = None
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict) -> Any:
+    def build_extra(cls, values: dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
-        values = _build_model_kwargs(values, all_required_field_names)
-        return values
+        return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -129,11 +126,12 @@ class _AnthropicCommon(BaseLanguageModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{}, **self._default_params}
+        return {**self._default_params}
 
-    def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
+    def _get_anthropic_stop(self, stop: Optional[list[str]] = None) -> list[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
-            raise NameError("Please ensure the anthropic package is loaded")
+            msg = "Please ensure the anthropic package is loaded"
+            raise NameError(msg)
 
         if stop is None:
             stop = []
@@ -156,6 +154,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             from langchain_anthropic import AnthropicLLM
 
             model = AnthropicLLM()
+
     """
 
     model_config = ConfigDict(
@@ -165,12 +164,13 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_warning(cls, values: Dict) -> Any:
+    def raise_warning(cls, values: dict) -> Any:
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
             "Please use `from langchain_anthropic import ChatAnthropic` "
-            "instead"
+            "instead",
+            stacklevel=2,
         )
         return values
 
@@ -180,7 +180,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return "anthropic-llm"
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
     @classmethod
@@ -188,7 +188,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return True
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
@@ -203,7 +203,9 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -217,7 +219,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
-            raise NameError("Please ensure the anthropic package is loaded")
+            msg = "Please ensure the anthropic package is loaded"
+            raise NameError(msg)
 
         if prompt.startswith(self.HUMAN_PROMPT):
             return prompt  # Already wrapped.
@@ -233,7 +236,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -242,6 +245,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager for LLM run.
+            kwargs: Additional keyword arguments to pass to the model.
 
         Returns:
             The string generated by the model.
@@ -257,7 +262,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         if self.streaming:
             completion = ""
             for chunk in self._stream(
-                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             ):
                 completion += chunk.text
             return completion
@@ -277,7 +285,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -285,7 +293,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         if self.streaming:
             completion = ""
             async for chunk in self._astream(
-                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             ):
                 completion += chunk.text
             return completion
@@ -303,7 +314,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -312,9 +323,14 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager for LLM run.
+            kwargs: Additional keyword arguments to pass to the model.
+
         Returns:
             A generator representing the stream of tokens from Anthropic.
+
         Example:
+
             .. code-block:: python
 
                 prompt = "Write a poem about a stream."
@@ -322,12 +338,16 @@ class AnthropicLLM(LLM, _AnthropicCommon):
                 generator = anthropic.stream(prompt)
                 for token in generator:
                     yield token
+
         """
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
 
         for token in self.client.completions.create(
-            prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
+            prompt=self._wrap_prompt(prompt),
+            stop_sequences=stop,
+            stream=True,
+            **params,
         ):
             chunk = GenerationChunk(text=token.completion)
 
@@ -338,7 +358,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
@@ -347,15 +367,21 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager for LLM run.
+            kwargs: Additional keyword arguments to pass to the model.
+
         Returns:
             A generator representing the stream of tokens from Anthropic.
+
         Example:
             .. code-block:: python
+
                 prompt = "Write a poem about a stream."
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
                 generator = anthropic.stream(prompt)
                 for token in generator:
                     yield token
+
         """
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
@@ -374,15 +400,16 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        raise NotImplementedError(
+        msg = (
             "Anthropic's legacy count_tokens method was removed in anthropic 0.39.0 "
             "and langchain-anthropic 0.3.0. Please use "
             "ChatAnthropic.get_num_tokens_from_messages instead."
+        )
+        raise NotImplementedError(
+            msg,
         )
 
 
 @deprecated(since="0.1.0", removal="1.0.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
     """Anthropic large language model."""
-
-    pass

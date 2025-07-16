@@ -1,5 +1,5 @@
 import string
-from typing import Any, List
+from typing import Any
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -49,7 +49,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         return True
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """
         Get the input keys.
 
@@ -68,7 +68,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """
         return "exact_match"
 
-    def _evaluate_strings(  # type: ignore[arg-type,override]
+    def _evaluate_strings(  # type: ignore[override]
         self,
         *,
         prediction: str,

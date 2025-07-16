@@ -108,10 +108,15 @@ class Node(NamedTuple):
 
     id: str
     name: str
-    data: Union[type[BaseModel], RunnableType]
+    data: Union[type[BaseModel], RunnableType, None]
     metadata: Optional[dict[str, Any]]
 
-    def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
+    def copy(
+        self,
+        *,
+        id: Optional[str] = None,  # noqa: A002
+        name: Optional[str] = None,
+    ) -> Node:
         """Return a copy of the node with optional new id and name.
 
         Args:
@@ -181,7 +186,10 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
+def node_data_str(
+    id: str,  # noqa: A002
+    data: Union[type[BaseModel], RunnableType, None],
+) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -193,7 +201,7 @@ def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
     """
     from langchain_core.runnables.base import Runnable
 
-    if not is_uuid(id):
+    if not is_uuid(id) or data is None:
         return id
     data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
@@ -215,8 +223,10 @@ def node_data_json(
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
-    if isinstance(node.data, RunnableSerializable):
-        json: dict[str, Any] = {
+    if node.data is None:
+        json: dict[str, Any] = {}
+    elif isinstance(node.data, RunnableSerializable):
+        json = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -288,7 +298,7 @@ class Graph:
                 "target": stable_node_ids[edge.target],
             }
             if edge.data is not None:
-                edge_dict["data"] = edge.data
+                edge_dict["data"] = edge.data  # type: ignore[assignment]
             if edge.conditional:
                 edge_dict["conditional"] = True
             edges.append(edge_dict)
@@ -317,8 +327,8 @@ class Graph:
 
     def add_node(
         self,
-        data: Union[type[BaseModel], RunnableType],
-        id: Optional[str] = None,
+        data: Union[type[BaseModel], RunnableType, None],
+        id: Optional[str] = None,  # noqa: A002
         *,
         metadata: Optional[dict[str, Any]] = None,
     ) -> Node:
@@ -338,8 +348,8 @@ class Graph:
         if id is not None and id in self.nodes:
             msg = f"Node with id {id} already exists"
             raise ValueError(msg)
-        id = id or self.next_id()
-        node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
+        id_ = id or self.next_id()
+        node = Node(id=id_, data=data, metadata=metadata, name=node_data_str(id_, data))
         self.nodes[node.id] = node
         return node
 
@@ -351,9 +361,7 @@ class Graph:
         """
         self.nodes.pop(node.id)
         self.edges = [
-            edge
-            for edge in self.edges
-            if edge.source != node.id and edge.target != node.id
+            edge for edge in self.edges if node.id not in {edge.source, edge.target}
         ]
 
     def add_edge(
@@ -361,7 +369,7 @@ class Graph:
         source: Node,
         target: Node,
         data: Optional[Stringifiable] = None,
-        conditional: bool = False,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
 
@@ -406,8 +414,8 @@ class Graph:
         if all(is_uuid(node.id) for node in graph.nodes.values()):
             prefix = ""
 
-        def prefixed(id: str) -> str:
-            return f"{prefix}:{id}" if prefix else id
+        def prefixed(id_: str) -> str:
+            return f"{prefix}:{id_}" if prefix else id_
 
         # prefix each node
         self.nodes.update(
@@ -450,8 +458,8 @@ class Graph:
 
         return Graph(
             nodes={
-                _get_node_id(id): node.copy(id=_get_node_id(id))
-                for id, node in self.nodes.items()
+                _get_node_id(id_): node.copy(id=_get_node_id(id_))
+                for id_, node in self.nodes.items()
             },
             edges=[
                 edge.copy(
@@ -632,6 +640,8 @@ class Graph:
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        max_retries: int = 1,
+        retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
@@ -647,6 +657,10 @@ class Graph:
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
             padding: The padding around the graph. Defaults to 10.
+            max_retries: The maximum number of retries (MermaidDrawMethod.API).
+                Defaults to 1.
+            retry_delay: The delay between retries (MermaidDrawMethod.API).
+                Defaults to 1.0.
             frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph. Defaults to None.
@@ -682,6 +696,8 @@ class Graph:
             draw_method=draw_method,
             background_color=background_color,
             padding=padding,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
 
 

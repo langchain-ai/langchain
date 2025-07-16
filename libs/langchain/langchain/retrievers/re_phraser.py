@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -62,7 +61,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get relevant documents given a user question.
 
         Args:
@@ -72,18 +71,19 @@ class RePhraseQueryRetriever(BaseRetriever):
             Relevant documents for re-phrased question
         """
         re_phrased_question = self.llm_chain.invoke(
-            query, {"callbacks": run_manager.get_child()}
+            query,
+            {"callbacks": run_manager.get_child()},
         )
-        logger.info(f"Re-phrased question: {re_phrased_question}")
-        docs = self.retriever.invoke(
-            re_phrased_question, config={"callbacks": run_manager.get_child()}
+        logger.info("Re-phrased question: %s", re_phrased_question)
+        return self.retriever.invoke(
+            re_phrased_question,
+            config={"callbacks": run_manager.get_child()},
         )
-        return docs
 
     async def _aget_relevant_documents(
         self,
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         raise NotImplementedError

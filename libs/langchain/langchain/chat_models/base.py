@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
@@ -34,20 +28,20 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, override
 
 __all__ = [
-    "init_chat_model",
     # For backwards compatibility
     "BaseChatModel",
     "SimpleChatModel",
-    "generate_from_stream",
     "agenerate_from_stream",
+    "generate_from_stream",
+    "init_chat_model",
 ]
 
 
 @overload
-def init_chat_model(  # type: ignore[overload-overlap]
+def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
@@ -73,7 +67,7 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = ...,
+    configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -87,7 +81,7 @@ def init_chat_model(
     *,
     model_provider: Optional[str] = None,
     configurable_fields: Optional[
-        Union[Literal["any"], List[str], Tuple[str, ...]]
+        Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
@@ -139,6 +133,7 @@ def init_chat_model(
             - 'mistral...'                      -> 'mistralai'
             - 'deepseek...'                     -> 'deepseek'
             - 'grok...'                         -> 'xai'
+            - 'sonar...'                        -> 'perplexity'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -320,27 +315,32 @@ def init_chat_model(
         warnings.warn(
             f"{config_prefix=} has been set but no fields are configurable. Set "
             f"`configurable_fields=(...)` to specify the model params that are "
-            f"configurable."
+            f"configurable.",
+            stacklevel=2,
         )
 
     if not configurable_fields:
         return _init_chat_model_helper(
-            cast(str, model), model_provider=model_provider, **kwargs
+            cast(str, model),
+            model_provider=model_provider,
+            **kwargs,
         )
-    else:
-        if model:
-            kwargs["model"] = model
-        if model_provider:
-            kwargs["model_provider"] = model_provider
-        return _ConfigurableModel(
-            default_config=kwargs,
-            config_prefix=config_prefix,
-            configurable_fields=configurable_fields,
-        )
+    if model:
+        kwargs["model"] = model
+    if model_provider:
+        kwargs["model_provider"] = model_provider
+    return _ConfigurableModel(
+        default_config=kwargs,
+        config_prefix=config_prefix,
+        configurable_fields=configurable_fields,
+    )
 
 
 def _init_chat_model_helper(
-    model: str, *, model_provider: Optional[str] = None, **kwargs: Any
+    model: str,
+    *,
+    model_provider: Optional[str] = None,
+    **kwargs: Any,
 ) -> BaseChatModel:
     model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
@@ -348,42 +348,42 @@ def _init_chat_model_helper(
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(model=model, **kwargs)
-    elif model_provider == "anthropic":
+    if model_provider == "anthropic":
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg]
-    elif model_provider == "azure_openai":
+        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
+    if model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
-    elif model_provider == "azure_ai":
+    if model_provider == "azure_ai":
         _check_pkg("langchain_azure_ai")
         from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
         return AzureAIChatCompletionsModel(model=model, **kwargs)
-    elif model_provider == "cohere":
+    if model_provider == "cohere":
         _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
 
         return ChatCohere(model=model, **kwargs)
-    elif model_provider == "google_vertexai":
+    if model_provider == "google_vertexai":
         _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai import ChatVertexAI
 
         return ChatVertexAI(model=model, **kwargs)
-    elif model_provider == "google_genai":
+    if model_provider == "google_genai":
         _check_pkg("langchain_google_genai")
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=model, **kwargs)
-    elif model_provider == "fireworks":
+    if model_provider == "fireworks":
         _check_pkg("langchain_fireworks")
         from langchain_fireworks import ChatFireworks
 
         return ChatFireworks(model=model, **kwargs)
-    elif model_provider == "ollama":
+    if model_provider == "ollama":
         try:
             _check_pkg("langchain_ollama")
             from langchain_ollama import ChatOllama
@@ -398,73 +398,72 @@ def _init_chat_model_helper(
                 _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
-    elif model_provider == "together":
+    if model_provider == "together":
         _check_pkg("langchain_together")
         from langchain_together import ChatTogether
 
         return ChatTogether(model=model, **kwargs)
-    elif model_provider == "mistralai":
+    if model_provider == "mistralai":
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
-        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg]
-    elif model_provider == "huggingface":
+        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
+    if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
 
         return ChatHuggingFace(model_id=model, **kwargs)
-    elif model_provider == "groq":
+    if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
 
         return ChatGroq(model=model, **kwargs)
-    elif model_provider == "bedrock":
+    if model_provider == "bedrock":
         _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrock
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
-    elif model_provider == "bedrock_converse":
+    if model_provider == "bedrock_converse":
         _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
-    elif model_provider == "google_anthropic_vertex":
+    if model_provider == "google_anthropic_vertex":
         _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai.model_garden import ChatAnthropicVertex
 
         return ChatAnthropicVertex(model=model, **kwargs)
-    elif model_provider == "deepseek":
+    if model_provider == "deepseek":
         _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
-    elif model_provider == "nvidia":
+    if model_provider == "nvidia":
         _check_pkg("langchain_nvidia_ai_endpoints")
         from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
         return ChatNVIDIA(model=model, **kwargs)
-    elif model_provider == "ibm":
+    if model_provider == "ibm":
         _check_pkg("langchain_ibm")
         from langchain_ibm import ChatWatsonx
 
         return ChatWatsonx(model_id=model, **kwargs)
-    elif model_provider == "xai":
+    if model_provider == "xai":
         _check_pkg("langchain_xai")
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
-    elif model_provider == "perplexity":
+    if model_provider == "perplexity":
         _check_pkg("langchain_perplexity")
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
-    else:
-        supported = ", ".join(_SUPPORTED_PROVIDERS)
-        raise ValueError(
-            f"Unsupported {model_provider=}.\n\nSupported model providers are: "
-            f"{supported}"
-        )
+    supported = ", ".join(_SUPPORTED_PROVIDERS)
+    msg = (
+        f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
+    )
+    raise ValueError(msg)
 
 
 _SUPPORTED_PROVIDERS = {
@@ -494,27 +493,28 @@ _SUPPORTED_PROVIDERS = {
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
     if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
-    elif model_name.startswith("claude"):
+    if model_name.startswith("claude"):
         return "anthropic"
-    elif model_name.startswith("command"):
+    if model_name.startswith("command"):
         return "cohere"
-    elif model_name.startswith("accounts/fireworks"):
+    if model_name.startswith("accounts/fireworks"):
         return "fireworks"
-    elif model_name.startswith("gemini"):
+    if model_name.startswith("gemini"):
         return "google_vertexai"
-    elif model_name.startswith("amazon."):
+    if model_name.startswith("amazon."):
         return "bedrock"
-    elif model_name.startswith("mistral"):
+    if model_name.startswith("mistral"):
         return "mistralai"
-    elif model_name.startswith("deepseek"):
+    if model_name.startswith("deepseek"):
         return "deepseek"
-    elif model_name.startswith("grok"):
+    if model_name.startswith("grok"):
         return "xai"
-    else:
-        return None
+    if model_name.startswith("sonar"):
+        return "perplexity"
+    return None
 
 
-def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
     if (
         not model_provider
         and ":" in model
@@ -524,10 +524,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
-        raise ValueError(
+        msg = (
             f"Unable to infer model provider for {model=}, please specify "
             f"model_provider directly."
         )
+        raise ValueError(msg)
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
@@ -535,9 +536,10 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
 def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
-        raise ImportError(
+        msg = (
             f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
+        raise ImportError(msg)
 
 
 def _remove_prefix(s: str, prefix: str) -> str:
@@ -554,12 +556,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         *,
         default_config: Optional[dict] = None,
-        configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = "any",
+        configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = "any",
         config_prefix: str = "",
-        queued_declarative_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
+        queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
     ) -> None:
         self._default_config: dict = default_config or {}
-        self._configurable_fields: Union[Literal["any"], List[str]] = (
+        self._configurable_fields: Union[Literal["any"], list[str]] = (
             configurable_fields
             if configurable_fields == "any"
             else list(configurable_fields)
@@ -569,8 +571,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
-        self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
-            queued_declarative_operations
+        self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
+            queued_declarative_operations,
         )
 
     def __getattr__(self, name: str) -> Any:
@@ -582,7 +584,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             # self._model()).
             def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
                 queued_declarative_operations = list(
-                    self._queued_declarative_operations
+                    self._queued_declarative_operations,
                 )
                 queued_declarative_operations.append((name, args, kwargs))
                 return _ConfigurableModel(
@@ -595,14 +597,13 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                 )
 
             return queue
-        elif self._default_config and (model := self._model()) and hasattr(model, name):
+        if self._default_config and (model := self._model()) and hasattr(model, name):
             return getattr(model, name)
-        else:
-            msg = f"{name} is not a BaseChatModel attribute"
-            if self._default_config:
-                msg += " and is not implemented on the default model"
-            msg += "."
-            raise AttributeError(msg)
+        msg = f"{name} is not a BaseChatModel attribute"
+        if self._default_config:
+            msg += " and is not implemented on the default model"
+        msg += "."
+        raise AttributeError(msg)
 
     def _model(self, config: Optional[RunnableConfig] = None) -> Runnable:
         params = {**self._default_config, **self._model_params(config)}
@@ -645,7 +646,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                     "with_config",
                     (),
                     {"config": remaining_config},
-                )
+                ),
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
@@ -670,9 +671,10 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         return Union[
             str,
             Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            list[AnyMessage],
         ]
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -681,6 +683,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return self._model(config).invoke(input, config=config, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -689,6 +692,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Any:
         return await self._model(config).ainvoke(input, config=config, **kwargs)
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -697,6 +701,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> Iterator[Any]:
         yield from self._model(config).stream(input, config=config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
@@ -708,49 +713,59 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     def batch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
             return self._model(config).batch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
-        else:
-            return super().batch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
-            )
+        return super().batch(
+            inputs,
+            config=config,
+            return_exceptions=return_exceptions,
+            **kwargs,
+        )
 
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Any]:
+    ) -> list[Any]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
             return await self._model(config).abatch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
-        else:
-            return await super().abatch(
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
-            )
+        return await super().abatch(
+            inputs,
+            config=config,
+            return_exceptions=return_exceptions,
+            **kwargs,
+        )
 
     def batch_as_completed(
         self,
@@ -759,20 +774,26 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Any, Exception]]]:
+    ) -> Iterator[tuple[int, Union[Any, Exception]]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
             yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         else:
             yield from super().batch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             )
 
     async def abatch_as_completed(
@@ -782,35 +803,42 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> AsyncIterator[Tuple[int, Any]]:
+    ) -> AsyncIterator[tuple[int, Any]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
             async for x in self._model(
-                cast(RunnableConfig, config)
+                cast(RunnableConfig, config),
             ).abatch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             ):
                 yield x
         # If multiple configs default to Runnable.batch which uses executor to invoke
         # in parallel.
         else:
             async for x in super().abatch_as_completed(  # type: ignore[call-overload]
-                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+                inputs,
+                config=config,
+                return_exceptions=return_exceptions,
+                **kwargs,
             ):
                 yield x
 
+    @override
     def transform(
         self,
         input: Iterator[LanguageModelInput],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Any]:
-        for x in self._model(config).transform(input, config=config, **kwargs):
-            yield x
+        yield from self._model(config).transform(input, config=config, **kwargs)
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[LanguageModelInput],
@@ -854,6 +882,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> AsyncIterator[RunLog]: ...
 
+    @override
     async def astream_log(
         self,
         input: Any,
@@ -884,6 +913,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         ):
             yield x
 
+    @override
     async def astream_events(
         self,
         input: Any,
@@ -915,13 +945,15 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
-        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        self,
+        schema: Union[dict, type[BaseModel]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)

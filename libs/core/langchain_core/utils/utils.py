@@ -13,6 +13,7 @@ from typing import Any, Callable, Optional, Union, overload
 from packaging.version import parse
 from pydantic import SecretStr
 from requests import HTTPError, Response
+from typing_extensions import override
 
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
@@ -23,7 +24,7 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive.".
 
     Args:
-        *arg_groups (Tuple[str, ...]): Groups of mutually exclusive keyword args.
+        *arg_groups (tuple[str, ...]): Groups of mutually exclusive keyword args.
 
     Returns:
         Callable: Decorator that validates the specified keyword args
@@ -91,6 +92,7 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
+        @override
         def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
             # Create a copy of dt_value.
             return MockDateTime(
@@ -201,7 +203,7 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
         pydantic_cls: Pydantic class.
 
     Returns:
-        Set[str]: Field names.
+        set[str]: Field names.
     """
     all_required_field_names = set()
     if is_pydantic_v1_subclass(pydantic_cls):
@@ -228,7 +230,7 @@ def _build_model_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        Dict[str, Any]: Extra kwargs.
+        dict[str, Any]: Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.
@@ -276,7 +278,7 @@ def build_extra_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        Dict[str, Any]: Extra kwargs.
+        dict[str, Any]: Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.

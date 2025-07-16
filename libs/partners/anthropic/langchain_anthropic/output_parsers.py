@@ -1,4 +1,6 @@
-from typing import Any, List, Optional, Type, Union, cast
+from __future__ import annotations
+
+from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.messages.tool import tool_call
@@ -14,27 +16,30 @@ class ToolsOutputParser(BaseGenerationOutputParser):
     """Whether to return only the first tool call."""
     args_only: bool = False
     """Whether to return only the arguments of the tool calls."""
-    pydantic_schemas: Optional[List[Type[BaseModel]]] = None
+    pydantic_schemas: Optional[list[type[BaseModel]]] = None
     """Pydantic schemas to parse tool calls into."""
 
     model_config = ConfigDict(
         extra="forbid",
     )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: (Not used) Whether the result is a partial result. If True, the
+                parser may return a partial result, which may not be complete or valid.
 
         Returns:
             Structured output.
+
         """
         if not result or not isinstance(result[0], ChatGeneration):
             return None if self.first_tool_only else []
         message = cast(AIMessage, result[0].message)
-        tool_calls: List = [
+        tool_calls: list = [
             dict(tc) for tc in _extract_tool_calls_from_message(message)
         ]
         if isinstance(message.content, list):
@@ -54,8 +59,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
 
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
-        else:
-            return [tool_call for tool_call in tool_calls]
+        return list(tool_calls)
 
     def _pydantic_parse(self, tool_call: dict) -> BaseModel:
         cls_ = {schema.__name__: schema for schema in self.pydantic_schemas or []}[
@@ -64,14 +68,14 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         return cls_(**tool_call["args"])
 
 
-def _extract_tool_calls_from_message(message: AIMessage) -> List[ToolCall]:
+def _extract_tool_calls_from_message(message: AIMessage) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if message.tool_calls:
         return message.tool_calls
     return extract_tool_calls(message.content)
 
 
-def extract_tool_calls(content: Union[str, List[Union[str, dict]]]) -> List[ToolCall]:
+def extract_tool_calls(content: Union[str, list[Union[str, dict]]]) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if isinstance(content, list):
         tool_calls = []
@@ -81,8 +85,7 @@ def extract_tool_calls(content: Union[str, List[Union[str, dict]]]) -> List[Tool
             if block["type"] != "tool_use":
                 continue
             tool_calls.append(
-                tool_call(name=block["name"], args=block["input"], id=block["id"])
+                tool_call(name=block["name"], args=block["input"], id=block["id"]),
             )
         return tool_calls
-    else:
-        return []
+    return []

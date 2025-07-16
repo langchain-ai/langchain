@@ -1,11 +1,11 @@
 import base64
 import json
 import re
-import typing
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
@@ -21,6 +21,7 @@ from langchain_core.messages.utils import (
     convert_to_openai_messages,
     count_tokens_approximately,
     filter_messages,
+    get_buffer_string,
     merge_message_runs,
     trim_messages,
 )
@@ -422,7 +423,7 @@ def test_trim_messages_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="first",
         allow_partial=True,
     )
@@ -440,7 +441,7 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="last",
         allow_partial=True,
     )
@@ -660,13 +661,12 @@ def test_trim_messages_start_on_with_allow_partial() -> None:
 
 
 class FakeTokenCountingModel(FakeChatModel):
+    @override
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
         tools: Optional[
-            Sequence[
-                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
-            ]
+            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
         return dummy_token_counter(messages)
@@ -870,9 +870,9 @@ def create_image_data() -> str:
     return "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q=="  # noqa: E501
 
 
-def create_base64_image(format: str = "jpeg") -> str:
+def create_base64_image(image_format: str = "jpeg") -> str:
     data = create_image_data()
-    return f"data:image/{format};base64,{data}"
+    return f"data:image/{image_format};base64,{data}"
 
 
 def test_convert_to_openai_messages_string() -> None:
@@ -1187,6 +1187,90 @@ def test_convert_to_openai_messages_developer() -> None:
     assert result == [{"role": "developer", "content": "a"}] * 2
 
 
+def test_convert_to_openai_messages_multimodal() -> None:
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Text message"},
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "draconomicon.pdf",
+                        "file_data": "data:application/pdf;base64,<base64 string>",
+                    },
+                },
+                {
+                    "type": "file",
+                    "source_type": "id",
+                    "id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": "<base64 string>",
+                        "format": "wav",
+                    },
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result) == 1
+    message = result[0]
+    assert len(message["content"]) == 8
+
+    # Test adding filename
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "application/pdf",
+                },
+            ]
+        )
+    ]
+    with pytest.warns(match="filename"):
+        result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result) == 1
+    message = result[0]
+    assert len(message["content"]) == 1
+    block = message["content"][0]
+    assert block == {
+        "type": "file",
+        "file": {
+            "file_data": "data:application/pdf;base64,<base64 string>",
+            "filename": "LC_AUTOGENERATED",
+        },
+    }
+
+
 def test_count_tokens_approximately_empty_messages() -> None:
     # Test with empty message list
     assert count_tokens_approximately([]) == 0
@@ -1312,3 +1396,64 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
 
     # Ensure that count is consistent if we do one message at a time
     assert sum(count_tokens_approximately([m]) for m in messages) == token_count
+
+
+def test_get_buffer_string_with_structured_content() -> None:
+    """Test get_buffer_string with structured content in messages."""
+    messages = [
+        HumanMessage(content=[{"type": "text", "text": "Hello, world!"}]),
+        AIMessage(content=[{"type": "text", "text": "Hi there!"}]),
+        SystemMessage(content=[{"type": "text", "text": "System message"}]),
+    ]
+    expected = "Human: Hello, world!\nAI: Hi there!\nSystem: System message"
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_mixed_content() -> None:
+    """Test get_buffer_string with mixed content types in messages."""
+    messages = [
+        HumanMessage(content="Simple text"),
+        AIMessage(content=[{"type": "text", "text": "Structured text"}]),
+        SystemMessage(content=[{"type": "text", "text": "Another structured text"}]),
+    ]
+    expected = (
+        "Human: Simple text\nAI: Structured text\nSystem: Another structured text"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_function_call() -> None:
+    """Test get_buffer_string with function call in additional_kwargs."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(
+            content="Hi",
+            additional_kwargs={
+                "function_call": {
+                    "name": "test_function",
+                    "arguments": '{"arg": "value"}',
+                }
+            },
+        ),
+    ]
+    # TODO: consider changing this
+    expected = (
+        "Human: Hello\n"
+        "AI: Hi{'name': 'test_function', 'arguments': '{\"arg\": \"value\"}'}"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_empty_content() -> None:
+    """Test get_buffer_string with empty content in messages."""
+    messages = [
+        HumanMessage(content=[]),
+        AIMessage(content=""),
+        SystemMessage(content=[]),
+    ]
+    expected = "Human: \nAI: \nSystem: "
+    actual = get_buffer_string(messages)
+    assert actual == expected

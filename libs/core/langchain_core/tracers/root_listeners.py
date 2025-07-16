@@ -79,9 +79,8 @@ class RootListenersTracer(BaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 call_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                call_func_with_variable_args(self._arg_on_error, run, self.config)
+        elif self._arg_on_error is not None:
+            call_func_with_variable_args(self._arg_on_error, run, self.config)
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
@@ -143,8 +142,5 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 await acall_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                await acall_func_with_variable_args(
-                    self._arg_on_error, run, self.config
-                )
+        elif self._arg_on_error is not None:
+            await acall_func_with_variable_args(self._arg_on_error, run, self.config)

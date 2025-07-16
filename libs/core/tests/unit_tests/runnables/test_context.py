@@ -25,7 +25,7 @@ def seq_naive_rag() -> Runnable:
         "What's your name?",
     ]
 
-    retriever = RunnableLambda(lambda x: context)
+    retriever = RunnableLambda(lambda _: context)
     prompt = PromptTemplate.from_template("{context} {question}")
     llm = FakeListLLM(responses=["hello"])
 
@@ -53,7 +53,7 @@ def seq_naive_rag_alt() -> Runnable:
         "What's your name?",
     ]
 
-    retriever = RunnableLambda(lambda x: context)
+    retriever = RunnableLambda(lambda _: context)
     prompt = PromptTemplate.from_template("{context} {question}")
     llm = FakeListLLM(responses=["hello"])
 
@@ -78,7 +78,7 @@ def seq_naive_rag_scoped() -> Runnable:
         "What's your name?",
     ]
 
-    retriever = RunnableLambda(lambda x: context)
+    retriever = RunnableLambda(lambda _: context)
     prompt = PromptTemplate.from_template("{context} {question}")
     llm = FakeListLLM(responses=["hello"])
 

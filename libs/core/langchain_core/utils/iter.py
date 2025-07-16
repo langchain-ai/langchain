@@ -4,6 +4,7 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import AbstractContextManager
 from itertools import islice
+from types import TracebackType
 from typing import (
     Any,
     Generic,
@@ -24,7 +25,12 @@ class NoLock:
     def __enter__(self) -> None:
         """Do nothing."""
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Literal[False]:
         """Exception not handled."""
         return False
 
@@ -75,7 +81,7 @@ def tee_peer(
             yield buffer.popleft()
     finally:
         with lock:
-            # this peer is done – remove its buffer
+            # this peer is done - remove its buffer
             for idx, peer_buffer in enumerate(peers):  # pragma: no branch
                 if peer_buffer is buffer:
                     peers.pop(idx)
@@ -173,7 +179,12 @@ class Tee(Generic[T]):
         """Return Tee instance."""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Literal[False]:
         """Close all child iterators."""
         self.close()
         return False

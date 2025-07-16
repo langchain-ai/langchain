@@ -1,4 +1,4 @@
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from langchain_anthropic.output_parsers import ToolsOutputParser
 
-_CONTENT: List = [
+_CONTENT: list = [
     {
         "type": "text",
         "text": "thought",
@@ -19,7 +19,7 @@ _CONTENT: List = [
     {"type": "tool_use", "input": {"baz": "a"}, "id": "2", "name": "_Foo2"},
 ]
 
-_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]  # type: ignore[misc]
+_RESULT: list = [ChatGeneration(message=AIMessage(_CONTENT))]  # type: ignore[misc]
 
 
 class _Foo1(BaseModel):
@@ -95,7 +95,8 @@ def test_tools_output_parser_empty_content() -> None:
         chart_type: Literal["pie", "line", "bar"]
 
     output_parser = ToolsOutputParser(
-        first_tool_only=True, pydantic_schemas=[ChartType]
+        first_tool_only=True,
+        pydantic_schemas=[ChartType],
     )
     message = AIMessage(
         "",
@@ -105,7 +106,7 @@ def test_tools_output_parser_empty_content() -> None:
                 "args": {"chart_type": "pie"},
                 "id": "foo",
                 "type": "tool_call",
-            }
+            },
         ],
     )
     actual = output_parser.invoke(message)

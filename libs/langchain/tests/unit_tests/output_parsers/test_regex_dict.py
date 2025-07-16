@@ -1,7 +1,5 @@
 """Test in memory docstore."""
 
-from typing import Dict
-
 from langchain.output_parsers.regex_dict import RegexDictParser
 
 DEF_EXPECTED_RESULT = {"action": "Search", "action_input": "How to use this class?"}
@@ -33,16 +31,18 @@ we expect the result to only contain the following fields:
 def test_regex_dict_result() -> None:
     """Test regex dict result."""
     regex_dict_parser = RegexDictParser(
-        output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT, no_update_value="N/A"
+        output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT,
+        no_update_value="N/A",
     )
     result_dict = regex_dict_parser.parse(DEF_README)
     print("parse_result:", result_dict)  # noqa: T201
-    assert DEF_EXPECTED_RESULT == result_dict
+    assert result_dict == DEF_EXPECTED_RESULT
 
 
 def test_regex_dict_output_type() -> None:
     """Test regex dict output type."""
     regex_dict_parser = RegexDictParser(
-        output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT, no_update_value="N/A"
+        output_key_to_format=DEF_OUTPUT_KEY_TO_FORMAT,
+        no_update_value="N/A",
     )
-    assert regex_dict_parser.OutputType is Dict[str, str]
+    assert regex_dict_parser.OutputType == dict[str, str]
