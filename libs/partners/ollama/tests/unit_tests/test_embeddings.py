@@ -41,11 +41,7 @@ def test_embed_documents_passes_options(mock_client_class: Any) -> None:
     mock_client.embed.return_value = {"embeddings": [[0.1, 0.2, 0.3]]}
 
     # Create embeddings with num_gpu parameter
-    embeddings = OllamaEmbeddings(
-        model=MODEL_NAME,
-        num_gpu=4,
-        temperature=0.5
-    )
+    embeddings = OllamaEmbeddings(model=MODEL_NAME, num_gpu=4, temperature=0.5)
 
     # Call embed_documents
     result = embeddings.embed_documents(["test text"])
