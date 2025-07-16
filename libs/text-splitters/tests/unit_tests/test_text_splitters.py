@@ -3504,7 +3504,7 @@ def test_recursive_character_text_splitter_strict_chunk_size_long_word() -> None
 
 @pytest.mark.parametrize("add_chunk_position", [True, False])
 def test_recursive_character_text_splitter_chunk_position(
-    add_chunk_position: bool,
+    add_chunk_position: bool,  # noqa: FBT001
 ) -> None:
     """Ensure chunk_position metadata is correctly assigned when enabled."""
     text = "This is a test document."
