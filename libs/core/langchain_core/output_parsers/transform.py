@@ -134,7 +134,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
@@ -161,7 +161,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
