@@ -228,7 +228,7 @@ class TestChatDeepSeekCustomUnit:
 
         tool_message = ToolMessage(content=["item1", "item2"], tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
-        assert payload["messages"][0]["content"] == "['item1', 'item2']"
+        assert payload["messages"][0]["content"] == '["item1", "item2"]'
 
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from json import JSONDecodeError
 from typing import Any, Literal, Optional, TypeVar, Union
@@ -228,7 +229,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = str(message["content"])
+                message["content"] = json.dumps(message["content"])
         return payload
 
     def _create_chat_result(
