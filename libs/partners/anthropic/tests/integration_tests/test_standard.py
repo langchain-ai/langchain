@@ -1,10 +1,10 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 from pathlib import Path
 from typing import Literal, cast
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, BaseMessageChunk
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_anthropic import ChatAnthropic
@@ -87,9 +87,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
@@ -118,9 +118,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
@@ -134,19 +134,18 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
 
 
-def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:
+def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noqa: FBT001
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            full = full + chunk if full else chunk  # type: ignore[operator]
+            full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))

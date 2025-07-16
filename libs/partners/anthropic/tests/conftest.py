@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from langchain_tests.conftest import YamlGzipSerializer
+from langchain_tests.conftest import CustomPersister, CustomSerializer
 from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
 from vcr import VCR  # type: ignore[import-untyped]
 
@@ -20,9 +20,7 @@ def remove_response_headers(response: dict) -> dict:
 
 @pytest.fixture(scope="session")
 def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
-    """
-    Extend the default configuration coming from langchain_tests.
-    """
+    """Extend the default configuration coming from langchain_tests."""
     config = _base_vcr_config.copy()
     config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers
@@ -32,9 +30,6 @@ def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
     return config
 
 
-@pytest.fixture
-def vcr(vcr_config: dict) -> VCR:
-    """Override the default vcr fixture to include custom serializers"""
-    my_vcr = VCR(**vcr_config)
-    my_vcr.register_serializer("yaml.gz", YamlGzipSerializer)
-    return my_vcr
+def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+    vcr.register_persister(CustomPersister())
+    vcr.register_serializer("yaml.gz", CustomSerializer())

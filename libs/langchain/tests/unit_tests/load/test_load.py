@@ -10,7 +10,7 @@ from langchain.chains.llm import LLMChain
 pytest.importorskip("langchain_openai", reason="langchain_openai not installed")
 pytest.importorskip("langchain_community", reason="langchain_community not installed")
 
-from langchain_community.llms.openai import (  # noqa: E402 # ignore: community-import
+from langchain_community.llms.openai import (  # ignore: community-import
     OpenAI as CommunityOpenAI,
 )
 
@@ -24,7 +24,10 @@ def test_loads_openai_llm() -> None:
     from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(
-        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+        model="davinci",
+        temperature=0.5,
+        openai_api_key="hello",
+        top_p=0.8,
     )
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
@@ -40,7 +43,10 @@ def test_loads_llmchain() -> None:
     from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(
-        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+        model="davinci",
+        temperature=0.5,
+        openai_api_key="hello",
+        top_p=0.8,
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)

@@ -24,7 +24,7 @@ test tests:
 	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -n auto $(TEST_FILE) --vcr-record=none
+	uv run --group test --group test_integration pytest -n auto $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
@@ -54,7 +54,7 @@ lint lint_diff lint_package lint_tests:
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
 spell_check:
 	uv run --all-groups codespell --toml pyproject.toml

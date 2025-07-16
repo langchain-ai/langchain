@@ -1,7 +1,7 @@
 """Test PydanticOutputParser."""
 
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import pydantic
 import pytest
@@ -30,7 +30,7 @@ class ForecastV1(V1BaseModel):
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
 def test_pydantic_parser_chaining(
-    pydantic_object: TBaseModel,
+    pydantic_object: Union[type[ForecastV2], type[ForecastV1]],
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -43,11 +43,11 @@ def test_pydantic_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type,var-annotated]
+    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[type-var]
     chain = prompt | model | parser
 
     res = chain.invoke({})
-    assert type(res) is pydantic_object
+    assert isinstance(res, pydantic_object)
     assert res.f_or_c == "C"
     assert res.temperature == 20
     assert res.forecast == "Sunny"
