@@ -42,5 +42,5 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
             crumbs_str = ""
         self.function_callback(
             f"{get_colored_text('[text]', color='blue')}"
-            f" {get_bolded_text(f'{crumbs_str}New text:')}\n{text}"
+            f" {get_bolded_text(f'{crumbs_str}New text:')}\n{text}",
         )

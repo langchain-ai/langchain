@@ -28,6 +28,6 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "DistanceStrategy",
-    "maximal_marginal_relevance",
     "filter_complex_metadata",
+    "maximal_marginal_relevance",
 ]

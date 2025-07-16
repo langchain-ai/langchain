@@ -70,7 +70,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_variable_name="summaries",
         )
         reduce_documents_chain = ReduceDocumentsChain(
-            combine_documents_chain=combine_results_chain
+            combine_documents_chain=combine_results_chain,
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_question_chain,
@@ -93,7 +93,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """Load chain from chain type."""
         _chain_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_with_sources_chain(
-            llm, chain_type=chain_type, **_chain_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -118,7 +120,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """
         _output_keys = [self.answer_key, self.sources_answer_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         return _output_keys
 
     @model_validator(mode="before")
@@ -133,7 +135,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """Split sources from answer."""
         if re.search(r"SOURCES?:", answer, re.IGNORECASE):
             answer, sources = re.split(
-                r"SOURCES?:|QUESTION:\s", answer, flags=re.IGNORECASE
+                r"SOURCES?:|QUESTION:\s",
+                answer,
+                flags=re.IGNORECASE,
             )[:2]
             sources = re.split(r"\n", sources)[0].strip()
         else:
@@ -164,7 +168,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
             docs = self._get_docs(inputs)  # type: ignore[call-arg]
 
         answer = self.combine_documents_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {
@@ -198,7 +204,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         else:
             docs = await self._aget_docs(inputs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {
