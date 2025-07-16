@@ -837,8 +837,8 @@ class ChatModelUnitTests(ChatModelTests):
         assert model is not None
 
     def test_model_param_name(self) -> None:
-        """Tests model initialization with a ``model=`` parameter. This should pass for all
-        integrations.
+        """Tests model initialization with a ``model=`` parameter. This should pass for
+        all integrations.
 
         .. dropdown:: Troubleshooting
 
@@ -851,7 +851,7 @@ class ChatModelUnitTests(ChatModelTests):
             ``model_config`` class attribute to your model class:
 
             .. code-block:: python
-            
+
                 class MyChatModel(BaseChatModel):
                     model: str = Field(alias="model_name")
                     model_config = ConfigDict(populate_by_name=True)
@@ -873,7 +873,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         model = self.chat_model_class(**params)
         assert model is not None
-        assert model.model == params["model"]
+        assert model.model == params["model"]  # type: ignore[attr-defined]
 
     def test_init_from_env(self) -> None:
         """Test initialization from environment variables. Relies on the

@@ -81,7 +81,7 @@ class ChatParrotLink(BaseChatModel):
             additional_kwargs={},  # Used to add additional payload to the message
             response_metadata={  # Use for response metadata
                 "time_in_seconds": 3,
-                "model_name": self.model_name,
+                "model_name": self.model,
             },
             usage_metadata={
                 "input_tokens": ct_input_tokens,
@@ -146,7 +146,7 @@ class ChatParrotLink(BaseChatModel):
         chunk = ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
-                response_metadata={"time_in_sec": 3, "model_name": self.model_name},
+                response_metadata={"time_in_sec": 3, "model_name": self.model},
             )
         )
         if run_manager:
