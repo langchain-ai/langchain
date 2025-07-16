@@ -30,6 +30,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -1197,3 +1198,15 @@ def test_convert_to_openai_image_block() -> None:
     }
     result = convert_to_openai_image_block(input_block)
     assert result == expected
+
+
+def test_known_block_types() -> None:
+    assert {
+        "text",
+        "tool_call",
+        "reasoning",
+        "non_standard",
+        "image",
+        "audio",
+        "file",
+    } == KNOWN_BLOCK_TYPES

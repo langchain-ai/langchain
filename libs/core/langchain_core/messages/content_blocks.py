@@ -4,10 +4,97 @@ import warnings
 from typing import Any, Literal, Union
 
 from pydantic import TypeAdapter, ValidationError
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 
-class BaseDataContentBlock(TypedDict, total=False):
+# Text and annotations
+class UrlCitation(TypedDict):
+    """Citation from a URL."""
+
+    type: Literal["url_citation"]
+
+    url: str
+    """Source URL."""
+
+    title: NotRequired[str]
+    """Source title."""
+
+    cited_text: NotRequired[str]
+    """Text from the source that is being cited."""
+
+    start_index: NotRequired[int]
+    """Start index of the response text for which the annotation applies."""
+
+    end_index: NotRequired[int]
+    """End index of the response text for which the annotation applies."""
+
+
+class DocumentCitation(TypedDict):
+    """Annotation for data from a document."""
+
+    type: Literal["document_citation"]
+
+    title: NotRequired[str]
+    """Source title."""
+
+    cited_text: NotRequired[str]
+    """Text from the source that is being cited."""
+
+    start_index: NotRequired[int]
+    """Start index of the response text for which the annotation applies."""
+
+    end_index: NotRequired[int]
+    """End index of the response text for which the annotation applies."""
+
+
+class NonStandardAnnotation(TypedDict):
+    """Provider-specific annotation format."""
+
+    type: Literal["non_standard_annotation"]
+    """Type of the content block."""
+    value: dict[str, Any]
+    """Provider-specific annotation data."""
+
+
+class TextContentBlock(TypedDict):
+    """Content block for text output."""
+
+    type: Literal["text"]
+    """Type of the content block."""
+    text: str
+    """Block text."""
+    annotations: NotRequired[
+        list[Union[UrlCitation, DocumentCitation, NonStandardAnnotation]]
+    ]
+    """Citations and other annotations."""
+
+
+# Tool calls
+class ToolCallContentBlock(TypedDict):
+    """Content block for tool calls.
+
+    These are references to a :class:`~langchain_core.messages.tool.ToolCall` in the
+    message's ``tool_calls`` attribute.
+    """
+
+    type: Literal["tool_call"]
+    """Type of the content block."""
+    id: str
+    """Tool call ID."""
+
+
+# Reasoning
+class ReasoningContentBlock(TypedDict):
+    """Content block for reasoning output."""
+
+    type: Literal["reasoning"]
+    """Type of the content block."""
+    reasoning: NotRequired[str]
+    """Reasoning text."""
+
+
+# Multi-modal
+class BaseDataContentBlock(TypedDict):
     """Base class for data content blocks."""
 
     mime_type: NotRequired[str]
@@ -47,7 +134,7 @@ class PlainTextContentBlock(BaseDataContentBlock):
     """Text data."""
 
 
-class IDContentBlock(TypedDict):
+class IDContentBlock(BaseDataContentBlock):
     """Content block for data specified by an identifier."""
 
     type: Literal["image", "audio", "file"]
@@ -66,6 +153,45 @@ DataContentBlock = Union[
 ]
 
 _DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
+
+
+# Non-standard
+class NonStandardContentBlock(TypedDict):
+    """Content block provider-specific data.
+
+    This block contains data for which there is not yet a standard type.
+    """
+
+    type: Literal["non_standard"]
+    """Type of the content block."""
+    value: dict[str, Any]
+    """Provider-specific data."""
+
+
+ContentBlock = Union[
+    TextContentBlock,
+    ToolCallContentBlock,
+    ReasoningContentBlock,
+    DataContentBlock,
+    NonStandardContentBlock,
+]
+
+
+def _extract_typedict_type_values(union_type: Any) -> set[str]:
+    """Extract the values of the 'type' field from a TypedDict union type."""
+    result: set[str] = set()
+    for value in get_args(union_type):
+        annotation = value.__annotations__["type"]
+        if get_origin(annotation) is Literal:
+            result.update(get_args(annotation))
+        else:
+            msg = f"{value} 'type' is not a Literal"
+            raise ValueError(msg)
+    return result
+
+
+# {"text", "tool_call", "reasoning", "non_standard", "image", "audio", "file"}
+KNOWN_BLOCK_TYPES = _extract_typedict_type_values(ContentBlock)
 
 
 def is_data_content_block(
