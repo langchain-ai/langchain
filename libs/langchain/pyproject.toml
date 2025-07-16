@@ -39,6 +39,7 @@ aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
+gigachat = ["langchain-gigachat"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
