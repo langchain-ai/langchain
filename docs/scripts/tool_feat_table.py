@@ -163,7 +163,7 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
     "Oxylabs Web Scraper API": {
-        "link": "docs/integrations/tools/oxylabs",
+        "link": "/docs/integrations/tools/oxylabs",
         "interactions": False,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
