@@ -167,6 +167,20 @@ class Chroma(VectorStore):
             Chroma client settings.
         persist_directory: Optional[str]
             Directory to persist the collection.
+        host: Optional[str]
+            Hostname of a deployed Chroma server.
+        port: Optional[int]
+            Connection port for a deployed Chroma server. Default is 8000.
+        ssl: Optional[bool]
+            Whether to establish an SSL connection with a deployed Chroma server. Default is False.
+        headers: Optional[dict[str, str]]
+            HTTP headers to send to a deployed Chroma server.
+        chroma_cloud_api_key: Optional[str]
+            Chroma Cloud API key.
+        tenant: Optional[str]
+            Tenant ID. Required for Chroma Cloud connections. Default is 'default_tenant' for local Chroma servers.
+        database: Optional[str]
+            Database name. Required for Chroma Cloud connections. Default is 'default_database'.
 
     Instantiate:
         .. code-block:: python
@@ -284,6 +298,13 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        ssl: Optional[bool] = None,
+        headers: Optional[dict[str, str]] = None,
+        chroma_cloud_api_key: Optional[str] = None,
+        tenant: Optional[str] = None,
+        database: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
@@ -305,32 +326,57 @@ class Chroma(VectorStore):
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to True.
         """
-        if client is not None:
-            self._client_settings = client_settings
-            self._client = client
-            self._persist_directory = persist_directory
-        else:
-            if client_settings:
-                # If client_settings is provided with persist_directory specified,
-                # then it is "in-memory and persisting to disk" mode.
-                client_settings.persist_directory = (
-                    persist_directory or client_settings.persist_directory
-                )
-                client_settings.is_persistent = (
-                    client_settings.persist_directory is not None
-                )
+        _tenant = tenant or chromadb.DEFAULT_TENANT
+        _database = database or chromadb.DEFAULT_DATABASE
 
-                _client_settings = client_settings
-            elif persist_directory:
-                _client_settings = chromadb.config.Settings(is_persistent=True)
-                _client_settings.persist_directory = persist_directory
-            else:
-                _client_settings = chromadb.config.Settings()
-            self._client_settings = _client_settings
-            self._client = chromadb.Client(_client_settings)
-            self._persist_directory = (
-                _client_settings.persist_directory or persist_directory
+        client_args = {
+            "persist_directory": persist_directory,
+            "host": host,
+            "chroma_cloud_api_key": chroma_cloud_api_key,
+        }
+
+        if sum(arg is not None for arg in client_args.values()) > 1:
+            raise ValueError(f"Only one of 'persist_directory', 'host' and 'chroma_cloud_api_key' is allowed, but got {",".join([name for name, value in client_args.items() if value is not None])}")
+
+        if client is not None:
+            self._client = client
+
+        # PersistentClient
+        elif persist_directory is not None:
+            self._client = chromadb.PersistentClient(
+                path=persist_directory,
+                settings=client_settings,
+                tenant=_tenant,
+                database=_database,
             )
+
+        # HttpClient
+        elif host is not None:
+            self._client = chromadb.HttpClient(
+                host=host,
+                port=port,
+                ssl=ssl,
+                headers=headers,
+                settings=client_settings,
+                tenant=_tenant,
+                database=_database,
+            )
+
+        # CloudClient
+        elif chroma_cloud_api_key is not None:
+            if not tenant or not database:
+                raise ValueError(
+                    "Must provide tenant and database values to connect to Chroma Cloud"
+                )
+            self._client = chromadb.CloudClient(
+                tenant=tenant,
+                database=database,
+                api_key=chroma_cloud_api_key,
+                settings=client_settings,
+            )
+
+        else:
+            self._client = chromadb.Client(settings=client_settings)
 
         self._embedding_function = embedding_function
         self._chroma_collection: Optional[chromadb.Collection] = None
