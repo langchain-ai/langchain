@@ -287,7 +287,9 @@ def test_dereference_refs_list_index() -> None:
                                 "pattern": r"^\d{4}-\d{2}-\d{2}$",
                             },
                             "endDate": {
-                                "$ref": "#/properties/payload/anyOf/1/properties/startDate"
+                                "$ref": (
+                                    "#/properties/payload/anyOf/1/properties/startDate"
+                                )
                             },
                         },
                     },
