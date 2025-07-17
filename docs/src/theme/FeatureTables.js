@@ -368,7 +368,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Google Gemini",
-                link: "/docs/integrations/text_embedding/google-generative-ai",
+                link: "/docs/integrations/text_embedding/google_generative_ai",
                 package: "langchain-google-genai",
                 apiLink: "https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html"
             },
