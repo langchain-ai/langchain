@@ -276,9 +276,7 @@ def test_dereference_refs_list_index() -> None:
                 "anyOf": [
                     {  # variant 0
                         "type": "object",
-                        "properties": {
-                            "kind": {"type": "string", "const": "ONE"}
-                        },
+                        "properties": {"kind": {"type": "string", "const": "ONE"}},
                     },
                     {  # variant 1
                         "type": "object",
@@ -297,7 +295,7 @@ def test_dereference_refs_list_index() -> None:
             }
         },
     }
-    
+
     expected = {
         "type": "object",
         "properties": {
@@ -305,9 +303,7 @@ def test_dereference_refs_list_index() -> None:
                 "anyOf": [
                     {  # variant 0
                         "type": "object",
-                        "properties": {
-                            "kind": {"type": "string", "const": "ONE"}
-                        },
+                        "properties": {"kind": {"type": "string", "const": "ONE"}},
                     },
                     {  # variant 1
                         "type": "object",
@@ -327,10 +323,10 @@ def test_dereference_refs_list_index() -> None:
             }
         },
     }
-    
+
     actual = dereference_refs(schema)
     assert actual == expected
-    
+
     # Test oneOf array with numeric index reference
     schema_oneof = {
         "type": "object",
@@ -341,15 +337,13 @@ def test_dereference_refs_list_index() -> None:
                     {"type": "number"},
                     {
                         "type": "object",
-                        "properties": {
-                            "value": {"$ref": "#/properties/data/oneOf/1"}
-                        }
-                    }
+                        "properties": {"value": {"$ref": "#/properties/data/oneOf/1"}},
+                    },
                 ]
             }
-        }
+        },
     }
-    
+
     expected_oneof = {
         "type": "object",
         "properties": {
@@ -357,20 +351,15 @@ def test_dereference_refs_list_index() -> None:
                 "oneOf": [
                     {"type": "string"},
                     {"type": "number"},
-                    {
-                        "type": "object",
-                        "properties": {
-                            "value": {"type": "number"}
-                        }
-                    }
+                    {"type": "object", "properties": {"value": {"type": "number"}}},
                 ]
             }
-        }
+        },
     }
-    
+
     actual_oneof = dereference_refs(schema_oneof)
     assert actual_oneof == expected_oneof
-    
+
     # Test allOf array with numeric index reference
     schema_allof = {
         "type": "object",
@@ -378,57 +367,49 @@ def test_dereference_refs_list_index() -> None:
             {"properties": {"name": {"type": "string"}}},
             {"properties": {"age": {"type": "number"}}},
         ],
-        "properties": {
-            "copy_name": {"$ref": "#/allOf/0/properties/name"}
-        }
+        "properties": {"copy_name": {"$ref": "#/allOf/0/properties/name"}},
     }
-    
+
     expected_allof = {
         "type": "object",
         "allOf": [
             {"properties": {"name": {"type": "string"}}},
             {"properties": {"age": {"type": "number"}}},
         ],
-        "properties": {
-            "copy_name": {"type": "string"}
-        }
+        "properties": {"copy_name": {"type": "string"}},
     }
-    
+
     actual_allof = dereference_refs(schema_allof)
     assert actual_allof == expected_allof
-    
+
     # Test edge case: out-of-bounds index should raise KeyError
     schema_invalid = {
         "type": "object",
         "properties": {
-            "data": {
-                "anyOf": [
-                    {"type": "string"}
-                ]
-            },
-            "invalid": {"$ref": "#/properties/data/anyOf/5"}  # Index 5 doesn't exist
-        }
+            "data": {"anyOf": [{"type": "string"}]},
+            "invalid": {"$ref": "#/properties/data/anyOf/5"},  # Index 5 doesn't exist
+        },
     }
-    
-    with pytest.raises(KeyError, match="Reference '#/properties/data/anyOf/5' not found"):
+
+    with pytest.raises(
+        KeyError, match="Reference '#/properties/data/anyOf/5' not found"
+    ):
         dereference_refs(schema_invalid)
-    
+
     # Test edge case: negative index should raise KeyError
     schema_negative = {
         "type": "object",
         "properties": {
-            "data": {
-                "anyOf": [
-                    {"type": "string"}
-                ]
-            },
-            "invalid": {"$ref": "#/properties/data/anyOf/-1"}  # Negative index
-        }
+            "data": {"anyOf": [{"type": "string"}]},
+            "invalid": {"$ref": "#/properties/data/anyOf/-1"},  # Negative index
+        },
     }
-    
-    with pytest.raises(KeyError, match="Reference '#/properties/data/anyOf/-1' not found"):
+
+    with pytest.raises(
+        KeyError, match="Reference '#/properties/data/anyOf/-1' not found"
+    ):
         dereference_refs(schema_negative)
-    
+
     # Test that existing dictionary-based numeric key functionality still works
     schema_dict_key = {
         "type": "object",
@@ -442,7 +423,7 @@ def test_dereference_refs_list_index() -> None:
             },
         },
     }
-    
+
     expected_dict_key = {
         "type": "object",
         "properties": {
@@ -458,7 +439,6 @@ def test_dereference_refs_list_index() -> None:
             },
         },
     }
-    
+
     actual_dict_key = dereference_refs(schema_dict_key)
     assert actual_dict_key == expected_dict_key
-
