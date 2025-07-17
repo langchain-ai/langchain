@@ -8,25 +8,66 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-
 def _retrieve_ref(path: str, schema: dict) -> dict:
-    components = path.split("/")
-    if components[0] != "#":
-        msg = (
-            "ref paths are expected to be URI fragments, meaning they should start "
-            "with #."
+    """Return the fragment referenced by an internal ``$ref``.
+
+    The subset of *JSON Pointer* used by JSON-Schema requires every reference
+    to be a URI-fragment (it **must** start with ``#``).  Each “/”-separated
+    token then selects either:
+
+    * a **mapping key** when the current node is a ``dict``; or  
+    * a **zero-based list index** when the current node is a ``list``.
+
+    Args:
+        path: The reference exactly as it appears in the schema
+            (for example ``"#/properties/name"``).  Must start with ``#``.
+        schema: The document-root schema object inside which *path* is resolved.
+            This object is **never** mutated.
+
+    Returns:
+        dict: A **deep copy** of the schema fragment located at *path*.
+
+    Raises:
+        ValueError: If *path* does **not** start with ``#``.
+        KeyError: If any token cannot be resolved.
+    """
+    tokens = path.split("/")
+
+    # All internal JSON-Schema references must be URI fragments.
+    if tokens[0] != "#":
+        raise ValueError(
+            "ref paths are expected to be URI fragments, meaning they should "
+            "start with '#'.",
         )
-        raise ValueError(msg)
-    out = schema
-    for component in components[1:]:
-        if component in out:
-            out = out[component]
-        elif component.isdigit() and int(component) in out:
-            out = out[int(component)]
-        else:
-            msg = f"Reference '{path}' not found."
-            raise KeyError(msg)
-    return deepcopy(out)
+
+    node: Any = schema  # start at the document root
+
+    for token in tokens[1:]:
+        # ----- Mapping lookup -------------------------------------------------- #
+        if isinstance(node, dict):
+            if token in node:
+                node = node[token]
+                continue
+            # Numeric token may reference an int key stored in the mapping.
+            if token.isdigit() and (int_token := int(token)) in node:
+                node = node[int_token]
+                continue
+
+        # ----- Sequence index -------------------------------------------------- #
+        if token.isdigit() and isinstance(node, list):
+            idx = int(token)
+            if idx >= len(node):
+                msg = "Index " + str(idx) + " out of range while resolving " + str(path)
+                raise KeyError(msg)
+            node = node[idx]
+            continue
+
+        # ---------------------------------------------------------------------- #
+        msg = "Unable to resolve token " + str(token) + " in " + str(path)
+        raise KeyError(msg)
+
+    # Hand back a deep copy so callers can mutate safely.
+    return deepcopy(node)
 
 
 def _dereference_refs_helper(
