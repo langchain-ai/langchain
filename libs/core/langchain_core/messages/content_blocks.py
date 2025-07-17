@@ -11,7 +11,7 @@ from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 class UrlCitation(TypedDict):
     """Citation from a URL."""
 
-    block_type: Literal["citation:url"]
+    annotation_type: Literal["citation:url"]
     """Type of the content block."""
 
     url: str
@@ -33,7 +33,7 @@ class UrlCitation(TypedDict):
 class DocumentCitation(TypedDict):
     """Annotation for data from a document."""
 
-    block_type: Literal["citation:document"]
+    annotation_type: Literal["citation:document"]
     """Type of the content block."""
 
     title: NotRequired[str]
@@ -52,7 +52,7 @@ class DocumentCitation(TypedDict):
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
-    block_type: Literal["annotation:non_standard"]
+    annotation_type: Literal["annotation:non_standard"]
     """Type of the content block."""
 
     value: dict[str, Any]
@@ -97,8 +97,21 @@ class ReasoningContentBlock(TypedDict):
     block_type: Literal["reasoning"]
     """Type of the content block."""
 
-    reasoning: NotRequired[str]
+    reasoning_text: NotRequired[str]
     """Reasoning text."""
+
+    reasoning_effort: NotRequired[str]
+    """Reasoning effort level, e.g., 'low', 'medium', 'high'"""
+
+    signature: NotRequired[str]
+    """Signature of the reasoning.
+
+    Inspired by:
+    - https://ai.google.dev/gemini-api/docs/thinking#signatures
+    """
+
+    tool_calls: NotRequired[list[ToolCallContentBlock]]
+    """Tool calls made during reasoning."""
 
 
 # Multi-modal
