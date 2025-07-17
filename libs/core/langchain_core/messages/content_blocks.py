@@ -6,35 +6,20 @@ from typing import Any, Literal, Union
 from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
-
 # Text and annotations
-class UrlCitation(TypedDict):
-    """Citation from a URL."""
-
-    annotation_type: Literal["citation:url"]
-    """Type of the content block."""
-
-    url: str
-    """Source URL."""
-
-    title: NotRequired[str]
-    """URL source title."""
-
-    cited_text: NotRequired[str]
-    """Text from the source that is being cited."""
-
-    start_index: NotRequired[int]
-    """Start index of the response text for which the annotation applies."""
-
-    end_index: NotRequired[int]
-    """End index of the response text for which the annotation applies."""
 
 
-class DocumentCitation(TypedDict):
+class Citation(TypedDict):
     """Annotation for data from a document."""
 
     annotation_type: Literal["citation:document"]
     """Type of the content block."""
+
+    url: NotRequired[str]
+    """URL of the document source."""
+
+    provenance: NotRequired[str]
+    """Provenance of the document, e.g., "Wikipedia", "arXiv", etc."""
 
     title: NotRequired[str]
     """Source document title."""
@@ -52,14 +37,14 @@ class DocumentCitation(TypedDict):
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
-    annotation_type: Literal["annotation:non_standard"]
+    annotation_type: Literal["non_standard"]
     """Type of the content block."""
 
     value: dict[str, Any]
     """Provider-specific annotation data."""
 
 
-Annotation = Union[UrlCitation, DocumentCitation, NonStandardAnnotation]
+Annotation = Union[Citation, NonStandardAnnotation]
 
 
 class TextContentBlock(TypedDict):
@@ -111,14 +96,18 @@ class ReasoningContentBlock(TypedDict):
     """
 
     tool_calls: NotRequired[list[ToolCallContentBlock]]
-    """Tool calls made during reasoning."""
+    """Tool calls made during reasoning.
+
+    Inspired by:
+    - https://cookbook.openai.com/examples/reasoning_function_calls
+    """
 
 
 # Multi-modal
 class DataImageUrl(TypedDict):
     """Content block for image data from a URL."""
 
-    block_type: Literal["data:image:url"]
+    data_type: Literal["image:url"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -131,7 +120,7 @@ class DataImageUrl(TypedDict):
 class DataImageBase64(TypedDict):
     """Content block for inline image data from a base64 string."""
 
-    block_type: Literal["data:image:base64"]
+    data_type: Literal["image:base64"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -144,7 +133,7 @@ class DataImageBase64(TypedDict):
 class DataAudioUrl(TypedDict):
     """Content block for audio data from a URL."""
 
-    block_type: Literal["data:audio:url"]
+    data_type: Literal["audio:url"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -157,7 +146,7 @@ class DataAudioUrl(TypedDict):
 class DataAudioBase64(TypedDict):
     """Content block for inline audio data from a base64 string."""
 
-    block_type: Literal["data:audio:base64"]
+    data_type: Literal["audio:base64"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -170,7 +159,7 @@ class DataAudioBase64(TypedDict):
 class DataFileUrl(TypedDict):
     """Content block for file data from a URL."""
 
-    block_type: Literal["data:file:url"]
+    data_type: Literal["file:url"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -183,7 +172,7 @@ class DataFileUrl(TypedDict):
 class DataFileBase64(TypedDict):
     """Content block for inline file data from a base64 string."""
 
-    block_type: Literal["data:file:base64"]
+    data_type: Literal["file:base64"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
@@ -196,7 +185,7 @@ class DataFileBase64(TypedDict):
 class DataFileText(TypedDict):
     """Content block for plain text data (e.g., from a document)."""
 
-    block_type: Literal["data:file:text"]
+    data_type: Literal["file:text"]
     """Type of the content block."""
 
     mime_type: Literal["text/plain"]
@@ -209,14 +198,14 @@ class DataFileText(TypedDict):
 class DataFileId(TypedDict):
     """Content block for data specified by an identifier."""
 
-    block_type: Literal["data:file:id"]
+    data_type: Literal["file:id"]
     """Type of the content block indicating source."""
 
     id: str
     """Identifier for data source."""
 
 
-DataContentBlock = Union[
+DataContentType = Union[
     DataImageUrl,
     DataImageBase64,
     DataAudioUrl,
@@ -226,6 +215,19 @@ DataContentBlock = Union[
     DataFileText,
     DataFileId,
 ]
+
+
+class DataContentBlock(TypedDict):
+    """Content block for data output.
+
+    This block can contain images, audio, files, or other data types.
+    """
+
+    block_type: Literal["data"]
+    """Type of the content block."""
+
+    data: DataContentType
+    """Data content, e.g., image, audio, file."""
 
 
 # Non-standard
