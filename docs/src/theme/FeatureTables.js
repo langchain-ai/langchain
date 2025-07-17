@@ -1,20 +1,20 @@
 import React from "react";
-import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+import { useCurrentSidebarCategory } from '@docusaurus/theme-common';
 import {
-  useDocById,
+    useDocById,
 } from '@docusaurus/plugin-content-docs/client';
 
 const FEATURE_TABLES = {
     chat: {
         link: "/docs/integrations/chat",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
-            {title: <a href="/docs/how_to/tool_calling">Tool calling</a>, formatter: (item) => item.tool_calling ? "✅" : "❌"},
-            {title: <a href="/docs/how_to/structured_output/">Structured output</a>, formatter: (item) => item.structured_output ? "✅" : "❌"},
-            {title: "JSON mode", formatter: (item) => item.json_mode ? "✅" : "❌"},
-            {title: "Local", formatter: (item) => item.local ? "✅" : "❌"},
-            {title: <a href="/docs/how_to/multimodal_inputs/">Multimodal</a>, formatter: (item) => item.multimodal ? "✅" : "❌"},
-            {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
+            { title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a> },
+            { title: <a href="/docs/how_to/tool_calling">Tool calling</a>, formatter: (item) => item.tool_calling ? "✅" : "❌" },
+            { title: <a href="/docs/how_to/structured_output/">Structured output</a>, formatter: (item) => item.structured_output ? "✅" : "❌" },
+            { title: "JSON mode", formatter: (item) => item.json_mode ? "✅" : "❌" },
+            { title: "Local", formatter: (item) => item.local ? "✅" : "❌" },
+            { title: <a href="/docs/how_to/multimodal_inputs/">Multimodal</a>, formatter: (item) => item.multimodal ? "✅" : "❌" },
+            { title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a> },
         ],
         items: [
             {
@@ -253,12 +253,16 @@ const FEATURE_TABLES = {
     llms: {
         link: "/docs/integrations/llms",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Package", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.package}</a>},
+            {
+                title: "Provider", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            {
+                title: "Package", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.package}</a>
+            },
         ],
         items: [
             {
@@ -332,10 +336,10 @@ const FEATURE_TABLES = {
     text_embedding: {
         link: "/docs/integrations/text_embedding",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
-            {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
+            { title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a> },
+            { title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a> },
         ],
-        items:[
+        items: [
             {
                 name: "AzureOpenAI",
                 link: "/docs/integrations/text_embedding/azureopenai",
@@ -347,12 +351,6 @@ const FEATURE_TABLES = {
                 link: "/docs/integrations/text_embedding/ollama",
                 package: "langchain-ollama",
                 apiLink: "https://python.langchain.com/api_reference/ollama/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html"
-            },
-            {
-                name: "AI21",
-                link: "/docs/integrations/text_embedding/ai21",
-                package: "langchain-ai21",
-                apiLink: "https://python.langchain.com/api_reference/ai21/embeddings/langchain_ai21.embeddings.AI21Embeddings.html"
             },
             {
                 name: "Fake",
@@ -394,7 +392,7 @@ const FEATURE_TABLES = {
                 name: "Cohere",
                 link: "/docs/integrations/text_embedding/cohere",
                 package: "langchain-cohere",
-                apiLink: "https://python.langchain.com/api_reference/cohere/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html"
+                apiLink: "https://python.langchain.com/api_reference/community/llms/langchain_community.llms.cohere.Cohere.html"
             },
             {
                 name: "Nomic",
@@ -407,12 +405,6 @@ const FEATURE_TABLES = {
                 link: "/docs/integrations/text_embedding/databricks",
                 package: "databricks-langchain",
                 apiLink: "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.DatabricksEmbeddings"
-            },
-            {
-                name: "VoyageAI",
-                link: "/docs/integrations/text_embedding/voyageai",
-                package: "langchain-voyageai",
-                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
             },
             {
                 name: "IBM",
@@ -431,10 +423,10 @@ const FEATURE_TABLES = {
     document_retrievers: {
         link: 'docs/integrations/retrievers',
         columns: [
-            {title: "Retriever", formatter: (item) => <a href={item.link}>{item.name}</a>},
-            {title: "Self-host", formatter: (item) => item.selfHost ? "✅" : "❌"},
-            {title: "Cloud offering", formatter: (item) => item.cloudOffering ? "✅" : "❌"},
-            {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
+            { title: "Retriever", formatter: (item) => <a href={item.link}>{item.name}</a> },
+            { title: "Self-host", formatter: (item) => item.selfHost ? "✅" : "❌" },
+            { title: "Cloud offering", formatter: (item) => item.cloudOffering ? "✅" : "❌" },
+            { title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a> },
         ],
         items: [
             {
@@ -474,13 +466,17 @@ const FEATURE_TABLES = {
     external_retrievers: {
         link: 'docs/integrations/retrievers',
         columns: [
-            {title: "Retriever", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Source", formatter: (item) => item.source},
-            {title: "Package", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.package}</a>},
+            {
+                title: "Retriever", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Source", formatter: (item) => item.source },
+            {
+                title: "Package", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.package}</a>
+            },
         ],
         items: [
             {
@@ -515,14 +511,18 @@ const FEATURE_TABLES = {
     cloud_provider_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Description", formatter: (item) => item.source},
-            {title: "Partner Package", formatter: (item) => item.partnerPackage ? "✅" : "❌"},
-            {title: "API reference", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.loaderName}</a>},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Description", formatter: (item) => item.source },
+            { title: "Partner Package", formatter: (item) => item.partnerPackage ? "✅" : "❌" },
+            {
+                title: "API reference", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.loaderName}</a>
+            },
         ],
         items: [
             {
@@ -650,12 +650,16 @@ const FEATURE_TABLES = {
     messaging_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "API reference", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.loaderName}</a>},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            {
+                title: "API reference", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.loaderName}</a>
+            },
         ],
         items: [
             {
@@ -693,12 +697,16 @@ const FEATURE_TABLES = {
     productivity_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "API reference", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.loaderName}</a>},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            {
+                title: "API reference", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.loaderName}</a>
+            },
         ],
         items: [
             {
@@ -748,12 +756,16 @@ const FEATURE_TABLES = {
     social_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "API reference", formatter: (item) => <a href={
-                item.apiLink
-            }>{item.loaderName}</a>},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            {
+                title: "API reference", formatter: (item) => <a href={
+                    item.apiLink
+                }>{item.loaderName}</a>
+            },
         ],
         items: [
             {
@@ -773,11 +785,13 @@ const FEATURE_TABLES = {
     webpage_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Description", formatter: (item) => item.source},
-            {title: "Package/API", formatter: (item) => item.api},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Description", formatter: (item) => item.source },
+            { title: "Package/API", formatter: (item) => item.api },
         ],
         items: [
             {
@@ -841,11 +855,13 @@ const FEATURE_TABLES = {
     pdf_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Description", formatter: (item) => item.source},
-            {title: "Package/API", formatter: (item) => item.api},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Description", formatter: (item) => item.source },
+            { title: "Package/API", formatter: (item) => item.api },
         ],
         items: [
             {
@@ -937,10 +953,12 @@ const FEATURE_TABLES = {
     common_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
-            {title: "Document Loader", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Data Type", formatter: (item) => item.source},
+            {
+                title: "Document Loader", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Data Type", formatter: (item) => item.source },
         ],
         items: [
             {
@@ -984,17 +1002,19 @@ const FEATURE_TABLES = {
     vectorstores: {
         link: 'docs/integrations/vectorstores',
         columns: [
-            {title: "Vectorstore", formatter: (item) => <a href={
-                item.link
-            }>{item.name}</a>},
-            {title: "Delete by ID", formatter: (item) => item.deleteById ? "✅" : "❌"},
-            {title: "Filtering", formatter: (item) => item.filtering ? "✅" : "❌"},
-            {title: "Search by Vector", formatter: (item) => item.searchByVector ? "✅" : "❌"},
-            {title: "Search with score", formatter: (item) => item.searchWithScore ? "✅" : "❌"},
-            {title: "Async", formatter: (item) => item.async ? "✅" : "❌"},
-            {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
-            {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
-            {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
+            {
+                title: "Vectorstore", formatter: (item) => <a href={
+                    item.link
+                }>{item.name}</a>
+            },
+            { title: "Delete by ID", formatter: (item) => item.deleteById ? "✅" : "❌" },
+            { title: "Filtering", formatter: (item) => item.filtering ? "✅" : "❌" },
+            { title: "Search by Vector", formatter: (item) => item.searchByVector ? "✅" : "❌" },
+            { title: "Search with score", formatter: (item) => item.searchWithScore ? "✅" : "❌" },
+            { title: "Async", formatter: (item) => item.async ? "✅" : "❌" },
+            { title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌" },
+            { title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌" },
+            { title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌" },
             // {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
@@ -1224,20 +1244,20 @@ const FEATURE_TABLES = {
 };
 
 const DEPRECATED_DOC_IDS = [
-  "integrations/chat/anthropic_functions",
-  "integrations/chat/ernie",
-  "integrations/chat/ollama_functions",
-  "integrations/document_loaders/airbyte_cdk",
-  "integrations/document_loaders/airbyte_gong",
-  "integrations/document_loaders/airbyte_hubspot",
-  "integrations/document_loaders/airbyte_json",
-  "integrations/document_loaders/airbyte_salesforce",
-  "integrations/document_loaders/airbyte_shopify",
-  "integrations/document_loaders/airbyte_stripe",
-  "integrations/document_loaders/airbyte_typeform",
-  "integrations/document_loaders/airbyte_zendesk_support",
-  "integrations/llms/anthropic",
-  "integrations/text_embedding/ernie",
+    "integrations/chat/anthropic_functions",
+    "integrations/chat/ernie",
+    "integrations/chat/ollama_functions",
+    "integrations/document_loaders/airbyte_cdk",
+    "integrations/document_loaders/airbyte_gong",
+    "integrations/document_loaders/airbyte_hubspot",
+    "integrations/document_loaders/airbyte_json",
+    "integrations/document_loaders/airbyte_salesforce",
+    "integrations/document_loaders/airbyte_shopify",
+    "integrations/document_loaders/airbyte_stripe",
+    "integrations/document_loaders/airbyte_typeform",
+    "integrations/document_loaders/airbyte_zendesk_support",
+    "integrations/llms/anthropic",
+    "integrations/text_embedding/ernie",
 ];
 
 function toTable(columns, items) {
@@ -1277,34 +1297,34 @@ export function ItemTable({ category, item }) {
 }
 
 function truncate(str, n) {
-    return (str.length > n) ? str.substring(0, n-1) + '...' : str;
+    return (str.length > n) ? str.substring(0, n - 1) + '...' : str;
 }
 
 export function IndexTable() {
-  const { items } = useCurrentSidebarCategory();
+    const { items } = useCurrentSidebarCategory();
 
-  const rows = items
-    .filter(
-      (item) =>
-        !item.docId?.endsWith?.("/index") &&
-        !DEPRECATED_DOC_IDS.includes(item.docId)
-    )
-    .map((item) => ({
-      ...item,
-      description: useDocById(item.docId ?? undefined)?.description,
-    }));
-  const rtn = toTable(
-    [
-      {
-        title: "Name",
-        formatter: (item) => <a href={item.href}>{item.label}</a>,
-      },
-      {
-        title: "Description",
-        formatter: (item) => truncate(item.description ?? "", 70),
-      },
-    ],
-    rows,
-  );
-  return rtn;
+    const rows = items
+        .filter(
+            (item) =>
+                !item.docId?.endsWith?.("/index") &&
+                !DEPRECATED_DOC_IDS.includes(item.docId)
+        )
+        .map((item) => ({
+            ...item,
+            description: useDocById(item.docId ?? undefined)?.description,
+        }));
+    const rtn = toTable(
+        [
+            {
+                title: "Name",
+                formatter: (item) => <a href={item.href}>{item.label}</a>,
+            },
+            {
+                title: "Description",
+                formatter: (item) => truncate(item.description ?? "", 70),
+            },
+        ],
+        rows,
+    );
+    return rtn;
 }
