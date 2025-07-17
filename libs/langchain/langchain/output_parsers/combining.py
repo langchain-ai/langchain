@@ -5,6 +5,8 @@ from typing import Any
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
 
+_MIN_PARSERS = 2
+
 
 class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     """Combine multiple output parsers into one."""
@@ -19,7 +21,7 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     def validate_parsers(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate the parsers."""
         parsers = values["parsers"]
-        if len(parsers) < 2:
+        if len(parsers) < _MIN_PARSERS:
             msg = "Must have at least two parsers"
             raise ValueError(msg)
         for parser in parsers:
