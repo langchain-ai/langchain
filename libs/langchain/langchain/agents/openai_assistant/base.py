@@ -582,7 +582,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = self.client.beta.threads.messages.list(
@@ -739,7 +739,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = await self.async_client.beta.threads.messages.list(
