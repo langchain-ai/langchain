@@ -99,6 +99,7 @@ jobs:
             prompty
             qdrant
             xai
+            infra
           requireScope: false
           disallowScopes: |
             release
