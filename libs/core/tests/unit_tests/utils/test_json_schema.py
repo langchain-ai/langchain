@@ -151,6 +151,38 @@ def test_dereference_refs_remote_ref() -> None:
         dereference_refs(schema)
 
 
+def test_dereference_refs_integer_ref_in_list() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "error_400": {"$ref": "#/$defs/0"},
+        },
+        "$defs": [
+            {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        ],
+    }
+    expected = {
+        "type": "object",
+        "properties": {
+            "error_400": {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        },
+        "$defs": [
+            {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        ],
+    }
+    actual = dereference_refs(schema)
+    assert actual == expected
+
+
 def test_dereference_refs_integer_ref() -> None:
     schema = {
         "type": "object",
