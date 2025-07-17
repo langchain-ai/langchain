@@ -102,132 +102,76 @@ class ReasoningContentBlock(TypedDict):
     - https://cookbook.openai.com/examples/reasoning_function_calls
     """
 
+    annotations: NotRequired[list[Annotation]]
+    """Citations and other annotations."""
+
 
 # Multi-modal
-class DataImageUrl(TypedDict):
-    """Content block for image data from a URL."""
+class DataImage(TypedDict):
+    """Content block for image data."""
 
-    data_type: Literal["image:url"]
+    block_type: Literal["image"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
     """MIME type of the image."""
 
-    url: str
-    """URL for data."""
-
-
-class DataImageBase64(TypedDict):
-    """Content block for inline image data from a base64 string."""
-
-    data_type: Literal["image:base64"]
-    """Type of the content block."""
-
-    mime_type: NotRequired[str]
-    """MIME type of the image."""
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
 
     data: str
-    """Data as a base64 string."""
+    """Data as a URL or base64 string."""
 
 
-class DataAudioUrl(TypedDict):
-    """Content block for audio data from a URL."""
+class DataAudio(TypedDict):
+    """Content block for audio data."""
 
-    data_type: Literal["audio:url"]
+    block_type: Literal["audio"]
     """Type of the content block."""
 
     mime_type: NotRequired[str]
     """MIME type of the audio."""
 
-    url: str
-    """URL for data."""
-
-
-class DataAudioBase64(TypedDict):
-    """Content block for inline audio data from a base64 string."""
-
-    data_type: Literal["audio:base64"]
-    """Type of the content block."""
-
-    mime_type: NotRequired[str]
-    """MIME type of the audio."""
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
 
     data: str
-    """Data as a base64 string."""
+    """Data as a URL or base64 string."""
 
 
-class DataFileUrl(TypedDict):
-    """Content block for file data from a URL."""
-
-    data_type: Literal["file:url"]
-    """Type of the content block."""
-
-    mime_type: NotRequired[str]
-    """MIME type of the file."""
-
-    url: str
-    """URL for data."""
-
-
-class DataFileBase64(TypedDict):
-    """Content block for inline file data from a base64 string."""
-
-    data_type: Literal["file:base64"]
-    """Type of the content block."""
-
-    mime_type: NotRequired[str]
-    """MIME type of the file."""
-
-    data: str
-    """Data as a base64 string."""
-
-
-class DataFileText(TypedDict):
+class DataText(TypedDict):
     """Content block for plain text data (e.g., from a document)."""
 
-    data_type: Literal["file:text"]
+    block_type: Literal["text-data"]
     """Type of the content block."""
 
     mime_type: Literal["text/plain"]
     """MIME type of the file."""
 
-    text: str
-    """Text data."""
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
+
+    data: str
+    """Data as a URL or base64 string."""
 
 
-class DataFileId(TypedDict):
-    """Content block for data specified by an identifier."""
+class DataFile(TypedDict):
+    """Content block for file data."""
 
-    data_type: Literal["file:id"]
-    """Type of the content block indicating source."""
-
-    id: str
-    """Identifier for data source."""
-
-
-DataContentType = Union[
-    DataImageUrl,
-    DataImageBase64,
-    DataAudioUrl,
-    DataAudioBase64,
-    DataFileUrl,
-    DataFileBase64,
-    DataFileText,
-    DataFileId,
-]
-
-
-class DataContentBlock(TypedDict):
-    """Content block for data output.
-
-    This block can contain images, audio, files, or other data types.
-    """
-
-    block_type: Literal["data"]
+    block_type: Literal["file"]
     """Type of the content block."""
 
-    data: DataContentType
-    """Data content, e.g., image, audio, file."""
+    mime_type: NotRequired[str]
+    """MIME type of the file."""
+
+    representation: Literal["url", "base64", "id"]
+    """How the data is represented, either as a URL, base64 string, or ID.
+
+    IDs are typically used for files stored in a system like OpenAI's file storage.
+    """
+
+    data: str
+    """Data as a URL, base64 string, or ID."""
 
 
 # Non-standard
@@ -243,13 +187,29 @@ class NonStandardContentBlock(TypedDict):
     value: dict[str, Any]
     """Provider-specific data."""
 
+    tool_calls: NotRequired[list[ToolCallContentBlock]]
+    """Tool calls made during reasoning."""
+
+    annotations: NotRequired[list[Annotation]]
+    """Citations and other annotations."""
+
 
 ContentBlock = Union[
     TextContentBlock,
     ToolCallContentBlock,
     ReasoningContentBlock,
-    DataContentBlock,
     NonStandardContentBlock,
+    DataImage,
+    DataAudio,
+    DataText,
+    DataFile,
+]
+
+DataContentBlock = Union[
+    DataImage,
+    DataAudio,
+    DataText,
+    DataFile,
 ]
 
 
