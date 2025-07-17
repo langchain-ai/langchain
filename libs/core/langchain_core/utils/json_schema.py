@@ -23,7 +23,9 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
             out = out[component]
         elif component.isdigit():
             index = int(component)
-            if (isinstance(out, list) and 0 <= index < len(out)) or (isinstance(out, dict) and index in out):
+            if isinstance(out, list) and 0 <= index < len(out):
+                out = out[index]
+            elif isinstance(out, dict) and index in out:
                 out = out[index]
             else:
                 msg = f"Reference '{path}' not found."
@@ -120,3 +122,4 @@ def dereference_refs(
         else _infer_skip_keys(schema_obj, full_schema)
     )
     return _dereference_refs_helper(schema_obj, full_schema, skip_keys)
+
