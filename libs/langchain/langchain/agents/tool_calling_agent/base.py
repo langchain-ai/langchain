@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Callable
 
 from langchain_core.agents import AgentAction
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -17,7 +17,7 @@ MessageFormatter = Callable[[Sequence[tuple[AgentAction, str]]], list[BaseMessag
 
 
 def create_tool_calling_agent(
-    llm: BaseLanguageModel,
+    llm: BaseChatModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
     *,
