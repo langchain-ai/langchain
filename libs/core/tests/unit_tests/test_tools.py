@@ -701,6 +701,12 @@ def test_missing_docstring() -> None:
         def search_api(query: str) -> str:
             return "API result"
 
+    @tool
+    class MyTool(BaseModel):
+        foo: str
+
+    assert MyTool.description == ""  # type: ignore[attr-defined]
+
 
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""

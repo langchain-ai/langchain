@@ -269,6 +269,10 @@ const config = {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },
+              {
+                label: "Slack",
+                href: "https://www.langchain.com/join-community",
+              },
             ],
           },
           {
