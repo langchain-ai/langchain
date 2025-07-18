@@ -277,7 +277,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         return (
             [res for res in parsed_tool_calls if res["type"] == self.key_name]
             if self.return_id
-            else [res["args"] for res in parsed_tool_calls if res["type"] == self.key_name]
+            else [
+                res["args"] for res in parsed_tool_calls if res["type"] == self.key_name
+            ]
         )
 
 
