@@ -100,5 +100,5 @@ def test_invoke() -> None:
     """Test invoke tokens from Fireworks."""
     llm = Fireworks(model=_MODEL)
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)

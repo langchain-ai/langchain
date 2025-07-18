@@ -36,6 +36,8 @@ class FakeMessagesListChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1

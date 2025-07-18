@@ -1,4 +1,4 @@
-name: release
+name: Release
 run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
 on:
   workflow_call:
@@ -64,7 +64,7 @@ jobs:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Check Version
+      - name: Check version
         id: check-version
         shell: python
         working-directory: ${{ inputs.working-directory }}
@@ -93,7 +93,7 @@ jobs:
             ${{ inputs.working-directory }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
-      - name: Check Tags
+      - name: Check tags
         id: check-tags
         shell: bash
         working-directory: langchain/${{ inputs.working-directory }}

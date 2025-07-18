@@ -940,7 +940,7 @@ def test_tool_message_serdes() -> None:
 
 
 class BadObject:
-    """"""
+    pass
 
 
 def test_tool_message_ser_non_serializable() -> None:

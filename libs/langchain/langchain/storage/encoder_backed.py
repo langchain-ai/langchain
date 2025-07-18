@@ -106,7 +106,9 @@ class EncoderBackedStore(BaseStore[K, V]):
         await self.store.amdelete(encoded_keys)
 
     def yield_keys(
-        self, *, prefix: Optional[str] = None
+        self,
+        *,
+        prefix: Optional[str] = None,
     ) -> Union[Iterator[K], Iterator[str]]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
@@ -114,7 +116,9 @@ class EncoderBackedStore(BaseStore[K, V]):
         yield from self.store.yield_keys(prefix=prefix)
 
     async def ayield_keys(
-        self, *, prefix: Optional[str] = None
+        self,
+        *,
+        prefix: Optional[str] = None,
     ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str

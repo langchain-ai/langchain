@@ -95,6 +95,7 @@ class LangChainTracer(BaseTracer):
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Optional[Run] = None
+        self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:
@@ -235,6 +236,11 @@ class LangChainTracer(BaseTracer):
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
         """Append token event to LLM run and return the run."""
+        run_id_str = str(run_id)
+        if run_id_str not in self.run_has_token_event_map:
+            self.run_has_token_event_map[run_id_str] = True
+        else:
+            return self._get_run(run_id, run_type={"llm", "chat_model"})
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,
