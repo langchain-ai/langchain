@@ -10,7 +10,7 @@ from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 
 class Citation(TypedDict):
-    """Annotation for data from a document.
+    """Annotation for citing data from a document.
 
     One of `url` or `provenance` must be provided.
     """
