@@ -322,7 +322,7 @@ class Crawler:
 
             if node_name == "#text" and ancestor_exception and ancestor_node:
                 text = strings[node_value[index]]
-                if text == "|" or text == "•":
+                if text in {"|", "•"}:
                     continue
                 ancestor_node.append({"type": "type", "value": text})
             else:
@@ -367,7 +367,7 @@ class Crawler:
                     element_node_value = strings[text_index]
 
             # remove redundant elements
-            if ancestor_exception and (node_name != "a" and node_name != "button"):
+            if ancestor_exception and (node_name not in {"a", "button"}):
                 continue
 
             elements_in_view_port.append(
@@ -423,10 +423,7 @@ class Crawler:
             # not very elegant, more like a placeholder
             if (
                 (converted_node_name != "button" or meta == "")
-                and converted_node_name != "link"
-                and converted_node_name != "input"
-                and converted_node_name != "img"
-                and converted_node_name != "textarea"
+                and converted_node_name not in {"link", "input", "img", "textarea"}
             ) and inner_text.strip() == "":
                 continue
 

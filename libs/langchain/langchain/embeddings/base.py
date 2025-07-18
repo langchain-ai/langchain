@@ -89,7 +89,6 @@ def _infer_model_and_provider(
     if provider is None and ":" in model:
         provider, model_name = _parse_model_string(model)
     else:
-        provider = provider
         model_name = model
 
     if not provider:
