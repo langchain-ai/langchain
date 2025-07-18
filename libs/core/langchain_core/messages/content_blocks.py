@@ -91,15 +91,8 @@ class ReasoningContentBlock(TypedDict):
     signature: NotRequired[str]
     """Signature of the reasoning.
 
-    Inspired by:
+    Examples:
     - https://ai.google.dev/gemini-api/docs/thinking#signatures
-    """
-
-    tool_calls: NotRequired[list[ToolCallContentBlock]]
-    """Tool calls made during reasoning.
-
-    Inspired by:
-    - https://cookbook.openai.com/examples/reasoning_function_calls
     """
 
     annotations: NotRequired[list[Annotation]]
