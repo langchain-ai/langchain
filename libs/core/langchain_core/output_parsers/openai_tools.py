@@ -234,23 +234,37 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Returns:
             The parsed tool calls.
         """
-        parsed_result = super().parse_result(result, partial=partial)
+        # We need to get all tool calls first, then filter by key_name,
+        # then apply first_tool_only logic to avoid the bug where
+        # first_tool_only is applied before filtering by key_name
+        
+        # Create a temporary parser with first_tool_only=False to get all tool calls
+        temp_first_tool_only = self.first_tool_only
+        self.first_tool_only = False
+        try:
+            parsed_result = super().parse_result(result, partial=partial)
+        finally:
+            # Restore the original value
+            self.first_tool_only = temp_first_tool_only
+        
+        # Filter by key_name first
+        filtered_results = [res for res in parsed_result if res["type"] == self.key_name]
 
-        if self.first_tool_only:
+        if temp_first_tool_only:
+            # Apply first_tool_only logic to the filtered results
             single_result = (
-                parsed_result
-                if parsed_result and parsed_result["type"] == self.key_name
-                else None
+                filtered_results[0] if filtered_results else None
             )
             if self.return_id:
                 return single_result
             if single_result:
                 return single_result["args"]
             return None
-        parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
+        
+        # Return all filtered results
         if not self.return_id:
-            parsed_result = [res["args"] for res in parsed_result]
-        return parsed_result
+            filtered_results = [res["args"] for res in filtered_results]
+        return filtered_results
 
 
 # Common cause of ValidationError is truncated output due to max_tokens.
@@ -319,3 +333,4 @@ class PydanticToolsParser(JsonOutputToolsParser):
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
         return pydantic_objects
+
