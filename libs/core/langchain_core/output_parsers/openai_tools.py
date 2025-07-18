@@ -237,6 +237,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         # Override the parent's parse_result to fix the bug where first_tool_only
         # is applied before filtering by key_name. We need to get all tool calls,
         # filter by key_name, then apply first_tool_only logic.
+        print(f"Starting parse_result with key_name={self.key_name}, first_tool_only={self.first_tool_only}")
         
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
@@ -262,6 +263,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         # for backwards compatibility
         for tc in tool_calls:
             tc["type"] = tc.pop("name")
+        print(f"All parsed results: {tool_calls}")
 
         # Filter by key_name BEFORE applying first_tool_only logic
         filtered_results = [tc for tc in tool_calls if tc["type"] == self.key_name]
@@ -269,6 +271,8 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         if self.first_tool_only:
             single_result = filtered_results[0] if filtered_results else None
             if self.return_id:
+                print(f"Filtered results: {filtered_results}")
+                print(f"Single result: {single_result}")
                 return single_result
             if single_result:
                 return single_result["args"]
@@ -345,5 +349,6 @@ class PydanticToolsParser(JsonOutputToolsParser):
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
         return pydantic_objects
+
 
 
