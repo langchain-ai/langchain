@@ -636,6 +636,56 @@ class ChildTool(BaseTool):
                         "using tools with JSON schema args_schema."
                     )
                     raise ValueError(msg)
+
+                if tool_input.strip().startswith('{') and tool_input.strip().endswith('}'):
+                    try:
+                        import json
+                        parsed_json = json.loads(tool_input.strip())
+                        if issubclass(input_args, BaseModel):
+                            for k, v in get_all_basemodel_annotations(input_args).items():
+                                if (
+                                    _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                                    and k not in parsed_json
+                                ):
+                                    if tool_call_id is None:
+                                        msg = (
+                                            "When tool includes an InjectedToolCallId "
+                                            "argument, tool must always be invoked with a full "
+                                            "model ToolCall of the form: {'args': {...}, "
+                                            "'name': '...', 'type': 'tool_call', "
+                                            "'tool_call_id': '...'}"
+                                        )
+                                        raise ValueError(msg)
+                                    parsed_json[k] = tool_call_id
+                            result = input_args.model_validate(parsed_json)
+                            result_dict = result.model_dump()
+                            return {
+                                k: getattr(result, k) for k, v in result_dict.items() if k in parsed_json
+                            }
+                        elif issubclass(input_args, BaseModelV1):
+                            for k, v in get_all_basemodel_annotations(input_args).items():
+                                if (
+                                    _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                                    and k not in parsed_json
+                                ):
+                                    if tool_call_id is None:
+                                        msg = (
+                                            "When tool includes an InjectedToolCallId "
+                                            "argument, tool must always be invoked with a full "
+                                            "model ToolCall of the form: {'args': {...}, "
+                                            "'name': '...', 'type': 'tool_call', "
+                                            "'tool_call_id': '...'}"
+                                        )
+                                        raise ValueError(msg)
+                                    parsed_json[k] = tool_call_id
+                            result = input_args.parse_obj(parsed_json)
+                            result_dict = result.dict()
+                            return {
+                                k: getattr(result, k) for k, v in result_dict.items() if k in parsed_json
+                            }
+                    except (json.JSONDecodeError, ValidationError, ValidationErrorV1):
+                        pass
+                
                 key_ = next(iter(get_fields(input_args).keys()))
                 if issubclass(input_args, BaseModel):
                     input_args.model_validate({key_: tool_input})
