@@ -38,7 +38,7 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import (
-    _AnyIdAIMessageChunk,
+    any_id_ai_message_chunk,
 )
 
 
@@ -1090,7 +1090,7 @@ async def test_openai_agent_tools_agent() -> None:
                         tool_input={"pet": "cat"},
                         log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                         message_log=[
-                            _AnyIdAIMessageChunk(
+                            any_id_ai_message_chunk(
                                 content="",
                                 additional_kwargs={
                                     "tool_calls": [
@@ -1116,7 +1116,7 @@ async def test_openai_agent_tools_agent() -> None:
                     ),
                 ],
                 "messages": [
-                    _AnyIdAIMessageChunk(
+                    any_id_ai_message_chunk(
                         content="",
                         additional_kwargs={
                             "tool_calls": [
@@ -1146,7 +1146,7 @@ async def test_openai_agent_tools_agent() -> None:
                         tool_input={},
                         log="\nInvoking: `check_time` with `{}`\n\n\n",
                         message_log=[
-                            _AnyIdAIMessageChunk(
+                            any_id_ai_message_chunk(
                                 content="",
                                 additional_kwargs={
                                     "tool_calls": [
@@ -1172,7 +1172,7 @@ async def test_openai_agent_tools_agent() -> None:
                     ),
                 ],
                 "messages": [
-                    _AnyIdAIMessageChunk(
+                    any_id_ai_message_chunk(
                         content="",
                         additional_kwargs={
                             "tool_calls": [
@@ -1209,7 +1209,7 @@ async def test_openai_agent_tools_agent() -> None:
                             tool_input={"pet": "cat"},
                             log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                             message_log=[
-                                _AnyIdAIMessageChunk(
+                                any_id_ai_message_chunk(
                                     content="",
                                     additional_kwargs={
                                         "tool_calls": [
@@ -1251,7 +1251,7 @@ async def test_openai_agent_tools_agent() -> None:
                             tool_input={},
                             log="\nInvoking: `check_time` with `{}`\n\n\n",
                             message_log=[
-                                _AnyIdAIMessageChunk(
+                                any_id_ai_message_chunk(
                                     content="",
                                     additional_kwargs={
                                         "tool_calls": [

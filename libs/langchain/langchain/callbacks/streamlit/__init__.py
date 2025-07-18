@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
 
 
-def StreamlitCallbackHandler(
+def StreamlitCallbackHandler(  # noqa: N802
     parent_container: DeltaGenerator,
     *,
     max_thought_containers: int = 4,

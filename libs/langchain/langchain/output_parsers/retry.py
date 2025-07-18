@@ -9,7 +9,7 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
 from pydantic import SkipValidation
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -172,6 +172,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         return "retry"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.parser.OutputType
 
@@ -292,5 +293,6 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         return "retry_with_error"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.parser.OutputType

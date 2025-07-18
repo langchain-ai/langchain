@@ -7,7 +7,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import SkipValidation
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 
@@ -144,5 +144,6 @@ class OutputFixingParser(BaseOutputParser[T]):
         return "output_fixing"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.parser.OutputType

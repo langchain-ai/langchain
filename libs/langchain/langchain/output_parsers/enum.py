@@ -3,6 +3,7 @@ from enum import Enum
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 
 class EnumOutputParser(BaseOutputParser[Enum]):
@@ -37,5 +38,6 @@ class EnumOutputParser(BaseOutputParser[Enum]):
         return f"Select one of the following options: {', '.join(self._valid_values)}"
 
     @property
+    @override
     def OutputType(self) -> type[Enum]:
         return self.enum

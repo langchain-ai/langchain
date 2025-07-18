@@ -6,6 +6,7 @@ import yaml
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from pydantic import BaseModel, ValidationError
+from typing_extensions import override
 
 from langchain.output_parsers.format_instructions import YAML_FORMAT_INSTRUCTIONS
 
@@ -61,5 +62,6 @@ class YamlOutputParser(BaseOutputParser[T]):
         return "yaml"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.pydantic_object
