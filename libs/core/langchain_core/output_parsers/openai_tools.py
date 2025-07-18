@@ -240,8 +240,8 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             raise OutputParserException(msg)
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls:
-            tool_calls = [dict(tc) for tc in message.tool_calls]
-            for tool_call in tool_calls:
+            parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
+            for tool_call in parsed_tool_calls:
                 if not self.return_id:
                     _ = tool_call.pop("id")
         else:
@@ -251,18 +251,18 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 if self.first_tool_only:
                     return None
                 return []
-            tool_calls = parse_tool_calls(
+            parsed_tool_calls = parse_tool_calls(
                 raw_tool_calls,
                 partial=partial,
                 strict=self.strict,
                 return_id=self.return_id,
             )
         # for backwards compatibility
-        for tc in tool_calls:
+        for tc in parsed_tool_calls:
             tc["type"] = tc.pop("name")
         if self.first_tool_only:
             parsed_result = list(
-                filter(lambda x: x["type"] == self.key_name, tool_calls)
+                filter(lambda x: x["type"] == self.key_name, parsed_tool_calls)
             )
             single_result = (
                 parsed_result[0]
@@ -274,11 +274,11 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             if single_result:
                 return single_result["args"]
             return None
-        tool_calls = [res for res in tool_calls if res["type"] == self.key_name]
-        if not self.return_id:
-            tool_calls = [res["args"] for res in tool_calls]
-
-        return tool_calls
+        return (
+            [res for res in parsed_tool_calls if res["type"] == self.key_name]
+            if self.return_id
+            else [res["args"] for res in parsed_tool_calls if res["type"] == self.key_name]
+        )
 
 
 # Common cause of ValidationError is truncated output due to max_tokens.
