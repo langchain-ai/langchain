@@ -233,3 +233,24 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_llm_type_property(self) -> None:
+        """Test that _llm_type property returns the expected value."""
+        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        assert chat_model._llm_type == "deepseek"
+
+    def test_langserve_compatibility(self) -> None:
+        """Test that the model can be used with LangServe without Pydantic validation errors."""
+        # This test verifies that the _llm_type doesn't contain hyphens that would cause
+        # LangServe to generate invalid Pydantic class names like "deepseekBatchRequest"
+        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        
+        # Verify the _llm_type doesn't contain hyphens
+        assert "-" not in chat_model._llm_type
+        
+        # Verify it's a valid Python identifier (which Pydantic class names need to be)
+        assert chat_model._llm_type.isidentifier()
+        
+        # Verify the specific expected value
+        assert chat_model._llm_type == "deepseek"
+
