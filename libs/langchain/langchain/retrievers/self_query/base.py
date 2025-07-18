@@ -97,7 +97,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone as CommunityPinecone,
     )
 
-    BUILTIN_TRANSLATORS: dict[type[VectorStore], type[Visitor]] = {
+    builtin_translators: dict[type[VectorStore], type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
@@ -128,8 +128,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             field.name for field in (vectorstore.meta_fields or []) if field.index
         ]
         return TencentVectorDBTranslator(fields)
-    if vectorstore.__class__ in BUILTIN_TRANSLATORS:
-        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
+    if vectorstore.__class__ in builtin_translators:
+        return builtin_translators[vectorstore.__class__]()
     try:
         from langchain_astradb.vectorstores import AstraDBVectorStore
     except ImportError:

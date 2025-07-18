@@ -154,7 +154,7 @@ class TestResult(dict):
 class EvalError(dict):
     """Your architecture raised an error."""
 
-    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:  # noqa: N803
         super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:

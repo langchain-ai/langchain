@@ -164,6 +164,7 @@ select = [
     "ICN",    # flake8-import-conventions
     "INT",    # flake8-gettext
     "ISC",    # isort-comprehensions
+    "N",      # pep8-naming
     "PGH",    # pygrep-hooks
     "PIE",    # flake8-pie
     "PERF",   # flake8-perf
@@ -203,6 +204,7 @@ ignore = [
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
