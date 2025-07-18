@@ -48,7 +48,8 @@ def test__split_list_double_doc() -> None:
     assert doc_list == [docs]
 
 
-def test__split_list_works_correctly() -> None:
+@pytest.mark.parametrize("acum_length", [False, True])
+def test__split_list_works_correctly(acum_length: bool) -> None:
     """Test splitting works correctly."""
     docs = [
         Document(page_content="foo"),
@@ -58,7 +59,7 @@ def test__split_list_works_correctly() -> None:
         Document(page_content="bar"),
         Document(page_content="baz"),
     ]
-    doc_list = split_list_of_docs(docs, _fake_docs_len_func, 10)
+    doc_list = split_list_of_docs(docs, _fake_docs_len_func, 10, acum_length)
     expected_result = [
         # Test a group of three.
         [
