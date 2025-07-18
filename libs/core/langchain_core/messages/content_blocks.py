@@ -6,39 +6,32 @@ from typing import Any, Literal, Union
 from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
-
 # Text and annotations
-class UrlCitation(TypedDict):
-    """Citation from a URL."""
-
-    type: Literal["url_citation"]
-
-    url: str
-    """Source URL."""
-
-    title: NotRequired[str]
-    """Source title."""
-
-    cited_text: NotRequired[str]
-    """Text from the source that is being cited."""
-
-    start_index: NotRequired[int]
-    """Start index of the response text for which the annotation applies."""
-
-    end_index: NotRequired[int]
-    """End index of the response text for which the annotation applies."""
 
 
-class DocumentCitation(TypedDict):
-    """Annotation for data from a document."""
+class Citation(TypedDict):
+    """Annotation for citing data from a document.
 
-    type: Literal["document_citation"]
+    One of `url` or `provenance` must be provided.
+    """
+
+    annotation_type: Literal["citation"]
+    """Type of the content block."""
+
+    url: NotRequired[str]
+    """URL of the document source."""
+
+    provenance: NotRequired[str]
+    """Provenance of the document, e.g., "Wikipedia", "arXiv", etc."""
 
     title: NotRequired[str]
-    """Source title."""
+    """Source document title.
+
+    For example, the page title for a web page or the title of a paper.
+    """
 
     cited_text: NotRequired[str]
-    """Text from the source that is being cited."""
+    """Text from the document source that is being cited."""
 
     start_index: NotRequired[int]
     """Start index of the response text for which the annotation applies."""
@@ -50,22 +43,26 @@ class DocumentCitation(TypedDict):
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
-    type: Literal["non_standard_annotation"]
+    annotation_type: Literal["non_standard"]
     """Type of the content block."""
+
     value: dict[str, Any]
     """Provider-specific annotation data."""
+
+
+Annotation = Union[Citation, NonStandardAnnotation]
 
 
 class TextContentBlock(TypedDict):
     """Content block for text output."""
 
-    type: Literal["text"]
+    block_type: Literal["text"]
     """Type of the content block."""
+
     text: str
     """Block text."""
-    annotations: NotRequired[
-        list[Union[UrlCitation, DocumentCitation, NonStandardAnnotation]]
-    ]
+
+    annotations: NotRequired[list[Annotation]]
     """Citations and other annotations."""
 
 
@@ -77,82 +74,216 @@ class ToolCallContentBlock(TypedDict):
     message's ``tool_calls`` attribute.
     """
 
-    type: Literal["tool_call"]
+    block_type: Literal["tool_call"]
     """Type of the content block."""
+
+    name: str
+    """The name of the tool to be called."""
+
+    args: dict[str, Any]
+    """The arguments for the tool, as a dictionary."""
+
     id: str
-    """Tool call ID."""
+    """The unique ID for this tool call."""
+
+
+class ToolOutputContentBlock(TypedDict):
+    """Content block for the result of a tool call."""
+
+    block_type: Literal["tool_output"]
+    """Type of the content block."""
+
+    output: str  # or `Any`??
+    """The output of the tool call."""
+
+    call_id: str
+    """The ID of the ToolCallContentBlock it corresponds to."""
 
 
 # Reasoning
 class ReasoningContentBlock(TypedDict):
     """Content block for reasoning output."""
 
-    type: Literal["reasoning"]
+    block_type: Literal["reasoning"]
     """Type of the content block."""
-    reasoning: NotRequired[str]
-    """Reasoning text."""
+
+    reasoning_text: NotRequired[str]
+    """Reasoning text.
+
+    Either the thought summary or the raw reasoning text itself. This is often parsed
+    from `<think>` tags in the model's response.
+    """
+
+    effort: NotRequired[str]
+    """Reasoning effort level, e.g., 'low', 'medium', 'high'"""
+
+    thought_signature: NotRequired[str]
+    """Opaque state handle representation of the model's internal thought process.
+
+    Maintains the context of the model's thinking across multiple interactions
+    (e.g. multi-turn conversations) since many APIs are stateless.
+
+    Not to be used to verify authenticity or integrity of the response (`'signature'`).
+
+    Examples:
+    - https://ai.google.dev/gemini-api/docs/thinking#signatures
+    """
+
+    signature: NotRequired[str]
+    """Signature of the reasoning content block used to verify authenticity.
+
+    Prevents from modifying or fabricating the model's reasoning process.
+
+    Examples:
+    - https://docs.anthropic.com/en/docs/build-with-claude/context-windows#the-context-window-with-extended-thinking-and-tool-use
+    """
+
+    annotations: NotRequired[list[Annotation]]
+    """Citations and other annotations."""
 
 
 # Multi-modal
-class BaseDataContentBlock(TypedDict):
-    """Base class for data content blocks."""
+
+
+# Note: `title` and `context` are fields that could be used to provide additional
+# information about the file, such as a description or summary of its content.
+# E.g. with Claude, you can provide a context for a file which is passed to the model.
+class ImageContentBlock(TypedDict):
+    """Content block for image data."""
+
+    block_type: Literal["image"]
+    """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the content block (if needed)."""
+    """MIME type of the image. Required for base64.
 
+    https://www.iana.org/assignments/media-types/media-types.xhtml#image
+    """
 
-class URLContentBlock(BaseDataContentBlock):
-    """Content block for data from a URL."""
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
 
-    type: Literal["image", "audio", "file"]
-    """Type of the content block."""
-    source_type: Literal["url"]
-    """Source type (url)."""
-    url: str
-    """URL for data."""
-
-
-class Base64ContentBlock(BaseDataContentBlock):
-    """Content block for inline data from a base64 string."""
-
-    type: Literal["image", "audio", "file"]
-    """Type of the content block."""
-    source_type: Literal["base64"]
-    """Source type (base64)."""
     data: str
-    """Data as a base64 string."""
+    """Data as a URL or base64 string."""
+
+    title: NotRequired[str]
+    """Title of the image."""
+
+    context: NotRequired[str]
+    """Context for the image, e.g., a description or summary of the image's content."""
 
 
-class PlainTextContentBlock(BaseDataContentBlock):
+class VideoContentBlock(TypedDict):
+    """Content block for video data."""
+
+    block_type: Literal["video"]
+    """Type of the content block."""
+
+    mime_type: NotRequired[str]
+    """MIME type of the video. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml#video
+    """
+
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
+
+    data: str
+    """Data as a URL or base64 string."""
+
+    title: NotRequired[str]
+    """Title of the video."""
+
+    context: NotRequired[str]
+    """Context for the video, e.g., a description or summary of the video's content."""
+
+
+class AudioContentBlock(TypedDict):
+    """Content block for audio data."""
+
+    block_type: Literal["audio"]
+    """Type of the content block."""
+
+    mime_type: NotRequired[str]
+    """MIME type of the audio. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml#audio
+    """
+
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
+
+    data: str
+    """Data as a URL or base64 string."""
+
+    title: NotRequired[str]
+    """Title of the audio."""
+
+    context: NotRequired[str]
+    """Context for the audio, e.g., a description or summary of the audio's content."""
+
+
+class PlainTextContentBlock(TypedDict):
     """Content block for plain text data (e.g., from a document)."""
 
-    type: Literal["file"]
+    block_type: Literal["text-plain"]
     """Type of the content block."""
-    source_type: Literal["text"]
-    """Source type (text)."""
-    text: str
-    """Text data."""
+
+    mime_type: Literal["text/plain"]
+    """MIME type of the file. Required for base64."""
+
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
+
+    data: str
+    """Data as a URL or base64 string."""
+
+    title: NotRequired[str]
+    """Title of the text data, e.g., the title of a document."""
+
+    context: NotRequired[str]
+    """Context for the text, e.g., a description or summary of the text's content."""
 
 
-class IDContentBlock(BaseDataContentBlock):
-    """Content block for data specified by an identifier."""
+class FileContentBlock(TypedDict):
+    """Content block for file data.
 
-    type: Literal["image", "audio", "file"]
+    This block is intended for files that are not images, audio, or plain text. For
+    example, it can be used for PDFs, Word documents, etc.
+
+    If the file is an image, audio, or plain text, you should use the corresponding
+    content block type (e.g., `ImageContentBlock`, `AudioContentBlock`,
+    `PlainTextContentBlock`).
+    """
+
+    block_type: Literal["file"]
     """Type of the content block."""
-    source_type: Literal["id"]
-    """Source type (id)."""
-    id: str
-    """Identifier for data source."""
+
+    mime_type: NotRequired[str]
+    """MIME type of the file. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml
+    """
+
+    representation: Literal["url", "base64", "id"]
+    """How the data is represented, either as a URL, base64 string, or ID.
+
+    IDs are typically used for files stored in a system like OpenAI's file storage.
+    """
+
+    data: str
+    """Data as a URL, base64 string, or ID."""
+
+    title: NotRequired[str]
+    """Title of the file, e.g., the name of a document or file."""
+
+    context: NotRequired[str]
+    """Context for the file, e.g., a description or summary of the file's content."""
 
 
-DataContentBlock = Union[
-    URLContentBlock,
-    Base64ContentBlock,
-    PlainTextContentBlock,
-    IDContentBlock,
-]
-
-_DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
+# Future modalities to consider:
+# - 3D models
+# - Tabular data
 
 
 # Non-standard
@@ -160,10 +291,16 @@ class NonStandardContentBlock(TypedDict):
     """Content block provider-specific data.
 
     This block contains data for which there is not yet a standard type.
+
+    The purpose of this block should be to simply hold a provider-specific payload.
+    If a provider's non-standard output includes reasoning and tool calls, it should be
+    the adapter's job to parse that payload and emit the corresponding standard
+    ReasoningContentBlock and ToolCallContentBlocks.
     """
 
-    type: Literal["non_standard"]
+    block_type: Literal["non_standard"]
     """Type of the content block."""
+
     value: dict[str, Any]
     """Provider-specific data."""
 
@@ -171,48 +308,68 @@ class NonStandardContentBlock(TypedDict):
 ContentBlock = Union[
     TextContentBlock,
     ToolCallContentBlock,
+    ToolOutputContentBlock,
     ReasoningContentBlock,
-    DataContentBlock,
     NonStandardContentBlock,
+    # Data types
+    ImageContentBlock,
+    VideoContentBlock,
+    AudioContentBlock,
+    PlainTextContentBlock,
+    FileContentBlock,
+]
+
+# Alias
+DataContentBlock = Union[
+    ImageContentBlock,
+    VideoContentBlock,
+    AudioContentBlock,
+    PlainTextContentBlock,
+    FileContentBlock,
 ]
 
 
-def _extract_typedict_type_values(union_type: Any) -> set[str]:
+def _extract_typedict_block_type_values(union_type: Any) -> set[str]:
     """Extract the values of the 'type' field from a TypedDict union type."""
     result: set[str] = set()
     for value in get_args(union_type):
-        annotation = value.__annotations__["type"]
+        annotation = value.__annotations__["block_type"]
         if get_origin(annotation) is Literal:
             result.update(get_args(annotation))
         else:
-            msg = f"{value} 'type' is not a Literal"
+            msg = f"{value} 'block_type' is not a Literal"
             raise ValueError(msg)
     return result
 
 
-# {"text", "tool_call", "reasoning", "non_standard", "image", "audio", "file"}
-KNOWN_BLOCK_TYPES = _extract_typedict_type_values(ContentBlock)
+KNOWN_BLOCK_TYPES = {
+    bt
+    for bt in get_args(ContentBlock)
+    for bt in get_args(bt.__annotations__["block_type"])
+}
+
+# Adapter for DataContentBlock
+_DataAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
 
 
-def is_data_content_block(
-    content_block: dict,
-) -> bool:
+def is_data_block(block: dict) -> bool:
     """Check if the content block is a standard data content block.
 
     Args:
-        content_block: The content block to check.
+        block: The content block to check.
 
     Returns:
         True if the content block is a data content block, False otherwise.
     """
     try:
-        _ = _DataContentBlockAdapter.validate_python(content_block)
+        _DataAdapter.validate_python(block)
     except ValidationError:
         return False
     else:
         return True
 
 
+# These would need to be refactored
 def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
     if content_block["source_type"] == "url":
