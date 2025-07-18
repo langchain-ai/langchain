@@ -21,6 +21,9 @@ _DEFAULT_PROMPT = ChatPromptTemplate.from_messages(
 def _get_prompt_input(input_: dict) -> dict[str, Any]:
     """Return the compression chain input."""
     documents = input_["documents"]
+
+    if not documents:
+        return {"query": input_["query"], "context": ""}
     context = ""
     for index, doc in enumerate(documents):
         context += f"Document ID: {index}\n```{doc.page_content}```\n\n"
