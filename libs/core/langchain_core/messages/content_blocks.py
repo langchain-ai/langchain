@@ -12,7 +12,7 @@ from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 class Citation(TypedDict):
     """Annotation for data from a document."""
 
-    annotation_type: Literal["citation:document"]
+    annotation_type: Literal["citation"]
     """Type of the content block."""
 
     url: NotRequired[str]
