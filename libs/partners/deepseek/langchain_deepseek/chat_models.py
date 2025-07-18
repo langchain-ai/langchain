@@ -179,7 +179,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "chat-deepseek"
+        return "deepseek"
 
     @property
     def lc_secrets(self) -> dict[str, str]:
@@ -419,3 +419,4 @@ class ChatDeepSeek(BaseChatOpenAI):
             strict=strict,
             **kwargs,
         )
+
