@@ -203,7 +203,10 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
+from langchain_core.messages.v2 import AIMessage as AIMessageV2
+
+
+class BaseChatModel(BaseLanguageModel[AIMessageV2], ABC):
     """Base class for chat models.
 
     Key imperative methods:
