@@ -71,8 +71,14 @@ class ToolCallContentBlock(TypedDict):
     block_type: Literal["tool_call"]
     """Type of the content block."""
 
+    name: str
+    """The name of the tool to be called."""
+
+    args: dict[str, Any]
+    """The arguments for the tool, as a dictionary."""
+
     id: str
-    """Tool call ID."""
+    """The unique ID for this tool call."""
 
 
 class ToolOutputContentBlock(TypedDict):
@@ -81,7 +87,7 @@ class ToolOutputContentBlock(TypedDict):
     block_type: Literal["tool_output"]
     """Type of the content block."""
 
-    output: str
+    output: str  # or `Any`??
     """The output of the tool call."""
 
     call_id: str
@@ -120,7 +126,7 @@ class DataImage(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the image."""
+    """MIME type of the image. Required for base64."""
 
     representation: Literal["url", "base64"]
     """How the data is represented, either as a URL or base64 string."""
@@ -136,7 +142,7 @@ class DataAudio(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the audio."""
+    """MIME type of the audio. Required for base64."""
 
     representation: Literal["url", "base64"]
     """How the data is represented, either as a URL or base64 string."""
@@ -152,7 +158,7 @@ class DataText(TypedDict):
     """Type of the content block."""
 
     mime_type: Literal["text/plain"]
-    """MIME type of the file."""
+    """MIME type of the file. Required for base64."""
 
     representation: Literal["url", "base64"]
     """How the data is represented, either as a URL or base64 string."""
@@ -168,7 +174,7 @@ class DataFile(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the file."""
+    """MIME type of the file. Required for base64."""
 
     representation: Literal["url", "base64", "id"]
     """How the data is represented, either as a URL, base64 string, or ID.
@@ -203,6 +209,7 @@ class NonStandardContentBlock(TypedDict):
 ContentBlock = Union[
     TextContentBlock,
     ToolCallContentBlock,
+    ToolOutputContentBlock,
     ReasoningContentBlock,
     NonStandardContentBlock,
     DataImage,
