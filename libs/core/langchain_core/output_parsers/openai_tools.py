@@ -234,34 +234,46 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Returns:
             The parsed tool calls.
         """
-        # We need to get all tool calls first, then filter by key_name,
-        # then apply first_tool_only logic to avoid the bug where
-        # first_tool_only is applied before filtering by key_name
+        # Override the parent's parse_result to fix the bug where first_tool_only
+        # is applied before filtering by key_name. We need to get all tool calls,
+        # filter by key_name, then apply first_tool_only logic.
         
-        # Create a temporary parser with first_tool_only=False to get all tool calls
-        temp_first_tool_only = self.first_tool_only
-        self.first_tool_only = False
-        try:
-            parsed_result = super().parse_result(result, partial=partial)
-        finally:
-            # Restore the original value
-            self.first_tool_only = temp_first_tool_only
-        
-        # Filter by key_name first
-        filtered_results = [res for res in parsed_result if res["type"] == self.key_name]
-
-        if temp_first_tool_only:
-            # Apply first_tool_only logic to the filtered results
-            single_result = (
-                filtered_results[0] if filtered_results else None
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
+        message = generation.message
+        if isinstance(message, AIMessage) and message.tool_calls:
+            tool_calls = [dict(tc) for tc in message.tool_calls]
+            for tool_call in tool_calls:
+                if not self.return_id:
+                    _ = tool_call.pop("id")
+        else:
+            try:
+                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            except KeyError:
+                return [] if not self.first_tool_only else None
+            tool_calls = parse_tool_calls(
+                raw_tool_calls,
+                partial=partial,
+                strict=self.strict,
+                return_id=self.return_id,
             )
+        # for backwards compatibility
+        for tc in tool_calls:
+            tc["type"] = tc.pop("name")
+
+        # Filter by key_name BEFORE applying first_tool_only logic
+        filtered_results = [tc for tc in tool_calls if tc["type"] == self.key_name]
+
+        if self.first_tool_only:
+            single_result = filtered_results[0] if filtered_results else None
             if self.return_id:
                 return single_result
             if single_result:
                 return single_result["args"]
             return None
-        
-        # Return all filtered results
+
         if not self.return_id:
             filtered_results = [res["args"] for res in filtered_results]
         return filtered_results
@@ -333,4 +345,5 @@ class PydanticToolsParser(JsonOutputToolsParser):
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
         return pydantic_objects
+
 
