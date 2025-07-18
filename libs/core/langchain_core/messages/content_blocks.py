@@ -75,6 +75,19 @@ class ToolCallContentBlock(TypedDict):
     """Tool call ID."""
 
 
+class ToolOutputContentBlock(TypedDict):
+    """Content block for the result of a tool call."""
+
+    block_type: Literal["tool_output"]
+    """Type of the content block."""
+
+    output: str
+    """The output of the tool call."""
+
+    call_id: str
+    """The ID of the ToolCallContentBlock it corresponds to."""
+
+
 # Reasoning
 class ReasoningContentBlock(TypedDict):
     """Content block for reasoning output."""
