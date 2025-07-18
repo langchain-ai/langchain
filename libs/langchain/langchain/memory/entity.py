@@ -146,7 +146,9 @@ class UpstashRedisEntityStore(BaseEntityStore):
             or default
             or ""
         )
-        logger.debug(f"Upstash Redis MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug(
+            "Upstash Redis MEM get '%s:%s': '%s'", self.full_key_prefix, key, res
+        )
         return res
 
     def set(self, key: str, value: Optional[str]) -> None:
@@ -154,7 +156,11 @@ class UpstashRedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
+            "Redis MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 
@@ -249,7 +255,7 @@ class RedisEntityStore(BaseEntityStore):
             or default
             or ""
         )
-        logger.debug(f"REDIS MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug("REDIS MEM get '%s:%s': '%s'", self.full_key_prefix, key, res)
         return res
 
     def set(self, key: str, value: Optional[str]) -> None:
@@ -257,7 +263,11 @@ class RedisEntityStore(BaseEntityStore):
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}",
+            "REDIS MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 

@@ -207,7 +207,7 @@ def _wrap_in_chain_factory(
             # It's an arbitrary function, wrap it in a RunnableLambda
             user_func = cast(Callable, llm_or_chain_factory)
             sig = inspect.signature(user_func)
-            logger.info(f"Wrapping function {sig} as RunnableLambda.")
+            logger.info("Wrapping function %s as RunnableLambda.", sig)
             wrapped = RunnableLambda(user_func)
             return lambda: wrapped
         constructor = cast(Callable, llm_or_chain_factory)
@@ -416,7 +416,7 @@ def _validate_example_inputs(
             # Otherwise it's a runnable
             _validate_example_inputs_for_chain(example, chain, input_mapper)
         elif isinstance(chain, Runnable):
-            logger.debug(f"Skipping input validation for {chain}")
+            logger.debug("Skipping input validation for %s", chain)
 
 
 ## Shared Evaluator Setup Utilities
@@ -461,16 +461,19 @@ def _determine_input_key(
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             logger.warning(
-                f"Input key {input_key} not in chain's specified"
-                f" input keys {run_inputs}. Evaluation behavior may be undefined.",
+                "Input key %s not in chain's specified input keys %s. "
+                "Evaluation behavior may be undefined.",
+                input_key,
+                run_inputs,
             )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
     elif run_inputs is not None and len(run_inputs) > 1:
         logger.warning(
-            f"Chain expects multiple input keys: {run_inputs},"
-            f" Evaluator is likely to fail. Evaluation behavior may be undefined."
+            "Chain expects multiple input keys: %s,"
+            " Evaluator is likely to fail. Evaluation behavior may be undefined."
             " Specify an input_key in the RunEvalConfig to avoid this warning.",
+            run_inputs,
         )
 
     return input_key
@@ -485,16 +488,19 @@ def _determine_prediction_key(
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
             logger.warning(
-                f"Prediction key {prediction_key} not in chain's specified"
-                f" output keys {run_outputs}. Evaluation behavior may be undefined.",
+                "Prediction key %s not in chain's specified output keys %s. "
+                "Evaluation behavior may be undefined.",
+                prediction_key,
+                run_outputs,
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     elif run_outputs is not None and len(run_outputs) > 1:
         logger.warning(
-            f"Chain expects multiple output keys: {run_outputs},"
-            f" Evaluation behavior may be undefined. Specify a prediction_key"
+            "Chain expects multiple output keys: %s,"
+            " Evaluation behavior may be undefined. Specify a prediction_key"
             " in the RunEvalConfig to avoid this warning.",
+            run_outputs,
         )
     return prediction_key
 
@@ -820,9 +826,11 @@ async def _arun_llm_or_chain(
         result = output
     except Exception as e:
         logger.warning(
-            f"{chain_or_llm} failed for example {example.id} "
-            f"with inputs {example.inputs}"
-            f"\n{e!r}",
+            "%s failed for example %s with inputs %s\n%s",
+            chain_or_llm,
+            example.id,
+            example.inputs,
+            e,
         )
         result = EvalError(Error=e)
     return result
@@ -981,9 +989,12 @@ def _run_llm_or_chain(
     except Exception as e:
         error_type = type(e).__name__
         logger.warning(
-            f"{chain_or_llm} failed for example {example.id} "
-            f"with inputs {example.inputs}"
-            f"\nError Type: {error_type}, Message: {e}",
+            "%s failed for example %s with inputs %s\nError Type: %s, Message: %s",
+            chain_or_llm,
+            example.id,
+            example.inputs,
+            error_type,
+            e,
         )
         result = EvalError(Error=e)
     return result
@@ -1113,7 +1124,9 @@ class _DatasetRunContainer:
                         project_id=self.project.id,
                     )
                 except Exception as e:
-                    logger.error(f"Error running batch evaluator {evaluator!r}: {e}")
+                    logger.exception(
+                        "Error running batch evaluator %s: %s", repr(evaluator), e
+                    )
         return aggregate_feedback
 
     def _collect_metrics(self) -> tuple[dict[str, _RowResult], dict[str, Run]]:
@@ -1174,7 +1187,7 @@ class _DatasetRunContainer:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
             except Exception as e:
-                logger.debug(f"Failed to print aggregate feedback: {e!r}")
+                logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
@@ -1182,7 +1195,7 @@ class _DatasetRunContainer:
                 end_time=datetime.now(timezone.utc),
             )
         except Exception as e:
-            logger.debug(f"Failed to close project: {e!r}")
+            logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 
     @classmethod

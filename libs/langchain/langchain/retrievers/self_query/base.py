@@ -320,7 +320,7 @@ class SelfQueryRetriever(BaseRetriever):
             config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return self._get_docs_with_query(new_query, search_kwargs)
 
@@ -343,7 +343,7 @@ class SelfQueryRetriever(BaseRetriever):
             config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return await self._aget_docs_with_query(new_query, search_kwargs)
 
