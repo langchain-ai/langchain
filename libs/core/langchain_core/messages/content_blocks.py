@@ -108,16 +108,34 @@ class ReasoningContentBlock(TypedDict):
     """Type of the content block."""
 
     reasoning_text: NotRequired[str]
-    """Reasoning text."""
+    """Reasoning text.
+
+    Either the thought summary or the raw reasoning text itself. This is often parsed
+    from `<think>` tags in the model's response.
+    """
 
     effort: NotRequired[str]
     """Reasoning effort level, e.g., 'low', 'medium', 'high'"""
 
-    signature: NotRequired[str]
-    """Signature of the reasoning.
+    thought_signature: NotRequired[str]
+    """Opaque state handle representation of the model's internal thought process.
+
+    Maintains the context of the model's thinking across multiple interactions
+    (e.g. multi-turn conversations) since many APIs are stateless.
+
+    Not to be used to verify authenticity or integrity of the response (`'signature'`).
 
     Examples:
     - https://ai.google.dev/gemini-api/docs/thinking#signatures
+    """
+
+    signature: NotRequired[str]
+    """Signature of the reasoning content block used to verify authenticity.
+
+    Prevents from modifying or fabricating the model's reasoning process.
+
+    Examples:
+    - https://docs.anthropic.com/en/docs/build-with-claude/context-windows#the-context-window-with-extended-thinking-and-tool-use
     """
 
     annotations: NotRequired[list[Annotation]]
@@ -125,6 +143,11 @@ class ReasoningContentBlock(TypedDict):
 
 
 # Multi-modal
+
+
+# Note: `title` and `context` are fields that could be used to provide additional
+# information about the file, such as a description or summary of its content.
+# E.g. with Claude, you can provide a context for a file which is passed to the model.
 class ImageContentBlock(TypedDict):
     """Content block for image data."""
 
@@ -132,7 +155,10 @@ class ImageContentBlock(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the image. Required for base64."""
+    """MIME type of the image. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml#image
+    """
 
     representation: Literal["url", "base64"]
     """How the data is represented, either as a URL or base64 string."""
@@ -140,8 +166,36 @@ class ImageContentBlock(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    title: NotRequired[str]
+    """Title of the image."""
+
     context: NotRequired[str]
-    """Context for the file, e.g., a description or summary of the file's content."""
+    """Context for the image, e.g., a description or summary of the image's content."""
+
+
+class VideoContentBlock(TypedDict):
+    """Content block for video data."""
+
+    block_type: Literal["video"]
+    """Type of the content block."""
+
+    mime_type: NotRequired[str]
+    """MIME type of the video. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml#video
+    """
+
+    representation: Literal["url", "base64"]
+    """How the data is represented, either as a URL or base64 string."""
+
+    data: str
+    """Data as a URL or base64 string."""
+
+    title: NotRequired[str]
+    """Title of the video."""
+
+    context: NotRequired[str]
+    """Context for the video, e.g., a description or summary of the video's content."""
 
 
 class AudioContentBlock(TypedDict):
@@ -151,7 +205,10 @@ class AudioContentBlock(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the audio. Required for base64."""
+    """MIME type of the audio. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml#audio
+    """
 
     representation: Literal["url", "base64"]
     """How the data is represented, either as a URL or base64 string."""
@@ -159,14 +216,17 @@ class AudioContentBlock(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    title: NotRequired[str]
+    """Title of the audio."""
+
     context: NotRequired[str]
-    """Context for the file, e.g., a description or summary of the file's content."""
+    """Context for the audio, e.g., a description or summary of the audio's content."""
 
 
 class PlainTextContentBlock(TypedDict):
     """Content block for plain text data (e.g., from a document)."""
 
-    block_type: Literal["text-data"]
+    block_type: Literal["text-plain"]
     """Type of the content block."""
 
     mime_type: Literal["text/plain"]
@@ -178,8 +238,11 @@ class PlainTextContentBlock(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    title: NotRequired[str]
+    """Title of the text data, e.g., the title of a document."""
+
     context: NotRequired[str]
-    """Context for the file, e.g., a description or summary of the file's content."""
+    """Context for the text, e.g., a description or summary of the text's content."""
 
 
 class FileContentBlock(TypedDict):
@@ -197,7 +260,10 @@ class FileContentBlock(TypedDict):
     """Type of the content block."""
 
     mime_type: NotRequired[str]
-    """MIME type of the file. Required for base64."""
+    """MIME type of the file. Required for base64.
+
+    https://www.iana.org/assignments/media-types/media-types.xhtml
+    """
 
     representation: Literal["url", "base64", "id"]
     """How the data is represented, either as a URL, base64 string, or ID.
@@ -208,8 +274,16 @@ class FileContentBlock(TypedDict):
     data: str
     """Data as a URL, base64 string, or ID."""
 
+    title: NotRequired[str]
+    """Title of the file, e.g., the name of a document or file."""
+
     context: NotRequired[str]
     """Context for the file, e.g., a description or summary of the file's content."""
+
+
+# Future modalities to consider:
+# - 3D models
+# - Tabular data
 
 
 # Non-standard
@@ -239,6 +313,7 @@ ContentBlock = Union[
     NonStandardContentBlock,
     # Data types
     ImageContentBlock,
+    VideoContentBlock,
     AudioContentBlock,
     PlainTextContentBlock,
     FileContentBlock,
@@ -247,6 +322,7 @@ ContentBlock = Union[
 # Alias
 DataContentBlock = Union[
     ImageContentBlock,
+    VideoContentBlock,
     AudioContentBlock,
     PlainTextContentBlock,
     FileContentBlock,
