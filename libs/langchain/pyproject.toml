@@ -177,6 +177,7 @@ select = [
     "SLF",    # flake8-self
     "SLOT",   # flake8-slots
     "SIM",    # flake8-simplify
+    "TC",     # flake8-type-checking
     "T10",    # flake8-debugger
     "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
@@ -199,6 +200,9 @@ ignore = [
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
     "UP007",   # pyupgrade: non-pep604-annotation-union
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel

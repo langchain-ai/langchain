@@ -122,7 +122,7 @@ class GenericFakeChatModel(BaseChatModel):
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
             assert isinstance(content, str)
-            content_chunks = cast(list[str], re.split(r"(\s)", content))
+            content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -140,7 +140,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast("list[str]", re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
