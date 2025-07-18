@@ -1,3 +1,48 @@
+#!/usr/bin/env python3
+
+from langchain_core.output_parsers.openai_tools import JsonOutputKeyToolsParser, JsonOutputToolsParser
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration
+
+def debug_step_by_step():
+    """Debug the fix step by step"""
+    print("=== DEBUGGING STEP BY STEP ===")
+    
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'func', 'arguments': '{"a":1}'}, 'type': 'func'}
+    ]}))]
+
+    print("1. Testing parent class behavior:")
+    parent_parser = JsonOutputToolsParser(first_tool_only=False, return_id=True)
+    parent_result = parent_parser.parse_result(result)
+    print(f"   Parent result (all tools): {parent_result}")
+    
+    parent_parser_first = JsonOutputToolsParser(first_tool_only=True, return_id=True)
+    parent_result_first = parent_parser_first.parse_result(result)
+    print(f"   Parent result (first only): {parent_result_first}")
+    
+    print("\n2. Testing our fixed parser:")
+    parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    
+    # Let's manually trace through our logic
+    print("   Step 2a: Getting all tool calls...")
+    temp_first_tool_only = parser.first_tool_only
+    parser.first_tool_only = False
+    parsed_result = JsonOutputToolsParser.parse_result(parser, result)
+    parser.first_tool_only = temp_first_tool_only
+    print(f"   All parsed results: {parsed_result}")
+    
+    print("   Step 2b: Filtering by key_name...")
+    filtered_results = [res for res in parsed_result if res["type"] == parser.key_name]
+    print(f"   Filtered results: {filtered_results}")
+    
+    print("   Step 2c: Final result...")
+    final_result = parser.parse_result(result)
+    print(f"   Final result: {final_result}")
+
+if __name__ == "__main__":
+    debug_step_by_step()
 from langchain_core.output_parsers.openai_tools import JsonOutputKeyToolsParser
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
@@ -45,3 +90,4 @@ class DebugJsonOutputKeyToolsParser(JsonOutputKeyToolsParser):
 parser = DebugJsonOutputKeyToolsParser(key_name='func', first_tool_only=True, return_id=True)
 output = parser.parse_result(result)
 print('Final output:', output)
+
