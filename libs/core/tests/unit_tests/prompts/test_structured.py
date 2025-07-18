@@ -11,6 +11,7 @@ from langchain_core.load.load import loads
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
+from langchain_core.utils.mustache import ChevronError
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
@@ -132,8 +133,8 @@ def test_structured_prompt_template_format() -> None:
 
 
 def test_structured_prompt_template_empty_vars() -> None:
-    with pytest.raises(ValueError, match="empty tag"):
+    with pytest.raises(ChevronError, match="empty tag"):
         StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
 
-    with pytest.raises(ValueError, match="empty tag"):
+    with pytest.raises(ChevronError, match="empty tag"):
         StructuredPrompt([("human", "hi {}")], schema={}, template_format="f-string")
