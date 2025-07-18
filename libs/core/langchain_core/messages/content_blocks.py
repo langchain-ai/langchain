@@ -125,7 +125,7 @@ class ReasoningContentBlock(TypedDict):
 
 
 # Multi-modal
-class DataImage(TypedDict):
+class ImageContentBlock(TypedDict):
     """Content block for image data."""
 
     block_type: Literal["image"]
@@ -140,8 +140,11 @@ class DataImage(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    context: NotRequired[str]
+    """Context for the file, e.g., a description or summary of the file's content."""
 
-class DataAudio(TypedDict):
+
+class AudioContentBlock(TypedDict):
     """Content block for audio data."""
 
     block_type: Literal["audio"]
@@ -156,8 +159,11 @@ class DataAudio(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    context: NotRequired[str]
+    """Context for the file, e.g., a description or summary of the file's content."""
 
-class DataText(TypedDict):
+
+class PlainTextContentBlock(TypedDict):
     """Content block for plain text data (e.g., from a document)."""
 
     block_type: Literal["text-data"]
@@ -172,9 +178,20 @@ class DataText(TypedDict):
     data: str
     """Data as a URL or base64 string."""
 
+    context: NotRequired[str]
+    """Context for the file, e.g., a description or summary of the file's content."""
 
-class DataFile(TypedDict):
-    """Content block for file data."""
+
+class FileContentBlock(TypedDict):
+    """Content block for file data.
+
+    This block is intended for files that are not images, audio, or plain text. For
+    example, it can be used for PDFs, Word documents, etc.
+
+    If the file is an image, audio, or plain text, you should use the corresponding
+    content block type (e.g., `ImageContentBlock`, `AudioContentBlock`,
+    `PlainTextContentBlock`).
+    """
 
     block_type: Literal["file"]
     """Type of the content block."""
@@ -190,6 +207,9 @@ class DataFile(TypedDict):
 
     data: str
     """Data as a URL, base64 string, or ID."""
+
+    context: NotRequired[str]
+    """Context for the file, e.g., a description or summary of the file's content."""
 
 
 # Non-standard
@@ -217,17 +237,19 @@ ContentBlock = Union[
     ToolOutputContentBlock,
     ReasoningContentBlock,
     NonStandardContentBlock,
-    DataImage,
-    DataAudio,
-    DataText,
-    DataFile,
+    # Data types
+    ImageContentBlock,
+    AudioContentBlock,
+    PlainTextContentBlock,
+    FileContentBlock,
 ]
 
+# Alias
 DataContentBlock = Union[
-    DataImage,
-    DataAudio,
-    DataText,
-    DataFile,
+    ImageContentBlock,
+    AudioContentBlock,
+    PlainTextContentBlock,
+    FileContentBlock,
 ]
 
 
