@@ -191,6 +191,11 @@ class NonStandardContentBlock(TypedDict):
     """Content block provider-specific data.
 
     This block contains data for which there is not yet a standard type.
+
+    The purpose of this block should be to simply hold a provider-specific payload.
+    If a provider's non-standard output includes reasoning and tool calls, it should be
+    the adapter's job to parse that payload and emit the corresponding standard
+    ReasoningContentBlock and ToolCallContentBlocks.
     """
 
     block_type: Literal["non_standard"]
@@ -198,12 +203,6 @@ class NonStandardContentBlock(TypedDict):
 
     value: dict[str, Any]
     """Provider-specific data."""
-
-    tool_calls: NotRequired[list[ToolCallContentBlock]]
-    """Tool calls made during reasoning."""
-
-    annotations: NotRequired[list[Annotation]]
-    """Citations and other annotations."""
 
 
 ContentBlock = Union[
