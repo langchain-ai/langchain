@@ -167,6 +167,7 @@ select = [
     "PGH",    # pygrep-hooks
     "PIE",    # flake8-pie
     "PERF",   # flake8-perf
+    "PT",     # flake8-pytest-style
     "PTH",    # flake8-use-pathlib
     "PYI",    # flake8-pyi
     "Q",      # flake8-quotes

@@ -88,12 +88,9 @@ def test_infer_model_and_provider_errors() -> None:
         _infer_model_and_provider("model", provider="")
 
     # Test invalid provider
-    with pytest.raises(ValueError, match="is not supported"):
+    with pytest.raises(ValueError, match="Provider 'invalid' is not supported.") as exc:
         _infer_model_and_provider("model", provider="invalid")
-
     # Test provider list is in error
-    with pytest.raises(ValueError) as exc:
-        _infer_model_and_provider("model", provider="invalid")
     for provider in _SUPPORTED_PROVIDERS:
         assert provider in str(exc.value)
 

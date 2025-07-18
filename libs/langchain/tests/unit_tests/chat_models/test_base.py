@@ -30,7 +30,7 @@ def test_all_imports() -> None:
     "langchain_groq",
 )
 @pytest.mark.parametrize(
-    ["model_name", "model_provider"],
+    ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
         ("claude-3-opus-20240229", "anthropic"),
@@ -57,7 +57,7 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
         init_chat_model("foo", model_provider="bar")
 
 

@@ -7,5 +7,7 @@ def test_check_package_version_pass() -> None:
 
 
 def test_check_package_version_fail() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Expected PyYAML version to be < 5.4.1. Received "
+    ):
         check_package_version("PyYAML", lt_version="5.4.1")
