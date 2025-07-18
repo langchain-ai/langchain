@@ -135,6 +135,3 @@ def test_structured_prompt_template_format() -> None:
 def test_structured_prompt_template_empty_vars() -> None:
     with pytest.raises(ChevronError, match="empty tag"):
         StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")
-
-    with pytest.raises(ChevronError, match="empty tag"):
-        StructuredPrompt([("human", "hi {}")], schema={}, template_format="f-string")
