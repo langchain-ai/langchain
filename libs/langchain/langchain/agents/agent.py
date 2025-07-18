@@ -363,7 +363,6 @@ class BaseMultiActionAgent(BaseModel):
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
-
         return {}
 
 
@@ -1811,7 +1810,6 @@ class AgentExecutor(Chain):
         Yields:
             AddableDict: Addable dictionary.
         """
-
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,

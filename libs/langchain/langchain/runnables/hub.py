@@ -5,9 +5,7 @@ from langchain_core.runnables.utils import Input, Output
 
 
 class HubRunnable(RunnableBindingBase[Input, Output]):
-    """
-    An instance of a runnable stored in the LangChain Hub.
-    """
+    """An instance of a runnable stored in the LangChain Hub."""
 
     owner_repo_commit: str
 

@@ -75,6 +75,8 @@ class MultiQueryRetriever(BaseRetriever):
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
             prompt: The prompt which aims to generate several different versions
                 of the given user query
+            parser_key: DEPRECATED. `parser_key` is no longer used and should not be
+                specified.
             include_original: Whether to include the original query in the list of
                 generated queries.
 
@@ -99,6 +101,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             query: user query
+            run_manager: the callback handler to use.
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -118,6 +121,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             question: user query
+            run_manager: the callback handler to use.
 
         Returns:
             List of LLM generated queries that are similar to the user input
@@ -140,6 +144,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             queries: query list
+            run_manager: the callback handler to use
 
         Returns:
             List of retrieved Documents
@@ -165,6 +170,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             query: user query
+            run_manager: the callback handler to use.
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -184,6 +190,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             question: user query
+            run_manager: run manager for callbacks
 
         Returns:
             List of LLM generated queries that are similar to the user input
@@ -206,6 +213,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             queries: query list
+            run_manager: run manager for callbacks
 
         Returns:
             List of retrieved Documents

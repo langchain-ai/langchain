@@ -55,7 +55,8 @@ class AgentExecutorIterator:
         include_run_info: bool = False,
         yield_actions: bool = False,
     ):
-        """
+        """Initialize the AgentExecutorIterator.
+
         Initialize the AgentExecutorIterator with the given AgentExecutor,
         inputs, and optional callbacks.
 
@@ -129,7 +130,8 @@ class AgentExecutorIterator:
         )
 
     def reset(self) -> None:
-        """
+        """Reset the iterator to its initial state.
+
         Reset the iterator to its initial state, clearing intermediate steps,
         iterations, and time elapsed.
         """
@@ -141,9 +143,7 @@ class AgentExecutorIterator:
         self.start_time = time.time()
 
     def update_iterations(self) -> None:
-        """
-        Increment the number of iterations and update the time elapsed.
-        """
+        """Increment the number of iterations and update the time elapsed."""
         self.iterations += 1
         self.time_elapsed = time.time() - self.start_time
         logger.debug(
@@ -235,9 +235,10 @@ class AgentExecutorIterator:
         yield self._stop(run_manager)
 
     async def __aiter__(self) -> AsyncIterator[AddableDict]:
-        """
+        """Create an async iterator for the AgentExecutor.
+
         N.B. __aiter__ must be a normal method, so need to initialize async run manager
-        on first __anext__ call where we can await it
+        on first __anext__ call where we can await it.
         """
         logger.debug("Initialising AgentExecutorIterator (async)")
         self.reset()
@@ -319,7 +320,8 @@ class AgentExecutorIterator:
         next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
         run_manager: CallbackManagerForChainRun,
     ) -> AddableDict:
-        """
+        """Process the output of the next step.
+
         Process the output of the next step,
         handling AgentFinish and tool return cases.
         """
@@ -347,7 +349,8 @@ class AgentExecutorIterator:
         next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
-        """
+        """Process the output of the next async step.
+
         Process the output of the next async step,
         handling AgentFinish and tool return cases.
         """
@@ -371,7 +374,8 @@ class AgentExecutorIterator:
         return AddableDict(intermediate_step=next_step_output)
 
     def _stop(self, run_manager: CallbackManagerForChainRun) -> AddableDict:
-        """
+        """Stop the iterator.
+
         Stop the iterator and raise a StopIteration exception with the stopped response.
         """
         logger.warning("Stopping agent prematurely due to triggering stop condition")
@@ -384,7 +388,8 @@ class AgentExecutorIterator:
         return self._return(output, run_manager=run_manager)
 
     async def _astop(self, run_manager: AsyncCallbackManagerForChainRun) -> AddableDict:
-        """
+        """Stop the async iterator.
+
         Stop the async iterator and raise a StopAsyncIteration exception with
         the stopped response.
         """
@@ -401,9 +406,7 @@ class AgentExecutorIterator:
         output: AgentFinish,
         run_manager: CallbackManagerForChainRun,
     ) -> AddableDict:
-        """
-        Return the final output of the iterator.
-        """
+        """Return the final output of the iterator."""
         returned_output = self.agent_executor._return(
             output,
             self.intermediate_steps,
@@ -418,9 +421,7 @@ class AgentExecutorIterator:
         output: AgentFinish,
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
-        """
-        Return the final output of the async iterator.
-        """
+        """Return the final output of the async iterator."""
         returned_output = await self.agent_executor._areturn(
             output,
             self.intermediate_steps,

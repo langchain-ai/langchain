@@ -38,7 +38,7 @@ class EvalConfig(BaseModel):
     evaluator_type : EvaluatorType
         The type of evaluator to use.
 
-    Methods
+    Methods:
     -------
     get_kwargs()
         Get the keyword arguments for the evaluator configuration.
@@ -50,7 +50,7 @@ class EvalConfig(BaseModel):
     def get_kwargs(self) -> dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
 
-        Returns
+        Returns:
         -------
         Dict[str, Any]
             The keyword arguments for the load_evaluator call.
@@ -345,6 +345,7 @@ class RunEvalConfig(BaseModel):
 
     class ScoreString(SingleKeyEvalConfig):
         """Configuration for a score string evaluator.
+
         This is like the criteria evaluator but it is configured by
         default to return a score on the scale from 1-10.
 

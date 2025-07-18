@@ -10,6 +10,7 @@ DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     """Callback handler for streaming in agents.
+
     Only works with agents using LLMs that support streaming.
 
     Only the final output of the agent will be streamed.
@@ -72,7 +73,6 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
 

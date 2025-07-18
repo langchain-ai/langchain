@@ -377,8 +377,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         reference_key: Optional[str] = None,
         tags: Optional[list[str]] = None,
     ) -> StringRunEvaluatorChain:
-        """
-        Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
+        """Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
 
         This method provides an easy way to instantiate a StringRunEvaluatorChain, by
         taking an evaluator and information about the type of run and the data.
@@ -402,7 +401,6 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 reference from the dataset but the reference key is not provided.
 
         """  # noqa: E501
-
         # Configure how run inputs/predictions are passed to the evaluator
         if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()

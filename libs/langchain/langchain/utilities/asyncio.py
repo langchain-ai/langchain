@@ -1,4 +1,4 @@
-"""Shims for asyncio features that may be missing from older python versions"""
+"""Shims for asyncio features that may be missing from older python versions."""
 
 import sys
 

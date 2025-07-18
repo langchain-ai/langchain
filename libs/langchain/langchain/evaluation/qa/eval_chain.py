@@ -177,6 +177,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             include_run_info (bool, optional): whether to include run info in the
                 returned results.
             **kwargs: additional keyword arguments, including callbacks, tags, etc.
+
         Returns:
             dict: The evaluation results containing the score or value.
         """
@@ -211,7 +212,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 
 class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
-    """LLM Chain for evaluating QA w/o GT based on context"""
+    """LLM Chain for evaluating QA w/o GT based on context."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
