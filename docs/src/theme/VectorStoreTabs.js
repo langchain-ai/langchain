@@ -70,7 +70,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "Qdrant",
             label: "Qdrant",
-            text: `from langchain_qdrant import QdrantVectorStore\nfrom qdrant_client import QdrantClient\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\nclient = QdrantClient(":memory:")\n${vectorStoreVarName} = QdrantVectorStore(\n    client=client,\n    collection_name="test",\n    embedding=embeddings,\n)`,
+            text: `from qdrant_client.models import Distance, VectorParams\nfrom langchain_qdrant import QdrantVectorStore\nfrom qdrant_client import QdrantClient\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\nclient = QdrantClient(":memory:")\nclient.create_collection(\n    collection_name="test",\n    vectors_config=VectorParams(size=3072, distance=Distance.COSINE)\n)\n${vectorStoreVarName} = QdrantVectorStore(\n    client=client,\n    collection_name="test",\n    embedding=embeddings,\n)`,
             packageName: "langchain-qdrant",
             default: false,
         },
