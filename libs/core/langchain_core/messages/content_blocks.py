@@ -10,7 +10,10 @@ from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 
 class Citation(TypedDict):
-    """Annotation for data from a document."""
+    """Annotation for data from a document.
+
+    One of `url` or `provenance` must be provided.
+    """
 
     annotation_type: Literal["citation"]
     """Type of the content block."""
@@ -22,7 +25,10 @@ class Citation(TypedDict):
     """Provenance of the document, e.g., "Wikipedia", "arXiv", etc."""
 
     title: NotRequired[str]
-    """Source document title."""
+    """Source document title.
+
+    For example, the page title for a web page or the title of a paper.
+    """
 
     cited_text: NotRequired[str]
     """Text from the document source that is being cited."""
