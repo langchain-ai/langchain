@@ -85,7 +85,7 @@ class ReasoningContentBlock(TypedDict):
     reasoning_text: NotRequired[str]
     """Reasoning text."""
 
-    reasoning_effort: NotRequired[str]
+    effort: NotRequired[str]
     """Reasoning effort level, e.g., 'low', 'medium', 'high'"""
 
     signature: NotRequired[str]
