@@ -1,5 +1,42 @@
 #!/usr/bin/env python3
 
+# Test the fix by directly calling the method
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs', 'core'))
+
+from langchain_core.output_parsers.openai_tools import JsonOutputKeyToolsParser
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration
+
+def test_fix_directly():
+    """Test the fix by calling the method directly"""
+    print("=== TESTING FIX DIRECTLY ===")
+    
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'func', 'arguments': '{"a":1}'}, 'type': 'func'}
+    ]}))]
+
+    parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    
+    print("Calling parse_result directly...")
+    output = parser.parse_result(result)
+    
+    print(f"Output: {output}")
+    print(f"Type: {type(output)}")
+    
+    if output is None:
+        print("❌ BUG STILL EXISTS: Output is None")
+        return False
+    else:
+        print("✅ BUG FIXED: Output is not None")
+        return True
+
+if __name__ == "__main__":
+    test_fix_directly()
+#!/usr/bin/env python3
+
 from langchain_core.output_parsers.openai_tools import JsonOutputKeyToolsParser
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
@@ -30,3 +67,4 @@ def test_original_bug():
 
 if __name__ == "__main__":
     test_original_bug()
+
