@@ -1,4 +1,5 @@
 """Test chat model integration."""
+
 import json
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -7,7 +8,6 @@ from unittest.mock import patch
 
 import pytest
 from httpx import Client, Request, Response
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
@@ -17,7 +17,6 @@ from langchain_ollama.chat_models import (
     _parse_arguments_from_tool_call,
     _parse_json_string,
 )
-
 
 MODEL_NAME = "llama3.1"
 
@@ -113,9 +112,7 @@ dummy_raw_tool_call = {
 def test_parse_json_string_success_cases(input_string, expected_output):
     """Tests that _parse_json_string correctly parses valid and fixable strings."""
     raw_tool_call = {"function": {"name": "test_func", "arguments": input_string}}
-    result = _parse_json_string(
-        input_string, raw_tool_call=raw_tool_call, skip=False
-    )
+    result = _parse_json_string(input_string, raw_tool_call=raw_tool_call, skip=False)
     assert result == expected_output
 
 

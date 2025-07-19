@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import ast
+import json
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -103,7 +103,8 @@ def _parse_json_string(
         return json.loads(json_string)
     except json.JSONDecodeError:
         try:
-            # Use ast.literal_eval to safely parse Python-style dicts (e.g. with single quotes)
+            # Use ast.literal_eval to safely parse Python-style dicts
+            # (e.g. with single quotes)
             return ast.literal_eval(json_string)
         except (SyntaxError, ValueError) as e:
             # If both fail, and we're not skipping, raise an informative error.
@@ -111,7 +112,8 @@ def _parse_json_string(
                 return json_string
             msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON or a Python literal. "
+                f"{raw_tool_call['function']['arguments']}"
+                "\n\nare not valid JSON or a Python literal. "
                 f"Received error: {e}"
             )
             raise OutputParserException(msg) from e
