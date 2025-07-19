@@ -116,7 +116,7 @@ def test_parse_json_string_success_cases(input_string, expected_output) -> None:
     assert result == expected_output
 
 
-def test_parse_json_string_failure_case_raises_exception()  -> None:
+def test_parse_json_string_failure_case_raises_exception() -> None:
     """Tests that _parse_json_string raises an exception for truly malformed strings."""
     malformed_string = "{'key': 'value',,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
@@ -128,7 +128,7 @@ def test_parse_json_string_failure_case_raises_exception()  -> None:
         )
 
 
-def test_parse_json_string_skip_returns_input_on_failure() -> None :
+def test_parse_json_string_skip_returns_input_on_failure() -> None:
     """Tests that skip=True returns the original string on parse failure."""
     malformed_string = "{'not': valid,,,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
