@@ -14,6 +14,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -330,6 +331,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """
         return ["prediction", "reference"]
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -354,6 +356,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -381,6 +384,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -415,6 +419,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -476,6 +481,7 @@ class PairwiseEmbeddingDistanceEvalChain(
     def evaluation_name(self) -> str:
         return f"pairwise_embedding_{self.distance_metric.value}_distance"
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -503,6 +509,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -530,6 +537,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -565,6 +573,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,

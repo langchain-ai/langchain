@@ -4,6 +4,7 @@ from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
+from typing_extensions import override
 
 from langchain.agents.format_scratchpad import (
     format_to_openai_function_messages,
@@ -55,6 +56,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer.
 

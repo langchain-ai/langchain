@@ -35,7 +35,7 @@ class JsonValidityEvaluator(StringEvaluator):
         {'score': 0, 'reasoning': 'Expecting property name enclosed in double quotes'}
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **_: Any) -> None:
         super().__init__()
 
     @property
@@ -110,7 +110,7 @@ class JsonEqualityEvaluator(StringEvaluator):
 
     """
 
-    def __init__(self, operator: Optional[Callable] = None, **kwargs: Any) -> None:
+    def __init__(self, operator: Optional[Callable] = None, **_: Any) -> None:
         super().__init__()
         self.operator = operator or eq
 

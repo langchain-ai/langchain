@@ -11,6 +11,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool, Tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -32,6 +33,7 @@ class SelfAskWithSearchAgent(Agent):
     output_parser: AgentOutputParser = Field(default_factory=SelfAskOutputParser)
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return SelfAskOutputParser()
 
@@ -41,6 +43,7 @@ class SelfAskWithSearchAgent(Agent):
         return AgentType.SELF_ASK_WITH_SEARCH
 
     @classmethod
+    @override
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Prompt does not depend on tools."""
         return PROMPT

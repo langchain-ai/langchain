@@ -6,6 +6,7 @@ from typing import Any, Literal, Union, cast
 
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
+from typing_extensions import override
 
 # TODO If used by two LLM runs in parallel this won't work as expected
 
@@ -25,6 +26,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.queue = asyncio.Queue()
         self.done = asyncio.Event()
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -34,13 +36,16 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         # If two calls are made in a row, this resets the state
         self.done.clear()
 
+    @override
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         if token is not None and token != "":
             self.queue.put_nowait(token)
 
+    @override
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self.done.set()
 
+    @override
     async def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         self.done.set()
 
