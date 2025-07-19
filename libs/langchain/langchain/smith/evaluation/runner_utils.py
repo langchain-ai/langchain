@@ -558,7 +558,7 @@ def _construct_run_evaluator(
         return run_evaluator_dec(eval_config)
     else:
         msg = f"Unknown evaluator type: {type(eval_config)}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
@@ -668,7 +668,7 @@ def _load_run_evaluators(
                 f"Unsupported custom evaluator: {custom_evaluator}."
                 f" Expected RunEvaluator or StringEvaluator."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     return run_evaluators
 
@@ -1040,7 +1040,7 @@ def _prepare_eval_run(
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
-            raise e
+            raise
         uid = uuid.uuid4()
         example_msg = f"""
 run_on_dataset(
@@ -1123,9 +1123,9 @@ class _DatasetRunContainer:
                         run_id=None,
                         project_id=self.project.id,
                     )
-                except Exception as e:
+                except Exception:
                     logger.exception(
-                        "Error running batch evaluator %s: %s", repr(evaluator), e
+                        "Error running batch evaluator %s", repr(evaluator)
                     )
         return aggregate_feedback
 

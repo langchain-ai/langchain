@@ -358,12 +358,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = self._wait_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -494,12 +494,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = await self._await_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response

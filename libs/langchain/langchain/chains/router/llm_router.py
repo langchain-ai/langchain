@@ -125,7 +125,7 @@ class LLMRouterChain(RouterChain):
     def _validate_outputs(self, outputs: dict[str, Any]) -> None:
         super()._validate_outputs(outputs)
         if not isinstance(outputs["next_inputs"], dict):
-            raise ValueError
+            raise ValueError  # noqa: TRY004
 
     def _call(
         self,
@@ -178,10 +178,10 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
             parsed = parse_and_check_json_markdown(text, expected_keys)
             if not isinstance(parsed["destination"], str):
                 msg = "Expected 'destination' to be a string."
-                raise ValueError(msg)
+                raise TypeError(msg)
             if not isinstance(parsed["next_inputs"], self.next_inputs_type):
                 msg = f"Expected 'next_inputs' to be {self.next_inputs_type}."
-                raise ValueError(msg)
+                raise TypeError(msg)
             parsed["next_inputs"] = {self.next_inputs_inner_key: parsed["next_inputs"]}
             if (
                 parsed["destination"].strip().lower()
@@ -190,7 +190,7 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
                 parsed["destination"] = None
             else:
                 parsed["destination"] = parsed["destination"].strip()
-            return parsed
         except Exception as e:
             msg = f"Parsing text\n{text}\n raised following error:\n{e}"
             raise OutputParserException(msg) from e
+        return parsed

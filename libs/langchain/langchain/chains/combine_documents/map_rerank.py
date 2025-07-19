@@ -127,7 +127,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         output_keys = output_parser.output_keys
         if self.rank_key not in output_keys:
             msg = (

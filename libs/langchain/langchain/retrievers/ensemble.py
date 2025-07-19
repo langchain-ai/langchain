@@ -116,7 +116,7 @@ class EnsembleRetriever(BaseRetriever):
             result = self.rank_fusion(input, run_manager=run_manager, config=config)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -157,7 +157,7 @@ class EnsembleRetriever(BaseRetriever):
             )
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,

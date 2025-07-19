@@ -128,7 +128,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
             self.redis_client = Redis(url=url, token=token)
         except Exception as exc:
             error_msg = "Upstash Redis instance could not be initiated"
-            logger.error(error_msg)
+            logger.exception(error_msg)
             raise RuntimeError(error_msg) from exc
 
         self.session_id = session_id
@@ -237,8 +237,8 @@ class RedisEntityStore(BaseEntityStore):
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
-        except redis.exceptions.ConnectionError as error:
-            logger.error(error)
+        except redis.exceptions.ConnectionError:
+            logger.exception("Redis client could not connect")
 
         self.session_id = session_id
         self.key_prefix = key_prefix

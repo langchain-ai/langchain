@@ -251,7 +251,7 @@ class LLMChain(Chain):
             response = self.generate(input_list, run_manager=run_manager)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         run_manager.on_chain_end({"outputs": outputs})
         return outputs
@@ -276,7 +276,7 @@ class LLMChain(Chain):
             response = await self.agenerate(input_list, run_manager=run_manager)
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         await run_manager.on_chain_end({"outputs": outputs})
         return outputs
