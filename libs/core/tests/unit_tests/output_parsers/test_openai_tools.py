@@ -616,3 +616,135 @@ def test_max_tokens_error(caplog: Any) -> None:
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
         for record, msg in zip(caplog.records, caplog.messages)
     )
+
+
+def test_json_output_key_tools_parser_multiple_tools_first_only() -> None:
+    """Test JsonOutputKeyToolsParser with multiple tool calls and first_tool_only=True.
+    
+    This tests the bug scenario where multiple tool calls exist with different names
+    and first_tool_only=True should return the first matching tool call by key_name,
+    not just the first tool call regardless of type.
+    """
+    # Test case from the original bug report
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'func', 'arguments': '{"a":1}'}, 'type': 'func'}
+    ]}))]
+
+    # Test with return_id=True
+    parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    output = parser.parse_result(result)
+    
+    # Should return the func tool call, not None
+    assert output is not None
+    assert output["type"] == "func"
+    assert output["args"] == {"a": 1}
+    assert "id" in output
+
+    # Test with return_id=False
+    parser_no_id = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=False)
+    output_no_id = parser_no_id.parse_result(result)
+    
+    # Should return just the args
+    assert output_no_id == {"a": 1}
+
+
+def test_json_output_key_tools_parser_multiple_tools_no_match() -> None:
+    """Test JsonOutputKeyToolsParser when no tool calls match the key_name."""
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'another', 'arguments': '{"c":3}'}, 'type': 'another'}
+    ]}))]
+
+    # Test with return_id=True, first_tool_only=True
+    parser = JsonOutputKeyToolsParser(key_name="nonexistent", first_tool_only=True, return_id=True)
+    output = parser.parse_result(result)
+    
+    # Should return None when no matches
+    assert output is None
+
+    # Test with return_id=False, first_tool_only=True
+    parser_no_id = JsonOutputKeyToolsParser(key_name="nonexistent", first_tool_only=True, return_id=False)
+    output_no_id = parser_no_id.parse_result(result)
+    
+    # Should return None when no matches
+    assert output_no_id is None
+
+
+def test_json_output_key_tools_parser_multiple_matching_tools() -> None:
+    """Test JsonOutputKeyToolsParser with multiple matching tool calls."""
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'func', 'arguments': '{"a":1}'}, 'type': 'func'},
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'func', 'arguments': '{"a":3}'}, 'type': 'func'}
+    ]}))]
+
+    # Test with first_tool_only=True - should return first matching
+    parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    output = parser.parse_result(result)
+    
+    assert output is not None
+    assert output["type"] == "func"
+    assert output["args"] == {"a": 1}  # First matching tool call
+
+    # Test with first_tool_only=False - should return all matching
+    parser_all = JsonOutputKeyToolsParser(key_name="func", first_tool_only=False, return_id=True)
+    output_all = parser_all.parse_result(result)
+    
+    assert len(output_all) == 2
+    assert output_all[0]["args"] == {"a": 1}
+    assert output_all[1]["args"] == {"a": 3}
+
+
+def test_json_output_key_tools_parser_empty_results() -> None:
+    """Test JsonOutputKeyToolsParser with empty tool calls."""
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': []}))]
+
+    # Test with first_tool_only=True
+    parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    output = parser.parse_result(result)
+    
+    # Should return None for empty results
+    assert output is None
+
+    # Test with first_tool_only=False
+    parser_all = JsonOutputKeyToolsParser(key_name="func", first_tool_only=False, return_id=True)
+    output_all = parser_all.parse_result(result)
+    
+    # Should return empty list for empty results
+    assert output_all == []
+
+
+def test_json_output_key_tools_parser_parameter_combinations() -> None:
+    """Test all parameter combinations of JsonOutputKeyToolsParser."""
+    result = [ChatGeneration(message=AIMessage(content='', additional_kwargs={'tool_calls': [
+        {'function': {'name': 'other', 'arguments': '{"b":2}'}, 'type': 'other'},
+        {'function': {'name': 'func', 'arguments': '{"a":1}'}, 'type': 'func'},
+        {'function': {'name': 'func', 'arguments': '{"a":3}'}, 'type': 'func'}
+    ]}))]
+
+    # Test: first_tool_only=True, return_id=True
+    parser1 = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=True)
+    output1 = parser1.parse_result(result)
+    assert output1["type"] == "func"
+    assert output1["args"] == {"a": 1}
+    assert "id" in output1
+
+    # Test: first_tool_only=True, return_id=False
+    parser2 = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True, return_id=False)
+    output2 = parser2.parse_result(result)
+    assert output2 == {"a": 1}
+
+    # Test: first_tool_only=False, return_id=True
+    parser3 = JsonOutputKeyToolsParser(key_name="func", first_tool_only=False, return_id=True)
+    output3 = parser3.parse_result(result)
+    assert len(output3) == 2
+    assert all("id" in item for item in output3)
+    assert output3[0]["args"] == {"a": 1}
+    assert output3[1]["args"] == {"a": 3}
+
+    # Test: first_tool_only=False, return_id=False
+    parser4 = JsonOutputKeyToolsParser(key_name="func", first_tool_only=False, return_id=False)
+    output4 = parser4.parse_result(result)
+    assert output4 == [{"a": 1}, {"a": 3}]
+
