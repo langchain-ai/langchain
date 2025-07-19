@@ -198,7 +198,6 @@ ignore = [
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
-    "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel

@@ -422,7 +422,7 @@ class LLMChain(Chain):
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
 
-    def _get_num_tokens(self, text: str) -> int:
+    def get_num_tokens(self, text: str) -> int:
         return _get_language_model(self.llm).get_num_tokens(text)
 
 
