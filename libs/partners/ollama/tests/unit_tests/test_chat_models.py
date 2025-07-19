@@ -109,7 +109,9 @@ dummy_raw_tool_call = {
         ("{'text': \"It's a great test!\"}", {"text": "It's a great test!"}),
     ],
 )
-def test_parse_json_string_success_cases(input_string, expected_output) -> None:
+def test_parse_json_string_success_cases(
+    input_string: str, expected_output: Any
+) -> None:
     """Tests that _parse_json_string correctly parses valid and fixable strings."""
     raw_tool_call = {"function": {"name": "test_func", "arguments": input_string}}
     result = _parse_json_string(input_string, raw_tool_call=raw_tool_call, skip=False)
