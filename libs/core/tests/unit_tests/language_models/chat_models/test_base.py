@@ -329,6 +329,7 @@ class StreamingModel(NoStreamingModel):
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
@@ -341,7 +342,7 @@ def test_disable_streaming(
         == expected
     )
 
-    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
     assert next(model.stream([], tools=[{"type": "function"}])).content == expected
     assert (
         model.invoke(
@@ -353,6 +354,7 @@ def test_disable_streaming(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_async(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
@@ -366,7 +368,7 @@ async def test_disable_streaming_async(
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
     ).content == expected
 
-    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
     async for c in model.astream([], tools=[{}]):
         assert c.content == expected
         break
@@ -379,6 +381,7 @@ async def test_disable_streaming_async(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming_no_streaming_model(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
@@ -393,6 +396,7 @@ def test_disable_streaming_no_streaming_model(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_no_streaming_model_async(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)

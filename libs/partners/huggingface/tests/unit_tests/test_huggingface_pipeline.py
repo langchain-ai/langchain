@@ -6,8 +6,7 @@ DEFAULT_MODEL_ID = "gpt2"
 
 
 def test_initialization_default() -> None:
-    """Test default initialization"""
-
+    """Test default initialization."""
     llm = HuggingFacePipeline()
 
     assert llm.model_id == DEFAULT_MODEL_ID
@@ -15,8 +14,7 @@ def test_initialization_default() -> None:
 
 @patch("transformers.pipeline")
 def test_initialization_with_pipeline(mock_pipeline: MagicMock) -> None:
-    """Test initialization with a pipeline object"""
-
+    """Test initialization with a pipeline object."""
     mock_pipe = MagicMock()
     mock_pipe.model.name_or_path = "mock-model-id"
     mock_pipeline.return_value = mock_pipe
@@ -32,8 +30,7 @@ def test_initialization_with_pipeline(mock_pipeline: MagicMock) -> None:
 def test_initialization_with_from_model_id(
     mock_pipeline: MagicMock, mock_model: MagicMock, mock_tokenizer: MagicMock
 ) -> None:
-    """Test initialization with the from_model_id method"""
-
+    """Test initialization with the from_model_id method."""
     mock_tokenizer.return_value = MagicMock(pad_token_id=0)
     mock_model.return_value = MagicMock()
 

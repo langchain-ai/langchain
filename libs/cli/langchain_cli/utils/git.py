@@ -1,8 +1,9 @@
 import hashlib
 import re
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, TypedDict
+from typing import Optional, TypedDict
 
 from git import Repo
 
@@ -18,7 +19,7 @@ class DependencySource(TypedDict):
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: Dict
+    event_metadata: dict
 
 
 # use poetry dependency string format
@@ -30,10 +31,11 @@ def parse_dependency_string(
 ) -> DependencySource:
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
-            raise ValueError(
+            msg = (
                 "If a dependency starts with git+, you cannot manually specify "
                 "a repo or branch."
             )
+            raise ValueError(msg)
         # remove git+
         gitstring = dep[4:]
         subdirectory = None
@@ -42,9 +44,8 @@ def parse_dependency_string(
         if "#subdirectory=" in gitstring:
             gitstring, subdirectory = gitstring.split("#subdirectory=")
             if "#" in subdirectory or "@" in subdirectory:
-                raise ValueError(
-                    "#subdirectory must be the last part of the dependency string"
-                )
+                msg = "#subdirectory must be the last part of the dependency string"
+                raise ValueError(msg)
 
         # find first slash after ://
         # find @ or # after that slash
@@ -53,9 +54,8 @@ def parse_dependency_string(
 
         # find first slash after ://
         if "://" not in gitstring:
-            raise ValueError(
-                "git+ dependencies must start with git+https:// or git+ssh://"
-            )
+            msg = "git+ dependencies must start with git+https:// or git+ssh://"
+            raise ValueError(msg)
 
         _, find_slash = gitstring.split("://", 1)
 
@@ -65,7 +65,7 @@ def parse_dependency_string(
         else:
             _, post_slash = find_slash.split("/", 1)
             if "@" in post_slash or "#" in post_slash:
-                _, ref = re.split(r"[@#]", post_slash, 1)
+                _, ref = re.split(r"[@#]", post_slash, maxsplit=1)
 
         # gitstring is everything before that
         gitstring = gitstring[: -len(ref) - 1] if ref is not None else gitstring
@@ -78,51 +78,53 @@ def parse_dependency_string(
             event_metadata={"dependency_string": dep},
         )
 
-    elif dep is not None and dep.startswith("https://"):
-        raise ValueError("Only git dependencies are supported")
-    else:
-        # if repo is none, use default, including subdirectory
-        base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
-        subdir = str(base_subdir / dep) if dep is not None else None
-        gitstring = (
-            DEFAULT_GIT_REPO
-            if repo is None
-            else f"https://github.com/{repo.strip('/')}.git"
-        )
-        ref = DEFAULT_GIT_REF if branch is None else branch
-        # it's a default git repo dependency
-        return DependencySource(
-            git=gitstring,
-            ref=ref,
-            subdirectory=subdir,
-            api_path=api_path,
-            event_metadata={
-                "dependency_string": dep,
-                "used_repo_flag": repo is not None,
-                "used_branch_flag": branch is not None,
-            },
-        )
+    if dep is not None and dep.startswith("https://"):
+        msg = "Only git dependencies are supported"
+        raise ValueError(msg)
+    # if repo is none, use default, including subdirectory
+    base_subdir = Path(DEFAULT_GIT_SUBDIRECTORY) if repo is None else Path()
+    subdir = str(base_subdir / dep) if dep is not None else None
+    gitstring = (
+        DEFAULT_GIT_REPO
+        if repo is None
+        else f"https://github.com/{repo.strip('/')}.git"
+    )
+    ref = DEFAULT_GIT_REF if branch is None else branch
+    # it's a default git repo dependency
+    return DependencySource(
+        git=gitstring,
+        ref=ref,
+        subdirectory=subdir,
+        api_path=api_path,
+        event_metadata={
+            "dependency_string": dep,
+            "used_repo_flag": repo is not None,
+            "used_branch_flag": branch is not None,
+        },
+    )
 
 
-def _list_arg_to_length(arg: Optional[List[str]], num: int) -> Sequence[Optional[str]]:
+def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional[str]]:
     if not arg:
         return [None] * num
-    elif len(arg) == 1:
+    if len(arg) == 1:
         return arg * num
-    elif len(arg) == num:
+    if len(arg) == num:
         return arg
-    else:
-        raise ValueError(f"Argument must be of length 1 or {num}")
+    msg = f"Argument must be of length 1 or {num}"
+    raise ValueError(msg)
 
 
 def parse_dependencies(
-    dependencies: Optional[List[str]],
-    repo: List[str],
-    branch: List[str],
-    api_path: List[str],
-) -> List[DependencySource]:
+    dependencies: Optional[list[str]],
+    repo: list[str],
+    branch: list[str],
+    api_path: list[str],
+) -> list[DependencySource]:
     num_deps = max(
-        len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
+        len(dependencies) if dependencies is not None else 0,
+        len(repo),
+        len(branch),
     )
     if (
         (dependencies and len(dependencies) != num_deps)
@@ -130,10 +132,11 @@ def parse_dependencies(
         or (repo and len(repo) not in [1, num_deps])
         or (branch and len(branch) not in [1, num_deps])
     ):
-        raise ValueError(
+        msg = (
             "Number of defined repos/branches/api_paths did not match the "
             "number of templates."
         )
+        raise ValueError(msg)
     inner_deps = _list_arg_to_length(dependencies, num_deps)
     inner_api_paths = _list_arg_to_length(api_path, num_deps)
     inner_repos = _list_arg_to_length(repo, num_deps)
@@ -142,7 +145,10 @@ def parse_dependencies(
     return [
         parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
         for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
-            inner_deps, inner_repos, inner_branches, inner_api_paths
+            inner_deps,
+            inner_repos,
+            inner_branches,
+            inner_api_paths,
         )
     ]
 
@@ -150,10 +156,10 @@ def parse_dependencies(
 def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     # only based on git for now
     ref_str = ref if ref is not None else ""
-    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode("utf-8")).hexdigest()[:8]
+    hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
-    removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
+    removed_basename = re.split(r"[/:]", removed_protocol, maxsplit=1)[-1]
     removed_extras = removed_basename.split("#")[0]
     foldername = re.sub(r"\W", "_", removed_extras)
 
@@ -169,7 +175,7 @@ def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
         try:
             repo = Repo(repo_path)
             if repo.active_branch.name != ref:
-                raise ValueError()
+                raise ValueError
             repo.remotes.origin.pull()
         except Exception:
             # if it fails, delete and clone again
@@ -185,8 +191,7 @@ def copy_repo(
     source: Path,
     destination: Path,
 ) -> None:
-    """
-    Copies a repo, ignoring git folders.
+    """Copiy a repo, ignoring git folders.
 
     Raises FileNotFound error if it can't find source
     """

@@ -243,9 +243,10 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running.
 
-        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
-            you're implementing a handler for a chat model,
-            you should use on_chat_model_start instead.
+        .. ATTENTION::
+            This method is called for non-chat models (regular LLMs). If you're
+            implementing a handler for a chat model, you should use
+            ``on_chat_model_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
@@ -271,7 +272,7 @@ class CallbackManagerMixin:
         """Run when a chat model starts running.
 
         **ATTENTION**: This method is called for chat models. If you're implementing
-            a handler for a non-chat model, you should use on_llm_start instead.
+        a handler for a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -490,9 +491,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when LLM starts running.
 
-        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
-            you're implementing a handler for a chat model,
-            you should use on_chat_model_start instead.
+        .. ATTENTION::
+            This method is called for non-chat models (regular LLMs). If you're
+            implementing a handler for a chat model, you should use
+            ``on_chat_model_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
@@ -518,7 +520,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when a chat model starts running.
 
         **ATTENTION**: This method is called for chat models. If you're implementing
-            a handler for a non-chat model, you should use on_llm_start instead.
+        a handler for a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.

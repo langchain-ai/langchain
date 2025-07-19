@@ -37,12 +37,12 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "RedisFilterOperator",
     "RedisFilter",
-    "RedisFilterField",
-    "check_operator_misuse",
-    "RedisTag",
-    "RedisNum",
-    "RedisText",
     "RedisFilterExpression",
+    "RedisFilterField",
+    "RedisFilterOperator",
+    "RedisNum",
+    "RedisTag",
+    "RedisText",
+    "check_operator_misuse",
 ]
