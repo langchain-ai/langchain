@@ -150,6 +150,11 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
 
+    # Check for empty tags
+    if not tag.strip():
+        msg = f"empty tag at line {_CURRENT_LINE}"
+        raise ChevronError(msg)
+
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
 
