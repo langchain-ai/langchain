@@ -11,7 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -91,6 +91,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         extra="forbid",
     )
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,

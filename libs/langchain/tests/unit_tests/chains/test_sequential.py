@@ -7,6 +7,7 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
@@ -31,6 +32,7 @@ class FakeChain(Chain):
         """Input keys this chain returns."""
         return self.output_variables
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
@@ -42,6 +44,7 @@ class FakeChain(Chain):
             outputs[var] = f"{' '.join(variables)}foo"
         return outputs
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, str],

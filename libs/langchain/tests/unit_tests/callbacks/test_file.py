@@ -2,6 +2,7 @@ import pathlib
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
+from typing_extensions import override
 
 from langchain.callbacks import FileCallbackHandler
 from langchain.chains.base import Chain
@@ -24,6 +25,7 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],

@@ -39,7 +39,7 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:
+    def load_llm(*_: Any, **__: Any) -> None:
         msg = (
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
@@ -47,7 +47,7 @@ except ImportError:
         )
         raise ImportError(msg)
 
-    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
+    def load_llm_from_config(*_: Any, **__: Any) -> None:
         msg = (
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "

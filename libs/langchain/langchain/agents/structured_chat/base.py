@@ -16,6 +16,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -70,6 +71,7 @@ class StructuredChatAgent(Agent):
         pass
 
     @classmethod
+    @override
     def _get_default_output_parser(
         cls,
         llm: Optional[BaseLanguageModel] = None,

@@ -386,7 +386,7 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        def __init__(self, *_: Any, **__: Any) -> None:
             msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"

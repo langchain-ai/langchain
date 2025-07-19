@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from langchain_core.outputs import LLMResult
+from typing_extensions import override
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 
@@ -60,6 +61,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.stream_prefix = stream_prefix
         self.answer_reached = False
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -70,10 +72,12 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.done.clear()
         self.answer_reached = False
 
+    @override
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         if self.answer_reached:
             self.done.set()
 
+    @override
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)

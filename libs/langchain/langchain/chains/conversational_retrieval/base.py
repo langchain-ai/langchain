@@ -22,6 +22,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -109,6 +110,7 @@ class BaseConversationalRetrievalChain(Chain):
         """Input keys."""
         return ["question", "chat_history"]
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -398,6 +400,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         return docs[:num_docs]
 
+    @override
     def _get_docs(
         self,
         question: str,
@@ -412,6 +415,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         )
         return self._reduce_tokens_below_limit(docs)
 
+    @override
     async def _aget_docs(
         self,
         question: str,
@@ -508,6 +512,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,

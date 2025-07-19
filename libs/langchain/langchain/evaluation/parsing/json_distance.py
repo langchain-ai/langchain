@@ -40,7 +40,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         self,
         string_distance: Optional[Callable[[str, str], float]] = None,
         canonicalize: Optional[Callable[[Any], Any]] = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
         super().__init__()
         if string_distance is not None:

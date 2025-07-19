@@ -1,6 +1,8 @@
 import string
 from typing import Any
 
+from typing_extensions import override
+
 from langchain.evaluation.schema import StringEvaluator
 
 
@@ -27,7 +29,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         ignore_case: bool = False,
         ignore_punctuation: bool = False,
         ignore_numbers: bool = False,
-        **kwargs: Any,
+        **_: Any,
     ):
         super().__init__()
         self.ignore_case = ignore_case
@@ -68,6 +70,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """
         return "exact_match"
 
+    @override
     def _evaluate_strings(  # type: ignore[override]
         self,
         *,
