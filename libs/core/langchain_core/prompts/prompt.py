@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from collections.abc import Mapping, Callable  # ✅ Fixed
 
 from pydantic import BaseModel, model_validator
 from typing_extensions import override
@@ -250,12 +250,13 @@ class PromptTemplate(StringPromptTemplate):
         try:
             resolved_path.relative_to(base_dir)
         except ValueError:
-            raise ValueError("Resolved path is outside of the allowed directory")
-
+            error_msg = "Resolved path is outside of the allowed directory"
+            raise ValueError(error_msg)
         loaded_prompt = load_prompt(str(resolved_path))
 
         if not isinstance(loaded_prompt, PromptTemplate):
-            raise TypeError("Expected a PromptTemplate.")
+            error_msg = "Expected a PromptTemplate."
+            raise TypeError(error_msg)
 
         if input_variables is not None:
             loaded_prompt.input_variables = input_variables
