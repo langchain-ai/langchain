@@ -221,31 +221,48 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template_file: Union[str, Path],
         input_variables: Optional[list[str]] = None,
-        encoding: Optional[str] = None,
-        **kwargs: Any,
-    ) -> PromptTemplate:
-        """Load a prompt from a file.
+        *,
+        partial_variables: Optional[Mapping[str, Union[str, Callable[[], str]]]] = None,
+        base_dir: Optional[Union[str, Path]] = None,
+    ) -> "PromptTemplate":
+        """Load a prompt template from a file, enforcing safe path resolution.
 
         Args:
-            template_file: The path to the file containing the prompt template.
-            input_variables: [DEPRECATED] A list of variable names the final prompt
-                template will expect. Defaults to None.
-            encoding: The encoding system for opening the template file.
-                If not provided, will use the OS default.
-
-        input_variables is ignored as from_file now delegates to from_template().
+            template_file: Path to the prompt template file.
+            input_variables: List of variables expected by the prompt.
+            partial_variables: Optional mapping of variables to fill in partially.
+            base_dir: Optional base directory to restrict file access for security.
 
         Returns:
-            The prompt loaded from the file.
+            A PromptTemplate instance loaded from the file.
+
+        Raises:
+            ValueError: If the file is outside the allowed base_dir.
+            TypeError: If the loaded object is not a PromptTemplate.
         """
-        template = Path(template_file).read_text(encoding=encoding)
-        if input_variables:
-            warnings.warn(
-                "`input_variables' is deprecated and ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return cls.from_template(template=template, **kwargs)
+        from langchain_core.prompts.loading import load_prompt
+
+        template_file = Path(template_file)
+        resolved_path = template_file.resolve(strict=False)
+
+        # Enforce safe path usage
+        base_dir = Path(base_dir or Path.cwd()).resolve()
+        try:
+            resolved_path.relative_to(base_dir)
+        except ValueError:
+            raise ValueError("Resolved path is outside of the allowed directory")
+
+        loaded_prompt = load_prompt(str(resolved_path))
+
+        if not isinstance(loaded_prompt, PromptTemplate):
+            raise TypeError("Expected a PromptTemplate.")
+
+        if input_variables is not None:
+            loaded_prompt.input_variables = input_variables
+        if partial_variables is not None:
+            loaded_prompt.partial_variables = partial_variables
+
+        return loaded_prompt
 
     @classmethod
     def from_template(
