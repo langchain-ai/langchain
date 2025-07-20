@@ -157,6 +157,12 @@ class AgentExecutorIterator:
         outputs: dict[str, Any],
         run_manager: Union[CallbackManagerForChainRun, AsyncCallbackManagerForChainRun],
     ) -> AddableDict:
+        """Make final outputs for the iterator.
+
+        Args:
+            outputs: The outputs from the agent executor.
+            run_manager: The run manager to use for callbacks.
+        """
         # have access to intermediate steps by design in iterator,
         # so return only outputs may as well always be true.
 
@@ -172,6 +178,7 @@ class AgentExecutorIterator:
         return prepared_outputs
 
     def __iter__(self: AgentExecutorIterator) -> Iterator[AddableDict]:
+        """Create an async iterator for the AgentExecutor."""
         logger.debug("Initialising AgentExecutorIterator")
         self.reset()
         callback_manager = CallbackManager.configure(

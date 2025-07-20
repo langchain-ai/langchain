@@ -22,6 +22,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -109,6 +110,7 @@ class BaseConversationalRetrievalChain(Chain):
         """Input keys."""
         return ["question", "chat_history"]
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -242,6 +244,7 @@ class BaseConversationalRetrievalChain(Chain):
             output["generated_question"] = new_question
         return output
 
+    @override
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
             msg = "Chain not saveable when `get_chat_history` is not None."
@@ -500,7 +503,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
             "please use `from langchain.chains import ConversationalRetrievalChain`",

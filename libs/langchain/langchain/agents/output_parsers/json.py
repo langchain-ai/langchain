@@ -6,6 +6,7 @@ from typing import Union
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -40,6 +41,7 @@ class JSONAgentOutputParser(AgentOutputParser):
     ```
     """
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             response = parse_json_markdown(text)

@@ -10,6 +10,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
@@ -189,6 +190,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return values
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         extra_keys = [
             k for k in self.llm_chain.input_keys if k != self.document_variable_name
