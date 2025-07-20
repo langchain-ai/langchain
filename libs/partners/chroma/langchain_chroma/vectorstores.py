@@ -20,6 +20,7 @@ from typing import (
 import chromadb
 import chromadb.config
 import numpy as np
+from chromadb import Settings
 from chromadb.api import CreateCollectionConfiguration
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -134,7 +135,6 @@ def maximal_marginal_relevance(
             if i in idxs:
                 continue
             redundant_score = max(similarity_to_selected[i])
-            query_score: float = query_score
             equation_score = (
                 lambda_mult * query_score - (1 - lambda_mult) * redundant_score
             )
@@ -302,7 +302,6 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
-        ssl: Optional[bool] = None,
         headers: Optional[dict[str, str]] = None,
         chroma_cloud_api_key: Optional[str] = None,
         tenant: Optional[str] = None,
@@ -313,6 +312,8 @@ class Chroma(VectorStore):
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT001, FBT002
+        *,
+        ssl: bool = False,
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -320,8 +321,20 @@ class Chroma(VectorStore):
             collection_name: Name of the collection to create.
             embedding_function: Embedding class object. Used to embed texts.
             persist_directory: Directory to persist the collection.
+            host: Hostname of a deployed Chroma server.
+            port: Connection port for a deployed Chroma server. Default is 8000.
+            ssl: Whether to establish an SSL connection with a deployed Chroma server.
+                    Default is False.
+            headers: HTTP headers to send to a deployed Chroma server.
+            chroma_cloud_api_key: Chroma Cloud API key.
+            tenant: Tenant ID. Required for Chroma Cloud connections.
+                    Default is 'default_tenant' for local Chroma servers.
+            database: Database name. Required for Chroma Cloud connections.
+                    Default is 'default_database'.
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
+            collection_configuration: Index configuration for the collection.
+                    Defaults to None.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             relevance_score_fn: Function to calculate relevance score from distance.
@@ -331,6 +344,7 @@ class Chroma(VectorStore):
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
+        _settings = client_settings or Settings()
 
         client_args = {
             "persist_directory": persist_directory,
@@ -339,7 +353,14 @@ class Chroma(VectorStore):
         }
 
         if sum(arg is not None for arg in client_args.values()) > 1:
-            raise ValueError(f"Only one of 'persist_directory', 'host' and 'chroma_cloud_api_key' is allowed, but got {",".join([name for name, value in client_args.items() if value is not None])}")
+            provided = [
+                name for name, value in client_args.items() if value is not None
+            ]
+            msg = (
+                f"Only one of 'persist_directory', 'host' and 'chroma_cloud_api_key' "
+                f"is allowed, but got {','.join(provided)}"
+            )
+            raise ValueError(msg)
 
         if client is not None:
             self._client = client
@@ -348,19 +369,20 @@ class Chroma(VectorStore):
         elif persist_directory is not None:
             self._client = chromadb.PersistentClient(
                 path=persist_directory,
-                settings=client_settings,
+                settings=_settings,
                 tenant=_tenant,
                 database=_database,
             )
 
         # HttpClient
         elif host is not None:
+            _port = port or 8000
             self._client = chromadb.HttpClient(
                 host=host,
-                port=port,
+                port=_port,
                 ssl=ssl,
                 headers=headers,
-                settings=client_settings,
+                settings=_settings,
                 tenant=_tenant,
                 database=_database,
             )
@@ -368,18 +390,19 @@ class Chroma(VectorStore):
         # CloudClient
         elif chroma_cloud_api_key is not None:
             if not tenant or not database:
-                raise ValueError(
+                msg = (
                     "Must provide tenant and database values to connect to Chroma Cloud"
                 )
+                raise ValueError(msg)
             self._client = chromadb.CloudClient(
                 tenant=tenant,
                 database=database,
                 api_key=chroma_cloud_api_key,
-                settings=client_settings,
+                settings=_settings,
             )
 
         else:
-            self._client = chromadb.Client(settings=client_settings)
+            self._client = chromadb.Client(settings=_settings)
 
         self._embedding_function = embedding_function
         self._chroma_collection: Optional[chromadb.Collection] = None
@@ -817,8 +840,8 @@ class Chroma(VectorStore):
         The most similar documents will have the lowest relevance score. Default
         relevance score function is Euclidean distance. Distance metric must be
         provided in `collection_configuration` during initialization of Chroma object.
-        Example: collection_configuration={"hnsw": {"space": "cosine"}}. Available distance
-        metrics are: 'cosine', 'l2' and 'ip'.
+        Example: collection_configuration={"hnsw": {"space": "cosine"}}.
+        Available distance metrics are: 'cosine', 'l2' and 'ip'.
 
         Returns:
             The relevance score function.
@@ -833,7 +856,9 @@ class Chroma(VectorStore):
         hnsw_distance: Optional[str] = hnsw_config.get("space") if hnsw_config else None
 
         spann_config = self._collection.configuration.get("spann")
-        spann_distance: Optional[str] = spann_config.get("space") if spann_config else None
+        spann_distance: Optional[str] = (
+            spann_config.get("space") if spann_config else None
+        )
 
         distance = hnsw_distance or spann_distance
 
@@ -877,7 +902,9 @@ class Chroma(VectorStore):
         Raises:
             ValueError: If the embedding function does not support image embeddings.
         """
-        if self._embedding_function is not None and hasattr(self._embedding_function, "embed_image"):
+        if self._embedding_function is not None and hasattr(
+            self._embedding_function, "embed_image"
+        ):
             # Obtain image embedding
             # Assuming embed_image returns a single embedding
             image_embedding = self._embedding_function.embed_image(uris=[uri])
@@ -889,9 +916,8 @@ class Chroma(VectorStore):
                 filter=filter,
                 **kwargs,
             )
-        else:
-            msg = "The embedding function must support image embedding."
-            raise ValueError(msg)
+        msg = "The embedding function must support image embedding."
+        raise ValueError(msg)
 
     def similarity_search_by_image_with_relevance_score(
         self,
@@ -918,7 +944,9 @@ class Chroma(VectorStore):
         Raises:
             ValueError: If the embedding function does not support image embeddings.
         """
-        if self._embedding_function is not None and hasattr(self._embedding_function, "embed_image"):
+        if self._embedding_function is not None and hasattr(
+            self._embedding_function, "embed_image"
+        ):
             # Obtain image embedding
             # Assuming embed_image returns a single embedding
             image_embedding = self._embedding_function.embed_image(uris=[uri])
@@ -930,9 +958,8 @@ class Chroma(VectorStore):
                 filter=filter,
                 **kwargs,
             )
-        else:
-            msg = "The embedding function must support image embedding."
-            raise ValueError(msg)
+        msg = "The embedding function must support image embedding."
+        raise ValueError(msg)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -1152,16 +1179,16 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
-            self._client,  # noqa: SLF001
+            self._client,
             "get_max_batch_size",
         ) or hasattr(  # for Chroma 0.5.1 and above
-            self._client,  # noqa: SLF001
+            self._client,
             "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=self._client,  # noqa: SLF001
+                api=self._client,
                 ids=ids,
                 metadatas=metadata,  # type: ignore[arg-type]
                 documents=text,
@@ -1192,7 +1219,6 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
-        ssl: Optional[bool] = None,
         headers: Optional[dict[str, str]] = None,
         chroma_cloud_api_key: Optional[str] = None,
         tenant: Optional[str] = None,
@@ -1201,6 +1227,8 @@ class Chroma(VectorStore):
         client: Optional[chromadb.ClientAPI] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
+        *,
+        ssl: bool = False,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -1213,12 +1241,16 @@ class Chroma(VectorStore):
             collection_name: Name of the collection to create.
             persist_directory: Directory to persist the collection.
             host: Hostname of a deployed Chroma server.
-            port: Connection port for a deployed Chroma server. Default is 8000.
-            ssl: Whether to establish an SSL connection with a deployed Chroma server. Default is False.
+            port: Connection port for a deployed Chroma server.
+                    Default is 8000.
+            ssl: Whether to establish an SSL connection with a deployed Chroma server.
+                    Default is False.
             headers: HTTP headers to send to a deployed Chroma server.
             chroma_cloud_api_key: Chroma Cloud API key.
-            tenant: Tenant ID. Required for Chroma Cloud connections. Default is 'default_tenant' for local Chroma servers.
-            database: Database name. Required for Chroma Cloud connections. Default is 'default_database'.
+            tenant: Tenant ID. Required for Chroma Cloud connections.
+                    Default is 'default_tenant' for local Chroma servers.
+            database: Database name. Required for Chroma Cloud connections.
+                    Default is 'default_database'.
             embedding: Embedding function. Defaults to None.
             metadatas: List of metadatas. Defaults to None.
             ids: List of document IDs. Defaults to None.
@@ -1226,7 +1258,8 @@ class Chroma(VectorStore):
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             collection_metadata: Collection configurations. Defaults to None.
-            collection_configuration: Index configuration for the collection. Defaults to None.
+            collection_configuration: Index configuration for the collection.
+                    Defaults to None.
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
@@ -1287,7 +1320,6 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
-        ssl: Optional[bool] = None,
         headers: Optional[dict[str, str]] = None,
         chroma_cloud_api_key: Optional[str] = None,
         tenant: Optional[str] = None,
@@ -1296,6 +1328,8 @@ class Chroma(VectorStore):
         client: Optional[chromadb.ClientAPI] = None,  # Add this line
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
+        *,
+        ssl: bool = False,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -1308,11 +1342,14 @@ class Chroma(VectorStore):
             persist_directory: Directory to persist the collection.
             host: Hostname of a deployed Chroma server.
             port: Connection port for a deployed Chroma server. Default is 8000.
-            ssl: Whether to establish an SSL connection with a deployed Chroma server. Default is False.
+            ssl: Whether to establish an SSL connection with a deployed Chroma server.
+                    Default is False.
             headers: HTTP headers to send to a deployed Chroma server.
             chroma_cloud_api_key: Chroma Cloud API key.
-            tenant: Tenant ID. Required for Chroma Cloud connections. Default is 'default_tenant' for local Chroma servers.
-            database: Database name. Required for Chroma Cloud connections. Default is 'default_database'.
+            tenant: Tenant ID. Required for Chroma Cloud connections.
+                    Default is 'default_tenant' for local Chroma servers.
+            database: Database name. Required for Chroma Cloud connections.
+                    Default is 'default_database'.
             ids : List of document IDs. Defaults to None.
             documents: List of documents to add to the vectorstore.
             embedding: Embedding function. Defaults to None.
@@ -1320,7 +1357,8 @@ class Chroma(VectorStore):
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             collection_metadata: Collection configurations. Defaults to None.
-            collection_configuration: Index configuration for the collection. Defaults to None.
+            collection_configuration: Index configuration for the collection.
+                    Defaults to None.
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
