@@ -1,0 +1,15 @@
+**/*.md
+**/*.min.js
+**/*.min.css
+**/*.svg
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.woff
+**/*.woff2
+**/*.map
+**/*.webp
+**/*.ico
+**/*.ttf
+**/*.eot
