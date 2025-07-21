@@ -80,11 +80,9 @@ class JsonSchemaEvaluator(StringEvaluator):
 
         try:
             validate(instance=prediction, schema=schema)
-            return {
-                "score": True,
-            }
         except ValidationError as e:
             return {"score": False, "reasoning": repr(e)}
+        return {"score": True}
 
     @override
     def _evaluate_strings(

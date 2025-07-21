@@ -296,7 +296,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             raise ValueError(msg)
         return (
             await self._async_client.embed(
-                self.model, texts, keep_alive=self.keep_alive
+                self.model,
+                texts,
+                options=self._default_params,
+                keep_alive=self.keep_alive,
             )
         )["embeddings"]
 
