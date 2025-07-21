@@ -9,7 +9,7 @@ from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
 
 
 @pytest.mark.parametrize(
-    "provider, model",
+    ("provider", "model"),
     [
         ("openai", "text-embedding-3-large"),
         ("google_vertexai", "text-embedding-gecko@003"),
