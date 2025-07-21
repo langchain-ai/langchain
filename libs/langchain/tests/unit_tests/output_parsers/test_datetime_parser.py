@@ -19,24 +19,20 @@ def test_datetime_output_parser_parse() -> None:
     parser.format = "%Y-%m-%dT%H:%M:%S"
     datestr = date.strftime(parser.format)
     result = parser.parse(datestr)
-    assert (
-        result.year == date.year
-        and result.month == date.month
-        and result.day == date.day
-        and result.hour == date.hour
-        and result.minute == date.minute
-        and result.second == date.second
-    )
+    assert result.year == date.year
+    assert result.month == date.month
+    assert result.day == date.day
+    assert result.hour == date.hour
+    assert result.minute == date.minute
+    assert result.second == date.second
 
     # Test valid input
     parser.format = "%H:%M:%S"
     datestr = date.strftime(parser.format)
     result = parser.parse(datestr)
-    assert (
-        result.hour == date.hour
-        and result.minute == date.minute
-        and result.second == date.second
-    )
+    assert result.hour == date.hour
+    assert result.minute == date.minute
+    assert result.second == date.second
 
     # Test invalid input
     with pytest.raises(OutputParserException):

@@ -23,7 +23,7 @@ def test_resolve_criteria_str() -> None:
 
 
 @pytest.mark.parametrize(
-    "text,want",
+    ("text", "want"),
     [
         ("Y", {"reasoning": "", "value": "Y", "score": 1}),
         (
@@ -91,7 +91,9 @@ def test_criteria_eval_chain_missing_reference() -> None:
         ),
         criteria={"my criterion": "my criterion description"},
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="LabeledCriteriaEvalChain requires a reference string."
+    ):
         chain.evaluate_strings(prediction="my prediction", input="my input")
 
 
