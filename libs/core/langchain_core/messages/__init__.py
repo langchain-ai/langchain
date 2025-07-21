@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         VideoContentBlock,
         convert_to_openai_data_block,
         convert_to_openai_image_block,
-        is_data_block,
+        is_data_content_block,
     )
     from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
@@ -120,7 +120,7 @@ __all__ = (
     "convert_to_openai_messages",
     "filter_messages",
     "get_buffer_string",
-    "is_data_block",
+    "is_data_content_block",
     "merge_content",
     "merge_message_runs",
     "message_chunk_to_message",
@@ -176,7 +176,7 @@ _dynamic_imports = {
     "convert_to_openai_messages": "utils",
     "filter_messages": "utils",
     "get_buffer_string": "utils",
-    "is_data_block": "content_blocks",
+    "is_data_content_block": "content_blocks",
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",

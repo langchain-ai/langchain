@@ -527,7 +527,7 @@ def _extract_typedict_type_values(union_type: Any) -> set[str]:
     return result
 
 
-KNOWN_TYPES = {
+KNOWN_BLOCK_TYPES = {
     bt for bt in get_args(ContentBlock) for bt in get_args(bt.__annotations__["type"])
 }
 
@@ -535,7 +535,7 @@ KNOWN_TYPES = {
 _DataAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
 
 
-def is_data_block(block: dict) -> bool:
+def is_data_content_block(block: dict) -> bool:
     """Check if the content block is a standard data content block.
 
     Args:
