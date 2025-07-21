@@ -65,7 +65,7 @@ The module defines several types of content blocks, including:
 
 .. code-block:: python
 
-    from langchain-core.messages.content_blocks import TextContentBlock, ImageContentBlock
+    from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
 
     multimodal_message: AIMessage = [
         TextContentBlock(type="text", text="What is shown in this image?"),
@@ -89,7 +89,7 @@ from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 class Citation(TypedDict):
     """Annotation for citing data from a document.
 
-    .. note:
+    .. note::
         ``start/end`` indices refer to the **response text**,
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the ``url``).
@@ -142,7 +142,7 @@ class Citation(TypedDict):
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
-    type: Literal["non_standard"]
+    type: Literal["non_standard_annotation"]
     """Type of the content block."""
 
     id: NotRequired[str]
@@ -340,7 +340,7 @@ class VideoContentBlock(TypedDict):
     url: NotRequired[str]
     """URL of the video."""
 
-    base64: str
+    base64: NotRequired[str]
     """Data as a base64 string."""
 
     # title: NotRequired[str]
@@ -372,7 +372,10 @@ class AudioContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
     """
 
-    base64: str
+    url: NotRequired[str]
+    """URL of the audio."""
+
+    base64: NotRequired[str]
     """Data as a base64 string."""
 
     # title: NotRequired[str]
@@ -383,7 +386,7 @@ class AudioContentBlock(TypedDict):
 
 
 class PlainTextContentBlock(TypedDict):
-    """Content block for plain text data (e.g., from a document).
+    """Content block for plaintext data (e.g., from a document).
 
     .. note::
         Title and context are optional fields that may be passed to the model. See
@@ -401,16 +404,19 @@ class PlainTextContentBlock(TypedDict):
     """
 
     file_id: NotRequired[str]
-    """ID of the plain text file, e.g., from a file storage system."""
+    """ID of the plaintext file, e.g., from a file storage system."""
 
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
-    base64: str
+    url: NotRequired[str]
+    """URL of the plaintext."""
+
+    base64: NotRequired[str]
     """Data as a base64 string."""
 
     text: NotRequired[str]
-    """Plain text content. This is optional if the data is provided as base64."""
+    """Plaintext content. This is optional if the data is provided as base64."""
 
     title: NotRequired[str]
     """Title of the text data, e.g., the title of a document."""
@@ -422,10 +428,10 @@ class PlainTextContentBlock(TypedDict):
 class FileContentBlock(TypedDict):
     """Content block for file data.
 
-    This block is intended for files that are not images, audio, or plain text. For
+    This block is intended for files that are not images, audio, or plaintext. For
     example, it can be used for PDFs, Word documents, etc.
 
-    If the file is an image, audio, or plain text, you should use the corresponding
+    If the file is an image, audio, or plaintext, you should use the corresponding
     content block type (e.g., ``ImageContentBlock``, ``AudioContentBlock``,
     ``PlainTextContentBlock``).
     """
@@ -449,7 +455,10 @@ class FileContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
     """
 
-    base64: str
+    url: NotRequired[str]
+    """URL of the file."""
+
+    base64: NotRequired[str]
     """Data as a base64 string."""
 
     # title: NotRequired[str]
@@ -552,7 +561,7 @@ def is_data_content_block(block: dict) -> bool:
         return True
 
 
-# These would need to be refactored
+# TODO: don't use `source_type` anymore
 def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
     if content_block["source_type"] == "url":
