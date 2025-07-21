@@ -553,7 +553,20 @@ class BaseChatOpenAI(BaseChatModel):
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM."""
+    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other providers.
+    
+    This is the recommended way to pass custom parameters that are specific to your
+    OpenAI-compatible API provider but not part of the standard OpenAI API.
+    
+    Examples:
+        - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
+        - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
+        - Any other provider-specific parameters
+        
+    Note: Do NOT use ``model_kwargs`` for custom parameters that are not part of the
+    standard OpenAI API, as this will cause errors when making API calls. Use 
+    ``extra_body`` instead.
+    """
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
@@ -2627,6 +2640,45 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Note that this is a beta feature that is only available for a subset of models.
         See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
         for more detail.
+
+    .. dropdown:: OpenAI-compatible APIs
+
+        ``ChatOpenAI`` can be used with OpenAI-compatible APIs like LM Studio, vLLM,
+        Ollama when using OpenAI compatibility mode, and others. To use custom parameters
+        specific to these providers, use the ``extra_body`` parameter.
+
+        **LM Studio example** with TTL (auto-eviction):
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(
+                base_url="http://localhost:1234/v1",
+                api_key="lm-studio",  # Can be any string
+                model="mlx-community/QwQ-32B-4bit",
+                temperature=0,
+                extra_body={"ttl": 300}  # Auto-evict model after 5 minutes of inactivity
+            )
+
+        **vLLM example** with custom parameters:
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="meta-llama/Llama-2-7b-chat-hf",
+                extra_body={
+                    "use_beam_search": True,
+                    "best_of": 4
+                }
+            )
+
+        .. important::
+
+            Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
+            Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 
     """  # noqa: E501
 
