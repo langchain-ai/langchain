@@ -887,3 +887,188 @@ def test_max_tokens_error(caplog: Any) -> None:
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
         for record, msg in zip(caplog.records, caplog.messages)
     )
+
+
+def test_reasoning_model_tool_call_extraction() -> None:
+    """Test extraction of JSON from reasoning model output with thinking tags."""
+    from langchain_core.output_parsers.openai_tools import (
+        _extract_json_from_reasoning_output,
+    )
+    
+    # Test case 1: JSON within <tool_call> tags
+    reasoning_output_1 = '''<think>
+I need to analyze this strategic focus...
+</think>
+<tool_call>
+{"result": [{"name": {"战略点名称": "促销优化"}, "information": {"战略点说明": "在成熟市场中利用促销手段"}}]}
+</tool_call>'''
+    
+    extracted = _extract_json_from_reasoning_output(reasoning_output_1, partial=False)
+    assert extracted is not None
+    import json
+    parsed = json.loads(extracted)
+    assert "result" in parsed
+    assert len(parsed["result"]) == 1
+    
+    # Test case 2: JSON after <thinking> tags
+    reasoning_output_2 = '''<thinking>
+Let me think about the strategic points...
+This requires careful analysis.
+</thinking>
+{"data": "value", "analysis": "complete"}'''
+    
+    extracted = _extract_json_from_reasoning_output(reasoning_output_2, partial=False)
+    assert extracted is not None
+    parsed = json.loads(extracted)
+    assert parsed["data"] == "value"
+    assert parsed["analysis"] == "complete"
+    
+    # Test case 3: Regular JSON should still work
+    regular_json = '{"simple": "json"}'
+    extracted = _extract_json_from_reasoning_output(regular_json, partial=False)
+    assert extracted == regular_json
+
+
+def test_parse_tool_call_with_reasoning_content() -> None:
+    """Test that parse_tool_call can handle reasoning model output."""
+    from langchain_core.output_parsers.openai_tools import parse_tool_call
+    
+    # Test the exact format from the issue report
+    raw_tool_call = {
+        "function": {
+            "name": "AnalysisResult",
+            "arguments": '''<think>
+</think>
+<tool_call>
+{"result": [{"name": {"战略点名称": "促销优化"}, "information": {"战略点说明": "在成熟市场中利用促销手段增加现有产品的吸引力"}}]}
+'''
+        },
+        "id": "call_reasoning_test"
+    }
+    
+    result = parse_tool_call(raw_tool_call)
+    assert result is not None
+    assert result["name"] == "AnalysisResult"
+    assert "result" in result["args"]
+    assert len(result["args"]["result"]) == 1
+    assert result["args"]["result"][0]["name"]["战略点名称"] == "促销优化"
+
+
+def test_parse_tool_call_reasoning_backward_compatibility() -> None:
+    """Test that normal JSON parsing still works after reasoning model support."""
+    from langchain_core.output_parsers.openai_tools import parse_tool_call
+    
+    # Normal JSON should work exactly as before
+    raw_tool_call = {
+        "function": {
+            "name": "TestFunction",
+            "arguments": '{"key": "value", "number": 123}'
+        },
+        "id": "call_normal_test"
+    }
+    
+    result = parse_tool_call(raw_tool_call)
+    assert result is not None
+    assert result["name"] == "TestFunction"
+    assert result["args"]["key"] == "value"
+    assert result["args"]["number"] == 123
+
+
+def test_parse_tool_call_various_reasoning_formats() -> None:
+    """Test various reasoning model formats."""
+    from langchain_core.output_parsers.openai_tools import parse_tool_call
+    
+    test_cases = [
+        # Format with multiple thinking blocks
+        {
+            "arguments": '''<think>Initial thoughts</think>
+<analysis>Detailed analysis</analysis>
+{"conclusion": "success"}''',
+            "expected": {"conclusion": "success"}
+        },
+        # Format with reasoning text before JSON
+        {
+            "arguments": '''Looking at this problem, I need to consider multiple factors.
+After careful analysis, here is my response:
+{"result": "analyzed", "confidence": 0.95}''',
+            "expected": {"result": "analyzed", "confidence": 0.95}
+        },
+        # Format with complex nested JSON
+        {
+            "arguments": '''<thinking>
+Complex analysis required here...
+</thinking>
+{"sections": [{"title": "Introduction", "content": {"text": "Hello"}}, {"title": "Conclusion", "metrics": [1, 2, 3]}]}''',
+            "expected": {
+                "sections": [
+                    {"title": "Introduction", "content": {"text": "Hello"}}, 
+                    {"title": "Conclusion", "metrics": [1, 2, 3]}
+                ]
+            }
+        }
+    ]
+    
+    for i, test_case in enumerate(test_cases):
+        raw_tool_call = {
+            "function": {
+                "name": f"ReasoningFunction{i}",
+                "arguments": test_case["arguments"]
+            },
+            "id": f"call_reasoning_{i}"
+        }
+        
+        result = parse_tool_call(raw_tool_call)
+        assert result is not None
+        assert result["args"] == test_case["expected"]
+
+
+def test_parse_tool_call_invalid_reasoning_content() -> None:
+    """Test that invalid JSON in reasoning content still raises proper errors."""
+    from langchain_core.output_parsers.openai_tools import parse_tool_call
+    from langchain_core.exceptions import OutputParserException
+    
+    # Even with reasoning tags, if JSON is invalid, should raise error
+    raw_tool_call = {
+        "function": {
+            "name": "BadReasoningFunction",
+            "arguments": '''<think>
+This will fail because the JSON is malformed
+</think>
+<tool_call>
+{invalid: json, missing: "quotes"}
+</tool_call>'''
+        },
+        "id": "call_bad_reasoning"
+    }
+    
+    with pytest.raises(OutputParserException):
+        parse_tool_call(raw_tool_call)
+
+
+def test_parse_tool_call_reasoning_partial() -> None:
+    """Test that partial parsing works with reasoning model output."""
+    from langchain_core.output_parsers.openai_tools import parse_tool_call
+    
+    # Test partial JSON within reasoning tags
+    raw_tool_call = {
+        "function": {
+            "name": "PartialReasoningFunction",
+            "arguments": '''<think>
+Thinking about partial results...
+</think>
+<tool_call>
+{"partial": "result", "incomplete": 
+</tool_call>'''
+        },
+        "id": "call_partial_reasoning"
+    }
+    
+    # With partial=True, should handle incomplete JSON
+    result = parse_tool_call(raw_tool_call, partial=True)
+    assert result is not None
+    assert result["args"]["partial"] == "result"
+    assert "incomplete" in result["args"]  # parse_partial_json should handle this
+    
+    # Without partial=True, should fail
+    with pytest.raises(OutputParserException):
+        parse_tool_call(raw_tool_call, partial=False)

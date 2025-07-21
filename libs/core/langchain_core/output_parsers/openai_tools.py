@@ -3,6 +3,7 @@
 import copy
 import json
 import logging
+import re
 from json import JSONDecodeError
 from typing import Annotated, Any, Optional
 
@@ -18,6 +19,56 @@ from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_json_from_reasoning_output(content: str, *, partial: bool = False) -> Optional[str]:
+    """Extract JSON from reasoning model output that may contain thinking tags.
+    
+    Args:
+        content: The raw content from reasoning model that may contain thinking tags
+        partial: Whether to allow partial/incomplete JSON extraction
+        
+    Returns:
+        Extracted JSON string or None if no valid JSON found
+    """
+    if not content or not isinstance(content, str):
+        return None
+    
+    # Common patterns for reasoning models
+    patterns = [
+        # Look for JSON within <tool_call> tags (allow incomplete for partial)
+        r'<tool_call>\s*(.*?)(?:</tool_call>|$)',
+        # Look for JSON after thinking blocks
+        r'<think>.*?</think>\s*(.*?)$',
+        r'<thinking>.*?</thinking>\s*(.*?)$', 
+        # Look for JSON after reasoning content (greedy match)
+        r'.*?(\{.*?)$',
+        # Look for standalone JSON blocks
+        r'^\s*(.*?)\s*$',
+    ]
+    
+    for pattern in patterns:
+        matches = re.findall(pattern, content.strip(), re.DOTALL | re.MULTILINE)
+        if matches:
+            # Try each match to see if it's valid JSON
+            for match in matches:
+                match = match.strip()
+                if not match:
+                    continue
+                    
+                if partial:
+                    # For partial parsing, just return the match if it looks like JSON
+                    if match.startswith('{'):
+                        return match
+                else:
+                    # For non-partial, validate that it's complete JSON
+                    try:
+                        json.loads(match)
+                        return match
+                    except JSONDecodeError:
+                        continue
+    
+    return None
 
 
 def parse_tool_call(
@@ -44,25 +95,46 @@ def parse_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
+    
+    raw_arguments = raw_tool_call["function"]["arguments"]
+    
     if partial:
         try:
-            function_args = parse_partial_json(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = parse_partial_json(raw_arguments, strict=strict)
         except (JSONDecodeError, TypeError):  # None args raise TypeError
-            return None
+            # Try to extract JSON from reasoning model output for partial parsing too
+            extracted_json = _extract_json_from_reasoning_output(raw_arguments, partial=True)
+            if extracted_json is not None:
+                try:
+                    function_args = parse_partial_json(extracted_json, strict=strict)
+                except (JSONDecodeError, TypeError):
+                    return None
+            else:
+                return None
     else:
         try:
-            function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
-            )
+            function_args = json.loads(raw_arguments, strict=strict)
         except JSONDecodeError as e:
-            msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
-            )
-            raise OutputParserException(msg) from e
+            # Try to extract JSON from reasoning model output
+            extracted_json = _extract_json_from_reasoning_output(raw_arguments, partial=False)
+            if extracted_json is not None:
+                try:
+                    function_args = json.loads(extracted_json, strict=strict)
+                except JSONDecodeError:
+                    # If extraction also fails, raise original error
+                    msg = (
+                        f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                        f"{raw_arguments}\n\nare not valid JSON. "
+                        f"Received JSONDecodeError {e}"
+                    )
+                    raise OutputParserException(msg) from e
+            else:
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{raw_arguments}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {e}"
+                )
+                raise OutputParserException(msg) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
