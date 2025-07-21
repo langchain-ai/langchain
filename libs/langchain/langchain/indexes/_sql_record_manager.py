@@ -153,7 +153,7 @@ class SQLRecordManager(RecordManager):
         """Create the database schema."""
         if isinstance(self.engine, AsyncEngine):
             msg = "This method is not supported for async engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         Base.metadata.create_all(self.engine)
 
@@ -162,7 +162,7 @@ class SQLRecordManager(RecordManager):
 
         if not isinstance(self.engine, AsyncEngine):
             msg = "This method is not supported for sync engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         async with self.engine.begin() as session:
             await session.run_sync(Base.metadata.create_all)
@@ -173,7 +173,7 @@ class SQLRecordManager(RecordManager):
 
         if isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for async engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         session = self.session_factory()
         try:
@@ -187,7 +187,7 @@ class SQLRecordManager(RecordManager):
 
         if not isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for sync engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         async with self.session_factory() as session:
             yield session
@@ -221,7 +221,7 @@ class SQLRecordManager(RecordManager):
                 dt = float(dt)
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
-                raise AssertionError(msg)
+                raise AssertionError(msg)  # noqa: TRY004
             return dt
 
     async def aget_time(self) -> float:
@@ -254,7 +254,7 @@ class SQLRecordManager(RecordManager):
                 dt = float(dt)
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
-                raise AssertionError(msg)
+                raise AssertionError(msg)  # noqa: TRY004
             return dt
 
     def update(

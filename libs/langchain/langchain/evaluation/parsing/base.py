@@ -74,9 +74,9 @@ class JsonValidityEvaluator(StringEvaluator):
         """
         try:
             parse_json_markdown(prediction, parser=json.loads)
-            return {"score": 1}
         except Exception as e:
             return {"score": 0, "reasoning": str(e)}
+        return {"score": 1}
 
 
 class JsonEqualityEvaluator(StringEvaluator):

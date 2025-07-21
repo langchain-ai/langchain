@@ -361,13 +361,13 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)
                 break
-            except ImportError as e:
-                raise e
+            except ImportError:
+                raise
             except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
             msg = f"Unable to parse spec from source {spec}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
         msg = (

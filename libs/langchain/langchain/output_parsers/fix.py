@@ -70,7 +70,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                 return self.parser.parse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
-                    raise e
+                    raise
                 retries += 1
                 if self.legacy and hasattr(self.retry_chain, "run"):
                     completion = self.retry_chain.run(
@@ -107,7 +107,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                 return await self.parser.aparse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
-                    raise e
+                    raise
                 retries += 1
                 if self.legacy and hasattr(self.retry_chain, "arun"):
                     completion = await self.retry_chain.arun(

@@ -181,6 +181,7 @@ select = [
     "T10",    # flake8-debugger
     "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
+    "TRY",    # tryceratops
     "UP",     # pyupgrade
     "W",      # pycodestyle warning
     "YTT",    # flake8-2020
@@ -201,6 +202,9 @@ ignore = [
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
+
+    # TODO
+    "TRY301", # tryceratops: raise-within-try
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
