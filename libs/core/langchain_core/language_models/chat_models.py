@@ -63,6 +63,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
+    Generation,
     LLMResult,
     RunInfo,
 )
@@ -993,7 +994,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    # Handle case where cache contains Generation objects instead of ChatGeneration objects
+                    # This can happen due to serialization/deserialization issues or legacy cache data
+                    converted_generations = []
+                    for gen in cache_val:
+                        if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
+                            # Convert Generation to ChatGeneration by creating an AIMessage
+                            # from the text content
+                            chat_gen = ChatGeneration(
+                                message=AIMessage(content=gen.text),
+                                generation_info=gen.generation_info,
+                            )
+                            converted_generations.append(chat_gen)
+                        else:
+                            # Already a ChatGeneration or other expected type
+                            converted_generations.append(gen)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1065,7 +1081,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    # Handle case where cache contains Generation objects instead of ChatGeneration objects
+                    # This can happen due to serialization/deserialization issues or legacy cache data
+                    converted_generations = []
+                    for gen in cache_val:
+                        if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
+                            # Convert Generation to ChatGeneration by creating an AIMessage
+                            # from the text content
+                            chat_gen = ChatGeneration(
+                                message=AIMessage(content=gen.text),
+                                generation_info=gen.generation_info,
+                            )
+                            converted_generations.append(chat_gen)
+                        else:
+                            # Already a ChatGeneration or other expected type
+                            converted_generations.append(gen)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
