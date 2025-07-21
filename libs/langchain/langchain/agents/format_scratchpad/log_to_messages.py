@@ -1,3 +1,5 @@
+"""Format scratchpad log to messages."""
+
 from langchain_core.agents import AgentAction
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 

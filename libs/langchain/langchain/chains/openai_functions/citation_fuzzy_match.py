@@ -1,3 +1,5 @@
+"""OpenAI functions citation fuzzy match chain."""
+
 from collections.abc import Iterator
 
 from langchain_core._api import deprecated

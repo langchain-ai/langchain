@@ -1,3 +1,5 @@
+"""Structured chat agent."""
+
 import re
 from collections.abc import Sequence
 from typing import Any, Optional, Union

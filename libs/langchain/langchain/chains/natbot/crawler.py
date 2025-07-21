@@ -1,3 +1,5 @@
+"""NatBot crawler."""
+
 import time
 from sys import platform
 from typing import (

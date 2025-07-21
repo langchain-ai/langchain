@@ -1,3 +1,5 @@
+"""Moved to langchain_core.load."""
+
 from langchain_core.load.serializable import (
     BaseSerialized,
     Serializable,

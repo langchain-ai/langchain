@@ -1,3 +1,5 @@
+"""Moved to langchain_core."""
+
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )

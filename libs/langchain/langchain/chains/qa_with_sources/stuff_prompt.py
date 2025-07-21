@@ -1,3 +1,5 @@
+"""QA with sources prompts."""
+
 from langchain_core.prompts import PromptTemplate
 
 template = """Given the following extracted parts of a long document and a question, create a final answer with references ("SOURCES").

@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.utils import (
     build_extra_kwargs,
     check_package_version,

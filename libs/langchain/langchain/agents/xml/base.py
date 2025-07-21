@@ -1,3 +1,5 @@
+"""XML agent."""
+
 from collections.abc import Sequence
 from typing import Any, Union
 
