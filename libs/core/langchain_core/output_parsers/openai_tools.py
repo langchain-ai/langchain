@@ -257,7 +257,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 strict=self.strict,
                 return_id=self.return_id,
             )
-        # for backwards compatibility
+        # For backwards compatibility
         for tc in parsed_tool_calls:
             tc["type"] = tc.pop("name")
         if self.first_tool_only:
