@@ -138,6 +138,13 @@ class BaseSingleActionAgent(BaseModel):
                 {"output": "Agent stopped due to iteration limit or time limit."},
                 "",
             )
+        if early_stopping_method == "generate":
+            # For BaseSingleActionAgent, we don't have direct access to the LLM
+            # This is a fallback that should be overridden by concrete implementations
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit. Unable to generate final response."},
+                "",
+            )
         msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
         raise ValueError(msg)
 
@@ -308,6 +315,13 @@ class BaseMultiActionAgent(BaseModel):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+        if early_stopping_method == "generate":
+            # For BaseMultiActionAgent, we don't have direct access to the LLM
+            # This is a fallback that should be overridden by concrete implementations
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit. Unable to generate final response."},
+                "",
+            )
         msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
         raise ValueError(msg)
 
@@ -506,6 +520,87 @@ class RunnableAgent(BaseSingleActionAgent):
             )
         return final_output
 
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: list[tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
+        """Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method to use for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            AgentFinish: Agent finish object.
+
+        Raises:
+            ValueError: If `early_stopping_method` is not supported.
+        """
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit or time limit."},
+                "",
+            )
+        if early_stopping_method == "generate":
+            # Generate does one final forward pass with instruction to generate final answer
+            from langchain_core.messages import AIMessage
+            from langchain.agents.format_scratchpad.tools import format_to_tool_messages
+            
+            # Format the intermediate steps as tool messages
+            messages = format_to_tool_messages(intermediate_steps)
+            
+            # Add a final AI message instructing to provide a final answer
+            messages.append(AIMessage(
+                content="I now need to return a final answer based on the previous steps:"
+            ))
+            
+            # Prepare inputs with the modified agent_scratchpad
+            inputs = {**kwargs, "agent_scratchpad": messages}
+            
+            try:
+                # Call the runnable to generate a final response
+                if self.stream_runnable:
+                    final_output: Any = None
+                    for chunk in self.runnable.stream(inputs):
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            final_output += chunk
+                else:
+                    final_output = self.runnable.invoke(inputs)
+                
+                # If we get an AgentFinish, return it directly
+                if isinstance(final_output, AgentFinish):
+                    return final_output
+                
+                # If we get an AgentAction or something else, wrap it as AgentFinish
+                return AgentFinish(
+                    {"output": str(final_output)}, 
+                    str(final_output)
+                )
+                
+            except Exception as e:
+                # Log the exception for debugging but continue with fallback
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Generate method failed, using fallback: {e}")
+                
+                # If generation fails, fall back to a basic message based on intermediate steps
+                if intermediate_steps:
+                    summary = f"Based on {len(intermediate_steps)} previous step(s), the agent was unable to complete the task due to iteration limits."
+                else:
+                    summary = "Agent stopped due to iteration limit. Unable to generate final response."
+                
+                return AgentFinish({"output": summary}, "")
+        
+        # Call parent implementation for other early stopping methods
+        return super().return_stopped_response(early_stopping_method, intermediate_steps, **kwargs)
+
 
 class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Agent powered by Runnables."""
@@ -624,6 +719,84 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             )
 
         return final_output
+
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: list[tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
+        """Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method to use for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            AgentFinish: Agent finish object.
+
+        Raises:
+            ValueError: If `early_stopping_method` is not supported.
+        """
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+        if early_stopping_method == "generate":
+            # Generate does one final forward pass with instruction to generate final answer
+            from langchain_core.messages import AIMessage
+            from langchain.agents.format_scratchpad.tools import format_to_tool_messages
+            
+            # Format the intermediate steps as tool messages
+            messages = format_to_tool_messages(intermediate_steps)
+            
+            # Add a final AI message instructing to provide a final answer
+            messages.append(AIMessage(
+                content="I now need to return a final answer based on the previous steps:"
+            ))
+            
+            # Prepare inputs with the modified agent_scratchpad
+            inputs = {**kwargs, "agent_scratchpad": messages}
+            
+            try:
+                # Call the runnable to generate a final response
+                if self.stream_runnable:
+                    final_output: Any = None
+                    for chunk in self.runnable.stream(inputs):
+                        if final_output is None:
+                            final_output = chunk
+                        else:
+                            final_output += chunk
+                else:
+                    final_output = self.runnable.invoke(inputs)
+                
+                # If we get an AgentFinish, return it directly
+                if isinstance(final_output, AgentFinish):
+                    return final_output
+                
+                # If we get a list of AgentActions or something else, wrap it as AgentFinish
+                return AgentFinish(
+                    {"output": str(final_output)}, 
+                    str(final_output)
+                )
+                
+            except Exception as e:
+                # Log the exception for debugging but continue with fallback
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Generate method failed, using fallback: {e}")
+                
+                # If generation fails, fall back to a basic message based on intermediate steps
+                if intermediate_steps:
+                    summary = f"Based on {len(intermediate_steps)} previous step(s), the agent was unable to complete the task due to iteration limits."
+                else:
+                    summary = "Agent stopped due to iteration limit. Unable to generate final response."
+                
+                return AgentFinish({"output": summary}, "")
+        
+        # Call parent implementation for other early stopping methods
+        return super().return_stopped_response(early_stopping_method, intermediate_steps, **kwargs)
 
 
 @deprecated(
