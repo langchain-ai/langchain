@@ -1,3 +1,5 @@
+"""DEPRECATED - Use pydantic.v1 or pydantic directly instead."""
+
 from importlib import metadata
 
 from langchain_core._api import warn_deprecated

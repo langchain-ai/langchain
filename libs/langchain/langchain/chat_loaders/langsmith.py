@@ -1,3 +1,5 @@
+"""Moved to langchain_community.chat_loaders."""
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer

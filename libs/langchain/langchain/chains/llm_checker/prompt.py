@@ -1,3 +1,5 @@
+"""LLM checker chain prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 _CREATE_DRAFT_ANSWER_TEMPLATE = """{question}\n\n"""

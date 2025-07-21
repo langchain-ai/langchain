@@ -1,3 +1,5 @@
+"""Knowledge triplet extraction prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 KG_TRIPLE_DELIMITER = "<|>"

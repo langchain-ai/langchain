@@ -1,3 +1,5 @@
+"""Contextual Compression Retriever."""
+
 from typing import Any
 
 from langchain_core.callbacks import (

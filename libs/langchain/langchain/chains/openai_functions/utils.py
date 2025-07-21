@@ -1,3 +1,5 @@
+"""OpenAI functions utilities."""
+
 from typing import Any
 
 

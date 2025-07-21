@@ -1,3 +1,5 @@
+"""QA with refine prompts."""
+
 from langchain_core.prompts import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (

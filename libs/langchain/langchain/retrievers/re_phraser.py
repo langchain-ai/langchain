@@ -1,3 +1,5 @@
+"""Re-phrase query retriever."""
+
 import logging
 
 from langchain_core.callbacks import (

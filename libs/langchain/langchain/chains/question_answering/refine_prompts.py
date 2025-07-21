@@ -1,3 +1,5 @@
+"""Question Answering refine prompt."""
+
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
 )

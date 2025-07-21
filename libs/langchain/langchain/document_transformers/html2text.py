@@ -1,3 +1,5 @@
+"""Moved to langchain_community.document_transformers."""
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer

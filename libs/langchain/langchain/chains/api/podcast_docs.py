@@ -1,3 +1,5 @@
+"""Podcast API docs."""
+
 PODCAST_DOCS = """API documentation:
 Endpoint: https://listen-api.listennotes.com/api/v2
 GET /search

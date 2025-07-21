@@ -1,3 +1,5 @@
+"""Moved to langchain_core.tools."""
+
 from langchain_core.tools import (
     create_retriever_tool,
     render_text_description,

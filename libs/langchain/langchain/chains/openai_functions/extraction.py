@@ -1,3 +1,5 @@
+"""OpenAI functions extraction chain."""
+
 from typing import Any, Optional
 
 from langchain_core._api import deprecated

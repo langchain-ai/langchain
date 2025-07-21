@@ -1,3 +1,5 @@
+"""Conversational retrieval prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 _template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.

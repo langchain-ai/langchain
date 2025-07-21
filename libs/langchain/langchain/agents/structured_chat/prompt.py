@@ -1,3 +1,5 @@
+"""Structured chat agent prompts."""
+
 PREFIX = """Respond to the human as helpfully and accurately as possible. You have access to the following tools:"""  # noqa: E501
 FORMAT_INSTRUCTIONS = """Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
 

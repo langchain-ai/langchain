@@ -1,3 +1,5 @@
+"""Agent types."""
+
 from typing import Union
 
 from langchain.agents.agent import BaseSingleActionAgent

@@ -1,3 +1,5 @@
+"""Pandas DataFrame output parser."""
+
 import re
 from typing import Any, Union
 

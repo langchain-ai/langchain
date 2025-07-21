@@ -1,3 +1,5 @@
+"""Query parser."""
+
 import datetime
 import warnings
 from collections.abc import Sequence

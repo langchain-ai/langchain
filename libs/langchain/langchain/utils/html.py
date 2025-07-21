@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.html import (
     DEFAULT_LINK_REGEX,
     PREFIXES_TO_IGNORE,
