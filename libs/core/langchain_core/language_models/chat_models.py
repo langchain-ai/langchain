@@ -994,12 +994,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    # Handle case where cache contains Generation objects instead of ChatGeneration objects
-                    # This can happen due to serialization/deserialization issues or legacy cache data
+                    # Handle case where cache contains Generation objects instead of
+                    # ChatGeneration objects
+                    # This can happen due to serialization/deserialization issues or
+                    # legacy cache data
                     converted_generations = []
                     for gen in cache_val:
-                        if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
-                            # Convert Generation to ChatGeneration by creating an AIMessage
+                        if isinstance(gen, Generation) and not isinstance(
+                            gen, ChatGeneration
+                        ):
+                            # Convert Generation to ChatGeneration by creating AIMessage
                             # from the text content
                             chat_gen = ChatGeneration(
                                 message=AIMessage(content=gen.text),
@@ -1081,12 +1085,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    # Handle case where cache contains Generation objects instead of ChatGeneration objects
-                    # This can happen due to serialization/deserialization issues or legacy cache data
+                    # Handle case where cache contains Generation objects instead of
+                    # ChatGeneration objects
+                    # This can happen due to serialization/deserialization issues or
+                    # legacy cache data
                     converted_generations = []
                     for gen in cache_val:
-                        if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
-                            # Convert Generation to ChatGeneration by creating an AIMessage
+                        if isinstance(gen, Generation) and not isinstance(
+                            gen, ChatGeneration
+                        ):
+                            # Convert Generation to ChatGeneration by creating AIMessage
                             # from the text content
                             chat_gen = ChatGeneration(
                                 message=AIMessage(content=gen.text),
