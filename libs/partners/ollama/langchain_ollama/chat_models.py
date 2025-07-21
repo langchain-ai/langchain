@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
@@ -77,33 +78,45 @@ def _get_usage_metadata_from_generation_info(
 
 def _parse_json_string(
     json_string: str,
+    *,
     raw_tool_call: dict[str, Any],
-    skip: bool,  # noqa: FBT001
+    skip: bool,
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
+    It first tries to use the standard json.loads. If that fails, it falls
+    back to ast.literal_eval to safely parse Python literals, which is more
+    robust against models using single quotes or containing apostrophes.
+
     Args:
         json_string: JSON string to parse.
-        skip: Whether to ignore parsing errors and return the value anyways.
         raw_tool_call: Raw tool call to include in error message.
+        skip: Whether to ignore parsing errors and return the value anyways.
 
     Returns:
-        The parsed JSON string.
+        The parsed JSON string or Python literal.
 
     Raises:
-        OutputParserException: If the JSON string wrong invalid and skip=False.
+        OutputParserException: If the string is invalid and skip=False.
     """
     try:
         return json.loads(json_string)
-    except json.JSONDecodeError as e:
-        if skip:
-            return json_string
-        msg = (
-            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-            f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
-            f"Received JSONDecodeError {e}"
-        )
-        raise OutputParserException(msg) from e
+    except json.JSONDecodeError:
+        try:
+            # Use ast.literal_eval to safely parse Python-style dicts
+            # (e.g. with single quotes)
+            return ast.literal_eval(json_string)
+        except (SyntaxError, ValueError) as e:
+            # If both fail, and we're not skipping, raise an informative error.
+            if skip:
+                return json_string
+            msg = (
+                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                f"{raw_tool_call['function']['arguments']}"
+                "\n\nare not valid JSON or a Python literal. "
+                f"Received error: {e}"
+            )
+            raise OutputParserException(msg) from e
     except TypeError as e:
         if skip:
             return json_string
