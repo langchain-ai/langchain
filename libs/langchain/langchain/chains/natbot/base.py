@@ -6,9 +6,7 @@ import warnings
 from typing import Any, Optional
 
 from langchain_core._api import deprecated
-from langchain_core.caches import BaseCache as BaseCache
 from langchain_core.callbacks import CallbackManagerForChainRun
-from langchain_core.callbacks import Callbacks as Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import Runnable
@@ -73,7 +71,8 @@ class NatBotChain(Chain):
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
-                "class method."
+                "class method.",
+                stacklevel=5,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
@@ -82,15 +81,19 @@ class NatBotChain(Chain):
     @classmethod
     def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
-        raise NotImplementedError(
+        msg = (
             "This method is no longer implemented. Please use from_llm."
             "llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
             "For example, NatBotChain.from_llm(llm, objective)"
         )
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        objective: str,
+        **kwargs: Any,
     ) -> NatBotChain:
         """Load from LLM."""
         llm_chain = PROMPT | llm | StrOutputParser()
@@ -158,6 +161,3 @@ class NatBotChain(Chain):
     @property
     def _chain_type(self) -> str:
         return "nat_bot_chain"
-
-
-NatBotChain.model_rebuild()

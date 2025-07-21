@@ -39,12 +39,12 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "extract_from_images_with_rapidocr",
-    "PyPDFParser",
-    "PDFMinerParser",
-    "PyMuPDFParser",
-    "PyPDFium2Parser",
-    "PDFPlumberParser",
     "AmazonTextractPDFParser",
     "DocumentIntelligenceParser",
+    "PDFMinerParser",
+    "PDFPlumberParser",
+    "PyMuPDFParser",
+    "PyPDFParser",
+    "PyPDFium2Parser",
+    "extract_from_images_with_rapidocr",
 ]

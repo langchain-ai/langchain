@@ -23,7 +23,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 DEFAULT_HISTORY_TEMPLATE = """
 Current date and time: {current_time}.
 
-Potentially relevant timestamped excerpts of previous conversations (you 
+Potentially relevant timestamped excerpts of previous conversations (you
 do not need to use these if irrelevant):
 {previous_history}
 
@@ -131,13 +131,13 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             previous_history = ""
         current_history = super().load_memory_variables(inputs)
         template = SystemMessagePromptTemplate.from_template(
-            self.previous_history_template
+            self.previous_history_template,
         )
         messages = [
             template.format(
                 previous_history=previous_history,
                 current_time=datetime.now().astimezone().strftime(TIMESTAMP_FORMAT),
-            )
+            ),
         ]
         messages.extend(current_history[self.memory_key])
         return {self.memory_key: messages}
@@ -167,7 +167,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             self._pop_and_store_interaction(buffer)
 
     def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:
-        input = buffer.pop(0)
+        input_ = buffer.pop(0)
         output = buffer.pop(0)
         timestamp = self._timestamps.pop(0).strftime(TIMESTAMP_FORMAT)
         # Split AI output into smaller chunks to avoid creating documents
@@ -175,7 +175,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         ai_chunks = self._split_long_ai_text(str(output.content))
         for index, chunk in enumerate(ai_chunks):
             self.memory_retriever.save_context(
-                {"Human": f"<{timestamp}/00> {str(input.content)}"},
+                {"Human": f"<{timestamp}/00> {input_.content!s}"},
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 

@@ -1066,7 +1066,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
         Args:
             output (Any): The output of the tool.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): The keyword arguments to pass to the event handler
         """
         if not self.handlers:
             return
@@ -1470,7 +1470,7 @@ class CallbackManager(BaseCallbackManager):
                 input is needed.
                 If provided, the inputs are expected to be formatted as a dict.
                 The keys will correspond to the named-arguments in the tool.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): The keyword arguments to pass to the event handler
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.

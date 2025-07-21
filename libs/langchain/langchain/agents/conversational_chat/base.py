@@ -96,15 +96,16 @@ class ConversationalChatAgent(Agent):
             A PromptTemplate.
         """
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [f"> {tool.name}: {tool.description}" for tool in tools],
         )
         tool_names = ", ".join([tool.name for tool in tools])
         _output_parser = output_parser or cls._get_default_output_parser()
         format_instructions = human_message.format(
-            format_instructions=_output_parser.get_format_instructions()
+            format_instructions=_output_parser.get_format_instructions(),
         )
         final_prompt = format_instructions.format(
-            tool_names=tool_names, tools=tool_strings
+            tool_names=tool_names,
+            tools=tool_strings,
         )
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
@@ -117,14 +118,15 @@ class ConversationalChatAgent(Agent):
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> list[BaseMessage]:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts: list[BaseMessage] = []
         for action, observation in intermediate_steps:
             thoughts.append(AIMessage(content=action.log))
             human_message = HumanMessage(
-                content=self.template_tool_response.format(observation=observation)
+                content=self.template_tool_response.format(observation=observation),
             )
             thoughts.append(human_message)
         return thoughts

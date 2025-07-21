@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE = """You are an AI assistant helping a human keep track of facts about relevant people, places, and concepts in their life. Update the summary of the provided entity in the "Entity" section based on the last line of your conversation with the human. If you are writing the summary for the first time, return a single sentence.
@@ -17,7 +16,7 @@ Existing summary of {entity}:
 
 Last line of conversation:
 Human: {input}
-Updated summary:"""
+Updated summary:"""  # noqa: E501
 
 ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
     input_variables=["entity", "summary", "history", "input"],
