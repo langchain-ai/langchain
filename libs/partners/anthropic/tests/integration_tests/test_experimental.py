@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -123,10 +122,6 @@ def test_with_structured_output() -> None:
 
 
 def test_anthropic_complex_structured_output() -> None:
-    class ToneEnum(str, Enum):
-        positive = "positive"
-        negative = "negative"
-
     class Email(BaseModel):
         """Relevant information about an email."""
 
@@ -150,7 +145,9 @@ def test_anthropic_complex_structured_output() -> None:
             ...,
             description="High level description of what the email is about",
         )
-        tone: ToneEnum = Field(..., description="The tone of the email.")
+        tone: Literal["positive", "negative"] = Field(
+            ..., description="The tone of the email."
+        )
 
     prompt = ChatPromptTemplate.from_messages(
         [
