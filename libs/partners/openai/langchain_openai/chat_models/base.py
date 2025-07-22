@@ -553,7 +553,8 @@ class BaseChatOpenAI(BaseChatModel):
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other providers.
+    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
+    providers.
     
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
@@ -2658,7 +2659,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 api_key="lm-studio",  # Can be any string
                 model="mlx-community/QwQ-32B-4bit",
                 temperature=0,
-                extra_body={"ttl": 300}  # Auto-evict model after 5 minutes of inactivity
+                extra_body={
+                    "ttl": 300
+                },  # Auto-evict model after 5 minutes of inactivity
             )
 
         **vLLM example** with custom parameters:
@@ -2669,10 +2672,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 base_url="http://localhost:8000/v1",
                 api_key="EMPTY",
                 model="meta-llama/Llama-2-7b-chat-hf",
-                extra_body={
-                    "use_beam_search": True,
-                    "best_of": 4
-                }
+                extra_body={"use_beam_search": True, "best_of": 4},
             )
 
         .. important::

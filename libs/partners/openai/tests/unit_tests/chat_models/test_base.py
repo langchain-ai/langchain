@@ -2533,14 +2533,14 @@ def test_make_computer_call_output_from_message() -> None:
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(
-        model="gpt-4o-mini", 
+        model="gpt-4o-mini",
         api_key="test-api-key",  # Set a fake API key to avoid validation error
-        extra_body={"ttl": 300, "custom_param": "test_value"}
+        extra_body={"ttl": 300, "custom_param": "test_value"},
     )
-    
+
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    
+
     # Verify extra_body is included in the payload
     assert "extra_body" in payload
     assert payload["extra_body"]["ttl"] == 300
@@ -2554,12 +2554,12 @@ def test_extra_body_with_model_kwargs() -> None:
         api_key="test-api-key",  # Set a fake API key to avoid validation error
         temperature=0.5,
         extra_body={"ttl": 600},
-        model_kwargs={"custom_non_openai_param": "test_value"}
+        model_kwargs={"custom_non_openai_param": "test_value"},
     )
-    
+
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
-    
+
     # Verify both extra_body and model_kwargs are in payload
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
