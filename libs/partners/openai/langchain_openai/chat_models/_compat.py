@@ -67,8 +67,8 @@ formats. The functions are used internally by ChatOpenAI.
 """  # noqa: E501
 
 import json
-from collections.abc import Iterable
-from typing import Any, Union, cast
+from collections.abc import Iterable, Iterator
+from typing import Any, Literal, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
 
@@ -391,7 +391,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
             elif block_type == "image_generation_call" and (
                 result := block.get("result")
             ):
-                new_block = {"type": "image", "source_type": "base64", "data": result}
+                new_block = {"type": "image", "base64": result}
                 if output_format := block.get("output_format"):
                     new_block["mime_type"] = f"image/{output_format}"
                 for extra_key in (
@@ -416,6 +416,68 @@ def _convert_to_v1_from_responses(message: AIMessage) -> AIMessage:
                     if extra_key in block:
                         new_block[extra_key] = block[extra_key]
                 yield new_block
+
+            elif block_type == "web_search_call":
+                web_search_call = {"type": "web_search_call", "id": block["id"]}
+                if "index" in block:
+                    web_search_call["index"] = block["index"]
+                if (
+                    "action" in block
+                    and isinstance(block["action"], dict)
+                    and block["action"].get("type") == "search"
+                    and "query" in block["action"]
+                ):
+                    web_search_call["query"] = block["action"]["query"]
+                for key in block:
+                    if key not in ("type", "id"):
+                        web_search_call[key] = block[key]
+
+                web_search_result = {"type": "web_search_result", "id": block["id"]}
+                if "index" in block:
+                    web_search_result["index"] = block["index"] + 1
+                yield web_search_call
+                yield web_search_result
+
+            elif block_type == "code_interpreter_call":
+                code_interpreter_call = {
+                    "type": "code_interpreter_call",
+                    "id": block["id"],
+                }
+                if "code" in block:
+                    code_interpreter_call["code"] = block["code"]
+                if "container_id" in block:
+                    code_interpreter_call["container_id"] = block["container_id"]
+                if "index" in block:
+                    code_interpreter_call["index"] = block["index"]
+
+                code_interpreter_result = {
+                    "type": "code_interpreter_result",
+                    "id": block["id"],
+                }
+                if "outputs" in block:
+                    code_interpreter_result["outputs"] = block["outputs"]
+                    for output in block["outputs"]:
+                        if (
+                            isinstance(output, dict)
+                            and (output_type := output.get("type"))
+                            and output_type == "logs"
+                        ):
+                            if "output" not in code_interpreter_result:
+                                code_interpreter_result["output"] = []
+                            code_interpreter_result["output"].append(
+                                {
+                                    "type": "code_interpreter_output",
+                                    "stdout": output.get("logs", ""),
+                                }
+                            )
+
+                if "status" in block:
+                    code_interpreter_result["status"] = block["status"]
+                if "index" in block:
+                    code_interpreter_result["index"] = block["index"] + 1
+
+                yield code_interpreter_call
+                yield code_interpreter_result
 
             else:
                 new_block = {"type": "non_standard", "value": block}
@@ -496,6 +558,69 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         yield merged
 
 
+def _consolidate_calls(
+    items: Iterable[dict[str, Any]],
+    call_name: Literal["web_search_call", "code_interpreter_call"],
+    result_name: Literal["web_search_result", "code_interpreter_result"],
+) -> Iterator[dict[str, Any]]:
+    """
+    Generator that walks through *items* and, whenever it meets the pair
+
+        {"type": "web_search_call",    "id": X, ...}
+        {"type": "web_search_result",  "id": X}
+
+    merges them into
+
+        {"id": X,
+         "action": …,
+         "status": …,
+         "type": "web_search_call"}
+
+    keeping every other element untouched.
+    """
+    items = iter(items)  # make sure we have a true iterator
+    for current in items:
+        # Only a call can start a pair worth collapsing
+        if current.get("type") != call_name:
+            yield current
+            continue
+
+        try:
+            nxt = next(items)  # look-ahead one element
+        except StopIteration:  # no “result” – just yield the call back
+            yield current
+            break
+
+        # If this really is the matching “result” – collapse
+        if nxt.get("type") == result_name and nxt.get("id") == current.get("id"):
+            if call_name == "web_search_call":
+                collapsed = {
+                    "id": current["id"],
+                    "status": current["status"],
+                    "type": "web_search_call",
+                }
+                if "action" in current:
+                    collapsed["action"] = current["action"]
+
+            if call_name == "code_interpreter_call":
+                collapsed = {"id": current["id"]}
+                for key in ("code", "container_id"):
+                    if key in current:
+                        collapsed[key] = current[key]
+
+                for key in ("outputs", "status"):
+                    if key in nxt:
+                        collapsed[key] = nxt[key]
+                collapsed["type"] = "code_interpreter_call"
+
+            yield collapsed
+
+        else:
+            # Not a matching pair – emit both, in original order
+            yield current
+            yield nxt
+
+
 def _convert_from_v1_to_responses(message: AIMessage) -> AIMessage:
     if not isinstance(message.content, list):
         return message
@@ -530,9 +655,9 @@ def _convert_from_v1_to_responses(message: AIMessage) -> AIMessage:
             elif (
                 is_data_content_block(block)
                 and block["type"] == "image"
-                and block["source_type"] == "base64"
+                and "base64" in block
             ):
-                new_block = {"type": "image_generation_call", "result": block["data"]}
+                new_block = {"type": "image_generation_call", "result": block["base64"]}
                 for extra_key in ("id", "status"):
                     if extra_key in block:
                         new_block[extra_key] = block[extra_key]
@@ -545,5 +670,13 @@ def _convert_from_v1_to_responses(message: AIMessage) -> AIMessage:
             new_content.append(block)
 
     new_content = list(_implode_reasoning_blocks(new_content))
+    new_content = list(
+        _consolidate_calls(new_content, "web_search_call", "web_search_result")
+    )
+    new_content = list(
+        _consolidate_calls(
+            new_content, "code_interpreter_call", "code_interpreter_result"
+        )
+    )
 
     return message.model_copy(update={"content": new_content})

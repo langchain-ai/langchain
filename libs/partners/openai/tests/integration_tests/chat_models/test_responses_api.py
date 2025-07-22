@@ -115,7 +115,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
         if output_version == "responses/v1":
             assert block_types == ["web_search_call", "text"]
         else:
-            assert block_types == ["non_standard", "text"]
+            assert block_types == ["web_search_call", "web_search_result", "text"]
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -489,11 +489,17 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
     else:
         # v1
         tool_outputs = [
-            item["value"]
-            for item in response.beta_content
-            if item["type"] == "non_standard"
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
         ]
-        assert tool_outputs[0]["type"] == "code_interpreter_call"
+        code_interpreter_result = next(
+            item
+            for item in response.content
+            if item["type"] == "code_interpreter_result"
+        )
+        assert tool_outputs
+        assert code_interpreter_result
     assert len(tool_outputs) == 1
 
     # Test streaming
@@ -521,12 +527,16 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
             if isinstance(item, dict) and item["type"] == "code_interpreter_call"
         ]
     else:
-        tool_outputs = [
-            item["value"]
-            for item in response.beta_content
-            if item["type"] == "non_standard"
-        ]
-        assert tool_outputs[0]["type"] == "code_interpreter_call"
+        code_interpreter_call = next(
+            item for item in response.content if item["type"] == "code_interpreter_call"
+        )
+        code_interpreter_result = next(
+            item
+            for item in response.content
+            if item["type"] == "code_interpreter_result"
+        )
+        assert code_interpreter_call
+        assert code_interpreter_result
     assert tool_outputs
 
     # Test we can pass back in
@@ -689,11 +699,9 @@ def test_image_generation_streaming(output_version: str) -> None:
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
         # v1
-        standard_keys = {"type", "source_type", "data", "id", "status", "index"}
+        standard_keys = {"type", "base64", "id", "status", "index"}
         tool_output = next(
-            block
-            for block in complete_ai_message.beta_content
-            if block["type"] == "image"
+            block for block in complete_ai_message.content if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -748,9 +756,9 @@ def test_image_generation_multi_turn(output_version: str) -> None:
         )
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
-        standard_keys = {"type", "source_type", "data", "id", "status"}
+        standard_keys = {"type", "base64", "id", "status"}
         tool_output = next(
-            block for block in ai_message.beta_content if block["type"] == "image"
+            block for block in ai_message.content if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -800,8 +808,8 @@ def test_image_generation_multi_turn(output_version: str) -> None:
         )
         assert set(tool_output.keys()).issubset(expected_keys)
     else:
-        standard_keys = {"type", "source_type", "data", "id", "status"}
+        standard_keys = {"type", "base64", "id", "status"}
         tool_output = next(
-            block for block in ai_message2.beta_content if block["type"] == "image"
+            block for block in ai_message2.content if block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
