@@ -50,7 +50,8 @@ class YamlOutputParser(BaseOutputParser[T]):
             # Pydantic v1
             schema = dict(self.pydantic_object.schema().items())
         else:
-            raise ValueError("Pydantic object must have either model_json_schema or schema method")
+            msg = "Pydantic object must have either model_json_schema or schema method"
+            raise ValueError(msg)
 
         # Remove extraneous fields.
         reduced_schema = schema
