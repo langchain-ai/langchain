@@ -363,37 +363,31 @@ def test_cache_with_generation_objects() -> None:
             self.cache.update(prompt_str, llm_string, result.generations)
             return result
 
-    try:
-        model = SimpleFakeChat(cache)
+    model = SimpleFakeChat(cache)
 
-        # First call - normal operation
-        result1 = model.generate_response("test prompt")
-        assert result1.generations[0].message.content == "hello"
+    # First call - normal operation
+    result1 = model.generate_response("test prompt")
+    assert result1.generations[0].message.content == "hello"
 
-        # Manually corrupt the cache by replacing ChatGeneration with Generation
-        cache_key = next(iter(cache._cache.keys()))
-        cached_chat_generations = cache._cache[cache_key]
+    # Manually corrupt the cache by replacing ChatGeneration with Generation
+    cache_key = next(iter(cache._cache.keys()))
+    cached_chat_generations = cache._cache[cache_key]
 
-        # Replace with Generation objects (missing message field)
-        corrupted_generations = [
+    # Replace with Generation objects (missing message field)
+    corrupted_generations = [
             Generation(
                 text=gen.text,
                 generation_info=gen.generation_info,
                 type="Generation",  # This is the key - wrong type
             )
             for gen in cached_chat_generations
-        ]
-        cache._cache[cache_key] = corrupted_generations
+    ]
+    cache._cache[cache_key] = corrupted_generations
 
-        # Second call should handle the Generation objects gracefully
-        result2 = model.generate_response("test prompt")
-        assert result2.generations[0].message.content == "hello"
-        assert isinstance(result2.generations[0], ChatGeneration)
-
-    finally:
-        pass  # No cleanup needed for simple test
-
-
+    # Second call should handle the Generation objects gracefully
+    result2 = model.generate_response("test prompt")
+    assert result2.generations[0].message.content == "hello"
+    assert isinstance(result2.generations[0], ChatGeneration)
 def test_cleanup_serialized() -> None:
     cleanup_serialized = {
         "lc": 1,
