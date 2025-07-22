@@ -839,19 +839,19 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
-                
+
                 # Skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True and
-                    stream_resp.get("done_reason") == "load" and
-                    not content.strip()
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
                 )
-                
+
                 if is_load_response_with_empty_content:
-                    # Skip this chunk - don't yield anything for load responses with empty content
+                    # Skip chunk - don't yield for load responses with empty content
                     continue
-                
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -911,19 +911,19 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
-                
+
                 # Skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True and
-                    stream_resp.get("done_reason") == "load" and
-                    not content.strip()
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
                 )
-                
+
                 if is_load_response_with_empty_content:
-                    # Skip this chunk - don't yield anything for load responses with empty content
+                    # Skip chunk - don't yield for load responses with empty content
                     continue
-                
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:

@@ -4,7 +4,7 @@ import json
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import Client, Request, Response
@@ -146,113 +146,101 @@ def test_load_response_with_empty_content_is_skipped() -> None:
     """Test that load responses with empty content are skipped."""
     load_only_response = [
         {
-            'model': 'test-model',
-            'created_at': '2025-01-01T00:00:00.000000000Z',
-            'done': True,
-            'done_reason': 'load',
-            'message': {
-                'role': 'assistant',
-                'content': ''
-            }
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": ""},
         }
     ]
-    
-    with patch('langchain_ollama.chat_models.Client') as mock_client_class:
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = load_only_response
-        
-        llm = ChatOllama(model='test-model')
-        
+
+        llm = ChatOllama(model="test-model")
+
         with pytest.raises(ValueError, match="No data received from Ollama stream"):
-            llm.invoke([HumanMessage('Hello')])
+            llm.invoke([HumanMessage("Hello")])
 
 
 def test_load_response_with_whitespace_content_is_skipped() -> None:
     """Test that load responses with only whitespace content are skipped."""
     load_whitespace_response = [
         {
-            'model': 'test-model',
-            'created_at': '2025-01-01T00:00:00.000000000Z',
-            'done': True,
-            'done_reason': 'load',
-            'message': {
-                'role': 'assistant',
-                'content': '   \n  \t  '
-            }
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": "   \n  \t  "},
         }
     ]
-    
-    with patch('langchain_ollama.chat_models.Client') as mock_client_class:
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = load_whitespace_response
-        
-        llm = ChatOllama(model='test-model')
-        
+
+        llm = ChatOllama(model="test-model")
+
         with pytest.raises(ValueError, match="No data received from Ollama stream"):
-            llm.invoke([HumanMessage('Hello')])
+            llm.invoke([HumanMessage("Hello")])
 
 
 def test_load_followed_by_content_response() -> None:
     """Test that load responses are skipped when followed by actual content."""
     load_then_content_response = [
         {
-            'model': 'test-model',
-            'created_at': '2025-01-01T00:00:00.000000000Z',
-            'done': True,
-            'done_reason': 'load',
-            'message': {
-                'role': 'assistant',
-                'content': ''
-            }
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": ""},
         },
         {
-            'model': 'test-model',
-            'created_at': '2025-01-01T00:00:01.000000000Z',
-            'done': True,
-            'done_reason': 'stop',
-            'message': {
-                'role': 'assistant',
-                'content': 'Hello! How can I help you today?'
-            }
-        }
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:01.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {
+                "role": "assistant",
+                "content": "Hello! How can I help you today?",
+            },
+        },
     ]
-    
-    with patch('langchain_ollama.chat_models.Client') as mock_client_class:
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = load_then_content_response
-        
-        llm = ChatOllama(model='test-model')
-        result = llm.invoke([HumanMessage('Hello')])
-        
-        assert result.content == 'Hello! How can I help you today?'
-        assert result.response_metadata.get('done_reason') == 'stop'
+
+        llm = ChatOllama(model="test-model")
+        result = llm.invoke([HumanMessage("Hello")])
+
+        assert result.content == "Hello! How can I help you today?"
+        assert result.response_metadata.get("done_reason") == "stop"
 
 
 def test_load_response_with_actual_content_is_not_skipped() -> None:
     """Test that load responses with actual content are NOT skipped."""
     load_with_content_response = [
         {
-            'model': 'test-model',
-            'created_at': '2025-01-01T00:00:00.000000000Z',
-            'done': True,
-            'done_reason': 'load',
-            'message': {
-                'role': 'assistant',
-                'content': 'This is actual content'
-            }
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": "This is actual content"},
         }
     ]
-    
-    with patch('langchain_ollama.chat_models.Client') as mock_client_class:
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = load_with_content_response
-        
-        llm = ChatOllama(model='test-model')
-        result = llm.invoke([HumanMessage('Hello')])
-        
-        assert result.content == 'This is actual content'
-        assert result.response_metadata.get('done_reason') == 'load'
+
+        llm = ChatOllama(model="test-model")
+        result = llm.invoke([HumanMessage("Hello")])
+
+        assert result.content == "This is actual content"
+        assert result.response_metadata.get("done_reason") == "load"
