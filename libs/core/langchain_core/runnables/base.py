@@ -3466,27 +3466,27 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, "BaseTool"]],
+        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         **kwargs: Any,
-    ) -> "RunnableSequence[Input, Output]":
-        """Bind tools to the sequence, with special handling for structured output chains.
-        
+    ) -> RunnableSequence[Input, Output]:
+        """Bind tools to the sequence with structured output chain handling.
+
         This method enables the combination of structured output and tool binding,
         which is a common pattern in AI applications where you need both:
         1. Structured output formatting (JSON responses)
         2. Tool calling capabilities (external function calls)
-        
-        The method detects when this RunnableSequence was created by 
+
+        The method detects when this RunnableSequence was created by
         `with_structured_output()` and intelligently combines the tools
         with the structured output configuration.
-        
+
         Args:
             tools: A list of tool definitions to bind.
             **kwargs: Additional arguments to pass to bind_tools.
-            
+
         Returns:
             A new RunnableSequence with tools bound.
-            
+
         Raises:
             AttributeError: If the first step doesn't support bind_tools and
                            this isn't a structured output chain.
@@ -3495,35 +3495,43 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # Pattern: ChatModel (bound with structured output tools) | OutputParser
         if len(self.steps) == 2:
             first_step = self.first
-            
-            # Check if first step has bind_tools (it's likely a ChatModel or RunnableBinding)
-            if hasattr(first_step, 'bind_tools'):
-                # This is likely a structured output chain, reconstruct with additional tools
+
+            # Check if first step has bind_tools
+            # (it's likely a ChatModel or RunnableBinding)
+            if hasattr(first_step, "bind_tools"):
+                # This is likely a structured output chain,
+                # reconstruct with additional tools
                 try:
                     # Bind the additional tools to the first step (the model)
                     new_first_step = first_step.bind_tools(tools, **kwargs)
-                    
-                    # Return a new sequence with the updated first step and same parser
-                    return RunnableSequence(new_first_step, self.last, name=self.name)
-                    
+
+                    # Return a new sequence with the updated first step
+                    return RunnableSequence(
+                        new_first_step, self.last, name=self.name
+                    )
+
                 except Exception:
                     # If binding fails for any reason, fall back to error
                     pass
-        
+
         # If first step supports bind_tools, try to bind there
-        if hasattr(self.first, 'bind_tools'):
+        if hasattr(self.first, "bind_tools"):
             try:
                 new_first_step = self.first.bind_tools(tools, **kwargs)
-                return RunnableSequence(new_first_step, *self.middle, self.last, name=self.name)
+                return RunnableSequence(
+                    new_first_step, *self.middle, self.last, name=self.name
+                )
             except Exception:
                 pass
-        
+
         # If we can't bind tools, raise a helpful error
-        raise AttributeError(
+        msg = (
             f"'{type(self).__name__}' object has no attribute 'bind_tools'. "
-            f"This RunnableSequence doesn't appear to contain a model that supports tool binding. "
-            f"To use tools with structured output, ensure your model supports both features."
+            f"This RunnableSequence doesn't appear to contain a model "
+            f"that supports tool binding. To use tools with structured output, "
+            f"ensure your model supports both features."
         )
+        raise AttributeError(msg)
 
 
 class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
