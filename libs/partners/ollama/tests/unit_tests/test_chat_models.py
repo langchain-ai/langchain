@@ -143,7 +143,7 @@ def test_parse_json_string_skip_returns_input_on_failure() -> None:
 
 
 def test_load_response_with_empty_content_is_skipped() -> None:
-    """Test that load responses with empty content are skipped."""
+    """Test that load responses with empty content emit a warning and are skipped."""
     load_only_response = [
         {
             "model": "test-model",
@@ -161,12 +161,13 @@ def test_load_response_with_empty_content_is_skipped() -> None:
 
         llm = ChatOllama(model="test-model")
 
-        with pytest.raises(ValueError, match="No data received from Ollama stream"):
-            llm.invoke([HumanMessage("Hello")])
+        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
+            with pytest.raises(ValueError, match="No data received from Ollama stream"):
+                llm.invoke([HumanMessage("Hello")])
 
 
 def test_load_response_with_whitespace_content_is_skipped() -> None:
-    """Test that load responses with only whitespace content are skipped."""
+    """Test that load responses with only whitespace content emit a warning and are skipped."""
     load_whitespace_response = [
         {
             "model": "test-model",
@@ -184,12 +185,16 @@ def test_load_response_with_whitespace_content_is_skipped() -> None:
 
         llm = ChatOllama(model="test-model")
 
+        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
+            with pytest.raises(ValueError, match="No data received from Ollama stream"):
+                llm.invoke([HumanMessage("Hello")])
+
         with pytest.raises(ValueError, match="No data received from Ollama stream"):
             llm.invoke([HumanMessage("Hello")])
 
 
 def test_load_followed_by_content_response() -> None:
-    """Test that load responses are skipped when followed by actual content."""
+    """Test that load responses emit a warning and are skipped when followed by actual content."""
     load_then_content_response = [
         {
             "model": "test-model",
@@ -216,7 +221,9 @@ def test_load_followed_by_content_response() -> None:
         mock_client.chat.return_value = load_then_content_response
 
         llm = ChatOllama(model="test-model")
-        result = llm.invoke([HumanMessage("Hello")])
+        
+        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
+            result = llm.invoke([HumanMessage("Hello")])
 
         assert result.content == "Hello! How can I help you today?"
         assert result.response_metadata.get("done_reason") == "stop"

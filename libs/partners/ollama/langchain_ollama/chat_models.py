@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -840,7 +841,7 @@ class ChatOllama(BaseChatModel):
                     else ""
                 )
 
-                # Skip responses with done_reason: 'load' and empty content
+                # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
                     stream_resp.get("done") is True
@@ -849,7 +850,13 @@ class ChatOllama(BaseChatModel):
                 )
 
                 if is_load_response_with_empty_content:
-                    # Skip chunk - don't yield for load responses with empty content
+                    warnings.warn(
+                        "Ollama returned empty response with done_reason='load'. "
+                        "This typically indicates the model was loaded but no content was generated. "
+                        "Skipping this response.",
+                        UserWarning,
+                        stacklevel=2
+                    )
                     continue
 
                 if stream_resp.get("done") is True:
@@ -912,7 +919,7 @@ class ChatOllama(BaseChatModel):
                     else ""
                 )
 
-                # Skip responses with done_reason: 'load' and empty content
+                # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
                     stream_resp.get("done") is True
@@ -921,7 +928,13 @@ class ChatOllama(BaseChatModel):
                 )
 
                 if is_load_response_with_empty_content:
-                    # Skip chunk - don't yield for load responses with empty content
+                    warnings.warn(
+                        "Ollama returned empty response with done_reason='load'. "
+                        "This typically indicates the model was loaded but no content was generated. "
+                        "Skipping this response.",
+                        UserWarning,
+                        stacklevel=2
+                    )
                     continue
 
                 if stream_resp.get("done") is True:
