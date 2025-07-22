@@ -111,8 +111,9 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
     """Format messages for tracing in on_chat_model_start.
 
-    For backward compatibility, we update image content blocks to OpenAI Chat
-    Completions format.
+    - Update image content blocks to OpenAI Chat Completions format (backward
+    compatibility).
+    - Add "type" key to content blocks that have a single key.
 
     Args:
         messages: List of messages to format.
@@ -126,6 +127,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
         if isinstance(message.content, list):
             for idx, block in enumerate(message.content):
                 if isinstance(block, dict):
+                    # Update image content blocks to OpenAI # Chat Completions format.
                     if (
                         block.get("type") == "image"
                         and is_data_content_block(block)
