@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.9, <4.0"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.66",
     "langchain-text-splitters<1.0.0,>=0.3.8",
@@ -167,6 +167,7 @@ select = [
     "PGH",    # pygrep-hooks
     "PIE",    # flake8-pie
     "PERF",   # flake8-perf
+    "PT",     # flake8-pytest-style
     "PTH",    # flake8-use-pathlib
     "PYI",    # flake8-pyi
     "Q",      # flake8-quotes
@@ -180,6 +181,7 @@ select = [
     "T10",    # flake8-debugger
     "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
+    "TRY",    # tryceratops
     "UP",     # pyupgrade
     "W",      # pycodestyle warning
     "YTT",    # flake8-2020
@@ -200,6 +202,9 @@ ignore = [
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
+
+    # TODO
+    "TRY301", # tryceratops: raise-within-try
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

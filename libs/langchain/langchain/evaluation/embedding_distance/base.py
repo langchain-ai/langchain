@@ -23,11 +23,10 @@ from langchain.schema import RUN_KEY
 def _import_numpy() -> Any:
     try:
         import numpy as np
-
-        return np
     except ImportError as e:
         msg = "Could not import numpy, please install with `pip install numpy`."
         raise ImportError(msg) from e
+    return np
 
 
 logger = logging.getLogger(__name__)

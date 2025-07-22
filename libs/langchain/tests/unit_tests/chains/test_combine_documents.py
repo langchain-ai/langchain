@@ -1,5 +1,6 @@
 """Test functionality related to combining documents."""
 
+import re
 from typing import Any
 
 import pytest
@@ -30,7 +31,9 @@ def test_multiple_input_keys() -> None:
 def test__split_list_long_single_doc() -> None:
     """Test splitting of a long single doc."""
     docs = [Document(page_content="foo" * 100)]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="A single document was longer than the context length"
+    ):
         split_list_of_docs(docs, _fake_docs_len_func, 100)
 
 
@@ -140,7 +143,17 @@ async def test_format_doc_missing_metadata() -> None:
         input_variables=["page_content", "bar"],
         template="{page_content}, {bar}",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Document prompt requires documents to have metadata variables: ['bar']."
+        ),
+    ):
         format_document(doc, prompt)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Document prompt requires documents to have metadata variables: ['bar']."
+        ),
+    ):
         await aformat_document(doc, prompt)

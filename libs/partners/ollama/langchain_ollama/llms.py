@@ -53,7 +53,10 @@ class OllamaLLM(BaseLLM):
       be present directly within the main response content."""
 
     validate_model_on_init: bool = False
-    """Whether to validate the model exists in ollama locally on initialization."""
+    """Whether to validate the model exists in ollama locally on initialization.
+
+    .. versionadded:: 0.3.4
+    """
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
