@@ -15,6 +15,7 @@ import json
 import logging
 import math
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -40,7 +41,12 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
+from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
 from langchain_core.messages.v1 import MessageV1
+from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
+from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -294,6 +300,43 @@ def _create_message_from_message_type(
     return message
 
 
+def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
+    if isinstance(message, AIMessageV1):
+        return AIMessage(
+            content=message.content,
+            id=message.id,
+            name=message.name,
+            tool_calls=message.tool_calls,
+            response_metadata=message.response_metadata,
+        )
+    if isinstance(message, AIMessageChunkV1):
+        return AIMessageChunk(
+            content=message.content,
+            id=message.id,
+            name=message.name,
+            tool_call_chunks=message.tool_call_chunks,
+            response_metadata=message.response_metadata,
+        )
+    if isinstance(message, HumanMessageV1):
+        return HumanMessage(
+            content=message.content,
+            id=message.id,
+            name=message.name,
+        )
+    if isinstance(message, SystemMessageV1):
+        return SystemMessage(
+            content=message.content,
+            id=message.id,
+        )
+    if isinstance(message, ToolMessageV1):
+        return ToolMessage(
+            content=message.content,
+            id=message.id,
+        )
+    message = f"Unsupported message type: {type(message)}"
+    raise NotImplementedError(message)
+
+
 def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """Instantiate a message from a variety of message formats.
 
@@ -341,6 +384,8 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         message_ = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
+    elif isinstance(message, dataclass):
+        message_ = _convert_from_v1_message(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)

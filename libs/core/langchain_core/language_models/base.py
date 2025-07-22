@@ -173,7 +173,7 @@ class BaseLanguageModel(
         stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> LLMResult:
+    ) -> Union[LLMResult, list[AIMessageV1]]:
         """Pass a sequence of prompts to the model and return model generations.
 
         This method should make use of batched calls for models that expose a batched

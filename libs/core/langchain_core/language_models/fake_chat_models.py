@@ -14,6 +14,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableConfig
 
@@ -21,7 +22,7 @@ from langchain_core.runnables import RunnableConfig
 class FakeMessagesListChatModel(BaseChatModel):
     """Fake ChatModel for testing purposes."""
 
-    responses: list[BaseMessage]
+    responses: list[Union[BaseMessage, AIMessageV1]]
     """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     """Sleep time in seconds between responses."""
@@ -147,7 +148,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessageV1]:
         if isinstance(config, list):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
@@ -160,7 +161,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessageV1]:
         if isinstance(config, list):
             # do Not use an async iterator here because need explicit ordering
             return [await self.ainvoke(m, c, **kwargs) for m, c in zip(inputs, config)]
