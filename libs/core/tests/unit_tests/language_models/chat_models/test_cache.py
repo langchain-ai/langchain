@@ -375,12 +375,12 @@ def test_cache_with_generation_objects() -> None:
 
     # Replace with Generation objects (missing message field)
     corrupted_generations = [
-            Generation(
-                text=gen.text,
-                generation_info=gen.generation_info,
-                type="Generation",  # This is the key - wrong type
-            )
-            for gen in cached_chat_generations
+        Generation(
+            text=gen.text,
+            generation_info=gen.generation_info,
+            type="Generation",  # This is the key - wrong type
+        )
+        for gen in cached_chat_generations
     ]
     cache._cache[cache_key] = corrupted_generations
 
@@ -388,6 +388,8 @@ def test_cache_with_generation_objects() -> None:
     result2 = model.generate_response("test prompt")
     assert result2.generations[0].message.content == "hello"
     assert isinstance(result2.generations[0], ChatGeneration)
+
+
 def test_cleanup_serialized() -> None:
     cleanup_serialized = {
         "lc": 1,
