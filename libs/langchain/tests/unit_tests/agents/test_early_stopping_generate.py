@@ -4,81 +4,85 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import RunnableLambda
 
 from langchain.agents.agent import (
-    BaseSingleActionAgent, 
     BaseMultiActionAgent,
-    RunnableAgent, 
+    BaseSingleActionAgent,
+    RunnableAgent,
     RunnableMultiActionAgent,
 )
 
 
-def test_base_single_action_agent_supports_generate():
+def test_base_single_action_agent_supports_generate() -> None:
     """Test that BaseSingleActionAgent supports early_stopping_method='generate'."""
-    
+
     class TestAgent(BaseSingleActionAgent):
-        @property 
-        def input_keys(self):
+        @property
+        def input_keys(self) -> list[str]:
             return ["input"]
-            
-        def plan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        def plan(self, intermediate_steps, callbacks=None, **kwargs) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-            
-        async def aplan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        async def aplan(
+            self, intermediate_steps, callbacks=None, **kwargs
+        ) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-    
+
     agent = TestAgent()
-    
+
     # Test that 'generate' is supported (no ValueError should be raised)
     result = agent.return_stopped_response("generate", [])
     assert isinstance(result, AgentFinish)
     assert "output" in result.return_values
-    
+
     # Test that 'force' still works
     result = agent.return_stopped_response("force", [])
     assert isinstance(result, AgentFinish)
     assert "iteration limit" in result.return_values["output"].lower()
 
 
-def test_base_multi_action_agent_supports_generate():
+def test_base_multi_action_agent_supports_generate() -> None:
     """Test that BaseMultiActionAgent supports early_stopping_method='generate'."""
-    
+
     class TestMultiAgent(BaseMultiActionAgent):
-        @property 
-        def input_keys(self):
+        @property
+        def input_keys(self) -> list[str]:
             return ["input"]
-            
-        def plan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        def plan(self, intermediate_steps, callbacks=None, **kwargs) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-            
-        async def aplan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        async def aplan(
+            self, intermediate_steps, callbacks=None, **kwargs
+        ) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-    
+
     agent = TestMultiAgent()
-    
+
     # Test that 'generate' is supported (no ValueError should be raised)
     result = agent.return_stopped_response("generate", [])
     assert isinstance(result, AgentFinish)
     assert "output" in result.return_values
-    
+
     # Test that 'force' still works
     result = agent.return_stopped_response("force", [])
     assert isinstance(result, AgentFinish)
     assert "max iterations" in result.return_values["output"].lower()
 
 
-def test_runnable_agent_generate_calls_runnable():
+def test_runnable_agent_generate_calls_runnable() -> None:
     """Test that RunnableAgent properly calls the runnable for generate method."""
-    
-    def mock_invoke(inputs):
+
+    def mock_invoke(inputs) -> AgentFinish:
         return AgentFinish({"output": "Generated final answer!"}, "final")
-    
+
     mock_runnable = RunnableLambda(mock_invoke)
     agent = RunnableAgent(runnable=mock_runnable, stream_runnable=False)
-    
+
     # Test intermediate steps
     intermediate_steps = [
         (AgentAction("tool1", "input1", "log1"), "observation1"),
     ]
-    
+
     # Test that 'generate' calls the runnable and returns its result
     result = agent.return_stopped_response("generate", intermediate_steps, input="test")
     assert isinstance(result, AgentFinish)
@@ -86,20 +90,22 @@ def test_runnable_agent_generate_calls_runnable():
     assert result.log == "final"
 
 
-def test_runnable_multi_action_agent_generate_calls_runnable():
-    """Test that RunnableMultiActionAgent properly calls the runnable for generate method."""
-    
-    def mock_invoke(inputs):
-        return AgentFinish({"output": "Multi-action generated final answer!"}, "multi-final")
-    
+def test_runnable_multi_action_agent_generate_calls_runnable() -> None:
+    """Test RunnableMultiActionAgent properly calls the runnable for generate method."""
+
+    def mock_invoke(inputs) -> AgentFinish:
+        return AgentFinish(
+            {"output": "Multi-action generated final answer!"}, "multi-final"
+        )
+
     mock_runnable = RunnableLambda(mock_invoke)
     agent = RunnableMultiActionAgent(runnable=mock_runnable, stream_runnable=False)
-    
+
     # Test intermediate steps
     intermediate_steps = [
         (AgentAction("tool1", "input1", "log1"), "observation1"),
     ]
-    
+
     # Test that 'generate' calls the runnable and returns its result
     result = agent.return_stopped_response("generate", intermediate_steps, input="test")
     assert isinstance(result, AgentFinish)
@@ -107,40 +113,45 @@ def test_runnable_multi_action_agent_generate_calls_runnable():
     assert result.log == "multi-final"
 
 
-def test_runnable_agent_generate_handles_exceptions():
+def test_runnable_agent_generate_handles_exceptions() -> None:
     """Test that RunnableAgent gracefully handles runnable exceptions."""
-    
+
+    class MockRunnableError(Exception):
+        """Custom exception for mock runnable errors."""
+
     def failing_invoke(inputs):
-        raise Exception("Mock runnable error")
-    
+        msg = "Mock runnable error"
+        raise MockRunnableError(msg)
+
     mock_runnable = RunnableLambda(failing_invoke)
     agent = RunnableAgent(runnable=mock_runnable, stream_runnable=False)
-    
+
     # Test that exceptions are handled gracefully with fallback message
     result = agent.return_stopped_response("generate", [], input="test")
     assert isinstance(result, AgentFinish)
     assert "Unable to generate final response" in result.return_values["output"]
 
 
-def test_unsupported_early_stopping_method_still_raises():
+def test_unsupported_early_stopping_method_still_raises() -> None:
     """Test that unsupported early stopping methods still raise ValueError."""
-    
+
     class TestAgent(BaseSingleActionAgent):
-        @property 
-        def input_keys(self):
+        @property
+        def input_keys(self) -> list[str]:
             return ["input"]
-            
-        def plan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        def plan(self, intermediate_steps, callbacks=None, **kwargs) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-            
-        async def aplan(self, intermediate_steps, callbacks=None, **kwargs):
+
+        async def aplan(
+            self, intermediate_steps, callbacks=None, **kwargs
+        ) -> AgentFinish:
             return AgentFinish({"output": "done"}, "")
-    
+
     agent = TestAgent()
-    
+
     # Test that unsupported methods still raise ValueError
-    try:
+    import pytest
+
+    with pytest.raises(ValueError, match="unsupported early_stopping_method"):
         agent.return_stopped_response("unsupported_method", [])
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "unsupported early_stopping_method" in str(e)
