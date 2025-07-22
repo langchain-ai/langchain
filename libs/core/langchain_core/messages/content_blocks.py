@@ -206,9 +206,6 @@ class ToolCallContentBlock(TypedDict):
     args: dict[str, Any]
     """The arguments for the tool, as a dictionary."""
 
-    call_id: str
-    """The unique ID for this tool call."""
-
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
