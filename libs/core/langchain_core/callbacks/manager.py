@@ -246,7 +246,7 @@ def shielded(func: Func) -> Func:
         # For older versions, fallback to original behavior
         try:
             # Create a task with the captured context to preserve context variables
-            task = asyncio.create_task(coro, context=ctx)  # type: ignore[call-arg]
+            task = asyncio.create_task(coro, context=ctx)  # type: ignore[call-arg, unused-ignore]
             # `call-arg` used to not fail 3.9 or 3.10 tests
             return await asyncio.shield(task)
         except TypeError:
