@@ -16,7 +16,7 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from qdrant_client import QdrantClient, models
+from qdrant_client import AsyncQdrantClient, QdrantClient, models
 
 from langchain_qdrant._utils import maximal_marginal_relevance
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings
@@ -51,8 +51,8 @@ class QdrantVectorStore(VectorStore):
             Optional sparse embedding function to use.
 
     Key init args — client params:
-        client: QdrantClient
-            Qdrant client to use.
+        client: Union[QdrantClient, AsyncQdrantClient]
+            Qdrant client to use. Can be either sync or async client.
         retrieval_mode: RetrievalMode
             Retrieval mode to use.
 
@@ -175,7 +175,7 @@ class QdrantVectorStore(VectorStore):
 
     def __init__(
         self,
-        client: QdrantClient,
+        client: Union[QdrantClient, AsyncQdrantClient],
         collection_name: str,
         embedding: Optional[Embeddings] = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
@@ -204,15 +204,46 @@ class QdrantVectorStore(VectorStore):
             self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
 
         if validate_collection_config:
-            self._validate_collection_config(
-                client,
-                collection_name,
-                retrieval_mode,
-                vector_name,
-                sparse_vector_name,
-                distance,
-                embedding,
-            )
+            if isinstance(client, AsyncQdrantClient):
+                # For async clients, run async validation synchronously
+                import asyncio
+
+                async def _validate():
+                    await self._avalidate_collection_config(
+                        client,
+                        collection_name,
+                        retrieval_mode,
+                        vector_name,
+                        sparse_vector_name,
+                        distance,
+                        embedding,
+                    )
+
+                try:
+                    asyncio.run(_validate())
+                except RuntimeError as e:
+                    # Only handle the specific case of existing event loop
+                    if (
+                        "asyncio.run() cannot be called from a running event loop"
+                        in str(e)
+                    ):
+                        # If we're in an existing event loop, use it directly
+                        loop = asyncio.get_event_loop()
+                        loop.run_until_complete(_validate())
+                    else:
+                        # Re-raise other RuntimeErrors (could be from validation)
+                        raise
+            else:
+                # For sync clients, use sync validation
+                self._validate_collection_config(
+                    client,
+                    collection_name,
+                    retrieval_mode,
+                    vector_name,
+                    sparse_vector_name,
+                    distance,
+                    embedding,
+                )
 
         self._client = client
         self.collection_name = collection_name
@@ -226,13 +257,15 @@ class QdrantVectorStore(VectorStore):
         self.sparse_vector_name = sparse_vector_name
 
     @property
-    def client(self) -> QdrantClient:
+    def client(self) -> Union[QdrantClient, AsyncQdrantClient]:
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            QdrantClient: An instance of ``QdrantClient``.
+            Union[QdrantClient, AsyncQdrantClient]: An instance of ``QdrantClient`` or ``AsyncQdrantClient``.
         """
         return self._client
+
+    
 
     @property
     def embeddings(self) -> Embeddings:
@@ -356,6 +389,119 @@ class QdrantVectorStore(VectorStore):
         return qdrant
 
     @classmethod
+    async def aconstruct_instance(
+        cls: type[QdrantVectorStore],
+        embedding: Optional[Embeddings] = None,
+        retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
+        sparse_embedding: Optional[SparseEmbeddings] = None,
+        client_options: dict[str, Any] = {},
+        collection_name: Optional[str] = None,
+        distance: models.Distance = models.Distance.COSINE,
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+        vector_name: str = VECTOR_NAME,
+        sparse_vector_name: str = SPARSE_VECTOR_NAME,
+        force_recreate: bool = False,
+        collection_create_options: dict[str, Any] = {},
+        vector_params: dict[str, Any] = {},
+        sparse_vector_params: dict[str, Any] = {},
+        validate_embeddings: bool = True,
+        validate_collection_config: bool = True,
+    ) -> QdrantVectorStore:
+        """Async construct an instance of QdrantVectorStore.
+        
+        Returns:
+            QdrantVectorStore: A new instance with async client.
+        """
+        if validate_embeddings:
+            cls._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
+        collection_name = collection_name or uuid.uuid4().hex
+        
+        client = AsyncQdrantClient(**client_options)
+        collection_exists = await client.collection_exists(collection_name)
+
+        if collection_exists and force_recreate:
+            await client.delete_collection(collection_name)
+            collection_exists = False
+            
+        if collection_exists:
+            if validate_collection_config:
+                await cls._avalidate_collection_config(
+                    client,
+                    collection_name,
+                    retrieval_mode,
+                    vector_name,
+                    sparse_vector_name,
+                    distance,
+                    embedding,
+                )
+                    
+        if not collection_exists:
+            vectors_config, sparse_vectors_config = {}, {}
+            if retrieval_mode == RetrievalMode.DENSE:
+                partial_embeddings = await embedding.aembed_documents(
+                    ["dummy_text"]
+                )  # type: ignore
+
+                vector_params["size"] = len(partial_embeddings[0])
+                vector_params["distance"] = distance
+
+                vectors_config = {
+                    vector_name: models.VectorParams(
+                        **vector_params,
+                    )
+                }
+
+            elif retrieval_mode == RetrievalMode.SPARSE:
+                sparse_vectors_config = {
+                    sparse_vector_name: models.SparseVectorParams(
+                        **sparse_vector_params
+                    )
+                }
+
+            elif retrieval_mode == RetrievalMode.HYBRID:
+                partial_embeddings = await embedding.aembed_documents(
+                    ["dummy_text"]
+                )  # type: ignore
+
+                vector_params["size"] = len(partial_embeddings[0])
+                vector_params["distance"] = distance
+
+                vectors_config = {
+                    vector_name: models.VectorParams(
+                        **vector_params,
+                    )
+                }
+
+                sparse_vectors_config = {
+                    sparse_vector_name: models.SparseVectorParams(
+                        **sparse_vector_params
+                    )
+                }
+
+            collection_create_options["collection_name"] = collection_name
+            collection_create_options["vectors_config"] = vectors_config
+            collection_create_options["sparse_vectors_config"] = sparse_vectors_config
+
+            await client.create_collection(**collection_create_options)
+
+        qdrant = cls(
+            client=client,
+            collection_name=collection_name,
+            embedding=embedding,
+            retrieval_mode=retrieval_mode,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
+            distance=distance,
+            vector_name=vector_name,
+            sparse_embedding=sparse_embedding,
+            sparse_vector_name=sparse_vector_name,
+            validate_embeddings=False,
+            validate_collection_config=False,
+        )
+        return qdrant
+
+    @classmethod
     def from_existing_collection(
         cls: type[QdrantVectorStore],
         collection_name: str,
@@ -442,6 +588,36 @@ class QdrantVectorStore(VectorStore):
 
         return added_ids
 
+    async def aadd_texts(  # type: ignore
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[Sequence[str | int]] = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> list[str | int]:
+        """Async add texts with embeddings to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of IDs associated with the texts.
+            batch_size: Batch size for adding texts.
+            **kwargs: vectorstore specific parameters.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        added_ids = []
+        async for batch_ids, points in self._agenerate_batches(
+            texts, metadatas, ids, batch_size
+        ):
+            await self.client.upsert(
+                collection_name=self.collection_name, points=points, **kwargs
+            )
+            added_ids.extend(batch_ids)
+        return added_ids
+
     def similarity_search(
         self,
         query: str,
@@ -460,6 +636,36 @@ class QdrantVectorStore(VectorStore):
             List of Documents most similar to the query.
         """
         results = self.similarity_search_with_score(
+            query,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            hybrid_fusion=hybrid_fusion,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        hybrid_fusion: Optional[models.FusionQuery] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs most similar to query.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        results = await self.asimilarity_search_with_score(
             query,
             k,
             filter=filter,
@@ -545,6 +751,104 @@ class QdrantVectorStore(VectorStore):
                 ],
                 query=hybrid_fusion or models.FusionQuery(fusion=models.Fusion.RRF),
                 **query_options,
+            ).points
+
+        else:
+            raise ValueError(f"Invalid retrieval mode. {self.retrieval_mode}.")
+        return [
+            (
+                self._document_from_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
+            )
+            for result in results
+        ]
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        hybrid_fusion: Optional[models.FusionQuery] = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Async return docs most similar to query.
+
+        Returns:
+            List of documents most similar to the query text and distance for each.
+        """
+
+
+        query_options = {
+            "collection_name": self.collection_name,
+            "query_filter": filter,
+            "search_params": search_params,
+            "limit": k,
+            "offset": offset,
+            "with_payload": True,
+            "with_vectors": False,
+            "score_threshold": score_threshold,
+            "consistency": consistency,
+            **kwargs,
+        }
+        if self.retrieval_mode == RetrievalMode.DENSE:
+            query_dense_embedding = await self.embeddings.aembed_query(query)
+            results = (
+                await self.client.query_points(
+                    query=query_dense_embedding,
+                    using=self.vector_name,
+                    **query_options,
+                )
+            ).points
+
+        elif self.retrieval_mode == RetrievalMode.SPARSE:
+            query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
+            results = (
+                await self.client.query_points(
+                    query=models.SparseVector(
+                        indices=query_sparse_embedding.indices,
+                        values=query_sparse_embedding.values,
+                    ),
+                    using=self.sparse_vector_name,
+                    **query_options,
+                )
+            ).points
+
+        elif self.retrieval_mode == RetrievalMode.HYBRID:
+            query_dense_embedding = await self.embeddings.aembed_query(query)
+            query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
+            results = (
+                await self.client.query_points(
+                    prefetch=[
+                        models.Prefetch(
+                            using=self.vector_name,
+                            query=query_dense_embedding,
+                            filter=filter,
+                            limit=k,
+                            params=search_params,
+                        ),
+                        models.Prefetch(
+                            using=self.sparse_vector_name,
+                            query=models.SparseVector(
+                                indices=query_sparse_embedding.indices,
+                                values=query_sparse_embedding.values,
+                            ),
+                            filter=filter,
+                            limit=k,
+                            params=search_params,
+                        ),
+                    ],
+                    query=hybrid_fusion or models.FusionQuery(fusion=models.Fusion.RRF),
+                    **query_options,
+                )
             ).points
 
         else:
@@ -684,6 +988,49 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         )
 
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs selected using the maximal marginal relevance with dense vectors.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+
+        self._validate_collection_for_dense(
+            self.client,
+            self.collection_name,
+            self.vector_name,
+            self.distance,
+            self.embeddings,
+        )
+
+        query_embedding = await self.embeddings.aembed_query(query)
+        return await self.amax_marginal_relevance_search_by_vector(
+            query_embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            search_params=search_params,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: list[float],
@@ -705,6 +1052,39 @@ class QdrantVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            search_params=search_params,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return docs selected using the maximal marginal relevance with dense vectors.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        results = await self.amax_marginal_relevance_search_with_score_by_vector(
             embedding,
             k=k,
             fetch_k=fetch_k,
@@ -773,6 +1153,66 @@ class QdrantVectorStore(VectorStore):
             for i in mmr_selected
         ]
 
+    async def amax_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: list[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Async return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance and distance for
+            each.
+        """
+
+
+        results = (
+            await self.client.query_points(
+                collection_name=self.collection_name,
+                query=embedding,
+                query_filter=filter,
+                search_params=search_params,
+                limit=fetch_k,
+                with_payload=True,
+                with_vectors=True,
+                score_threshold=score_threshold,
+                consistency=consistency,
+                using=self.vector_name,
+                **kwargs,
+            )
+        ).points
+
+        embeddings = [
+            result.vector
+            if isinstance(result.vector, list)
+            else result.vector.get(self.vector_name)  # type: ignore
+            for result in results
+        ]
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+        )
+        return [
+            (
+                self._document_from_point(
+                    results[i],
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                results[i].score,
+            )
+            for i in mmr_selected
+        ]
+
     def delete(  # type: ignore
         self,
         ids: Optional[list[str | int]] = None,
@@ -793,6 +1233,26 @@ class QdrantVectorStore(VectorStore):
         )
         return result.status == models.UpdateStatus.COMPLETED
 
+    async def adelete(  # type: ignore
+        self,
+        ids: Optional[list[str | int]] = None,
+        **kwargs: Any,
+    ) -> Optional[bool]:
+        """Async delete documents by their ids.
+
+        Args:
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            True if deletion is successful, False otherwise.
+        """
+        result = await self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=ids,
+        )
+        return result.status == models.UpdateStatus.COMPLETED
+
     def get_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:
         results = self.client.retrieve(self.collection_name, ids, with_payload=True)
 
@@ -805,6 +1265,54 @@ class QdrantVectorStore(VectorStore):
             )
             for result in results
         ]
+
+    async def aget_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:
+        """Async get documents by their IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+        """
+        results = await self.client.retrieve(
+            self.collection_name, ids, with_payload=True
+        )
+
+        return [
+            self._document_from_point(
+                result,
+                self.collection_name,
+                self.content_payload_key,
+                self.metadata_payload_key,
+            )
+            for result in results
+        ]
+
+    async def aadd_documents(
+        self, documents: list[Document], **kwargs: Any
+    ) -> list[str]:
+        """Async add documents with embeddings to the vectorstore.
+
+        Args:
+            documents: List of documents to add to the vectorstore.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List of ids from adding the documents into the vectorstore.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        # Extract ids from documents if present
+        ids = None
+        if "ids" not in kwargs:
+            doc_ids = [doc.id for doc in documents]
+            if any(doc_ids):
+                ids = doc_ids
+                kwargs["ids"] = ids
+
+        return await self.aadd_texts(texts, metadatas, ids=ids, **kwargs)
 
     @classmethod
     def construct_instance(
@@ -984,6 +1492,41 @@ class QdrantVectorStore(VectorStore):
 
             yield batch_ids, points
 
+    async def _agenerate_batches(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[Sequence[str | int]] = None,
+        batch_size: int = 64,
+    ):
+        """Async version of _generate_batches."""
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
+            points = [
+                models.PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload=payload,
+                )
+                for point_id, vector, payload in zip(
+                    batch_ids,
+                    await self._abuild_vectors(batch_texts),
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                )
+            ]
+
+            yield batch_ids, points
+
     @staticmethod
     def _build_payloads(
         texts: Iterable[str],
@@ -1060,6 +1603,60 @@ class QdrantVectorStore(VectorStore):
                 f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
             )
 
+    async def _abuild_vectors(
+        self,
+        texts: Iterable[str],
+    ) -> list[models.VectorStruct]:
+        if self.retrieval_mode == RetrievalMode.DENSE:
+            batch_embeddings = await self.embeddings.aembed_documents(list(texts))
+            return [
+                {
+                    self.vector_name: vector,
+                }
+                for vector in batch_embeddings
+            ]
+
+        elif self.retrieval_mode == RetrievalMode.SPARSE:
+            batch_sparse_embeddings = await self.sparse_embeddings.aembed_documents(
+                list(texts)
+            )
+            return [
+                {
+                    self.sparse_vector_name: models.SparseVector(
+                        values=vector.values, indices=vector.indices
+                    )
+                }
+                for vector in batch_sparse_embeddings
+            ]
+
+        elif self.retrieval_mode == RetrievalMode.HYBRID:
+            dense_embeddings = await self.embeddings.aembed_documents(list(texts))
+            sparse_embeddings = await self.sparse_embeddings.aembed_documents(
+                list(texts)
+            )
+
+            if len(dense_embeddings) != len(sparse_embeddings):
+                raise ValueError(
+                    "Mismatched length between dense and sparse embeddings."
+                )
+
+            return [
+                {
+                    self.vector_name: dense_vector,
+                    self.sparse_vector_name: models.SparseVector(
+                        values=sparse_vector.values, indices=sparse_vector.indices
+                    ),
+                }
+                for dense_vector, sparse_vector in zip(
+                    dense_embeddings, sparse_embeddings
+                )
+            ]
+
+        else:
+            raise ValueError(
+                f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
+            )
+
     @classmethod
     def _validate_collection_config(
         cls: type[QdrantVectorStore],
@@ -1086,6 +1683,36 @@ class QdrantVectorStore(VectorStore):
                 client, collection_name, vector_name, distance, embedding
             )
             cls._validate_collection_for_sparse(
+                client, collection_name, sparse_vector_name
+            )
+
+    @classmethod
+    async def _avalidate_collection_config(
+        cls: type[QdrantVectorStore],
+        client: AsyncQdrantClient,
+        collection_name: str,
+        retrieval_mode: RetrievalMode,
+        vector_name: str,
+        sparse_vector_name: str,
+        distance: models.Distance,
+        embedding: Optional[Embeddings],
+    ) -> None:
+        """Async version of _validate_collection_config."""
+        if retrieval_mode == RetrievalMode.DENSE:
+            await cls._avalidate_collection_for_dense(
+                client, collection_name, vector_name, distance, embedding
+            )
+
+        elif retrieval_mode == RetrievalMode.SPARSE:
+            await cls._avalidate_collection_for_sparse(
+                client, collection_name, sparse_vector_name
+            )
+
+        elif retrieval_mode == RetrievalMode.HYBRID:
+            await cls._avalidate_collection_for_dense(
+                client, collection_name, vector_name, distance, embedding
+            )
+            await cls._avalidate_collection_for_sparse(
                 client, collection_name, sparse_vector_name
             )
 
@@ -1158,6 +1785,79 @@ class QdrantVectorStore(VectorStore):
             )
 
     @classmethod
+    async def _avalidate_collection_for_dense(
+        cls: type[QdrantVectorStore],
+        client: AsyncQdrantClient,
+        collection_name: str,
+        vector_name: str,
+        distance: models.Distance,
+        dense_embeddings: Union[Embeddings, list[float], None],
+    ) -> None:
+        """Async version of _validate_collection_for_dense."""
+        collection_info = await client.get_collection(
+            collection_name=collection_name
+        )
+        vector_config = collection_info.config.params.vectors
+
+        if isinstance(vector_config, dict):
+            # vector_config is a Dict[str, VectorParams]
+            if vector_name not in vector_config:
+                raise QdrantVectorStoreError(
+                    f"Existing Qdrant collection {collection_name} does not "
+                    f"contain dense vector named {vector_name}. "
+                    "Did you mean one of the "
+                    f"existing vectors: {', '.join(vector_config.keys())}? "  # type: ignore
+                    f"If you want to recreate the collection, set `force_recreate` "
+                    f"parameter to `True`."
+                )
+
+            # Get the VectorParams object for the specified vector_name
+            vector_config = vector_config[vector_name]  # type: ignore
+
+        else:
+            # vector_config is an instance of VectorParams
+            # Case of a collection with single/unnamed vector.
+            if vector_name != "":
+                raise QdrantVectorStoreError(
+                    f"Existing Qdrant collection {collection_name} is built "
+                    "with unnamed dense vector. "
+                    f"If you want to reuse it, set `vector_name` to ''(empty string)."
+                    f"If you want to recreate the collection, "
+                    "set `force_recreate` to `True`."
+                )
+
+        if vector_config is None:
+            raise ValueError("VectorParams is None")
+
+        if isinstance(dense_embeddings, Embeddings):
+            vector_size = len(
+                (await dense_embeddings.aembed_documents(["dummy_text"]))[0]
+            )
+        elif isinstance(dense_embeddings, list):
+            vector_size = len(dense_embeddings)
+        else:
+            raise ValueError("Invalid `embeddings` type.")
+
+        if vector_config.size != vector_size:
+            raise QdrantVectorStoreError(
+                f"Existing Qdrant collection is configured for dense vectors with "
+                f"{vector_config.size} dimensions. "
+                f"Selected embeddings are {vector_size}-dimensional. "
+                f"If you want to recreate the collection, set `force_recreate` "
+                f"parameter to `True`."
+            )
+
+        if vector_config.distance != distance:
+            raise QdrantVectorStoreError(
+                f"Existing Qdrant collection is configured for "
+                f"{vector_config.distance.name} similarity, but requested "
+                f"{distance.upper()}. Please set `distance` parameter to "
+                f"`{vector_config.distance.name}` if you want to reuse it. "
+                f"If you want to recreate the collection, set `force_recreate` "
+                f"parameter to `True`."
+            )
+
+    @classmethod
     def _validate_collection_for_sparse(
         cls: type[QdrantVectorStore],
         client: QdrantClient,
@@ -1165,6 +1865,30 @@ class QdrantVectorStore(VectorStore):
         sparse_vector_name: str,
     ) -> None:
         collection_info = client.get_collection(collection_name=collection_name)
+        sparse_vector_config = collection_info.config.params.sparse_vectors
+
+        if (
+            sparse_vector_config is None
+            or sparse_vector_name not in sparse_vector_config
+        ):
+            raise QdrantVectorStoreError(
+                f"Existing Qdrant collection {collection_name} does not "
+                f"contain sparse vectors named {sparse_vector_name}. "
+                f"If you want to recreate the collection, set `force_recreate` "
+                f"parameter to `True`."
+            )
+
+    @classmethod
+    async def _avalidate_collection_for_sparse(
+        cls: type[QdrantVectorStore],
+        client: AsyncQdrantClient,
+        collection_name: str,
+        sparse_vector_name: str,
+    ) -> None:
+        """Async version of _validate_collection_for_sparse."""
+        collection_info = await client.get_collection(
+            collection_name=collection_name
+        )
         sparse_vector_config = collection_info.config.params.sparse_vectors
 
         if (
