@@ -1165,34 +1165,49 @@ def test_is_data_content_block() -> None:
 
 
 def test_convert_to_openai_image_block() -> None:
-    input_block = {
-        "type": "image",
-        "source_type": "url",
-        "url": "https://...",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {"url": "https://..."},
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
-
-    input_block = {
-        "type": "image",
-        "source_type": "base64",
-        "data": "<base64 data>",
-        "mime_type": "image/jpeg",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {
-            "url": "data:image/jpeg;base64,<base64 data>",
+    for input_block in [
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
         },
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+    for input_block in [
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/jpeg;base64,<base64 data>",
+            },
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
 
 
 def test_known_block_types() -> None:
