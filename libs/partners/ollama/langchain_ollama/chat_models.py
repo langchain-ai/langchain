@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
-import warnings
+import logging
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -58,6 +58,8 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
+
+log = logging.getLogger(__name__)
 
 
 def _get_usage_metadata_from_generation_info(
@@ -850,12 +852,10 @@ class ChatOllama(BaseChatModel):
                 )
 
                 if is_load_response_with_empty_content:
-                    warnings.warn(
-                        "Ollama returned empty response with done_reason='load'. "
-                        "This typically indicates the model was loaded but no content was generated. "
-                        "Skipping this response.",
-                        UserWarning,
-                        stacklevel=2
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'."
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
                     )
                     continue
 
@@ -928,12 +928,10 @@ class ChatOllama(BaseChatModel):
                 )
 
                 if is_load_response_with_empty_content:
-                    warnings.warn(
+                    log.warning(
                         "Ollama returned empty response with done_reason='load'. "
-                        "This typically indicates the model was loaded but no content was generated. "
-                        "Skipping this response.",
-                        UserWarning,
-                        stacklevel=2
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
                     )
                     continue
 

@@ -1,6 +1,7 @@
 """Test chat model integration."""
 
 import json
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
@@ -142,8 +143,8 @@ def test_parse_json_string_skip_returns_input_on_failure() -> None:
     assert result == malformed_string
 
 
-def test_load_response_with_empty_content_is_skipped() -> None:
-    """Test that load responses with empty content emit a warning and are skipped."""
+def test_load_response_with_empty_content_is_skipped(caplog) -> None:
+    """Test that load responses with empty content log a warning and are skipped."""
     load_only_response = [
         {
             "model": "test-model",
@@ -161,13 +162,17 @@ def test_load_response_with_empty_content_is_skipped() -> None:
 
         llm = ChatOllama(model="test-model")
 
-        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
-            with pytest.raises(ValueError, match="No data received from Ollama stream"):
-                llm.invoke([HumanMessage("Hello")])
+        with (
+            caplog.at_level(logging.WARNING),
+            pytest.raises(ValueError, match="No data received from Ollama stream"),
+        ):
+            llm.invoke([HumanMessage("Hello")])
+
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
 
-def test_load_response_with_whitespace_content_is_skipped() -> None:
-    """Test that load responses with only whitespace content emit a warning and are skipped."""
+def test_load_response_with_whitespace_content_is_skipped(caplog) -> None:
+    """Test load responses w/ only whitespace content log a warning and are skipped."""
     load_whitespace_response = [
         {
             "model": "test-model",
@@ -185,16 +190,16 @@ def test_load_response_with_whitespace_content_is_skipped() -> None:
 
         llm = ChatOllama(model="test-model")
 
-        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
-            with pytest.raises(ValueError, match="No data received from Ollama stream"):
-                llm.invoke([HumanMessage("Hello")])
-
-        with pytest.raises(ValueError, match="No data received from Ollama stream"):
+        with (
+            caplog.at_level(logging.WARNING),
+            pytest.raises(ValueError, match="No data received from Ollama stream"),
+        ):
             llm.invoke([HumanMessage("Hello")])
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
 
-def test_load_followed_by_content_response() -> None:
-    """Test that load responses emit a warning and are skipped when followed by actual content."""
+def test_load_followed_by_content_response(caplog) -> None:
+    """Test load responses log a warning and are skipped when followed by content."""
     load_then_content_response = [
         {
             "model": "test-model",
@@ -221,16 +226,17 @@ def test_load_followed_by_content_response() -> None:
         mock_client.chat.return_value = load_then_content_response
 
         llm = ChatOllama(model="test-model")
-        
-        with pytest.warns(UserWarning, match="Ollama returned empty response with done_reason='load'"):
+
+        with caplog.at_level(logging.WARNING):
             result = llm.invoke([HumanMessage("Hello")])
 
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
         assert result.content == "Hello! How can I help you today?"
         assert result.response_metadata.get("done_reason") == "stop"
 
 
-def test_load_response_with_actual_content_is_not_skipped() -> None:
-    """Test that load responses with actual content are NOT skipped."""
+def test_load_response_with_actual_content_is_not_skipped(caplog) -> None:
+    """Test load responses with actual content are NOT skipped and log no warning."""
     load_with_content_response = [
         {
             "model": "test-model",
@@ -247,7 +253,10 @@ def test_load_response_with_actual_content_is_not_skipped() -> None:
         mock_client.chat.return_value = load_with_content_response
 
         llm = ChatOllama(model="test-model")
-        result = llm.invoke([HumanMessage("Hello")])
+
+        with caplog.at_level(logging.WARNING):
+            result = llm.invoke([HumanMessage("Hello")])
 
         assert result.content == "This is actual content"
         assert result.response_metadata.get("done_reason") == "load"
+        assert not caplog.text
