@@ -1,8 +1,24 @@
+"""LangChain 1.0 message format."""
+
+import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, List, Literal, Optional, TypedDict, Union
+from typing import Any, Literal, Optional, TypedDict, Union
 
-from langchain_core.messages.ai import UsageMetadata
+from typing_extensions import override
+
+from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
+from langchain_core.messages.base import merge_content
+from langchain_core.messages.tool import (
+    ToolCallChunk,
+)
+from langchain_core.messages.tool import (
+    invalid_tool_call as create_invalid_tool_call,
+)
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.utils._merge import merge_dicts, merge_lists
+from langchain_core.utils.json import parse_partial_json
 
 
 def _ensure_id(id_val: Optional[str]) -> str:
@@ -15,22 +31,6 @@ def _ensure_id(id_val: Optional[str]) -> str:
         A valid string ID, either the provided value or a new UUID.
     """
     return id_val or str(uuid.uuid4())
-
-
-@dataclass
-class ContentBlock:
-    """A block of content within a message.
-
-    This represents a single unit of content that can be of various types
-    including text, images, code, or other structured data.
-
-    Attributes:
-        type: The type of content block (text, image, code, or other).
-        data: The actual content data, either as a string or dictionary.
-    """
-
-    type: Literal["text", "image", "code", "other"]
-    data: Union[str, dict]
 
 
 class Provider(TypedDict):
@@ -67,8 +67,8 @@ class AIMessage:
         usage: Optional dictionary containing usage statistics.
     """
 
-    id: str
     type: Literal["ai"] = "ai"
+
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -78,21 +78,50 @@ class AIMessage:
     model implementation.
     """
 
+    id: Optional[str] = None
+
     lc_version: str = "v1"
     """Encoding version for the message."""
 
-    content: List[ContentBlock] = field(default_factory=list)
-    tool_calls: Optional[List[dict]] = None
-    invalid_tool_calls: Optional[List[dict]] = None
-    usage: Optional[dict] = None
+    content: list[dict[str, Any]] = field(default_factory=list)
+    usage_metadata: Optional[UsageMetadata] = None
+    response_metadata: dict = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
-        """Initialize computed fields after dataclass creation.
+    def __init__(
+        self,
+        content: Union[str, list[dict]],
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        lc_version: str = "v1",
+        response_metadata: Optional[dict] = None,
+        usage_metadata: Optional[UsageMetadata] = None,
+    ):
+        """Initialize an AI message.
 
-        Ensures the message has a valid ID and initializes the response field.
+        Args:
+            content: Message content as string or list of content blocks.
+            id: Optional unique identifier for the message.
+            name: Optional human-readable name for the message.
+            lc_version: Encoding version for the message.
+            response_metadata: Optional metadata about the response.
+            usage_metadata: Optional metadata about token usage.
         """
-        self.id = _ensure_id(self.id)
-        self._response = None
+        if isinstance(content, str):
+            self.content = [{"type": "text", "text": content, "index": 0}]
+        else:
+            self.content = content
+
+        self.id = id
+        self.name = name
+        self.lc_version = lc_version
+        self.usage_metadata = usage_metadata
+        if response_metadata is None:
+            self.response_metadata = {}
+        else:
+            self.response_metadata = response_metadata
+
+        self._tool_calls = []
+        self._invalid_tool_calls = []
 
     @property
     def response(self) -> Optional[Any]:
@@ -105,6 +134,34 @@ class AIMessage:
             Response is expected to be serializable.
         """
         return self._response
+
+    @property
+    def text(self) -> Optional[str]:
+        """Extract all text content from the AI message as a string."""
+        text_blocks = [block for block in self.content if block.type == "text"]
+        if text_blocks:
+            return "".join(block["text"] for block in text_blocks)
+        return None
+
+    @property
+    def reasoning(self) -> Optional[str]:
+        """Extract all reasoning text from the AI message as a string."""
+        raise NotImplementedError("Ask Eugene: eyurtsev")
+
+    @property
+    def tool_calls(self) -> list[dict]:  # update once we fix branch
+        """Get the tool calls made by the AI."""
+        if self._tool_calls:
+            return self._tool_calls
+        tool_calls = [block for block in self.content if block["type"] == "tool_call"]
+        if tool_calls:
+            self._tool_calls = tool_calls
+        return self._tool_calls
+
+    @tool_calls.setter
+    def tool_calls(self, value: list[dict]) -> None:
+        """Set the tool calls for the AI message."""
+        self._tool_calls = value
 
 
 @dataclass
@@ -123,8 +180,8 @@ class AIMessageChunk:
         usage_metadata: Optional metadata about token usage and costs.
     """
 
-    id: str
     type: Literal["ai_chunk"] = "ai_chunk"
+
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -133,21 +190,235 @@ class AIMessageChunk:
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
     """
-    content: List[ContentBlock] = field(default_factory=list)
-    tool_call_chunks: Optional[List[dict]] = None
 
+    id: Optional[str] = None
+
+    lc_version: str = "v1"
+    """Encoding version for the message."""
+
+    content: list[dict] = field(init=False)
     usage_metadata: Optional[UsageMetadata] = None
-    """If provided, usage metadata for a message, such as token counts.
+    response_metadata: dict = field(init=False)
+    tool_call_chunks: Optional[list[dict]] = None
 
-    This is a standard representation of token usage that is consistent across models.
-    """
+    def __init__(
+        self,
+        content: Union[str, list[dict]],
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        lc_version: str = "v1",
+        response_metadata: Optional[dict] = None,
+        usage_metadata: Optional[UsageMetadata] = None,
+        tool_call_chunks: Optional[list[dict]] = None,
+    ):
+        """Initialize an AI message.
 
-    def __post_init__(self) -> None:
-        """Initialize computed fields after dataclass creation.
-
-        Ensures the message chunk has a valid ID.
+        Args:
+            content: Message content as string or list of content blocks.
+            id: Optional unique identifier for the message.
+            name: Optional human-readable name for the message.
+            lc_version: Encoding version for the message.
+            response_metadata: Optional metadata about the response.
+            usage_metadata: Optional metadata about token usage.
+            tool_call_chunks: Optional list of partial tool call data.
         """
-        self.id = _ensure_id(self.id)
+        if isinstance(content, str):
+            self.content = [{"type": "text", "text": content, "index": 0}]
+        else:
+            self.content = content
+
+        self.id = id
+        self.name = name
+        self.lc_version = lc_version
+        self.usage_metadata = usage_metadata
+        if response_metadata is None:
+            self.response_metadata = {}
+        else:
+            self.response_metadata = response_metadata
+        if tool_call_chunks is None:
+            self.tool_call_chunks = []
+        else:
+            self.tool_call_chunks = tool_call_chunks
+
+        self._tool_calls = []
+        self._invalid_tool_calls = []
+        self._init_tool_calls()
+
+    def _init_tool_calls(self) -> None:
+        """Initialize tool calls from tool call chunks.
+
+        Args:
+            values: The values to validate.
+
+        Raises:
+            ValueError: If the tool call chunks are malformed.
+        """
+        self._tool_calls = []
+        self._invalid_tool_calls = []
+        if not self.tool_call_chunks:
+            if self._tool_calls:
+                self.tool_call_chunks = [
+                    create_tool_call_chunk(
+                        name=tc["name"],
+                        args=json.dumps(tc["args"]),
+                        id=tc["id"],
+                        index=None,
+                    )
+                    for tc in self._tool_calls
+                ]
+            if self._invalid_tool_calls:
+                tool_call_chunks = self.tool_call_chunks
+                tool_call_chunks.extend(
+                    [
+                        create_tool_call_chunk(
+                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
+                        )
+                        for tc in self._invalid_tool_calls
+                    ]
+                )
+                self.tool_call_chunks = tool_call_chunks
+
+            return self
+        tool_calls = []
+        invalid_tool_calls = []
+
+        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
+            invalid_tool_calls.append(
+                create_invalid_tool_call(
+                    name=chunk["name"],
+                    args=chunk["args"],
+                    id=chunk["id"],
+                    error=None,
+                )
+            )
+
+        for chunk in self.tool_call_chunks:
+            try:
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
+                if isinstance(args_, dict):
+                    tool_calls.append(
+                        create_tool_call(
+                            name=chunk["name"] or "",
+                            args=args_,
+                            id=chunk["id"],
+                        )
+                    )
+                else:
+                    add_chunk_to_invalid_tool_calls(chunk)
+            except Exception:
+                add_chunk_to_invalid_tool_calls(chunk)
+        self._tool_calls = tool_calls
+        self._invalid_tool_calls = invalid_tool_calls
+        return None
+
+    @property
+    def response(self) -> Optional[Any]:
+        """Get the raw provider response when available.
+
+        The response contains the original data returned by the AI provider.
+
+        Returns:
+            The raw provider response if available, None otherwise.
+            Response is expected to be serializable.
+        """
+        return self._response
+
+    @property
+    def text(self) -> Optional[str]:
+        """Extract all text content from the AI message as a string."""
+        text_blocks = [block for block in self.content if block.type == "text"]
+        if text_blocks:
+            return "".join(block["text"] for block in text_blocks)
+        return None
+
+    @property
+    def reasoning(self) -> Optional[str]:
+        """Extract all reasoning text from the AI message as a string."""
+        text_blocks = [block for block in self.content if block.type == "reasoning"]
+        if text_blocks:
+            return "".join(block["reasoning"] for block in text_blocks)
+        return None
+
+    @property
+    def tool_calls(self) -> list[dict]:  # update once we fix branch
+        """Get the tool calls made by the AI."""
+        if self._tool_calls:
+            return self._tool_calls
+        tool_calls = [block for block in self.content if block.type == "tool_call"]
+        if tool_calls:
+            self._tool_calls = tool_calls
+        return self._tool_calls
+
+    @tool_calls.setter
+    def tool_calls(self, value: list[dict]) -> None:
+        """Set the tool calls for the AI message."""
+        self._tool_calls = value
+
+    @override
+    def __add__(self, other: Any) -> "AIMessageChunk":  # type: ignore[override]
+        if isinstance(other, AIMessageChunk):
+            return add_ai_message_chunks(self, other)
+        if isinstance(other, (list, tuple)) and all(
+            isinstance(o, AIMessageChunk) for o in other
+        ):
+            return add_ai_message_chunks(self, *other)
+        return super().__add__(other)
+
+
+def add_ai_message_chunks(
+    left: AIMessageChunk, *others: AIMessageChunk
+) -> AIMessageChunk:
+    """Add multiple AIMessageChunks together."""
+    content = merge_content(left.content, *(o.content for o in others))
+    response_metadata = merge_dicts(
+        left.response_metadata, *(o.response_metadata for o in others)
+    )
+
+    # Merge tool call chunks
+    if raw_tool_calls := merge_lists(
+        left.tool_call_chunks, *(o.tool_call_chunks for o in others)
+    ):
+        tool_call_chunks = [
+            create_tool_call_chunk(
+                name=rtc.get("name"),
+                args=rtc.get("args"),
+                index=rtc.get("index"),
+                id=rtc.get("id"),
+            )
+            for rtc in raw_tool_calls
+        ]
+    else:
+        tool_call_chunks = []
+
+    # Token usage
+    if left.usage_metadata or any(o.usage_metadata is not None for o in others):
+        usage_metadata: Optional[UsageMetadata] = left.usage_metadata
+        for other in others:
+            usage_metadata = add_usage(usage_metadata, other.usage_metadata)
+    else:
+        usage_metadata = None
+
+    chunk_id = None
+    candidates = [left.id] + [o.id for o in others]
+    # first pass: pick the first non-run-* id
+    for id_ in candidates:
+        if id_ and not id_.startswith(_LC_ID_PREFIX):
+            chunk_id = id_
+            break
+    else:
+        # second pass: no provider-assigned id found, just take the first non-null
+        for id_ in candidates:
+            if id_:
+                chunk_id = id_
+                break
+
+    return left.__class__(
+        content=content,
+        tool_call_chunks=tool_call_chunks,
+        response_metadata=response_metadata,
+        usage_metadata=usage_metadata,
+        id=chunk_id,
+    )
 
 
 @dataclass
@@ -165,7 +436,7 @@ class HumanMessage:
     """
 
     id: str
-    content: List[ContentBlock]
+    content: list[dict[str, Any]]
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -182,7 +453,7 @@ class HumanMessage:
     """
 
     def __init__(
-        self, content: Union[str, List[ContentBlock]], id: Optional[str] = None
+        self, content: Union[str, list[dict[str, Any]]], id: Optional[str] = None
     ):
         """Initialize a human message.
 
@@ -192,7 +463,7 @@ class HumanMessage:
         """
         self.id = _ensure_id(id)
         if isinstance(content, str):
-            self.content = [ContentBlock(type="text", data=content)]
+            self.content = [{"type": "text", "text": content}]
         else:
             self.content = content
 
@@ -223,11 +494,11 @@ class SystemMessage:
     """
 
     id: str
-    content: List[ContentBlock]
+    content: list[dict[str, Any]]
     type: Literal["system"] = "system"
 
     def __init__(
-        self, content: Union[str, List[ContentBlock]], *, id: Optional[str] = None
+        self, content: Union[str, list[dict[str, Any]]], *, id: Optional[str] = None
     ):
         """Initialize a system message.
 
@@ -237,16 +508,12 @@ class SystemMessage:
         """
         self.id = _ensure_id(id)
         if isinstance(content, str):
-            self.content = [ContentBlock(type="text", data=content)]
+            self.content = [{"type": "text", "text": content}]
         else:
             self.content = content
 
     def text(self) -> str:
-        """Extract all text content from the system message.
-
-        Returns:
-            Concatenated string of all text blocks in the message.
-        """
+        """Extract all text content from the system message."""
         return "".join(
             block.data
             for block in self.content
@@ -272,16 +539,21 @@ class ToolMessage:
 
     id: str
     tool_call_id: str
-    content: List[ContentBlock]
+    content: list[dict[str, Any]]
     artifact: Optional[Any] = None  # App-side payload not for the model
     status: Literal["success", "error"] = "success"
     type: Literal["tool"] = "tool"
 
     @property
-    def text(self):
-        return
+    def text(self) -> str:
+        """Extract all text content from the tool message."""
+        return "".join(
+            block.data
+            for block in self.content
+            if block.type == "text" and isinstance(block.data, str)
+        )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize computed fields after dataclass creation.
 
         Ensures the tool message has a valid ID.
