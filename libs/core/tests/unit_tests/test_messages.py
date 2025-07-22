@@ -34,7 +34,7 @@ from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.messages.v2 import AIMessageChunk as AIMessageChunkV2
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.utils._merge import merge_lists
 
 
@@ -198,31 +198,31 @@ def test_message_chunks() -> None:
 
 
 def test_message_chunks_v2() -> None:
-    left = AIMessageChunkV2("foo ", id="abc")
-    right = AIMessageChunkV2("bar")
-    expected = AIMessageChunkV2("foo bar", id="abc")
+    left = AIMessageChunkV1("foo ", id="abc")
+    right = AIMessageChunkV1("bar")
+    expected = AIMessageChunkV1("foo bar", id="abc")
     assert left + right == expected
 
     # Test tool calls
-    one = AIMessageChunkV2(
+    one = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name="tool1", args="", id="1", index=0)
         ],
     )
-    two = AIMessageChunkV2(
+    two = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name=None, args='{"arg1": "val', id=None, index=0)
         ],
     )
-    three = AIMessageChunkV2(
+    three = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name=None, args='ue}"', id=None, index=0)
         ],
     )
-    expected = AIMessageChunkV2(
+    expected = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(
@@ -233,20 +233,20 @@ def test_message_chunks_v2() -> None:
     assert one + two + three == expected
 
     assert (
-        AIMessageChunkV2(
+        AIMessageChunkV1(
             [],
             tool_call_chunks=[
                 create_tool_call_chunk(name="tool1", args="", id="1", index=0)
             ],
         )
-        + AIMessageChunkV2(
+        + AIMessageChunkV1(
             [],
             tool_call_chunks=[
                 create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
             ],
         )
         # Don't merge if `index` field does not match.
-    ) == AIMessageChunkV2(
+    ) == AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name="tool1", args="", id="1", index=0),
@@ -254,8 +254,8 @@ def test_message_chunks_v2() -> None:
         ],
     )
 
-    ai_msg_chunk = AIMessageChunkV2([])
-    tool_calls_msg_chunk = AIMessageChunkV2(
+    ai_msg_chunk = AIMessageChunkV1([])
+    tool_calls_msg_chunk = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
@@ -264,7 +264,7 @@ def test_message_chunks_v2() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
-    ai_msg_chunk = AIMessageChunkV2(
+    ai_msg_chunk = AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name="tool1", args="", id="1", index=0)
@@ -273,27 +273,27 @@ def test_message_chunks_v2() -> None:
     assert ai_msg_chunk.tool_calls == [create_tool_call(name="tool1", args={}, id="1")]
 
     # Test token usage
-    left = AIMessageChunkV2(
+    left = AIMessageChunkV1(
         [],
         usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
     )
-    right = AIMessageChunkV2(
+    right = AIMessageChunkV1(
         [],
         usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
     )
-    assert left + right == AIMessageChunkV2(
+    assert left + right == AIMessageChunkV1(
         content=[],
         usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
     )
-    assert AIMessageChunkV2(content=[]) + left == left
-    assert right + AIMessageChunkV2(content=[]) == right
+    assert AIMessageChunkV1(content=[]) + left == left
+    assert right + AIMessageChunkV1(content=[]) == right
 
     # Test ID order of precedence
-    null_id = AIMessageChunkV2(content=[], id=None)
-    default_id = AIMessageChunkV2(
+    null_id = AIMessageChunkV1(content=[], id=None)
+    default_id = AIMessageChunkV1(
         content=[], id="run-abc123"
     )  # LangChain-assigned run ID
-    meaningful_id = AIMessageChunkV2(
+    meaningful_id = AIMessageChunkV1(
         content=[], id="msg_def456"
     )  # provider-assigned ID
 

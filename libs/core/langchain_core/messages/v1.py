@@ -9,6 +9,7 @@ from typing_extensions import override
 
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
 from langchain_core.messages.base import merge_content
+from langchain_core.messages.content_blocks import ContentBlock
 from langchain_core.messages.tool import (
     ToolCallChunk,
 )
@@ -83,13 +84,13 @@ class AIMessage:
     lc_version: str = "v1"
     """Encoding version for the message."""
 
-    content: list[dict[str, Any]] = field(default_factory=list)
+    content: list[ContentBlock] = field(default_factory=list)
     usage_metadata: Optional[UsageMetadata] = None
     response_metadata: dict = field(default_factory=dict)
 
     def __init__(
         self,
-        content: Union[str, list[dict]],
+        content: Union[str, list[ContentBlock]],
         id: Optional[str] = None,
         name: Optional[str] = None,
         lc_version: str = "v1",
@@ -124,29 +125,12 @@ class AIMessage:
         self._invalid_tool_calls = []
 
     @property
-    def response(self) -> Optional[Any]:
-        """Get the raw provider response when available.
-
-        The response contains the original data returned by the AI provider.
-
-        Returns:
-            The raw provider response if available, None otherwise.
-            Response is expected to be serializable.
-        """
-        return self._response
-
-    @property
     def text(self) -> Optional[str]:
         """Extract all text content from the AI message as a string."""
         text_blocks = [block for block in self.content if block.type == "text"]
         if text_blocks:
             return "".join(block["text"] for block in text_blocks)
         return None
-
-    @property
-    def reasoning(self) -> Optional[str]:
-        """Extract all reasoning text from the AI message as a string."""
-        raise NotImplementedError("Ask Eugene: eyurtsev")
 
     @property
     def tool_calls(self) -> list[dict]:  # update once we fix branch
@@ -196,14 +180,14 @@ class AIMessageChunk:
     lc_version: str = "v1"
     """Encoding version for the message."""
 
-    content: list[dict] = field(init=False)
+    content: list[ContentBlock] = field(init=False)
     usage_metadata: Optional[UsageMetadata] = None
     response_metadata: dict = field(init=False)
     tool_call_chunks: Optional[list[dict]] = None
 
     def __init__(
         self,
-        content: Union[str, list[dict]],
+        content: Union[str, list[ContentBlock]],
         id: Optional[str] = None,
         name: Optional[str] = None,
         lc_version: str = "v1",
@@ -310,18 +294,6 @@ class AIMessageChunk:
         self._tool_calls = tool_calls
         self._invalid_tool_calls = invalid_tool_calls
         return None
-
-    @property
-    def response(self) -> Optional[Any]:
-        """Get the raw provider response when available.
-
-        The response contains the original data returned by the AI provider.
-
-        Returns:
-            The raw provider response if available, None otherwise.
-            Response is expected to be serializable.
-        """
-        return self._response
 
     @property
     def text(self) -> Optional[str]:
@@ -436,7 +408,7 @@ class HumanMessage:
     """
 
     id: str
-    content: list[dict[str, Any]]
+    content: list[ContentBlock]
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -453,7 +425,7 @@ class HumanMessage:
     """
 
     def __init__(
-        self, content: Union[str, list[dict[str, Any]]], id: Optional[str] = None
+        self, content: Union[str, list[ContentBlock]], id: Optional[str] = None
     ):
         """Initialize a human message.
 
@@ -494,11 +466,11 @@ class SystemMessage:
     """
 
     id: str
-    content: list[dict[str, Any]]
+    content: list[ContentBlock]
     type: Literal["system"] = "system"
 
     def __init__(
-        self, content: Union[str, list[dict[str, Any]]], *, id: Optional[str] = None
+        self, content: Union[str, list[ContentBlock]], *, id: Optional[str] = None
     ):
         """Initialize a system message.
 
@@ -562,7 +534,7 @@ class ToolMessage:
 
 
 # Alias for a message type that can be any of the defined message types
-MessageV2 = Union[
+MessageV1 = Union[
     AIMessage,
     AIMessageChunk,
     HumanMessage,

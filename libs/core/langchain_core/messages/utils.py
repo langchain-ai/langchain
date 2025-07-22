@@ -40,7 +40,7 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
-from langchain_core.messages.v2 import MessageV2
+from langchain_core.messages.v1 import MessageV1
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -203,7 +203,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any], MessageV2
+    BaseMessage, list[str], tuple[str, str], str, dict[str, Any], MessageV1
 ]
 
 

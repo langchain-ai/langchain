@@ -59,6 +59,7 @@ from langchain_core.messages import (
     message_chunk_to_message,
 )
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -203,10 +204,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-from langchain_core.messages.v2 import AIMessage as AIMessageV2
-
-
-class BaseChatModel(BaseLanguageModel[AIMessageV2], ABC):
+class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
     """Base class for chat models.
 
     Key imperative methods:
