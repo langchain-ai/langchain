@@ -25,7 +25,7 @@ def get_user(user_id: str, verbose: bool = False):  # Maintains stable interface
 * Prefer descriptive, **self-explanatory variable names**. Avoid overly short or cryptic identifiers.
 * Break up overly long or deeply nested functions for **readability and maintainability**.
 * Avoid unnecessary abstraction or premature optimization.
-* All generated Python code must include type hints.
+* All generated Python code must include type hints and return types.
 
 Bad:
 
