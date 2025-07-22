@@ -13,7 +13,7 @@ dependencies = [
     "aiohttp<4,>=3.9.1",
 ]
 name = "langchain-xai"
-version = "0.2.4"
+version = "0.2.5"
 description = "An integration package connecting xAI and LangChain"
 readme = "README.md"
 
