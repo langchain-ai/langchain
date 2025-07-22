@@ -109,7 +109,36 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                         )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
-                        merged.append(e)
+                        # Special handling for tool call chunks: if this chunk appears to be
+                        # a continuation (has None name/id) and no matching index was found,
+                        # try to merge with the most recent tool call chunk that has a name/id.
+                        # This fixes issues with models like Qwen3 that send inconsistent indices.
+                        if (
+                            e.get("type") == "tool_call_chunk"
+                            and e.get("name") is None
+                            and e.get("id") is None
+                            and merged
+                        ):
+                            # Find the most recent tool call chunk with a valid name or id
+                            for i in reversed(range(len(merged))):
+                                if (
+                                    isinstance(merged[i], dict)
+                                    and merged[i].get("type") == "tool_call_chunk"
+                                    and (merged[i].get("name") is not None or merged[i].get("id") is not None)
+                                ):
+                                    # Merge with this chunk
+                                    new_e = (
+                                        {k: v for k, v in e.items() if k != "type"}
+                                        if "type" in e
+                                        else e
+                                    )
+                                    merged[i] = merge_dicts(merged[i], new_e)
+                                    break
+                            else:
+                                # No suitable chunk found, append as new
+                                merged.append(e)
+                        else:
+                            merged.append(e)
                 else:
                     merged.append(e)
     return merged
