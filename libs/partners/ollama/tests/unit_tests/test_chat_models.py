@@ -143,7 +143,9 @@ def test_parse_json_string_skip_returns_input_on_failure() -> None:
     assert result == malformed_string
 
 
-def test_load_response_with_empty_content_is_skipped(caplog) -> None:
+def test_load_response_with_empty_content_is_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test that load responses with empty content log a warning and are skipped."""
     load_only_response = [
         {
@@ -171,7 +173,9 @@ def test_load_response_with_empty_content_is_skipped(caplog) -> None:
         assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
 
-def test_load_response_with_whitespace_content_is_skipped(caplog) -> None:
+def test_load_response_with_whitespace_content_is_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test load responses w/ only whitespace content log a warning and are skipped."""
     load_whitespace_response = [
         {
@@ -198,7 +202,9 @@ def test_load_response_with_whitespace_content_is_skipped(caplog) -> None:
         assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
 
-def test_load_followed_by_content_response(caplog) -> None:
+def test_load_followed_by_content_response(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test load responses log a warning and are skipped when followed by content."""
     load_then_content_response = [
         {
@@ -235,7 +241,9 @@ def test_load_followed_by_content_response(caplog) -> None:
         assert result.response_metadata.get("done_reason") == "stop"
 
 
-def test_load_response_with_actual_content_is_not_skipped(caplog) -> None:
+def test_load_response_with_actual_content_is_not_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test load responses with actual content are NOT skipped and log no warning."""
     load_with_content_response = [
         {
