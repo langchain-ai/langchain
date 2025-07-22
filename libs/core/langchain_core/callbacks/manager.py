@@ -238,10 +238,10 @@ def shielded(func: Func) -> Func:
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
         # Capture the current context to preserve context variables
         ctx = copy_context()
-        
+
         # Create the coroutine
         coro = func(*args, **kwargs)
-        
+
         # For Python 3.11+, create task with explicit context
         # For older versions, fallback to original behavior
         try:
