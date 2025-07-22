@@ -3506,12 +3506,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     new_first_step = first_step.bind_tools(tools, **kwargs)
 
                     # Return a new sequence with the updated first step
-                    return RunnableSequence(
-                        new_first_step, self.last, name=self.name
-                    )
+                    return RunnableSequence(new_first_step, self.last, name=self.name)
 
-                except Exception:
-                    # If binding fails for any reason, fall back to error
+                except (AttributeError, TypeError, ValueError):
+                    # If binding fails due to incompatible types or missing methods,
+                    # continue to the general fallback logic below
                     pass
 
         # If first step supports bind_tools, try to bind there
@@ -3521,7 +3520,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 return RunnableSequence(
                     new_first_step, *self.middle, self.last, name=self.name
                 )
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
+                # If binding fails, fall through to helpful error message
                 pass
 
         # If we can't bind tools, raise a helpful error
