@@ -1040,7 +1040,7 @@ const FEATURE_TABLES = {
                 searchWithScore: true,
                 async: true,
                 passesStandardTests: true,
-                multiTenancy: false,
+                multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
             },
