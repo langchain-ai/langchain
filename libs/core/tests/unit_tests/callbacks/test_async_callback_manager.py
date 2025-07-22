@@ -172,7 +172,7 @@ async def test_shielded_callback_context_preservation() -> None:
 
         def __init__(self) -> None:
             self.run_inline = False
-            self.context_values = []
+            self.context_values: list[str] = []
 
         @override
         async def on_llm_end(self, response: Any, **kwargs: Any) -> None:
@@ -198,7 +198,7 @@ async def test_shielded_callback_context_preservation() -> None:
     chain_run_manager = await manager.on_chain_start({}, {"test": "input"})
 
     # Test LLM end callback (which is shielded)
-    await llm_run_manager.on_llm_end({"response": "test"})
+    await llm_run_manager.on_llm_end({"response": "test"})  # type: ignore[arg-type]
 
     # Test Chain end callback (which is shielded)
     await chain_run_manager.on_chain_end({"output": "test"})
