@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -217,3 +217,19 @@ class TestChatDeepSeekCustomUnit:
             msg = "Expected chunk_result not to be None"
             raise AssertionError(msg)
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
+
+    def test_get_request_payload(self) -> None:
+        """Test that tool message content is converted from list to string."""
+        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+
+        tool_message = ToolMessage(content=[], tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "[]"
+
+        tool_message = ToolMessage(content=["item1", "item2"], tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == '["item1", "item2"]'
+
+        tool_message = ToolMessage(content="test string", tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "test string"

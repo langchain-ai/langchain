@@ -4,7 +4,7 @@ The interfaces for core components like chat models, LLMs, vector stores, retrie
 and more are defined here. The universal invocation protocol (Runnables) along with
 a syntax for combining components (LangChain Expression Language) are also defined here.
 
-No third-party integrations are defined here. The dependencies are kept purposefully
+**No third-party integrations are defined here.** The dependencies are kept purposefully
 very lightweight.
 """
 

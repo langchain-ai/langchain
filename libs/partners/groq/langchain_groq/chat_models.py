@@ -159,8 +159,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user
-                sentence to French."),
+                ("system", "You are a helpful translator. Translate the user sentence to French."),
                 ("human", "I love programming."),
             ]
             llm.invoke(messages)
@@ -244,14 +243,12 @@ class ChatGroq(BaseChatModel):
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state,
-                e.g. San Francisco, CA")
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state,
-                e.g. San Francisco, CA")
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
             model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
             ai_msg = model_with_tools.invoke("What is the population of NY?")
@@ -277,16 +274,14 @@ class ChatGroq(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke
-                is, from 1 to 10")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
 
             structured_model = llm.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats")
 
         .. code-block:: python
 
-            Joke(setup="Why don't cats play poker in the jungle?",
-            punchline='Too many cheetahs!', rating=None)
+            Joke(setup="Why don't cats play poker in the jungle?", punchline='Too many cheetahs!', rating=None)
 
         See ``ChatGroq.with_structured_output()`` for more.
 
@@ -309,7 +304,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
-    """
+    """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -834,7 +829,7 @@ class ChatGroq(BaseChatModel):
                 "auto" to automatically determine which function to call
                 with the option to not call any function, "any" to enforce that some
                 function is called, or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
 
@@ -876,10 +871,12 @@ class ChatGroq(BaseChatModel):
         Args:
             schema:
                 The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (supported added in 0.1.9),
-                    - or a Pydantic class.
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (supported added in 0.1.9),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -891,19 +888,27 @@ class ChatGroq(BaseChatModel):
 
                     Added support for TypedDict class.
             method:
-                The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
+                The method for steering model generation, either ``'function_calling'``
+                or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
+                function-calling API. If ``'json_mode'`` then OpenAI's JSON mode will be
+                used.
+
+                .. note::
+                    If using ``'json_mode'`` then you must include instructions for formatting
+                    the output into the desired schema into the model call. (either via the
+                    prompt itself or in the system message/prompt/instructions).
+
+                .. warning::
+                    ``'json_mode'`` does not support streaming responses stop sequences.
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
             kwargs:
                 Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -917,9 +922,10 @@ class ChatGroq(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+
+            - ``"raw"``: BaseMessage
+            - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``"parsing_error"``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python

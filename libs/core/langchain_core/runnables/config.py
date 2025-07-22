@@ -230,6 +230,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
             not key.startswith("__")
             and isinstance(value, (str, int, float, bool))
             and key not in empty["metadata"]
+            and key != "api_key"
         ):
             empty["metadata"][key] = value
     return empty

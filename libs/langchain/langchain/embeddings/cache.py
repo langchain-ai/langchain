@@ -340,7 +340,7 @@ class CacheBackedEmbeddings(Embeddings):
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

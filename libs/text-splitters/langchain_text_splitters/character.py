@@ -734,6 +734,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.VISUALBASIC6:
+            vis = r"(?:Public|Private|Friend|Global|Static)\s+"
+            return [
+                # Split along definitions
+                rf"\n(?!End\s){vis}?Sub\s+",
+                rf"\n(?!End\s){vis}?Function\s+",
+                rf"\n(?!End\s){vis}?Property\s+(?:Get|Let|Set)\s+",
+                rf"\n(?!End\s){vis}?Type\s+",
+                rf"\n(?!End\s){vis}?Enum\s+",
+                # Split along control flow statements
+                r"\n(?!End\s)If\s+",
+                r"\nElseIf\s+",
+                r"\nElse\s+",
+                r"\nSelect\s+Case\s+",
+                r"\nCase\s+",
+                r"\nFor\s+",
+                r"\nDo\s+",
+                r"\nWhile\s+",
+                r"\nWith\s+",
+                # Split by the normal type of lines
+                r"\n\n",
+                r"\n",
+                " ",
+                "",
+            ]
+
         if language in Language._value2member_map_:
             msg = f"Language {language} is not implemented yet!"
             raise ValueError(msg)

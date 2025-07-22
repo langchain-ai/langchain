@@ -147,7 +147,9 @@ class AgentExecutorIterator:
         self.iterations += 1
         self.time_elapsed = time.time() - self.start_time
         logger.debug(
-            f"Agent Iterations: {self.iterations} ({self.time_elapsed:.2f}s elapsed)",
+            "Agent Iterations: %s (%.2fs elapsed)",
+            self.iterations,
+            self.time_elapsed,
         )
 
     def make_final_outputs(

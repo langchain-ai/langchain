@@ -174,7 +174,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         run_manager.on_chain_end(outputs)
 
         if include_run_info:
@@ -228,7 +228,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         await run_manager.on_chain_end(outputs)
 
         if include_run_info:
@@ -781,10 +781,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(chain_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

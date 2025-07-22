@@ -71,12 +71,8 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: Union[AgentAction, AgentFinish] = (
-                    self.output_fixing_parser.parse(text)
-                )
-            else:
-                parsed_obj = self.base_parser.parse(text)
-            return parsed_obj
+                return self.output_fixing_parser.parse(text)
+            return self.base_parser.parse(text)
         except Exception as e:
             msg = f"Could not parse LLM output: {text}"
             raise OutputParserException(msg) from e

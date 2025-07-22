@@ -13,8 +13,11 @@ DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
 NOTEBOOKS_NO_CASSETTES = [
+    "docs/docs/tutorials/rag.ipynb",  # TODO: accommodate langsmith changes in cassettes
     "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
     "docs/docs/how_to/multi_vector.ipynb",  # Non-determinism due to batch
+    "docs/docs/how_to/qa_sources.ipynb",  # TODO: accommodate langsmith changes in cassettes
+    "docs/docs/how_to/qa_streaming.ipynb",  # TODO: accommodate langsmith changes in cassettes
 ]
 
 NOTEBOOKS_NO_EXECUTION = [

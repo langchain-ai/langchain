@@ -74,7 +74,7 @@ class RePhraseQueryRetriever(BaseRetriever):
             query,
             {"callbacks": run_manager.get_child()},
         )
-        logger.info(f"Re-phrased question: {re_phrased_question}")
+        logger.info("Re-phrased question: %s", re_phrased_question)
         return self.retriever.invoke(
             re_phrased_question,
             config={"callbacks": run_manager.get_child()},

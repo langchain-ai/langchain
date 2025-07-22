@@ -905,7 +905,7 @@ async def test_ascoped_full_fails_with_bad_source_ids(
 def test_index_empty_doc_scoped_full(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
-    """Test Indexing with scoped_full strategy"""
+    """Test Indexing with scoped_full strategy."""
     loader = ToyLoader(
         documents=[
             Document(
@@ -1927,7 +1927,6 @@ def test_incremental_cleanup_with_different_batchsize(
     record_manager: InMemoryRecordManager, vector_store: VectorStore
 ) -> None:
     """Check that we can clean up with different batch size."""
-
     docs = [
         Document(
             page_content="This is a test document.",

@@ -209,10 +209,10 @@ class BaseSingleActionAgent(BaseModel):
             raise NotImplementedError(msg)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -352,10 +352,10 @@ class BaseMultiActionAgent(BaseModel):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -1380,7 +1380,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg) from e
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
@@ -1519,7 +1519,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg) from e
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(

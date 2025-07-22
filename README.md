@@ -79,5 +79,6 @@ guided examples on getting started with LangChain.
 snippets for topics such as tool calling, RAG use cases, and more.
 - [Conceptual Guides](https://python.langchain.com/docs/concepts/): Explanations of key
 concepts behind the LangChain framework.
+- [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.

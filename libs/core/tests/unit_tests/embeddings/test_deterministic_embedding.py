@@ -2,7 +2,9 @@ from langchain_core.embeddings import DeterministicFakeEmbedding
 
 
 def test_deterministic_fake_embeddings() -> None:
-    """Test that the deterministic fake embeddings return the same
+    """Test that DeterministicFakeEmbedding is deterministic.
+
+    Test that the deterministic fake embeddings return the same
     embedding vector for the same text.
     """
     fake = DeterministicFakeEmbedding(size=10)

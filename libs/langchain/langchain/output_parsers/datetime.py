@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
@@ -26,7 +26,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
             )
         else:
             try:
-                now = datetime.now()
+                now = datetime.now(tz=timezone.utc)
                 examples = comma_list(
                     [
                         now.strftime(self.format),
@@ -48,7 +48,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
     def parse(self, response: str) -> datetime:
         """Parse a string into a datetime object."""
         try:
-            return datetime.strptime(response.strip(), self.format)
+            return datetime.strptime(response.strip(), self.format)  # noqa: DTZ007
         except ValueError as e:
             msg = f"Could not parse datetime string: {response}"
             raise OutputParserException(msg) from e

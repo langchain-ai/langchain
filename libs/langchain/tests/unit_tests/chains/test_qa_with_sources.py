@@ -5,7 +5,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.mark.parametrize(
-    "text,answer,sources",
+    ("text", "answer", "sources"),
     [
         (
             "This Agreement is governed by English law.\nSOURCES: 28-pl",

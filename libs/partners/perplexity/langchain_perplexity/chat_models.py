@@ -74,7 +74,7 @@ class ChatPerplexity(BaseChatModel):
 
         Key init args - completion params:
             model: str
-                Name of the model to use. e.g. "llama-3.1-sonar-small-128k-online"
+                Name of the model to use. e.g. "sonar"
             temperature: float
                 Sampling temperature to use. Default is 0.7
             max_tokens: Optional[int]
@@ -95,11 +95,9 @@ class ChatPerplexity(BaseChatModel):
         Instantiate:
             .. code-block:: python
 
-                from langchain_community.chat_models import ChatPerplexity
+                from langchain_perplexity import ChatPerplexity
 
-                llm = ChatPerplexity(
-                    model="llama-3.1-sonar-small-128k-online", temperature=0.7
-                )
+                llm = ChatPerplexity(model="sonar", temperature=0.7)
 
         Invoke:
             .. code-block:: python
@@ -147,7 +145,7 @@ class ChatPerplexity(BaseChatModel):
     """  # noqa: E501
 
     client: Any = None  #: :meta private:
-    model: str = "llama-3.1-sonar-small-128k-online"
+    model: str = "sonar"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -325,7 +323,7 @@ class ChatPerplexity(BaseChatModel):
             additional_kwargs = {}
             if first_chunk:
                 additional_kwargs["citations"] = chunk.get("citations", [])
-                for attr in ["images", "related_questions"]:
+                for attr in ["images", "related_questions", "search_results"]:
                     if attr in chunk:
                         additional_kwargs[attr] = chunk[attr]
 
@@ -376,7 +374,7 @@ class ChatPerplexity(BaseChatModel):
             usage_metadata = None
 
         additional_kwargs = {}
-        for attr in ["citations", "images", "related_questions"]:
+        for attr in ["citations", "images", "related_questions", "search_results"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 

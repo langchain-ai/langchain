@@ -27,6 +27,7 @@ EXPECTED_ALL = [
     "pre_init",
     "from_env",
     "secret_from_env",
+    "sanitize_for_postgres",
 ]
 
 

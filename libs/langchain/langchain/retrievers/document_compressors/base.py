@@ -48,7 +48,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
                 documents = _transformer.transform_documents(documents)
             else:
                 msg = f"Got unexpected transformer type: {_transformer}"
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
         return documents
 
     async def acompress_documents(
@@ -78,5 +78,5 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
                 documents = await _transformer.atransform_documents(documents)
             else:
                 msg = f"Got unexpected transformer type: {_transformer}"
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
         return documents

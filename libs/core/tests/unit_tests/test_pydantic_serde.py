@@ -1,4 +1,6 @@
-"""A set of tests that verifies that Union discrimination works correctly with
+"""Test pydantic SerDe.
+
+A set of tests that verifies that Union discrimination works correctly with
 the various pydantic base models.
 
 These tests can uncover issues that will also arise during regular instantiation

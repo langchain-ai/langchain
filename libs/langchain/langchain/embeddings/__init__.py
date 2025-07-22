@@ -1,7 +1,7 @@
 """**Embedding models**  are wrappers around embedding models
 from different APIs and services.
 
-**Embedding models** can be LLMs or not.
+Embedding models can be LLMs or not.
 
 **Class hierarchy:**
 

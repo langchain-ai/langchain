@@ -37,6 +37,7 @@ test = [
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
     "langgraph",
+    "msgpack",
     "jupyter<2.0.0,>=1.1.1",
     "click<9.0.0,>=8.1.7",
     "aiofiles<25.0.0,>=24.1.0",

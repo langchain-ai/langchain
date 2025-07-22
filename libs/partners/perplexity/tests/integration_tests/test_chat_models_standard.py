@@ -23,3 +23,5 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     @pytest.mark.xfail(reason="Raises 400: Custom stop words not supported.")
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         super().test_stop_sequence(model)
+
+    # TODO, API regressed for some reason after 2025-04-15
