@@ -834,6 +834,24 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+                
+                # Skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True and
+                    stream_resp.get("done_reason") == "load" and
+                    not content.strip()
+                )
+                
+                if is_load_response_with_empty_content:
+                    # Skip this chunk - don't yield anything for load responses with empty content
+                    continue
+                
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -841,12 +859,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -894,6 +906,24 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+                
+                # Skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True and
+                    stream_resp.get("done_reason") == "load" and
+                    not content.strip()
+                )
+                
+                if is_load_response_with_empty_content:
+                    # Skip this chunk - don't yield anything for load responses with empty content
+                    continue
+                
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -901,12 +931,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
