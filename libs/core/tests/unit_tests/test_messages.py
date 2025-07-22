@@ -1112,23 +1112,20 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "url",
             "url": "https://...",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
         }
@@ -1136,13 +1133,17 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "metadata": {"cache_control": {"type": "ephemeral"}},
         }
     )
-
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",  # backward compatibility
+        }
+    )
     assert not is_data_content_block(
         {
             "type": "text",
@@ -1153,12 +1154,6 @@ def test_is_data_content_block() -> None:
         {
             "type": "image_url",
             "image_url": {"url": "https://..."},
-        }
-    )
-    assert not is_data_content_block(
-        {
-            "type": "image",
-            "source_type": "base64",
         }
     )
     assert not is_data_content_block(
@@ -1203,10 +1198,17 @@ def test_convert_to_openai_image_block() -> None:
 def test_known_block_types() -> None:
     assert {
         "text",
+        "text-plain",
         "tool_call",
         "reasoning",
         "non_standard",
         "image",
         "audio",
         "file",
+        "video",
+        "code_interpreter_call",
+        "code_interpreter_output",
+        "code_interpreter_result",
+        "web_search_call",
+        "web_search_result",
     } == KNOWN_BLOCK_TYPES

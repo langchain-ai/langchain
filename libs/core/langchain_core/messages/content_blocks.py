@@ -80,7 +80,6 @@ The module defines several types of content blocks, including:
 import warnings
 from typing import Any, Literal, Union
 
-from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 # --- Text and annotations ---
@@ -212,10 +211,10 @@ class ToolCallContentBlock(TypedDict):
 
 
 # Web search
-class SearchCall(TypedDict):
+class WebSearchCall(TypedDict):
     """Content block for a built-in web search tool call."""
 
-    type: Literal["search_call"]
+    type: Literal["web_search_call"]
     """Type of the content block."""
 
     id: NotRequired[str]
@@ -229,10 +228,10 @@ class SearchCall(TypedDict):
     """The search query used in the web search tool call."""
 
 
-class SearchResult(TypedDict):
-    """Content block for the result of a built-in search tool call."""
+class WebSearchResult(TypedDict):
+    """Content block for the result of a built-in web search tool call."""
 
-    type: Literal["search_result"]
+    type: Literal["web_search_result"]
     """Type of the content block."""
 
     id: NotRequired[str]
@@ -603,8 +602,8 @@ ToolContentBlock = Union[
     CodeInterpreterCall,
     CodeInterpreterOutput,
     CodeInterpreterResult,
-    SearchCall,
-    SearchResult,
+    WebSearchCall,
+    WebSearchResult,
 ]
 
 ContentBlock = Union[
@@ -634,9 +633,6 @@ KNOWN_BLOCK_TYPES = {
     bt for bt in get_args(ContentBlock) for bt in get_args(bt.__annotations__["type"])
 }
 
-# Adapter for DataContentBlock
-_DataAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
-
 
 def is_data_content_block(block: dict) -> bool:
     """Check if the content block is a standard data content block.
@@ -647,12 +643,22 @@ def is_data_content_block(block: dict) -> bool:
     Returns:
         True if the content block is a data content block, False otherwise.
     """
-    try:
-        _DataAdapter.validate_python(block)
-    except ValidationError:
-        return False
-    else:
-        return True
+    return block.get("type") in (
+        "audio",
+        "image",
+        "video",
+        "file",
+        "text-plain",
+    ) and any(
+        key in block
+        for key in (
+            "url",
+            "base64",
+            "file_id",
+            "text",
+            "source_type",  # backwards compatibility
+        )
+    )
 
 
 # TODO: don't use `source_type` anymore
