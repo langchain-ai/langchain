@@ -11,7 +11,7 @@ dependencies = [
     "openai<2.0.0,>=1.68.2",
 ]
 name = "langchain-perplexity"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Perplexity and LangChain"
 readme = "README.md"
 
