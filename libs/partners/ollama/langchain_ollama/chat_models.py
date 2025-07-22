@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -57,6 +58,8 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
+
+log = logging.getLogger(__name__)
 
 
 def _get_usage_metadata_from_generation_info(
@@ -837,6 +840,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'."
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -844,12 +869,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -897,6 +916,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'. "
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -904,12 +945,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
