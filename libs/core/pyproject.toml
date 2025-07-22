@@ -86,6 +86,7 @@ ignore = [
     "FIX002", # Line contains TODO
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
+    "PLC0414",  # Enable re-export
     "PLR09", # Too many something (arg, statements, etc)
     "RUF012", # Doesn't play well with Pydantic
     "TC001", # Doesn't play well with Pydantic

@@ -3,13 +3,11 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict, Union
+from typing import Any, Literal, Optional, TypedDict, Union, cast
 
-from typing_extensions import override
-
+import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
 from langchain_core.messages.base import merge_content
-from langchain_core.messages.content_blocks import ContentBlock
 from langchain_core.messages.tool import (
     ToolCallChunk,
 )
@@ -84,13 +82,13 @@ class AIMessage:
     lc_version: str = "v1"
     """Encoding version for the message."""
 
-    content: list[ContentBlock] = field(default_factory=list)
+    content: list[types.ContentBlock] = field(default_factory=list)
     usage_metadata: Optional[UsageMetadata] = None
     response_metadata: dict = field(default_factory=dict)
 
     def __init__(
         self,
-        content: Union[str, list[ContentBlock]],
+        content: Union[str, list[types.ContentBlock]],
         id: Optional[str] = None,
         name: Optional[str] = None,
         lc_version: str = "v1",
@@ -121,19 +119,19 @@ class AIMessage:
         else:
             self.response_metadata = response_metadata
 
-        self._tool_calls = []
-        self._invalid_tool_calls = []
+        self._tool_calls: list[types.ToolCall] = []
+        self._invalid_tool_calls: list[types.InvalidToolCall] = []
 
     @property
     def text(self) -> Optional[str]:
         """Extract all text content from the AI message as a string."""
-        text_blocks = [block for block in self.content if block.type == "text"]
+        text_blocks = [block for block in self.content if block["type"] == "text"]
         if text_blocks:
             return "".join(block["text"] for block in text_blocks)
         return None
 
     @property
-    def tool_calls(self) -> list[dict]:  # update once we fix branch
+    def tool_calls(self) -> list[types.ToolCall]:  # update once we fix branch
         """Get the tool calls made by the AI."""
         if self._tool_calls:
             return self._tool_calls
@@ -143,7 +141,7 @@ class AIMessage:
         return self._tool_calls
 
     @tool_calls.setter
-    def tool_calls(self, value: list[dict]) -> None:
+    def tool_calls(self, value: list[types.ToolCall]) -> None:
         """Set the tool calls for the AI message."""
         self._tool_calls = value
 
@@ -180,20 +178,20 @@ class AIMessageChunk:
     lc_version: str = "v1"
     """Encoding version for the message."""
 
-    content: list[ContentBlock] = field(init=False)
+    content: list[types.ContentBlock] = field(init=False)
     usage_metadata: Optional[UsageMetadata] = None
     response_metadata: dict = field(init=False)
-    tool_call_chunks: Optional[list[dict]] = None
+    tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
 
     def __init__(
         self,
-        content: Union[str, list[ContentBlock]],
+        content: Union[str, list[types.ContentBlock]],
         id: Optional[str] = None,
         name: Optional[str] = None,
         lc_version: str = "v1",
         response_metadata: Optional[dict] = None,
         usage_metadata: Optional[UsageMetadata] = None,
-        tool_call_chunks: Optional[list[dict]] = None,
+        tool_call_chunks: Optional[list[types.ToolCallChunk]] = None,
     ):
         """Initialize an AI message.
 
@@ -220,12 +218,12 @@ class AIMessageChunk:
         else:
             self.response_metadata = response_metadata
         if tool_call_chunks is None:
-            self.tool_call_chunks = []
+            self.tool_call_chunks: list[types.ToolCallChunk] = []
         else:
             self.tool_call_chunks = tool_call_chunks
 
-        self._tool_calls = []
-        self._invalid_tool_calls = []
+        self._tool_calls: list[types.ToolCall] = []
+        self._invalid_tool_calls: list[types.InvalidToolCall] = []
         self._init_tool_calls()
 
     def _init_tool_calls(self) -> None:
@@ -262,7 +260,6 @@ class AIMessageChunk:
                 )
                 self.tool_call_chunks = tool_call_chunks
 
-            return self
         tool_calls = []
         invalid_tool_calls = []
 
@@ -293,12 +290,11 @@ class AIMessageChunk:
                 add_chunk_to_invalid_tool_calls(chunk)
         self._tool_calls = tool_calls
         self._invalid_tool_calls = invalid_tool_calls
-        return None
 
     @property
     def text(self) -> Optional[str]:
         """Extract all text content from the AI message as a string."""
-        text_blocks = [block for block in self.content if block.type == "text"]
+        text_blocks = [block for block in self.content if block["type"] == "text"]
         if text_blocks:
             return "".join(block["text"] for block in text_blocks)
         return None
@@ -306,42 +302,46 @@ class AIMessageChunk:
     @property
     def reasoning(self) -> Optional[str]:
         """Extract all reasoning text from the AI message as a string."""
-        text_blocks = [block for block in self.content if block.type == "reasoning"]
+        text_blocks = [block for block in self.content if block["type"] == "reasoning"]
         if text_blocks:
             return "".join(block["reasoning"] for block in text_blocks)
         return None
 
     @property
-    def tool_calls(self) -> list[dict]:  # update once we fix branch
+    def tool_calls(self) -> list[types.ToolCall]:
         """Get the tool calls made by the AI."""
         if self._tool_calls:
             return self._tool_calls
-        tool_calls = [block for block in self.content if block.type == "tool_call"]
+        tool_calls = [block for block in self.content if block["type"] == "tool_call"]
         if tool_calls:
             self._tool_calls = tool_calls
         return self._tool_calls
 
     @tool_calls.setter
-    def tool_calls(self, value: list[dict]) -> None:
+    def tool_calls(self, value: list[types.ToolCall]) -> None:
         """Set the tool calls for the AI message."""
         self._tool_calls = value
 
-    @override
-    def __add__(self, other: Any) -> "AIMessageChunk":  # type: ignore[override]
+    def __add__(self, other: Any) -> "AIMessageChunk":
+        """Add AIMessageChunk to this one."""
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
         if isinstance(other, (list, tuple)) and all(
             isinstance(o, AIMessageChunk) for o in other
         ):
             return add_ai_message_chunks(self, *other)
-        return super().__add__(other)
+        error_msg = "Can only add AIMessageChunk or sequence of AIMessageChunk."
+        raise NotImplementedError(error_msg)
 
 
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
     """Add multiple AIMessageChunks together."""
-    content = merge_content(left.content, *(o.content for o in others))
+    content = merge_content(
+        cast("list[str | dict[Any, Any]]", left.content),
+        *(cast("list[str | dict[Any, Any]]", o.content) for o in others),
+    )
     response_metadata = merge_dicts(
         left.response_metadata, *(o.response_metadata for o in others)
     )
@@ -385,7 +385,7 @@ def add_ai_message_chunks(
                 break
 
     return left.__class__(
-        content=content,
+        content=cast("list[types.ContentBlock]", content),
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
@@ -408,7 +408,7 @@ class HumanMessage:
     """
 
     id: str
-    content: list[ContentBlock]
+    content: list[types.ContentBlock]
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -425,7 +425,7 @@ class HumanMessage:
     """
 
     def __init__(
-        self, content: Union[str, list[ContentBlock]], id: Optional[str] = None
+        self, content: Union[str, list[types.ContentBlock]], id: Optional[str] = None
     ):
         """Initialize a human message.
 
@@ -446,9 +446,7 @@ class HumanMessage:
             Concatenated string of all text blocks in the message.
         """
         return "".join(
-            block.data
-            for block in self.content
-            if block.type == "text" and isinstance(block.data, str)
+            block["text"] for block in self.content if block["type"] == "text"
         )
 
 
@@ -466,11 +464,11 @@ class SystemMessage:
     """
 
     id: str
-    content: list[ContentBlock]
+    content: list[types.ContentBlock]
     type: Literal["system"] = "system"
 
     def __init__(
-        self, content: Union[str, list[ContentBlock]], *, id: Optional[str] = None
+        self, content: Union[str, list[types.ContentBlock]], *, id: Optional[str] = None
     ):
         """Initialize a system message.
 
@@ -487,9 +485,7 @@ class SystemMessage:
     def text(self) -> str:
         """Extract all text content from the system message."""
         return "".join(
-            block.data
-            for block in self.content
-            if block.type == "text" and isinstance(block.data, str)
+            block["text"] for block in self.content if block["type"] == "text"
         )
 
 
@@ -520,9 +516,7 @@ class ToolMessage:
     def text(self) -> str:
         """Extract all text content from the tool message."""
         return "".join(
-            block.data
-            for block in self.content
-            if block.type == "text" and isinstance(block.data, str)
+            block["text"] for block in self.content if block["type"] == "text"
         )
 
     def __post_init__(self) -> None:
