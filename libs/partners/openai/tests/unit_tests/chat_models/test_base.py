@@ -2532,11 +2532,7 @@ def test_convert_to_v1_from_chat_completions(
                             },
                         ],
                     },
-                    {
-                        "type": "image",
-                        "base64": "...",
-                        "id": "img_123",
-                    },
+                    {"type": "image", "base64": "...", "id": "img_123"},
                     {
                         "type": "non_standard",
                         "value": {"type": "something_else", "foo": "bar"},
@@ -2736,11 +2732,7 @@ def test_convert_from_v1_to_responses(
                             },
                         ],
                     },
-                    {
-                        "type": "image",
-                        "base64": "...",
-                        "id": "img_123",
-                    },
+                    {"type": "image", "base64": "...", "id": "img_123"},
                     {
                         "type": "non_standard",
                         "value": {"type": "something_else", "foo": "bar"},
