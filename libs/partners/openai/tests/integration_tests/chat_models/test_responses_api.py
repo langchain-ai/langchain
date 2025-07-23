@@ -496,7 +496,7 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         code_interpreter_result = next(
             item
             for item in response.content
-            if item["type"] == "code_interpreter_result"
+            if isinstance(item, dict) and item["type"] == "code_interpreter_result"
         )
         assert tool_outputs
         assert code_interpreter_result
@@ -528,12 +528,14 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         ]
     else:
         code_interpreter_call = next(
-            item for item in response.content if item["type"] == "code_interpreter_call"
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
         )
         code_interpreter_result = next(
             item
             for item in response.content
-            if item["type"] == "code_interpreter_result"
+            if isinstance(item, dict) and item["type"] == "code_interpreter_result"
         )
         assert code_interpreter_call
         assert code_interpreter_result
@@ -701,7 +703,9 @@ def test_image_generation_streaming(output_version: str) -> None:
         # v1
         standard_keys = {"type", "base64", "id", "status", "index"}
         tool_output = next(
-            block for block in complete_ai_message.content if block["type"] == "image"
+            block
+            for block in complete_ai_message.content
+            if isinstance(block, dict) and block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -758,7 +762,9 @@ def test_image_generation_multi_turn(output_version: str) -> None:
     else:
         standard_keys = {"type", "base64", "id", "status"}
         tool_output = next(
-            block for block in ai_message.content if block["type"] == "image"
+            block
+            for block in ai_message.content
+            if isinstance(block, dict) and block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())
 
@@ -810,6 +816,8 @@ def test_image_generation_multi_turn(output_version: str) -> None:
     else:
         standard_keys = {"type", "base64", "id", "status"}
         tool_output = next(
-            block for block in ai_message2.content if block["type"] == "image"
+            block
+            for block in ai_message2.content
+            if isinstance(block, dict) and block["type"] == "image"
         )
         assert set(standard_keys).issubset(tool_output.keys())

@@ -3807,11 +3807,12 @@ def _construct_lc_result_from_responses_api(
             )
             if image_generation_call.output_format:
                 mime_type = f"image/{image_generation_call.output_format}"
-                for block in message.content:
+                for content_block in message.content:
                     # OK to mutate output message
                     if (
-                        block.get("type") == "image"
-                        and "base64" in block
+                        isinstance(content_block, dict)
+                        and content_block.get("type") == "image"
+                        and "base64" in content_block
                         and "mime_type" not in block
                     ):
                         block["mime_type"] = mime_type
@@ -4055,10 +4056,13 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif output_version == "v1":
         message = cast(AIMessageChunk, _convert_to_v1_from_responses(message))
-        for block in message.content:
-            if block.get("index", -1) > current_index:
+        for content_block in message.content:
+            if (
+                isinstance(content_block, dict)
+                and content_block.get("index", -1) > current_index
+            ):
                 # blocks were added for v1
-                current_index = block["index"]
+                current_index = content_block["index"]
     else:
         pass
     return (
