@@ -2534,8 +2534,7 @@ def test_convert_to_v1_from_chat_completions(
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": "...",
+                        "base64": "...",
                         "id": "img_123",
                     },
                     {
@@ -2739,8 +2738,7 @@ def test_convert_from_v1_to_responses(
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": "...",
+                        "base64": "...",
                         "id": "img_123",
                     },
                     {
