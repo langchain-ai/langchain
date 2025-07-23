@@ -637,8 +637,12 @@ class ChildTool(BaseTool):
                     )
                     raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
-                if issubclass(input_args, (BaseModel, BaseModelV1)):
+                if issubclass(input_args, BaseModel):
+                    # ✅ For v2
                     input_args.model_validate({key_: tool_input})
+                elif issubclass(input_args, BaseModelV1):
+                    # ✅ For v1 (compatible)
+                    input_args.parse_obj({key_: tool_input})
                 else:
                     msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
                     raise TypeError(msg)
@@ -680,7 +684,12 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
+                if issubclass(input_args, BaseModel):
+                    # ✅ v2 model
+                    result = input_args.model_validate(tool_input)
+                elif issubclass(input_args, BaseModelV1):
+                    # ✅ v1 model
+                    result = input_args.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
                 msg = (
@@ -952,7 +961,9 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 func_to_check = (
-                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                    self._run
+                    if self.__class__._arun is BaseTool._arun
+                    else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
