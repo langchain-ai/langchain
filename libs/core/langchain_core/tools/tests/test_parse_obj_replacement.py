@@ -23,6 +23,6 @@ class DummyTool(BaseTool):
 
 def test_model_validate() -> None:
     """Test if tool handles args_schema using model_validate correctly."""
-    tool = DummyTool(name="dummy", description="dummy tool")
+    tool = DummyTool(name="dummy", description="Tool for testing")  # ✅ REQUIRED
     output = tool.invoke({"name": "LangChain"})
     assert output == "Hello LangChain"  # noqa: S101
