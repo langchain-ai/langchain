@@ -117,7 +117,7 @@ def _load_stuff_documents_chain(config: dict, **kwargs: Any) -> StuffDocumentsCh
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "document_prompt" in config:
         prompt_config = config.pop("document_prompt")
@@ -150,7 +150,7 @@ def _load_map_reduce_documents_chain(
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "reduce_documents_chain" in config:
         reduce_documents_chain = load_chain_from_config(

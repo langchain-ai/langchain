@@ -57,7 +57,7 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     return buffer
 
 
