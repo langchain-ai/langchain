@@ -23,6 +23,7 @@ on:
 env:
   PYTHON_VERSION: "3.11"
   UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
   UV_LOCKED: "true"
 
 jobs:
