@@ -78,13 +78,25 @@ class AIMessage:
     """
 
     id: Optional[str] = None
+    """Unique identifier for the message.
+
+    If the provider assigns a meaningful ID, it should be used here.
+    """
 
     lc_version: str = "v1"
     """Encoding version for the message."""
 
     content: list[types.ContentBlock] = field(default_factory=list)
+
     usage_metadata: Optional[UsageMetadata] = None
+    """If provided, usage metadata for a message, such as token counts."""
+
     response_metadata: dict = field(default_factory=dict)
+    """Metadata about the response.
+
+    This field should include non-standard data returned by the provider, such as
+    response headers, service tiers, or log probabilities.
+    """
 
     def __init__(
         self,
@@ -174,13 +186,29 @@ class AIMessageChunk:
     """
 
     id: Optional[str] = None
+    """Unique identifier for the message chunk.
+
+    If the provider assigns a meaningful ID, it should be used here.
+    """
 
     lc_version: str = "v1"
     """Encoding version for the message."""
 
     content: list[types.ContentBlock] = field(init=False)
+
     usage_metadata: Optional[UsageMetadata] = None
+    """If provided, usage metadata for a message chunk, such as token counts.
+
+    These data represent incremental usage statistics, as opposed to a running total.
+    """
+
     response_metadata: dict = field(init=False)
+    """Metadata about the response chunk.
+
+    This field should include non-standard data returned by the provider, such as
+    response headers, service tiers, or log probabilities.
+    """
+
     tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
 
     def __init__(
