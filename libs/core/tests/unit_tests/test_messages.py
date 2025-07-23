@@ -1052,7 +1052,7 @@ def test_tool_message_serdes() -> None:
 
 
 class BadObject:
-    """"""
+    pass
 
 
 def test_tool_message_ser_non_serializable() -> None:
@@ -1223,23 +1223,20 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "url",
             "url": "https://...",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
         }
@@ -1247,13 +1244,17 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "metadata": {"cache_control": {"type": "ephemeral"}},
         }
     )
-
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",  # backward compatibility
+        }
+    )
     assert not is_data_content_block(
         {
             "type": "text",
@@ -1269,55 +1270,71 @@ def test_is_data_content_block() -> None:
     assert not is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-        }
-    )
-    assert not is_data_content_block(
-        {
-            "type": "image",
             "source": "<base64 data>",
         }
     )
 
 
 def test_convert_to_openai_image_block() -> None:
-    input_block = {
-        "type": "image",
-        "source_type": "url",
-        "url": "https://...",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {"url": "https://..."},
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
-
-    input_block = {
-        "type": "image",
-        "source_type": "base64",
-        "data": "<base64 data>",
-        "mime_type": "image/jpeg",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {
-            "url": "data:image/jpeg;base64,<base64 data>",
+    for input_block in [
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
         },
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+    for input_block in [
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/jpeg;base64,<base64 data>",
+            },
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
 
 
 def test_known_block_types() -> None:
     assert {
         "text",
+        "text-plain",
         "tool_call",
         "reasoning",
         "non_standard",
         "image",
         "audio",
         "file",
+        "video",
+        "code_interpreter_call",
+        "code_interpreter_output",
+        "code_interpreter_result",
+        "web_search_call",
+        "web_search_result",
     } == KNOWN_BLOCK_TYPES

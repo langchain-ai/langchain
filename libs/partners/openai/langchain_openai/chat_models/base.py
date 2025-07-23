@@ -3485,6 +3485,10 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
         # string, assume image_url
         output = {"type": "input_image", "image_url": message.content}
     computer_call_output["output"] = output
+    if "acknowledged_safety_checks" in message.additional_kwargs:
+        computer_call_output["acknowledged_safety_checks"] = message.additional_kwargs[
+            "acknowledged_safety_checks"
+        ]
     return computer_call_output
 
 
@@ -3803,11 +3807,11 @@ def _construct_lc_result_from_responses_api(
             )
             if image_generation_call.output_format:
                 mime_type = f"image/{image_generation_call.output_format}"
-                for block in message.beta_content:  # type: ignore[assignment]
+                for block in message.content:
                     # OK to mutate output message
                     if (
                         block.get("type") == "image"
-                        and block["source_type"] == "base64"
+                        and "base64" in block
                         and "mime_type" not in block
                     ):
                         block["mime_type"] = mime_type
@@ -4051,6 +4055,10 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif output_version == "v1":
         message = cast(AIMessageChunk, _convert_to_v1_from_responses(message))
+        for block in message.content:
+            if block.get("index", -1) > current_index:
+                # blocks were added for v1
+                current_index = block["index"]
     else:
         pass
     return (

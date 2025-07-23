@@ -1194,14 +1194,29 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 {"type": "text", "text": "Text message"},
                 {
                     "type": "image",
-                    "source_type": "url",
                     "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "source_type": "url",  # backward compatibility
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "base64": "<base64 string>",
+                    "mime_type": "image/png",
                 },
                 {
                     "type": "image",
                     "source_type": "base64",
                     "data": "<base64 string>",
                     "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "base64": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",
                 },
                 {
                     "type": "file",
@@ -1219,8 +1234,17 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 },
                 {
                     "type": "file",
+                    "file_id": "file-abc123",
+                },
+                {
+                    "type": "file",
                     "source_type": "id",
                     "id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "base64": "<base64 string>",
+                    "mime_type": "audio/wav",
                 },
                 {
                     "type": "audio",
@@ -1241,7 +1265,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
     result = convert_to_openai_messages(messages, text_format="block")
     assert len(result) == 1
     message = result[0]
-    assert len(message["content"]) == 8
+    assert len(message["content"]) == 13
 
     # Test adding filename
     messages = [
@@ -1249,8 +1273,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
             content=[
                 {
                     "type": "file",
-                    "source_type": "base64",
-                    "data": "<base64 string>",
+                    "base64": "<base64 string>",
                     "mime_type": "application/pdf",
                 },
             ]

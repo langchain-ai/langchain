@@ -37,6 +37,8 @@ class FakeMessagesListChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -62,9 +64,9 @@ class FakeListChatModel(SimpleChatModel):
     """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
-    """List of responses to **cycle** through in order."""
-    error_on_chunk_number: Optional[int] = None
     """Internally incremented after every model invocation."""
+    error_on_chunk_number: Optional[int] = None
+    """If set, raise an error on the specified chunk number during streaming."""
 
     @property
     @override
@@ -80,6 +82,8 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1

@@ -80,7 +80,6 @@ The module defines several types of content blocks, including:
 import warnings
 from typing import Any, Literal, Optional, Union
 
-from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 # --- Text and annotations ---
@@ -273,10 +272,10 @@ class ToolCallChunk(TypedDict):
 
 
 # Web search
-class SearchCall(TypedDict):
+class WebSearchCall(TypedDict):
     """Content block for a built-in web search tool call."""
 
-    type: Literal["search_call"]
+    type: Literal["web_search_call"]
     """Type of the content block."""
 
     id: NotRequired[str]
@@ -293,10 +292,10 @@ class SearchCall(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
 
-class SearchResult(TypedDict):
-    """Content block for the result of a built-in search tool call."""
+class WebSearchResult(TypedDict):
+    """Content block for the result of a built-in web search tool call."""
 
-    type: Literal["search_result"]
+    type: Literal["web_search_result"]
     """Type of the content block."""
 
     id: NotRequired[str]
@@ -700,8 +699,8 @@ ToolContentBlock = Union[
     CodeInterpreterCall,
     CodeInterpreterOutput,
     CodeInterpreterResult,
-    SearchCall,
-    SearchResult,
+    WebSearchCall,
+    WebSearchResult,
 ]
 
 ContentBlock = Union[
@@ -731,9 +730,6 @@ KNOWN_BLOCK_TYPES = {
     bt for bt in get_args(ContentBlock) for bt in get_args(bt.__annotations__["type"])
 }
 
-# Adapter for DataContentBlock
-_DataAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
-
 
 def is_data_content_block(block: dict) -> bool:
     """Check if the content block is a standard data content block.
@@ -744,33 +740,46 @@ def is_data_content_block(block: dict) -> bool:
     Returns:
         True if the content block is a data content block, False otherwise.
     """
-    try:
-        _DataAdapter.validate_python(block)
-    except ValidationError:
-        return False
-    else:
-        return True
+    return block.get("type") in (
+        "audio",
+        "image",
+        "video",
+        "file",
+        "text-plain",
+    ) and any(
+        key in block
+        for key in (
+            "url",
+            "base64",
+            "file_id",
+            "text",
+            "source_type",  # backwards compatibility
+        )
+    )
 
 
-# TODO: don't use `source_type` anymore
 def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
-    if content_block["source_type"] == "url":
+    if "url" in content_block:
         return {
             "type": "image_url",
             "image_url": {
                 "url": content_block["url"],
             },
         }
-    if content_block["source_type"] == "base64":
+    if "base64" in content_block or content_block.get("source_type") == "base64":
         if "mime_type" not in content_block:
             error_message = "mime_type key is required for base64 data."
             raise ValueError(error_message)
         mime_type = content_block["mime_type"]
+        if "data" in content_block:  # Backwards compatibility
+            base64_data = content_block["data"]
+        else:
+            base64_data = content_block["base64"]
         return {
             "type": "image_url",
             "image_url": {
-                "url": f"data:{mime_type};base64,{content_block['data']}",
+                "url": f"data:{mime_type};base64,{base64_data}",
             },
         }
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
@@ -783,8 +792,9 @@ def convert_to_openai_data_block(block: dict) -> dict:
         formatted_block = convert_to_openai_image_block(block)
 
     elif block["type"] == "file":
-        if block["source_type"] == "base64":
-            file = {"file_data": f"data:{block['mime_type']};base64,{block['data']}"}
+        if "base64" in block or block.get("source_type") == "base64":
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
                 file["filename"] = filename
             elif (metadata := block.get("metadata")) and ("filename" in metadata):
@@ -792,27 +802,28 @@ def convert_to_openai_data_block(block: dict) -> dict:
             else:
                 warnings.warn(
                     "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the content block: {'type': 'file', 'source_type': 'base64', "
-                    "'mime_type': 'application/pdf', 'data': '...', "
-                    "'filename': 'my-pdf'}",
+                    "in the content block: {'type': 'file', 'mime_type': "
+                    "'application/pdf', 'base64': '...', 'filename': 'my-pdf'}",
                     stacklevel=1,
                 )
             formatted_block = {"type": "file", "file": file}
-        elif block["source_type"] == "id":
-            formatted_block = {"type": "file", "file": {"file_id": block["id"]}}
+        elif "file_id" in block or block.get("source_type") == "id":
+            file_id = block["id"] if "source_type" in block else block["file_id"]
+            formatted_block = {"type": "file", "file": {"file_id": file_id}}
         else:
-            error_msg = "source_type base64 or id is required for file blocks."
+            error_msg = "Keys base64 or file_id required for file blocks."
             raise ValueError(error_msg)
 
     elif block["type"] == "audio":
-        if block["source_type"] == "base64":
+        if "base64" in block or block.get("source_type") == "base64":
+            base64_data = block["data"] if "source_type" in block else block["base64"]
             audio_format = block["mime_type"].split("/")[-1]
             formatted_block = {
                 "type": "input_audio",
-                "input_audio": {"data": block["data"], "format": audio_format},
+                "input_audio": {"data": base64_data, "format": audio_format},
             }
         else:
-            error_msg = "source_type base64 is required for audio blocks."
+            error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
     else:
         error_msg = f"Block of type {block['type']} is not supported."
