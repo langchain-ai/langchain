@@ -68,6 +68,16 @@ typing = [
     "types-toml>=0.10.8.20240310",
 ]
 
+test_integration = [
+    "vcrpy>=7.0",
+    "urllib3<2; python_version < \"3.10\"",
+    "wrapt<2.0.0,>=1.15.0",
+    "python-dotenv<2.0.0,>=1.0.0",
+    "cassio<1.0.0,>=0.1.0",
+    "langchainhub<1.0.0,>=0.1.16",
+    "langchain-core",
+    "langchain-text-splitters",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
