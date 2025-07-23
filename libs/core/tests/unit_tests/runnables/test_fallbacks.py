@@ -19,7 +19,6 @@ from langchain_core.language_models import (
 )
 from langchain_core.load import dumps
 from langchain_core.messages import BaseMessage
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
@@ -341,7 +340,7 @@ class FakeStructuredOutputModel(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessageV1]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
 
     @override
@@ -374,7 +373,7 @@ class FakeModel(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessageV1]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
 
     @property

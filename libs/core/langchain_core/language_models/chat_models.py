@@ -49,6 +49,7 @@ from langchain_core.language_models.base import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
+    AnyMessage,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
@@ -59,8 +60,6 @@ from langchain_core.messages import (
 )
 from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -68,6 +67,7 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
@@ -239,7 +239,7 @@ def _convert_to_v1(message: AIMessage) -> AIMessageV1:
     )
 
 
-class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
+class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -398,7 +398,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
     @override
     def OutputType(self) -> Any:
         """Get the output type for this runnable."""
-        return AIMessageV1
+        return AnyMessage
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
         if isinstance(model_input, PromptValue):
@@ -421,9 +421,9 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AIMessageV1:
+    ) -> BaseMessage:
         config = ensure_config(config)
-        chat_generation = cast(
+        return cast(
             "ChatGeneration",
             self.generate_prompt(
                 [self._convert_input(input)],
@@ -435,12 +435,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
                 run_id=config.pop("run_id", None),
                 **kwargs,
             ).generations[0][0],
-        )
-        ai_message = cast("AIMessage", chat_generation.message)
-        if self.output_version != "v1":
-            return cast("AIMessageV1", ai_message)
-        # TODO: plumb through AIMessageV1, this can remain a fallback
-        return _convert_to_v1(ai_message)
+        ).message
 
     @override
     async def ainvoke(
@@ -450,7 +445,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AIMessageV1:
+    ) -> BaseMessage:
         config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
@@ -462,11 +457,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
             run_id=config.pop("run_id", None),
             **kwargs,
         )
-        chat_generation = cast("ChatGeneration", llm_result.generations[0][0])
-        ai_message = cast("AIMessage", chat_generation.message)
-        if self.output_version != "v1":
-            return cast("AIMessageV1", ai_message)
-        return _convert_to_v1(ai_message)
+        return cast("ChatGeneration", llm_result.generations[0][0]).message
 
     def _should_stream(
         self,
@@ -511,11 +502,11 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunkV1]:
+    ) -> Iterator[BaseMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                "AIMessageChunkV1",
+                "BaseMessageChunk",
                 self.invoke(input, config=config, stop=stop, **kwargs),
             )
         else:
@@ -767,7 +758,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
-    ) -> Union[LLMResult, list[AIMessageV1]]:
+    ) -> LLMResult:
         """Pass a sequence of prompts to the model and return model generations.
 
         This method should make use of batched calls for models that expose a batched
@@ -855,21 +846,12 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
                         ),
                     )
                 raise
-
-        if all(isinstance(res, AIMessageV1) for res in results):
-            return cast("list[AIMessageV1]", results)
-
-        if not all(isinstance(res, ChatResult) for res in results):
-            error_msg = "All results must be of type LLMResult or AIMessageV1."
-            raise ValueError(error_msg)
-        chat_results = cast("list[ChatResult]", results)
-
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
-            for res in chat_results
+            for res in results
         ]
-        llm_output = self._combine_llm_outputs([res.llm_output for res in chat_results])
-        generations = [res.generations for res in chat_results]
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
+        generations = [res.generations for res in results]
         output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
         if run_managers:
             run_infos = []
@@ -1026,7 +1008,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[LLMResult, list[AIMessageV1]]:
+    ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
 
@@ -1049,7 +1031,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Union[ChatResult, AIMessageV1]:
+    ) -> ChatResult:
         llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
@@ -1092,22 +1074,12 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-
-        # if not all(isinstance(res, ChatResult) for res in results):
-        #     error_msg = "All results must be of type LLMResult or AIMessageV1."
-        #     raise ValueError(error_msg)
-        # chat_results = cast("list[ChatResult]", results)
         elif inspect.signature(self._generate).parameters.get("run_manager"):
-            generation_result = self._generate(
+            result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
         else:
-            generation_result = self._generate(messages, stop=stop, **kwargs)
-
-        if isinstance(generation_result, AIMessageV1):
-            return generation_result
-
-        result = generation_result
+            result = self._generate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1204,7 +1176,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Union[AIMessageV1, ChatResult]:
+    ) -> ChatResult:
         """Top Level call."""
 
     async def _agenerate(
@@ -1406,7 +1378,7 @@ class BaseChatModel(BaseLanguageModel[AIMessageV1], ABC):
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessageV1]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tools to the model.
 
         Args:
