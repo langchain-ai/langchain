@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from langchain_core.tools.base import ChildTool
+from langchain_core.tools.base import BaseTool
 
 
 class DummyArgs(BaseModel):
@@ -11,10 +11,10 @@ class DummyArgs(BaseModel):
     name: str
 
 
-class DummyTool(ChildTool):
+class DummyTool(BaseTool):
     """Tool using DummyArgs as args_schema."""
 
-    args_schema = DummyArgs
+    args_schema: type[DummyArgs] = DummyArgs
 
     def _run(self, name: str) -> str:
         """Simple echo tool."""
@@ -23,6 +23,6 @@ class DummyTool(ChildTool):
 
 def test_model_validate() -> None:
     """Test if tool handles args_schema using model_validate correctly."""
-    tool = DummyTool()
+    tool = DummyTool(name="dummy", description="dummy tool")
     output = tool.invoke({"name": "LangChain"})
     assert output == "Hello LangChain"  # noqa: S101
