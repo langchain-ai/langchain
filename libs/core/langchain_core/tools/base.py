@@ -640,7 +640,7 @@ class ChildTool(BaseTool):
                 if issubclass(input_args, BaseModel):
                     input_args.model_validate({key_: tool_input})
                 elif issubclass(input_args, BaseModelV1):
-                    input_args.parse_obj({key_: tool_input})
+                    input_args.model_validate({key_: tool_input})
                 else:
                     msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
                     raise TypeError(msg)
@@ -682,7 +682,7 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
+                result = input_args.model_validate(tool_input)
                 result_dict = result.dict()
             else:
                 msg = (
