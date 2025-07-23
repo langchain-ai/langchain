@@ -147,11 +147,9 @@ select = [
     "A",      # flake8-builtins
     "B",      # flake8-bugbear
     "ASYNC",  # flake8-async
-    "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "DTZ",    # flake8-datetimez
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
@@ -164,9 +162,10 @@ select = [
     "ICN",    # flake8-import-conventions
     "INT",    # flake8-gettext
     "ISC",    # isort-comprehensions
+    "PERF",   # flake8-perf
     "PGH",    # pygrep-hooks
     "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
+    "PL",     # pylint
     "PT",     # flake8-pytest-style
     "PTH",    # flake8-use-pathlib
     "PYI",    # flake8-pyi
@@ -175,9 +174,9 @@ select = [
     "RSE",    # flake8-rst-docstrings
     "RUF",    # ruff
     "S",      # flake8-bandit
-    "SLF",    # flake8-self
     "SLOT",   # flake8-slots
     "SIM",    # flake8-simplify
+    "SLF",    # flake8-self
     "T10",    # flake8-debugger
     "T20",    # flake8-print
     "TID",    # flake8-tidy-imports
@@ -198,13 +197,15 @@ ignore = [
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
+    "PLR09",   # Too many something (args, statements, etc)
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
 
-    # TODO
-    "TRY301", # tryceratops: raise-within-try
+    # TODO rules
+    "PLC0415", # pylint: import-outside-top-level
+    "TRY301",  # tryceratops: raise-within-try
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -217,9 +218,10 @@ pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
-    "S101",   # Tests need assertions
-    "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "SLF001", # Private member access in tests
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001",  # Private member access in tests
+    "PLR2004", # Magic value comparisons
 ]
 "langchain/chains/constitutional_ai/principles.py" = [
     "E501", # Line too long

@@ -128,7 +128,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
 
     validate_model_on_init: bool = False
-    """Whether to validate the model exists in ollama locally on initialization."""
+    """Whether to validate the model exists in ollama locally on initialization.
+
+    .. versionadded:: 0.3.4
+    """
 
     base_url: Optional[str] = None
     """Base url the model is hosted under."""

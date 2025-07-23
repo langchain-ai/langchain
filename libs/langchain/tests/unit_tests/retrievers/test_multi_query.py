@@ -1,4 +1,4 @@
-import pytest as pytest
+import pytest
 from langchain_core.documents import Document
 
 from langchain.retrievers.multi_query import LineListOutputParser, _unique_documents
