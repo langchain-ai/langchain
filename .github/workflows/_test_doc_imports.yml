@@ -13,6 +13,7 @@ permissions:
 
 env:
   UV_FROZEN: "true"
+  UV_LOCKED: "true"
 
 jobs:
   build:
