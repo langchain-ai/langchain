@@ -3,7 +3,7 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict, Union, cast
+from typing import Any, Literal, Optional, TypedDict, Union, cast, get_args
 
 import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
@@ -106,7 +106,7 @@ class AIMessage:
             usage_metadata: Optional metadata about token usage.
         """
         if isinstance(content, str):
-            self.content = [{"type": "text", "text": content, "index": 0}]
+            self.content = [{"type": "text", "text": content}]
         else:
             self.content = content
 
@@ -535,3 +535,4 @@ MessageV1 = Union[
     SystemMessage,
     ToolMessage,
 ]
+MessageV1Types = get_args(MessageV1)

@@ -15,7 +15,6 @@ import json
 import logging
 import math
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -44,7 +43,7 @@ from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1
+from langchain_core.messages.v1 import MessageV1, MessageV1Types
 from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
 from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 
@@ -301,9 +300,11 @@ def _create_message_from_message_type(
 
 
 def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
+    # type ignores here are because AIMessageV1.content is a list of dicts. AIMessage
+    # content expects str or list[str | dict].
     if isinstance(message, AIMessageV1):
         return AIMessage(
-            content=message.content,
+            content=message.content,  # type: ignore[arg-type]
             id=message.id,
             name=message.name,
             tool_calls=message.tool_calls,
@@ -311,7 +312,7 @@ def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
         )
     if isinstance(message, AIMessageChunkV1):
         return AIMessageChunk(
-            content=message.content,
+            content=message.content,  # type: ignore[arg-type]
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
@@ -319,18 +320,18 @@ def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(
-            content=message.content,
+            content=message.content,  # type: ignore[arg-type]
             id=message.id,
             name=message.name,
         )
     if isinstance(message, SystemMessageV1):
         return SystemMessage(
-            content=message.content,
+            content=message.content,  # type: ignore[arg-type]
             id=message.id,
         )
     if isinstance(message, ToolMessageV1):
         return ToolMessage(
-            content=message.content,
+            content=message.content,  # type: ignore[arg-type]
             id=message.id,
         )
     message = f"Unsupported message type: {type(message)}"
@@ -384,7 +385,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         message_ = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
-    elif isinstance(message, dataclass):
+    elif isinstance(message, MessageV1Types):
         message_ = _convert_from_v1_message(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
@@ -1050,10 +1051,11 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str, MessageV1Types)):
         messages = [messages]
 
-    messages = convert_to_messages(messages)
+    # TODO: resolve type ignore here
+    messages = convert_to_messages(messages)  # type: ignore[arg-type]
 
     for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}

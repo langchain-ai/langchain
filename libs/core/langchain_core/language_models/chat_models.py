@@ -60,6 +60,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -67,7 +68,6 @@ from langchain_core.outputs import (
     LLMResult,
     RunInfo,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.rate_limiters import BaseRateLimiter

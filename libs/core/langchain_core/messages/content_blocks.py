@@ -215,7 +215,7 @@ class ToolCall(TypedDict):
     """
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
-    type: NotRequired[Literal["tool_call"]]
+    type: Literal["tool_call"]
 
 
 class InvalidToolCall(TypedDict):
@@ -233,7 +233,7 @@ class InvalidToolCall(TypedDict):
     """An identifier associated with the tool call."""
     error: Optional[str]
     """An error message associated with the tool call."""
-    type: NotRequired[Literal["invalid_tool_call"]]
+    type: Literal["invalid_tool_call"]
 
 
 class ToolCallChunk(TypedDict):
