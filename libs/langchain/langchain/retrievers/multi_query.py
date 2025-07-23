@@ -128,7 +128,7 @@ class MultiQueryRetriever(BaseRetriever):
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
-            logger.info(f"Generated queries: {lines}")
+            logger.info("Generated queries: %s", lines)
         return lines
 
     async def aretrieve_documents(
@@ -194,7 +194,7 @@ class MultiQueryRetriever(BaseRetriever):
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
-            logger.info(f"Generated queries: {lines}")
+            logger.info("Generated queries: %s", lines)
         return lines
 
     def retrieve_documents(

@@ -127,7 +127,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         output_keys = output_parser.output_keys
         if self.rank_key not in output_keys:
             msg = (
@@ -161,13 +161,12 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     def combine_docs(

@@ -157,7 +157,7 @@ class QueryTransformer(Transformer):
     def date(self, item: Any) -> ISO8601Date:
         item = str(item).strip("\"'")
         try:
-            datetime.datetime.strptime(item, "%Y-%m-%d")
+            datetime.datetime.strptime(item, "%Y-%m-%d")  # noqa: DTZ007
         except ValueError:
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
@@ -173,7 +173,7 @@ class QueryTransformer(Transformer):
             datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S%z")
         except ValueError:
             try:
-                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")
+                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")  # noqa: DTZ007
             except ValueError as e:
                 msg = "Datetime values are expected to be in ISO 8601 format."
                 raise ValueError(msg) from e
