@@ -36,6 +36,8 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
 
+_MAX_SCORE = 5
+
 
 class TrajectoryEval(TypedDict):
     """A named tuple containing the score and reasoning for a trajectory."""
@@ -86,10 +88,10 @@ class TrajectoryOutputParser(BaseOutputParser):
             raise OutputParserException(msg)
         score = int(_score.group(1))
         # If the score is not in the range 1-5, raise an exception.
-        if not 1 <= score <= 5:
+        if not 1 <= score <= _MAX_SCORE:
             msg = f"Score is not a digit in the range 1-5: {text}"
             raise OutputParserException(msg)
-        normalized_score = (score - 1) / 4
+        normalized_score = (score - 1) / (_MAX_SCORE - 1)
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
