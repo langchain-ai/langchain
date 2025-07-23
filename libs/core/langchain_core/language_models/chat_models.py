@@ -328,7 +328,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     does not properly support streaming.
     """
 
-    output_version: Literal["v0", "v1"] = "v0"
+    output_version: str = "v0"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -339,7 +339,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     All chat models currently support the default of ``"v0"``.
 
-    .. versionadded:: 0.3.68
+    .. versionadded:: 0.4
     """
 
     @model_validator(mode="before")
