@@ -78,7 +78,7 @@ class LLMChain(Chain):
 
     @classmethod
     @override
-    def is_lc_serializable(self) -> bool:
+    def is_lc_serializable(cls) -> bool:
         return True
 
     prompt: BasePromptTemplate
