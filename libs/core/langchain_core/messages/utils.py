@@ -40,6 +40,12 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
+from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
+from langchain_core.messages.v1 import MessageV1, MessageV1Types
+from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
+from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -202,7 +208,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
+    BaseMessage, list[str], tuple[str, str], str, dict[str, Any], MessageV1
 ]
 
 
@@ -212,7 +218,7 @@ def _create_message_from_message_type(
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -293,6 +299,45 @@ def _create_message_from_message_type(
     return message
 
 
+def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
+    # type ignores here are because AIMessageV1.content is a list of dicts. AIMessage
+    # content expects str or list[str | dict].
+    if isinstance(message, AIMessageV1):
+        return AIMessage(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+            name=message.name,
+            tool_calls=message.tool_calls,
+            response_metadata=message.response_metadata,
+        )
+    if isinstance(message, AIMessageChunkV1):
+        return AIMessageChunk(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+            name=message.name,
+            tool_call_chunks=message.tool_call_chunks,
+            response_metadata=message.response_metadata,
+        )
+    if isinstance(message, HumanMessageV1):
+        return HumanMessage(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+            name=message.name,
+        )
+    if isinstance(message, SystemMessageV1):
+        return SystemMessage(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+        )
+    if isinstance(message, ToolMessageV1):
+        return ToolMessage(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+        )
+    message = f"Unsupported message type: {type(message)}"
+    raise NotImplementedError(message)
+
+
 def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """Instantiate a message from a variety of message formats.
 
@@ -340,6 +385,8 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         message_ = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
+    elif isinstance(message, MessageV1Types):
+        message_ = _convert_from_v1_message(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
@@ -1004,10 +1051,11 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str, MessageV1Types)):
         messages = [messages]
 
-    messages = convert_to_messages(messages)
+    # TODO: resolve type ignore here
+    messages = convert_to_messages(messages)  # type: ignore[arg-type]
 
     for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}

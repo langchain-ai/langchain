@@ -33,7 +33,6 @@ EXPECTED_ALL = [
     "TextContentBlock",
     "ToolCall",
     "ToolCallChunk",
-    "ToolCallContentBlock",
     "ToolMessage",
     "ToolMessageChunk",
     "VideoContentBlock",

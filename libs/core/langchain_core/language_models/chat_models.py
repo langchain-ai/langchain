@@ -58,7 +58,9 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -218,6 +220,23 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
         ls_structured_output_format_dict = {}
 
     return ls_structured_output_format_dict
+
+
+def _convert_to_v1(message: AIMessage) -> AIMessageV1:
+    """Best-effort conversion of a V0 AIMessage to V1."""
+    if isinstance(message.content, str):
+        content: list[types.ContentBlock] = []
+        if message.content:
+            content = [{"type": "text", "text": message.content}]
+
+    for tool_call in message.tool_calls:
+        content.append(tool_call)
+
+    return AIMessageV1(
+        content=content,
+        usage_metadata=message.usage_metadata,
+        response_metadata=message.response_metadata,
+    )
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
