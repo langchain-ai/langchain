@@ -2932,6 +2932,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Tests that Unicode characters in tool call arguments are preserved correctly,
         not escaped as \\uXXXX sequences.
         """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling support.")
 
         # Configure tool choice based on provider capabilities
         if tool_choice is None and force_tool_call:
