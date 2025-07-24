@@ -35,6 +35,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.content_blocks import (
     AudioContentBlock,
     FileContentBlock,
@@ -43,7 +44,6 @@ from langchain_core.messages.content_blocks import (
     TextContentBlock,
     VideoContentBlock,
 )
-from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -206,7 +206,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
 
 def _get_image_from_data_content_block(block: dict) -> str:
     """Format standard data content block to format expected by Ollama.
-    
+
     Supports both legacy data content blocks and new ImageContentBlock format.
     """
     if block["type"] == "image":
@@ -214,17 +214,21 @@ def _get_image_from_data_content_block(block: dict) -> str:
         if "source_type" in block and block["source_type"] == "base64":
             return block["data"]
         # Handle new ImageContentBlock format with base64 field
-        elif "base64" in block:
+        if "base64" in block:
             return block["base64"]
         # Handle new ImageContentBlock format with url field
-        elif "url" in block:
+        if "url" in block:
             # For URL-based images, we need to convert to base64 format
             # For now, raise an error as Ollama expects base64 data
-            error_message = "Image URLs are not supported. Only base64 image data is supported."
+            error_message = (
+                "Image URLs are not supported. Only base64 image data is supported."
+            )
             raise ValueError(error_message)
-        else:
-            error_message = "Image data only supported through base64 format. Block must contain 'base64' field or legacy 'source_type'/'data' fields."
-            raise ValueError(error_message)
+        error_message = (
+            "Image data only supported through base64 format. Block must contain "
+            "'base64' field or legacy 'source_type'/'data' fields."
+        )
+        raise ValueError(error_message)
 
     error_message = f"Blocks of type {block['type']} not supported."
     raise ValueError(error_message)
@@ -238,35 +242,38 @@ def _convert_standard_content_block_to_ollama(
         VideoContentBlock,
         PlainTextContentBlock,
         FileContentBlock,
-    ]
+    ],
 ) -> tuple[str, list[str]]:
     """Convert standard content blocks to Ollama format.
-    
+
     Args:
         content_block: Standard content block to convert
-        
+
     Returns:
         Tuple of (text_content, images_list)
-        
+
     Raises:
         ValueError: For unsupported content block types
     """
     if content_block["type"] == "text":
         return content_block["text"], []
-    elif content_block["type"] == "image":
+    if content_block["type"] == "image":
         if "base64" in content_block:
             return "", [content_block["base64"]]
-        elif "url" in content_block:
+        if "url" in content_block:
             # For URL-based images, we need to convert to base64 format
             # For now, raise an error as Ollama expects base64 data
-            error_message = "Image URLs are not supported. Only base64 image data is supported."
+            error_message = (
+                "Image URLs are not supported. Only base64 image data is supported."
+            )
             raise ValueError(error_message)
-        else:
-            error_message = "ImageContentBlock must contain either 'base64' or 'url' field."
-            raise ValueError(error_message)
-    else:
-        error_message = f"Content block type '{content_block['type']}' is not supported by Ollama. Supported types: text, image (base64 only)."
+        error_message = "ImageContentBlock must contain either 'base64' or 'url' field."
         raise ValueError(error_message)
+    error_message = (
+        f"Content block type '{content_block['type']}' is not supported by Ollama. "
+        "Supported types: text, image (base64 only)."
+    )
+    raise ValueError(error_message)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -721,23 +728,46 @@ class ChatOllama(BaseChatModel):
             else:
                 for content_part in message.content:
                     # Handle new standard content blocks
-                    if isinstance(content_part, (
-                        TextContentBlock,
-                        ImageContentBlock,
-                        AudioContentBlock,
-                        VideoContentBlock,
-                        PlainTextContentBlock,
-                        FileContentBlock,
-                    )):
-                        part_text, part_images = _convert_standard_content_block_to_ollama(content_part)
+                    if isinstance(content_part, dict) and content_part.get("type") in {
+                        "text",
+                        "image",
+                        "audio",
+                        "video",
+                        "plain_text",
+                        "file",
+                    }:
+                        part_text, part_images = (
+                            _convert_standard_content_block_to_ollama(
+                                cast(
+                                    Union[
+                                        TextContentBlock,
+                                        ImageContentBlock,
+                                        AudioContentBlock,
+                                        VideoContentBlock,
+                                        PlainTextContentBlock,
+                                        FileContentBlock,
+                                    ],
+                                    content_part,
+                                )
+                            )
+                        )
                         content += part_text
                         images.extend(part_images)
                     # Handle legacy OpenAI-style and data content blocks
-                    elif isinstance(content_part, dict) and content_part.get("type") == "text":
+                    elif (
+                        isinstance(content_part, dict)
+                        and content_part.get("type") == "text"
+                    ):
                         content += f"\n{content_part['text']}"
-                    elif isinstance(content_part, dict) and content_part.get("type") == "tool_use":
+                    elif (
+                        isinstance(content_part, dict)
+                        and content_part.get("type") == "tool_use"
+                    ):
                         continue
-                    elif isinstance(content_part, dict) and content_part.get("type") == "image_url":
+                    elif (
+                        isinstance(content_part, dict)
+                        and content_part.get("type") == "image_url"
+                    ):
                         image_url = None
                         temp_image_url = content_part.get("image_url")
                         if isinstance(temp_image_url, str):
@@ -762,7 +792,9 @@ class ChatOllama(BaseChatModel):
                             images.append(image_url_components[1])
                         else:
                             images.append(image_url_components[0])
-                    elif isinstance(content_part, dict) and is_data_content_block(content_part):
+                    elif isinstance(content_part, dict) and is_data_content_block(
+                        content_part
+                    ):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
@@ -1458,8 +1490,3 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
-
-
-
-
-
