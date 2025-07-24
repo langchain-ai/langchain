@@ -8,9 +8,6 @@ help: Makefile
 	@printf "\n\033[1mUsage: make <TARGETS> ...\033[0m\n\n\033[1mTargets:\033[0m\n\n"
 	@sed -n 's/^## //p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/  /'
 
-## all: Default target, shows help.
-all: help
-
 ## clean: Clean documentation and API documentation artifacts.
 clean: docs_clean api_docs_clean
 
@@ -19,7 +16,7 @@ clean: docs_clean api_docs_clean
 ######################
 
 ## docs_build: Build the documentation.
-docs_build:
+docs_build: docs_clean
 	cd docs && make build
 
 ## docs_clean: Clean the documentation build artifacts.
@@ -31,7 +28,7 @@ docs_linkcheck:
 	uv run --no-group test linkchecker _dist/docs/ --ignore-url node_modules
 
 ## api_docs_build: Build the API Reference documentation.
-api_docs_build:
+api_docs_build: api_docs_clean
 	uv run --no-group test python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && uv run --no-group test make html
 	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
@@ -49,6 +46,8 @@ api_docs_clean:
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
 	git clean -fdX ./docs/api_reference
 	rm -f docs/api_reference/index.md
+
+clean_all_docs: docs_clean api_docs_clean
 	
 
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.

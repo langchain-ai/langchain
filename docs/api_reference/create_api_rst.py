@@ -497,6 +497,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
     if package_name in (
         "langchain",
+        "langchain_v1",
         "experimental",
         "community",
         "core",
