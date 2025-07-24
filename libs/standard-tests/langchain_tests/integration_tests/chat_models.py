@@ -546,8 +546,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
             directory and implement the ``vcr_config`` fixture there.
 
-            ``langchain-tests`` excludes the headers ``"authorization"``,
-            ``"x-api-key"``, and ``"api-key"`` from VCR cassettes. To pick up this
+            ``langchain-tests`` excludes the headers ``'authorization'``,
+            ``'x-api-key'``, and ``'api-key'`` from VCR cassettes. To pick up this
             configuration, you will need to add ``conftest.py`` as shown below. You can
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
@@ -582,7 +582,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. dropdown:: Compressing cassettes
 
                 ``langchain-tests`` includes a custom VCR serializer that compresses
-                cassettes using gzip. To use it, register the ``"yaml.gz"`` serializer
+                cassettes using gzip. To use it, register the ``yaml.gz`` serializer
                 to your VCR fixture and enable this serializer in the config. See
                 example below:
 
@@ -995,7 +995,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     )]
                 )
 
-            Check also that the response includes a ``"model_name"`` key in its
+            Check also that the response includes a ``'model_name'`` key in its
             ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
@@ -1172,7 +1172,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     )]
                 )
 
-            Check also that the aggregated response includes a ``"model_name"`` key
+            Check also that the aggregated response includes a ``'model_name'`` key
             in its ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
@@ -1309,7 +1309,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     super().test_tool_calling(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
+            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1382,7 +1382,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     await super().test_tool_calling_async(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
+            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1657,7 +1657,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             supports forced tool calling. If it does, ``bind_tools`` should accept a
             ``tool_choice`` parameter that can be used to force a tool call.
 
-            It should accept (1) the string ``"any"`` to force calling the bound tool,
+            It should accept (1) the string ``'any'`` to force calling the bound tool,
             and (2) the string name of the tool to force calling that tool.
 
         """
@@ -1718,7 +1718,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     super().test_tool_calling_with_no_arguments(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
+            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")

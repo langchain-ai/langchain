@@ -982,7 +982,7 @@ class ChatAnthropic(BaseChatModel):
             .. versionadded:: 0.3.15
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
+            apply one hour caching by enabling the ``'extended-cache-ttl-2025-04-11'``
             beta header:
 
             .. code-block:: python
@@ -1593,8 +1593,8 @@ class ChatAnthropic(BaseChatModel):
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``"auto"``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
+                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
+                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
 
@@ -1801,9 +1801,10 @@ class ChatAnthropic(BaseChatModel):
             Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``raw``: BaseMessage
-                - ``parsed``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``parsing_error``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
 

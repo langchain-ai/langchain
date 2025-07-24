@@ -736,10 +736,10 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the Runnable.
             config: A config to use when invoking the Runnable.
-               The config supports standard keys like 'tags', 'metadata' for tracing
-               purposes, 'max_concurrency' for controlling how much work to do
-               in parallel, and other keys. Please refer to the RunnableConfig
-               for more details.
+                The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to None.
 
         Returns:
             The output of the Runnable.
@@ -885,9 +885,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-                The config supports standard keys like 'tags', 'metadata' for tracing
-                purposes, 'max_concurrency' for controlling how much work to do
-                in parallel, and other keys. Please refer to the RunnableConfig
+                The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the RunnableConfig
                 for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
@@ -950,10 +950,10 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the Runnable.
             config: A config to use when invoking the Runnable.
-                The config supports standard keys like 'tags', 'metadata' for tracing
-                purposes, 'max_concurrency' for controlling how much work to do
-                in parallel, and other keys. Please refer to the RunnableConfig
-                for more details. Defaults to None. Defaults to None.
+                The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the RunnableConfig
+                for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
             kwargs: Additional keyword arguments to pass to the Runnable.
@@ -1569,18 +1569,17 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> Runnable[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the Runnable starts running, with the Run object.
-        on_end: Called after the Runnable finishes running, with the Run object.
-        on_error: Called if the Runnable throws an error, with the Run object.
-
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
 
         Args:
-            on_start: Called before the Runnable starts running. Defaults to None.
-            on_end: Called after the Runnable finishes running. Defaults to None.
-            on_error: Called if the Runnable throws an error. Defaults to None.
+            on_start: Called before the Runnable starts running, with the Run object.
+                Defaults to None.
+            on_end: Called after the Runnable finishes running, with the Run object.
+                Defaults to None.
+            on_error: Called if the Runnable throws an error, with the Run object.
+                Defaults to None.
 
         Returns:
             A new Runnable with the listeners bound.
@@ -1636,21 +1635,17 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> Runnable[Input, Output]:
         """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Asynchronously called before the Runnable starts running.
-        on_end: Asynchronously called after the Runnable finishes running.
-        on_error: Asynchronously called if the Runnable throws an error.
-
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
 
         Args:
-            on_start: Asynchronously called before the Runnable starts running.
-                Defaults to None.
-            on_end: Asynchronously called after the Runnable finishes running.
-                Defaults to None.
-            on_error: Asynchronously called if the Runnable throws an error.
-                Defaults to None.
+            on_start: Called asynchronously before the Runnable starts running,
+                with the Run object. Defaults to None.
+            on_end: Called asynchronously after the Runnable finishes running,
+                with the Run object. Defaults to None.
+            on_error: Called asynchronously if the Runnable throws an error,
+                with the Run object. Defaults to None.
 
         Returns:
             A new Runnable with the listeners bound.
@@ -2550,7 +2545,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             which: The ConfigurableField instance that will be used to select the
                 alternative.
             default_key: The default key to use if no alternative is selected.
-                Defaults to "default".
+                Defaults to ``'default'``.
             prefix_keys: Whether to prefix the keys with the ConfigurableField id.
                 Defaults to False.
             **kwargs: A dictionary of keys to Runnable instances or callables that
@@ -5215,6 +5210,10 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     ) -> RunnableEach[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+
         Args:
             on_start: Called before the Runnable starts running, with the Run object.
                 Defaults to None.
@@ -5225,10 +5224,6 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
         Returns:
             A new Runnable with the listeners bound.
-
-        The Run object contains information about the run, including its id,
-        type, input, output, error, start_time, end_time, and any tags or metadata
-        added to the run.
         """
         return RunnableEach(
             bound=self.bound.with_listeners(
@@ -5245,20 +5240,20 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     ) -> RunnableEach[Input, Output]:
         """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
-        Args:
-            on_start: Called asynchronously before the Runnable starts running,
-                      with the Run object. Defaults to None.
-            on_end: Called asynchronously after the Runnable finishes running,
-                    with the Run object. Defaults to None.
-            on_error: Called asynchronously if the Runnable throws an error,
-                    with the Run object. Defaults to None.
-
-        Returns:
-            A new Runnable with the listeners bound.
-
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+        Args:
+            on_start: Called asynchronously before the Runnable starts running,
+                with the Run object. Defaults to None.
+            on_end: Called asynchronously after the Runnable finishes running,
+                with the Run object. Defaults to None.
+            on_error: Called asynchronously if the Runnable throws an error,
+                with the Run object. Defaults to None.
+
+        Returns:
+            A new Runnable with the listeners bound.
         """
         return RunnableEach(
             bound=self.bound.with_alisteners(
@@ -5768,6 +5763,10 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     ) -> Runnable[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+
         Args:
             on_start: Called before the Runnable starts running, with the Run object.
                 Defaults to None.
@@ -5777,9 +5776,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
                 Defaults to None.
 
         Returns:
-            The Runnable object contains information about the run, including its id,
-            type, input, output, error, start_time, end_time, and any tags or metadata
-            added to the run.
+            A new Runnable with the listeners bound.
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
