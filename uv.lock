@@ -2162,7 +2162,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.26"
+version = "0.3.27"
 source = { editable = "libs/langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2332,7 +2332,7 @@ dependencies = [
 
 [[package]]
 name = "langchain-chroma"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "libs/partners/chroma" }
 dependencies = [
     { name = "chromadb" },
@@ -2403,7 +2403,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.70"
+version = "0.3.72"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
