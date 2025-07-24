@@ -216,7 +216,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModelFast(BaseLanguageModel[BaseMessage], ABC):
+class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
 
     Key imperative methods:
