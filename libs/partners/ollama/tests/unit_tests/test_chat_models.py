@@ -11,6 +11,14 @@ import pytest
 from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage, HumanMessage
+from langchain_core.messages.content_blocks import (
+    AudioContentBlock,
+    FileContentBlock,
+    ImageContentBlock,
+    PlainTextContentBlock,
+    TextContentBlock,
+    VideoContentBlock,
+)
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
