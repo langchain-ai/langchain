@@ -723,7 +723,7 @@ class ChatOllama(BaseChatModel):
                         content += f"\n{content_part['text']}"
                     elif isinstance(content_part, dict) and content_part.get("type") == "tool_use":
                         continue
-                    elif content_part.get("type") == "image_url":
+                    elif isinstance(content_part, dict) and content_part.get("type") == "image_url":
                         image_url = None
                         temp_image_url = content_part.get("image_url")
                         if isinstance(temp_image_url, str):
@@ -748,7 +748,7 @@ class ChatOllama(BaseChatModel):
                             images.append(image_url_components[1])
                         else:
                             images.append(image_url_components[0])
-                    elif is_data_content_block(content_part):
+                    elif isinstance(content_part, dict) and is_data_content_block(content_part):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
@@ -1444,6 +1444,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
