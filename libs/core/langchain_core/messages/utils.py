@@ -1550,7 +1550,7 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
             "id": tool_call["id"],
             "function": {
                 "name": tool_call["name"],
-                "arguments": json.dumps(tool_call["args"]),
+                "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             },
         }
         for tool_call in tool_calls
