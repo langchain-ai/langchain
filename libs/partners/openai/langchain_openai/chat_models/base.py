@@ -461,7 +461,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
@@ -469,7 +469,7 @@ class BaseChatOpenAI(BaseChatModel):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     stream_usage: bool = False
     """Whether to include usage metadata in streaming output. If True, an additional
@@ -547,7 +547,7 @@ class BaseChatOpenAI(BaseChatModel):
         invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -565,12 +565,14 @@ class BaseChatOpenAI(BaseChatModel):
         - Any other provider-specific parameters
         
     .. note::
+    
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use 
-    ``extra_body`` instead.
+        ``extra_body`` instead.
     """
+
     include_response_headers: bool = False
-    """Whether to include response headers in the output message response_metadata."""
+    """Whether to include response headers in the output message ``response_metadata``."""  # noqa: E501
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
     """Parameters of the OpenAI client or chat.completions endpoint that should be 
     disabled for the given model.
@@ -579,7 +581,7 @@ class BaseChatOpenAI(BaseChatModel):
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
     
-    For example, older models may not support the 'parallel_tool_calls' parameter at 
+    For example, older models may not support the ``'parallel_tool_calls'`` parameter at
     all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
     in.
     
@@ -677,7 +679,7 @@ class BaseChatOpenAI(BaseChatModel):
     - ``'responses/v1'``: Formats Responses API output
       items into AIMessage content blocks.
 
-    Currently only impacts the Responses API. ``output_version="responses/v1"`` is
+    Currently only impacts the Responses API. ``output_version='responses/v1'`` is
     recommended.
 
     .. versionadded:: 0.3.25
@@ -1587,7 +1589,7 @@ class BaseChatOpenAI(BaseChatModel):
                 their schema dictionary representation.
             function_call: Which function to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any).
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -1645,9 +1647,8 @@ class BaseChatOpenAI(BaseChatModel):
                 - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                 - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
-                provided in the tool definition. If True, the input schema will be
-                validated according to
-                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                provided in the tool definition. The input schema will also be validated according to the
+                `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
                 If False, input schema will not be validated and model output will not
                 be validated.
                 If None, ``strict`` argument will not be passed to the model.
@@ -1718,8 +1719,7 @@ class BaseChatOpenAI(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
@@ -1735,24 +1735,20 @@ class BaseChatOpenAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses OpenAI's tool-calling (formerly called function calling)
-                    API: https://platform.openai.com/docs/guides/function-calling
-                - "json_schema":
-                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
-                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", "o1", and later
+                    `API <https://platform.openai.com/docs/guides/function-calling>`__
+                - ``'json_schema'``:
+                    Uses OpenAI's Structured Output `API <https://platform.openai.com/docs/guides/structured-outputs>`__
+                    Supported for ``'gpt-4o-mini'``, ``'gpt-4o-2024-08-06'``, ``'o1'``, and later
                     models.
-                - "json_mode":
-                    Uses OpenAI's JSON mode. Note that if using JSON mode then you
-                    must include instructions for formatting the output into the
-                    desired schema into the model call:
-                    https://platform.openai.com/docs/guides/structured-outputs/json-mode
+                - ``'json_mode'``:
+                    Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
+                    Note that if using JSON mode then you must include instructions for
+                    formatting the output into the desired schema into the model call
 
                 Learn more about the differences between the methods and which models
-                support which methods here:
-
-                - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
-                - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
+                support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -1760,13 +1756,12 @@ class BaseChatOpenAI(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
             strict:
 
                 - True:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to
-                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
                 - False:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -1823,13 +1818,14 @@ class BaseChatOpenAI(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         .. versionchanged:: 0.1.20
 
@@ -1838,7 +1834,7 @@ class BaseChatOpenAI(BaseChatModel):
         .. versionchanged:: 0.1.21
 
             Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
+            Support for ``method="json_schema"`` added.
 
         .. versionchanged:: 0.3.12
             Support for ``tools`` added.
@@ -2080,24 +2076,25 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 # other params...
             )
 
-        **NOTE**: Any param which is not explicitly supported will be passed directly to the
-        ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
-        invoked. For example:
+        .. note::
+            Any param which is not explicitly supported will be passed directly to the
+            ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
+            invoked. For example:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
-            import openai
+                from langchain_openai import ChatOpenAI
+                import openai
 
-            ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
+                ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
 
-            # results in underlying API call of:
+                # results in underlying API call of:
 
-            openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
+                openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
 
-            # which is also equivalent to:
+                # which is also equivalent to:
 
-            ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
+                ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
 
     .. dropdown:: Invoke
 
@@ -2264,26 +2261,27 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             ]
 
-        Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
-        that defaults to ``True``. This parameter can be set to ``False`` to
-        disable parallel tool calls:
+        .. note::
+            ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
+            that defaults to ``True``. This parameter can be set to ``False`` to
+            disable parallel tool calls:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            ai_msg = llm_with_tools.invoke(
-                "What is the weather in LA and NY?", parallel_tool_calls=False
-            )
-            ai_msg.tool_calls
+                ai_msg = llm_with_tools.invoke(
+                    "What is the weather in LA and NY?", parallel_tool_calls=False
+                )
+                ai_msg.tool_calls
 
-        .. code-block:: python
+            .. code-block:: python
 
-            [
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_4OoY0ZR99iEvC7fevsH8Uhtz",
-                }
-            ]
+                [
+                    {
+                        "name": "GetWeather",
+                        "args": {"location": "Los Angeles, CA"},
+                        "id": "call_4OoY0ZR99iEvC7fevsH8Uhtz",
+                    }
+                ]
 
         Like other runtime parameters, ``parallel_tool_calls`` can be bound to a model
         using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
@@ -2297,7 +2295,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         You can access `built-in tools <https://platform.openai.com/docs/guides/tools?api-mode=responses>`_
         supported by the OpenAI Responses API. See LangChain
-        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
+        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
         detail.
 
         .. note::
@@ -2352,7 +2350,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `conversation state <https://platform.openai.com/docs/guides/conversation-state?api-mode=responses>`_.
         Passing in response IDs from previous messages will continue a conversational
         thread. See LangChain
-        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
+        `conversation docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
         detail.
 
         .. code-block:: python
@@ -2641,14 +2639,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             llm = ChatOpenAI(model="o4-mini", service_tier="flex")
 
         Note that this is a beta feature that is only available for a subset of models.
-        See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
+        See OpenAI `flex processing docs <https://platform.openai.com/docs/guides/flex-processing>`__
         for more detail.
 
     .. dropdown:: OpenAI-compatible APIs
 
-        ``ChatOpenAI`` can be used with OpenAI-compatible APIs like LM Studio, vLLM,
-        Ollama, and others. To use custom parameters specific to these providers,
-        use the ``extra_body`` parameter.
+        ``ChatOpenAI`` can be used with OpenAI-compatible APIs like `LM Studio <https://lmstudio.ai/>`__,
+        `vLLM <https://github.com/vllm-project/vllm>`__,
+        `Ollama <https://ollama.com/>`__, and others.
+        To use custom parameters specific to these providers, use the ``extra_body`` parameter.
 
         **LM Studio example** with TTL (auto-eviction):
 
@@ -2681,7 +2680,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         Use the correct parameter for different types of API arguments:
 
-        **Use `model_kwargs` for:**
+        **Use ``model_kwargs`` for:**
 
         - Standard OpenAI API parameters not explicitly defined as class parameters
         - Parameters that should be flattened into the top-level request payload
@@ -2700,7 +2699,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             )
 
-        **Use `extra_body` for:**
+        **Use ``extra_body`` for:**
 
         - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio, etc.)
         - Parameters that need to be nested under ``extra_body`` in the request
@@ -2760,7 +2759,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @property
@@ -2822,8 +2821,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
                 - a TypedDict class,
@@ -2839,25 +2837,20 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             method: The method for steering model generation, one of:
 
-                - "json_schema":
-                    Uses OpenAI's Structured Output API:
-                    https://platform.openai.com/docs/guides/structured-outputs
-                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", "o1", and later
+                - ``'json_schema'``:
+                    Uses OpenAI's `Structured Output API <https://platform.openai.com/docs/guides/structured-outputs>`__.
+                    Supported for ``'gpt-4o-mini'``, ``'gpt-4o-2024-08-06'``, ``'o1'``, and later
                     models.
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses OpenAI's tool-calling (formerly called function calling)
-                    API: https://platform.openai.com/docs/guides/function-calling
-                - "json_mode":
-                    Uses OpenAI's JSON mode. Note that if using JSON mode then you
-                    must include instructions for formatting the output into the
-                    desired schema into the model call:
-                    https://platform.openai.com/docs/guides/structured-outputs/json-mode
+                    `API <https://platform.openai.com/docs/guides/function-calling>`__
+                - ``'json_mode'``:
+                    Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
+                    Note that if using JSON mode then you must include instructions for
+                    formatting the output into the desired schema into the model call
 
                 Learn more about the differences between the methods and which models
-                support which methods here:
-
-                - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
-                - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
+                support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -2865,13 +2858,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
             strict:
 
                 - True:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to
-                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
                 - False:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -2933,13 +2925,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         .. versionchanged:: 0.1.20
 
@@ -2967,7 +2960,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 
-            See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+            See all constraints `here <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas>`__.
 
             .. code-block:: python
 
