@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import atexit
+from dataclasses import is_dataclass
 import functools
 import logging
 import uuid
@@ -22,6 +23,8 @@ from typing import (
 )
 from uuid import UUID
 
+from langchain_core.messages.v1 import MessageV1
+from langchain_core.outputs.chat_generation import ChatGeneration
 from langsmith.run_helpers import get_tracing_context
 from typing_extensions import Self, override
 
@@ -241,6 +244,22 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+def _convert_llm_events(
+    event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> None:
+    if event_name == "on_chat_model_start" and isinstance(args[1], list):
+        for idx, item in enumerate(args[1]):
+            if is_dataclass(item):
+                args[1][idx] = item  # convert to old message
+    elif event_name == "on_llm_new_token" and is_dataclass(args[0]):
+        kwargs["chunk"] = ChatGenerationChunk(text=args[0].text, message=args[0])
+        args[0] = args[0].text
+    elif event_name == "on_llm_end" and is_dataclass(args[0]):
+        args[0] = LLMResult(
+            generations=[[ChatGeneration(text=args[0].text, message=args[0])]]
+        )
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -269,6 +288,8 @@ def handle_event(
                 if ignore_condition_name is None or not getattr(
                     handler, ignore_condition_name
                 ):
+                    if not handler.accepts_new_messages:
+                        _convert_llm_events(event_name, args, kwargs)
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
                         coros.append(event)
@@ -363,6 +384,8 @@ async def _ahandle_event_for_handler(
 ) -> None:
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
+            if not handler.accepts_new_messages:
+                _convert_llm_events(event_name, args, kwargs)
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)

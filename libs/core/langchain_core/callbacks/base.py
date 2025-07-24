@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -64,7 +65,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | AIMessageChunk,
         *,
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         run_id: UUID,
@@ -84,7 +85,7 @@ class LLMManagerMixin:
 
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: LLMResult | AIMessage,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -261,7 +262,7 @@ class CallbackManagerMixin:
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: list[list[BaseMessage]] | list[MessageV1],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -438,6 +439,9 @@ class BaseCallbackHandler(
 
     run_inline: bool = False
     """Whether to run the callback inline."""
+
+    accepts_new_messages: bool = False
+    """Whether the callback accepts new message format."""
 
     @property
     def ignore_llm(self) -> bool:
