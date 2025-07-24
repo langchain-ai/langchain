@@ -1176,7 +1176,9 @@ def convert_to_openai_messages(
                                 "id": block["id"],
                                 "function": {
                                     "name": block["name"],
-                                    "arguments": json.dumps(block["input"]),
+                                    "arguments": json.dumps(
+                                        block["input"], ensure_ascii=False
+                                    ),
                                 },
                             }
                         )
