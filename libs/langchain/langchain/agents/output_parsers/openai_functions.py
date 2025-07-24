@@ -87,7 +87,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
         return self._parse_ai_message(message)
 

@@ -123,7 +123,10 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
         Chain (LLMChain) that can be used to answer questions with citations.
     """
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
-    schema = QuestionAnswer.schema()
+    if hasattr(QuestionAnswer, "model_json_schema"):
+        schema = QuestionAnswer.model_json_schema()
+    else:
+        schema = QuestionAnswer.schema()
     function = {
         "name": schema["title"],
         "description": schema["description"],
