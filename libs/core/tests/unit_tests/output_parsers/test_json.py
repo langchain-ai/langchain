@@ -5,7 +5,10 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from langchain_core.exceptions import OutputParserException
+from langchain.output_parsers.json import parse_and_check_json_markdown
+from langchain.schema import OutputParserException
+
+
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
@@ -209,6 +212,13 @@ def test_parse_json_with_code_blocks_and_newlines() -> None:
         "action": "Final Answer",
         "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
     }
+
+def test_parse_non_dict_json_output():
+    text = "```json\n1\n```"
+    with pytest.raises(OutputParserException) as exc_info:
+        parse_and_check_json_markdown(text, expected_keys=["foo"])
+    
+    assert "Expected JSON object (dict)" in str(exc_info.value)
 
 
 TEST_CASES_ESCAPED_QUOTES = [
