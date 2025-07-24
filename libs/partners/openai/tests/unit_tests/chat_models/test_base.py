@@ -2530,6 +2530,32 @@ def test_make_computer_call_output_from_message() -> None:
     }
 
 
+def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call
+
+    tool_call = ToolCall(
+        id="call_123",
+        name="create_customer",
+        args={"customer_name": "你好啊集团"},
+        type="tool_call",
+    )
+
+    result = _lc_tool_call_to_openai_tool_call(tool_call)
+
+    assert result["type"] == "function"
+    assert result["id"] == "call_123"
+    assert result["function"]["name"] == "create_customer"
+
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(

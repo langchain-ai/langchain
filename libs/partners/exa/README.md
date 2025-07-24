@@ -98,7 +98,7 @@ print("Similar Results:", similar_results)
 All Exa tools support the following common parameters:
 
 - `num_results` (1-100): Number of search results to return
-- `type`: Search type - "neural", "keyword", or "auto" 
+- `type`: Search type - "neural", "keyword", or "auto"
 - `livecrawl`: Live crawling mode - "always", "fallback", or "never"
 - `summary`: Get AI-generated summaries (True/False or custom prompt dict)
 - `text_contents_options`: Dict to limit text length (e.g. `{"max_characters": 2000}`)
