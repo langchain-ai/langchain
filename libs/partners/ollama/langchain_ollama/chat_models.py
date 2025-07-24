@@ -721,7 +721,7 @@ class ChatOllama(BaseChatModel):
                     # Handle legacy OpenAI-style and data content blocks
                     elif isinstance(content_part, dict) and content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
-                    elif content_part.get("type") == "tool_use":
+                    elif isinstance(content_part, dict) and content_part.get("type") == "tool_use":
                         continue
                     elif content_part.get("type") == "image_url":
                         image_url = None
@@ -1444,5 +1444,6 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
