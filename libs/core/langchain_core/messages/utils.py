@@ -307,7 +307,7 @@ def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
             id=message.id,
             name=message.name,
             tool_calls=message.tool_calls,
-            response_metadata=cast(dict, message.response_metadata),
+            response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, AIMessageChunkV1):
         return AIMessageChunk(
@@ -315,7 +315,7 @@ def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
-            response_metadata=cast(dict, message.response_metadata),
+            response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(

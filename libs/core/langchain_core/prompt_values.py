@@ -14,16 +14,18 @@ from typing_extensions import TypedDict, overload
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
+    ToolMessage,
     get_buffer_string,
 )
 from langchain_core.messages import content_blocks as types
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1
+from langchain_core.messages.v1 import MessageV1, ResponseMetadata
 from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
 from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 
@@ -40,7 +42,7 @@ def _convert_to_v1(message: BaseMessage) -> MessageV1:
             if isinstance(block, str):
                 content.append({"type": "text", "text": block})
             elif isinstance(block, dict):
-                content.append(block)
+                content.append(cast("types.ContentBlock", block))
             else:
                 pass
 
@@ -52,7 +54,7 @@ def _convert_to_v1(message: BaseMessage) -> MessageV1:
         return AIMessageV1(
             content=content,
             usage_metadata=message.usage_metadata,
-            response_metadata=message.response_metadata,
+            response_metadata=cast("ResponseMetadata", message.response_metadata),
             tool_calls=message.tool_calls,
         )
     if isinstance(message, SystemMessage):
@@ -92,8 +94,18 @@ class PromptValue(Serializable, ABC):
     def to_string(self) -> str:
         """Return prompt value as string."""
 
+    @overload
+    def to_messages(
+        self, output_version: Literal["v0"] = "v0"
+    ) -> list[BaseMessage]: ...
+
+    @overload
+    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+
     @abstractmethod
-    def to_messages(self) -> list[BaseMessage]:
+    def to_messages(
+        self, output_version: Literal["v0", "v1"] = "v0"
+    ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt as a list of Messages."""
 
 
@@ -117,10 +129,6 @@ class StringPromptValue(PromptValue):
         """Return prompt as string."""
         return self.text
 
-    def to_messages(self) -> list[BaseMessage]:
-        """Return prompt as messages."""
-        return [HumanMessage(content=self.text)]
-
     @overload
     def to_messages(
         self, output_version: Literal["v0"] = "v0"
@@ -131,12 +139,8 @@ class StringPromptValue(PromptValue):
 
     def to_messages(
         self, output_version: Literal["v0", "v1"] = "v0"
-    ) -> Union[list[BaseMessage], list[MessageV1]]:
-        """Return prompt as a list of messages.
-
-        Args:
-            output_version: The output version, either "v0" (default) or "v1".
-        """
+    ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
+        """Return prompt as messages."""
         if output_version == "v1":
             return [HumanMessageV1(content=self.text)]
         return [HumanMessage(content=self.text)]
@@ -165,7 +169,7 @@ class ChatPromptValue(PromptValue):
 
     def to_messages(
         self, output_version: Literal["v0", "v1"] = "v0"
-    ) -> Union[list[BaseMessage], list[MessageV1]]:
+    ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt as a list of messages.
 
         Args:
@@ -207,8 +211,26 @@ class ImagePromptValue(PromptValue):
         """Return prompt (image URL) as string."""
         return self.image_url["url"]
 
-    def to_messages(self) -> list[BaseMessage]:
+    @overload
+    def to_messages(
+        self, output_version: Literal["v0"] = "v0"
+    ) -> list[BaseMessage]: ...
+
+    @overload
+    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+
+    def to_messages(
+        self, output_version: Literal["v0", "v1"] = "v0"
+    ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt (image URL) as messages."""
+        if output_version == "v1":
+            block: types.ImageContentBlock = {
+                "type": "image",
+                "url": self.image_url["url"],
+            }
+            if "detail" in self.image_url:
+                block["detail"] = self.image_url["detail"]
+            return [HumanMessageV1(content=[block])]
         return [HumanMessage(content=[cast("dict", self.image_url)])]
 
 
