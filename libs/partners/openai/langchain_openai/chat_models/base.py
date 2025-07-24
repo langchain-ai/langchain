@@ -2645,8 +2645,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     .. dropdown:: OpenAI-compatible APIs
 
         ``ChatOpenAI`` can be used with OpenAI-compatible APIs like LM Studio, vLLM,
-        Ollama when using OpenAI compatibility mode, and others. To use custom parameters
-        specific to these providers, use the ``extra_body`` parameter.
+        Ollama, and others. To use custom parameters specific to these providers,
+        use the ``extra_body`` parameter.
 
         **LM Studio example** with TTL (auto-eviction):
 
