@@ -2555,6 +2555,7 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
     assert "你好啊集团" in arguments_str
     assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
 
+
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(
