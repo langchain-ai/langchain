@@ -79,7 +79,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
     def parse(self, request: str) -> dict[str, Any]:
         stripped_request_params = None
         splitted_request = request.strip().split(":")
-        if len(splitted_request) != 2:
+        if len(splitted_request) != 2:  # noqa: PLR2004
             msg = f"Request '{request}' is not correctly formatted. \
                     Please refer to the format instructions."
             raise OutputParserException(msg)
@@ -127,16 +127,15 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                         filtered_df[stripped_request_params],
                         request_type,
                     )()
+            elif request_type == "column":
+                result[request_params] = self.dataframe[request_params]
+            elif request_type == "row":
+                result[request_params] = self.dataframe.iloc[int(request_params)]
             else:
-                if request_type == "column":
-                    result[request_params] = self.dataframe[request_params]
-                elif request_type == "row":
-                    result[request_params] = self.dataframe.iloc[int(request_params)]
-                else:
-                    result[request_type] = getattr(
-                        self.dataframe[request_params],
-                        request_type,
-                    )()
+                result[request_type] = getattr(
+                    self.dataframe[request_params],
+                    request_type,
+                )()
         except (AttributeError, IndexError, KeyError) as e:
             if request_type not in {"column", "row"}:
                 msg = f"Unsupported request type '{request_type}'. \

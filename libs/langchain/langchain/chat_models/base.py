@@ -86,59 +86,60 @@ def init_chat_model(
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> Union[BaseChatModel, _ConfigurableModel]:
-    """Initialize a ChatModel from the model name and provider.
+    """Initialize a ChatModel in a single line using the model's name and provider.
 
-    **Note:** Must have the integration package corresponding to the model provider
-    installed.
+    .. note::
+        Must have the integration package corresponding to the model provider installed.
+        You should look at the `provider integration's API reference <https://python.langchain.com/api_reference/reference.html#integrations>`__
+        to see what parameters are supported by the model.
 
     Args:
-        model: The name of the model, e.g. "o3-mini", "claude-3-5-sonnet-latest". You can
+        model: The name of the model, e.g. ``'o3-mini'``, ``'claude-3-5-sonnet-latest'``. You can
             also specify model and model provider in a single argument using
-            '{model_provider}:{model}' format, e.g. "openai:o1".
+            ``'{model_provider}:{model}'`` format, e.g. ``'openai:o1'``.
         model_provider: The model provider if not specified as part of model arg (see
             above). Supported model_provider values and the corresponding integration
             package are:
 
-            - 'openai'              -> langchain-openai
-            - 'anthropic'           -> langchain-anthropic
-            - 'azure_openai'        -> langchain-openai
-            - 'azure_ai'            -> langchain-azure-ai
-            - 'google_vertexai'     -> langchain-google-vertexai
-            - 'google_genai'        -> langchain-google-genai
-            - 'bedrock'             -> langchain-aws
-            - 'bedrock_converse'    -> langchain-aws
-            - 'cohere'              -> langchain-cohere
-            - 'fireworks'           -> langchain-fireworks
-            - 'together'            -> langchain-together
-            - 'mistralai'           -> langchain-mistralai
-            - 'huggingface'         -> langchain-huggingface
-            - 'groq'                -> langchain-groq
-            - 'ollama'              -> langchain-ollama
-            - 'google_anthropic_vertex'    -> langchain-google-vertexai
-            - 'deepseek'            -> langchain-deepseek
-            - 'ibm'                 -> langchain-ibm
-            - 'nvidia'              -> langchain-nvidia-ai-endpoints
-            - 'xai'                 -> langchain-xai
-            - 'perplexity'          -> langchain-perplexity
+            - ``openai``              -> ``langchain-openai``
+            - ``anthropic``           -> ``langchain-anthropic``
+            - ``azure_openai``        -> ``langchain-openai``
+            - ``azure_ai``            -> ``langchain-azure-ai``
+            - ``google_vertexai``     -> ``langchain-google-vertexai``
+            - ``google_genai``        -> ``langchain-google-genai``
+            - ``bedrock``             -> ``langchain-aws``
+            - ``bedrock_converse``    -> ``langchain-aws``
+            - ``cohere``              -> ``langchain-cohere``
+            - ``fireworks``           -> ``langchain-fireworks``
+            - ``together``            -> ``langchain-together``
+            - ``mistralai``           -> ``langchain-mistralai``
+            - ``huggingface``         -> ``langchain-huggingface``
+            - ``groq``                -> ``langchain-groq``
+            - ``ollama``              -> ``langchain-ollama``
+            - ``google_anthropic_vertex``    -> ``langchain-google-vertexai``
+            - ``deepseek``            -> ``langchain-deepseek``
+            - ``ibm``                 -> ``langchain-ibm``
+            - ``nvidia``              -> ``langchain-nvidia-ai-endpoints``
+            - ``xai``                 -> ``langchain-xai``
+            - ``perplexity``          -> ``langchain-perplexity``
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - 'gpt-3...' | 'gpt-4...' | 'o1...' -> 'openai'
-            - 'claude...'                       -> 'anthropic'
-            - 'amazon....'                      -> 'bedrock'
-            - 'gemini...'                       -> 'google_vertexai'
-            - 'command...'                      -> 'cohere'
-            - 'accounts/fireworks...'           -> 'fireworks'
-            - 'mistral...'                      -> 'mistralai'
-            - 'deepseek...'                     -> 'deepseek'
-            - 'grok...'                         -> 'xai'
-            - 'sonar...'                        -> 'perplexity'
-        configurable_fields: Which model parameters are
-            configurable:
+            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
+            - ``claude...``                       -> ``anthropic``
+            - ``amazon...``                       -> ``bedrock``
+            - ``gemini...``                       -> ``google_vertexai``
+            - ``command...``                      -> ``cohere``
+            - ``accounts/fireworks...``           -> ``fireworks``
+            - ``mistral...``                      -> ``mistralai``
+            - ``deepseek...``                     -> ``deepseek``
+            - ``grok...``                         -> ``xai``
+            - ``sonar...``                        -> ``perplexity``
+        configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
-            - "any": All fields are configurable. *See Security Note below.*
+            - ``'any'``: All fields are configurable. **See Security Note below.**
             - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
 
             Fields are assumed to have config_prefix stripped if there is a
@@ -146,15 +147,15 @@ def init_chat_model(
             not specified, then defaults to ``("model", "model_provider")``.
 
             ***Security Note***: Setting ``configurable_fields="any"`` means fields like
-            api_key, base_url, etc. can be altered at runtime, potentially redirecting
+            ``api_key``, ``base_url``, etc. can be altered at runtime, potentially redirecting
             model requests to a different service/user. Make sure that if you're
             accepting untrusted configurations that you enumerate the
             ``configurable_fields=(...)`` explicitly.
 
-        config_prefix: If config_prefix is a non-empty string then model will be
+        config_prefix: If ``'config_prefix'`` is a non-empty string then model will be
             configurable at runtime via the
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
-            config_prefix is an empty string then model will be configurable via
+            ``'config_prefix'`` is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
         temperature: Model temperature.
         max_tokens: Max output tokens.

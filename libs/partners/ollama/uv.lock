@@ -305,7 +305,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.69"
+version = "0.3.70"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -363,7 +363,7 @@ typing = [
 
 [[package]]
 name = "langchain-ollama"
-version = "0.3.4"
+version = "0.3.6"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
