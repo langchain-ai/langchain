@@ -300,38 +300,37 @@ def _create_message_from_message_type(
 
 
 def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
-    # type ignores here are because AIMessageV1.content is a list of dicts. AIMessage
-    # content expects str or list[str | dict].
+    content = cast("Union[str, list[str | dict]]", message.content)
     if isinstance(message, AIMessageV1):
         return AIMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
             tool_calls=message.tool_calls,
-            response_metadata=message.response_metadata,
+            response_metadata=cast(dict, message.response_metadata),
         )
     if isinstance(message, AIMessageChunkV1):
         return AIMessageChunk(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
-            response_metadata=message.response_metadata,
+            response_metadata=cast(dict, message.response_metadata),
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
         )
     if isinstance(message, SystemMessageV1):
         return SystemMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
         )
     if isinstance(message, ToolMessageV1):
         return ToolMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
         )
     message = f"Unsupported message type: {type(message)}"
