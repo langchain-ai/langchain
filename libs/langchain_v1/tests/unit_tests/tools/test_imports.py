@@ -4,7 +4,6 @@ EXPECTED_ALL = {
     "BaseTool",
     "InjectedToolArg",
     "InjectedToolCallId",
-    "Tool",
     "ToolException",
     "tool",
 }

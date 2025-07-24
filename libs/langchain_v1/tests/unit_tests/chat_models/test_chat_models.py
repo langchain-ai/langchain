@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 EXPECTED_ALL = [
     "init_chat_model",
+    "BaseChatModel",
 ]
 
 
