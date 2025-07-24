@@ -705,8 +705,21 @@ class ChatOllama(BaseChatModel):
             if isinstance(message.content, str):
                 content = message.content
             else:
-                for content_part in cast(list[dict], message.content):
-                    if content_part.get("type") == "text":
+                for content_part in message.content:
+                    # Handle new standard content blocks
+                    if isinstance(content_part, (
+                        TextContentBlock,
+                        ImageContentBlock,
+                        AudioContentBlock,
+                        VideoContentBlock,
+                        PlainTextContentBlock,
+                        FileContentBlock,
+                    )):
+                        part_text, part_images = _convert_standard_content_block_to_ollama(content_part)
+                        content += part_text
+                        images.extend(part_images)
+                    # Handle legacy OpenAI-style and data content blocks
+                    elif isinstance(content_part, dict) and content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "tool_use":
                         continue
