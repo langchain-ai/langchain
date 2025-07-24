@@ -35,6 +35,14 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages.content_blocks import (
+    AudioContentBlock,
+    FileContentBlock,
+    ImageContentBlock,
+    PlainTextContentBlock,
+    TextContentBlock,
+    VideoContentBlock,
+)
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
