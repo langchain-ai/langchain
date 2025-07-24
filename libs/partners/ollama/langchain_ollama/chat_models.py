@@ -205,12 +205,26 @@ def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
 
 
 def _get_image_from_data_content_block(block: dict) -> str:
-    """Format standard data content block to format expected by Ollama."""
+    """Format standard data content block to format expected by Ollama.
+    
+    Supports both legacy data content blocks and new ImageContentBlock format.
+    """
     if block["type"] == "image":
-        if block["source_type"] == "base64":
+        # Handle legacy data content blocks with source_type and data fields
+        if "source_type" in block and block["source_type"] == "base64":
             return block["data"]
-        error_message = "Image data only supported through in-line base64 format."
-        raise ValueError(error_message)
+        # Handle new ImageContentBlock format with base64 field
+        elif "base64" in block:
+            return block["base64"]
+        # Handle new ImageContentBlock format with url field
+        elif "url" in block:
+            # For URL-based images, we need to convert to base64 format
+            # For now, raise an error as Ollama expects base64 data
+            error_message = "Image URLs are not supported. Only base64 image data is supported."
+            raise ValueError(error_message)
+        else:
+            error_message = "Image data only supported through base64 format. Block must contain 'base64' field or legacy 'source_type'/'data' fields."
+            raise ValueError(error_message)
 
     error_message = f"Blocks of type {block['type']} not supported."
     raise ValueError(error_message)
@@ -1444,6 +1458,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
