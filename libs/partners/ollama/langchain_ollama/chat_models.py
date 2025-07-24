@@ -216,6 +216,45 @@ def _get_image_from_data_content_block(block: dict) -> str:
     raise ValueError(error_message)
 
 
+def _convert_standard_content_block_to_ollama(
+    content_block: Union[
+        TextContentBlock,
+        ImageContentBlock,
+        AudioContentBlock,
+        VideoContentBlock,
+        PlainTextContentBlock,
+        FileContentBlock,
+    ]
+) -> tuple[str, list[str]]:
+    """Convert standard content blocks to Ollama format.
+    
+    Args:
+        content_block: Standard content block to convert
+        
+    Returns:
+        Tuple of (text_content, images_list)
+        
+    Raises:
+        ValueError: For unsupported content block types
+    """
+    if content_block["type"] == "text":
+        return content_block["text"], []
+    elif content_block["type"] == "image":
+        if "base64" in content_block:
+            return "", [content_block["base64"]]
+        elif "url" in content_block:
+            # For URL-based images, we need to convert to base64 format
+            # For now, raise an error as Ollama expects base64 data
+            error_message = "Image URLs are not supported. Only base64 image data is supported."
+            raise ValueError(error_message)
+        else:
+            error_message = "ImageContentBlock must contain either 'base64' or 'url' field."
+            raise ValueError(error_message)
+    else:
+        error_message = f"Content block type '{content_block['type']}' is not supported by Ollama. Supported types: text, image (base64 only)."
+        raise ValueError(error_message)
+
+
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
@@ -1392,3 +1431,4 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
