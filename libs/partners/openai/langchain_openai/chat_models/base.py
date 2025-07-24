@@ -553,7 +553,22 @@ class BaseChatOpenAI(BaseChatModel):
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM."""
+    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
+    providers.
+    
+    This is the recommended way to pass custom parameters that are specific to your
+    OpenAI-compatible API provider but not part of the standard OpenAI API.
+    
+    Examples:
+        - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
+        - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
+        - Any other provider-specific parameters
+        
+    .. note::
+        Do NOT use ``model_kwargs`` for custom parameters that are not part of the
+        standard OpenAI API, as this will cause errors when making API calls. Use 
+    ``extra_body`` instead.
+    """
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
@@ -579,11 +594,11 @@ class BaseChatOpenAI(BaseChatModel):
 
     Supported values:
 
-    - ``"file_search_call.results"``
-    - ``"message.input_image.image_url"``
-    - ``"computer_call_output.output.image_url"``
-    - ``"reasoning.encrypted_content"``
-    - ``"code_interpreter_call.outputs"``
+    - ``'file_search_call.results'``
+    - ``'message.input_image.image_url'``
+    - ``'computer_call_output.output.image_url'``
+    - ``'reasoning.encrypted_content'``
+    - ``'code_interpreter_call.outputs'``
 
     .. versionadded:: 0.3.24
     """
@@ -658,8 +673,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     Supported values:
 
-    - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
-    - ``"responses/v1"``: Formats Responses API output
+    - ``'v0'``: AIMessage format as of langchain-openai 0.3.x.
+    - ``'responses/v1'``: Formats Responses API output
       items into AIMessage content blocks.
 
     Currently only impacts the Responses API. ``output_version="responses/v1"`` is
@@ -1560,8 +1575,9 @@ class BaseChatOpenAI(BaseChatModel):
 
         Assumes model is compatible with OpenAI function-calling API.
 
-        NOTE: Using bind_tools is recommended instead, as the `functions` and
-            `function_call` request parameters are officially marked as deprecated by
+        .. note::
+            Using ``bind_tools()`` is recommended instead, as the ``functions`` and
+            ``function_call`` request parameters are officially marked as deprecated by
             OpenAI.
 
         Args:
@@ -1622,10 +1638,10 @@ class BaseChatOpenAI(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
-                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                - ``"auto"``: automatically selects a tool (including no tool).
-                - ``"none"``: does not call a tool.
-                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
+                - str of the form ``'<<tool_name>>'``: calls <<tool_name>> tool.
+                - ``'auto'``: automatically selects a tool (including no tool).
+                - ``'none'``: does not call a tool.
+                - ``'any'`` or ``'required'`` or ``True``: force at least one tool to be called.
                 - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                 - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
@@ -1760,12 +1776,12 @@ class BaseChatOpenAI(BaseChatModel):
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 
-                - ``method`` is ``"json_schema"`` (default).
+                - ``method`` is ``'json_schema'`` (default).
                 - ``strict=True``
                 - ``include_raw=True``
 
                 If a model elects to call a
-                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+                tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
                 .. dropdown:: Example
 
@@ -2628,6 +2644,91 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         See OpenAI `docs <https://platform.openai.com/docs/guides/flex-processing>`_
         for more detail.
 
+    .. dropdown:: OpenAI-compatible APIs
+
+        ``ChatOpenAI`` can be used with OpenAI-compatible APIs like LM Studio, vLLM,
+        Ollama, and others. To use custom parameters specific to these providers,
+        use the ``extra_body`` parameter.
+
+        **LM Studio example** with TTL (auto-eviction):
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(
+                base_url="http://localhost:1234/v1",
+                api_key="lm-studio",  # Can be any string
+                model="mlx-community/QwQ-32B-4bit",
+                temperature=0,
+                extra_body={
+                    "ttl": 300
+                },  # Auto-evict model after 5 minutes of inactivity
+            )
+
+        **vLLM example** with custom parameters:
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="meta-llama/Llama-2-7b-chat-hf",
+                extra_body={"use_beam_search": True, "best_of": 4},
+            )
+
+    .. dropdown:: model_kwargs vs extra_body
+
+        Use the correct parameter for different types of API arguments:
+
+        **Use `model_kwargs` for:**
+
+        - Standard OpenAI API parameters not explicitly defined as class parameters
+        - Parameters that should be flattened into the top-level request payload
+        - Examples: ``max_completion_tokens``, ``stream_options``, ``modalities``, ``audio``
+
+        .. code-block:: python
+
+            # Standard OpenAI parameters
+            llm = ChatOpenAI(
+                model="gpt-4o",
+                model_kwargs={
+                    "stream_options": {"include_usage": True},
+                    "max_completion_tokens": 300,
+                    "modalities": ["text", "audio"],
+                    "audio": {"voice": "alloy", "format": "wav"},
+                },
+            )
+
+        **Use `extra_body` for:**
+
+        - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio, etc.)
+        - Parameters that need to be nested under ``extra_body`` in the request
+        - Any non-standard OpenAI API parameters
+
+        .. code-block:: python
+
+            # Custom provider parameters
+            llm = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                model="custom-model",
+                extra_body={
+                    "use_beam_search": True,  # vLLM parameter
+                    "best_of": 4,  # vLLM parameter
+                    "ttl": 300,  # LM Studio parameter
+                },
+            )
+
+        **Key Differences:**
+
+        - ``model_kwargs``: Parameters are **merged into top-level** request payload
+        - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
+
+        .. important::
+
+            Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
+            Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
+
     """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
@@ -2780,17 +2881,17 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                Note: ``strict`` can only be non-null if ``method`` is
-                ``"json_schema"`` or ``"function_calling"``.
+                .. note::
+                    ``strict`` can only be non-null if ``method`` is ``'json_schema'`` or ``'function_calling'``.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 
-                - ``method`` is ``"json_schema"`` (default).
+                - ``method`` is ``'json_schema'`` (default).
                 - ``strict=True``
                 - ``include_raw=True``
 
                 If a model elects to call a
-                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+                tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
                 .. dropdown:: Example
 

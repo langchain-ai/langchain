@@ -44,7 +44,7 @@ from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -2554,3 +2554,42 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
     # Also ensure the raw JSON string contains Unicode, not escaped sequences
     assert "你好啊集团" in arguments_str
     assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+def test_extra_body_parameter() -> None:
+    """Test that extra_body parameter is properly included in request payload."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        extra_body={"ttl": 300, "custom_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify extra_body is included in the payload
+    assert "extra_body" in payload
+    assert payload["extra_body"]["ttl"] == 300
+    assert payload["extra_body"]["custom_param"] == "test_value"
+
+
+def test_extra_body_with_model_kwargs() -> None:
+    """Test that extra_body and model_kwargs work together correctly."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        temperature=0.5,
+        extra_body={"ttl": 600},
+        model_kwargs={"custom_non_openai_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify both extra_body and model_kwargs are in payload
+    assert payload["extra_body"]["ttl"] == 600
+    assert payload["custom_non_openai_param"] == "test_value"
+    assert payload["temperature"] == 0.5
