@@ -470,14 +470,14 @@ class ImageContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#image>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the image."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the image."""
@@ -508,14 +508,14 @@ class VideoContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#video>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the video."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the video."""
@@ -546,14 +546,14 @@ class AudioContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the audio."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the audio."""
@@ -586,6 +586,9 @@ class PlainTextContentBlock(TypedDict):
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the plaintext."""
 
@@ -594,9 +597,6 @@ class PlainTextContentBlock(TypedDict):
 
     text: NotRequired[str]
     """Plaintext content. This is optional if the data is provided as base64."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     title: NotRequired[str]
     """Title of the text data, e.g., the title of a document."""
@@ -635,14 +635,14 @@ class FileContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the file."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the file, e.g., the name of a document or file."""
