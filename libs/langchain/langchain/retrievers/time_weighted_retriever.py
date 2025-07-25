@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
@@ -128,6 +129,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
             result.append(buffered_doc)
         return result
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
@@ -142,6 +144,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         docs_and_scores.update(self.get_salient_docs(query))
         return self._get_rescored_docs(docs_and_scores)
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,

@@ -355,6 +355,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
         return feedback
 
+    @override
     def evaluate_run(
         self,
         run: Run,
@@ -372,6 +373,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 # TODO: Add run ID once we can declare it via callbacks
             )
 
+    @override
     async def aevaluate_run(
         self,
         run: Run,

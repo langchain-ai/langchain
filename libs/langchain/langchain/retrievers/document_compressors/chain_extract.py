@@ -110,7 +110,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-        llm_chain_kwargs: Optional[dict] = None,
+        llm_chain_kwargs: Optional[dict] = None,  # noqa: ARG003
     ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()

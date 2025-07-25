@@ -1,6 +1,7 @@
 from typing import Any, Callable
 
 from langchain_core.documents import Document
+from typing_extensions import override
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
 from langchain.storage import InMemoryStore
@@ -15,6 +16,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._identity_fn
 
+    @override
     def similarity_search(
         self,
         query: str,
@@ -26,6 +28,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
             return []
         return [res]
 
+    @override
     def similarity_search_with_score(
         self,
         query: str,
