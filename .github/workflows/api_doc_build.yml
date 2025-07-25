@@ -53,7 +53,7 @@ jobs:
           # Checkout each unique repository that is in langchain-ai org
           for repo in $REPOS; do
             # Validate repository is in langchain-ai org
-            if [[ ! "$repo" =~ ^langchain-ai/[a-zA-Z0-9_.-]+$ ]]; then
+            if [[ ! "$repo" =~ ^langchain-ai/[a-zA-Z0-9_-]+$ ]]; then
               echo "Error: Invalid repository format: $repo"
               exit 1
             fi
@@ -61,7 +61,7 @@ jobs:
             REPO_NAME=$(echo $repo | cut -d'/' -f2)
             
             # Additional validation for repo name
-            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
               echo "Error: Invalid repository name: $REPO_NAME"
               exit 1
             fi
