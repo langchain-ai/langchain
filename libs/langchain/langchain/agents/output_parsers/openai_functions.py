@@ -9,6 +9,7 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -30,10 +31,11 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return "openai-functions-agent"
 
     @staticmethod
-    def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
+    def parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         """Parse an AI message."""
         if not isinstance(message, AIMessage):
-            raise TypeError(f"Expected an AI message got {type(message)}")
+            msg = f"Expected an AI message got {type(message)}"
+            raise TypeError(msg)
 
         function_call = message.additional_kwargs.get("function_call", {})
 
@@ -46,11 +48,12 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                 else:
                     # otherwise it returns a json object
                     _tool_input = json.loads(function_call["arguments"], strict=False)
-            except JSONDecodeError:
-                raise OutputParserException(
+            except JSONDecodeError as e:
+                msg = (
                     f"Could not parse tool input: {function_call} because "
                     f"the `arguments` is not valid JSON."
                 )
+                raise OutputParserException(msg) from e
 
             # HACK HACK HACK:
             # The code that encodes tool input into Open AI uses a special variable
@@ -73,16 +76,24 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             )
 
         return AgentFinish(
-            return_values={"output": message.content}, log=str(message.content)
+            return_values={"output": message.content},
+            log=str(message.content),
         )
 
+    @override
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self,
+        result: list[Generation],
+        *,
+        partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
-            raise ValueError("This output parser only works on ChatGeneration output")
+            msg = "This output parser only works on ChatGeneration output"
+            raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
-        return self._parse_ai_message(message)
+        return self.parse_ai_message(message)
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        raise ValueError("Can only parse messages")
+        msg = "Can only parse messages"
+        raise ValueError(msg)

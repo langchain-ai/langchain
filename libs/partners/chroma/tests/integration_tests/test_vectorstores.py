@@ -28,8 +28,8 @@ class MyEmbeddingFunction:
     def __init__(self, fak: Fak):
         self.fak = fak
 
-    def __call__(self, input: Embeddable) -> list[list[float]]:
-        texts = cast(list[str], input)
+    def __call__(self, input_: Embeddable) -> list[list[float]]:
+        texts = cast(list[str], input_)
         return self.fak.embed_documents(texts=texts)
 
 
@@ -44,7 +44,9 @@ def test_chroma() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output = docsearch.similarity_search("foo", k=1)
 
@@ -92,7 +94,9 @@ async def test_chroma_async() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output = await docsearch.asimilarity_search("foo", k=1)
 
@@ -173,7 +177,7 @@ def test_chroma_with_metadatas_with_scores_and_ids() -> None:
     output = docsearch.similarity_search_with_score("foo", k=1)
     docsearch.delete_collection()
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0)
+        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0),
     ]
 
 
@@ -211,11 +215,12 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     )
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.similarity_search_by_vector_with_relevance_scores(
-        embedding=embedded_query, k=1
+        embedding=embedded_query,
+        k=1,
     )
     docsearch.delete_collection()
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0)
+        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0),
     ]
 
 
@@ -235,10 +240,10 @@ def test_chroma_search_filter() -> None:
     output2 = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
     docsearch.delete_collection()
     assert output1 == [
-        Document(page_content="far", metadata={"first_letter": "f"}, id="id_0")
+        Document(page_content="far", metadata={"first_letter": "f"}, id="id_0"),
     ]
     assert output2 == [
-        Document(page_content="bar", metadata={"first_letter": "b"}, id="id_1")
+        Document(page_content="bar", metadata={"first_letter": "b"}, id="id_1"),
     ]
 
 
@@ -255,17 +260,21 @@ def test_chroma_search_filter_with_scores() -> None:
         ids=ids,
     )
     output1 = docsearch.similarity_search_with_score(
-        "far", k=1, filter={"first_letter": "f"}
+        "far",
+        k=1,
+        filter={"first_letter": "f"},
     )
     output2 = docsearch.similarity_search_with_score(
-        "far", k=1, filter={"first_letter": "b"}
+        "far",
+        k=1,
+        filter={"first_letter": "b"},
     )
     docsearch.delete_collection()
     assert output1 == [
-        (Document(page_content="far", metadata={"first_letter": "f"}, id="id_0"), 0.0)
+        (Document(page_content="far", metadata={"first_letter": "f"}, id="id_0"), 0.0),
     ]
     assert output2 == [
-        (Document(page_content="bar", metadata={"first_letter": "b"}, id="id_1"), 1.0)
+        (Document(page_content="bar", metadata={"first_letter": "b"}, id="id_1"), 1.0),
     ]
 
 
@@ -365,7 +374,9 @@ def test_chroma_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output = docsearch.max_marginal_relevance_search("foo", k=1)
     docsearch.delete_collection()
@@ -379,7 +390,9 @@ def test_chroma_mmr_by_vector() -> None:
     texts = ["foo", "bar", "baz"]
     embeddings = FakeEmbeddings()
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=embeddings
+        collection_name="test_collection",
+        texts=texts,
+        embedding=embeddings,
     )
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
@@ -393,7 +406,9 @@ def test_chroma_with_include_parameter() -> None:
     """Test end to end construction and include parameter."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output1 = docsearch.get(include=["embeddings"])
     output2 = docsearch.get()
@@ -424,7 +439,7 @@ def test_chroma_update_document() -> None:
         embedding=embedding,
         ids=[document_id],
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -441,7 +456,7 @@ def test_chroma_update_document() -> None:
     output = docsearch.similarity_search(updated_content, k=1)
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -449,7 +464,7 @@ def test_chroma_update_document() -> None:
 
     # Assert that the updated document is returned by the search
     assert output == [
-        Document(page_content=updated_content, metadata={"page": "0"}, id=document_id)
+        Document(page_content=updated_content, metadata={"page": "0"}, id=document_id),
     ]
 
     assert list(new_embedding) == list(embedding.embed_documents([updated_content])[0])
@@ -470,7 +485,9 @@ def test_chroma_update_document_with_id() -> None:
 
     # Create an instance of Document with initial content and metadata
     original_doc = Document(
-        page_content=initial_content, metadata={"page": "0"}, id=document_id
+        page_content=initial_content,
+        metadata={"page": "0"},
+        id=document_id,
     )
 
     # Initialize a Chroma instance with the original document
@@ -479,7 +496,7 @@ def test_chroma_update_document_with_id() -> None:
         documents=[original_doc],
         embedding=embedding,
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -488,7 +505,9 @@ def test_chroma_update_document_with_id() -> None:
 
     # Create a new Document instance with the updated content and the same id
     updated_doc = Document(
-        page_content=updated_content, metadata={"page": "0"}, id=document_id
+        page_content=updated_content,
+        metadata={"page": "0"},
+        id=document_id,
     )
 
     # Update the document in the Chroma instance
@@ -498,7 +517,7 @@ def test_chroma_update_document_with_id() -> None:
     output = docsearch.similarity_search(updated_content, k=1)
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -506,7 +525,7 @@ def test_chroma_update_document_with_id() -> None:
 
     # Assert that the updated document is returned by the search
     assert output == [
-        Document(page_content=updated_content, metadata={"page": "0"}, id=document_id)
+        Document(page_content=updated_content, metadata={"page": "0"}, id=document_id),
     ]
 
     assert list(new_embedding) == list(embedding.embed_documents([updated_content])[0])
@@ -568,13 +587,14 @@ def test_chroma_add_documents_mixed_metadata() -> None:
 
     assert actual_ids == ids
     assert sorted(search, key=lambda d: d.page_content) == sorted(
-        docs, key=lambda d: d.page_content
+        docs,
+        key=lambda d: d.page_content,
     )
 
 
 def is_api_accessible(url: str) -> bool:
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         return response.status_code == 200
     except Exception:
         return False
@@ -582,9 +602,7 @@ def is_api_accessible(url: str) -> bool:
 
 def batch_support_chroma_version() -> bool:
     major, minor, patch = chromadb.__version__.split(".")
-    if int(major) == 0 and int(minor) >= 4 and int(patch) >= 10:
-        return True
-    return False
+    return bool(int(major) == 0 and int(minor) >= 4 and int(patch) >= 10)
 
 
 @pytest.mark.requires("chromadb")
@@ -601,9 +619,9 @@ def test_chroma_large_batch() -> None:
     embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore[arg-type]
     )
-    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -629,9 +647,9 @@ def test_chroma_large_batch_update() -> None:
     embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore[arg-type]
     )
-    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
@@ -642,11 +660,12 @@ def test_chroma_large_batch_update() -> None:
     )
     new_docs = [
         Document(
-            page_content="This is a new test document", metadata={"doc_id": f"{i}"}
+            page_content="This is a new test document",
+            metadata={"doc_id": f"{i}"},
         )
         for i in range(len(docs) - 10)
     ]
-    new_ids = [_id for _id in ids[: len(new_docs)]]
+    new_ids = list(ids[: len(new_docs)])
     db.update_documents(ids=new_ids, documents=new_docs)
 
     db.delete_collection()
@@ -658,14 +677,15 @@ def test_chroma_large_batch_update() -> None:
     reason="API not accessible",
 )
 @pytest.mark.skipif(
-    batch_support_chroma_version(), reason="ChromaDB version does not support batching"
+    batch_support_chroma_version(),
+    reason="ChromaDB version does not support batching",
 )
 def test_chroma_legacy_batching() -> None:
     client = chromadb.HttpClient()
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=MyEmbeddingFunction,  # type: ignore
+        embedding_function=MyEmbeddingFunction,  # type: ignore[arg-type]
     )
     docs = ["This is a test document"] * 100
     db = Chroma.from_texts(
@@ -683,7 +703,9 @@ def test_create_collection_if_not_exist_default() -> None:
     """Tests existing behaviour without the new create_collection_if_not_exists flag."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     assert docsearch._client.get_collection("test_collection") is not None
     docsearch.delete_collection()
@@ -765,7 +787,7 @@ def test_collection_none_after_delete(
         _ = vectorstore._collection
     with pytest.raises(Exception, match="does not exist"):
         vectorstore._client.get_collection("test_collection")
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         vectorstore.similarity_search("foo")
 
 
@@ -798,7 +820,7 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
         [
             Document(page_content="foo", metadata={"test": "bar"}),
             Document(page_content="bar", metadata={"test": "foo"}),
-        ]
+        ],
     )
     assert vectorstore._collection.count() == 2
     vectorstore.delete(where={"test": "bar"})

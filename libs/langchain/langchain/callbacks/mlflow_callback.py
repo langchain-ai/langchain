@@ -31,8 +31,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "MlflowCallbackHandler",
+    "MlflowLogger",
     "analyze_text",
     "construct_html_from_prompt_and_generation",
-    "MlflowLogger",
-    "MlflowCallbackHandler",
 ]

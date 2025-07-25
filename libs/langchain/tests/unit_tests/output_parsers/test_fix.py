@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from datetime import timezone
 from typing import Any, Callable, Optional, TypeVar
 
 import pytest
@@ -18,14 +19,13 @@ T = TypeVar("T")
 
 class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     parse_count: int = 0  # Number of times parse has been called
-    attemp_count_before_success: (
-        int  # Number of times to fail before succeeding  # noqa
-    )
+    attemp_count_before_success: int  # Number of times to fail before succeeding
 
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
-            raise OutputParserException("error")
+            msg = "error"
+            raise OutputParserException(msg)
         return "parsed"
 
 
@@ -39,17 +39,15 @@ class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterR
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
-        ),  # noqa: E501
+            attemp_count_before_success=5,
+        ),
     ],
 )
 def test_output_fixing_parser_parse(
     base_parser: SuccessfulParseAfterRetries,
 ) -> None:
     # preparation
-    n: int = (
-        base_parser.attemp_count_before_success
-    )  # Success on the (n+1)-th attempt  # noqa
+    n: int = base_parser.attemp_count_before_success  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
     parser = OutputFixingParser[str](
         parser=base_parser,
@@ -84,16 +82,14 @@ def test_output_fixing_parser_from_llm() -> None:
     [
         SuccessfulParseAfterRetries(attemp_count_before_success=5),
         SuccessfulParseAfterRetriesWithGetFormatInstructions(
-            attemp_count_before_success=5
-        ),  # noqa: E501
+            attemp_count_before_success=5,
+        ),
     ],
 )
 async def test_output_fixing_parser_aparse(
     base_parser: SuccessfulParseAfterRetries,
 ) -> None:
-    n: int = (
-        base_parser.attemp_count_before_success
-    )  # Success on the (n+1)-th attempt   # noqa
+    n: int = base_parser.attemp_count_before_success  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
     parser = OutputFixingParser[str](
         parser=base_parser,
@@ -145,32 +141,33 @@ def test_output_fixing_parser_output_type(
     base_parser: BaseOutputParser,
 ) -> None:
     parser = OutputFixingParser[str](
-        parser=base_parser, retry_chain=RunnablePassthrough()
+        parser=base_parser,
+        retry_chain=RunnablePassthrough(),
     )
     assert parser.OutputType is base_parser.OutputType
 
 
 @pytest.mark.parametrize(
-    "input,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
 def test_output_fixing_parser_parse_with_retry_chain(
-    input: str,
+    completion: str,
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[dict[str, Any], str],
     expected: T,
@@ -184,30 +181,30 @@ def test_output_fixing_parser_parse_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert parser.parse(input) == expected
+    assert parser.parse(completion) == expected
 
 
 @pytest.mark.parametrize(
-    "input,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
 async def test_output_fixing_parser_aparse_with_retry_chain(
-    input: str,
+    completion: str,
     base_parser: BaseOutputParser[T],
     retry_chain: Runnable[dict[str, Any], str],
     expected: T,
@@ -220,7 +217,7 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
         retry_chain=retry_chain,
         legacy=False,
     )
-    assert (await parser.aparse(input)) == expected
+    assert (await parser.aparse(completion)) == expected
 
 
 def _extract_exception(

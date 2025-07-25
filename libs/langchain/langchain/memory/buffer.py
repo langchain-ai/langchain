@@ -4,6 +4,7 @@ from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.utils import get_prompt_input_key
@@ -121,9 +122,8 @@ class ConversationStringBufferMemory(BaseMemory):
     def validate_chains(cls, values: dict) -> dict:
         """Validate that return messages is not True."""
         if values.get("return_messages", False):
-            raise ValueError(
-                "return_messages must be False for ConversationStringBufferMemory"
-            )
+            msg = "return_messages must be False for ConversationStringBufferMemory"
+            raise ValueError(msg)
         return values
 
     @property
@@ -149,16 +149,19 @@ class ConversationStringBufferMemory(BaseMemory):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+                msg = f"One output key expected, got {outputs.keys()}"
+                raise ValueError(msg)
+            output_key = next(iter(outputs.keys()))
         else:
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer += "\n" + "\n".join([human, ai])
+        self.buffer += f"\n{human}\n{ai}"
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         return self.save_context(inputs, outputs)
@@ -167,5 +170,6 @@ class ConversationStringBufferMemory(BaseMemory):
         """Clear memory contents."""
         self.buffer = ""
 
+    @override
     async def aclear(self) -> None:
         self.clear()

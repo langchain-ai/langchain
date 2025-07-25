@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, ToolCall
@@ -27,9 +29,12 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: (Not used) Whether the result is a partial result. If True, the
+                parser may return a partial result, which may not be complete or valid.
 
         Returns:
             Structured output.
+
         """
         if not result or not isinstance(result[0], ChatGeneration):
             return None if self.first_tool_only else []
@@ -54,8 +59,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
 
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
-        else:
-            return [tool_call for tool_call in tool_calls]
+        return list(tool_calls)
 
     def _pydantic_parse(self, tool_call: dict) -> BaseModel:
         cls_ = {schema.__name__: schema for schema in self.pydantic_schemas or []}[
@@ -81,8 +85,7 @@ def extract_tool_calls(content: Union[str, list[Union[str, dict]]]) -> list[Tool
             if block["type"] != "tool_use":
                 continue
             tool_calls.append(
-                tool_call(name=block["name"], args=block["input"], id=block["id"])
+                tool_call(name=block["name"], args=block["input"], id=block["id"]),
             )
         return tool_calls
-    else:
-        return []
+    return []

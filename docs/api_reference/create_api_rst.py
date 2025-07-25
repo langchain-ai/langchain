@@ -267,7 +267,7 @@ def _construct_doc(
 .. _{package_namespace}:
 
 ======================================
-{package_namespace.replace('_', '-')}: {package_version}
+{package_namespace.replace("_", "-")}: {package_version}
 ======================================
 
 .. automodule:: {package_namespace}
@@ -325,7 +325,7 @@ def _construct_doc(
 
         index_autosummary += f"""
 :ref:`{package_namespace}_{module}`
-{'^' * (len(package_namespace) + len(module) + 8)}
+{"^" * (len(package_namespace) + len(module) + 8)}
 """
 
         if classes:
@@ -364,7 +364,7 @@ def _construct_doc(
     
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if functions:
@@ -427,7 +427,7 @@ def _construct_doc(
 
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if deprecated_functions:
@@ -497,6 +497,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
     if package_name in (
         "langchain",
+        "langchain_v1",
         "experimental",
         "community",
         "core",
@@ -592,7 +593,12 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
     if integrations:
         integration_headers = [
             " ".join(
-                custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB"))
+                custom_names.get(
+                    x,
+                    x.title().replace("db", "DB")
+                    if dir_ == "langchain_v1"
+                    else x.title().replace("ai", "AI").replace("db", "DB"),
+                )
                 for x in dir_.split("-")
             )
             for dir_ in integrations

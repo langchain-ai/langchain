@@ -1,4 +1,4 @@
-name: API docs build
+name: API Docs Build
 
 on:
   workflow_dispatch:
@@ -11,7 +11,8 @@ jobs:
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,14 +50,27 @@ jobs:
           # Get unique repositories
           REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
           
-          # Checkout each unique repository that is in langchain-ai org
+          # Checkout each unique repository
           for repo in $REPOS; do
+            # Validate repository format (allow any org with proper format)
+            if [[ ! "$repo" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository format: $repo"
+              exit 1
+            fi
+            
             REPO_NAME=$(echo $repo | cut -d'/' -f2)
+            
+            # Additional validation for repo name
+            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository name: $REPO_NAME"
+              exit 1
+            fi
+            
             echo "Checking out $repo to $REPO_NAME"
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
-      - name: Setup python ${{ env.PYTHON_VERSION }}
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         id: setup-python
         with:
@@ -68,10 +82,8 @@ jobs:
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
-      - name: Move libs with script
+      - name: Move libs
         run: python langchain/.github/scripts/prep_api_docs_build.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rm old html
         run:

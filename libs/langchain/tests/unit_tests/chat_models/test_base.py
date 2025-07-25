@@ -30,7 +30,7 @@ def test_all_imports() -> None:
     "langchain_groq",
 )
 @pytest.mark.parametrize(
-    ["model_name", "model_provider"],
+    ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
         ("claude-3-opus-20240229", "anthropic"),
@@ -40,10 +40,13 @@ def test_all_imports() -> None:
 )
 def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
     llm1: BaseChatModel = init_chat_model(
-        model_name, model_provider=model_provider, api_key="foo"
+        model_name,
+        model_provider=model_provider,
+        api_key="foo",
     )
     llm2: BaseChatModel = init_chat_model(
-        f"{model_provider}:{model_name}", api_key="foo"
+        f"{model_provider}:{model_name}",
+        api_key="foo",
     )
     assert llm1.dict() == llm2.dict()
 
@@ -54,13 +57,15 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
         init_chat_model("foo", model_provider="bar")
 
 
 @pytest.mark.requires("langchain_openai")
 @mock.patch.dict(
-    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"}, clear=True
+    os.environ,
+    {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"},
+    clear=True,
 )
 def test_configurable() -> None:
     model = init_chat_model()
@@ -85,7 +90,7 @@ def test_configurable() -> None:
 
     # Can call declarative methods even without a default model.
     model_with_tools = model.bind_tools(
-        [{"name": "foo", "description": "foo", "parameters": {}}]
+        [{"name": "foo", "description": "foo", "parameters": {}}],
     )
 
     # Check that original model wasn't mutated by declarative operation.
@@ -93,7 +98,8 @@ def test_configurable() -> None:
 
     # Can iteratively call declarative methods.
     model_with_config = model_with_tools.with_config(
-        RunnableConfig(tags=["foo"]), configurable={"model": "gpt-4o"}
+        RunnableConfig(tags=["foo"]),
+        configurable={"model": "gpt-4o"},
     )
     assert model_with_config.model_name == "gpt-4o"  # type: ignore[attr-defined]
 
@@ -113,6 +119,7 @@ def test_configurable() -> None:
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
+            "output_version": "v0",
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
@@ -138,6 +145,7 @@ def test_configurable() -> None:
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_previous_response_id": False,
             "use_responses_api": None,
         },
         "kwargs": {
@@ -145,8 +153,8 @@ def test_configurable() -> None:
                 {
                     "type": "function",
                     "function": {"name": "foo", "description": "foo", "parameters": {}},
-                }
-            ]
+                },
+            ],
         },
         "config": {"tags": ["foo"], "configurable": {}},
         "config_factories": [],
@@ -157,7 +165,9 @@ def test_configurable() -> None:
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 @mock.patch.dict(
-    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"}, clear=True
+    os.environ,
+    {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"},
+    clear=True,
 )
 def test_configurable_with_default() -> None:
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
@@ -181,7 +191,7 @@ def test_configurable_with_default() -> None:
     assert model.model_name == "gpt-4o"
 
     model_with_tools = model.bind_tools(
-        [{"name": "foo", "description": "foo", "parameters": {}}]
+        [{"name": "foo", "description": "foo", "parameters": {}}],
     )
 
     model_with_config = model_with_tools.with_config(
@@ -215,7 +225,7 @@ def test_configurable_with_default() -> None:
             "stream_usage": True,
         },
         "kwargs": {
-            "tools": [{"name": "foo", "description": "foo", "input_schema": {}}]
+            "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
         "config": {"tags": ["foo"], "configurable": {}},
         "config_factories": [],

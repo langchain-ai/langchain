@@ -35,8 +35,8 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "Redis",
     "RedisFilter",
+    "RedisNum",
     "RedisTag",
     "RedisText",
-    "RedisNum",
     "RedisVectorStoreRetriever",
 ]
