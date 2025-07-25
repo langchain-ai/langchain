@@ -129,6 +129,7 @@ class ConversationStringBufferMemory(BaseMemory):
     @property
     def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
+
         :meta private:
         """
         return [self.memory_key]

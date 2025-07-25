@@ -1,4 +1,4 @@
-"""Test yamlOutputParser"""
+"""Test yamlOutputParser."""
 
 from enum import Enum
 from typing import Optional
@@ -70,7 +70,6 @@ DEF_EXPECTED_RESULT = TestModel(
 @pytest.mark.parametrize("result", [DEF_RESULT, DEF_RESULT_NO_BACKTICKS])
 def test_yaml_output_parser(result: str) -> None:
     """Test yamlOutputParser."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )
@@ -82,7 +81,6 @@ def test_yaml_output_parser(result: str) -> None:
 
 def test_yaml_output_parser_fail() -> None:
     """Test YamlOutputParser where completion result fails schema validation."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )

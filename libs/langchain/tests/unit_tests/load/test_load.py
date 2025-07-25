@@ -1,4 +1,4 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import pytest
 from langchain_core.load.dump import dumpd, dumps

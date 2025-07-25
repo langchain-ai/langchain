@@ -110,7 +110,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         await self.aprune()
 
     def prune(self) -> None:
-        """Prune buffer if it exceeds max token limit"""
+        """Prune buffer if it exceeds max token limit."""
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:
@@ -124,7 +124,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             )
 
     async def aprune(self) -> None:
-        """Asynchronously prune buffer if it exceeds max token limit"""
+        """Asynchronously prune buffer if it exceeds max token limit."""
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:

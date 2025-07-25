@@ -9,7 +9,7 @@ Classes
 CriteriaEvalChain : Evaluates the output of a language model or
 chain against specified criteria.
 
-Examples
+Examples:
 --------
 Using a predefined criterion:
 >>> from langchain_community.llms import OpenAI

@@ -21,7 +21,9 @@ from langchain.memory.utils import get_prompt_input_key
     ),
 )
 class VectorStoreRetrieverMemory(BaseMemory):
-    """Store the conversation history in a vector store and retrieves the relevant
+    """Vector Store Retriever Memory.
+
+    Store the conversation history in a vector store and retrieves the relevant
     parts of past conversation based on the input.
     """
 
