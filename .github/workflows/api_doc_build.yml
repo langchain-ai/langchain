@@ -11,7 +11,8 @@ jobs:
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,8 +84,6 @@ jobs:
 
       - name: Move libs
         run: python langchain/.github/scripts/prep_api_docs_build.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rm old html
         run:

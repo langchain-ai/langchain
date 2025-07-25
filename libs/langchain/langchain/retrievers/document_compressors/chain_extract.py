@@ -12,6 +12,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
@@ -29,6 +30,7 @@ class NoOutputParser(BaseOutputParser[str]):
 
     no_output_str: str = "NO_OUTPUT"
 
+    @override
     def parse(self, text: str) -> str:
         cleaned_text = text.strip()
         if cleaned_text == self.no_output_str:

@@ -35,18 +35,22 @@ class JsonValidityEvaluator(StringEvaluator):
         {'score': 0, 'reasoning': 'Expecting property name enclosed in double quotes'}
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **_: Any) -> None:
+        """Initialize the JsonValidityEvaluator."""
         super().__init__()
 
     @property
+    @override
     def requires_input(self) -> bool:
         return False
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return False
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "json_validity"
 
@@ -110,19 +114,28 @@ class JsonEqualityEvaluator(StringEvaluator):
 
     """
 
-    def __init__(self, operator: Optional[Callable] = None, **kwargs: Any) -> None:
+    def __init__(self, operator: Optional[Callable] = None, **_: Any) -> None:
+        """Initialize the JsonEqualityEvaluator.
+
+        Args:
+            operator: A custom operator to compare the parsed JSON objects.
+                Defaults to equality (`eq`).
+        """
         super().__init__()
         self.operator = operator or eq
 
     @property
+    @override
     def requires_input(self) -> bool:
         return False
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return True
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "json_equality"
 

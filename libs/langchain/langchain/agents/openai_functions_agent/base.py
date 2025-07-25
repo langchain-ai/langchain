@@ -134,7 +134,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -167,7 +167,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             functions=self.functions,
             callbacks=callbacks,
         )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     def return_stopped_response(
         self,

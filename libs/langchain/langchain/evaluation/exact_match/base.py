@@ -27,8 +27,18 @@ class ExactMatchStringEvaluator(StringEvaluator):
         ignore_case: bool = False,
         ignore_punctuation: bool = False,
         ignore_numbers: bool = False,
-        **kwargs: Any,
+        **_: Any,
     ):
+        """Initialize the ExactMatchStringEvaluator.
+
+        Args:
+            ignore_case: Whether to ignore case when comparing strings.
+                Defaults to False.
+            ignore_punctuation: Whether to ignore punctuation when comparing strings.
+                Defaults to False.
+            ignore_numbers: Whether to ignore numbers when comparing strings.
+                Defaults to False.
+        """
         super().__init__()
         self.ignore_case = ignore_case
         self.ignore_punctuation = ignore_punctuation
