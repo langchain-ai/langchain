@@ -154,7 +154,7 @@ class TestResult(dict):
 class EvalError(dict):
     """Your architecture raised an error."""
 
-    def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+    def __init__(self, Error: BaseException, **kwargs: Any) -> None:  # noqa: N803
         """Initialize the EvalError with an error and additional attributes.
 
         Args:
