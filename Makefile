@@ -34,17 +34,21 @@ docs_linkcheck:
 	@echo "✅ Link check complete"
 
 ## api_docs_build: Build the API Reference documentation.
-api_docs_build: api_docs_clean
-	uv run --no-group test python docs/api_reference/create_api_rst.py
-	cd docs/api_reference && uv run --no-group test make html
-	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+api_docs_build: clean
+	@echo "📖 Building API Reference documentation..."
+	uv run --group docs python docs/api_reference/create_api_rst.py
+	cd docs/api_reference && uv run --group docs make html
+	uv run --group docs python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+	@echo "✅ API documentation built"
 
 API_PKG ?= text-splitters
 
-api_docs_quick_preview:
-	uv run --no-group test python docs/api_reference/create_api_rst.py $(API_PKG)
-	cd docs/api_reference && uv run make html
-	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+api_docs_quick_preview: clean
+	@echo "⚡ Building quick API preview for $(API_PKG)..."
+	uv run --group docs python docs/api_reference/create_api_rst.py $(API_PKG)
+	cd docs/api_reference && uv run --group docs make html
+	uv run --group docs python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+	@echo "🌐 Opening preview in browser..."
 	open docs/api_reference/_build/html/reference.html
 
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
