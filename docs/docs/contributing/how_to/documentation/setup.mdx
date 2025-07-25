@@ -63,6 +63,41 @@ make docs_build
 make api_docs_build
 ```
 
+### Viewing documentation locally
+
+After building the documentation, you can view it locally by starting a development server:
+
+```bash
+# For main documentation
+cd docs && make start
+```
+
+This will start a development server where you can view the documentation in your browser. The exact url will be shown to you during the start process. The server will automatically reload when you make changes to the documentation files under the `build/` directory (e.g. for temporary tests - changes you wish to persist should be put under `docs/docs/`).
+
+:::tip
+
+You can specify a different port by setting the `PORT` environment variable:
+
+```bash
+cd docs && PORT=3000 make start
+```
+
+:::
+
+The API Reference documentation is built as static HTML files and can be opened directly in your browser:
+
+```bash
+# Opens the API Reference in your default browser
+make api_docs_quick_preview
+```
+
+You can also view the API Reference for a specific package by specifying the package name:
+
+```bash
+# Opens the API Reference for the langchain package in your default browser
+make api_docs_quick_preview API_PKG=ollama
+```
+
 :::tip
 
 The `make api_docs_build` command takes a long time. If you're making cosmetic changes to the API docs and want to see how they look, use:
@@ -89,7 +124,7 @@ make docs_clean
 make api_docs_clean
 
 # or to clean all documentation artifacts
-make clean_all_docs
+make clean
 ```
 
 ### Formatting and linting
