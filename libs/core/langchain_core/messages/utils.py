@@ -300,8 +300,16 @@ def _create_message_from_message_type(
 
 
 def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
-    # type ignores here are because AIMessageV1.content is a list of dicts. AIMessage
-    # content expects str or list[str | dict].
+    """Compatibility layer to convert v1 messages to current messages.
+
+    Args:
+        message: MessageV1 instance to convert.
+
+    Returns:
+        BaseMessage: Converted message instance.
+    """
+    # type ignores here are because AIMessageV1.content is a list of dicts.
+    # AIMessageV0.content expects str or list[str | dict].
     if isinstance(message, AIMessageV1):
         return AIMessage(
             content=message.content,  # type: ignore[arg-type]
