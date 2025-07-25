@@ -326,8 +326,6 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         chat_history = []  # Collect chat history here (a sequence of messages)
         rag_chain.invoke({"input": query, "chat_history": chat_history})
 
-
-
     This chain takes in chat history (a list of messages) and new questions,
     and then returns an answer to that question.
     The algorithm for this chain consists of three parts:
