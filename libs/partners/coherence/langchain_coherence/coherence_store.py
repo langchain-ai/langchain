@@ -44,7 +44,6 @@ from coherence.serialization import (  # type: ignore[import-untyped]
     JSONSerializer,
     SerializerRegistry,
 )
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -79,7 +78,7 @@ class CoherenceVectorStore(VectorStore):
                             model_name="sentence-transformers/all-MiniLM-l6-v2")
                 # this embedding generates vectors of dimension 384
                 cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-                                                    named_map,embedding,384)
+                                                    named_map,embedding
                 d1 :Document = Document(id="1", page_content="apple")
                 d2 :Document = Document(id="2", page_content="orange")
                 documents = [d1, d2]
@@ -111,7 +110,7 @@ class CoherenceVectorStore(VectorStore):
                             model_name="sentence-transformers/all-MiniLM-l6-v2")
                 # this embedding generates vectors of dimension 384
                 cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-                                                    named_map,embedding,384)
+                                                    named_map,embedding)
                 d1 :Document = Document(id="1", page_content="apple")
                 d2 :Document = Document(id="2", page_content="orange")
                 documents = [d1, d2]
@@ -156,7 +155,7 @@ class CoherenceVectorStore(VectorStore):
                             model_name="sentence-transformers/all-MiniLM-l6-v2")
                     # this embedding generates vectors of dimension 384
                     cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-                                                        named_map,embedding,384)
+                                                        named_map,embedding)
                     await cvs.aadd_documents(documents)
                     ids = [doc.id for doc in documents]
                     l = await cvs.aget_by_ids(ids)
@@ -204,7 +203,7 @@ class CoherenceVectorStore(VectorStore):
                             model_name="sentence-transformers/all-MiniLM-l6-v2")
                     # this embedding generates vectors of dimension 384
                     cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-                                                        named_map,embedding,384)
+                                                        named_map,embedding)
                     await cvs.aadd_documents(documents)
                     ids = [doc.id for doc in documents]
                     l = await cvs.aget_by_ids(ids)
@@ -238,21 +237,34 @@ class CoherenceVectorStore(VectorStore):
         self.embedding = embedding
 
     @staticmethod
-    async def create(coherence_cache: NamedCache, embedding: Embeddings,
-        dimensions: int
+    async def create(
+        coherence_cache: NamedCache,
+        embedding: Embeddings,
     ) -> CoherenceVectorStore:
         """Create an instance of CoherenceVectorStore.
 
         Args:
             coherence_cache: Coherence NamedCache to use
             embedding: embedding function to use.
+        """
+        coh_store: CoherenceVectorStore = CoherenceVectorStore(
+            coherence_cache, embedding
+        )
+        return coh_store
+
+    async def add_index(self, dimensions: int) -> None:
+        """Creates index on the Coherence cache on the VECTOR_FIELD.
+
+        Args:
             dimensions: size of the vector created by the embedding function
         """
-        coh_store: CoherenceVectorStore = CoherenceVectorStore(coherence_cache,
-                                                               embedding)
-        await coherence_cache.add_index(HnswIndex(
-            CoherenceVectorStore.VECTOR_EXTRACTOR, dimensions))
-        return coh_store
+        await self.cache.add_index(
+            HnswIndex(CoherenceVectorStore.VECTOR_EXTRACTOR, dimensions)
+        )
+
+    async def remove_index(self) -> None:
+        """Removes index on the Coherence cache on the VECTOR_FIELD."""
+        await self.cache.remove_index(CoherenceVectorStore.VECTOR_EXTRACTOR)
 
     @property
     @override
@@ -269,7 +281,19 @@ class CoherenceVectorStore(VectorStore):
     async def aadd_documents(
         self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
     ) -> list[str]:
-        """Add documents to the store."""
+        """Async run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            ids: Optional list of IDs of the documents.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            List of IDs of the added texts.
+
+        Raises:
+            ValueError: If the number of IDs does not match the number of documents.
+        """
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
@@ -334,7 +358,8 @@ class CoherenceVectorStore(VectorStore):
             # Efficient parallel delete
             await asyncio.gather(*(self.cache.remove(i) for i in ids))
 
-    def _parse_coherence_kwargs(self, **kwargs: Any
+    def _parse_coherence_kwargs(
+        self, **kwargs: Any
     ) -> tuple[DistanceAlgorithm, Filter, bool]:
         allowed_keys = {"algorithm", "filter", "brute_force"}
         extra_keys = set(kwargs) - allowed_keys
@@ -489,10 +514,11 @@ class CoherenceVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: Optional[list[dict[Any, Any]]] = None,
         **kwargs: Any,
     ) -> CoherenceVectorStore:
-        raise NotImplementedError
+        msg = "Use `afrom_texts()` instead; sync context is not supported."
+        raise NotImplementedError(msg)
 
     @classmethod
     @override
@@ -500,10 +526,51 @@ class CoherenceVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: Optional[list[dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> CoherenceVectorStore:
-        raise NotImplementedError
+        """Asynchronously initialize CoherenceVectorStore from texts and embeddings.
+
+        Args:
+            texts: List of input text strings.
+            embedding: Embedding function to use.
+            metadatas: Optional list of metadata dicts corresponding to each text.
+            kwargs: Additional keyword arguments.
+                - cache: Required Coherence NamedCache[str, Document] instance.
+                - ids: Optional list of document IDs.
+
+
+        Returns:
+            CoherenceVectorStore: An initialized and populated vector store.
+
+        Raises:
+            ValueError: If `cache` is not provided.
+        """
+        # Extract and validate required Coherence cache
+        cache = kwargs.get("cache")
+        if cache is None:
+            msg = "Missing required 'cache' parameter in afrom_texts"
+            raise ValueError(msg)
+
+        # Optionally use caller-supplied document IDs
+        ids: Optional[list[str]] = kwargs.get("ids")
+        if ids is not None and len(ids) != len(texts):
+            msg = "Length of 'ids' must match length of 'texts'"
+            raise ValueError(msg)
+
+        # Create store instance
+        store = await cls.create(cache, embedding)
+
+        # Construct Document objects
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas and i < len(metadatas) else {}
+            doc_id = ids[i] if ids else str(uuid.uuid4())
+            documents.append(Document(page_content=text, metadata=metadata, id=doc_id))
+
+        # Add documents to vector store
+        await store.aadd_documents(documents)
+        return store
 
 
 @jsonpickle.handlers.register(Document)

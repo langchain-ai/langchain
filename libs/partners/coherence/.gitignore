@@ -27,6 +27,9 @@ coverage.xml
 # Logs
 *.log
 
+# OCA
+.oca
+
 # OS
 .DS_Store
 Thumbs.db
