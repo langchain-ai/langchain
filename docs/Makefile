@@ -18,6 +18,9 @@ PORT ?= 3001
 clean:
 	rm -rf build
 
+clean-cache:
+	rm -rf build .venv/deps_installed
+
 install-vercel-deps:
 	yum -y -q update
 	yum -y -q install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
@@ -38,16 +41,19 @@ generate-files:
 	@echo "📄 Generating documentation files..."
 	mkdir -p $(INTERMEDIATE_DIR)
 	cp -rp $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
-
-	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
-
-	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
-
-	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
-
-	curl https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md | sed 's/<=/\&lt;=/g' > $(INTERMEDIATE_DIR)/langserve.md
+	@if [ ! -f build/langserve_readme_cache.md ] || [ $$(find build/langserve_readme_cache.md -mtime +1 -print) ]; then \
+		echo "🌐 Downloading LangServe README..."; \
+		curl -s https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md | sed 's/<=/\&lt;=/g' > build/langserve_readme_cache.md; \
+	fi
+	cp build/langserve_readme_cache.md $(INTERMEDIATE_DIR)/langserve.md
 	cp ../SECURITY.md $(INTERMEDIATE_DIR)/security.md
-	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+	@echo "🔧 Generating feature tables and processing links..."
+	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR) & \
+	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR) & \
+	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR) & \
+	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/ & \
+	wait
+	@echo "✅ Files generated"
 
 copy-infra:
 	@echo "📂 Copying infrastructure files..."
