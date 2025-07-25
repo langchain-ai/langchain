@@ -264,12 +264,16 @@ atee = Tee
 class aclosing(AbstractAsyncContextManager):  # noqa: N801
     """Async context manager to wrap an AsyncGenerator that has a ``aclose()`` method.
 
-    Code like this::
+    Code like this:
+
+    .. code-block:: python
 
         async with aclosing(<module>.fetch(<arguments>)) as agen:
             <block>
 
-    is equivalent to this::
+    is equivalent to this:
+
+    .. code-block:: python
 
         agen = <module>.fetch(<arguments>)
         try:
