@@ -15,6 +15,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -232,8 +233,10 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
 
 class SelfQueryRetriever(BaseRetriever):
-    """Retriever that uses a vector store and an LLM to generate
-    the vector store queries."""
+    """Self Query Retriever.
+
+    Retriever that uses a vector store and an LLM to generate the vector store queries.
+    """
 
     vectorstore: VectorStore
     """The underlying vector store from which documents will be retrieved."""
@@ -301,20 +304,13 @@ class SelfQueryRetriever(BaseRetriever):
     ) -> list[Document]:
         return await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = self.query_constructor.invoke(
             {"query": query},
             config={"callbacks": run_manager.get_child()},
@@ -324,20 +320,13 @@ class SelfQueryRetriever(BaseRetriever):
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return self._get_docs_with_query(new_query, search_kwargs)
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = await self.query_constructor.ainvoke(
             {"query": query},
             config={"callbacks": run_manager.get_child()},

@@ -115,6 +115,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
             chat_memory: The chat history to summarize.
             summarize_step: Number of messages to summarize at a time.
             **kwargs: Additional keyword arguments to pass to the class.
+
         Returns:
             An instance of ConversationSummaryMemory with the summarized history.
         """

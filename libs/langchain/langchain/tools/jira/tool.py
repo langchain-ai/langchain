@@ -1,5 +1,4 @@
-"""
-This module provides dynamic access to deprecated Jira tools.
+"""This module provides dynamic access to deprecated Jira tools.
 
 When attributes like `JiraAction` are accessed, they are redirected to their new
 locations in `langchain_community.tools`. This ensures backward compatibility
@@ -25,8 +24,7 @@ _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_L
 
 
 def __getattr__(name: str) -> Any:
-    """
-    Dynamically retrieve attributes from the updated module path.
+    """Dynamically retrieve attributes from the updated module path.
 
     Args:
         name (str): The name of the attribute to import.

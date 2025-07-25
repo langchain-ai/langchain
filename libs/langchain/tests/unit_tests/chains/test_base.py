@@ -80,7 +80,7 @@ def test_bad_outputs() -> None:
 
 
 def test_run_info() -> None:
-    """Test that run_info is returned properly when specified"""
+    """Test that run_info is returned properly when specified."""
     chain = FakeChain()
     output = chain({"foo": "bar"}, include_run_info=True)
     assert "foo" in output

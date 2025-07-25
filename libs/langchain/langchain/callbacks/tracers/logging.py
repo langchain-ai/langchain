@@ -22,14 +22,13 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         extra: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Initialize the LoggingCallbackHandler.
+        """Initialize the LoggingCallbackHandler.
 
         Args:
             logger: the logger to use for logging
             log_level: the logging level (default: logging.INFO)
             extra: the extra context to log (default: None)
-            **kwargs:
+            **kwargs: additional keyword arguments.
         """
         log_method = getattr(logger, logging.getLevelName(level=log_level).lower())
 

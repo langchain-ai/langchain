@@ -92,7 +92,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @property
     def functions(self) -> list[dict]:
         """Get functions."""
-
         return [dict(convert_to_openai_function(t)) for t in self.tools]
 
     def plan(
@@ -309,7 +308,6 @@ def create_openai_functions_agent(
         ValueError: If `agent_scratchpad` is not in the prompt.
 
     Example:
-
         Creating an agent with no memory
 
         .. code-block:: python

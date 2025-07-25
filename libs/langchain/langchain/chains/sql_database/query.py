@@ -38,7 +38,7 @@ def create_sql_query_chain(
     *,
     get_col_comments: Optional[bool] = None,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
-    """Create a chain that generates SQL queries.
+    r"""Create a chain that generates SQL queries.
 
     *Security Note*: This chain generates SQL queries for the given database.
 

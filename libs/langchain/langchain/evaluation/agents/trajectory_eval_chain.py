@@ -236,11 +236,12 @@ The following is the expected answer. Use this to measure correctness:
         """Create a TrajectoryEvalChain object from a language model chain.
 
         Args:
-            llm (BaseChatModel): The language model chain.
-            agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available to the agent.
-            output_parser (Optional[TrajectoryOutputParser]): The output parser
-                used to parse the chain output into a score.
+            llm: The language model chain.
+            agent_tools: A list of tools available to the agent.
+            output_parser : The output parser used to parse the chain output into a
+                score.
+            **kwargs: Additional keyword arguments.
+
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
@@ -346,15 +347,18 @@ The following is the expected answer. Use this to measure correctness:
         """Evaluate a trajectory.
 
         Args:
-            prediction (str): The final predicted response.
-            input (str): The input to the agent.
-            agent_trajectory (List[Tuple[AgentAction, str]]):
-                The intermediate steps forming the agent trajectory.
-            reference (Optional[str]): The reference answer.
-            callbacks (Callbacks): Callbacks to use for this chain run.
+            prediction: The final predicted response.
+            input: The input to the agent.
+            agent_trajectory: The intermediate steps forming the agent trajectory.
+            reference: The reference answer.
+            callbacks: Callbacks to use for this chain run.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation result, which includes the score and optionally
+            The evaluation result, which includes the score and optionally
                 the reasoning for reaching that.
         """
         inputs = {
@@ -389,15 +393,18 @@ The following is the expected answer. Use this to measure correctness:
         """Asynchronously evaluate a trajectory.
 
         Args:
-            prediction (str): The final predicted response.
-            input (str): The input to the agent.
-            agent_trajectory (List[Tuple[AgentAction, str]]):
-                The intermediate steps forming the agent trajectory.
-            reference (Optional[str]): The reference answer.
-            callbacks (Callbacks): Callbacks to use for this chain run.
+            prediction: The final predicted response.
+            input: The input to the agent.
+            agent_trajectory: The intermediate steps forming the agent trajectory.
+            reference: The reference answer.
+            callbacks: Callbacks to use for this chain run.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation result, which includes the score and optionally
+            The evaluation result, which includes the score and optionally
                 the reasoning for reaching that.
         """
         inputs = {

@@ -36,8 +36,7 @@ class FakeChain(Chain):
 
 
 def strip_ansi(text: str) -> str:
-    """
-    Removes ANSI escape sequences from a string.
+    """Removes ANSI escape sequences from a string.
 
     Args:
         text: The string potentially containing ANSI codes.

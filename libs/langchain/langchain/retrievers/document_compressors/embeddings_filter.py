@@ -22,8 +22,10 @@ def _get_similarity_function() -> Callable:
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
-    """Document compressor that uses embeddings to drop documents
-    unrelated to the query."""
+    """Embeddings Filter.
+
+    Document compressor that uses embeddings to drop documents unrelated to the query.
+    """
 
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""

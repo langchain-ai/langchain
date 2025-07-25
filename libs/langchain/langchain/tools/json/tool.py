@@ -1,5 +1,4 @@
-"""
-This module provides dynamic access to deprecated JSON tools in LangChain.
+"""This module provides dynamic access to deprecated JSON tools in LangChain.
 
 It ensures backward compatibility by forwarding references such as
 `JsonGetValueTool`, `JsonListKeysTool`, and `JsonSpec` to their updated
@@ -30,8 +29,7 @@ _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_L
 
 
 def __getattr__(name: str) -> Any:
-    """
-    Dynamically retrieve attributes from the updated module path.
+    """Dynamically retrieve attributes from the updated module path.
 
     This method is used to resolve deprecated attribute imports
     at runtime and forward them to their new locations.
