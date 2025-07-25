@@ -388,7 +388,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             StuffDocumentsChain,
         ):
             tokens = [
-                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)
+                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)  # noqa: SLF001
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])

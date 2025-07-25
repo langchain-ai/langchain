@@ -200,7 +200,6 @@ ignore = [
     "PLR09",   # Too many something (args, statements, etc)
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
-    "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
 
     # TODO rules

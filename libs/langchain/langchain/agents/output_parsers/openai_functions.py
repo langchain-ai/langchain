@@ -30,7 +30,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return "openai-functions-agent"
 
     @staticmethod
-    def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
+    def parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         """Parse an AI message."""
         if not isinstance(message, AIMessage):
             msg = f"Expected an AI message got {type(message)}"
@@ -89,7 +89,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             msg = "This output parser only works on ChatGeneration output"
             raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
-        return self._parse_ai_message(message)
+        return self.parse_ai_message(message)
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         msg = "Can only parse messages"

@@ -239,7 +239,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain._get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)  # noqa: SLF001
 
     def combine_docs(
         self,
