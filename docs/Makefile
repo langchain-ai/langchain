@@ -23,11 +23,16 @@ install-vercel-deps:
 	yum -y -q install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
 
 install-py-deps:
-	python3 -m venv .venv
-	$(PYTHON) -m pip install -q --upgrade pip
-	$(PYTHON) -m pip install -q --upgrade uv
-	$(PYTHON) -m uv pip install -q --pre -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install -q --pre $$($(PYTHON) scripts/partner_deps_list.py) --overrides vercel_overrides.txt
+	@echo "📦 Installing Python dependencies..."
+	@if [ ! -d .venv ]; then python3 -m venv .venv; fi
+	@if [ ! -f .venv/deps_installed ]; then \
+		$(PYTHON) -m pip install -q --upgrade pip --disable-pip-version-check; \
+		$(PYTHON) -m pip install -q --upgrade uv; \
+		$(PYTHON) -m uv pip install -q --pre -r vercel_requirements.txt; \
+		$(PYTHON) -m uv pip install -q --pre $$($(PYTHON) scripts/partner_deps_list.py) --overrides vercel_overrides.txt; \
+		touch .venv/deps_installed; \
+	fi
+	@echo "✅ Dependencies installed"
 
 generate-files:
 	@echo "📄 Generating documentation files..."
