@@ -3,10 +3,12 @@
 import contextlib
 import re
 import xml
-import xml.etree.ElementTree as ET  # noqa: N817
+import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder
+
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
@@ -49,7 +51,9 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                import defusedxml  # type: ignore[import-untyped]
+                from defusedxml.ElementTree import (  # type: ignore[import-untyped]
+                    XMLParser,
+                )
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -57,10 +61,10 @@ class _StreamingParser:
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg) from e
-            _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
+            parser_ = XMLParser(target=TreeBuilder())
         else:
-            _parser = None
-        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
+            parser_ = None
+        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=parser_)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
         self.current_path: list[str] = []
         self.current_path_has_children = False
@@ -205,7 +209,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree
+                from defusedxml import ElementTree  # type: ignore[import-untyped]
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -214,9 +218,9 @@ class XMLOutputParser(BaseTransformOutputParser):
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg) from e
-            _et = ElementTree  # Use the defusedxml parser
+            et = ElementTree  # Use the defusedxml parser
         else:
-            _et = ET  # Use the standard library parser
+            et = ET  # Use the standard library parser
 
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
@@ -228,12 +232,13 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = _et.fromstring(text)
+            root = et.fromstring(text)
             return self._root_to_dict(root)
-        except _et.ParseError as e:
+        except et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
+    @override
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
@@ -242,6 +247,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             yield from streaming_parser.parse(chunk)
         streaming_parser.close()
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:

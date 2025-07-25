@@ -16,7 +16,9 @@ _debug: bool = False
 _llm_cache: Optional["BaseCache"] = None
 
 
-def set_verbose(value: bool) -> None:
+def set_verbose(
+    value: bool,  # noqa: FBT001
+) -> None:
     """Set a new value for the `verbose` global setting."""
     import langchain
 
@@ -37,7 +39,7 @@ def set_verbose(value: bool) -> None:
         # have migrated to using `set_verbose()` here.
         langchain.verbose = value
 
-    global _verbose
+    global _verbose  # noqa: PLW0603
     _verbose = value
 
 
@@ -64,14 +66,15 @@ def get_verbose() -> bool:
         # In the meantime, the `verbose` setting is considered True if either the old
         # or the new value are True. This accommodates users who haven't migrated
         # to using `set_verbose()` yet. Those users are getting deprecation warnings
-        # directing them to use `set_verbose()` when they import `langhchain.verbose`.
+        # directing them to use `set_verbose()` when they import `langchain.verbose`.
         old_verbose = langchain.verbose
 
-    global _verbose
     return _verbose or old_verbose
 
 
-def set_debug(value: bool) -> None:
+def set_debug(
+    value: bool,  # noqa: FBT001
+) -> None:
     """Set a new value for the `debug` global setting."""
     import langchain
 
@@ -90,7 +93,7 @@ def set_debug(value: bool) -> None:
         # have migrated to using `set_debug()` here.
         langchain.debug = value
 
-    global _debug
+    global _debug  # noqa: PLW0603
     _debug = value
 
 
@@ -115,10 +118,9 @@ def get_debug() -> bool:
         # In the meantime, the `debug` setting is considered True if either the old
         # or the new value are True. This accommodates users who haven't migrated
         # to using `set_debug()` yet. Those users are getting deprecation warnings
-        # directing them to use `set_debug()` when they import `langhchain.debug`.
+        # directing them to use `set_debug()` when they import `langchain.debug`.
         old_debug = langchain.debug
 
-    global _debug
     return _debug or old_debug
 
 
@@ -143,7 +145,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
         # once all users have migrated to using `set_llm_cache()` here.
         langchain.llm_cache = value
 
-    global _llm_cache
+    global _llm_cache  # noqa: PLW0603
     _llm_cache = value
 
 
@@ -172,8 +174,7 @@ def get_llm_cache() -> "BaseCache":
         # or the old value if both are falsy. This accommodates users
         # who haven't migrated to using `set_llm_cache()` yet.
         # Those users are getting deprecation warnings directing them
-        # to use `set_llm_cache()` when they import `langhchain.llm_cache`.
+        # to use `set_llm_cache()` when they import `langchain.llm_cache`.
         old_llm_cache = langchain.llm_cache
 
-    global _llm_cache
     return _llm_cache or old_llm_cache

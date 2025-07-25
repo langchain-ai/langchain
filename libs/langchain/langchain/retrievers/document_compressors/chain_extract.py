@@ -5,16 +5,16 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, cast
 
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
@@ -30,6 +30,7 @@ class NoOutputParser(BaseOutputParser[str]):
 
     no_output_str: str = "NO_OUTPUT"
 
+    @override
     def parse(self, text: str) -> str:
         cleaned_text = text.strip()
         if cleaned_text == self.no_output_str:
@@ -81,7 +82,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(output) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=cast(str, output), metadata=doc.metadata)
+                Document(page_content=cast(str, output), metadata=doc.metadata),
             )
         return compressed_docs
 
@@ -99,7 +100,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(outputs[i]) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=outputs[i], metadata=doc.metadata)
+                Document(page_content=outputs[i], metadata=doc.metadata),
             )
         return compressed_docs
 

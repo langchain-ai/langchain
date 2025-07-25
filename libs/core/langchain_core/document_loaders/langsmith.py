@@ -50,7 +50,7 @@ class LangSmithLoader(BaseLoader):
         offset: int = 0,
         limit: Optional[int] = None,
         metadata: Optional[dict] = None,
-        filter: Optional[str] = None,
+        filter: Optional[str] = None,  # noqa: A002
         content_key: str = "",
         format_content: Optional[Callable[..., str]] = None,
         client: Optional[LangSmithClient] = None,
@@ -61,7 +61,7 @@ class LangSmithLoader(BaseLoader):
         Args:
             dataset_id: The ID of the dataset to filter by. Defaults to None.
             dataset_name: The name of the dataset to filter by. Defaults to None.
-            content_key: The inputs key to set as Document page content. ``"."`` characters
+            content_key: The inputs key to set as Document page content. ``'.'`` characters
                 are interpreted as nested keys. E.g. ``content_key="first.second"`` will
                 result in
                 ``Document(page_content=format_content(example.inputs["first"]["second"]))``

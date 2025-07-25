@@ -7,11 +7,11 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.52",
-    "openai<2.0.0,>=1.68.2",
+    "langchain-core<1.0.0,>=0.3.71",
+    "openai<2.0.0,>=1.97.1",
 ]
 name = "langchain-perplexity"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Perplexity and LangChain"
 readme = "README.md"
 
@@ -36,7 +36,7 @@ test = [
     "langchain-tests",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["langchain-core"]
 test_integration = [
     "httpx<1.0.0,>=0.27.0",
@@ -59,8 +59,8 @@ ignore_missing_imports = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
-ignore = [ "UP007", ]
+select = ["E", "F", "I", "T201", "UP", "S"]
+ignore = [ "UP007", "UP045"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -79,4 +79,10 @@ markers = [
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]

@@ -1,4 +1,4 @@
-name: Integration tests
+name: Integration Tests
 
 on:
   workflow_dispatch:
@@ -11,6 +11,9 @@ on:
         required: true
         type: string
         description: "Python version to use"
+
+permissions:
+  contents: read
 
 env:
   UV_FROZEN: "true"
@@ -41,6 +44,8 @@ jobs:
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -67,7 +72,6 @@ jobs:
           ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
-          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}

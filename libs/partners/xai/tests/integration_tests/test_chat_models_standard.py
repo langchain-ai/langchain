@@ -18,6 +18,10 @@ rate_limiter = InMemoryRateLimiter(
 )
 
 
+# Not using Grok 4 since it doesn't support reasoning params (effort) or returns
+# reasoning content.
+
+
 class TestXAIStandard(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
@@ -25,6 +29,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
+        # TODO: bump to test new Grok once they implement other features
         return {
             "model": "grok-3",
             "rate_limiter": rate_limiter,
@@ -35,7 +40,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatXAI(
-        model="grok-3-mini-beta",
+        model="grok-3-mini",
         reasoning_effort="low",
     )
     response = chat_model.invoke("What is 3^3?")
@@ -48,3 +53,24 @@ def test_reasoning_content() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
+
+
+def test_web_search() -> None:
+    llm = ChatXAI(
+        model="grok-3",
+        search_parameters={"mode": "auto", "max_search_results": 3},
+    )
+
+    # Test invoke
+    response = llm.invoke("Provide me a digest of world news in the last 24 hours.")
+    assert response.content
+    assert response.additional_kwargs["citations"]
+    assert len(response.additional_kwargs["citations"]) <= 3
+
+    # Test streaming
+    full = None
+    for chunk in llm.stream("Provide me a digest of world news in the last 24 hours."):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["citations"]
+    assert len(full.additional_kwargs["citations"]) <= 3

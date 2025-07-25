@@ -23,7 +23,12 @@ if TYPE_CHECKING:
     from langchain_core.utils.iter import batch_iterate
     from langchain_core.utils.loading import try_load_from_hub
     from langchain_core.utils.pydantic import pre_init
-    from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
+    from langchain_core.utils.strings import (
+        comma_list,
+        sanitize_for_postgres,
+        stringify_dict,
+        stringify_value,
+    )
     from langchain_core.utils.utils import (
         build_extra_kwargs,
         check_package_version,
@@ -38,32 +43,33 @@ if TYPE_CHECKING:
     )
 
 __all__ = (
-    "build_extra_kwargs",
     "StrictFormatter",
+    "abatch_iterate",
+    "batch_iterate",
+    "build_extra_kwargs",
     "check_package_version",
+    "comma_list",
     "convert_to_secret_str",
     "formatter",
+    "from_env",
     "get_bolded_text",
     "get_color_mapping",
     "get_colored_text",
+    "get_from_dict_or_env",
+    "get_from_env",
     "get_pydantic_field_names",
     "guard_import",
+    "image",
     "mock_now",
+    "pre_init",
     "print_text",
     "raise_for_status_with_text",
-    "xor_args",
-    "try_load_from_hub",
-    "image",
-    "get_from_env",
-    "get_from_dict_or_env",
-    "stringify_dict",
-    "comma_list",
-    "stringify_value",
-    "pre_init",
-    "batch_iterate",
-    "abatch_iterate",
-    "from_env",
+    "sanitize_for_postgres",
     "secret_from_env",
+    "stringify_dict",
+    "stringify_value",
+    "try_load_from_hub",
+    "xor_args",
 )
 
 _dynamic_imports = {
@@ -81,6 +87,7 @@ _dynamic_imports = {
     "try_load_from_hub": "loading",
     "pre_init": "pydantic",
     "comma_list": "strings",
+    "sanitize_for_postgres": "strings",
     "stringify_dict": "strings",
     "stringify_value": "strings",
     "build_extra_kwargs": "utils",

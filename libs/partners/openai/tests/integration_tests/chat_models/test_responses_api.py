@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Literal, Optional, cast
 
 import openai
 import pytest
@@ -11,6 +11,8 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
+    HumanMessage,
+    MessageLikeRepresentation,
 )
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -48,15 +50,11 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["service_tier"]
-    for tool_output in response.additional_kwargs["tool_outputs"]:
-        assert tool_output["id"]
-        assert tool_output["status"]
-        assert tool_output["type"]
 
 
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version="responses/v1")
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -109,6 +107,11 @@ def test_web_search() -> None:
     )
     _check_response(response)
 
+    for msg in [first_response, full, response]:
+        assert isinstance(msg, AIMessage)
+        block_types = [block["type"] for block in msg.content]  # type: ignore[index]
+        assert block_types == ["web_search_call", "text"]
+
 
 @pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
@@ -130,6 +133,12 @@ async def test_web_search_async() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
+
+    for msg in [response, full]:
+        assert msg.additional_kwargs["tool_outputs"]
+        assert len(msg.additional_kwargs["tool_outputs"]) == 1
+        tool_output = msg.additional_kwargs["tool_outputs"][0]
+        assert tool_output["type"] == "web_search_call"
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -286,20 +295,32 @@ def test_function_calling_and_structured_output() -> None:
     assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
 
 
-def test_reasoning() -> None:
-    llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
+@pytest.mark.default_cassette("test_reasoning.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
 
     # Test init params + streaming
-    llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", reasoning={"effort": "low"}, output_version=output_version
+    )
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("Hello"):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
-    assert full.additional_kwargs["reasoning"]
+
+    for msg in [response, full]:
+        if output_version == "v0":
+            assert msg.additional_kwargs["reasoning"]
+        else:
+            block_types = [block["type"] for block in msg.content]
+            assert block_types == ["reasoning", "text"]
 
 
 def test_stateful_api() -> None:
@@ -315,13 +336,15 @@ def test_stateful_api() -> None:
 
 
 def test_route_from_model_kwargs() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(
+        model=MODEL_NAME, model_kwargs={"text": {"format": {"type": "text"}}}
+    )
     _ = next(llm.stream("Hello"))
 
 
 @pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
-    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    llm = ChatOpenAI(model="computer-use-preview", truncation="auto")
     tool = {
         "type": "computer_use_preview",
         "display_width": 1024,
@@ -351,20 +374,37 @@ def test_file_search() -> None:
     _check_response(full)
 
 
-def test_stream_reasoning_summary() -> None:
-    reasoning = {"effort": "medium", "summary": "auto"}
-
+@pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_stream_reasoning_summary(
+    output_version: Literal["v0", "responses/v1"],
+) -> None:
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, model_kwargs={"reasoning": reasoning}
+        model="o4-mini",
+        # Routes to Responses API if `reasoning` is set.
+        reasoning={"effort": "medium", "summary": "auto"},
+        output_version=output_version,
     )
-    message_1 = {"role": "user", "content": "What is 3^3?"}
+    message_1 = {
+        "role": "user",
+        "content": "What was the third tallest buliding in the year 2000?",
+    }
     response_1: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([message_1]):
         assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
-    reasoning = response_1.additional_kwargs["reasoning"]
-    assert set(reasoning.keys()) == {"id", "type", "summary"}
+    if output_version == "v0":
+        reasoning = response_1.additional_kwargs["reasoning"]
+        assert set(reasoning.keys()) == {"id", "type", "summary"}
+    else:
+        reasoning = next(
+            block
+            for block in response_1.content
+            if block["type"] == "reasoning"  # type: ignore[index]
+        )
+        assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
     summary = reasoning["summary"]
     assert isinstance(summary, list)
     for block in summary:
@@ -377,3 +417,258 @@ def test_stream_reasoning_summary() -> None:
     message_2 = {"role": "user", "content": "Thank you."}
     response_2 = llm.invoke([message_1, response_1, message_2])
     assert isinstance(response_2, AIMessage)
+
+
+@pytest.mark.vcr
+def test_code_interpreter() -> None:
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm_with_tools = llm.bind_tools(
+        [{"type": "code_interpreter", "container": {"type": "auto"}}]
+    )
+    input_message = {
+        "role": "user",
+        "content": "Write and run code to answer the question: what is 3^3?",
+    }
+    response = llm_with_tools.invoke([input_message])
+    _check_response(response)
+    tool_outputs = response.additional_kwargs["tool_outputs"]
+    assert tool_outputs
+    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
+    # Test streaming
+    # Use same container
+    tool_outputs = response.additional_kwargs["tool_outputs"]
+    assert len(tool_outputs) == 1
+    container_id = tool_outputs[0]["container_id"]
+    llm_with_tools = llm.bind_tools(
+        [{"type": "code_interpreter", "container": container_id}]
+    )
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    tool_outputs = full.additional_kwargs["tool_outputs"]
+    assert tool_outputs
+    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+
+    # Test we can pass back in
+    next_message = {"role": "user", "content": "Please add more comments to the code."}
+    _ = llm_with_tools.invoke([input_message, full, next_message])
+
+
+@pytest.mark.vcr
+def test_mcp_builtin() -> None:
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": output["id"],
+            }
+            for output in response.additional_kwargs["tool_outputs"]
+            if output["type"] == "mcp_approval_request"
+        ]
+    )
+    _ = llm_with_tools.invoke(
+        [approval_message], previous_response_id=response.response_metadata["id"]
+    )
+
+
+@pytest.mark.vcr
+def test_mcp_builtin_zdr() -> None:
+    llm = ChatOpenAI(
+        model="o4-mini",
+        output_version="responses/v1",
+        store=False,
+        include=["reasoning.encrypted_content"],
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert all(isinstance(block, dict) for block in full.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "mcp_approval_response",
+                "approve": True,
+                "approval_request_id": block["id"],  # type: ignore[index]
+            }
+            for block in full.content
+            if block["type"] == "mcp_approval_request"  # type: ignore[index]
+        ]
+    )
+    _ = llm_with_tools.invoke([input_message, full, approval_message])
+
+
+@pytest.mark.vcr()
+def test_image_generation_streaming() -> None:
+    """Test image generation streaming."""
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    tool = {
+        "type": "image_generation",
+        # For testing purposes let's keep the quality low, so the test runs faster.
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+
+    # Example tool output for an image
+    # {
+    #     "background": "opaque",
+    #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
+    #     "output_format": "png",
+    #     "quality": "high",
+    #     "revised_prompt": "A fluffy, fuzzy cat sitting calmly, with soft fur, bright "
+    #     "eyes, and a cute, friendly expression. The background is "
+    #     "simple and light to emphasize the cat's texture and "
+    #     "fluffiness.",
+    #     "size": "1024x1024",
+    #     "status": "completed",
+    #     "type": "image_generation_call",
+    #     "result": # base64 encode image data
+    # }
+
+    expected_keys = {
+        "id",
+        "index",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    complete_ai_message = cast(AIMessageChunk, full)
+    # At the moment, the streaming API does not pick up annotations fully.
+    # So the following check is commented out.
+    # _check_response(complete_ai_message)
+    tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
+    assert set(tool_output.keys()).issubset(expected_keys)
+
+
+@pytest.mark.vcr()
+def test_image_generation_multi_turn() -> None:
+    """Test multi-turn editing of image generation by passing in history."""
+    # Test multi-turn
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    # Test invocation
+    tool = {
+        "type": "image_generation",
+        # For testing purposes let's keep the quality low, so the test runs faster.
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    chat_history: list[MessageLikeRepresentation] = [
+        {"role": "user", "content": "Draw a random short word in green font."}
+    ]
+    ai_message = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message)
+    tool_output = ai_message.additional_kwargs["tool_outputs"][0]
+
+    # Example tool output for an image
+    # {
+    #     "background": "opaque",
+    #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
+    #     "output_format": "png",
+    #     "quality": "high",
+    #     "revised_prompt": "A fluffy, fuzzy cat sitting calmly, with soft fur, bright "
+    #     "eyes, and a cute, friendly expression. The background is "
+    #     "simple and light to emphasize the cat's texture and "
+    #     "fluffiness.",
+    #     "size": "1024x1024",
+    #     "status": "completed",
+    #     "type": "image_generation_call",
+    #     "result": # base64 encode image data
+    # }
+
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    assert set(tool_output.keys()).issubset(expected_keys)
+
+    chat_history.extend(
+        [
+            # AI message with tool output
+            ai_message,
+            # New request
+            {
+                "role": "user",
+                "content": (
+                    "Now, change the font to blue. Keep the word and everything else "
+                    "the same."
+                ),
+            },
+        ]
+    )
+
+    ai_message2 = llm_with_tools.invoke(chat_history)
+    _check_response(ai_message2)
+    tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
+    assert set(tool_output2.keys()).issubset(expected_keys)

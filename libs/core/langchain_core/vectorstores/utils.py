@@ -7,6 +7,7 @@ as they can change without notice.
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
@@ -42,10 +43,27 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         raise ImportError(msg) from e
 
     if len(x) == 0 or len(y) == 0:
-        return np.array([])
+        return np.array([[]])
 
     x = np.array(x)
     y = np.array(y)
+
+    # Check for NaN
+    if np.any(np.isnan(x)) or np.any(np.isnan(y)):
+        warnings.warn(
+            "NaN found in input arrays, unexpected return might follow",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )
+
+    # Check for Inf
+    if np.any(np.isinf(x)) or np.any(np.isinf(y)):
+        warnings.warn(
+            "Inf found in input arrays, unexpected return might follow",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )
+
     if x.shape[1] != y.shape[1]:
         msg = (
             f"Number of columns in X and Y must be the same. X has shape {x.shape} "
@@ -64,6 +82,9 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         # Ignore divide by zero errors run time warnings as those are handled below.
         with np.errstate(divide="ignore", invalid="ignore"):
             similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
+        if np.isnan(similarity).all():
+            msg = "NaN values found, please remove the NaN values and try again"
+            raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
 

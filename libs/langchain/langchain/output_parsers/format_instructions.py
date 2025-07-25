@@ -1,12 +1,10 @@
-# flake8: noqa
-
 STRUCTURED_FORMAT_INSTRUCTIONS = """The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
 
 ```json
 {{
 {format}
 }}
-```"""
+```"""  # noqa: E501
 
 STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS = """
 ```json
@@ -24,7 +22,7 @@ the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema.
 Here is the output schema:
 ```
 {schema}
-```"""
+```"""  # noqa: E501
 
 YAML_FORMAT_INSTRUCTIONS = """The output should be formatted as a YAML instance that conforms to the given JSON schema below.
 
@@ -49,14 +47,14 @@ YAML_FORMAT_INSTRUCTIONS = """The output should be formatted as a YAML instance 
 ```
 habit: Using disposable water bottles for daily hydration.
 sustainable_alternative: Switch to a reusable water bottle to reduce plastic waste and decrease your environmental footprint.
-``` 
+```
 
-Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema: 
+Please follow the standard YAML formatting conventions with an indent of 2 spaces and make sure that the data types adhere strictly to the following JSON schema:
 ```
 {schema}
 ```
 
-Make sure to always enclose the YAML output in triple backticks (```). Please do not add anything other than valid YAML output!"""
+Make sure to always enclose the YAML output in triple backticks (```). Please do not add anything other than valid YAML output!"""  # noqa: E501
 
 
 PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS = """The output should be formatted as a string as the operation, followed by a colon, followed by the column or row to be queried on, followed by optional array parameters.
@@ -78,4 +76,4 @@ Here are the possible columns:
 ```
 {columns}
 ```
-"""
+"""  # noqa: E501
