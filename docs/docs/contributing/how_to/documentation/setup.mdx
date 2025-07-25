@@ -65,10 +65,10 @@ make api_docs_build
 
 ### Viewing documentation locally
 
-After building the documentation, you can view it locally by starting a development server:
+After building the main documentation, you can view it locally by starting a development server:
 
 ```bash
-# For main documentation
+# For main documentation (after running `make docs_build`)
 cd docs && make start
 ```
 
@@ -84,17 +84,13 @@ cd docs && PORT=3000 make start
 
 :::
 
-The API Reference documentation is built as static HTML files and can be opened directly in your browser:
+The API Reference documentation is built as static HTML files and will be automatically opened directly in your browser.
+
+You can also view the API Reference for a specific package by specifying the package name and installing the package if necessary dependencies:
 
 ```bash
-# Opens the API Reference in your default browser
-make api_docs_quick_preview
-```
-
-You can also view the API Reference for a specific package by specifying the package name:
-
-```bash
-# Opens the API Reference for the langchain package in your default browser
+# Opens the API Reference for the `ollama` package in your default browser
+uv pip install -e libs/partners/ollama
 make api_docs_quick_preview API_PKG=ollama
 ```
 
@@ -106,11 +102,11 @@ The `make api_docs_build` command takes a long time. If you're making cosmetic c
 make api_docs_quick_preview
 ```
 
-which will just build a small subset of the API reference.
+which will just build a small subset of the API reference (the text-`splitters` package).
 
 :::
 
-Finally, run the link checker to ensure all links are valid:
+Finally, run the link checker from the project root to ensure all links are valid:
 
 ```bash
 make docs_linkcheck
@@ -120,11 +116,11 @@ make api_docs_linkcheck
 To clean up the documentation build artifacts, you can run:
 
 ```bash
+make clean
+
+# Or to clean specific documentation artifacts
 make docs_clean
 make api_docs_clean
-
-# or to clean all documentation artifacts
-make clean
 ```
 
 ### Formatting and linting
@@ -183,11 +179,11 @@ def my_function(arg1: int, arg2: str) -> float:
 The in-code documentation is linted from the directories belonging to the packages
 being documented.
 
-For example, if you're working on the `langchain-community` package, you would change
-the working directory to the `langchain-community` directory:
+For example, if you're working on the `langchain-ollama` package, you would change
+the working directory to the the package directory:
 
 ```bash
-cd [root]/libs/langchain-community
+cd [root]/libs/partners/ollama
 ```
 
 Then you can run the following commands to lint and format the in-code documentation:

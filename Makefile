@@ -30,7 +30,12 @@ docs_clean:
 ## docs_linkcheck: Run linkchecker on the documentation.
 docs_linkcheck:
 	@echo "🔗 Checking documentation links..."
-	uv run --no-group test linkchecker _dist/docs/ --ignore-url node_modules
+	@if [ -d _dist/docs ]; then \
+		uv run --group test linkchecker _dist/docs/ --ignore-url node_modules; \
+	else \
+		echo "⚠️  Documentation not built. Run 'make docs_build' first."; \
+		exit 1; \
+	fi
 	@echo "✅ Link check complete"
 
 ## api_docs_build: Build the API Reference documentation.
@@ -62,19 +67,24 @@ api_docs_clean:
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
 api_docs_linkcheck:
 	@echo "🔗 Checking API documentation links..."
-	uv run --no-group test linkchecker docs/api_reference/_build/html/index.html
+	@if [ -f docs/api_reference/_build/html/index.html ]; then \
+		uv run --group test linkchecker docs/api_reference/_build/html/index.html; \
+	else \
+		echo "⚠️  API documentation not built. Run 'make api_docs_build' first."; \
+		exit 1; \
+	fi
 	@echo "✅ API link check complete"
 
 ## spell_check: Run codespell on the project.
 spell_check:
 	@echo "✏️ Checking spelling across project..."
-	uv run --no-group test codespell --toml pyproject.toml
+	uv run --group codespell codespell --toml pyproject.toml
 	@echo "✅ Spell check complete"
 
 ## spell_fix: Run codespell on the project and fix the errors.
 spell_fix:
 	@echo "✏️ Fixing spelling errors across project..."
-	uv run --no-group test codespell --toml pyproject.toml -w
+	uv run --group codespell codespell --toml pyproject.toml -w
 	@echo "✅ Spelling errors fixed"
 
 ######################
