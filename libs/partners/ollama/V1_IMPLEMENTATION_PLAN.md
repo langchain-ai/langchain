@@ -69,6 +69,65 @@ AIMessage(
 2. `_generate()` and `_agenerate()`: Add conditional v1 conversion for final message  
 3. `_convert_messages_to_ollama_messages()`: Handle v1 input format unconditionally
 
+### Message Flow Sequencing
+
+Understanding the complete request/response flow is crucial for proper implementation:
+
+#### Request Flow (Input Processing)
+
+```python
+# 1. User passes messages (could be v1 or v0 format)
+messages = [
+    HumanMessage("Hello"),
+    AIMessage(content=[  # v1 format input
+        {"type": "reasoning", "reasoning": "I should be helpful"},
+        {"type": "text", "text": "Hi there!"}
+    ])
+]
+llm.invoke(messages)  # output_version could be "v0" or "v1"
+
+# 2. _convert_messages_to_ollama_messages() processes ALL input
+for message in messages:
+    if isinstance(message.content, list):  # Detected v1 format
+        # Convert v1 → v0 for Ollama API (ALWAYS, regardless of output_version)
+        converted = _convert_from_v1_to_ollama_format(message)
+        # Result: AIMessage(content="Hi there!", additional_kwargs={"reasoning_content": "I should be helpful"})
+    else:
+        converted = message  # Already v0 format
+    
+    # Process for Ollama API (expects v0 format)
+    ollama_message = self._process_single_message(converted)
+
+# 3. Send to Ollama API with v0-style messages
+```
+
+#### Response Flow (Output Processing)
+
+```python
+# 4. Ollama API returns response
+ollama_response = "Hello back!"
+
+# 5. Create AIMessage in v0 format (native Ollama)
+response_message = AIMessage(
+    content="Hello back!",  # String content (v0)
+    additional_kwargs={"reasoning_content": "..."}  # v0 reasoning location
+)
+
+# 6. CONDITIONAL conversion based on output_version
+if self.output_version == "v1":
+    # Convert v0 → v1 for user (ONLY when requested)
+    response_message = _convert_to_v1_from_ollama_format(response_message)
+    # Result: AIMessage(content=[{"type": "text", "text": "Hello back!"}, ...])
+
+# 7. Return to user in requested format
+```
+
+**Key Insights:**
+
+- **Input processing is ALWAYS v1-aware** (handles both v0 and v1 input)
+- **Internal processing is ALWAYS v0** (Ollama API expects v0 format)  
+- **Output processing is CONDITIONAL** (only convert to v1 when `output_version="v1"`)
+
 **Patterns Following OpenAI Implementation:**
 
 - **Conditional Output Conversion:** Only convert to v1 when `output_version="v1"`
