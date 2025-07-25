@@ -11,7 +11,8 @@ jobs:
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,7 +52,20 @@ jobs:
           
           # Checkout each unique repository that is in langchain-ai org
           for repo in $REPOS; do
+            # Validate repository is in langchain-ai org
+            if [[ ! "$repo" =~ ^langchain-ai/[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository format: $repo"
+              exit 1
+            fi
+            
             REPO_NAME=$(echo $repo | cut -d'/' -f2)
+            
+            # Additional validation for repo name
+            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository name: $REPO_NAME"
+              exit 1
+            fi
+            
             echo "Checking out $repo to $REPO_NAME"
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
@@ -70,8 +84,6 @@ jobs:
 
       - name: Move libs
         run: python langchain/.github/scripts/prep_api_docs_build.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rm old html
         run:
