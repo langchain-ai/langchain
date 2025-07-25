@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 # Removed incorrect import of parse_and_check_json_markdown
-from langchain.schema import OutputParserException
+from langchain_core.exceptions import OutputParserException
 
 
 from langchain_core.output_parsers.json import (
