@@ -1336,7 +1336,7 @@ wheels = [
 
 [[package]]
 name = "langchain-coherence"
-version = "0.0.1.dev0"
+version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "coherence-client" },

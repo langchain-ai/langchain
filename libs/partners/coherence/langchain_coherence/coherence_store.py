@@ -378,7 +378,7 @@ class CoherenceVectorStore(VectorStore):
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        """Async method return docs most similar to query.
+        """Async method return list of docs most similar to query.
 
         Args:
             query: Input text.
@@ -423,7 +423,7 @@ class CoherenceVectorStore(VectorStore):
     async def asimilarity_search_by_vector(
         self, embedding: list[float], k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        """Async method return docs most similar to passed embedding vector.
+        """Async method return list of docs most similar to passed embedding vector.
 
         Args:
             embedding: Input vector.
@@ -466,7 +466,7 @@ class CoherenceVectorStore(VectorStore):
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[tuple[Document, float]]:
-        """Async method return list tuple(Document, score) most similar to query.
+        """Async method return list of tuple(Document, score) most similar to query.
 
         Args:
             query: Input text.
@@ -529,7 +529,7 @@ class CoherenceVectorStore(VectorStore):
         metadatas: Optional[list[dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> CoherenceVectorStore:
-        """Asynchronously initialize CoherenceVectorStore from texts and embeddings.
+        """Asynchronously initialize the CoherenceVectorStore from texts and embeddings.
 
         Args:
             texts: List of input text strings.
@@ -538,7 +538,6 @@ class CoherenceVectorStore(VectorStore):
             kwargs: Additional keyword arguments.
                 - cache: Required Coherence NamedCache[str, Document] instance.
                 - ids: Optional list of document IDs.
-
 
         Returns:
             CoherenceVectorStore: An initialized and populated vector store.

@@ -32,7 +32,10 @@ docs = [
     "jupytext>=1.16",
     "nbdoc>=0.0.29",
 ]
-
+publish = [
+    "build",
+    "twine"
+]
 [tool.mypy]
 strict = "True"
 disallow_untyped_defs = "True"

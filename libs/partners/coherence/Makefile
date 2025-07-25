@@ -8,10 +8,13 @@ RUFF := .venv/bin/ruff
 PYTEST := .venv/bin/pytest
 MYPY := .venv/bin/mypy
 
+PACKAGE_NAME=langchain-coherence
+DIST_DIR=dist
+
 install:
 	@echo "🔧 Installing all dependencies..."
 	uv venv
-	uv pip install -e .[lint,typing,test,docs]
+	uv pip install -e .[lint,typing,test,docs,publish]
 
 update-dev:
 	@echo "🔄 Updating development dependencies..."
@@ -51,7 +54,17 @@ test:
 
 clean:
 	@echo "🧹 Cleaning build/test artifacts..."
-	rm -rf .pytest_cache .mypy_cache .ruff_cache .venv .uv __pycache__ *.egg-info dist build
+	rm -rf .pytest_cache .mypy_cache .ruff_cache __pycache__ *.egg-info dist build
+
+build:
+	@echo "🧱 Building distribution using local virtualenv"
+	$(PYTHON) -m build --no-isolation
+
+upload-pypi:
+	@echo "🚀 Uploading to PyPI"
+	$(PYTHON) -m twine upload dist/*
+
+publish: build upload-pypi
 
 help:
 	@echo "🛠 Available Make targets:"
@@ -63,6 +76,9 @@ help:
 	@echo "  lint          - Run linter and mypy"
 	@echo "  fix           - Autoformat and fix issues"
 	@echo "  test          - Run all tests"
+	@echo "  build         - Building distribution using local virtualenv"
+	@echo "  upload-pypi   - Uploading to PyPI"
+	@echo "  publish       - calls build, upload-pypi"
 	@echo "  clean         - Remove temp and build files"
 
 
