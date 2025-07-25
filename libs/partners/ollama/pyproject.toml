@@ -8,7 +8,7 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "ollama>=0.5.1,<1.0.0",
-    "langchain-core<1.0.0,>=0.3.70",
+    "langchain-core<1.0.0,>=0.3.72",
 ]
 name = "langchain-ollama"
 version = "0.3.6"
@@ -118,6 +118,7 @@ omit = ["tests/*"]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
+    "requires: mark test to require specific dependencies or external services",
 ]
 asyncio_mode = "auto"
 
