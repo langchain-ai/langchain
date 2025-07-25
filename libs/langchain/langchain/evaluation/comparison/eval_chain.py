@@ -55,11 +55,10 @@ def resolve_pairwise_criteria(
     """Resolve the criteria for the pairwise evaluator.
 
     Args:
-        criteria (Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]], optional):
-        The criteria to use.
+        criteria: The criteria to use.
 
     Returns:
-        dict: The resolved criteria.
+        The resolved criteria.
 
     """
     if criteria is None:
@@ -155,7 +154,9 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
 
 
 class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
-    """A chain for comparing two outputs, such as the outputs
+    r"""Pairwise String Evaluation Chain.
+
+    A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
     Attributes:
@@ -180,7 +181,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         #    "comment": "Both responses accurately state"
         #       " that the chemical formula for water is H2O."
         #       " However, Response B provides additional information"
-        # .     " by explaining what the formula means.\\n[[B]]"
+        # .     " by explaining what the formula means.\n[[B]]"
         # }
 
     """  # noqa: E501
@@ -245,12 +246,13 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Initialize the PairwiseStringEvalChain from an LLM.
 
         Args:
-            llm (BaseChatModel): The LLM to use (GPT-4 recommended).
-            prompt (PromptTemplate, optional): The prompt to use.
-            **kwargs (Any): Additional keyword arguments.
+            llm: The LLM to use (GPT-4 recommended).
+            prompt: The prompt to use.
+            criteria: The criteria to use.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            PairwiseStringEvalChain: The initialized PairwiseStringEvalChain.
+            The initialized PairwiseStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.
@@ -328,15 +330,18 @@ Performance may be significantly worse with other models.",
         """Evaluate whether output A is preferred to output B.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            input (str, optional): The input or task string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            input: The input or task string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            reference: The reference string, if any.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
+            A dictionary containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.
@@ -371,15 +376,18 @@ Performance may be significantly worse with other models.",
         """Asynchronously evaluate whether output A is preferred to output B.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            input (str, optional): The input or task string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            input: The input or task string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            reference: The reference string, if any.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
+            A dictionary containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.
@@ -399,9 +407,11 @@ Performance may be significantly worse with other models.",
 
 
 class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
-    """A chain for comparing two outputs, such as the outputs
-     of two models, prompts, or outputs of a single model on similar inputs,
-     with labeled preferences.
+    """Labeled Pairwise String Evaluation Chain.
+
+    A chain for comparing two outputs, such as the outputs
+    of two models, prompts, or outputs of a single model on similar inputs,
+    with labeled preferences.
 
     Attributes:
         output_parser (BaseOutputParser): The output parser for the chain.

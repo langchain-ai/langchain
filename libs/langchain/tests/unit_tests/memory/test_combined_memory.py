@@ -1,4 +1,4 @@
-"""Test for CombinedMemory class"""
+"""Test for CombinedMemory class."""
 
 # from langchain_core.prompts import PromptTemplate
 
@@ -16,7 +16,7 @@ def example_memory() -> list[ConversationBufferMemory]:
 
 
 def test_basic_functionality(example_memory: list[ConversationBufferMemory]) -> None:
-    """Test basic functionality of methods exposed by class"""
+    """Test basic functionality of methods exposed by class."""
     combined_memory = CombinedMemory(memories=[example_memory[0], example_memory[1]])
     assert combined_memory.memory_variables == ["foo", "bar"]
     assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
@@ -33,7 +33,7 @@ def test_basic_functionality(example_memory: list[ConversationBufferMemory]) -> 
 
 
 def test_repeated_memory_var(example_memory: list[ConversationBufferMemory]) -> None:
-    """Test raising error when repeated memory variables found"""
+    """Test raising error when repeated memory variables found."""
     with pytest.raises(
         ValueError,
         match="Value error, The same variables {'bar'} are found in "
