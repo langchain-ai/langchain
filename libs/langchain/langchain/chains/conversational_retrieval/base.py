@@ -261,7 +261,7 @@ class BaseConversationalRetrievalChain(Chain):
     removal="1.0",
 )
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
-    """Chain for having a conversation based on retrieved documents.
+    r"""Chain for having a conversation based on retrieved documents.
 
     This class is deprecated. See below for an example implementation using
     `create_retrieval_chain`. Additional walkthroughs can be found at

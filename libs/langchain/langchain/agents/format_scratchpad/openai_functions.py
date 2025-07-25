@@ -15,6 +15,7 @@ def _convert_agent_action_to_messages(
 
     Args:
         agent_action: Agent action to convert.
+        observation: The result of the tool invocation.
 
     Returns:
         AIMessage or the previous messages plus a FunctionMessage that corresponds to
@@ -33,9 +34,11 @@ def _create_function_message(
     observation: str,
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
         agent_action: the tool invocation request from the agent.
         observation: the result of the tool invocation.
+
     Returns:
         FunctionMessage that corresponds to the original tool invocation.
 
