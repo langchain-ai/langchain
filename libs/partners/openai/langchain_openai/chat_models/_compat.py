@@ -79,9 +79,11 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 def _convert_to_v03_ai_message(
     message: AIMessage, has_reasoning: bool = False
 ) -> AIMessage:
-    """Mutate an AIMessage to the old-style v0.3 format."""
+    """Mutate an AIMessageV1 to the old-style v0.3 format."""
     if isinstance(message.content, list):
-        new_content: list[Union[dict, str]] = []
+        new_content: list[  # Match signature of v0.3 AIMessage content
+            Union[dict, str]
+        ] = []
         for block in message.content:
             if isinstance(block, dict):
                 if block.get("type") == "reasoning":
@@ -148,7 +150,9 @@ def _convert_to_v03_ai_message(
     return message
 
 
-def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
+def _convert_from_v03_ai_message(
+    message: AIMessage,
+) -> AIMessage:  # this should be AIMessageV1?
     """Convert an old-style v0.3 AIMessage into the new content-block format."""
     # Only update ChatOpenAI v0.3 AIMessages
     # TODO: structure provenance into AIMessage
@@ -622,6 +626,8 @@ def _consolidate_calls(
 
 
 def _convert_from_v1_to_responses(message: AIMessage) -> AIMessage:
+    """Convert a v1 message to the Responses format."""
+
     if not isinstance(message.content, list):
         return message
 
