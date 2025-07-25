@@ -9,6 +9,7 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -79,6 +80,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             log=str(message.content),
         )
 
+    @override
     def parse_result(
         self,
         result: list[Generation],
@@ -91,6 +93,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         message = result[0].message
         return self.parse_ai_message(message)
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         msg = "Can only parse messages"
         raise ValueError(msg)

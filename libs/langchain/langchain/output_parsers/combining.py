@@ -4,6 +4,7 @@ from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 _MIN_PARSERS = 2
 
@@ -14,6 +15,7 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     parsers: list[BaseOutputParser]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 

@@ -10,11 +10,14 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 class ToolAgentAction(AgentActionMessageLog):
+    """ "Tool agent action."""
+
     tool_call_id: str
     """Tool call that this message is responding to."""
 
@@ -90,6 +93,7 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
     def _type(self) -> str:
         return "tools-agent-output-parser"
 
+    @override
     def parse_result(
         self,
         result: list[Generation],
@@ -102,6 +106,7 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         message = result[0].message
         return parse_ai_message_to_tool_action(message)
 
+    @override
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         msg = "Can only parse messages"
         raise ValueError(msg)

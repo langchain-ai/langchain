@@ -73,7 +73,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "
             "please use `from langchain.chains import RetrievalQAWithSourcesChain`",

@@ -14,6 +14,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -317,6 +318,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         return True
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return f"embedding_{self.distance_metric.value}_distance"
 
@@ -473,6 +475,7 @@ class PairwiseEmbeddingDistanceEvalChain(
 
     @property
     def evaluation_name(self) -> str:
+        """Return the evaluation name."""
         return f"pairwise_embedding_{self.distance_metric.value}_distance"
 
     def _call(
