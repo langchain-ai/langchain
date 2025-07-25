@@ -1,3 +1,5 @@
+"""Map/reduce prompt for summarization chain."""
+
 from langchain_core.prompts import PromptTemplate
 
 prompt_template = """Write a concise summary of the following:

@@ -1,3 +1,5 @@
+"""Format scratchpad log to string."""
+
 from langchain_core.agents import AgentAction
 
 

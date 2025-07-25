@@ -1,3 +1,5 @@
+"""Refine prompts for summarization chain."""
+
 from langchain_core.prompts import PromptTemplate
 
 REFINE_PROMPT_TMPL = """\

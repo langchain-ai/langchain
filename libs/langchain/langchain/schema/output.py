@@ -1,3 +1,5 @@
+"""Moved to langchain_core.outputs."""
+
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,

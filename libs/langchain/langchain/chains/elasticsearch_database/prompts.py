@@ -1,3 +1,5 @@
+"""Elasticsearch database prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following Elasticsearch indices:

@@ -1,3 +1,5 @@
+"""Moved to langchain_core.runnables."""
+
 from langchain_core.runnables.passthrough import (
     RunnableAssign,
     RunnablePassthrough,

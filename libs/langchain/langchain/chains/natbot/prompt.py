@@ -1,3 +1,5 @@
+"""NatBot chain prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """

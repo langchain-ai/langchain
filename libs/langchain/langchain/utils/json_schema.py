@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.json_schema import (
     _dereference_refs_helper,
     _retrieve_ref,

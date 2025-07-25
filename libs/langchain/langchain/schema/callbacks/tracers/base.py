@@ -1,3 +1,5 @@
+"""Moved to langchain_core."""
+
 from langchain_core.exceptions import TracerException
 from langchain_core.tracers.base import BaseTracer
 

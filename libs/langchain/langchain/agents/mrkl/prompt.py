@@ -1,3 +1,5 @@
+"""MRKL agent prompts."""
+
 PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""  # noqa: E501
 FORMAT_INSTRUCTIONS = """Use the following format:
 

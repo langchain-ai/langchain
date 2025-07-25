@@ -1,3 +1,5 @@
+"""React agent textworld prompt."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [

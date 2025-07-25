@@ -1,3 +1,5 @@
+"""Moved to langchain_community.callbacks."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional

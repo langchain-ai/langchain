@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.loading import try_load_from_hub
 
 # For backwards compatibility

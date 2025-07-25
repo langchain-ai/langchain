@@ -1,3 +1,5 @@
+"""Moved to langchain_community.utilities."""
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
