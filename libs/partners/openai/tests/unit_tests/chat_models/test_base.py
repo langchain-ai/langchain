@@ -51,7 +51,11 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
     _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _convert_to_v1_from_chat_completions,
+    _convert_to_v1_from_responses,
 )
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
@@ -2297,7 +2301,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v1() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2356,6 +2360,411 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {"type": "tool_call", "id": "call_123"},
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "url_citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "message_chat_completions, expected",
+    [
+        (
+            AIMessage(
+                "Hello, world!", id="chatcmpl-123", response_metadata={"foo": "bar"}
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+        ),
+        (
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+            AIMessage(
+                [
+                    {"type": "text", "text": "Hello, world!"},
+                    {"type": "tool_call", "id": "call_123"},
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+        ),
+        (
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+                additional_kwargs={"tool_calls": [{"foo": "bar"}]},
+            ),
+            AIMessage(
+                [{"type": "tool_call", "id": "call_123"}],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    }
+                ],
+                id="chatcmpl-123",
+                response_metadata={"foo": "bar"},
+            ),
+        ),
+    ],
+)
+def test_convert_to_v1_from_chat_completions(
+    message_chat_completions: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_to_v1_from_chat_completions(message_chat_completions)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {"type": "tool_call", "id": "call_123"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "arguments": '{"location": "New York"}',
+                        "item_id": "fc_123",
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "url_citation", "url": "https://example.com"},
+                            {
+                                "type": "document_citation",
+                                "title": "my doc",
+                                "index": 1,
+                                "file_id": "file_123",
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "img_123"},
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        # Make values different to check we pull from content when
+                        # available
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_3",
+                        "args": {"location": "Boston"},
+                    },
+                ],
+                id="resp123",
+                response_metadata={"foo": "bar"},
+            ),
+            AIMessage(
+                [
+                    {"type": "reasoning", "id": "abc123", "summary": []},
+                    {
+                        "type": "reasoning",
+                        "id": "abc234",
+                        "summary": [
+                            {"type": "summary_text", "text": "foo "},
+                            {"type": "summary_text", "text": "bar"},
+                        ],
+                    },
+                    {
+                        "type": "function_call",
+                        "call_id": "call_123",
+                        "name": "get_weather",
+                        "arguments": '{"location": "San Francisco"}',
+                    },
+                    {
+                        "type": "function_call",
+                        "call_id": "call_234",
+                        "name": "get_weather_2",
+                        "arguments": '{"location": "New York"}',
+                        "id": "fc_123",
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "url_citation", "url": "https://example.com"},
+                            {
+                                "type": "file_citation",
+                                "filename": "my doc",
+                                "index": 1,
+                                "file_id": "file_123",
+                            },
+                            {"bar": "baz"},
+                        ],
+                    },
+                    {"type": "image_generation_call", "id": "img_123", "result": "..."},
+                    {"type": "something_else", "foo": "bar"},
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        # Make values different to check we pull from content when
+                        # available
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_3",
+                        "args": {"location": "Boston"},
+                    },
+                ],
+                id="resp123",
+                response_metadata={"foo": "bar"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_responses(message_v1)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "message_responses, expected",
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "id": "abc123"},
+                    {
+                        "type": "reasoning",
+                        "id": "abc234",
+                        "summary": [
+                            {"type": "summary_text", "text": "foo "},
+                            {"type": "summary_text", "text": "bar"},
+                        ],
+                    },
+                    {
+                        "type": "function_call",
+                        "call_id": "call_123",
+                        "name": "get_weather",
+                        "arguments": '{"location": "San Francisco"}',
+                    },
+                    {
+                        "type": "function_call",
+                        "call_id": "call_234",
+                        "name": "get_weather_2",
+                        "arguments": '{"location": "New York"}',
+                        "id": "fc_123",
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "url_citation", "url": "https://example.com"},
+                            {
+                                "type": "file_citation",
+                                "filename": "my doc",
+                                "index": 1,
+                                "file_id": "file_123",
+                            },
+                            {"bar": "baz"},
+                        ],
+                    },
+                    {"type": "image_generation_call", "id": "img_123", "result": "..."},
+                    {"type": "something_else", "foo": "bar"},
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        # Make values different to check we pull from content when
+                        # available
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_3",
+                        "args": {"location": "Boston"},
+                    },
+                ],
+                id="resp123",
+                response_metadata={"foo": "bar"},
+            ),
+            AIMessage(
+                [
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "arguments": '{"location": "San Francisco"}',
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "arguments": '{"location": "New York"}',
+                        "item_id": "fc_123",
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "url_citation", "url": "https://example.com"},
+                            {
+                                "type": "document_citation",
+                                "title": "my doc",
+                                "index": 1,
+                                "file_id": "file_123",
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "img_123"},
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        # Make values different to check we pull from content when
+                        # available
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_3",
+                        "args": {"location": "Boston"},
+                    },
+                ],
+                id="resp123",
+                response_metadata={"foo": "bar"},
+            ),
+        )
+    ],
+)
+def test_convert_to_v1_from_responses(
+    message_responses: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_to_v1_from_responses(message_responses)
+    assert result == expected
 
 
 def test_get_last_messages() -> None:

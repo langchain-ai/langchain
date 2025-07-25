@@ -58,7 +58,9 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -220,6 +222,23 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
+def _convert_to_v1(message: AIMessage) -> AIMessageV1:
+    """Best-effort conversion of a V0 AIMessage to V1."""
+    if isinstance(message.content, str):
+        content: list[types.ContentBlock] = []
+        if message.content:
+            content = [{"type": "text", "text": message.content}]
+
+    for tool_call in message.tool_calls:
+        content.append(tool_call)
+
+    return AIMessageV1(
+        content=content,
+        usage_metadata=message.usage_metadata,
+        response_metadata=message.response_metadata,
+    )
+
+
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
 
@@ -326,6 +345,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     The main reason for this flag is that code might be written using ``.stream()`` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
+    """
+
+    output_version: str = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
+    recommend this for new applications.
+
+    All chat models currently support the default of ``"v0"``.
+
+    .. versionadded:: 0.4
     """
 
     @model_validator(mode="before")
