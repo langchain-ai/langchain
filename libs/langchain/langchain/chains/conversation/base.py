@@ -53,6 +53,7 @@ class ConversationChain(LLMChain):
                 "Hi I'm Bob.",
                 config={"configurable": {"session_id": "1"}},
             )  # session_id determines thread
+
     Memory objects can also be incorporated into the ``get_session_history`` callable:
 
         .. code-block:: python
