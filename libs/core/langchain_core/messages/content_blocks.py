@@ -758,24 +758,21 @@ def is_data_content_block(block: dict) -> bool:
     )
 
 
-def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
+def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
-    if "url" in content_block:
+    if "url" in block:
         return {
             "type": "image_url",
             "image_url": {
-                "url": content_block["url"],
+                "url": block["url"],
             },
         }
-    if "base64" in content_block or content_block.get("source_type") == "base64":
-        if "mime_type" not in content_block:
+    if "base64" in block or block.get("source_type") == "base64":
+        if "mime_type" not in block:
             error_message = "mime_type key is required for base64 data."
             raise ValueError(error_message)
-        mime_type = content_block["mime_type"]
-        if "data" in content_block:  # Backwards compatibility
-            base64_data = content_block["data"]
-        else:
-            base64_data = content_block["base64"]
+        mime_type = block["mime_type"]
+        base64_data = block["data"] if "data" in block else block["base64"]
         return {
             "type": "image_url",
             "image_url": {
