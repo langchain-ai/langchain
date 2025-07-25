@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from langchain.output_parsers.json import parse_and_check_json_markdown
+# Removed incorrect import of parse_and_check_json_markdown
 from langchain.schema import OutputParserException
 
 
