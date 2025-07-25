@@ -693,6 +693,9 @@ packages:
 - name: langchain-greennode
   path: libs/greennode
   repo: greennode-ai/langchain-greennode
+- name: langchain-scrapeless
+  repo: scrapeless-ai/langchain-scrapeless
+  path: .
 - name: langchain-tensorlake
   path: .
   repo: tensorlakeai/langchain-tensorlake
