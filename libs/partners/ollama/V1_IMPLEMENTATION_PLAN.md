@@ -339,6 +339,37 @@ def _get_image_from_data_content_block(block: dict) -> str:
     raise ValueError(f"Blocks of type {block['type']} not supported.")
 ```
 
+#### 4.2 NonStandardContentBlock Support
+
+Unknown content block types should be converted to `NonStandardContentBlock` instead of raising errors. This enables forward compatibility and provider-specific extensions.
+
+Update message processing to handle unknown content blocks:
+
+```python
+from langchain_core.messages.content_blocks import NonStandardContentBlock
+
+def _convert_unknown_content_block_to_non_standard(block: dict) -> NonStandardContentBlock:
+    """Convert unknown content block to NonStandardContentBlock format."""
+    return NonStandardContentBlock(
+        type="non_standard",
+        value=block
+    )
+```
+
+In `_convert_messages_to_ollama_messages()`, replace error handling for unknown blocks:
+
+```python
+# Instead of raising ValueError for unknown blocks:
+elif is_data_content_block(content_part):
+    image = _get_image_from_data_content_block(content_part)
+    images.append(image)
+else:
+    # Convert unknown blocks to NonStandardContentBlock
+    non_standard_block = _convert_unknown_content_block_to_non_standard(content_part)
+    # Should we convert non-standard blocks to a string or keep them as-is?
+    continue
+```
+
 #### 4.2 Update Message Conversion
 
 Enhance `_convert_messages_to_ollama_messages()` to handle v1 content:

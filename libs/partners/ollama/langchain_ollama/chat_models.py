@@ -36,6 +36,7 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.content_blocks import NonStandardContentBlock
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -57,7 +58,12 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
-from ._utils import validate_model
+from langchain_ollama._compat import (
+    _convert_from_v1_message,
+    _convert_to_v1_chunk,
+    _convert_to_v1_message,
+)
+from langchain_ollama._utils import validate_model
 
 log = logging.getLogger(__name__)
 
@@ -206,6 +212,23 @@ def _get_image_from_data_content_block(block: dict) -> str:
 
     error_message = f"Blocks of type {block['type']} not supported."
     raise ValueError(error_message)
+
+
+def _convert_unknown_content_block_to_non_standard(
+    block: dict,
+) -> NonStandardContentBlock:
+    """Convert unknown content block to NonStandardContentBlock format.
+
+    This enables forward compatibility by preserving unknown content block types
+    instead of raising errors.
+
+    Args:
+        block: Unknown content block dictionary.
+
+    Returns:
+        NonStandardContentBlock containing the original block data.
+    """
+    return NonStandardContentBlock(type="non_standard", value=block)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -418,11 +441,51 @@ class ChatOllama(BaseChatModel):
 
             AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
 
+    V1 Output Format:
+        .. code-block:: python
+
+            llm = ChatOllama(model="llama3.1", output_version="v1")
+            response = llm.invoke("Hello")
+
+            # Response content is now a list of standard output content blocks:
+            response.content
+            # [{"type": "text", "text": "Hello! How can I help you?"}]  # follows TextContentBlock format
+
+            # With reasoning enabled:
+            llm_reasoning = ChatOllama(
+                model="deepseek-r1:8b",
+                output_version="v1",
+                reasoning=True
+            )
+            response = llm_reasoning.invoke("What is 2+2?")
+
+            # Response includes reasoning and text blocks:
+            response.content
+            # [
+            #     {"type": "reasoning", "reasoning": "I need to add 2+2..."},  # ReasoningContentBlock
+            #     {"type": "text", "text": "2+2 equals 4."}                    # TextContentBlock
+            # ]
 
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
     """Model name to use."""
+
+    output_version: str = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    Supported values:
+
+    - ``"v0"``: AIMessage format as of langchain-ollama 0.x.x.
+    - ``"v1"``: v1 of LangChain cross-provider standard.
+
+    ``output_version="v1"`` is recommended.
+
+    .. versionadded:: 0.4.0
+    """
 
     reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
@@ -627,6 +690,10 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: list = []
         for message in messages:
+            # Handle v1 format messages in input
+            if isinstance(message, AIMessage) and isinstance(message.content, list):
+                # This is v1 format message (content is list) - convert for Ollama API
+                message = _convert_from_v1_message(message)
             role: str
             tool_call_id: Optional[str] = None
             tool_calls: Optional[list[dict[str, Any]]] = None
@@ -663,6 +730,12 @@ class ChatOllama(BaseChatModel):
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "tool_use":
                         continue
+                    elif content_part.get("type") == "tool_call":
+                        # Skip - handled by tool_calls property
+                        continue
+                    elif content_part.get("type") == "reasoning":
+                        # Skip - handled by reasoning parameter
+                        continue
                     elif content_part.get("type") == "image_url":
                         image_url = None
                         temp_image_url = content_part.get("image_url")
@@ -692,12 +765,10 @@ class ChatOllama(BaseChatModel):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
-                        msg = (
-                            "Unsupported message content type. "
-                            "Must either have type 'text' or type 'image_url' "
-                            "with a string 'image_url' field."
-                        )
-                        raise ValueError(msg)
+                        # Convert unknown content blocks to NonStandardContentBlock
+                        # TODO what to do with these?
+                        _convert_unknown_content_block_to_non_standard(content_part)
+                        continue
             # Should convert to ollama.Message once role includes tool,
             # and tool_call_id is in Message
             msg_: dict = {
@@ -820,13 +891,18 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        ai_message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+        )
+
+        if self.output_version == "v1":
+            ai_message = _convert_to_v1_message(ai_message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=ai_message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
@@ -889,6 +965,11 @@ class ChatOllama(BaseChatModel):
                     ),
                     generation_info=generation_info,
                 )
+
+                if self.output_version == "v1":
+                    chunk.message = _convert_to_v1_chunk(
+                        cast(AIMessageChunk, chunk.message)
+                    )
 
                 yield chunk
 
@@ -966,6 +1047,11 @@ class ChatOllama(BaseChatModel):
                     generation_info=generation_info,
                 )
 
+                if self.output_version == "v1":
+                    chunk.message = _convert_to_v1_chunk(
+                        cast(AIMessageChunk, chunk.message)
+                    )
+
                 yield chunk
 
     async def _astream(
@@ -994,13 +1080,18 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        ai_message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+        )
+
+        if self.output_version == "v1":
+            ai_message = _convert_to_v1_message(ai_message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=ai_message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
