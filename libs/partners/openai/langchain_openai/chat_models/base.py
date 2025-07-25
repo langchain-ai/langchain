@@ -3511,8 +3511,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
-            lc_msg = _convert_from_v03_ai_message(lc_msg)
-            lc_msg = _convert_from_v1_to_responses(lc_msg)
+            lc_msg = _convert_from_v03_ai_message(lc_msg)  # Stage 1: v0.3 to v1
+            lc_msg = _convert_from_v1_to_responses(lc_msg)  # Stage 2: v1 to Responses
         msg = _convert_message_to_dict(lc_msg)
         # "name" parameter unsupported
         if "name" in msg:

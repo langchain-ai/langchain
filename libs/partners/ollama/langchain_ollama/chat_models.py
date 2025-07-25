@@ -36,6 +36,7 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.content_blocks import NonStandardContentBlock
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -57,9 +58,37 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
-from ._utils import validate_model
+from langchain_ollama._compat import (
+    _convert_from_v1_message,
+    _convert_to_v1_chunk,
+    _convert_to_v1_message,
+)
+from langchain_ollama._utils import validate_model
 
 log = logging.getLogger(__name__)
+
+
+def _strip_think_tags(content: str) -> str:
+    """Strip ``<think>`` tags from content.
+
+    This is needed because some models have reasoning/thinking as their default
+    behavior and will include ``<think>`` tags even when ``reasoning=False`` is set.
+
+    Since Ollama doesn't provide a way to completely disable thinking for models
+    that do it by default, we must post-process the response to remove the tags
+    when the user has explicitly disabled reasoning.
+
+    Args:
+        content: The content that may contain think tags.
+
+    Returns:
+        Content with think tags and their contents removed.
+    """
+    import re
+
+    # Remove everything between <think> and </think> tags, including the tags
+    pattern = r"<think>.*?</think>"
+    return re.sub(pattern, "", content, flags=re.DOTALL).strip()
 
 
 def _get_usage_metadata_from_generation_info(
@@ -206,6 +235,23 @@ def _get_image_from_data_content_block(block: dict) -> str:
 
     error_message = f"Blocks of type {block['type']} not supported."
     raise ValueError(error_message)
+
+
+def _convert_unknown_content_block_to_non_standard(
+    block: dict,
+) -> NonStandardContentBlock:
+    """Convert unknown content block to NonStandardContentBlock format.
+
+    This enables forward compatibility by preserving unknown content block types
+    instead of raising errors.
+
+    Args:
+        block: Unknown content block dictionary.
+
+    Returns:
+        NonStandardContentBlock containing the original block data.
+    """
+    return NonStandardContentBlock(type="non_standard", value=block)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -418,11 +464,51 @@ class ChatOllama(BaseChatModel):
 
             AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
 
+    V1 Output Format:
+        .. code-block:: python
+
+            llm = ChatOllama(model="llama3.1", output_version="v1")
+            response = llm.invoke("Hello")
+
+            # Response content is now a list of standard output content blocks:
+            response.content
+            # [{"type": "text", "text": "Hello! How can I help you?"}]  # follows TextContentBlock format
+
+            # With reasoning enabled:
+            llm_reasoning = ChatOllama(
+                model="deepseek-r1:8b",
+                output_version="v1",
+                reasoning=True
+            )
+            response = llm_reasoning.invoke("What is 2+2?")
+
+            # Response includes reasoning and text blocks:
+            response.content
+            # [
+            #     {"type": "reasoning", "reasoning": "I need to add 2+2..."},  # ReasoningContentBlock
+            #     {"type": "text", "text": "2+2 equals 4."}                    # TextContentBlock
+            # ]
 
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
     """Model name to use."""
+
+    output_version: str = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    Supported values:
+
+    - ``"v0"``: AIMessage format as of langchain-ollama 0.x.x.
+    - ``"v1"``: v1 of LangChain cross-provider standard.
+
+    ``output_version="v1"`` is recommended.
+
+    .. versionadded:: 0.4.0
+    """
 
     reasoning: Optional[bool] = None
     """Controls the reasoning/thinking mode for
@@ -552,6 +638,72 @@ class ChatOllama(BaseChatModel):
     The async client to use for making requests.
     """
 
+    def _chat_params_v1(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Generate chat parameters with native v1 message support.
+
+        This method uses the v1-native message conversion and is preferred for handling
+        v1 format messages.
+
+        Args:
+            messages: List of messages to convert.
+            stop: Optional stop sequences.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Dictionary of parameters for Ollama API.
+        """
+        # TODO make this just part of _chat_params ?
+        # Depends on longrun decision and message formatting probably
+        ollama_messages = self._convert_messages_to_ollama_messages_v1(messages)
+
+        if self.stop is not None and stop is not None:
+            msg = "`stop` found in both the input and default params."
+            raise ValueError(msg)
+        if self.stop is not None:
+            stop = self.stop
+
+        options_dict = kwargs.pop(
+            "options",
+            {
+                "mirostat": self.mirostat,
+                "mirostat_eta": self.mirostat_eta,
+                "mirostat_tau": self.mirostat_tau,
+                "num_ctx": self.num_ctx,
+                "num_gpu": self.num_gpu,
+                "num_thread": self.num_thread,
+                "num_predict": self.num_predict,
+                "repeat_last_n": self.repeat_last_n,
+                "repeat_penalty": self.repeat_penalty,
+                "temperature": self.temperature,
+                "seed": self.seed,
+                "stop": self.stop if stop is None else stop,
+                "tfs_z": self.tfs_z,
+                "top_k": self.top_k,
+                "top_p": self.top_p,
+            },
+        )
+
+        params = {
+            "messages": ollama_messages,
+            "stream": kwargs.pop("stream", True),
+            "model": kwargs.pop("model", self.model),
+            "think": kwargs.pop("reasoning", self.reasoning),
+            "format": kwargs.pop("format", self.format),
+            "options": Options(**options_dict),
+            "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            **kwargs,
+        }
+
+        if tools := kwargs.get("tools"):
+            params["tools"] = tools
+
+        return params
+
     def _chat_params(
         self,
         messages: list[BaseMessage],
@@ -603,6 +755,34 @@ class ChatOllama(BaseChatModel):
 
         return params
 
+    def _get_chat_params(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Get chat parameters, choosing between v0 and v1 methods.
+
+        This method automatically chooses the appropriate parameter generation method
+        based on whether messages contain v1 format content.
+
+        Args:
+            messages: List of messages to convert.
+            stop: Optional stop sequences.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Dictionary of parameters for Ollama API.
+        """
+        # Check if any message has v1 format content (list of content blocks)
+        has_v1_messages = any(isinstance(msg.content, list) for msg in messages)
+
+        if has_v1_messages:
+            # Use v1-native method for better handling
+            return self._chat_params_v1(messages, stop, **kwargs)
+        # Use legacy v0 method for backward compatibility
+        return self._chat_params(messages, stop, **kwargs)
+
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
@@ -622,11 +802,188 @@ class ChatOllama(BaseChatModel):
             validate_model(self._client, self.model)
         return self
 
+    def _convert_messages_to_ollama_messages_v1(
+        self, messages: list[BaseMessage]
+    ) -> Sequence[Message]:
+        """Convert messages to Ollama format with native v1 support.
+
+        This method handles v1 format messages natively without converting to v0 first.
+        This is the preferred method for v1 message handling.
+
+        Args:
+            messages: List of messages to convert, may include v1 format.
+
+        Returns:
+            Sequence of Ollama Message objects.
+        """
+        ollama_messages: list = []
+        for message in messages:
+            # Handle v1 format messages natively (don't convert to v0)
+            role: str
+            tool_call_id: Optional[str] = None
+            tool_calls: Optional[list[dict[str, Any]]] = None
+            if isinstance(message, HumanMessage):
+                role = "user"
+            elif isinstance(message, AIMessage):
+                role = "assistant"
+                tool_calls = (
+                    [
+                        _lc_tool_call_to_openai_tool_call(tool_call)
+                        for tool_call in message.tool_calls
+                    ]
+                    if message.tool_calls
+                    else None
+                )
+            elif isinstance(message, SystemMessage):
+                role = "system"
+            elif isinstance(message, ChatMessage):
+                role = message.role
+            elif isinstance(message, ToolMessage):
+                role = "tool"
+                tool_call_id = message.tool_call_id
+            else:
+                msg = "Received unsupported message type for Ollama."
+                raise ValueError(msg)
+
+            content = ""
+            images = []
+            reasoning_content = None
+
+            # Handle v1 format content (list of content blocks)
+            if isinstance(message.content, list):
+                for content_part in message.content:
+                    if isinstance(content_part, dict):
+                        block_type = content_part.get("type")
+                        if block_type == "text":
+                            content += content_part.get("text", "")
+                        elif block_type == "reasoning":
+                            # Extract reasoning content for separate handling
+                            reasoning_content = content_part.get("reasoning", "")
+                        elif block_type == "tool_call":
+                            # Skip - handled by tool_calls property
+                            continue
+                        elif block_type == "image_url":
+                            image_url = None
+                            temp_image_url = content_part.get("image_url")
+                            if isinstance(temp_image_url, str):
+                                image_url = temp_image_url
+                            elif (
+                                isinstance(temp_image_url, dict)
+                                and "url" in temp_image_url
+                                and isinstance(temp_image_url["url"], str)
+                            ):
+                                image_url = temp_image_url["url"]
+                            else:
+                                msg = (
+                                    "Only string image_url or dict with string 'url' "
+                                    "inside content parts are supported."
+                                )
+                                raise ValueError(msg)
+
+                            image_url_components = image_url.split(",")
+                            # Support data:image/jpeg;base64,<image> format
+                            # and base64 strings
+                            if len(image_url_components) > 1:
+                                images.append(image_url_components[1])
+                            else:
+                                images.append(image_url_components[0])
+                        elif is_data_content_block(content_part):
+                            image = _get_image_from_data_content_block(content_part)
+                            images.append(image)
+                        else:
+                            # Convert unknown content blocks to NonStandardContentBlock
+                            # TODO what to do with these?
+                            _convert_unknown_content_block_to_non_standard(content_part)
+                            continue
+                    else:
+                        # Handle content blocks that are not dicts
+                        # (e.g., TextContentBlock objects)
+                        if hasattr(content_part, "type"):
+                            if content_part.type == "text":
+                                content += getattr(content_part, "text", "")
+                            elif content_part.type == "reasoning":
+                                reasoning_content = getattr(
+                                    content_part, "reasoning", ""
+                                )
+                            # Add other content block types as needed
+
+            # Handle v0 format content (string)
+            elif isinstance(message.content, str):
+                content = message.content
+            else:
+                # Handle other content formats if needed
+                for content_part in cast(list[dict], message.content):
+                    if content_part.get("type") == "text":
+                        content += f"\n{content_part['text']}"
+                    elif content_part.get("type") == "tool_use":
+                        continue
+                    elif content_part.get("type") == "tool_call":
+                        # Skip - handled by tool_calls property
+                        continue
+                    elif content_part.get("type") == "reasoning":
+                        # Skip - handled by reasoning parameter
+                        continue
+                    elif content_part.get("type") == "image_url":
+                        image_url = None
+                        temp_image_url = content_part.get("image_url")
+                        if isinstance(temp_image_url, str):
+                            image_url = temp_image_url
+                        elif (
+                            isinstance(temp_image_url, dict)
+                            and "url" in temp_image_url
+                            and isinstance(temp_image_url["url"], str)
+                        ):
+                            image_url = temp_image_url["url"]
+                        else:
+                            msg = (
+                                "Only string image_url or dict with string 'url' "
+                                "inside content parts are supported."
+                            )
+                            raise ValueError(msg)
+
+                        image_url_components = image_url.split(",")
+                        # Support data:image/jpeg;base64,<image> format
+                        # and base64 strings
+                        if len(image_url_components) > 1:
+                            images.append(image_url_components[1])
+                        else:
+                            images.append(image_url_components[0])
+                    elif is_data_content_block(content_part):
+                        image = _get_image_from_data_content_block(content_part)
+                        images.append(image)
+                    else:
+                        # Convert unknown content blocks to NonStandardContentBlock
+                        # TODO what to do with these?
+                        _convert_unknown_content_block_to_non_standard(content_part)
+                        continue
+
+            # Should convert to ollama.Message once role includes tool,
+            # and tool_call_id is in Message
+            msg_: dict = {
+                "role": role,
+                "content": content,
+                "images": images,
+            }
+            if tool_calls:
+                msg_["tool_calls"] = tool_calls
+            if tool_call_id:
+                msg_["tool_call_id"] = tool_call_id
+            # Store reasoning content for later use if present
+            if reasoning_content:
+                msg_["_reasoning_content"] = reasoning_content
+            ollama_messages.append(msg_)
+
+        return ollama_messages
+
     def _convert_messages_to_ollama_messages(
         self, messages: list[BaseMessage]
     ) -> Sequence[Message]:
         ollama_messages: list = []
         for message in messages:
+            # Handle v1 format messages in input
+            if isinstance(message, AIMessage) and isinstance(message.content, list):
+                # This is v1 format message (content is list) - convert for Ollama API
+                message = _convert_from_v1_message(message)
             role: str
             tool_call_id: Optional[str] = None
             tool_calls: Optional[list[dict[str, Any]]] = None
@@ -663,6 +1020,12 @@ class ChatOllama(BaseChatModel):
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "tool_use":
                         continue
+                    elif content_part.get("type") == "tool_call":
+                        # Skip - handled by tool_calls property
+                        continue
+                    elif content_part.get("type") == "reasoning":
+                        # Skip - handled by reasoning parameter
+                        continue
                     elif content_part.get("type") == "image_url":
                         image_url = None
                         temp_image_url = content_part.get("image_url")
@@ -692,12 +1055,10 @@ class ChatOllama(BaseChatModel):
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
-                        msg = (
-                            "Unsupported message content type. "
-                            "Must either have type 'text' or type 'image_url' "
-                            "with a string 'image_url' field."
-                        )
-                        raise ValueError(msg)
+                        # Convert unknown content blocks to NonStandardContentBlock
+                        # TODO what to do with these?
+                        _convert_unknown_content_block_to_non_standard(content_part)
+                        continue
             # Should convert to ollama.Message once role includes tool,
             # and tool_call_id is in Message
             msg_: dict = {
@@ -820,13 +1181,18 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        ai_message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+        )
+
+        if self.output_version == "v1":
+            ai_message = _convert_to_v1_message(ai_message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=ai_message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
@@ -845,6 +1211,10 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
+
+                # Strip think tags if reasoning is explicitly disabled
+                if reasoning is False:
+                    content = _strip_think_tags(content)
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
@@ -890,6 +1260,11 @@ class ChatOllama(BaseChatModel):
                     generation_info=generation_info,
                 )
 
+                if self.output_version == "v1":
+                    chunk.message = _convert_to_v1_chunk(
+                        cast(AIMessageChunk, chunk.message)
+                    )
+
                 yield chunk
 
     def _stream(
@@ -921,6 +1296,10 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
+
+                # Strip think tags if reasoning is explicitly disabled
+                if reasoning is False:
+                    content = _strip_think_tags(content)
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
@@ -966,6 +1345,11 @@ class ChatOllama(BaseChatModel):
                     generation_info=generation_info,
                 )
 
+                if self.output_version == "v1":
+                    chunk.message = _convert_to_v1_chunk(
+                        cast(AIMessageChunk, chunk.message)
+                    )
+
                 yield chunk
 
     async def _astream(
@@ -994,13 +1378,18 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        ai_message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+        )
+
+        if self.output_version == "v1":
+            ai_message = _convert_to_v1_message(ai_message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=ai_message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
