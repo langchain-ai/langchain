@@ -13,6 +13,7 @@ from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsPa
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -202,10 +203,12 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 
