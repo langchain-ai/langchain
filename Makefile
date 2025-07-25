@@ -45,6 +45,8 @@ api_docs_build: clean
 	cd docs/api_reference && uv run --group docs make html
 	uv run --group docs python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
 	@echo "✅ API documentation built"
+	@echo "🌐 Opening documentation in browser..."
+	open docs/api_reference/_build/html/reference.html
 
 API_PKG ?= text-splitters
 
