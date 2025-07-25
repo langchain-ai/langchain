@@ -40,8 +40,8 @@ def strip_ansi(text: str) -> str:
     Args:
         text: The string potentially containing ANSI codes.
     """
-    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-    return ansi_escape.sub('', text)
+    ansi_escape = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+    return ansi_escape.sub("", text)
 
 
 def test_filecallback(tmp_path: pathlib.Path) -> None:
