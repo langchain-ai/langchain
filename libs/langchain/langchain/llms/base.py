@@ -1,5 +1,4 @@
-"""
-This module provides backward-compatible exports of core language model classes.
+"""This module provides backward-compatible exports of core language model classes.
 
 These classes are re-exported for compatibility with older versions of LangChain
 and allow users to import language model interfaces from a stable path.

@@ -93,6 +93,7 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
         Args:
             llm: The language model to use.
             base_parser: An optional StructuredChatOutputParser to use.
+
         Returns:
             An instance of StructuredChatOutputParserWithRetries.
         """

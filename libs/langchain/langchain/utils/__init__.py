@@ -1,5 +1,4 @@
-"""
-**Utility functions** for LangChain.
+"""**Utility functions** for LangChain.
 
 These functions do not depend on any other LangChain module.
 """

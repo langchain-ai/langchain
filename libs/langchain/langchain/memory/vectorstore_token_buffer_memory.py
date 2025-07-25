@@ -1,5 +1,4 @@
-"""
-Class for a conversation memory buffer with older messages stored in a vectorstore .
+"""Class for a conversation memory buffer with older messages stored in a vectorstore .
 
 This implements a conversation memory in which the messages are stored in a memory
 buffer up to a specified token limit. When the limit is exceeded, older messages are
@@ -155,8 +154,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
 
     def save_remainder(self) -> None:
-        """
-        Save the remainder of the conversation buffer to the vector store.
+        """Save the remainder of the conversation buffer to the vector store.
 
         This is useful if you have made the vectorstore persistent, in which
         case this can be called before the end of the session to store the

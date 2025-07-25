@@ -181,7 +181,7 @@ async def ask_for_help(query: str) -> dict[str, Any]:
 
 
 def custom_openapi() -> dict[str, Any]:
-    """Add servers configuration to the OpenAPI schema"""
+    """Add servers configuration to the OpenAPI schema."""
     if app.openapi_schema:
         return app.openapi_schema
 
