@@ -1,6 +1,8 @@
 import re
 from typing import Any
 
+from typing_extensions import override
+
 from langchain.evaluation.schema import StringEvaluator
 
 
@@ -70,6 +72,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """
         return "regex_match"
 
+    @override
     def _evaluate_strings(  # type: ignore[override]
         self,
         *,

@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.tools import BaseTool, Tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
@@ -38,6 +39,7 @@ class ReActDocstoreAgent(Agent):
     output_parser: AgentOutputParser = Field(default_factory=ReActOutputParser)
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ReActOutputParser()
 
@@ -47,6 +49,7 @@ class ReActDocstoreAgent(Agent):
         return AgentType.REACT_DOCSTORE
 
     @classmethod
+    @override
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return WIKI_PROMPT
@@ -141,6 +144,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
+    @override
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT
