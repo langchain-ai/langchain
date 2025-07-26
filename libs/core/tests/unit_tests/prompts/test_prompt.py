@@ -678,3 +678,30 @@ def test_prompt_with_template_variable_name_jinja2() -> None:
     template = "This is a {{template}} test."
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_template_add_with_with_another_format():
+    with pytest.raises(match=r"Cannot add two templates"):
+        PromptTemplate.from_template("This is a {template}") + PromptTemplate.from_template("So {{this}} is", template_format="mustache")
+
+
+@pytest.mark.parametrize(
+        "template_format, prompt1, prompt2",
+        [
+            ("f-string", "This is a {variable}", ". This is {another_variable}"),
+            pytest.param("jinja2", "This is a {{variable}}", ". This is {{another_variable}}", marks=[pytest.mark.requires("jinja2")]),
+            ("mustache", "This is a {{variable}}", ". This is {{another_variable}}"),
+        ]
+)
+def test_prompt_template_add(template_format: str, prompt1: str, prompt2: str) -> None:
+    first_prompt = PromptTemplate.from_template(prompt1, template_format=template_format)
+    second_prompt = PromptTemplate.from_template(prompt2, template_format=template_format)
+
+    concated_prompt = first_prompt + second_prompt
+    prompt_of_concated = PromptTemplate.from_template(prompt1 + prompt2, template_format=template_format)
+
+    assert concated_prompt.input_variables == prompt_of_concated.input_variables
+    assert (
+        concated_prompt.format(variable="template", another_variable="other_template") == 
+        prompt_of_concated.format(variable="template", another_variable="other_template")
+    )
