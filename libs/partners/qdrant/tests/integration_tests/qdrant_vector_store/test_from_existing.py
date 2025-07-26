@@ -48,4 +48,4 @@ def test_qdrant_from_existing_collection_uses_same_collection(
     )
     qdrant.add_texts(["baz", "bar"])
 
-    assert 3 == qdrant.client.count(collection_name).count
+    assert 3 == qdrant.sync_client.count(collection_name).count

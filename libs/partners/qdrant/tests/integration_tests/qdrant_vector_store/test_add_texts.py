@@ -137,7 +137,7 @@ def test_qdrant_add_texts_stores_ids(
         batch_size=batch_size,
     )
 
-    assert 3 == vec_store.client.count(collection_name).count
-    stored_ids = [point.id for point in vec_store.client.scroll(collection_name)[0]]
+    assert 3 == vec_store.sync_client.count(collection_name).count
+    stored_ids = [point.id for point in vec_store.sync_client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)
     assert 3 == len(vec_store.get_by_ids(ids))

@@ -30,7 +30,7 @@ def test_vectorstore_from_texts(location: str, retrieval_mode: RetrievalMode) ->
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
+    assert 2 == vec_store.sync_client.count(collection_name).count
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -66,8 +66,8 @@ def test_qdrant_from_texts_stores_ids(
         sparse_vector_name=sparse_vector_name,
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
-    stored_ids = [point.id for point in vec_store.client.retrieve(collection_name, ids)]
+    assert 2 == vec_store.sync_client.count(collection_name).count
+    stored_ids = [point.id for point in vec_store.sync_client.retrieve(collection_name, ids)]
     assert set(ids) == set(stored_ids)
 
 
@@ -97,16 +97,16 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
     )
 
-    assert 5 == vec_store.client.count(collection_name).count
+    assert 5 == vec_store.sync_client.count(collection_name).count
     if retrieval_mode in retrieval_modes(sparse=False):
         assert all(
             (vector_name in point.vector or isinstance(point.vector, list))  # type: ignore
-            for point in vec_store.client.scroll(collection_name, with_vectors=True)[0]
+            for point in vec_store.sync_client.scroll(collection_name, with_vectors=True)[0]
         )
     if retrieval_mode in retrieval_modes(dense=False):
         assert all(
             sparse_vector_name in point.vector  # type: ignore
-            for point in vec_store.client.scroll(collection_name, with_vectors=True)[0]
+            for point in vec_store.sync_client.scroll(collection_name, with_vectors=True)[0]
         )
 
 
@@ -149,7 +149,7 @@ def test_qdrant_from_texts_reuses_same_collection(
         sparse_embedding=sparse_embeddings,
     )
 
-    assert 7 == vec_store.client.count(collection_name).count
+    assert 7 == vec_store.sync_client.count(collection_name).count
 
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
@@ -302,7 +302,7 @@ def test_qdrant_from_texts_recreates_collection_on_force_recreate(
         force_recreate=True,
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
+    assert 2 == vec_store.sync_client.count(collection_name).count
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -379,7 +379,7 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload(
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
     )
 
-    collection_info = vec_store.client.get_collection(collection_name)
+    collection_info = vec_store.sync_client.get_collection(collection_name)
     assert collection_info.config.params.vectors[vector_name].on_disk is True  # type: ignore
     assert collection_info.config.optimizer_config.memmap_threshold == 1000
     assert collection_info.config.params.on_disk_payload is True
