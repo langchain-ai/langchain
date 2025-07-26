@@ -16,6 +16,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     """
 
     def append_to_last_tokens(self, token: str) -> None:
+        """Append token to the last tokens."""
         self.last_tokens.append(token)
         self.last_tokens_stripped.append(token.strip())
         if len(self.last_tokens) > len(self.answer_prefix_tokens):
@@ -23,6 +24,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
             self.last_tokens_stripped.pop(0)
 
     def check_if_answer_reached(self) -> bool:
+        """Check if the answer has been reached."""
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
         return self.last_tokens == self.answer_prefix_tokens

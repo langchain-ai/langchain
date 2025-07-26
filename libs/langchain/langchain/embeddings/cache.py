@@ -89,7 +89,7 @@ _warned_about_sha1: bool = False
 
 def _warn_about_sha1_encoder() -> None:
     """Emit a one-time warning about SHA-1 collision weaknesses."""
-    global _warned_about_sha1
+    global _warned_about_sha1  # noqa: PLW0603
     if not _warned_about_sha1:
         warnings.warn(
             "Using default key encoder: SHA-1 is *not* collision-resistant. "

@@ -58,7 +58,7 @@ class ElasticsearchDatabaseChain(Chain):
     )
 
     @model_validator(mode="after")
-    def validate_indices(self) -> Self:
+    def _validate_indices(self) -> Self:
         if self.include_indices and self.ignore_indices:
             msg = "Cannot specify both 'include_indices' and 'ignore_indices'."
             raise ValueError(msg)

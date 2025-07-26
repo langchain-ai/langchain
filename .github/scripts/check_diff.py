@@ -16,6 +16,7 @@ LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
     "libs/langchain",
+    "libs/langchain_v1",
 ]
 
 # when set to True, we are ignoring core dependents
