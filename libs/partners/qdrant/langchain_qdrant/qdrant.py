@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import Generator, Iterable, Sequence
 from enum import Enum
@@ -203,13 +204,13 @@ class QdrantVectorStore(VectorStore):
         if validate_embeddings:
             self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
 
+        # Store validation task for async clients
+        self._validation_task = None
+        self.validate_collection_config = validate_collection_config
         if validate_collection_config:
             if isinstance(client, AsyncQdrantClient):
-                # For async clients, run async validation synchronously
-                import asyncio
-
-                async def _validate():
-                    await self._avalidate_collection_config(
+                self._validation_task = asyncio.create_task(
+                    self._avalidate_collection_config(
                         client,
                         collection_name,
                         retrieval_mode,
@@ -218,21 +219,7 @@ class QdrantVectorStore(VectorStore):
                         distance,
                         embedding,
                     )
-
-                try:
-                    asyncio.run(_validate())
-                except RuntimeError as e:
-                    # Only handle the specific case of existing event loop
-                    if (
-                        "asyncio.run() cannot be called from a running event loop"
-                        in str(e)
-                    ):
-                        # If we're in an existing event loop, use it directly
-                        loop = asyncio.get_event_loop()
-                        loop.run_until_complete(_validate())
-                    else:
-                        # Re-raise other RuntimeErrors (could be from validation)
-                        raise
+                )
             else:
                 # For sync clients, use sync validation
                 self._validate_collection_config(
@@ -265,7 +252,11 @@ class QdrantVectorStore(VectorStore):
         """
         return self._client
 
-    
+    async def _ensure_validation_complete(self) -> None:
+        """Ensure any pending validation task is completed."""
+        if self.validate_collection_config and self._validation_task is not None:
+            await self._validation_task
+            self._validation_task = None
 
     @property
     def embeddings(self) -> Embeddings:
@@ -409,39 +400,36 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,
     ) -> QdrantVectorStore:
         """Async construct an instance of QdrantVectorStore.
-        
+
         Returns:
             QdrantVectorStore: A new instance with async client.
         """
         if validate_embeddings:
             cls._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
         collection_name = collection_name or uuid.uuid4().hex
-        
+
         client = AsyncQdrantClient(**client_options)
         collection_exists = await client.collection_exists(collection_name)
 
         if collection_exists and force_recreate:
             await client.delete_collection(collection_name)
             collection_exists = False
-            
-        if collection_exists:
-            if validate_collection_config:
-                await cls._avalidate_collection_config(
-                    client,
-                    collection_name,
-                    retrieval_mode,
-                    vector_name,
-                    sparse_vector_name,
-                    distance,
-                    embedding,
-                )
-                    
+
+        if collection_exists and validate_collection_config:
+            await cls._avalidate_collection_config(
+                client,
+                collection_name,
+                retrieval_mode,
+                vector_name,
+                sparse_vector_name,
+                distance,
+                embedding,
+            )
+
         if not collection_exists:
             vectors_config, sparse_vectors_config = {}, {}
             if retrieval_mode == RetrievalMode.DENSE:
-                partial_embeddings = await embedding.aembed_documents(
-                    ["dummy_text"]
-                )  # type: ignore
+                partial_embeddings = await embedding.aembed_documents(["dummy_text"])  # type: ignore
 
                 vector_params["size"] = len(partial_embeddings[0])
                 vector_params["distance"] = distance
@@ -460,9 +448,7 @@ class QdrantVectorStore(VectorStore):
                 }
 
             elif retrieval_mode == RetrievalMode.HYBRID:
-                partial_embeddings = await embedding.aembed_documents(
-                    ["dummy_text"]
-                )  # type: ignore
+                partial_embeddings = await embedding.aembed_documents(["dummy_text"])  # type: ignore
 
                 vector_params["size"] = len(partial_embeddings[0])
                 vector_params["distance"] = distance
@@ -608,6 +594,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        await self._ensure_validation_complete()
+
         added_ids = []
         async for batch_ids, points in self._agenerate_batches(
             texts, metadatas, ids, batch_size
@@ -665,6 +653,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
+        await self._ensure_validation_complete()
+
         results = await self.asimilarity_search_with_score(
             query,
             k,
@@ -785,7 +775,7 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of documents most similar to the query text and distance for each.
         """
-
+        await self._ensure_validation_complete()
 
         query_options = {
             "collection_name": self.collection_name,
@@ -1008,7 +998,7 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
+        await self._ensure_validation_complete()
 
         self._validate_collection_for_dense(
             self.client,
@@ -1084,6 +1074,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        await self._ensure_validation_complete()
+
         results = await self.amax_marginal_relevance_search_with_score_by_vector(
             embedding,
             k=k,
@@ -1173,7 +1165,7 @@ class QdrantVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance and distance for
             each.
         """
-
+        await self._ensure_validation_complete()
 
         results = (
             await self.client.query_points(
@@ -1247,6 +1239,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             True if deletion is successful, False otherwise.
         """
+        await self._ensure_validation_complete()
+
         result = await self.client.delete(
             collection_name=self.collection_name,
             points_selector=ids,
@@ -1275,6 +1269,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of Documents.
         """
+        await self._ensure_validation_complete()
+
         results = await self.client.retrieve(
             self.collection_name, ids, with_payload=True
         )
@@ -1301,6 +1297,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of ids from adding the documents into the vectorstore.
         """
+        await self._ensure_validation_complete()
+
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
 
@@ -1794,9 +1792,7 @@ class QdrantVectorStore(VectorStore):
         dense_embeddings: Union[Embeddings, list[float], None],
     ) -> None:
         """Async version of _validate_collection_for_dense."""
-        collection_info = await client.get_collection(
-            collection_name=collection_name
-        )
+        collection_info = await client.get_collection(collection_name=collection_name)
         vector_config = collection_info.config.params.vectors
 
         if isinstance(vector_config, dict):
@@ -1886,9 +1882,7 @@ class QdrantVectorStore(VectorStore):
         sparse_vector_name: str,
     ) -> None:
         """Async version of _validate_collection_for_sparse."""
-        collection_info = await client.get_collection(
-            collection_name=collection_name
-        )
+        collection_info = await client.get_collection(collection_name=collection_name)
         sparse_vector_config = collection_info.config.params.sparse_vectors
 
         if (
