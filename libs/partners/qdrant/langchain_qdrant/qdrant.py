@@ -268,6 +268,15 @@ class QdrantVectorStore(VectorStore):
             )
         return self.client
 
+    def _ensure_async_client(self) -> AsyncQdrantClient:
+        """Ensure we have an async client for async operations."""
+        if not isinstance(self.client, AsyncQdrantClient):
+            raise ValueError(
+                "Cannot perform asynchronous operations with QdrantClient. "
+                "Use sync methods instead or pass AsyncQdrantClient."
+            )
+        return self.client
+
     @property
     def embeddings(self) -> Embeddings:
         """Get the dense embeddings instance that is being used.
@@ -608,10 +617,11 @@ class QdrantVectorStore(VectorStore):
         await self._ensure_validation_complete()
 
         added_ids = []
+        async_client = self._ensure_async_client()
         async for batch_ids, points in self._agenerate_batches(
             texts, metadatas, ids, batch_size
         ):
-            await self.client.upsert(
+            await async_client.upsert(
                 collection_name=self.collection_name, points=points, **kwargs
             )
             added_ids.extend(batch_ids)
@@ -790,6 +800,7 @@ class QdrantVectorStore(VectorStore):
             List of documents most similar to the query text and distance for each.
         """
         await self._ensure_validation_complete()
+        async_client = self._ensure_async_client()
 
         query_options = {
             "collection_name": self.collection_name,
@@ -806,7 +817,7 @@ class QdrantVectorStore(VectorStore):
         if self.retrieval_mode == RetrievalMode.DENSE:
             query_dense_embedding = await self.embeddings.aembed_query(query)
             results = (
-                await self.client.query_points(
+                await async_client.query_points(
                     query=query_dense_embedding,
                     using=self.vector_name,
                     **query_options,
@@ -816,7 +827,7 @@ class QdrantVectorStore(VectorStore):
         elif self.retrieval_mode == RetrievalMode.SPARSE:
             query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
             results = (
-                await self.client.query_points(
+                await async_client.query_points(
                     query=models.SparseVector(
                         indices=query_sparse_embedding.indices,
                         values=query_sparse_embedding.values,
@@ -830,7 +841,7 @@ class QdrantVectorStore(VectorStore):
             query_dense_embedding = await self.embeddings.aembed_query(query)
             query_sparse_embedding = await self.sparse_embeddings.aembed_query(query)
             results = (
-                await self.client.query_points(
+                await async_client.query_points(
                     prefetch=[
                         models.Prefetch(
                             using=self.vector_name,
@@ -887,9 +898,10 @@ class QdrantVectorStore(VectorStore):
             List of Documents most similar to the query and distance for each.
         """
         qdrant_filter = filter
+        sync_client = self._ensure_sync_client()
 
         self._validate_collection_for_dense(
-            client=self.client,
+            client=sync_client,
             collection_name=self.collection_name,
             vector_name=self.vector_name,
             distance=self.distance,
@@ -972,8 +984,9 @@ class QdrantVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        sync_client = self._ensure_sync_client()
         self._validate_collection_for_dense(
-            self.client,
+            sync_client,
             self.collection_name,
             self.vector_name,
             self.distance,
@@ -1193,9 +1206,10 @@ class QdrantVectorStore(VectorStore):
             each.
         """
         await self._ensure_validation_complete()
+        async_client = self._ensure_async_client()
 
         results = (
-            await self.client.query_points(
+            await async_client.query_points(
                 collection_name=self.collection_name,
                 query=embedding,
                 query_filter=filter,
@@ -1268,8 +1282,9 @@ class QdrantVectorStore(VectorStore):
             True if deletion is successful, False otherwise.
         """
         await self._ensure_validation_complete()
+        async_client = self._ensure_async_client()
 
-        result = await self.client.delete(
+        result = await async_client.delete(
             collection_name=self.collection_name,
             points_selector=ids,
         )
@@ -1299,8 +1314,9 @@ class QdrantVectorStore(VectorStore):
             List of Documents.
         """
         await self._ensure_validation_complete()
+        async_client = self._ensure_async_client()
 
-        results = await self.client.retrieve(
+        results = await async_client.retrieve(
             self.collection_name, ids, with_payload=True
         )
 
@@ -1316,7 +1332,7 @@ class QdrantVectorStore(VectorStore):
 
     async def aadd_documents(
         self, documents: list[Document], **kwargs: Any
-    ) -> list[str | int]:
+    ) -> list[str]:
         """Async add documents with embeddings to the vectorstore.
 
         Args:
@@ -1339,7 +1355,8 @@ class QdrantVectorStore(VectorStore):
                 ids = doc_ids
                 kwargs["ids"] = ids
 
-        return await self.aadd_texts(texts, metadatas, ids=ids, **kwargs)
+        result = await self.aadd_texts(texts, metadatas, ids=ids, **kwargs)
+        return [str(id_) for id_ in result]
 
     @classmethod
     def construct_instance(
