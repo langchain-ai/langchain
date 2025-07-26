@@ -38,7 +38,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
             StuffDocumentsChain,
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)
+                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)  # noqa: SLF001
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -73,7 +73,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "
             "please use `from langchain.chains import RetrievalQAWithSourcesChain`",

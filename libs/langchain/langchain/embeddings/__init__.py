@@ -87,7 +87,7 @@ class HypotheticalDocumentEmbedder:
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
-        return H(*args, **kwargs)  # type: ignore[return-value]
+        return H(*args, **kwargs)  # type: ignore[return-value] # noqa: PLE0101
 
     @classmethod
     def from_llm(cls, *args: Any, **kwargs: Any) -> Any:

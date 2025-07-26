@@ -24,6 +24,9 @@ if TYPE_CHECKING:
     from langchain_community.docstore.base import Docstore
 
 
+_LOOKUP_AND_SEARCH_TOOLS = {"Lookup", "Search"}
+
+
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
@@ -52,11 +55,11 @@ class ReActDocstoreAgent(Agent):
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
-        if len(tools) != 2:
+        if len(tools) != len(_LOOKUP_AND_SEARCH_TOOLS):
             msg = f"Exactly two tools must be specified, but got {tools}"
             raise ValueError(msg)
         tool_names = {tool.name for tool in tools}
-        if tool_names != {"Lookup", "Search"}:
+        if tool_names != _LOOKUP_AND_SEARCH_TOOLS:
             msg = f"Tool names should be Lookup and Search, got {tool_names}"
             raise ValueError(msg)
 

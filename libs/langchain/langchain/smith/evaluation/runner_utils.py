@@ -155,9 +155,24 @@ class EvalError(dict):
     """Your architecture raised an error."""
 
     def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        """Initialize the EvalError with an error and additional attributes.
+
+        Args:
+            Error: The error that occurred.
+            **kwargs: Additional attributes to include in the error.
+        """
         super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
+        """Get an attribute from the EvalError.
+
+        Args:
+            name: The name of the attribute to get.
+        Returns:
+            The value of the attribute.
+        Raises:
+            AttributeError: If the attribute does not exist.
+        """
         try:
             return self[name]
         except KeyError as e:
@@ -1330,6 +1345,113 @@ async def arun_on_dataset(
     revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    """Run on dataset.
+
+    Run the Chain or language model on a dataset and store traces
+    to the specified project name.
+
+    For the (usually faster) async version of this function,
+    see :func:`arun_on_dataset`.
+
+    Args:
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        evaluation: Configuration for evaluators to run on the
+            results of the chain
+        concurrency_level: The number of async tasks to run concurrently.
+        project_name: Name of the project to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        project_metadata: Optional metadata to add to the project.
+            Useful for storing information the test variant.
+            (prompt version, model version, etc.)
+        client: LangSmith client to use to access the dataset and to
+            log feedback and run traces.
+        verbose: Whether to print progress.
+        tags: Tags to add to each run in the project.
+        revision_id: Optional revision identifier to assign this test run to
+            track the performance of different versions of your system.
+    Returns:
+        A dictionary containing the run's project name and the resulting model outputs.
+
+    Examples:
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain_openai import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = smith_eval.RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                smith_eval.RunEvalConfig.Criteria("helpfulness"),
+                smith_eval.RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        await arun_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = smith_eval.RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        await arun_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+    """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
@@ -1395,6 +1517,113 @@ def run_on_dataset(
     revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    """Run on dataset.
+
+    Run the Chain or language model on a dataset and store traces
+    to the specified project name.
+
+    For the (usually faster) async version of this function,
+    see :func:`arun_on_dataset`.
+
+    Args:
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        evaluation: Configuration for evaluators to run on the
+            results of the chain
+        concurrency_level: The number of async tasks to run concurrently.
+        project_name: Name of the project to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        project_metadata: Optional metadata to add to the project.
+            Useful for storing information the test variant.
+            (prompt version, model version, etc.)
+        client: LangSmith client to use to access the dataset and to
+            log feedback and run traces.
+        verbose: Whether to print progress.
+        tags: Tags to add to each run in the project.
+        revision_id: Optional revision identifier to assign this test run to
+            track the performance of different versions of your system.
+    Returns:
+        A dictionary containing the run's project name and the resulting model outputs.
+
+    Examples:
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain_openai import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = smith_eval.RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                smith_eval.RunEvalConfig.Criteria("helpfulness"),
+                smith_eval.RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        run_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = smith_eval.RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        run_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+    """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
@@ -1456,117 +1685,3 @@ def run_on_dataset(
             )
 
     return container.finish(batch_results, verbose=verbose)
-
-
-_RUN_ON_DATASET_DOCSTRING = """
-Run the Chain or language model on a dataset and store traces
-to the specified project name.
-
-Args:
-    dataset_name: Name of the dataset to run the chain on.
-    llm_or_chain_factory: Language model or Chain constructor to run
-        over the dataset. The Chain constructor is used to permit
-        independent calls on each example without carrying over state.
-    evaluation: Configuration for evaluators to run on the
-        results of the chain
-    concurrency_level: The number of async tasks to run concurrently.
-    project_name: Name of the project to store the traces in.
-        Defaults to {dataset_name}-{chain class name}-{datetime}.
-    project_metadata: Optional metadata to add to the project.
-        Useful for storing information the test variant.
-        (prompt version, model version, etc.)
-    client: LangSmith client to use to access the dataset and to
-        log feedback and run traces.
-    verbose: Whether to print progress.
-    tags: Tags to add to each run in the project.
-    revision_id: Optional revision identifier to assign this test run to
-        track the performance of different versions of your system.
-Returns:
-    A dictionary containing the run's project name and the resulting model outputs.
-
-
-For the (usually faster) async version of this function, see :func:`arun_on_dataset`.
-
-Examples
---------
-
-.. code-block:: python
-
-    from langsmith import Client
-    from langchain_openai import ChatOpenAI
-    from langchain.chains import LLMChain
-    from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
-
-    # Chains may have memory. Passing in a constructor function lets the
-    # evaluation framework avoid cross-contamination between runs.
-    def construct_chain():
-        llm = ChatOpenAI(temperature=0)
-        chain = LLMChain.from_string(
-            llm,
-            "What's the answer to {your_input_key}"
-        )
-        return chain
-
-    # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
-    evaluation_config = smith_eval.RunEvalConfig(
-        evaluators=[
-            "qa",  # "Correctness" against a reference answer
-            "embedding_distance",
-            smith_eval.RunEvalConfig.Criteria("helpfulness"),
-            smith_eval.RunEvalConfig.Criteria({
-                "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
-            }),
-        ]
-    )
-
-    client = Client()
-    run_on_dataset(
-        client,
-        dataset_name="<my_dataset_name>",
-        llm_or_chain_factory=construct_chain,
-        evaluation=evaluation_config,
-    )
-
-You can also create custom evaluators by subclassing the
-:class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-or LangSmith's `RunEvaluator` classes.
-
-.. code-block:: python
-
-    from typing import Optional
-    from langchain.evaluation import StringEvaluator
-
-    class MyStringEvaluator(StringEvaluator):
-
-        @property
-        def requires_input(self) -> bool:
-            return False
-
-        @property
-        def requires_reference(self) -> bool:
-            return True
-
-        @property
-        def evaluation_name(self) -> str:
-            return "exact_match"
-
-        def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
-            return {"score": prediction == reference}
-
-
-    evaluation_config = smith_eval.RunEvalConfig(
-        custom_evaluators = [MyStringEvaluator()],
-    )
-
-    run_on_dataset(
-        client,
-        dataset_name="<my_dataset_name>",
-        llm_or_chain_factory=construct_chain,
-        evaluation=evaluation_config,
-    )
-"""  # noqa: E501
-run_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING
-arun_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING.replace(
-    "run_on_dataset(",
-    "await arun_on_dataset(",
-)

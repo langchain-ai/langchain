@@ -66,7 +66,7 @@ class NatBotChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
