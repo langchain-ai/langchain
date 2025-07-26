@@ -543,12 +543,6 @@ def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
         raise ImportError(msg)
 
 
-def _remove_prefix(s: str, prefix: str) -> str:
-    if s.startswith(prefix):
-        s = s[len(prefix) :]
-    return s
-
-
 _DECLARATIVE_METHODS = ("bind_tools", "with_structured_output")
 
 
@@ -616,7 +610,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
         config = ensure_config(config)
         model_params = {
-            _remove_prefix(k, self._config_prefix): v
+            k.removeprefix(self._config_prefix): v
             for k, v in config.get("configurable", {}).items()
             if k.startswith(self._config_prefix)
         }
@@ -638,7 +632,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         remaining_config["configurable"] = {
             k: v
             for k, v in config.get("configurable", {}).items()
-            if _remove_prefix(k, self._config_prefix) not in model_params
+            if k.removeprefix(self._config_prefix) not in model_params
         }
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:

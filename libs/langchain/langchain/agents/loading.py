@@ -14,7 +14,7 @@ from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.types import AGENT_TO_CLASS
 from langchain.chains.loading import load_chain, load_chain_from_config
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
