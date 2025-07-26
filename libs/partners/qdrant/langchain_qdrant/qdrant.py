@@ -248,7 +248,8 @@ class QdrantVectorStore(VectorStore):
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            Union[QdrantClient, AsyncQdrantClient]: An instance of ``QdrantClient`` or ``AsyncQdrantClient``.
+            Union[QdrantClient, AsyncQdrantClient]: An instance of ``QdrantClient`` 
+                or ``AsyncQdrantClient``.
         """
         return self._client
 
@@ -990,7 +991,8 @@ class QdrantVectorStore(VectorStore):
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
     ) -> list[Document]:
-        """Async return docs selected using the maximal marginal relevance with dense vectors.
+        """Async return docs selected using the maximal marginal relevance 
+        with dense vectors.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -1066,7 +1068,8 @@ class QdrantVectorStore(VectorStore):
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
     ) -> list[Document]:
-        """Async return docs selected using the maximal marginal relevance with dense vectors.
+        """Async return docs selected using the maximal marginal relevance 
+        with dense vectors.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
