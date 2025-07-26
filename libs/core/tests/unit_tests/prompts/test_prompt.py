@@ -681,7 +681,7 @@ def test_prompt_with_template_variable_name_jinja2() -> None:
 
 
 def test_prompt_template_add_with_with_another_format():
-    with pytest.raises(match=r"Cannot add two templates"):
+    with pytest.raises(match=r"Cannot add templates"):
         PromptTemplate.from_template("This is a {template}") + PromptTemplate.from_template("So {{this}} is", template_format="mustache")
 
 
