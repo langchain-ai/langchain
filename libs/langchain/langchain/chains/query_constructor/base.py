@@ -91,7 +91,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
                 filter_directive = cast(
-                    Optional[FilterDirective],
+                    "Optional[FilterDirective]",
                     get_parser().parse(raw_filter),
                 )
                 return fix_filter_directive(
@@ -144,7 +144,7 @@ def fix_filter_directive(
             return None
         args = [
             cast(
-                FilterDirective,
+                "FilterDirective",
                 fix_filter_directive(
                     arg,
                     allowed_comparators=allowed_comparators,
