@@ -1177,7 +1177,7 @@ class AgentExecutor(Chain):
         to reflect the changes made in the root_validator.
         """
         if isinstance(self.agent, Runnable):
-            return cast(RunnableAgentType, self.agent)
+            return cast("RunnableAgentType", self.agent)
         return self.agent
 
     @override

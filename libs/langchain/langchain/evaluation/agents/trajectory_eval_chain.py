@@ -301,7 +301,7 @@ The following is the expected answer. Use this to measure correctness:
             chain_input,
             callbacks=_run_manager.get_child(),
         )
-        return cast(dict, self.output_parser.parse(raw_output))
+        return cast("dict", self.output_parser.parse(raw_output))
 
     async def _acall(
         self,
@@ -326,7 +326,7 @@ The following is the expected answer. Use this to measure correctness:
             chain_input,
             callbacks=_run_manager.get_child(),
         )
-        return cast(dict, self.output_parser.parse(raw_output))
+        return cast("dict", self.output_parser.parse(raw_output))
 
     @override
     def _evaluate_agent_trajectory(
