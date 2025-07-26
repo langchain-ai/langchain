@@ -682,7 +682,10 @@ def test_prompt_with_template_variable_name_jinja2() -> None:
 
 def test_prompt_template_add_with_with_another_format() -> None:
     with pytest.raises(ValueError, match=r"Cannot add templates"):
-        PromptTemplate.from_template("This is a {template}") + PromptTemplate.from_template("So {{this}} is", template_format="mustache")
+        (
+            PromptTemplate.from_template("This is a {template}") +
+            PromptTemplate.from_template("So {{this}} is", template_format="mustache")
+        )
 
 
 @pytest.mark.parametrize(
