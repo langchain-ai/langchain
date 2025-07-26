@@ -571,7 +571,7 @@ async def test_runnable_agent_with_function_calls() -> None:
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
-        return cast(Union[AgentFinish, AgentAction], next(parser_responses))
+        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -683,7 +683,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
-        return cast(Union[AgentFinish, AgentAction], next(parser_responses))
+        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
