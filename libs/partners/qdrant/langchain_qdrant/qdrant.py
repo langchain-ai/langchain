@@ -258,7 +258,8 @@ class QdrantVectorStore(VectorStore):
         """Get the sync Qdrant client instance.
         
         This property provides type-safe access to the sync client for cases where
-        you know the client is sync (e.g., created via from_texts() or with QdrantClient).
+        you know the client is sync (e.g., created via from_texts() or with
+        QdrantClient).
         
         Returns:
             QdrantClient: The sync client instance.
