@@ -1214,8 +1214,32 @@ class BaseChatOpenAI(BaseChatModel):
                 f"Response missing `choices` key: {response_dict.keys()}"
             ) from e
 
+        # Handle vLLM compatibility issue where model_dump() may return choices as None
+        # even when the original response object contains valid choices data
         if choices is None:
-            raise TypeError("Received response with null value for `choices`.")
+            # Try to access choices directly from the response object if it's not a dict
+            if not isinstance(response, dict) and hasattr(response, "choices"):
+                try:
+                    # Access choices directly from the response object
+                    raw_choices = response.choices
+                    if raw_choices is not None:
+                        # Convert the choices to the expected format
+                        choices = []
+                        for choice in raw_choices:
+                            if hasattr(choice, "model_dump"):
+                                choices.append(choice.model_dump())
+                            elif hasattr(choice, "__dict__"):
+                                choices.append(choice.__dict__)
+                            else:
+                                choices.append(choice)
+                except (AttributeError, TypeError):
+                    # If we can't access choices from the response object,
+                    # fall back to the original error
+                    pass
+
+            # If we still don't have choices, raise the original error
+            if choices is None:
+                raise TypeError("Received response with null value for `choices`.")
 
         token_usage = response_dict.get("usage")
 
