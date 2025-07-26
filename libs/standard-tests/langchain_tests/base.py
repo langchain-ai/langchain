@@ -1,10 +1,10 @@
 from abc import ABC
 
 
-class BaseStandardTests(ABC):
+class BaseStandardTests(ABC):  # noqa: B024
     """:private:"""
 
-    def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:
+    def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:  # noqa: N802
         """Test that no standard tests are overridden.
 
         :private:
