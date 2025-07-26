@@ -25,6 +25,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool, tool
 from langchain_core.tracers import RunLog, RunLogPatch
+from typing_extensions import override
 
 from langchain.agents import (
     AgentExecutor,
@@ -48,6 +49,7 @@ class FakeListLLM(LLM):
     responses: list[str]
     i: int = -1
 
+    @override
     def _call(
         self,
         prompt: str,
@@ -462,7 +464,7 @@ async def test_runnable_agent() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
@@ -569,7 +571,7 @@ async def test_runnable_agent_with_function_calls() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
         return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
@@ -681,7 +683,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
         return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
@@ -1032,7 +1034,7 @@ async def test_openai_agent_tools_agent() -> None:
         ],
     )
 
-    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore[assignment,misc]
+    GenericFakeChatModel.bind_tools = lambda self, _: self  # type: ignore[assignment,misc]
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @tool

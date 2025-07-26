@@ -83,7 +83,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
         """
         return [self.output_key]
 
-    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:  # noqa: ARG002
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list

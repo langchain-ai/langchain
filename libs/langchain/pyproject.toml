@@ -145,6 +145,7 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
+    "ARG",    # flake8-unused-arguments
     "ASYNC",  # flake8-async
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions

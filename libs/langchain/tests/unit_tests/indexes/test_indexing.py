@@ -13,6 +13,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
+from typing_extensions import override
 
 from langchain.indexes import aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -45,18 +46,21 @@ class InMemoryVectorStore(VectorStore):
         self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
 
+    @override
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     def add_documents(
         self,
         documents: Sequence[Document],
@@ -81,6 +85,7 @@ class InMemoryVectorStore(VectorStore):
 
         return list(ids)
 
+    @override
     async def aadd_documents(
         self,
         documents: Sequence[Document],

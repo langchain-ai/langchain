@@ -10,6 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -63,6 +64,7 @@ class TransformChain(Chain):
         """
         return self.output_variables
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
@@ -70,6 +72,7 @@ class TransformChain(Chain):
     ) -> dict[str, str]:
         return self.transform_cb(inputs)
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],

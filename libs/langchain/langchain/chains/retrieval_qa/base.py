@@ -18,6 +18,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -330,6 +331,7 @@ class VectorDBQA(BaseRetrievalQA):
                 raise ValueError(msg)
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,

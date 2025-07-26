@@ -1,6 +1,8 @@
 import string
 from typing import Any
 
+from typing_extensions import override
+
 from langchain.evaluation.schema import StringEvaluator
 
 
@@ -78,6 +80,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """
         return "exact_match"
 
+    @override
     def _evaluate_strings(  # type: ignore[override]
         self,
         *,

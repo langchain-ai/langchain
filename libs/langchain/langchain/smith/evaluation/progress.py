@@ -19,7 +19,6 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         total: int,
         ncols: int = 50,
         end_with: str = "\n",
-        **kwargs: Any,
     ):
         """Initialize the progress bar.
 

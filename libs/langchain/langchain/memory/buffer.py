@@ -79,10 +79,12 @@ class ConversationBufferMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
+    @override
     async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
         buffer = await self.abuffer()
@@ -133,6 +135,7 @@ class ConversationStringBufferMemory(BaseMemory):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}

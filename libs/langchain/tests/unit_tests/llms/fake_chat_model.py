@@ -16,11 +16,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import run_in_executor
+from typing_extensions import override
 
 
 class FakeChatModel(SimpleChatModel):
     """Fake Chat Model wrapper for testing purposes."""
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -30,6 +32,7 @@ class FakeChatModel(SimpleChatModel):
     ) -> str:
         return "fake response"
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],
@@ -74,6 +77,7 @@ class GenericFakeChatModel(BaseChatModel):
     into message chunks.
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
