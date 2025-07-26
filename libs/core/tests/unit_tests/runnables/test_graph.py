@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from packaging import version
 from pydantic import BaseModel
@@ -6,6 +6,7 @@ from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain_core.language_models import FakeListLLM
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
@@ -222,7 +223,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     str_parser = StrOutputParser()
     xml_parser = XMLOutputParser()
 
-    def conditional_str_parser(value: str) -> Runnable:
+    def conditional_str_parser(value: str) -> Runnable[Union[BaseMessage, str], str]:
         if value == "a":
             return str_parser
         return xml_parser
@@ -528,7 +529,7 @@ def test_graph_mermaid_escape_node_label() -> None:
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["foo", "bar"])
-    sequence: Runnable = (
+    sequence = (
         PromptTemplate.from_template("Hello, {input}")
         | {
             "llm1": fake_llm,

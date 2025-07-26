@@ -17,6 +17,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import (
+    MessageLikeRepresentation,
     convert_to_messages,
     convert_to_openai_messages,
     count_tokens_approximately,
@@ -153,7 +154,7 @@ def test_merge_messages_tool_messages() -> None:
         {"include_names": ["blah", "blur"], "exclude_types": [SystemMessage]},
     ],
 )
-def test_filter_message(filters: dict) -> None:
+def test_filter_message(filters: dict[str, Any]) -> None:
     messages = [
         SystemMessage("foo", name="blah", id="1"),
         HumanMessage("bar", name="blur", id="2"),
@@ -673,7 +674,7 @@ class FakeTokenCountingModel(FakeChatModel):
 
 
 def test_convert_to_messages() -> None:
-    message_like: list = [
+    message_like: list[MessageLikeRepresentation] = [
         # BaseMessage
         SystemMessage("1"),
         SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),
@@ -1206,7 +1207,7 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
 
 
 def test_convert_to_openai_messages_developer() -> None:
-    messages: list = [
+    messages: list[MessageLikeRepresentation] = [
         SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
         {"role": "developer", "content": "a"},
     ]
