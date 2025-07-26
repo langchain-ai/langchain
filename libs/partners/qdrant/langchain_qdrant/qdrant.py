@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
@@ -258,6 +258,15 @@ class QdrantVectorStore(VectorStore):
         if self.validate_collection_config and self._validation_task is not None:
             await self._validation_task
             self._validation_task = None
+
+    def _ensure_sync_client(self) -> QdrantClient:
+        """Ensure we have a sync client for sync operations."""
+        if isinstance(self.client, AsyncQdrantClient):
+            raise ValueError(
+                "Cannot perform synchronous operations with AsyncQdrantClient. "
+                "Use async methods instead."
+            )
+        return self.client
 
     @property
     def embeddings(self) -> Embeddings:
@@ -565,10 +574,11 @@ class QdrantVectorStore(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         added_ids = []
+        sync_client = self._ensure_sync_client()
         for batch_ids, points in self._generate_batches(
             texts, metadatas, ids, batch_size
         ):
-            self.client.upsert(
+            sync_client.upsert(
                 collection_name=self.collection_name, points=points, **kwargs
             )
             added_ids.extend(batch_ids)
@@ -700,7 +710,8 @@ class QdrantVectorStore(VectorStore):
         }
         if self.retrieval_mode == RetrievalMode.DENSE:
             query_dense_embedding = self.embeddings.embed_query(query)
-            results = self.client.query_points(
+            sync_client = self._ensure_sync_client()
+            results = sync_client.query_points(
                 query=query_dense_embedding,
                 using=self.vector_name,
                 **query_options,
@@ -708,7 +719,8 @@ class QdrantVectorStore(VectorStore):
 
         elif self.retrieval_mode == RetrievalMode.SPARSE:
             query_sparse_embedding = self.sparse_embeddings.embed_query(query)
-            results = self.client.query_points(
+            sync_client = self._ensure_sync_client()
+            results = sync_client.query_points(
                 query=models.SparseVector(
                     indices=query_sparse_embedding.indices,
                     values=query_sparse_embedding.values,
@@ -720,7 +732,8 @@ class QdrantVectorStore(VectorStore):
         elif self.retrieval_mode == RetrievalMode.HYBRID:
             query_dense_embedding = self.embeddings.embed_query(query)
             query_sparse_embedding = self.sparse_embeddings.embed_query(query)
-            results = self.client.query_points(
+            sync_client = self._ensure_sync_client()
+            results = sync_client.query_points(
                 prefetch=[
                     models.Prefetch(
                         using=self.vector_name,
@@ -882,7 +895,8 @@ class QdrantVectorStore(VectorStore):
             distance=self.distance,
             dense_embeddings=embedding,
         )
-        results = self.client.query_points(
+        sync_client = self._ensure_sync_client()
+        results = sync_client.query_points(
             collection_name=self.collection_name,
             query=embedding,
             using=self.vector_name,
@@ -1002,13 +1016,22 @@ class QdrantVectorStore(VectorStore):
         """
         await self._ensure_validation_complete()
 
-        self._validate_collection_for_dense(
-            self.client,
-            self.collection_name,
-            self.vector_name,
-            self.distance,
-            self.embeddings,
-        )
+        if isinstance(self.client, AsyncQdrantClient):
+            await self._avalidate_collection_for_dense(
+                self.client,
+                self.collection_name,
+                self.vector_name,
+                self.distance,
+                self.embeddings,
+            )
+        else:
+            self._validate_collection_for_dense(
+                self.client,
+                self.collection_name,
+                self.vector_name,
+                self.distance,
+                self.embeddings,
+            )
 
         query_embedding = await self.embeddings.aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
@@ -1112,7 +1135,8 @@ class QdrantVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance and distance for
             each.
         """
-        results = self.client.query_points(
+        sync_client = self._ensure_sync_client()
+        results = sync_client.query_points(
             collection_name=self.collection_name,
             query=embedding,
             query_filter=filter,
@@ -1222,7 +1246,8 @@ class QdrantVectorStore(VectorStore):
         Returns:
             True if deletion is successful, False otherwise.
         """
-        result = self.client.delete(
+        sync_client = self._ensure_sync_client()
+        result = sync_client.delete(
             collection_name=self.collection_name,
             points_selector=ids,
         )
@@ -1251,7 +1276,8 @@ class QdrantVectorStore(VectorStore):
         return result.status == models.UpdateStatus.COMPLETED
 
     def get_by_ids(self, ids: Sequence[str | int], /) -> list[Document]:
-        results = self.client.retrieve(self.collection_name, ids, with_payload=True)
+        sync_client = self._ensure_sync_client()
+        results = sync_client.retrieve(self.collection_name, ids, with_payload=True)
 
         return [
             self._document_from_point(
@@ -1290,7 +1316,7 @@ class QdrantVectorStore(VectorStore):
 
     async def aadd_documents(
         self, documents: list[Document], **kwargs: Any
-    ) -> list[str]:
+    ) -> list[str | int]:
         """Async add documents with embeddings to the vectorstore.
 
         Args:
@@ -1308,8 +1334,8 @@ class QdrantVectorStore(VectorStore):
         # Extract ids from documents if present
         ids = None
         if "ids" not in kwargs:
-            doc_ids = [doc.id for doc in documents]
-            if any(doc_ids):
+            doc_ids = [doc.id for doc in documents if doc.id is not None]
+            if doc_ids:
                 ids = doc_ids
                 kwargs["ids"] = ids
 
@@ -1499,7 +1525,7 @@ class QdrantVectorStore(VectorStore):
         metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str | int]] = None,
         batch_size: int = 64,
-    ):
+    ) -> AsyncGenerator[tuple[list[str | int], list[models.PointStruct]], None]:
         """Async version of _generate_batches."""
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
