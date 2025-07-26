@@ -104,15 +104,13 @@ async def test_async_similarity_search_with_consistency(location: str) -> None:
     await vec_store.aadd_texts(texts)
 
     # Test with different consistency levels
-    
+
     # Test with factor consistency (int)
-    results = await vec_store.asimilarity_search(
-        "test", k=1, consistency=1
-    )
+    results = await vec_store.asimilarity_search("test", k=1, consistency=1)
     assert len(results) <= 1
     if results:
         assert results[0].page_content == "test document"
-    
+
     # Test with majority consistency
     results = await vec_store.asimilarity_search(
         "test", k=1, consistency=models.ReadConsistencyType.MAJORITY
@@ -120,7 +118,7 @@ async def test_async_similarity_search_with_consistency(location: str) -> None:
     assert len(results) <= 1
     if results:
         assert results[0].page_content == "test document"
-    
+
     # Test with all consistency
     results = await vec_store.asimilarity_search(
         "test", k=1, consistency=models.ReadConsistencyType.ALL
