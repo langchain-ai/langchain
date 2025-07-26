@@ -67,7 +67,9 @@ def test_qdrant_from_texts_stores_ids(
     )
 
     assert 2 == vec_store.sync_client.count(collection_name).count
-    stored_ids = [point.id for point in vec_store.sync_client.retrieve(collection_name, ids)]
+    stored_ids = [
+        point.id for point in vec_store.sync_client.retrieve(collection_name, ids)
+    ]
     assert set(ids) == set(stored_ids)
 
 
@@ -101,12 +103,16 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
     if retrieval_mode in retrieval_modes(sparse=False):
         assert all(
             (vector_name in point.vector or isinstance(point.vector, list))  # type: ignore
-            for point in vec_store.sync_client.scroll(collection_name, with_vectors=True)[0]
+            for point in vec_store.sync_client.scroll(
+                collection_name, with_vectors=True
+            )[0]
         )
     if retrieval_mode in retrieval_modes(dense=False):
         assert all(
             sparse_vector_name in point.vector  # type: ignore
-            for point in vec_store.sync_client.scroll(collection_name, with_vectors=True)[0]
+            for point in vec_store.sync_client.scroll(
+                collection_name, with_vectors=True
+            )[0]
         )
 
 

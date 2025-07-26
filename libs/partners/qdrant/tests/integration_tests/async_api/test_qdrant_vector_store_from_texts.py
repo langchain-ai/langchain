@@ -1,12 +1,10 @@
 import uuid
-from typing import Union
 
 import pytest
 from langchain_core.documents import Document
-from qdrant_client import AsyncQdrantClient, models
+from qdrant_client import AsyncQdrantClient
 
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
-from langchain_qdrant.qdrant import QdrantVectorStoreError
 from tests.integration_tests.common import (
     ConsistentFakeEmbeddings,
     ConsistentFakeSparseEmbeddings,
@@ -17,7 +15,9 @@ from tests.integration_tests.fixtures import qdrant_locations, retrieval_modes
 
 @pytest.mark.parametrize("location", qdrant_locations())
 @pytest.mark.parametrize("retrieval_mode", retrieval_modes())
-async def test_async_vectorstore_from_texts(location: str, retrieval_mode: RetrievalMode) -> None:
+async def test_async_vectorstore_from_texts(
+    location: str, retrieval_mode: RetrievalMode
+) -> None:
     """Test end to end QdrantVectorStore async construction from texts."""
     collection_name = uuid.uuid4().hex
 
@@ -28,7 +28,7 @@ async def test_async_vectorstore_from_texts(location: str, retrieval_mode: Retri
         collection_name=collection_name,
         client_options={"location": location},
     )
-    
+
     # Add texts using async method
     await vec_store.aadd_texts(["Lorem ipsum dolor sit amet", "Ipsum dolor sit amet"])
 
@@ -43,7 +43,7 @@ async def test_async_vectorstore_from_texts(location: str, retrieval_mode: Retri
 async def test_async_qdrant_similarity_search(location: str) -> None:
     """Test QdrantVectorStore async similarity search."""
     collection_name = uuid.uuid4().hex
-    
+
     vec_store = await QdrantVectorStore.aconstruct_instance(
         embedding=ConsistentFakeEmbeddings(),
         collection_name=collection_name,
@@ -66,8 +66,8 @@ async def test_async_qdrant_delete(location: str) -> None:
     texts = ["foo", "bar", "baz"]
     ids = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
-        "cdc1aa36-d6ab-4fb2-8a94-56674fd27484", 
-        "b4c1aa36-d6ab-4fb2-8a94-56674fd27485"
+        "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
+        "b4c1aa36-d6ab-4fb2-8a94-56674fd27485",
     ]
 
     vec_store = await QdrantVectorStore.aconstruct_instance(
@@ -80,7 +80,7 @@ async def test_async_qdrant_delete(location: str) -> None:
 
     async_client = vec_store.client
     assert isinstance(async_client, AsyncQdrantClient)
-    
+
     # Verify all texts are added
     count_result = await async_client.count(collection_name)
     assert 3 == count_result.count
@@ -98,7 +98,7 @@ async def test_async_qdrant_delete(location: str) -> None:
 async def test_async_qdrant_add_documents(location: str) -> None:
     """Test QdrantVectorStore async add documents functionality."""
     collection_name = uuid.uuid4().hex
-    
+
     documents = [
         Document(page_content="foo", metadata={"page": 1}),
         Document(page_content="bar", metadata={"page": 2}),
@@ -118,7 +118,7 @@ async def test_async_qdrant_add_documents(location: str) -> None:
 
     async_client = vec_store.client
     assert isinstance(async_client, AsyncQdrantClient)
-    
+
     # Verify documents are added
     count_result = await async_client.count(collection_name)
     assert 3 == count_result.count
