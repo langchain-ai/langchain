@@ -7,7 +7,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import SkipValidation
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 
@@ -15,6 +15,8 @@ T = TypeVar("T")
 
 
 class OutputFixingParserRetryChainInput(TypedDict, total=False):
+    """Input for the retry chain of the OutputFixingParser."""
+
     instructions: str
     completion: str
     error: str
@@ -24,6 +26,7 @@ class OutputFixingParser(BaseOutputParser[T]):
     """Wrap a parser and try to fix parsing errors."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
@@ -62,6 +65,7 @@ class OutputFixingParser(BaseOutputParser[T]):
         chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
+    @override
     def parse(self, completion: str) -> T:
         retries = 0
 
@@ -99,6 +103,7 @@ class OutputFixingParser(BaseOutputParser[T]):
         msg = "Failed to parse"
         raise OutputParserException(msg)
 
+    @override
     async def aparse(self, completion: str) -> T:
         retries = 0
 
@@ -136,6 +141,7 @@ class OutputFixingParser(BaseOutputParser[T]):
         msg = "Failed to parse"
         raise OutputParserException(msg)
 
+    @override
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
 
@@ -144,5 +150,6 @@ class OutputFixingParser(BaseOutputParser[T]):
         return "output_fixing"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.parser.OutputType

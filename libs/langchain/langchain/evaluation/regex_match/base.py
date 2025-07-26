@@ -27,7 +27,12 @@ class RegexMatchStringEvaluator(StringEvaluator):
         )  # This will return {'score': 1.0} as the prediction matches the second pattern in the union
     """  # noqa: E501
 
-    def __init__(self, *, flags: int = 0, **kwargs: Any):  # Default is no flags
+    def __init__(self, *, flags: int = 0, **_: Any):  # Default is no flags
+        """Initialize the RegexMatchStringEvaluator.
+
+        Args:
+            flags: Flags to use for the regex match. Defaults to 0 (no flags).
+        """
         super().__init__()
         self.flags = flags
 

@@ -45,6 +45,14 @@ class FactWithEvidence(BaseModel):
             yield from s.spans()
 
     def get_spans(self, context: str) -> Iterator[str]:
+        """Get spans of the substring quote in the context.
+
+        Args:
+            context: The context in which to find the spans of the substring quote.
+
+        Returns:
+            An iterator over the spans of the substring quote in the context.
+        """
         for quote in self.substring_quote:
             yield from self._get_span(quote, context)
 

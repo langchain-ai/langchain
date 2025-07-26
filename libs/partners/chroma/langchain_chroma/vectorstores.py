@@ -888,14 +888,14 @@ class Chroma(VectorStore):
 
         Args:
             uri (str): URI of the image to search for.
-            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            k (int, optional): Number of results to return. Defaults to ``DEFAULT_K``.
             filter (Optional[Dict[str, str]], optional): Filter by metadata.
             **kwargs (Any): Additional arguments to pass to function.
 
 
         Returns:
             List of Images most similar to the provided image.
-            Each element in list is a Langchain Document Object.
+            Each element in list is a LangChain Document Object.
             The page content is b64 encoded image, metadata is default or
             as defined by user.
 
@@ -938,7 +938,7 @@ class Chroma(VectorStore):
         Returns:
             List[Tuple[Document, float]]: List of tuples containing documents similar
             to the query image and their similarity scores.
-            0th element in each tuple is a Langchain Document Object.
+            0th element in each tuple is a LangChain Document Object.
             The page content is b64 encoded img, metadata is default or defined by user.
 
         Raises:
