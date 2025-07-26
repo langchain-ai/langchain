@@ -248,10 +248,25 @@ class QdrantVectorStore(VectorStore):
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            Union[QdrantClient, AsyncQdrantClient]: An instance of ``QdrantClient``
+            Union[QdrantClient, AsyncQdrantClient]: An instance of ``QdrantClient`` 
                 or ``AsyncQdrantClient``.
         """
         return self._client
+
+    @property
+    def sync_client(self) -> QdrantClient:
+        """Get the sync Qdrant client instance.
+        
+        This property provides type-safe access to the sync client for cases where
+        you know the client is sync (e.g., created via from_texts() or with QdrantClient).
+        
+        Returns:
+            QdrantClient: The sync client instance.
+            
+        Raises:
+            ValueError: If the client is an AsyncQdrantClient.
+        """
+        return self._ensure_sync_client()
 
     async def _ensure_validation_complete(self) -> None:
         """Ensure any pending validation task is completed."""
