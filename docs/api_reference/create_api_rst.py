@@ -497,6 +497,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
     if package_name in (
         "langchain",
+        "langchain_v1",
         "experimental",
         "community",
         "core",
@@ -592,7 +593,12 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
     if integrations:
         integration_headers = [
             " ".join(
-                custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB"))
+                custom_names.get(
+                    x,
+                    x.title().replace("db", "DB")
+                    if dir_ == "langchain_v1"
+                    else x.title().replace("ai", "AI").replace("db", "DB"),
+                )
                 for x in dir_.split("-")
             )
             for dir_ in integrations

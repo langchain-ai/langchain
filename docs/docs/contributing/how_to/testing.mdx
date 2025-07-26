@@ -10,7 +10,7 @@ Unit tests run on every pull request, so they should be fast and reliable.
 
 Integration tests run once a day, and they require more setup, so they should be reserved for confirming interface points with external services.
 
-## Unit Tests
+## Unit tests
 
 Unit tests cover modular logic that does not require calls to outside APIs.
 If you add new logic, please add a unit test.
@@ -27,19 +27,13 @@ To run unit tests:
 make test
 ```
 
-To run unit tests in Docker:
-
-```bash
-make docker_tests
-```
-
 To run a specific test:
 
 ```bash
 TEST_FILE=tests/unit_tests/test_imports.py make test
 ```
 
-## Integration Tests
+## Integration tests
 
 Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
 If you add support for a new external API, please add a new integration test.

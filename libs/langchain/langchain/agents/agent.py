@@ -64,6 +64,7 @@ class BaseSingleActionAgent(BaseModel):
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[list[str]]:
+        """Get allowed tools."""
         return None
 
     @abstractmethod

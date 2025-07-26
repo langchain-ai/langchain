@@ -266,17 +266,20 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
     Code like this:
 
+    .. code-block:: python
+
         async with aclosing(<module>.fetch(<arguments>)) as agen:
             <block>
 
     is equivalent to this:
+
+    .. code-block:: python
 
         agen = <module>.fetch(<arguments>)
         try:
             <block>
         finally:
             await agen.aclose()
-
     """
 
     def __init__(

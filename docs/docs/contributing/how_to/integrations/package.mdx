@@ -358,7 +358,7 @@ a schema for the LLM to fill out when calling the tool. Similar to the `name` an
 description (part of `Field(..., description="description")`) are passed to the LLM, 
 and the values in these fields should be concise and LLM-usable.
 
-### Run Methods
+### Run methods
 
 `_run` is the main method that should be implemented in the subclass. This method
 takes in the arguments from `args_schema` and runs the tool, returning a string
@@ -469,6 +469,6 @@ import RetrieverSource from '/src/theme/integration_template/integration_templat
 
 ---
 
-## Next Steps
+## Next steps
 
 Now that you've implemented your package, you can move on to [testing your integration](../standard_tests) for your integration and successfully run them.

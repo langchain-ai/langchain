@@ -430,7 +430,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @property
@@ -562,8 +562,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
@@ -597,7 +596,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             strict:
                 - ``True``:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to `this schema <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
+                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
                 - ``False``:
                     Input schema will not be validated and model output will not be
                     validated.

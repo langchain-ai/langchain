@@ -40,6 +40,7 @@ try:
 except ImportError:
 
     def load_llm(*args: Any, **kwargs: Any) -> None:
+        """Import error for load_llm."""
         msg = (
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
@@ -48,6 +49,7 @@ except ImportError:
         raise ImportError(msg)
 
     def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
+        """Import error for load_llm_from_config."""
         msg = (
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "

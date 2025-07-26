@@ -32,6 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -76,6 +77,7 @@ class LLMChain(Chain):
     """
 
     @classmethod
+    @override
     def is_lc_serializable(self) -> bool:
         return True
 

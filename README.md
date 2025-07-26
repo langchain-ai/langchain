@@ -40,9 +40,10 @@ controllable agent workflows.
 ## Why use LangChain?
 
 LangChain helps developers build applications powered by LLMs through a standard
-interface for models, embeddings, vector stores, and more. 
+interface for models, embeddings, vector stores, and more.
 
 Use LangChain for:
+
 - **Real-time data augmentation**. Easily connect LLMs to diverse data sources and
 external / internal systems, drawing from LangChain’s vast library of integrations with
 model providers, tools, vector stores, retrievers, and more.
@@ -52,9 +53,10 @@ frontier evolves, adapt quickly — LangChain’s abstractions keep you moving w
 losing momentum.
 
 ## LangChain’s ecosystem
+
 While the LangChain framework can be used standalone, it also integrates seamlessly
 with any LangChain product, giving developers a full suite of tools when building LLM
-applications. 
+applications.
 
 To improve your LLM application development, pair LangChain with:
 
@@ -73,6 +75,7 @@ teams — and iterate quickly with visual prototyping in
 [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/).
 
 ## Additional resources
+
 - [Tutorials](https://python.langchain.com/docs/tutorials/): Simple walkthroughs with
 guided examples on getting started with LangChain.
 - [How-to Guides](https://python.langchain.com/docs/how_to/): Quick, actionable code

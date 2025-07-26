@@ -98,7 +98,7 @@ def get_usage_metadata_callback(
 
     Args:
         name (str): The name of the context variable. Defaults to
-            ``"usage_metadata_callback"``.
+            ``'usage_metadata_callback'``.
 
     Example:
         .. code-block:: python

@@ -594,7 +594,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,
@@ -689,7 +689,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,

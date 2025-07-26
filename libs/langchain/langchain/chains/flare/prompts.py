@@ -1,5 +1,6 @@
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
+from typing_extensions import override
 
 
 class FinishedOutputParser(BaseOutputParser[tuple[str, bool]]):
@@ -8,6 +9,7 @@ class FinishedOutputParser(BaseOutputParser[tuple[str, bool]]):
     finished_value: str = "FINISHED"
     """Value that indicates the output is finished."""
 
+    @override
     def parse(self, text: str) -> tuple[str, bool]:
         cleaned = text.strip()
         finished = self.finished_value in cleaned

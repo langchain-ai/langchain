@@ -43,7 +43,7 @@ class MultiVectorRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def shim_docstore(cls, values: dict) -> Any:
+    def _shim_docstore(cls, values: dict) -> Any:
         byte_store = values.get("byte_store")
         docstore = values.get("docstore")
         if byte_store is not None:

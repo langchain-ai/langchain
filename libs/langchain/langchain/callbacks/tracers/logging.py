@@ -7,6 +7,7 @@ from uuid import UUID
 from langchain_core.exceptions import TracerException
 from langchain_core.tracers.stdout import FunctionCallbackHandler
 from langchain_core.utils.input import get_bolded_text, get_colored_text
+from typing_extensions import override
 
 
 class LoggingCallbackHandler(FunctionCallbackHandler):
@@ -21,6 +22,15 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         extra: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize the LoggingCallbackHandler.
+
+        Args:
+            logger: the logger to use for logging
+            log_level: the logging level (default: logging.INFO)
+            extra: the extra context to log (default: None)
+            **kwargs:
+        """
         log_method = getattr(logger, logging.getLevelName(level=log_level).lower())
 
         def callback(text: str) -> None:
@@ -28,6 +38,7 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
 
         super().__init__(function=callback, **kwargs)
 
+    @override
     def on_text(
         self,
         text: str,

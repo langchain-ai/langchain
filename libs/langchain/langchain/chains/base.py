@@ -108,6 +108,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         arbitrary_types_allowed=True,
     )
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -115,6 +116,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model("ChainInput", **dict.fromkeys(self.input_keys, (Any, None)))
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,

@@ -292,11 +292,11 @@ def _convert_chunk_to_message_chunk(
 
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
-    """Format Langchain ToolCall to dict expected by Mistral."""
+    """Format LangChain ToolCall to dict expected by Mistral."""
     result: dict[str, Any] = {
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         }
     }
     if _id := tool_call.get("id"):
@@ -306,7 +306,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
 
 
 def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
-    """Format Langchain InvalidToolCall to dict expected by Mistral."""
+    """Format LangChain InvalidToolCall to dict expected by Mistral."""
     result: dict[str, Any] = {
         "function": {
             "name": invalid_tool_call["name"],
@@ -707,7 +707,7 @@ class ChatMistralAI(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
@@ -746,12 +746,13 @@ class ChatMistralAI(BaseChatModel):
         r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.12),
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.12),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -765,13 +766,13 @@ class ChatMistralAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Mistral's
                     `function-calling feature <https://docs.mistral.ai/capabilities/function_calling/>`_.
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Mistral's
                     `structured output feature <https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/>`_.
-                - "json_mode":
+                - ``'json_mode'``:
                     Uses Mistral's
                     `JSON mode <https://docs.mistral.ai/capabilities/structured-output/json_mode/>`_.
                     Note that if using JSON mode then you
@@ -788,7 +789,7 @@ class ChatMistralAI(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``. This is useful for passing in
@@ -805,9 +806,9 @@ class ChatMistralAI(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+                - ``'raw'``: BaseMessage
+                - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``'parsing_error'``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
@@ -1073,7 +1074,7 @@ class ChatMistralAI(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @classmethod

@@ -3,6 +3,7 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -35,6 +36,7 @@ class SelfAskOutputParser(AgentOutputParser):
     followups: Sequence[str] = ("Follow up:", "Followup:")
     finish_string: str = "So the final answer is: "
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         last_line = text.split("\n")[-1]
         if not any(follow in last_line for follow in self.followups):

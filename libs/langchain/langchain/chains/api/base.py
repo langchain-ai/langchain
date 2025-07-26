@@ -47,8 +47,8 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     scheme, domain = _extract_scheme_and_domain(url)
 
     for allowed_domain in limit_to_domains:
-        allowed_scheme, allowed_domain = _extract_scheme_and_domain(allowed_domain)
-        if scheme == allowed_scheme and domain == allowed_domain:
+        allowed_scheme, allowed_domain_ = _extract_scheme_and_domain(allowed_domain)
+        if scheme == allowed_scheme and domain == allowed_domain_:
             return True
     return False
 
@@ -386,7 +386,10 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
+        """Raise an ImportError if APIChain is used without langchain_community."""
+
         def __init__(self, *args: Any, **kwargs: Any) -> None:
+            """Raise an ImportError if APIChain is used without langchain_community."""
             msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"

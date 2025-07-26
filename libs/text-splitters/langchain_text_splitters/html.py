@@ -842,6 +842,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         preserved_elements,
                         placeholder_count,
                     )
+                    content = " ".join(elem.find_all(string=True, recursive=False))
+                    if content:
+                        content = self._normalize_and_clean_text(content)
+                        current_content.append(content)
                     continue
 
                 if elem.name in [h[0] for h in self._headers_to_split_on]:

@@ -37,6 +37,15 @@ class SummarizerMixin(BaseModel):
         messages: list[BaseMessage],
         existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -51,6 +60,15 @@ class SummarizerMixin(BaseModel):
         messages: list[BaseMessage],
         existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -89,6 +107,16 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         summarize_step: int = 2,
         **kwargs: Any,
     ) -> ConversationSummaryMemory:
+        """Create a ConversationSummaryMemory from a list of messages.
+
+        Args:
+            llm: The language model to use for summarization.
+            chat_memory: The chat history to summarize.
+            summarize_step: Number of messages to summarize at a time.
+            **kwargs: Additional keyword arguments to pass to the class.
+        Returns:
+            An instance of ConversationSummaryMemory with the summarized history.
+        """
         obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
         for i in range(0, len(obj.chat_memory.messages), summarize_step):
             obj.buffer = obj.predict_new_summary(

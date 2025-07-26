@@ -40,13 +40,13 @@ def format_xml(
             # Escape XML tags in tool names and inputs using custom delimiters
             tool = _escape(action.tool)
             tool_input = _escape(str(action.tool_input))
-            observation = _escape(str(observation))
+            observation_ = _escape(str(observation))
         else:
             tool = action.tool
             tool_input = str(action.tool_input)
-            observation = str(observation)
+            observation_ = str(observation)
         log += (
             f"<tool>{tool}</tool><tool_input>{tool_input}"
-            f"</tool_input><observation>{observation}</observation>"
+            f"</tool_input><observation>{observation_}</observation>"
         )
     return log

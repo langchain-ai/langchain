@@ -357,7 +357,7 @@ def __getattr__(name: str) -> Any:
 
         return ElasticVectorSearch
     # For backwards compatibility
-    if name == "SerpAPIChain" or name == "SerpAPIWrapper":
+    if name in {"SerpAPIChain", "SerpAPIWrapper"}:
         from langchain_community.utilities import SerpAPIWrapper
 
         _warn_on_import(

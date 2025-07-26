@@ -125,7 +125,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         return [t.name for t in self.tools]
 
     @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    def _validate_prompt(self) -> Self:
         prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
             msg = (

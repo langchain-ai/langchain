@@ -22,6 +22,7 @@ from langchain_core.structured_query import (
     Operator,
     StructuredQuery,
 )
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
@@ -46,6 +47,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
+    @override
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]

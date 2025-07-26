@@ -10,6 +10,7 @@ from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTempl
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
+from typing_extensions import override
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
@@ -45,11 +46,13 @@ class XMLAgent(BaseSingleActionAgent):
     """Chain to use to predict action."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return ["input"]
 
     @staticmethod
     def get_default_prompt() -> ChatPromptTemplate:
+        """Return the default prompt for the XML agent."""
         base_prompt = ChatPromptTemplate.from_template(agent_instructions)
         return base_prompt + AIMessagePromptTemplate.from_template(
             "{intermediate_steps}",
@@ -57,8 +60,10 @@ class XMLAgent(BaseSingleActionAgent):
 
     @staticmethod
     def get_default_output_parser() -> XMLAgentOutputParser:
+        """Return an XMLAgentOutputParser."""
         return XMLAgentOutputParser()
 
+    @override
     def plan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
@@ -83,6 +88,7 @@ class XMLAgent(BaseSingleActionAgent):
         response = self.llm_chain(inputs, callbacks=callbacks)
         return response[self.llm_chain.output_key]
 
+    @override
     async def aplan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],

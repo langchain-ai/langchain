@@ -66,7 +66,7 @@ All out of scope targets defined by huntr as well as:
     for more details, but generally tools interact with the real world. Developers are
     expected to understand the security implications of their code and are responsible
     for the security of their tools.
-- Code documented with security notices. This will be decided done on a case by
+- Code documented with security notices. This will be decided on a case by
   case basis, but likely will not be eligible for a bounty as the code is already
   documented with guidelines for developers that should be followed for making their
   application secure.

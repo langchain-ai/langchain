@@ -15,7 +15,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils.json import parse_and_check_json_markdown
 from pydantic import model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
@@ -102,7 +102,7 @@ class LLMRouterChain(RouterChain):
     """LLM chain used to perform routing"""
 
     @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    def _validate_prompt(self) -> Self:
         prompt = self.llm_chain.prompt
         if prompt.output_parser is None:
             msg = (
@@ -172,6 +172,7 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
     next_inputs_type: type = str
     next_inputs_inner_key: str = "input"
 
+    @override
     def parse(self, text: str) -> dict[str, Any]:
         try:
             expected_keys = ["destination", "next_inputs"]

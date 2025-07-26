@@ -3,6 +3,7 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -10,6 +11,7 @@ from langchain.agents.agent import AgentOutputParser
 class ReActOutputParser(AgentOutputParser):
     """Output parser for the ReAct agent."""
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         action_prefix = "Action: "
         if not text.strip().split("\n")[-1].startswith(action_prefix):
