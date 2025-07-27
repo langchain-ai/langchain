@@ -6,6 +6,7 @@ from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 
 def _get_similarity_function() -> Callable:
@@ -50,6 +51,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             raise ValueError(msg)
         return values
 
+    @override
     def compress_documents(
         self,
         documents: Sequence[Document],
@@ -93,6 +95,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             stateful_documents[i].state["query_similarity_score"] = similarity[i]
         return [stateful_documents[i] for i in included_idxs]
 
+    @override
     async def acompress_documents(
         self,
         documents: Sequence[Document],

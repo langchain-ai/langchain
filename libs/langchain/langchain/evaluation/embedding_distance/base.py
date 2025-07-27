@@ -331,6 +331,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """
         return ["prediction", "reference"]
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -355,6 +356,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -382,6 +384,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -416,6 +419,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -478,6 +482,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Return the evaluation name."""
         return f"pairwise_embedding_{self.distance_metric.value}_distance"
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -505,6 +510,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -532,6 +538,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -567,6 +574,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,

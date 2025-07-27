@@ -11,7 +11,7 @@ try:
     from lark import Lark, Transformer, v_args
 except ImportError:
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+    def v_args(*_: Any, **__: Any) -> Any:  # type: ignore[misc]
         """Dummy decorator for when lark is not installed."""
         return lambda _: None
 

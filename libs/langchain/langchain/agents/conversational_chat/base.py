@@ -20,6 +20,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser
@@ -42,6 +43,7 @@ class ConversationalChatAgent(Agent):
     """Template for the tool response."""
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ConvoOutputParser()
 
