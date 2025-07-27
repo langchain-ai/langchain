@@ -229,7 +229,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         docs: list[Document],
         results: Sequence[Union[str, list[str], dict[str, str]]],
     ) -> tuple[str, dict]:
-        typed_results = cast(list[dict], results)
+        typed_results = cast("list[dict]", results)
         sorted_res = sorted(
             zip(typed_results, docs),
             key=lambda x: -int(x[0][self.rank_key]),

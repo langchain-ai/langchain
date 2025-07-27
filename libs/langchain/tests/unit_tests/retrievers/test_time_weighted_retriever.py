@@ -8,6 +8,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import override
 
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
@@ -31,6 +32,7 @@ def _get_example_memories(k: int = 4) -> list[Document]:
 class MockVectorStore(VectorStore):
     """Mock invalid vector store."""
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
@@ -39,6 +41,7 @@ class MockVectorStore(VectorStore):
     ) -> list[str]:
         return list(texts)
 
+    @override
     def similarity_search(
         self,
         query: str,
@@ -48,6 +51,7 @@ class MockVectorStore(VectorStore):
         return []
 
     @classmethod
+    @override
     def from_texts(
         cls: type["MockVectorStore"],
         texts: list[str],
@@ -57,6 +61,7 @@ class MockVectorStore(VectorStore):
     ) -> "MockVectorStore":
         return cls()
 
+    @override
     def _similarity_search_with_relevance_scores(
         self,
         query: str,

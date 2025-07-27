@@ -71,6 +71,7 @@ class StructuredChatAgent(Agent):
         pass
 
     @classmethod
+    @override
     def _get_default_output_parser(
         cls,
         llm: Optional[BaseLanguageModel] = None,

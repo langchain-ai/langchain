@@ -364,7 +364,7 @@ def test_agent_iterator_failing_tool() -> None:
     tools = [
         Tool(
             name="FailingTool",
-            func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
+            func=lambda _: 1 / 0,  # This tool will raise a ZeroDivisionError
             description="A tool that fails",
         ),
     ]

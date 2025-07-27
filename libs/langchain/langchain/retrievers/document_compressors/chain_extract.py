@@ -82,7 +82,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(output) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=cast(str, output), metadata=doc.metadata),
+                Document(page_content=cast("str", output), metadata=doc.metadata),
             )
         return compressed_docs
 
@@ -110,7 +110,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-        llm_chain_kwargs: Optional[dict] = None,
+        llm_chain_kwargs: Optional[dict] = None,  # noqa: ARG003
     ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
