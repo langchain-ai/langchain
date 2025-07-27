@@ -159,7 +159,6 @@ ignore = [
 
     # TODO rules
     "ANN401",
-    "ARG",
     "BLE",
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
@@ -169,8 +168,6 @@ ignore = [
     "ERA",
     "N",
     "PLC0415", # pylint: import-outside-top-level
-    "PT",
-    "TC",
     "TRY301",  # tryceratops: raise-within-try
 ]
 unfixable = [
