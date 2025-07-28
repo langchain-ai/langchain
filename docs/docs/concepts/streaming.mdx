@@ -119,7 +119,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic
 
-model = ChatAnthropic(model="claude-3-sonnet-20240229")
+model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
 
 prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
 parser = StrOutputParser()
