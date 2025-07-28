@@ -89,7 +89,6 @@ help:
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'test                         - run unit tests'
-	@echo 'tests                        - run unit tests (alias for "make test")'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
