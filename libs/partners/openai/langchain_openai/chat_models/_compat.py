@@ -63,7 +63,7 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 ``"v1"`` represents LangChain's cross-provider standard format.
 
 For backwards compatibility, this module provides functions to convert between the
-old and new formats. The functions are used internally by ChatOpenAI.
+formats. The functions are used internally by ChatOpenAI.
 
 """  # noqa: E501
 
@@ -80,7 +80,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 def _convert_to_v03_ai_message(
     message: AIMessage, has_reasoning: bool = False
 ) -> AIMessage:
-    """Mutate an AIMessageV1 to the old-style v0.3 format."""
+    """Mutate an AIMessage to the old-style v0.3 format."""
     if isinstance(message.content, list):
         new_content: list[  # Match signature of v0.3 AIMessage content
             Union[dict, str]
@@ -151,9 +151,7 @@ def _convert_to_v03_ai_message(
     return message
 
 
-def _convert_from_v03_ai_message(
-    message: AIMessage,
-) -> AIMessage:  # this should be AIMessageV1?
+def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert an old-style v0.3 AIMessage into the new content-block format."""
     # Only update ChatOpenAI v0.3 AIMessages
     # TODO: structure provenance into AIMessage

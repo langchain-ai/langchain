@@ -553,7 +553,7 @@ class BaseChatOpenAI(BaseChatModel):
         invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -561,19 +561,19 @@ class BaseChatOpenAI(BaseChatModel):
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
     providers.
-    
+
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
-    
+
     Examples:
         - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
         - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
         - Any other provider-specific parameters
-        
+
     .. note::
-    
+
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
-        standard OpenAI API, as this will cause errors when making API calls. Use 
+        standard OpenAI API, as this will cause errors when making API calls. Use
         ``extra_body`` instead.
     """
 
@@ -586,9 +586,9 @@ class BaseChatOpenAI(BaseChatModel):
     Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
-    
+
     For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed
     in.
 
     If a parameter is disabled then it will not be used by default in any methods, e.g.
