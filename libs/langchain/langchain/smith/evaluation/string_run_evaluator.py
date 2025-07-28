@@ -16,6 +16,7 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.messages import BaseMessage, get_buffer_string, messages_from_dict
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
@@ -70,6 +71,15 @@ class LLMStringRunMapper(StringRunMapper):
         raise ValueError(msg)
 
     def serialize_inputs(self, inputs: dict) -> str:
+        """Serialize inputs.
+
+        Args:
+            inputs: The inputs from the run, expected to contain prompts or messages.
+        Returns:
+            The serialized input text from the prompts or messages.
+        Raises:
+            ValueError: If neither prompts nor messages are found in the inputs.
+        """
         if "prompts" in inputs:  # Should we even accept this?
             input_ = "\n\n".join(inputs["prompts"])
         elif "prompt" in inputs:
@@ -82,6 +92,18 @@ class LLMStringRunMapper(StringRunMapper):
         return input_
 
     def serialize_outputs(self, outputs: dict) -> str:
+        """Serialize outputs.
+
+        Args:
+            outputs: The outputs from the run, expected to contain generations.
+
+        Returns:
+            The serialized output text from the first generation.
+
+        Raises:
+            ValueError: If no generations are found in the outputs,
+            or if the generations are empty.
+        """
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
             raise ValueError(msg)
@@ -185,6 +207,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
+    @override
     def map(self, run: Run) -> dict[str, str]:
         if not run.outputs:
             msg = f"Run {run.id} has no outputs to evaluate."
@@ -256,10 +279,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     """The evaluation chain."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return ["run", "example"]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["feedback"]
 
@@ -330,6 +355,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
         return feedback
 
+    @override
     def evaluate_run(
         self,
         run: Run,
@@ -347,6 +373,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 # TODO: Add run ID once we can declare it via callbacks
             )
 
+    @override
     async def aevaluate_run(
         self,
         run: Run,

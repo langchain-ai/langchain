@@ -63,7 +63,8 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 ``"v1"`` represents LangChain's cross-provider standard format.
 
 For backwards compatibility, this module provides functions to convert between the
-formats. The functions are used internally by ChatOpenAI.
+old and new formats. The functions are used internally by ChatOpenAI.
+
 """  # noqa: E501
 
 import json
@@ -223,7 +224,7 @@ def _convert_from_v03_ai_message(
         function_call = {
             "type": "function_call",
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             "call_id": tool_call["id"],
         }
         if function_call_ids is not None and (

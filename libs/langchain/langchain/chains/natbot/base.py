@@ -47,6 +47,7 @@ class NatBotChain(Chain):
 
             from langchain.chains import NatBotChain
             natbot = NatBotChain.from_default("Buy me a new hat.")
+
     """
 
     llm_chain: Runnable
@@ -66,7 +67,7 @@ class NatBotChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
@@ -151,6 +152,7 @@ class NatBotChain(Chain):
 
                 browser_content = "...."
                 llm_command = natbot.run("www.google.com", browser_content)
+
         """
         _inputs = {
             self.input_url_key: url,
