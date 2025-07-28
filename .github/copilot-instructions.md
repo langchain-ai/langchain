@@ -239,7 +239,7 @@ uv lock
 
 ```bash
 # Run unit tests (no network)
-make test
+make unit_test
 
 # Don't run integration tests, as API keys must be set
 
