@@ -69,7 +69,7 @@ formats. The functions are used internally by ChatOpenAI.
 import copy
 import json
 from collections.abc import Iterable, Iterator
-from typing import Any, Literal, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
 from langchain_core.messages import content_blocks as types
@@ -318,17 +318,18 @@ def _convert_annotation_to_v1(annotation: dict[str, Any]) -> dict[str, Any]:
         for field in ("end_index", "start_index", "title"):
             if field in annotation:
                 url_citation[field] = annotation[field]
-        url_citation["type"] = "url_citation"
+        url_citation["type"] = "citation"
         url_citation["url"] = annotation["url"]
         return url_citation
 
     elif annotation_type == "file_citation":
-        document_citation = {"type": "document_citation"}
+        document_citation = {"type": "citation"}
         if "filename" in annotation:
             document_citation["title"] = annotation["filename"]
-        for field in ("file_id", "index"):  # OpenAI-specific
-            if field in annotation:
-                document_citation[field] = annotation[field]
+        if "file_id" in annotation:
+            document_citation["file_id"] = annotation["file_id"]
+        if "index" in annotation:
+            document_citation["file_index"] = annotation["index"]
         return document_citation
 
     # TODO: standardise container_file_citation?
@@ -368,6 +369,8 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[dict[str, Any]]:
 
 def _convert_to_v1_from_responses(
     content: list[dict[str, Any]],
+    tool_calls: Optional[list[types.ToolCall]] = None,
+    invalid_tool_calls: Optional[list[types.InvalidToolCall]] = None,
 ) -> list[types.ContentBlock]:
     """Mutate a Responses message to v1 format."""
 
@@ -408,13 +411,24 @@ def _convert_to_v1_from_responses(
                 yield new_block
 
             elif block_type == "function_call":
-                new_block = {"type": "tool_call", "id": block.get("call_id", "")}
-                if "id" in block:
-                    new_block["item_id"] = block["id"]
-                for extra_key in ("arguments", "name", "index"):
-                    if extra_key in block:
-                        new_block[extra_key] = block[extra_key]
-                yield new_block
+                new_block = None
+                call_id = block.get("call_id", "")
+                if call_id:
+                    for tool_call in tool_calls or []:
+                        if tool_call.get("id") == call_id:
+                            new_block = tool_call.copy()
+                            break
+                    else:
+                        for invalid_tool_call in invalid_tool_calls or []:
+                            if invalid_tool_call.get("id") == call_id:
+                                new_block = invalid_tool_call.copy()
+                                break
+                if new_block:
+                    if "id" in block:
+                        new_block["item_id"] = block["id"]
+                    if "index" in block:
+                        new_block["index"] = block["index"]
+                    yield new_block
 
             elif block_type == "web_search_call":
                 web_search_call = {"type": "web_search_call", "id": block["id"]}
@@ -490,16 +504,16 @@ def _convert_to_v1_from_responses(
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     if annotation["type"] == "citation":
         if "url" in annotation:
-            return dict(annotation)
+            return {**annotation, "type": "url_citation"}
 
         new_ann: dict[str, Any] = {"type": "file_citation"}
 
         if "title" in annotation:
             new_ann["filename"] = annotation["title"]
-
-        for fld in ("file_id", "index"):
-            if fld in annotation:
-                new_ann[fld] = annotation[fld]  # type: ignore[typeddict-item]
+        if "file_id" in annotation:
+            new_ann["file_id"] = annotation["file_id"]
+        if "file_index" in annotation:
+            new_ann["index"] = annotation["file_index"]
 
         return new_ann
 
@@ -525,7 +539,10 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         elif "reasoning" not in block and "summary" not in block:
             # {"type": "reasoning", "id": "rs_..."}
             oai_format = {**block, "summary": []}
+            # Update key order
             oai_format["type"] = oai_format.pop("type", "reasoning")
+            if "encrypted_content" in oai_format:
+                oai_format["encrypted_content"] = oai_format.pop("encrypted_content")
             yield oai_format
             i += 1
             continue
@@ -591,13 +608,11 @@ def _consolidate_calls(
         # If this really is the matching “result” – collapse
         if nxt.get("type") == result_name and nxt.get("id") == current.get("id"):
             if call_name == "web_search_call":
-                collapsed = {
-                    "id": current["id"],
-                    "status": current["status"],
-                    "type": "web_search_call",
-                }
+                collapsed = {"id": current["id"]}
                 if "action" in current:
                     collapsed["action"] = current["action"]
+                collapsed["status"] = current["status"]
+                collapsed["type"] = "web_search_call"
 
             if call_name == "code_interpreter_call":
                 collapsed = {"id": current["id"]}
@@ -652,6 +667,8 @@ def _convert_from_v1_to_responses(
             is_data_content_block(cast(dict, block))
             and block["type"] == "image"
             and "base64" in block
+            and isinstance(block.get("id"), str)
+            and block["id"].startswith("ig_")
         ):
             new_block = {"type": "image_generation_call", "result": block["base64"]}
             for extra_key in ("id", "status"):

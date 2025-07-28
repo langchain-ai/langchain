@@ -186,7 +186,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> MessageV1:
         raise ValueError(error_message)
 
 
-def _format_message_content(content: Any) -> Any:
+def _format_message_content(content: Any, responses_api: bool = False) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
         formatted_content = []
@@ -198,7 +198,11 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking", "reasoning_content")
             ):
                 continue
-            elif isinstance(block, dict) and is_data_content_block(block):
+            elif (
+                isinstance(block, dict)
+                and is_data_content_block(block)
+                and not responses_api
+            ):
                 formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
@@ -231,7 +235,7 @@ def _format_message_content(content: Any) -> Any:
     return formatted_content
 
 
-def _convert_message_to_dict(message: MessageV1) -> dict:
+def _convert_message_to_dict(message: MessageV1, responses_api: bool = False) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -240,7 +244,9 @@ def _convert_message_to_dict(message: MessageV1) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: dict[str, Any] = {"content": _format_message_content(message.content)}
+    message_dict: dict[str, Any] = {
+        "content": _format_message_content(message.content, responses_api=responses_api)
+    }
     if name := message.name:
         message_dict["name"] = name
 
@@ -264,7 +270,11 @@ def _convert_message_to_dict(message: MessageV1) -> dict:
 
         audio: Optional[dict[str, Any]] = None
         for block in message.content:
-            if block.get("type") == "audio" and (id_ := block.get("id")):
+            if (
+                block.get("type") == "audio"
+                and (id_ := block.get("id"))
+                and not responses_api
+            ):
                 # openai doesn't support passing the data back - only the id
                 # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
                 audio = {"id": id_}
@@ -375,7 +385,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class BaseChatOpenAIV1(BaseChatModelV1):
+class BaseChatOpenAI(BaseChatModelV1):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     root_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -582,7 +592,7 @@ class BaseChatOpenAIV1(BaseChatModelV1):
     .. versionadded:: 0.3.9
     """
 
-    output_version: str = "v0"
+    output_version: str = "v1"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -824,7 +834,6 @@ class BaseChatOpenAIV1(BaseChatModelV1):
                     current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
-                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -875,7 +884,6 @@ class BaseChatOpenAIV1(BaseChatModelV1):
                     current_sub_index,
                     schema=original_schema_obj,
                     metadata=metadata,
-                    output_version=self.output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -968,7 +976,7 @@ class BaseChatOpenAIV1(BaseChatModelV1):
                 )
             yield message_chunk
 
-    def _generate(
+    def _invoke(
         self,
         messages: list[MessageV1],
         stop: Optional[list[str]] = None,
@@ -1196,7 +1204,7 @@ class BaseChatOpenAIV1(BaseChatModelV1):
                 )
             yield message_chunk
 
-    async def _agenerate(
+    async def _ainvoke(
         self,
         messages: list[MessageV1],
         stop: Optional[list[str]] = None,
@@ -1810,7 +1818,7 @@ class BaseChatOpenAIV1(BaseChatModelV1):
         )
 
 
-class ChatOpenAI(BaseChatOpenAIV1):  # type: ignore[override]
+class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     """OpenAI chat model integration.
 
     .. dropdown:: Setup
@@ -3288,11 +3296,17 @@ def _construct_responses_api_input(messages: Sequence[MessageV1]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
-        msg = _convert_message_to_dict(lc_msg)
+        msg = _convert_message_to_dict(lc_msg, responses_api=True)
         if isinstance(lc_msg, AIMessageV1):
             msg["content"] = _convert_from_v1_to_responses(
                 msg["content"], lc_msg.tool_calls
             )
+        else:
+            # Get content from non-standard content blocks
+            for i, block in enumerate(msg["content"]):
+                if block.get("type") == "non_standard":
+                    msg["content"][i] = block["value"]
+
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")
@@ -3420,7 +3434,10 @@ def _construct_responses_api_input(messages: Sequence[MessageV1]) -> list:
                         input_.append(block)
                     else:
                         pass
-                msg["content"] = new_blocks
+                if len(new_blocks) == 1 and new_blocks[0]["type"] == "input_text":
+                    msg["content"] = new_blocks[0]["text"]
+                else:
+                    msg["content"] = new_blocks
                 if msg["content"]:
                     input_.append(msg)
             else:
@@ -3603,7 +3620,6 @@ def _convert_responses_chunk_to_generation_chunk(
     current_sub_index: int,  # index of content block in output item
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: str = "v0",
 ) -> tuple[int, int, int, Optional[AIMessageChunkV1]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -3668,29 +3684,18 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        if output_version == "v1":
-            content.append(
-                {
-                    "type": "text",
-                    "text": "",
-                    "annotations": [annotation],
-                    "index": current_index,
-                }
-            )
-        else:
-            content.append({"annotations": [annotation], "index": current_index})
+        content.append(
+            {
+                "type": "text",
+                "text": "",
+                "annotations": [annotation],
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_text.done":
-        if output_version == "v1":
-            content.append(
-                {
-                    "type": "text",
-                    "text": "",
-                    "id": chunk.item_id,
-                    "index": current_index,
-                }
-            )
-        else:
-            content.append({"id": chunk.item_id, "index": current_index})
+        content.append(
+            {"type": "text", "text": "", "id": chunk.item_id, "index": current_index}
+        )
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
@@ -3704,10 +3709,7 @@ def _convert_responses_chunk_to_generation_chunk(
             **{k: v for k, v in msg.response_metadata.items() if k != "id"},  # type: ignore[typeddict-item]
         }
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
-        if output_version == "v0":
-            id = chunk.item.id
-        else:
-            pass
+        pass
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
@@ -3763,29 +3765,12 @@ def _convert_responses_chunk_to_generation_chunk(
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        if output_version in ("v0", "responses/v1"):
-            _advance(chunk.output_index)
-            content.append(
-                {
-                    # langchain-core uses the `index` key to aggregate text blocks.
-                    "summary": [
-                        {
-                            "index": chunk.summary_index,
-                            "type": "summary_text",
-                            "text": "",
-                        }
-                    ],
-                    "index": current_index,
-                    "type": "reasoning",
-                }
-            )
-        else:
-            block: dict = {"type": "reasoning", "reasoning": ""}
-            if chunk.summary_index > 0:
-                _advance(chunk.output_index, chunk.summary_index)
-                block["id"] = chunk.item_id
-            block["index"] = current_index
-            content.append(block)
+        block: dict = {"type": "reasoning", "reasoning": ""}
+        if chunk.summary_index > 0:
+            _advance(chunk.output_index, chunk.summary_index)
+            block["id"] = chunk.item_id
+        block["index"] = current_index
+        content.append(block)
     elif chunk.type == "response.image_generation_call.partial_image":
         # Partial images are not supported yet.
         pass
