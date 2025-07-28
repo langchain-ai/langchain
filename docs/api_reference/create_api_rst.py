@@ -202,6 +202,12 @@ def _load_package_modules(
         if file_path.name.startswith("_"):
             continue
 
+        if "integration_template" in file_path.parts:
+            continue
+
+        if "project_template" in file_path.parts:
+            continue
+
         relative_module_name = file_path.relative_to(package_path)
 
         # Skip if any module part starts with an underscore
@@ -495,16 +501,7 @@ def _package_namespace(package_name: str) -> str:
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    if package_name in (
-        "langchain",
-        "langchain_v1",
-        "experimental",
-        "community",
-        "core",
-        "cli",
-        "text-splitters",
-        "standard-tests",
-    ):
+    if (ROOT_DIR / "libs" / package_name).exists():
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
         return (
@@ -666,18 +663,12 @@ def main(dirs: Optional[list] = None) -> None:
     print("Starting to build API reference files.")
     if not dirs:
         dirs = [
-            dir_
-            for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "packages.yml")
-            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / dir_)
+            p.parent.name
+            for p in (ROOT_DIR / "libs").rglob("pyproject.toml")
+            # Exclude packages that are not directly under libs/ or libs/partners/
+            if p.parent.parent.name in ("libs", "partners")
         ]
-        dirs += [
-            dir_
-            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
-            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
-            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
-        ]
-    for dir_ in dirs:
+    for dir_ in sorted(dirs):
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
@@ -688,7 +679,7 @@ def main(dirs: Optional[list] = None) -> None:
             print("Building package:", dir_)
             _build_rst_file(package_name=dir_)
 
-    _build_index(dirs)
+    _build_index(sorted(dirs))
     print("API reference files built.")
 
 
