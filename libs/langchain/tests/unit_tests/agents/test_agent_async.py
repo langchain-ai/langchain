@@ -8,6 +8,7 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
+from typing_extensions import override
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -19,6 +20,7 @@ class FakeListLLM(LLM):
     responses: list[str]
     i: int = -1
 
+    @override
     def _call(
         self,
         prompt: str,

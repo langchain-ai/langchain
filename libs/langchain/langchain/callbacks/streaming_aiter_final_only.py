@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from langchain_core.outputs import LLMResult
+from typing_extensions import override
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 
@@ -15,6 +16,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     """
 
     def append_to_last_tokens(self, token: str) -> None:
+        """Append token to the last tokens."""
         self.last_tokens.append(token)
         self.last_tokens_stripped.append(token.strip())
         if len(self.last_tokens) > len(self.answer_prefix_tokens):
@@ -22,6 +24,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
             self.last_tokens_stripped.pop(0)
 
     def check_if_answer_reached(self) -> bool:
+        """Check if the answer has been reached."""
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
         return self.last_tokens == self.answer_prefix_tokens
@@ -60,6 +63,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.stream_prefix = stream_prefix
         self.answer_reached = False
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -70,10 +74,12 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.done.clear()
         self.answer_reached = False
 
+    @override
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         if self.answer_reached:
             self.done.set()
 
+    @override
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)

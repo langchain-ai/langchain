@@ -91,6 +91,7 @@ class BaseChatMessageHistory(ABC):
                 def clear(self):
                     with open(os.path.join(storage_path, session_id), "w") as f:
                         f.write("[]")
+
     """
 
     messages: list[BaseMessage]
