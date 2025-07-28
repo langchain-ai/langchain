@@ -9,7 +9,7 @@
 	"service": "langchain",
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
-	"workspaceFolder": "/workspaces/langchain",
+	"workspaceFolder": "/workspace",
 	// Prevent the container from shutting down
 	"overrideCommand": true,
 	// Features to add to the dev container. More info: https://containers.dev/features
