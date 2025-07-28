@@ -1,0 +1,93 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "langchain-cohere"
+version = "0.4.4"
+description = "An integration package connecting Cohere and LangChain"
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "langchain-core>=0.3.27",
+    "cohere>=5.12.0,<6.0",
+    "langchain-community>=0.3.0",
+    "pydantic>=2,<3",
+]
+authors = [
+    {name = "LangChain", email = "hello@langchain.com"}
+]
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain-cohere"
+"Homepage" = "https://github.com/langchain-ai/langchain-cohere"
+
+[tool.poetry]
+name = "langchain-cohere"
+version = "0.4.4"
+description = "An integration package connecting Cohere and LangChain"
+authors = []
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain-cohere"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain-cohere"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.27"
+cohere = ">=5.12.0,<6.0"
+langchain-community = { version = "^0.3.0"}
+pydantic = ">=2,<3"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.2"
+freezegun = "^1.2.2"
+pytest-mock = "^3.10.0"
+syrupy = "^4.0.2"
+pytest-watcher = "^0.3.4"
+pytest-asyncio = "^0.21.1"
+langchain-tests = "0.3.1"
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.5"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^0.991"
+
+[tool.ruff]
+select = [
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
+]
+
+fixable = ["ALL"]
+
+[tool.mypy]
+disallow_untyped_defs = true
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+markers = [
+  "requires: mark tests as requiring a specific library",
+  "asyncio: mark tests as requiring asyncio",
+  "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
