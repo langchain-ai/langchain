@@ -13,6 +13,7 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
     Tokenizer,
+    TokenTextSplitter
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
@@ -3666,3 +3667,40 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+def test_token_splitter_create_documents() -> None:
+    splitter = TokenTextSplitter(
+        add_start_index=True, 
+        chunk_size=10, 
+        chunk_overlap=5
+    )
+    text="""
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, 
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    """
+    docs = splitter.create_documents([text])
+    for doc in docs:
+        s_i = doc.metadata["start_index"]
+        assert text[s_i : s_i + len(doc.page_content)] == doc.page_content
+
+def test_token_splitter_create_documents_repeat_text() -> None:
+    splitter = TokenTextSplitter(
+        add_start_index=True, 
+        chunk_size=10, 
+        chunk_overlap=5
+    )
+    text="""
+    "the quick brown fox jumped over the lazy fox
+    the quick brown fox jumped over the lazy fox
+    the quick brown fox jumped over the lazy fox
+    the quick brown fox jumped over the lazy fox
+    the quick brown fox jumped over the lazy fox"
+    """
+    docs = splitter.create_documents([text])
+    for doc in docs:
+        s_i = doc.metadata["start_index"]
+        assert text[s_i : s_i + len(doc.page_content)] == doc.page_content
+

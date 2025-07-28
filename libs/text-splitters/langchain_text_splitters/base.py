@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import copy
 import logging
@@ -74,6 +75,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
     ) -> list[Document]:
         """Create documents from a list of texts."""
+        if isinstance(self,TokenTextSplitter):
+            return self.token_create_documents(texts,metadatas)
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
@@ -284,6 +287,30 @@ class TokenTextSplitter(TextSplitter):
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
+    
+    def create_documents(
+    self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+) -> list[Document]:
+        """Override to create documents from a list of tokens."""
+        _metadatas = metadatas or [{}] * len(texts)
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = _metadatas[i]
+            input_ids = self._tokenizer.encode(text)
+            start_idx = 0
+            char_index = 0
+            while start_idx < len(input_ids):
+                end_idx = min(start_idx + self._chunk_size, len(input_ids)) 
+                chunk_ids = input_ids[start_idx:end_idx] 
+                chunk_text = self._tokenizer.decode(chunk_ids)
+                if self._add_start_index:
+                    char_index = text.find(chunk_text, char_index)
+                    metadata["start_index"] = char_index
+                documents.append(Document(page_content=chunk_text,metadata=metadata))       
+                if end_idx == len(input_ids):
+                    break
+                start_idx += self._chunk_size - self._chunk_overlap
+        return documents
     
 class Language(str, Enum):
     """Enum of the programming languages."""
