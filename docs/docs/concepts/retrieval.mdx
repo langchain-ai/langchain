@@ -10,28 +10,28 @@
 :::
 
 :::danger[Security]
- 
+
 Some of the concepts reviewed here utilize models to generate queries (e.g., for SQL or graph databases).
-There are inherent risks in doing this. 
-Make sure that your database connection permissions are scoped as narrowly as possible for your application's needs. 
-This will mitigate, though not eliminate, the risks of building a model-driven system capable of querying databases. 
+There are inherent risks in doing this.
+Make sure that your database connection permissions are scoped as narrowly as possible for your application's needs.
+This will mitigate, though not eliminate, the risks of building a model-driven system capable of querying databases.
 For more on general security best practices, see our [security guide](/docs/security/).
 
 :::
 
-## Overview 
+## Overview
 
-Retrieval systems are fundamental to many AI applications, efficiently identifying relevant information from large datasets. 
+Retrieval systems are fundamental to many AI applications, efficiently identifying relevant information from large datasets.
 These systems accommodate various data formats:
 
 - Unstructured text (e.g., documents) is often stored in vector stores or lexical search indexes.
 - Structured data is typically housed in relational or graph databases with defined schemas.
 
-Despite the growing diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces. 
-Models play a crucial role in this process by translating natural language queries into formats compatible with the underlying search index or database. 
+Despite the growing diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces.
+Models play a crucial role in this process by translating natural language queries into formats compatible with the underlying search index or database.
 This translation enables more intuitive and flexible interactions with complex data structures.
 
-## Key concepts 
+## Key concepts
 
 ![Retrieval](/img/retrieval_concept.png)
 
@@ -39,20 +39,20 @@ This translation enables more intuitive and flexible interactions with complex d
 
 (2) **Information retrieval**: Search queries are used to fetch information from various retrieval systems.
 
-## Query analysis 
+## Query analysis
 
-While users typically prefer to interact with retrieval systems using natural language, these systems may require specific query syntax or benefit from certain keywords. 
+While users typically prefer to interact with retrieval systems using natural language, these systems may require specific query syntax or benefit from certain keywords.
 Query analysis serves as a bridge between raw user input and optimized search queries. Some common applications of query analysis include:
 
 1. **Query Re-writing**: Queries can be re-written or expanded to improve semantic or lexical searches.
 2. **Query Construction**: Search indexes may require structured queries (e.g., SQL for databases).
 
-Query analysis employs models to transform or construct optimized search queries from raw user input. 
+Query analysis employs models to transform or construct optimized search queries from raw user input.
 
 ### Query re-writing
 
-Retrieval systems should ideally handle a wide spectrum of user inputs, from simple and poorly worded queries to complex, multi-faceted questions. 
-To achieve this versatility, a popular approach is to use models to transform raw user queries into more effective search queries. 
+Retrieval systems should ideally handle a wide spectrum of user inputs, from simple and poorly worded queries to complex, multi-faceted questions.
+To achieve this versatility, a popular approach is to use models to transform raw user queries into more effective search queries.
 This transformation can range from simple keyword extraction to sophisticated query expansion and reformulation.
 Here are some key benefits of using models for query analysis in unstructured data retrieval:
 
@@ -87,7 +87,7 @@ class Questions(BaseModel):
     )
 
 # Create an instance of the model and enforce the output structure
-model = ChatOpenAI(model="gpt-4o", temperature=0) 
+model = ChatOpenAI(model="gpt-4o", temperature=0)
 structured_model = model.with_structured_output(Questions)
 
 # Define the system prompt
@@ -111,7 +111,7 @@ See our RAG from Scratch videos for a few different specific approaches:
 
 ### Query construction
 
-Query analysis also can focus on translating natural language queries into specialized query languages or filters. 
+Query analysis also can focus on translating natural language queries into specialized query languages or filters.
 This translation is crucial for effectively interacting with various types of databases that house structured or semi-structured data.
 
 1. **Structured Data examples**: For relational and graph databases, Domain-Specific Languages (DSLs) are used to query data.
@@ -129,10 +129,10 @@ These approaches leverage models to bridge the gap between user intent and the s
 | [Text to SQL](/docs/tutorials/sql_qa/)   | If users are asking questions that require information housed in a relational database, accessible via SQL.                          | This uses an LLM to transform user input into a SQL query.                                                                                                                                                                                           |
 | [Text-to-Cypher](/docs/tutorials/graph/) | If users are asking questions that require information housed in a graph database, accessible via Cypher.                            | This uses an LLM to transform user input into a Cypher query.                                                                                                                                                                                        |
 
-As an example, here is how to use the `SelfQueryRetriever` to convert natural language queries into metadata filters.  
+As an example, here is how to use the `SelfQueryRetriever` to convert natural language queries into metadata filters.
 
 ```python
-metadata_field_info = schema_for_metadata 
+metadata_field_info = schema_for_metadata
 document_content_description = "Brief summary of a movie"
 llm = ChatOpenAI(temperature=0)
 retriever = SelfQueryRetriever.from_llm(
@@ -149,20 +149,20 @@ retriever = SelfQueryRetriever.from_llm(
 * See our [blog post overview](https://blog.langchain.dev/query-construction/).
 * See our RAG from Scratch video on [query construction](https://youtu.be/kl6NwWYxvbM?feature=shared).
 
-::: 
+:::
 
-## Information retrieval 
+## Information retrieval
 
 ### Common retrieval systems
 
 #### Lexical search indexes
 
-Many search engines are based upon matching words in a query to the words in each document. 
+Many search engines are based upon matching words in a query to the words in each document.
 This approach is called lexical retrieval, using search [algorithms that are typically based upon word frequencies](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
 The intution is simple: a word appears frequently both in the user’s query and a particular document, then this document might be a good match.
 
 The particular data structure used to implement this is often an [*inverted index*](https://www.geeksforgeeks.org/inverted-index/).
-This types of index contains a list of words and a mapping of each word to a list of locations at which it occurs in various documents. 
+This types of index contains a list of words and a mapping of each word to a list of locations at which it occurs in various documents.
 Using this data structure, it is possible to efficiently match the words in search queries to the documents in which they appear.
 [BM25](https://en.wikipedia.org/wiki/Okapi_BM25#:~:text=BM25%20is%20a%20bag%2Dof,slightly%20different%20components%20and%20parameters.) and [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
 
@@ -171,13 +171,13 @@ Using this data structure, it is possible to efficiently match the words in sear
 * See the [BM25](/docs/integrations/retrievers/bm25/) retriever integration.
 * See the [Elasticsearch](/docs/integrations/retrievers/elasticsearch_retriever/) retriever integration.
 
-::: 
+:::
 
 #### Vector indexes
 
 Vector indexes are an alternative way to index and store unstructured data.
-See our conceptual guide on [vectorstores](/docs/concepts/vectorstores/) for a detailed overview.  
-In short, rather than using word frequencies, vectorstores use an [embedding model](/docs/concepts/embedding_models/) to compress documents into high-dimensional vector representation. 
+See our conceptual guide on [vectorstores](/docs/concepts/vectorstores/) for a detailed overview.
+In short, rather than using word frequencies, vectorstores use an [embedding model](/docs/concepts/embedding_models/) to compress documents into high-dimensional vector representation.
 This allows for efficient similarity search over embedding vectors using simple mathematical operations like cosine similarity.
 
 :::info[Further reading]
@@ -190,9 +190,9 @@ This allows for efficient similarity search over embedding vectors using simple 
 
 #### Relational databases
 
-Relational databases are a fundamental type of structured data storage used in many applications. 
-They organize data into tables with predefined schemas, where each table represents an entity or relationship. 
-Data is stored in rows (records) and columns (attributes), allowing for efficient querying and manipulation through SQL (Structured Query Language). 
+Relational databases are a fundamental type of structured data storage used in many applications.
+They organize data into tables with predefined schemas, where each table represents an entity or relationship.
+Data is stored in rows (records) and columns (attributes), allowing for efficient querying and manipulation through SQL (Structured Query Language).
 Relational databases excel at maintaining data integrity, supporting complex queries, and handling relationships between different data entities.
 
 :::info[Further reading]
@@ -204,8 +204,8 @@ Relational databases excel at maintaining data integrity, supporting complex que
 
 #### Graph databases
 
-Graph databases are a specialized type of database designed to store and manage highly interconnected data. 
-Unlike traditional relational databases, graph databases use a flexible structure consisting of nodes (entities), edges (relationships), and properties. 
+Graph databases are a specialized type of database designed to store and manage highly interconnected data.
+Unlike traditional relational databases, graph databases use a flexible structure consisting of nodes (entities), edges (relationships), and properties.
 This structure allows for efficient representation and querying of complex, interconnected data.
 Graph databases store data in a graph structure, with nodes, edges, and properties.
 They are particularly useful for storing and querying complex relationships between data points, such as social networks, supply-chain management, fraud detection, and recommendation services
@@ -213,12 +213,12 @@ They are particularly useful for storing and querying complex relationships betw
 :::info[Further reading]
 
 * See our [tutorial](/docs/tutorials/graph/) for working with graph databases.
-* See our [list of graph database integrations](/docs/integrations/graphs/). 
+* See our [list of graph database integrations](/docs/integrations/graphs/).
 * See Neo4j's [starter kit for LangChain](https://neo4j.com/developer-blog/langchain-neo4j-starter-kit/).
 
 :::
 
-### Retriever  
+### Retriever
 
 LangChain provides a unified interface for interacting with various retrieval systems through the [retriever](/docs/concepts/retrievers/) concept. The interface is straightforward:
 
