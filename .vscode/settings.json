@@ -1,0 +1,88 @@
+{
+  // Python Configuration
+  "python.analysis.include": [
+    "libs/**",
+    "docs/**",
+    "cookbook/**"
+  ],
+  "python.analysis.exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.*",
+    "_dist/**",
+    "docs/_build/**",
+    "docs/api_reference/_build/**"
+  ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.testing.cwd": "${workspaceFolder}",
+  // Linting and Formatting (using ruff)
+  "python.linting.enabled": true,
+  "python.linting.ruffEnabled": true,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  // Editor Configuration
+  "editor.rulers": [
+    88
+  ],
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.trimAutoWhitespace": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  // File Exclusions
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/*.pyc": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "_dist/**": true,
+    "docs/_build/**": true,
+    "docs/api_reference/_build/**": true,
+    "**/node_modules": true,
+    "**/.git": false
+  },
+  // Search Configuration
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "_dist/**": true,
+    "docs/_build/**": true,
+    "docs/api_reference/_build/**": true,
+    "**/node_modules": true,
+    "**/.git": true,
+    "uv.lock": true,
+    "yarn.lock": true
+  },
+  // Git Configuration
+  "git.autofetch": true,
+  "git.enableSmartCommit": true,
+  // Jupyter Configuration
+  "jupyter.askForKernelRestart": false,
+  "jupyter.interactiveWindow.textEditor.executeSelection": true,
+  // Language-specific settings
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+}
