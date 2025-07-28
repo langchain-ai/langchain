@@ -1,5 +1,5 @@
 name: '⏰ Scheduled Integration Tests'
-run-name: 'Run Integration Tests'
+run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.9,3.11' }})"
 
 on:
   workflow_dispatch:  # Allows maintainers to trigger the workflow manually in GitHub UI
