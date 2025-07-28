@@ -706,6 +706,7 @@ ToolContentBlock = Union[
 ContentBlock = Union[
     TextContentBlock,
     ToolCall,
+    InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,
     DataContentBlock,
