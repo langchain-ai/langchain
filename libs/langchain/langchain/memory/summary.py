@@ -9,6 +9,7 @@ from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_strin
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils import pre_init
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -133,6 +134,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:

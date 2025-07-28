@@ -311,6 +311,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
+
         """
         history_chain: Runnable = RunnableLambda(
             self._enter_history, self._aenter_history
