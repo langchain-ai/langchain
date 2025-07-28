@@ -1,3 +1,4 @@
+import copy
 import re
 from collections.abc import Sequence
 from typing import Optional
@@ -128,7 +129,10 @@ def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
                     and _is_openai_data_block(block)
                 ):
                     if formatted_message is message:
-                        formatted_message = message.model_copy()
+                        if isinstance(message, BaseMessage):
+                            formatted_message = message.model_copy()
+                        else:
+                            formatted_message = copy.copy(message)
                         # Also shallow-copy content
                         formatted_message.content = list(formatted_message.content)
 
