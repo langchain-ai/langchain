@@ -122,13 +122,17 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """  # noqa: E501
 
     model: str
     """Model name to use."""
 
     validate_model_on_init: bool = False
-    """Whether to validate the model exists in ollama locally on initialization."""
+    """Whether to validate the model exists in ollama locally on initialization.
+
+    .. versionadded:: 0.3.4
+    """
 
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
@@ -296,7 +300,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             raise ValueError(msg)
         return (
             await self._async_client.embed(
-                self.model, texts, keep_alive=self.keep_alive
+                self.model,
+                texts,
+                options=self._default_params,
+                keep_alive=self.keep_alive,
             )
         )["embeddings"]
 

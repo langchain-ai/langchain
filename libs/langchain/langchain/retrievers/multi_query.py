@@ -14,6 +14,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 class LineListOutputParser(BaseOutputParser[list[str]]):
     """Output parser for a list of lines."""
 
+    @override
     def parse(self, text: str) -> list[str]:
         lines = text.strip().split("\n")
         return list(filter(None, lines))  # Remove empty lines
@@ -65,7 +67,7 @@ class MultiQueryRetriever(BaseRetriever):
         retriever: BaseRetriever,
         llm: BaseLanguageModel,
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
-        parser_key: Optional[str] = None,
+        parser_key: Optional[str] = None,  # noqa: ARG003
         include_original: bool = False,  # noqa: FBT001,FBT002
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
@@ -128,7 +130,7 @@ class MultiQueryRetriever(BaseRetriever):
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
-            logger.info(f"Generated queries: {lines}")
+            logger.info("Generated queries: %s", lines)
         return lines
 
     async def aretrieve_documents(
@@ -194,7 +196,7 @@ class MultiQueryRetriever(BaseRetriever):
         )
         lines = response["text"] if isinstance(self.llm_chain, LLMChain) else response
         if self.verbose:
-            logger.info(f"Generated queries: {lines}")
+            logger.info("Generated queries: %s", lines)
         return lines
 
     def retrieve_documents(

@@ -12,8 +12,8 @@ Beyond the architecture, our software is designed to empower developers like you
 
 Want more Groq? Check out our [website](https://groq.com) for more resources and join our [Discord community](https://discord.gg/JvNsBDKeCG) to connect with our developers!
 
-
 ## Installation and Setup
+
 Install the integration package:
 
 ```bash
@@ -27,6 +27,7 @@ export GROQ_API_KEY=gsk_...
 ```
 
 ## Chat Model
+
 See a [usage example](https://python.langchain.com/docs/integrations/chat/groq).
 
 ## Development

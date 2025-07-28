@@ -141,11 +141,11 @@ def test_valid_action_and_answer_raises_exception() -> None:
 def test_from_chains() -> None:
     """Test initializing from chains."""
     chain_configs = [
-        Tool(name="foo", func=lambda x: "foo", description="foobar1"),
-        Tool(name="bar", func=lambda x: "bar", description="foobar2"),
+        Tool(name="foo", func=lambda _x: "foo", description="foobar1"),
+        Tool(name="bar", func=lambda _x: "bar", description="foobar2"),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
-    expected_tools_prompt = "foo(x) - foobar1\nbar(x) - foobar2"
+    expected_tools_prompt = "foo(_x) - foobar1\nbar(_x) - foobar2"
     expected_tool_names = "foo, bar"
     expected_template = "\n\n".join(
         [

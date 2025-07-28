@@ -44,7 +44,7 @@ from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -63,6 +63,7 @@ from langchain_openai.chat_models.base import (
     _create_usage_metadata_responses,
     _format_message_content,
     _get_last_messages,
+    _make_computer_call_output_from_message,
     _oai_structured_outputs_parser,
 )
 
@@ -2454,3 +2455,142 @@ def test_get_request_payload_use_previous_response_id() -> None:
     payload = llm._get_request_payload(messages)
     assert "previous_response_id" not in payload
     assert len(payload["input"]) == 1
+
+
+def test_make_computer_call_output_from_message() -> None:
+    # List content
+    tool_message = ToolMessage(
+        content=[
+            {"type": "input_image", "image_url": "data:image/png;base64,<image_data>"}
+        ],
+        tool_call_id="call_abc123",
+        additional_kwargs={"type": "computer_call_output"},
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+    }
+
+    # String content
+    tool_message = ToolMessage(
+        content="data:image/png;base64,<image_data>",
+        tool_call_id="call_abc123",
+        additional_kwargs={"type": "computer_call_output"},
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+    }
+
+    # Safety checks
+    tool_message = ToolMessage(
+        content=[
+            {"type": "input_image", "image_url": "data:image/png;base64,<image_data>"}
+        ],
+        tool_call_id="call_abc123",
+        additional_kwargs={
+            "type": "computer_call_output",
+            "acknowledged_safety_checks": [
+                {
+                    "id": "cu_sc_abc234",
+                    "code": "malicious_instructions",
+                    "message": "Malicious instructions detected.",
+                }
+            ],
+        },
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+        "acknowledged_safety_checks": [
+            {
+                "id": "cu_sc_abc234",
+                "code": "malicious_instructions",
+                "message": "Malicious instructions detected.",
+            }
+        ],
+    }
+
+
+def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call
+
+    tool_call = ToolCall(
+        id="call_123",
+        name="create_customer",
+        args={"customer_name": "你好啊集团"},
+        type="tool_call",
+    )
+
+    result = _lc_tool_call_to_openai_tool_call(tool_call)
+
+    assert result["type"] == "function"
+    assert result["id"] == "call_123"
+    assert result["function"]["name"] == "create_customer"
+
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
+def test_extra_body_parameter() -> None:
+    """Test that extra_body parameter is properly included in request payload."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        extra_body={"ttl": 300, "custom_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify extra_body is included in the payload
+    assert "extra_body" in payload
+    assert payload["extra_body"]["ttl"] == 300
+    assert payload["extra_body"]["custom_param"] == "test_value"
+
+
+def test_extra_body_with_model_kwargs() -> None:
+    """Test that extra_body and model_kwargs work together correctly."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        temperature=0.5,
+        extra_body={"ttl": 600},
+        model_kwargs={"custom_non_openai_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify both extra_body and model_kwargs are in payload
+    assert payload["extra_body"]["ttl"] == 600
+    assert payload["custom_non_openai_param"] == "test_value"
+    assert payload["temperature"] == 0.5

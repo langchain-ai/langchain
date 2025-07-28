@@ -199,6 +199,7 @@ class QdrantVectorStore(VectorStore):
                 retrieval_mode=RetrievalMode.HYBRID,
                 sparse_embedding=FastEmbedSparse(),
             )
+
         """
         if validate_embeddings:
             self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
@@ -318,6 +319,7 @@ class QdrantVectorStore(VectorStore):
             from langchain_openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings()
             qdrant = Qdrant.from_texts(texts, embeddings, url="http://localhost:6333")
+
         """
         client_options = {
             "location": location,

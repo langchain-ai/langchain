@@ -15,13 +15,6 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     after parsing them and converting them to a canonical format (i.e., whitespace and key order are normalized).
     It can be customized with alternative distance and canonicalization functions.
 
-    Args:
-        string_distance (Optional[Callable[[str, str], float]]): A callable that computes the distance between two strings.
-            If not provided, a Damerau-Levenshtein distance from the `rapidfuzz` package will be used.
-        canonicalize (Optional[Callable[[Any], Any]]): A callable that converts a parsed JSON object into its canonical string form.
-            If not provided, the default behavior is to serialize the JSON with sorted keys and no extra whitespace.
-        **kwargs (Any): Additional keyword arguments.
-
     Attributes:
         _string_distance (Callable[[str, str], float]): The internal distance computation function.
         _canonicalize (Callable[[Any], Any]): The internal canonicalization function.
@@ -40,8 +33,23 @@ class JsonEditDistanceEvaluator(StringEvaluator):
         self,
         string_distance: Optional[Callable[[str, str], float]] = None,
         canonicalize: Optional[Callable[[Any], Any]] = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
+        """Initialize the JsonEditDistanceEvaluator.
+
+        Args:
+            string_distance: A callable that computes the distance between two strings.
+                If not provided, a Damerau-Levenshtein distance from the `rapidfuzz`
+                package will be used.
+            canonicalize: A callable that converts a parsed JSON object into its
+                canonical string form.
+                If not provided, the default behavior is to serialize the JSON with
+                sorted keys and no extra whitespace.
+
+        Raises:
+            ImportError: If the `rapidfuzz` package is not installed and no
+            `string_distance` function is provided.
+        """
         super().__init__()
         if string_distance is not None:
             self._string_distance = string_distance
@@ -67,14 +75,17 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             )
 
     @property
+    @override
     def requires_input(self) -> bool:
         return False
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return True
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "json_edit_distance"
 

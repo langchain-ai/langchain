@@ -9,6 +9,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -61,6 +62,7 @@ class QAGenerationChain(Chain):
                     split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
                 )
             )
+
     """
 
     llm_chain: LLMChain
@@ -103,10 +105,12 @@ class QAGenerationChain(Chain):
         raise NotImplementedError
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 

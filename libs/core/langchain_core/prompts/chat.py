@@ -35,7 +35,7 @@ from langchain_core.messages import (
     convert_to_messages,
 )
 from langchain_core.messages.base import get_msg_title_repr
-from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
+from langchain_core.prompt_values import ChatPromptValue, ImageURL
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.dict import DictPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
@@ -126,6 +126,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             # -> [
             #     HumanMessage(content="Hello!"),
             # ]
+
     """
 
     variable_name: str
@@ -715,20 +716,20 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """
         return (await self.aformat_prompt(**kwargs)).to_string()
 
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Format prompt. Should return a PromptValue.
+    def format_prompt(self, **kwargs: Any) -> ChatPromptValue:
+        """Format prompt. Should return a ChatPromptValue.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            PromptValue.
+            ChatPromptValue.
         """
         messages = self.format_messages(**kwargs)
         return ChatPromptValue(messages=messages)
 
-    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
-        """Async format prompt. Should return a PromptValue.
+    async def aformat_prompt(self, **kwargs: Any) -> ChatPromptValue:
+        """Async format prompt. Should return a ChatPromptValue.
 
         Args:
             **kwargs: Keyword arguments to use for formatting.
@@ -1164,6 +1165,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Returns:
             a chat prompt template.
+
         """
         return cls(messages, template_format=template_format)
 
@@ -1248,6 +1250,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 template2 = template.partial(user="Lucy", name="R2D2")
 
                 template2.format_messages(input="hello")
+
         """
         prompt_dict = self.__dict__.copy()
         prompt_dict["input_variables"] = list(

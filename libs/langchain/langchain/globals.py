@@ -39,7 +39,7 @@ def set_verbose(
         # have migrated to using `set_verbose()` here.
         langchain.verbose = value
 
-    global _verbose
+    global _verbose  # noqa: PLW0603
     _verbose = value
 
 
@@ -69,7 +69,6 @@ def get_verbose() -> bool:
         # directing them to use `set_verbose()` when they import `langchain.verbose`.
         old_verbose = langchain.verbose
 
-    global _verbose
     return _verbose or old_verbose
 
 
@@ -94,7 +93,7 @@ def set_debug(
         # have migrated to using `set_debug()` here.
         langchain.debug = value
 
-    global _debug
+    global _debug  # noqa: PLW0603
     _debug = value
 
 
@@ -122,7 +121,6 @@ def get_debug() -> bool:
         # directing them to use `set_debug()` when they import `langchain.debug`.
         old_debug = langchain.debug
 
-    global _debug
     return _debug or old_debug
 
 
@@ -147,7 +145,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
         # once all users have migrated to using `set_llm_cache()` here.
         langchain.llm_cache = value
 
-    global _llm_cache
+    global _llm_cache  # noqa: PLW0603
     _llm_cache = value
 
 
@@ -179,5 +177,4 @@ def get_llm_cache() -> "BaseCache":
         # to use `set_llm_cache()` when they import `langchain.llm_cache`.
         old_llm_cache = langchain.llm_cache
 
-    global _llm_cache
     return _llm_cache or old_llm_cache

@@ -16,11 +16,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import run_in_executor
+from typing_extensions import override
 
 
 class FakeChatModel(SimpleChatModel):
     """Fake Chat Model wrapper for testing purposes."""
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -30,6 +32,7 @@ class FakeChatModel(SimpleChatModel):
     ) -> str:
         return "fake response"
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],
@@ -74,6 +77,7 @@ class GenericFakeChatModel(BaseChatModel):
     into message chunks.
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -105,7 +109,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         message = chat_result.generations[0].message
 
@@ -114,7 +118,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         content = message.content
 
@@ -122,7 +126,7 @@ class GenericFakeChatModel(BaseChatModel):
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
             assert isinstance(content, str)
-            content_chunks = cast(list[str], re.split(r"(\s)", content))
+            content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -140,7 +144,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast("list[str]", re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
