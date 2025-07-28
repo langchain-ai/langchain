@@ -1,4 +1,4 @@
-name: Integration docs lint
+name: Integration Docs Lint
 
 on:
   push:

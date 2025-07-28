@@ -547,12 +547,13 @@ class BaseChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
-        http_async_client as well if you'd like a custom client for async invocations.
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+        ``http_async_client`` as well if you'd like a custom client for async
+        invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
-        http_client as well if you'd like a custom client for sync invocations."""
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
@@ -593,8 +594,8 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     service_tier: Optional[str] = None
-    """Latency tier for request. Options are 'auto', 'default', or 'flex'. Relevant
-    for users of OpenAI's scale tier service.
+    """Latency tier for request. Options are ``'auto'``, ``'default'``, or ``'flex'``.
+    Relevant for users of OpenAI's scale tier service.
     """
 
     store: Optional[bool] = None
@@ -605,8 +606,8 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     truncation: Optional[str] = None
-    """Truncation strategy (Responses API). Can be ``"auto"`` or ``"disabled"``
-    (default). If ``"auto"``, model may drop input items from the middle of the
+    """Truncation strategy (Responses API). Can be ``'auto'`` or ``'disabled'``
+    (default). If ``'auto'``, model may drop input items from the middle of the
     message sequence to fit the context window.
 
     .. versionadded:: 0.3.24
@@ -1484,7 +1485,7 @@ class BaseChatOpenAI(BaseChatModel):
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
     ) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+        """Calculate num tokens for ``gpt-3.5-turbo`` and ``gpt-4`` with ``tiktoken`` package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
         image tokens if you are specifying the image as a base64 string, and you must
@@ -1492,14 +1493,13 @@ class BaseChatOpenAI(BaseChatModel):
         as a URL. If these aren't installed image inputs will be ignored in token
         counting.
 
-        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+        `OpenAI reference <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb>`__
 
         Args:
             messages: The message inputs to tokenize.
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
-        """
+        """  # noqa: E501
         # TODO: Count bound tools as part of input.
         if tools is not None:
             warnings.warn(
@@ -2069,13 +2069,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         max_retries: Optional[int]
             Max number of retries.
         api_key: Optional[str]
-            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            var ``OPENAI_ORG_ID``.
 
         See full list of supported init args and their descriptions in the params section.
 
@@ -3782,6 +3782,24 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
     elif output_version == "v1":
         message = _convert_to_v1_from_responses(message)
+        if response.tools and any(
+            tool.type == "image_generation" for tool in response.tools
+        ):
+            # Get mime_time from tool definition and add to image generations
+            # if missing (primarily for tracing purposes).
+            image_generation_call = next(
+                tool for tool in response.tools if tool.type == "image_generation"
+            )
+            if image_generation_call.output_format:
+                mime_type = f"image/{image_generation_call.output_format}"
+                for block in message.content:
+                    # OK to mutate output message
+                    if (
+                        block.get("type") == "image"
+                        and block["source_type"] == "base64"
+                        and "mime_type" not in block
+                    ):
+                        block["mime_type"] = mime_type
     else:
         pass
     return ChatResult(generations=[ChatGeneration(message=message)])
@@ -3860,7 +3878,17 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        content.append({"annotations": [annotation], "index": current_index})
+        if output_version == "v1":
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "annotations": [annotation],
+                    "index": current_index
+                }
+            )
+        else:
+            content.append({"annotations": [annotation], "index": current_index})
     elif chunk.type == "response.output_text.done":
         if output_version == "v1":
             content.append(

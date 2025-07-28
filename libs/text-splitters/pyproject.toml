@@ -61,7 +61,7 @@ ignore_missing_imports = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "PGH003", "T201", "D"]
+select = ["E", "F", "FBT", "I", "UP", "PGH003", "T201", "D"]
 ignore = ["D100",]
 pyupgrade.keep-runtime-typing = true
 

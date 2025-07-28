@@ -112,7 +112,7 @@ class HTMLHeaderTextSplitter:
     def __init__(
         self,
         headers_to_split_on: list[tuple[str, str]],
-        return_each_element: bool = False,
+        return_each_element: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Initialize with headers to split on.
 
@@ -744,7 +744,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             soup (Any): Parsed HTML content using BeautifulSoup.
         """
         if self._allowlist_tags:
-            for tag in soup.find_all(True):
+            for tag in soup.find_all(name=True):
                 if tag.name not in self._allowlist_tags:
                     tag.decompose()
 

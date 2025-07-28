@@ -217,17 +217,17 @@ class ChatOllama(BaseChatModel):
             `supported models <https://ollama.com/search?c=thinking>`__.
 
             - ``True``: Enables reasoning mode. The model's reasoning process will be
-            captured and returned separately in the ``additional_kwargs`` of the
-            response message, under ``reasoning_content``. The main response
-            content will not include the reasoning tags.
+              captured and returned separately in the ``additional_kwargs`` of the
+              response message, under ``reasoning_content``. The main response
+              content will not include the reasoning tags.
             - ``False``: Disables reasoning mode. The model will not perform any reasoning,
-            and the response will not include any reasoning content.
+              and the response will not include any reasoning content.
             - ``None`` (Default): The model will use its default reasoning behavior. Note
-            however, if the model's default behavior *is* to perform reasoning, think tags
-            ()``<think>`` and ``</think>``) will be present within the main response content
-            unless you set ``reasoning`` to ``True``.
+              however, if the model's default behavior *is* to perform reasoning, think tags
+              (``<think>`` and ``</think>``) will be present within the main response content
+              unless you set ``reasoning`` to ``True``.
         temperature: float
-            Sampling temperature. Ranges from 0.0 to 1.0.
+            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         num_predict: Optional[int]
             Max number of tokens to generate.
 
@@ -343,7 +343,6 @@ class ChatOllama(BaseChatModel):
             '{"location": "Pune, India", "time_of_day": "morning"}'
 
     Tool Calling:
-
         .. code-block:: python
 
             from langchain_ollama import ChatOllama
@@ -362,6 +361,48 @@ class ChatOllama(BaseChatModel):
             'args': {'a': 45, 'b': 67},
             'id': '420c3f3b-df10-4188-945f-eb3abdb40622',
             'type': 'tool_call'}]
+
+    Thinking / Reasoning:
+        You can enable reasoning mode for models that support it by setting
+        the ``reasoning`` parameter to ``True`` in either the constructor or
+        the ``invoke``/``stream`` methods. This will enable the model to think
+        through the problem and return the reasoning process separately in the
+        ``additional_kwargs`` of the response message, under ``reasoning_content``.
+
+        If ``reasoning`` is set to ``None``, the model will use its default reasoning
+        behavior, and any reasoning content will *not* be captured under the
+        ``reasoning_content`` key, but will be present within the main response content
+        as think tags (``<think>`` and ``</think>``).
+
+        .. note::
+            This feature is only available for `models that support reasoning <https://ollama.com/search?c=thinking>`__.
+
+        .. code-block:: python
+
+            from langchain_ollama import ChatOllama
+
+            llm = ChatOllama(
+                model = "deepseek-r1:8b",
+                reasoning= True,
+            )
+
+            user_message = HumanMessage(content="how many r in the word strawberry?")
+            messages: List[Any] = [user_message]
+            llm.invoke(messages)
+
+            # or, on an invocation basis:
+
+            llm.invoke(messages, reasoning=True)
+            # or llm.stream(messages, reasoning=True)
+
+            # If not provided, the invocation will default to the ChatOllama reasoning
+            # param provided (None by default).
+
+        .. code-block:: python
+
+            AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
+
+
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
@@ -777,6 +818,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -795,7 +837,7 @@ class ChatOllama(BaseChatModel):
 
                 additional_kwargs = {}
                 if (
-                    self.reasoning
+                    reasoning
                     and "message" in stream_resp
                     and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
@@ -836,6 +878,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 if stream_resp.get("done") is True:
@@ -854,7 +897,7 @@ class ChatOllama(BaseChatModel):
 
                 additional_kwargs = {}
                 if (
-                    self.reasoning
+                    reasoning
                     and "message" in stream_resp
                     and (thinking_content := stream_resp["message"].get("thinking"))
                 ):

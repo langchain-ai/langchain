@@ -1,4 +1,4 @@
-name: Scheduled tests
+name: Scheduled Tests
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
@@ -162,7 +162,7 @@ jobs:
             langchain/libs/partners/google-vertexai \
             langchain/libs/partners/aws
 
-      - name: Ensure the tests did not create any additional files
+      - name: Ensure tests did not create additional files
         working-directory: langchain
         run: |
           set -eu
