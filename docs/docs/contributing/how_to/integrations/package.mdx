@@ -4,7 +4,7 @@ pagination_prev: contributing/how_to/integrations/index
 ---
 # How to implement an integration package
 
-This guide walks through the process of implementing a LangChain integration 
+This guide walks through the process of implementing a LangChain integration
 package.
 
 Integration packages are just Python packages that can be installed with `pip install <your-package>`,
@@ -14,11 +14,11 @@ We will cover:
 
 1. (Optional) How to bootstrap a new integration package
 2. How to implement components, such as [chat models](/docs/concepts/chat_models/) and [vector stores](/docs/concepts/vectorstores/), that adhere
-to the LangChain interface;  
+to the LangChain interface;
 
 ## (Optional) bootstrapping a new integration package
 
-In this section, we will outline 2 options for bootstrapping a new integration package, 
+In this section, we will outline 2 options for bootstrapping a new integration package,
 and you're welcome to use other tools if you prefer!
 
 1. **langchain-cli**: This is a command-line tool that can be used to bootstrap a new integration package with a template for LangChain components and Poetry for dependency management.
@@ -132,7 +132,7 @@ We will also add some `test` dependencies in a separate poetry dependency group.
 you are not using Poetry, we recommend adding these in a way that won't package them
 with your published package, or just installing them separately when you run tests.
 
-`langchain-tests` will provide the [standard tests](../standard_tests) we will use later. 
+`langchain-tests` will provide the [standard tests](../standard_tests) we will use later.
 We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
 
 Note: Replace `<latest_version>` with the latest version of `langchain-tests` below.
@@ -168,8 +168,8 @@ langchain-parrot-link/
 └── README.md
 ```
 
-All of these files should already exist from step 1, except for 
-`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
+All of these files should already exist from step 1, except for
+`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py`
 later, following the [standard tests](../standard_tests) guide.
 
 For `chat_models.py`, simply paste the contents of the chat model implementation
@@ -202,7 +202,7 @@ import CodeBlock from '@theme/CodeBlock';
 <Tabs>
 
     <TabItem value="chat_models" label="Chat models">
-        
+
         Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
         detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
 
@@ -244,7 +244,7 @@ import ChatModelSource from '../../../../src/theme/integration_template/integrat
         base class. This interface consists of methods for writing, deleting and searching
         for documents in the vector store.
 
-        `VectorStore` supports a variety of synchronous and asynchronous search types (e.g., 
+        `VectorStore` supports a variety of synchronous and asynchronous search types (e.g.,
         nearest-neighbor or maximum marginal relevance), as well as interfaces for adding
         documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
         for all supported methods. The required methods are tabulated below:
@@ -331,7 +331,7 @@ or parameters to call the tool with.
 2. To take a "tool call" as generated above, and take some action and return a response
 that can be passed back to the chat model as a ToolMessage.
 
-The `Tools` class must inherit from the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) base class. This interface has 3 properties and 2 methods that should be implemented in a 
+The `Tools` class must inherit from the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) base class. This interface has 3 properties and 2 methods that should be implemented in a
 subclass.
 
 | Method/Property         | Description                                          |
@@ -355,7 +355,7 @@ important for the initial user experience of the tool.
 arguments. This is used to validate the input arguments to the tool, and to provide
 a schema for the LLM to fill out when calling the tool. Similar to the `name` and
 `description` of the overall Tool class, the fields' names (the variable name) and
-description (part of `Field(..., description="description")`) are passed to the LLM, 
+description (part of `Field(..., description="description")`) are passed to the LLM,
 and the values in these fields should be concise and LLM-usable.
 
 ### Run methods
