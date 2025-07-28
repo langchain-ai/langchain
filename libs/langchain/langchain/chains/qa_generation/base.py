@@ -62,6 +62,7 @@ class QAGenerationChain(Chain):
                     split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
                 )
             )
+
     """
 
     llm_chain: LLMChain

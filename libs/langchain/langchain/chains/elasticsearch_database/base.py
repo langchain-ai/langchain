@@ -34,6 +34,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             database = Elasticsearch("http://localhost:9200")
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
+
     """
 
     query_chain: Runnable

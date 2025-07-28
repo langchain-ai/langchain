@@ -85,6 +85,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 | model
                 | StrOutputParser()
             ).with_fallbacks([RunnableLambda(when_all_is_lost)])
+
     """
 
     runnable: Runnable[Input, Output]
