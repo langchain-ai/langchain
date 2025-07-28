@@ -1,5 +1,5 @@
-name: '📝 Run Documentation Notebooks'
-
+name: '📓 Validate Documentation Notebooks'
+run-name: 'Test notebooks in ${{ inputs.working-directory  }}'
 on:
   workflow_dispatch:
     inputs:
