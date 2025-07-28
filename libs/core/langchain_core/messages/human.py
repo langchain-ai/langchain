@@ -28,6 +28,7 @@ class HumanMessage(BaseMessage):
             # Instantiate a chat model and invoke it with the messages
             model = ...
             print(model.invoke(messages))
+
     """
 
     example: bool = False

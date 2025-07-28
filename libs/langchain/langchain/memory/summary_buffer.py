@@ -3,6 +3,7 @@ from typing import Any, Union
 from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
@@ -46,6 +47,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         buffer = self.chat_memory.messages
@@ -64,6 +66,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             )
         return {self.memory_key: final_buffer}
 
+    @override
     async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Asynchronously return key-value pairs given the text input to the chain."""
         buffer = await self.chat_memory.aget_messages()

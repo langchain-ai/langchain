@@ -56,6 +56,7 @@ class PromptTemplate(StringPromptTemplate):
 
             # Instantiation using initializer
             prompt = PromptTemplate(template="Say {foo}")
+
     """
 
     @property

@@ -46,6 +46,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         store.mset([(1, 3.14), (2, 2.718)])
         values = store.mget([1, 2])  # Retrieves [3.14, 2.718]
         store.mdelete([1, 2])  # Deletes the keys 1 and 2
+
     """
 
     def __init__(

@@ -54,6 +54,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 child_splitter=child_splitter,
                 parent_splitter=parent_splitter,
             )
+
     """  # noqa: E501
 
     child_splitter: TextSplitter

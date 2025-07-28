@@ -1418,6 +1418,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             .. code-block:: python
 
                 llm.save(file_path="path/llm.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path)

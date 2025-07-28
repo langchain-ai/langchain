@@ -70,6 +70,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             compressed_docs = reranker.compress_documents(documents, "Who is steve")
             assert len(compressed_docs) == 3
             assert "Steve" in compressed_docs[0].page_content
+
     """
 
     reranker: Runnable[dict, list[Document]]

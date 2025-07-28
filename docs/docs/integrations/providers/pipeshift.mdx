@@ -8,7 +8,7 @@
 
 - Install the Pipeshift integration package.
 
-  ```
+  ```bash
   pip install langchain-pipeshift
   ```
 
@@ -18,13 +18,13 @@
 
 You can perform authentication using your Pipeshift API key in any of the following ways:
 
-1.  Adding API key to the environment variable as `PIPESHIFT_API_KEY`.
+1. Adding API key to the environment variable as `PIPESHIFT_API_KEY`.
 
     ```python
     os.environ["PIPESHIFT_API_KEY"] = "<your_api_key>"
     ```
 
-2.  By passing `api_key` to the pipeshift LLM module or chat module
+2. By passing `api_key` to the pipeshift LLM module or chat module
 
     ```python
     llm = Pipeshift(api_key="<your_api_key>", model="meta-llama/Meta-Llama-3.1-8B-Instruct", max_tokens=512)

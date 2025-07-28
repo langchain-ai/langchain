@@ -146,6 +146,7 @@ class LLMMathChain(Chain):
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
+
     """  # noqa: E501
 
     llm_chain: LLMChain

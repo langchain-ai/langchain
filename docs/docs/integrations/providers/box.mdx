@@ -1,11 +1,11 @@
 # Box
 
-[Box](https://box.com) is the Intelligent Content Cloud, a single platform that enables 
-organizations to fuel collaboration, manage the entire content lifecycle, secure critical content, 
-and transform business workflows with enterprise AI. Founded in 2005, Box simplifies work for 
+[Box](https://box.com) is the Intelligent Content Cloud, a single platform that enables
+organizations to fuel collaboration, manage the entire content lifecycle, secure critical content,
+and transform business workflows with enterprise AI. Founded in 2005, Box simplifies work for
 leading global organizations, including AstraZeneca, JLL, Morgan Stanley, and Nationwide.
 
-In this package, we make available a number of ways to include Box content in your AI workflows. 
+In this package, we make available a number of ways to include Box content in your AI workflows.
 
 ### Installation and setup
 
@@ -23,9 +23,9 @@ Box, check out our [developer documentation](https://developer.box.com).
 
 In order to integrate with Box, you need a few things:
 
-* A Box instance — if you are not a current Box customer, sign up for a 
+* A Box instance — if you are not a current Box customer, sign up for a
 [free dev account](https://account.box.com/signup/n/developer#ty9l3).
-* A Box app — more on how to 
+* A Box app — more on how to
 [create an app](https://developer.box.com/guides/getting-started/first-application/)
 * Your app approved in your Box instance — This is done by your admin.
 The good news is if you are using a free developer account, you are the admin.
@@ -35,13 +35,13 @@ The good news is if you are using a free developer account, you are the admin.
 
 The `box-langchain` package offers some flexibility to authentication. The
 most basic authentication method is by using a developer token. This can be
-found in the [Box developer console](https://account.box.com/developers/console) 
-on the configuration screen. This token is purposely short-lived (1 hour) and is 
-intended for development. With this token, you can add it to your environment as 
-`BOX_DEVELOPER_TOKEN`, you can pass it directly to the loader, or you can use the 
+found in the [Box developer console](https://account.box.com/developers/console)
+on the configuration screen. This token is purposely short-lived (1 hour) and is
+intended for development. With this token, you can add it to your environment as
+`BOX_DEVELOPER_TOKEN`, you can pass it directly to the loader, or you can use the
 `BoxAuth` authentication helper class.
 
-We will cover passing it directly to the loader in the section below. 
+We will cover passing it directly to the loader in the section below.
 
 ### BoxAuth helper class
 
@@ -55,14 +55,14 @@ We will cover passing it directly to the loader in the section below.
 
 :::note
 If using JWT authentication, you will need to download the configuration from the Box
-developer console after generating your public/private key pair. Place this file in your 
+developer console after generating your public/private key pair. Place this file in your
 application directory structure somewhere. You will use the path to this file when using
 the `BoxAuth` helper class.
 :::
 
-For more information, learn about how to 
+For more information, learn about how to
 [set up a Box application](https://developer.box.com/guides/getting-started/first-application/),
-and check out the 
+and check out the
 [Box authentication guide](https://developer.box.com/guides/authentication/select/)
 for more about our different authentication options.
 

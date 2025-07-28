@@ -53,6 +53,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         When not used as a context manager, a deprecation warning will be issued
         on first use. The file will be opened immediately in ``__init__`` and closed
         in ``__del__`` or when ``close()`` is called explicitly.
+
     """
 
     def __init__(

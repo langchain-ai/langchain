@@ -408,7 +408,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.26"
+version = "0.3.27"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },

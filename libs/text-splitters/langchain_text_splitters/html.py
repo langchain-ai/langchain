@@ -107,6 +107,7 @@ class HTMLHeaderTextSplitter:
             #   content="Conclusion"
             # - Document with metadata={"Main Topic": "Conclusion"} and
             #   content="Final thoughts."
+
     """
 
     def __init__(
@@ -562,6 +563,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 preserve_images=True,
                 custom_handlers={"iframe": custom_iframe_extractor}
             )
+
     """  # noqa: E501, D214
 
     def __init__(

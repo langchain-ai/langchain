@@ -71,6 +71,7 @@ class StructuredChatAgent(Agent):
         pass
 
     @classmethod
+    @override
     def _get_default_output_parser(
         cls,
         llm: Optional[BaseLanguageModel] = None,
@@ -279,6 +280,7 @@ def create_structured_chat_agent(
                     ("human", human),
                 ]
             )
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

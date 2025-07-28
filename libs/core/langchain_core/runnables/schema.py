@@ -83,6 +83,7 @@ class BaseStreamEvent(TypedDict):
                     "tags": [],
                 },
             ]
+
     """
 
     event: str

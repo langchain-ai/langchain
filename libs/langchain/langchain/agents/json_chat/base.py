@@ -160,6 +160,7 @@ def create_json_chat_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

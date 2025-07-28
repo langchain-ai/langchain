@@ -96,6 +96,7 @@ class LLMRouterChain(RouterChain):
             )
 
             chain.invoke({"query": "what color are carrots"})
+
     """  # noqa: E501
 
     llm_chain: LLMChain
@@ -137,7 +138,7 @@ class LLMRouterChain(RouterChain):
 
         prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             self.llm_chain.prompt.output_parser.parse(prediction),
         )
 
@@ -149,7 +150,7 @@ class LLMRouterChain(RouterChain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
         )
 

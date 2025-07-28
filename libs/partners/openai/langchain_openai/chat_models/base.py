@@ -526,6 +526,7 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     .. versionadded:: 0.3.24
+
     """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -657,6 +658,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
     .. versionadded:: 0.3.26
+
     """
 
     use_responses_api: Optional[bool] = None
@@ -1841,6 +1843,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         .. versionchanged:: 0.3.21
             Pass ``kwargs`` through to the model.
+
         """  # noqa: E501
         if strict is not None and method == "json_mode":
             raise ValueError(
@@ -3162,6 +3165,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     },
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
@@ -3903,6 +3907,7 @@ def _convert_responses_chunk_to_generation_chunk(
 
         This function just identifies updates in output or sub-indexes and increments
         the current index accordingly.
+
         """
         nonlocal current_index, current_output_index, current_sub_index
         if sub_idx is None:

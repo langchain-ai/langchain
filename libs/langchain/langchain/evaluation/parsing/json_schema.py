@@ -33,11 +33,8 @@ class JsonSchemaEvaluator(StringEvaluator):
 
     """  # noqa: E501
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **_: Any) -> None:
         """Initializes the JsonSchemaEvaluator.
-
-        Args:
-            kwargs: Additional keyword arguments.
 
         Raises:
             ImportError: If the jsonschema package is not installed.

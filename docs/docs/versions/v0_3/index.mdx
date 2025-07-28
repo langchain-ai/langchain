@@ -10,7 +10,7 @@
 
 **These are the only breaking changes.**
 
-## What’s new
+## What's new
 
 The following features have been added during the development of 0.2.x:
 
@@ -95,7 +95,7 @@ well as updating the `langchain_core.pydantic_v1` and `langchain.pydantic_v1` im
 
 Once you've updated to recent versions of the packages, you may need to address the following issues stemming from the internal switch from Pydantic v1 to Pydantic v2:
 
-- If your code depends on Pydantic aside from LangChain, you will need to upgrade your pydantic version constraints to be `pydantic>=2,<3`.  See [Pydantic’s migration guide](https://docs.pydantic.dev/latest/migration/) for help migrating your non-LangChain code to Pydantic v2 if you use pydantic v1.
+- If your code depends on Pydantic aside from LangChain, you will need to upgrade your pydantic version constraints to be `pydantic>=2,<3`.  See [Pydantic's migration guide](https://docs.pydantic.dev/latest/migration/) for help migrating your non-LangChain code to Pydantic v2 if you use pydantic v1.
 - There are a number of side effects to LangChain components caused by the internal switch from Pydantic v1 to v2. We have listed some of the common cases below together with the recommended solutions.
 
 ## Common issues when transitioning to Pydantic 2
@@ -246,8 +246,8 @@ You will need to run the migration script **twice** as it only applies one impor
 
 For example, say that your code is still using the old import `from langchain.chat_models import ChatOpenAI`:
 
-After the first run, you’ll get: `from langchain_community.chat_models import ChatOpenAI`
-After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
+After the first run, you'll get: `from langchain_community.chat_models import ChatOpenAI`
+After the second run, you'll get: `from langchain_openai import ChatOpenAI`
 
 ```bash
 # Run a first time

@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -240,6 +241,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         """
         return [self.input_docs_key, self.question_key]
 
+    @override
     def _get_docs(
         self,
         inputs: dict[str, Any],
@@ -249,6 +251,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         """Get docs to run questioning over."""
         return inputs.pop(self.input_docs_key)
 
+    @override
     async def _aget_docs(
         self,
         inputs: dict[str, Any],

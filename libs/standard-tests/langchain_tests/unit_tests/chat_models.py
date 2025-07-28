@@ -798,6 +798,7 @@ class ChatModelUnitTests(ChatModelTests):
                             "my_api_key": "api_key",
                         },
                     )
+
     """  # noqa: E501
 
     @property

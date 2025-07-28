@@ -359,6 +359,7 @@ def create_openai_functions_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)

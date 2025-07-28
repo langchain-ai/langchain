@@ -9,7 +9,7 @@
 :::
 :::info[Note]
 
-This conceptual overview focuses on text-based indexing and retrieval for simplicity. 
+This conceptual overview focuses on text-based indexing and retrieval for simplicity.
 However, embedding models can be [multi-modal](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings)
 and vector stores can be used to store and retrieve a variety of data types beyond text.
 :::
@@ -125,7 +125,7 @@ to the documentation of the specific vectorstore you are using to see what simil
 
 Given a similarity metric to measure the distance between the embedded query and any embedded document, we need an algorithm to efficiently search over *all* the embedded documents to find the most similar ones.
 There are various ways to do this. As an example, many vectorstores implement [HNSW (Hierarchical Navigable Small World)](https://www.pinecone.io/learn/series/faiss/hnsw/), a graph-based index structure that allows for efficient similarity search.
-Regardless of the search algorithm used under the hood, the LangChain vectorstore interface has a `similarity_search` method for all integrations. 
+Regardless of the search algorithm used under the hood, the LangChain vectorstore interface has a `similarity_search` method for all integrations.
 This will take the search query, create an embedding, find similar documents, and return them as a list of [Documents](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html).
 
 ```python
@@ -166,7 +166,7 @@ vectorstore.similarity_search(
     k=2,
     filter={"source": "tweet"},
 )
-```  
+```
 
 :::info[Further reading]
 
@@ -179,7 +179,7 @@ vectorstore.similarity_search(
 
 While algorithms like HNSW provide the foundation for efficient similarity search in many cases, additional techniques can be employed to improve search quality and diversity.
 For example, [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/) is a re-ranking algorithm used to diversify search results, which is applied after the initial similarity search to ensure a more diverse set of results.
-As a second example, some [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity search, which marries the benefits of both approaches. 
+As a second example, some [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity search, which marries the benefits of both approaches.
 At the moment, there is no unified way to perform hybrid search using LangChain vectorstores, but it is generally exposed as a keyword argument that is passed in with `similarity_search`.
 See this [how-to guide on hybrid search](/docs/how_to/hybrid/) for more details.
 
@@ -188,4 +188,4 @@ See this [how-to guide on hybrid search](/docs/how_to/hybrid/) for more details.
 | [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)                                            | When combining keyword-based and semantic similarity. | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. [Paper](https://arxiv.org/abs/2210.11934). |
 | [Maximal Marginal Relevance (MMR)](https://python.langchain.com/api_reference/pinecone/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.max_marginal_relevance_search) | When needing to diversify search results.             | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents.                                        |
 
- 
+

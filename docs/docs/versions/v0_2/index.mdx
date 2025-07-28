@@ -34,8 +34,8 @@ we hope that it will help you migrate your code more quickly.
 
 The migration script has the following limitations:
 
-1. It’s limited to helping users move from old imports to new imports. It does not help address other deprecations.
-2. It can’t handle imports that involve `as` .
+1. It's limited to helping users move from old imports to new imports. It does not help address other deprecations.
+2. It can't handle imports that involve `as` .
 3. New imports are always placed in global scope, even if the old import that was replaced was located inside some local scope (e..g, function body).
 4. It will likely miss some deprecated imports.
 
@@ -66,8 +66,8 @@ You will need to run the migration script **twice** as it only applies one impor
 
 For example, say your code still uses `from langchain.chat_models import ChatOpenAI`:
 
-After the first run, you’ll get: `from langchain_community.chat_models import ChatOpenAI`
-After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
+After the first run, you'll get: `from langchain_community.chat_models import ChatOpenAI`
+After the second run, you'll get: `from langchain_openai import ChatOpenAI`
 
 ```bash
 # Run a first time

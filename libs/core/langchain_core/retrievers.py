@@ -124,6 +124,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
                     results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
+
     """  # noqa: E501
 
     model_config = ConfigDict(
@@ -230,6 +231,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         .. code-block:: python
 
             retriever.invoke("query")
+
         """
         from langchain_core.callbacks.manager import CallbackManager
 
@@ -294,6 +296,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         .. code-block:: python
 
             await retriever.ainvoke("query")
+
         """
         from langchain_core.callbacks.manager import AsyncCallbackManager
 

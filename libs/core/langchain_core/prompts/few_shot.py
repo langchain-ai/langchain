@@ -357,6 +357,7 @@ class FewShotChatMessagePromptTemplate(
             from langchain_core.chat_models import ChatAnthropic
             chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
             chain.invoke({"input": "What's 3+3?"})
+
     """
 
     input_variables: list[str] = Field(default_factory=list)

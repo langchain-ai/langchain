@@ -187,6 +187,7 @@ class ConstitutionalChain(Chain):
             )
 
             constitutional_chain.run(question="What is the meaning of life?")
+
     """  # noqa: E501
 
     chain: LLMChain

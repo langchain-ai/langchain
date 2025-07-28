@@ -8,7 +8,7 @@
 
 ## Overview
 
-Retrieval Augmented Generation (RAG) is a powerful technique that enhances [language models](/docs/concepts/chat_models/) by combining them with external knowledge bases. 
+Retrieval Augmented Generation (RAG) is a powerful technique that enhances [language models](/docs/concepts/chat_models/) by combining them with external knowledge bases.
 RAG addresses [a key limitation of models](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise): models rely on fixed training datasets, which can lead to outdated or incomplete information.
 When given a query, RAG systems first search a knowledge base for relevant information.
 The system then incorporates this retrieved information into the model's prompt.
@@ -44,7 +44,7 @@ See our conceptual guide on [retrieval](/docs/concepts/retrieval/).
 
 ## Adding external knowledge
 
-With a retrieval system in place, we need to pass knowledge from this system to the model. 
+With a retrieval system in place, we need to pass knowledge from this system to the model.
 A RAG pipeline typically achieves this following these steps:
 
 - Receive an input query.
@@ -59,12 +59,12 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 # Define a system prompt that tells the model how to use the retrieved context
-system_prompt = """You are an assistant for question-answering tasks. 
-Use the following pieces of retrieved context to answer the question. 
-If you don't know the answer, just say that you don't know. 
+system_prompt = """You are an assistant for question-answering tasks.
+Use the following pieces of retrieved context to answer the question.
+If you don't know the answer, just say that you don't know.
 Use three sentences maximum and keep the answer concise.
 Context: {context}:"""
-    
+
 # Define a question
 question = """What are the main components of an LLM-powered autonomous agent system?"""
 
@@ -78,7 +78,7 @@ docs_text = "".join(d.page_content for d in docs)
 system_prompt_fmt = system_prompt.format(context=docs_text)
 
 # Create a model
-model = ChatOpenAI(model="gpt-4o", temperature=0) 
+model = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # Generate a response
 questions = model.invoke([SystemMessage(content=system_prompt_fmt),
