@@ -1,4 +1,4 @@
-name: CI / cd . / make spell_check
+name: '🔤 Spell Check'
 
 on:
   push:
@@ -10,18 +10,18 @@ permissions:
 
 jobs:
   codespell:
-    name: (Check for spelling errors)
+    name: '🔤 Check for Spelling Errors'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: '📋 Checkout Code'
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: '📦 Install Dependencies'
         run: |
           pip install toml
 
-      - name: Extract Ignore Words List
+      - name: '📄 Extract Ignore Words List'
         run: |
           # Use a Python script to extract the ignore words list from pyproject.toml
           python .github/workflows/extract_ignored_words_list.py

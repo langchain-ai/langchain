@@ -1,5 +1,5 @@
-name: Release
-run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
+name: '🚀 Package Release'
+run-name: '🚀 Release ${{ inputs.working-directory }} by @${{ github.actor }}'
 on:
   workflow_call:
     inputs:
@@ -18,7 +18,7 @@ on:
         required: false
         type: boolean
         default: false
-        description: "Release from a non-master branch (danger!)"
+        description: "Release from a non-master branch (danger!) - Only use for hotfixes"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -26,6 +26,8 @@ env:
   UV_NO_SYNC: "true"
 
 jobs:
+  # Build the distribution package and extract version info
+  # Runs in isolated environment with minimal permissions for security
   build:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
