@@ -109,11 +109,11 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                         )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     # Special handling for tool call chunks: if this chunk appears to be
-                    # a continuation (has None name/id) and no matching index was found,
-                    # try to merge with the most recent tool call chunk that has a
-                    # name/id.
-                    # This fixes issues with models like Qwen3 that send inconsistent
-                    # indices.
+                    # a continuation of a prior chunk (has None name/id) and no matching
+                    # index was found, try to merge with the most recent tool call chunk
+                    # that has a name/id.
+                    # Fixes issues with models that send inconsistent indices.
+                    # See #31511 for more.
                     elif (
                         e.get("type") == "tool_call_chunk"
                         and e.get("name") is None
