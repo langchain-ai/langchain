@@ -415,6 +415,8 @@ def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
     """Add multiple AIMessageChunks together."""
+    if not others:
+        return left
     content = merge_content(
         cast("list[str | dict[Any, Any]]", left.content),
         *(cast("list[str | dict[Any, Any]]", o.content) for o in others),

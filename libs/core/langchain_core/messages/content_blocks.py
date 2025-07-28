@@ -470,14 +470,14 @@ class ImageContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#image>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the image."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the image."""
@@ -508,14 +508,14 @@ class VideoContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#video>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the video."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the video."""
@@ -546,14 +546,14 @@ class AudioContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the audio."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the audio."""
@@ -586,6 +586,9 @@ class PlainTextContentBlock(TypedDict):
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the plaintext."""
 
@@ -594,9 +597,6 @@ class PlainTextContentBlock(TypedDict):
 
     text: NotRequired[str]
     """Plaintext content. This is optional if the data is provided as base64."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     title: NotRequired[str]
     """Title of the text data, e.g., the title of a document."""
@@ -635,14 +635,14 @@ class FileContentBlock(TypedDict):
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
     """
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     url: NotRequired[str]
     """URL of the file."""
 
     base64: NotRequired[str]
     """Data as a base64 string."""
-
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
 
     # title: NotRequired[str]
     # """Title of the file, e.g., the name of a document or file."""
@@ -758,24 +758,21 @@ def is_data_content_block(block: dict) -> bool:
     )
 
 
-def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
+def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     """Convert image content block to format expected by OpenAI Chat Completions API."""
-    if "url" in content_block:
+    if "url" in block:
         return {
             "type": "image_url",
             "image_url": {
-                "url": content_block["url"],
+                "url": block["url"],
             },
         }
-    if "base64" in content_block or content_block.get("source_type") == "base64":
-        if "mime_type" not in content_block:
+    if "base64" in block or block.get("source_type") == "base64":
+        if "mime_type" not in block:
             error_message = "mime_type key is required for base64 data."
             raise ValueError(error_message)
-        mime_type = content_block["mime_type"]
-        if "data" in content_block:  # Backwards compatibility
-            base64_data = content_block["data"]
-        else:
-            base64_data = content_block["base64"]
+        mime_type = block["mime_type"]
+        base64_data = block["data"] if "data" in block else block["base64"]
         return {
             "type": "image_url",
             "image_url": {

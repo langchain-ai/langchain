@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
+from dataclasses import is_dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -37,6 +38,8 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.messages.v1 import AIMessage, AIMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
@@ -47,7 +50,7 @@ if TYPE_CHECKING:
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.outputs import GenerationChunk
     from langchain_core.runnables.config import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -241,6 +244,22 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+def _convert_llm_events(
+    event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> None:
+    if event_name == "on_chat_model_start" and isinstance(args[1], list):
+        for idx, item in enumerate(args[1]):
+            if is_dataclass(item):
+                args[1][idx] = item  # convert to old message
+    elif event_name == "on_llm_new_token" and is_dataclass(args[0]):
+        kwargs["chunk"] = ChatGenerationChunk(text=args[0].text, message=args[0])
+        args[0] = args[0].text
+    elif event_name == "on_llm_end" and is_dataclass(args[0]):
+        args[0] = LLMResult(
+            generations=[[ChatGeneration(text=args[0].text, message=args[0])]]
+        )
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -269,6 +288,8 @@ def handle_event(
                 if ignore_condition_name is None or not getattr(
                     handler, ignore_condition_name
                 ):
+                    if not handler.accepts_new_messages:
+                        _convert_llm_events(event_name, args, kwargs)
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
                         coros.append(event)
@@ -363,6 +384,8 @@ async def _ahandle_event_for_handler(
 ) -> None:
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
+            if not handler.accepts_new_messages:
+                _convert_llm_events(event_name, args, kwargs)
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
@@ -670,9 +693,11 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -697,11 +722,11 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(self, response: Union[LLMResult, AIMessage], **kwargs: Any) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -727,8 +752,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
@@ -766,9 +791,11 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -794,11 +821,13 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
     @shielded
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -825,11 +854,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
-
-
-
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
