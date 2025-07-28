@@ -1,4 +1,4 @@
-name: Integration Tests
+name: '🚀 Integration Tests'
 
 on:
   workflow_dispatch:
@@ -24,20 +24,20 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: Python ${{ inputs.python-version }}
+    name: '🚀 Integration Tests (Python ${{ inputs.python-version }})'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: Run integration tests
+      - name: '🚀 Run Integration Tests'
         shell: bash
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
