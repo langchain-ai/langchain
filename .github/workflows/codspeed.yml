@@ -1,4 +1,4 @@
-name: '⚡ Performance Benchmarks (CodSpeed)'
+name: '⚡ CodSpeed'
 
 on:
   push:

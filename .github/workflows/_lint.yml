@@ -28,7 +28,7 @@ env:
 jobs:
   # Linting job - runs quality checks on package and test code
   build:
-    name: '🧹 make lint (Python ${{ inputs.python-version }})'
+    name: 'Python ${{ inputs.python-version }}'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

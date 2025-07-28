@@ -25,7 +25,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: '🔗 Compile Integration Tests (Python ${{ inputs.python-version }})'
+    name: 'Python ${{ inputs.python-version }}'
     steps:
       - uses: actions/checkout@v4
 
