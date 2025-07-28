@@ -1,5 +1,4 @@
 {
-  // Python Configuration
   "python.analysis.include": [
     "libs/**",
     "docs/**",
@@ -17,7 +16,6 @@
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
   "python.testing.cwd": "${workspaceFolder}",
-  // Linting and Formatting (using ruff)
   "python.linting.enabled": true,
   "python.linting.ruffEnabled": true,
   "[python]": {
@@ -28,7 +26,6 @@
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  // Editor Configuration
   "editor.rulers": [
     88
   ],
@@ -37,7 +34,6 @@
   "editor.trimAutoWhitespace": true,
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  // File Exclusions
   "files.exclude": {
     "**/__pycache__": true,
     "**/.pytest_cache": true,
@@ -50,7 +46,6 @@
     "**/node_modules": true,
     "**/.git": false
   },
-  // Search Configuration
   "search.exclude": {
     "**/__pycache__": true,
     "**/*.pyc": true,
@@ -62,13 +57,10 @@
     "uv.lock": true,
     "yarn.lock": true
   },
-  // Git Configuration
   "git.autofetch": true,
   "git.enableSmartCommit": true,
-  // Jupyter Configuration
   "jupyter.askForKernelRestart": false,
   "jupyter.interactiveWindow.textEditor.executeSelection": true,
-  // Language-specific settings
   "[markdown]": {
     "editor.wordWrap": "on",
     "editor.quickSuggestions": {

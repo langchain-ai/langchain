@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    // Python
     "ms-python.python",
     "charliermarsh.ruff",
     "ms-python.mypy-type-checker",
@@ -9,18 +8,14 @@
     "ms-toolsai.jupyter-renderers",
     "ms-toolsai.vscode-jupyter-cell-tags",
     "ms-toolsai.vscode-jupyter-slideshow",
-    // Docs / Markdown
     "yzhang.markdown-all-in-one",
     "davidanson.vscode-markdownlint",
     "bierner.markdown-mermaid",
     "bierner.markdown-preview-github-styles",
-    // Git and Version Control
     "eamodio.gitlens",
     "github.vscode-pull-request-github",
     "github.vscode-github-actions",
-    // YAML and Configuration
     "redhat.vscode-yaml",
-    // General Development
     "editorconfig.editorconfig",
   ],
 }
