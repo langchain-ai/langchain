@@ -309,8 +309,11 @@ def test_llm_representation_for_serializable() -> None:
 def test_cache_with_generation_objects() -> None:
     """Test that cache can handle Generation objects instead of ChatGeneration objects.
 
-    This test reproduces the bug where cache returns Generation objects
+    This test reproduces a bug where cache returns Generation objects
     but ChatResult expects ChatGeneration objects, causing validation errors.
+
+    See #22389 for more info.
+    
     """
     cache = InMemoryCache()
 
