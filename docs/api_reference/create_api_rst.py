@@ -202,6 +202,12 @@ def _load_package_modules(
         if file_path.name.startswith("_"):
             continue
 
+        if "integration_template" in file_path.parts:
+            continue
+
+        if "project_template" in file_path.parts:
+            continue
+
         relative_module_name = file_path.relative_to(package_path)
 
         # Skip if any module part starts with an underscore
@@ -495,16 +501,7 @@ def _package_namespace(package_name: str) -> str:
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    if package_name in (
-        "langchain",
-        "langchain_v1",
-        "experimental",
-        "community",
-        "core",
-        "cli",
-        "text-splitters",
-        "standard-tests",
-    ):
+    if (ROOT_DIR / "libs" / package_name).exists():
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
         return (
