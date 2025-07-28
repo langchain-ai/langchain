@@ -32,7 +32,7 @@ LangChain is partnered with [huntr by Protect AI](https://huntr.com/) to provide
 a bounty program for our open source projects.
 
 Please report security vulnerabilities associated with the LangChain
-open source projects [here](https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true).
+open source projects at [huntr](https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true).
 
 Before reporting a vulnerability, please review:
 

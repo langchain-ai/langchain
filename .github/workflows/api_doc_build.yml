@@ -1,4 +1,5 @@
-name: '📚 API Documentation Build'
+name: '📚 API Docs'
+run-name: 'Build & Deploy API Reference'
 # Runs daily or can be triggered manually for immediate updates
 
 on:
@@ -51,7 +52,7 @@ jobs:
         run: |
           # Get unique repositories
           REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
-          
+
           # Checkout each unique repository
           for repo in $REPOS; do
             # Validate repository format (allow any org with proper format)
@@ -59,15 +60,15 @@ jobs:
               echo "Error: Invalid repository format: $repo"
               exit 1
             fi
-            
+
             REPO_NAME=$(echo $repo | cut -d'/' -f2)
-            
+
             # Additional validation for repo name
             if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
               echo "Error: Invalid repository name: $REPO_NAME"
               exit 1
             fi
-            
+
             echo "Checking out $repo to $REPO_NAME"
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done

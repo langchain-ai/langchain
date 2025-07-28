@@ -444,6 +444,9 @@ def index(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -452,6 +455,8 @@ def index(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
@@ -784,6 +789,9 @@ async def aindex(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -792,6 +800,8 @@ async def aindex(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc) for doc in hashed_docs
