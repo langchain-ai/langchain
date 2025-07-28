@@ -4,8 +4,7 @@ services:
     build:
       dockerfile: libs/langchain/dev.Dockerfile
       context: ..
-    volumes:
-      - .:/workspace
+    
     networks:
       - langchain-network
 
