@@ -3,6 +3,7 @@ from typing import Any
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
+from typing_extensions import override
 
 from langchain.memory.chat_memory import BaseChatMemory
 
@@ -55,6 +56,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}

@@ -115,6 +115,7 @@ class StructuredPrompt(ChatPromptTemplate):
 
         Returns:
             a structured prompt template
+
         """
         return cls(messages, schema, **kwargs)
 

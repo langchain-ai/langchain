@@ -146,6 +146,7 @@ class LLMMathChain(Chain):
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
+
     """  # noqa: E501
 
     llm_chain: LLMChain
@@ -163,7 +164,7 @@ class LLMMathChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         try:
             import numexpr  # noqa: F401
         except ImportError as e:
@@ -307,5 +308,12 @@ class LLMMathChain(Chain):
         prompt: BasePromptTemplate = PROMPT,
         **kwargs: Any,
     ) -> LLMMathChain:
+        """Create a LLMMathChain from a language model.
+
+        Args:
+            llm: a language model
+            prompt: a prompt template
+            **kwargs: additional arguments
+        """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)

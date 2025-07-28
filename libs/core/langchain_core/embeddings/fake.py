@@ -46,6 +46,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
 
             2
             [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
+
     """
 
     size: int
@@ -103,6 +104,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
 
             2
             [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
+
     """
 
     size: int

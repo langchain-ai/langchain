@@ -110,6 +110,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             # Bad
             chain = template | model
             retryable_chain = chain.with_retry()
+
     """  # noqa: E501
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)

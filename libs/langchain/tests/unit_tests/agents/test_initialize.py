@@ -8,7 +8,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @tool
-def my_tool(query: str) -> str:
+def my_tool(query: str) -> str:  # noqa: ARG001
     """A fake tool."""
     return "fake tool"
 

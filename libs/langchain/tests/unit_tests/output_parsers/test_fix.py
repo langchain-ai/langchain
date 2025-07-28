@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from typing_extensions import override
 
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
@@ -21,6 +22,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     parse_count: int = 0  # Number of times parse has been called
     attemp_count_before_success: int  # Number of times to fail before succeeding
 
+    @override
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
@@ -62,7 +64,7 @@ def test_output_fixing_parser_parse(
 
 
 def test_output_fixing_parser_from_llm() -> None:
-    def fake_llm(prompt: str) -> AIMessage:
+    def fake_llm(_: str) -> AIMessage:
         return AIMessage("2024-07-08T00:00:00.000000Z")
 
     llm = RunnableLambda(fake_llm)
