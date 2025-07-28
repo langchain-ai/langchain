@@ -1233,7 +1233,7 @@ def test_tool_call_streaming_different_indices() -> None:
     )
 
     # Merge chunks as happens during streaming
-    merged_chunk = chunk1 + chunk2
+    merged_chunk: AIMessageChunk = chunk1 + chunk2  # type: ignore[assignment]
 
     # Should result in a single merged tool call chunk
     assert len(merged_chunk.tool_call_chunks) == 1
@@ -1252,7 +1252,7 @@ def test_tool_call_streaming_different_indices() -> None:
     assert tool_call["id"] == "call_123"
 
     # Test with message_chunk_to_message (core functionality)
-    message = message_chunk_to_message(merged_chunk)
+    message: AIMessage = message_chunk_to_message(merged_chunk)  # type: ignore[assignment]
 
     assert len(message.tool_calls) == 1
     assert len(message.invalid_tool_calls) == 0
