@@ -20,16 +20,16 @@ For more info, check out the [GitHub documentation](https://docs.github.com/en/f
 
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 
-Note: If you click the link above you will open the main repo (langchain-ai/langchain) and not your local cloned repo. This is fine if you only want to run and test the library, but if you want to contribute you can use the  link below and replace with your username and cloned repo name:
+> [!NOTE]  
+> If you click the link above you will open the main repo (`langchain-ai/langchain`) and *not* your local cloned repo. This is fine if you only want to run and test the library, but if you want to contribute you can use the link below and replace with your username and cloned repo name:
 
-```
-https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/<yourusername>/<yourclonedreponame>
-
+```txt
+https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/&lt;YOUR_USERNAME&gt;/&lt;YOUR_CLONED_REPO_NAME&gt;
 ```
 
 Then you will have a local cloned repo where you can contribute and then create pull requests.
 
-If you already have VS Code and Docker installed, you can use the button above to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
+If you already have VS Code and Docker installed, you can use the button above to get started. This will use VSCode to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
 Alternatively you can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
 
