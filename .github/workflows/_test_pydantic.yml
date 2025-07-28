@@ -31,7 +31,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: 'Pydantic ~=${{ inputs.pydantic-version }} (Python ${{ inputs.python-version }})'
+    name: 'Pydantic ~=${{ inputs.pydantic-version }}'
     steps:
       - name: '📋 Checkout Code'
         uses: actions/checkout@v4

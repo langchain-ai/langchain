@@ -28,7 +28,7 @@ jobs:
   # This job analyzes which files changed and creates a dynamic test matrix
   # to only run tests/lints for the affected packages, improving CI efficiency
   build:
-    name: '📋 Detect Changes & Set Matrix'
+    name: 'Detect Changes & Set Matrix'
     runs-on: ubuntu-latest
     steps:
       - name: '📋 Checkout Code'
