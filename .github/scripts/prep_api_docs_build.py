@@ -73,6 +73,7 @@ def main():
             for p in package_yaml["packages"]
             if (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
+            and p["name"] != "langchain-ai21"  # Skip AI21 due to dependency conflicts
         ])
 
         # Move libraries to their new locations
@@ -82,6 +83,7 @@ def main():
             if not p.get("disabled", False)
             and (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
             and p["repo"] != "langchain-ai/langchain"
+            and p["name"] != "langchain-ai21"  # Skip AI21 due to dependency conflicts
         ])
 
         # Delete ones without a pyproject.toml

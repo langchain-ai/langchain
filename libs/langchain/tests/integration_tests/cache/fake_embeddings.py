@@ -3,6 +3,7 @@
 import math
 
 from langchain_core.embeddings import Embeddings
+from typing_extensions import override
 
 fake_texts = ["foo", "bar", "baz"]
 
@@ -18,6 +19,7 @@ class FakeEmbeddings(Embeddings):
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.embed_documents(texts)
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         """Return constant query embeddings.
         Embeddings are identical to embed_documents(texts)[0].

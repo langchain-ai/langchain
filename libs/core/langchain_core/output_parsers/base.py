@@ -155,6 +155,7 @@ class BaseOutputParser(
                 @property
                 def _type(self) -> str:
                     return "boolean_output_parser"
+
     """  # noqa: E501
 
     @property

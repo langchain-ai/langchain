@@ -44,6 +44,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
     .. versionadded:: 0.3.49
+
     """
 
     def __init__(self) -> None:
@@ -98,7 +99,7 @@ def get_usage_metadata_callback(
 
     Args:
         name (str): The name of the context variable. Defaults to
-            ``"usage_metadata_callback"``.
+            ``'usage_metadata_callback'``.
 
     Example:
         .. code-block:: python
@@ -127,6 +128,7 @@ def get_usage_metadata_callback(
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
     .. versionadded:: 0.3.49
+
     """
     from langchain_core.tracers.context import register_configure_hook
 

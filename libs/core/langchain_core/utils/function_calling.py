@@ -687,6 +687,7 @@ def tool_example_to_messages(
                 messages.extend(
                     tool_example_to_messages(txt, [tool_call])
                 )
+
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = [
