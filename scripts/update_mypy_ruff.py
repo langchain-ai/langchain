@@ -1,12 +1,13 @@
 """python scripts/update_mypy_ruff.py"""
 
 import glob
-import tomllib
+import re
+import subprocess
 from pathlib import Path
 
-import toml
-import subprocess
-import re
+# Ignoring errors since this script is run in a controlled environment
+import toml  # type: ignore # pyright: ignore[reportMissingModuleSource]
+import tomllib  # type: ignore # pyright: ignore[reportMissingImports]
 
 ROOT_DIR = Path(__file__).parents[1]
 
@@ -50,10 +51,9 @@ def main():
 
         to_ignore = {}
         for l in logs:
-            if re.match("^(.*)\:(\d+)\: error:.*\[(.*)\]", l):
-                path, line_no, error_type = re.match(
-                    "^(.*)\:(\d+)\: error:.*\[(.*)\]", l
-                ).groups()
+            match = re.match(r"^(.*):(\d+): error:.*\[(.*)\]", l)
+            if match:
+                path, line_no, error_type = match.groups()
                 if (path, line_no) in to_ignore:
                     to_ignore[(path, line_no)].append(error_type)
                 else:
