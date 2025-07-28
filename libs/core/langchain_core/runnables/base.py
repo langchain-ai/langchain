@@ -731,7 +731,7 @@ class Runnable(ABC, Generic[Input, Output]):
     @abstractmethod
     def invoke(
         self,
-        input: Input,  # noqa: A002
+        input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Output:
@@ -751,7 +751,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     async def ainvoke(
         self,
-        input: Input,  # noqa: A002
+        input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Output:
@@ -999,7 +999,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def stream(
         self,
-        input: Input,  # noqa: A002
+        input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
@@ -1019,7 +1019,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     async def astream(
         self,
-        input: Input,  # noqa: A002
+        input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
@@ -1073,7 +1073,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     async def astream_log(
         self,
-        input: Any,  # noqa: A002
+        input: Any,
         config: Optional[RunnableConfig] = None,
         *,
         diff: bool = True,
@@ -1144,7 +1144,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     async def astream_events(
         self,
-        input: Any,  # noqa: A002
+        input: Any,
         config: Optional[RunnableConfig] = None,
         *,
         version: Literal["v1", "v2"] = "v2",
@@ -1410,7 +1410,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def transform(
         self,
-        input: Iterator[Input],  # noqa: A002
+        input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
@@ -1452,7 +1452,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     async def atransform(
         self,
-        input: AsyncIterator[Input],  # noqa: A002
+        input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:

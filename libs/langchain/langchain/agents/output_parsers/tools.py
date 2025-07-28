@@ -47,7 +47,12 @@ def parse_ai_message_to_tool_action(
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
-                    ToolCall(name=function_name, args=args, id=tool_call["id"]),
+                    ToolCall(
+                        name=function_name,
+                        args=args,
+                        id=tool_call["id"],
+                        type="tool_call",
+                    )
                 )
             except JSONDecodeError as e:
                 msg = (
