@@ -5,12 +5,7 @@ import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
@@ -599,7 +594,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 from langchain_anthropic import ChatAnthropic
 
                 gpt_4o = ChatOpenAI(model="gpt-4o")
-                claude_3_sonnet = ChatAnthropic(model="claude-3-sonnet-20240229")
+                claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
                 llm = gpt_4o.with_fallbacks([claude_3_sonnet])
 
                 llm.model_name

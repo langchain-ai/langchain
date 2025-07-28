@@ -97,10 +97,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.retry import ExponentialJitterParams
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
@@ -2570,7 +2567,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             from langchain_openai import ChatOpenAI
 
             model = ChatAnthropic(
-                model_name="claude-3-sonnet-20240229"
+                model_name="claude-3-7-sonnet-20250219"
             ).configurable_alternatives(
                 ConfigurableField(id="llm"),
                 default_key="anthropic",
