@@ -785,6 +785,7 @@
           'args',
           'id',
           'error',
+          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -1015,6 +1016,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -1029,6 +1034,7 @@
           'name',
           'args',
           'id',
+          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -2217,6 +2223,7 @@
           'args',
           'id',
           'error',
+          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -2447,6 +2454,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -2461,6 +2472,7 @@
           'name',
           'args',
           'id',
+          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',

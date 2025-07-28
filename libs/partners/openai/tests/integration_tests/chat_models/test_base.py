@@ -473,6 +473,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
                     name="GenerateUsername",
                     args={"name": "Sally", "hair_color": "green"},
                     id="foo",
+                    type="tool_call",
                 )
             ],
         ),
@@ -494,6 +495,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
                     name="GenerateUsername",
                     args={"name": "Sally", "hair_color": "green"},
                     id="bar",
+                    type="tool_call",
                 )
             ],
         ),
