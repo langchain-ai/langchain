@@ -1204,7 +1204,8 @@ def test_tool_call_streaming_different_indices() -> None:
     tool call are merged correctly. This addresses issues with models like Qwen3 that
     send inconsistent indices during streaming.
 
-    See: https://github.com/langchain-ai/langchain/issues/31511
+    See #31511.
+
     """  # noqa: D205
     # Create chunks that simulate Qwen3 behavior:
     # First chunk has index=1, subsequent chunks have index=0 with name=None, id=None
@@ -1251,7 +1252,7 @@ def test_tool_call_streaming_different_indices() -> None:
     assert tool_call["args"] == {"query": "langchain tutorial"}
     assert tool_call["id"] == "call_123"
 
-    # Test with message_chunk_to_message (core functionality)
+    # Test with message_chunk_to_message
     message: AIMessage = message_chunk_to_message(merged_chunk)  # type: ignore[assignment]
 
     assert len(message.tool_calls) == 1
