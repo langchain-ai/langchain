@@ -3,11 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import (
-    Any,
-    Callable,
-    Optional,
-)
+from typing import Any, Callable, Optional
 
 import anthropic
 from langchain_core._api.deprecation import deprecated
@@ -19,14 +15,8 @@ from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.utils import (
-    get_pydantic_field_names,
-)
-from langchain_core.utils.utils import (
-    _build_model_kwargs,
-    from_env,
-    secret_from_env,
-)
+from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -37,7 +27,7 @@ class _AnthropicCommon(BaseLanguageModel):
     model: str = Field(default="claude-2", alias="model_name")
     """Model name to use."""
 
-    max_tokens_to_sample: int = Field(default=1024, alias="max_tokens")
+    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -112,7 +102,7 @@ class _AnthropicCommon(BaseLanguageModel):
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Anthropic API."""
         d = {
-            "max_tokens_to_sample": self.max_tokens_to_sample,
+            "max_tokens": self.max_tokens,
             "model": self.model,
         }
         if self.temperature is not None:
@@ -192,7 +182,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Get the identifying parameters."""
         return {
             "model": self.model,
-            "max_tokens": self.max_tokens_to_sample,
+            "max_tokens": self.max_tokens,
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
@@ -211,7 +201,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         params = super()._get_ls_params(stop=stop, **kwargs)
         identifying_params = self._identifying_params
         if max_tokens := kwargs.get(
-            "max_tokens_to_sample",
+            "max_tokens",
             identifying_params.get("max_tokens"),
         ):
             params["ls_max_tokens"] = max_tokens
