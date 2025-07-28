@@ -1,15 +1,16 @@
 """Test chat model integration."""
 
 import json
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import ChatMessage
+from langchain_core.messages import ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
@@ -140,3 +141,130 @@ def test_parse_json_string_skip_returns_input_on_failure() -> None:
         skip=True,
     )
     assert result == malformed_string
+
+
+def test_load_response_with_empty_content_is_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that load responses with empty content log a warning and are skipped."""
+    load_only_response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": ""},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = load_only_response
+
+        llm = ChatOllama(model="test-model")
+
+        with (
+            caplog.at_level(logging.WARNING),
+            pytest.raises(ValueError, match="No data received from Ollama stream"),
+        ):
+            llm.invoke([HumanMessage("Hello")])
+
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+
+
+def test_load_response_with_whitespace_content_is_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test load responses w/ only whitespace content log a warning and are skipped."""
+    load_whitespace_response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": "   \n  \t  "},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = load_whitespace_response
+
+        llm = ChatOllama(model="test-model")
+
+        with (
+            caplog.at_level(logging.WARNING),
+            pytest.raises(ValueError, match="No data received from Ollama stream"),
+        ):
+            llm.invoke([HumanMessage("Hello")])
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+
+
+def test_load_followed_by_content_response(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test load responses log a warning and are skipped when followed by content."""
+    load_then_content_response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": ""},
+        },
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:01.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {
+                "role": "assistant",
+                "content": "Hello! How can I help you today?",
+            },
+        },
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = load_then_content_response
+
+        llm = ChatOllama(model="test-model")
+
+        with caplog.at_level(logging.WARNING):
+            result = llm.invoke([HumanMessage("Hello")])
+
+        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+        assert result.content == "Hello! How can I help you today?"
+        assert result.response_metadata.get("done_reason") == "stop"
+
+
+def test_load_response_with_actual_content_is_not_skipped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test load responses with actual content are NOT skipped and log no warning."""
+    load_with_content_response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "load",
+            "message": {"role": "assistant", "content": "This is actual content"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = load_with_content_response
+
+        llm = ChatOllama(model="test-model")
+
+        with caplog.at_level(logging.WARNING):
+            result = llm.invoke([HumanMessage("Hello")])
+
+        assert result.content == "This is actual content"
+        assert result.response_metadata.get("done_reason") == "load"
+        assert not caplog.text

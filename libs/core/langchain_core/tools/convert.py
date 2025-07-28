@@ -144,7 +144,8 @@ def tool(
                 return "partial json of results", {"full": "object of results"}
 
     .. versionadded:: 0.2.14
-    Parse Google-style docstrings:
+
+        Parse Google-style docstrings:
 
         .. code-block:: python
 
@@ -214,6 +215,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
+
     """  # noqa: D214, D410, D411
 
     def _create_tool_factory(

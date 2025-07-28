@@ -7,13 +7,13 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-openai<0.4,>=0.3.18",
-    "langchain-core<1.0.0,>=0.3.62",
+    "langchain-openai<0.4,>=0.3.28",
+    "langchain-core<1.0.0,>=0.3.70",
     "requests<3,>=2",
     "aiohttp<4,>=3.9.1",
 ]
 name = "langchain-xai"
-version = "0.2.4"
+version = "0.2.5"
 description = "An integration package connecting xAI and LangChain"
 readme = "README.md"
 
@@ -55,7 +55,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "D", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "D104", ]
 
 [tool.coverage.run]
 omit = ["tests/*"]

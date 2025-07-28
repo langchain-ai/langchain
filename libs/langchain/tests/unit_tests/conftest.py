@@ -78,6 +78,7 @@ def pytest_collection_modifyitems(
         @pytest.mark.requires("package1", "package2")
         def test_something():
             ...
+
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -130,8 +131,7 @@ def pytest_collection_modifyitems(
                             pytest.mark.skip(reason=f"Requires pkg: `{pkg}`"),
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test."),
-                )
+        elif only_extended:
+            item.add_marker(
+                pytest.mark.skip(reason="Skipping not an extended test."),
+            )
