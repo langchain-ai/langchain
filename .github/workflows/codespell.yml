@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   codespell:
-    name: '🔤 Check for Spelling Errors'
+    name: 'Check for Spelling Errors'
     runs-on: ubuntu-latest
 
     steps:

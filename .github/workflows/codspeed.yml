@@ -18,7 +18,7 @@ env:
 
 jobs:
   codspeed:
-    name: '⚡ Run Performance Benchmarks'
+    name: 'Benchmark'
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -58,7 +58,7 @@ on:
 jobs:
   # Validates that PR title follows Conventional Commits specification
   lint-pr-title:
-    name: '🔍 Validate PR Title Format'
+    name: 'Validate PR Title Format'
     runs-on: ubuntu-latest
     steps:
       - name: '✅ Validate Conventional Commits Format'
