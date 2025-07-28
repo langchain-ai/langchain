@@ -6,7 +6,7 @@
 	// Point to a Docker Compose file
 	"dockerComposeFile": "./docker-compose.yaml",
 	// Required when using Docker Compose. The name of the service to connect to once running
-	"service": "langchain-py",
+	"service": "langchain",
 	// The optional 'workspaceFolder' property is the path VS Code should open by default when
 	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/workspaces/langchain",
