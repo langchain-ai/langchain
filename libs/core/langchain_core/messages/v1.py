@@ -329,9 +329,9 @@ class AIMessageChunk:
         def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
             invalid_tool_calls.append(
                 create_invalid_tool_call(
-                    name=chunk["name"],
-                    args=chunk["args"],
-                    id=chunk["id"],
+                    name=chunk.get("name", ""),
+                    args=chunk.get("args", ""),
+                    id=chunk.get("id", ""),
                     error=None,
                 )
             )
@@ -342,9 +342,9 @@ class AIMessageChunk:
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
-                            name=chunk["name"] or "",
+                            name=chunk.get("name", ""),
                             args=args_,
-                            id=chunk["id"],
+                            id=chunk.get("id", ""),
                         )
                     )
                 else:

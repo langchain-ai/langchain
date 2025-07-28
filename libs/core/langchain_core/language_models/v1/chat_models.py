@@ -39,7 +39,6 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
     convert_to_openai_image_block,
     get_buffer_string,
     is_data_content_block,
@@ -924,13 +923,13 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         Returns:
             The sum of the number of tokens across the messages.
         """
-        messages = [_convert_from_v1_message(message) for message in messages]
+        messages_v0 = [_convert_from_v1_message(message) for message in messages]
         if tools is not None:
             warnings.warn(
                 "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
                 stacklevel=2,
             )
-        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
+        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages_v0)
 
 
 def _gen_info_and_msg_metadata(
