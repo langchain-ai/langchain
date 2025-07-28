@@ -345,6 +345,7 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
+
     """  # noqa: E501
     try:
         from langchain_community.utilities.openapi import OpenAPISpec

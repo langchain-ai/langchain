@@ -1467,6 +1467,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         .. versionchanged:: 0.2.26
 
                 Added support for TypedDict class.
+
         """  # noqa: E501
         _ = kwargs.pop("method", None)
         _ = kwargs.pop("strict", None)
