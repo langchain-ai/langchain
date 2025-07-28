@@ -79,20 +79,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
-            not_found = -1
-            retries = 1
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
                 if self._add_start_index:
-                    search_boundary = len(chunk) + 1 
                     offset = index + previous_chunk_len - self._chunk_overlap
-                    prev_index = index
-                    index = text.find(chunk, max(0, offset), max(0,offset) + search_boundary)
-                    if index == not_found:
-                        for token_offset in range(0,retries):
-                            index = text.find(chunk, prev_index + token_offset)
-                            if index is prev_index:
-                                continue
+                    index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
@@ -234,7 +225,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
 class TokenTextSplitter(TextSplitter):
     """Splitting text to tokens using model tokenizer."""
-
     def __init__(
         self,
         encoding_name: str = "gpt2",
@@ -294,8 +284,7 @@ class TokenTextSplitter(TextSplitter):
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
-
-
+    
 class Language(str, Enum):
     """Enum of the programming languages."""
 
@@ -357,3 +346,4 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
         cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
     return splits
+
