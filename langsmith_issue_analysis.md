@@ -1,8 +1,14 @@
-# LangSmith Workspace Stats Mismatch - Repository Analysis
+# LangSmith Workspace Stats Mismatch - Comprehensive Analysis Report
 
-## Issue Summary
+## Executive Summary
+
+This report analyzes a critical mismatch in the LangSmith frontend where the sidebar displays 55 tracing projects while only 5 projects appear in the tracing table. After thorough investigation of the LangChain repository, **we have determined that this issue originates in the LangSmith backend services, not in the LangChain client code**.
+
+## Issue Details
+
 **Problem**: LangSmith frontend shows a mismatch between sidebar project count (55) and tracing project table display (5).
 **Suspected Cause**: The `get_current_workspace_stats()` function called by `{apiWorkspacesPath}/current/stats` endpoint may be returning an incorrect `tracer_session_count`.
+**Impact**: Users cannot access or view the majority of their tracing projects, severely limiting observability capabilities.
 
 ## Key Finding: Issue Not in LangChain Repository
 
@@ -60,3 +66,4 @@ To resolve this issue, you'll need to:
 4. Compare the counting logic between the stats endpoint and the projects listing endpoint
 
 This analysis confirms that the LangChain repository cannot be used to fix this particular issue, as it only contains client-side integration code.
+
