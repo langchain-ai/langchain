@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.tools import BaseTool, Tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
@@ -24,6 +25,9 @@ if TYPE_CHECKING:
     from langchain_community.docstore.base import Docstore
 
 
+_LOOKUP_AND_SEARCH_TOOLS = {"Lookup", "Search"}
+
+
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
@@ -35,6 +39,7 @@ class ReActDocstoreAgent(Agent):
     output_parser: AgentOutputParser = Field(default_factory=ReActOutputParser)
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ReActOutputParser()
 
@@ -44,6 +49,7 @@ class ReActDocstoreAgent(Agent):
         return AgentType.REACT_DOCSTORE
 
     @classmethod
+    @override
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return WIKI_PROMPT
@@ -52,11 +58,11 @@ class ReActDocstoreAgent(Agent):
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
-        if len(tools) != 2:
+        if len(tools) != len(_LOOKUP_AND_SEARCH_TOOLS):
             msg = f"Exactly two tools must be specified, but got {tools}"
             raise ValueError(msg)
         tool_names = {tool.name for tool in tools}
-        if tool_names != {"Lookup", "Search"}:
+        if tool_names != _LOOKUP_AND_SEARCH_TOOLS:
             msg = f"Tool names should be Lookup and Search, got {tool_names}"
             raise ValueError(msg)
 
@@ -138,6 +144,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
+    @override
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT

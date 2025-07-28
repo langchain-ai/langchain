@@ -111,6 +111,7 @@ def get_buffer_string(
             ]
             get_buffer_string(messages)
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+
     """
     string_messages = []
     for m in messages:
@@ -463,6 +464,7 @@ def filter_messages(
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
+
     """  # noqa: E501
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
@@ -869,6 +871,7 @@ def trim_messages(
                     HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
+
     """  # noqa: E501
     # Validate arguments
     if start_on and strategy == "first":
@@ -1176,7 +1179,9 @@ def convert_to_openai_messages(
                                 "id": block["id"],
                                 "function": {
                                     "name": block["name"],
-                                    "arguments": json.dumps(block["input"]),
+                                    "arguments": json.dumps(
+                                        block["input"], ensure_ascii=False
+                                    ),
                                 },
                             }
                         )
@@ -1550,7 +1555,7 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
             "id": tool_call["id"],
             "function": {
                 "name": tool_call["name"],
-                "arguments": json.dumps(tool_call["args"]),
+                "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             },
         }
         for tool_call in tool_calls

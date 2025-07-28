@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -98,6 +99,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 llm_chain=llm_chain,
                 reduce_documents_chain=reduce_documents_chain,
             )
+
     """
 
     llm_chain: LLMChain
@@ -111,6 +113,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -193,13 +196,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     @property

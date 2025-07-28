@@ -61,6 +61,13 @@ export default function VectorStoreTabs(props) {
             default: false,
         },
         {
+          value: "PGVectorStore",
+          label: "PGVectorStore",
+          text: `from langchain_postgres import PGEngine, PGVectorStore\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n$engine = PGEngine.from_connection_string(\n    url="postgresql+psycopg://..."\n)\n\n${vectorStoreVarName} = PGVectorStore.create_sync(\n    engine=pg_engine,\n    table_name='test_table',\n    embedding_service=embedding\n)`,
+          packageName: "langchain-postgres",
+          default: false,
+      },
+        {
             value: "Pinecone",
             label: "Pinecone",
             text: `from langchain_pinecone import PineconeVectorStore\nfrom pinecone import Pinecone\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\npc = Pinecone(api_key=...)\nindex = pc.Index(index_name)\n\n${vectorStoreVarName} = PineconeVectorStore(embedding=embeddings, index=index)`,

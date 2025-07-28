@@ -18,7 +18,7 @@ LangChain exposes a standard interface for key components, making it easy to swi
 
 3. **Observability and evaluation:** As applications become more complex, it becomes increasingly difficult to understand what is happening within them.
 Furthermore, the pace of development can become rate-limited by the [paradox of choice](https://en.wikipedia.org/wiki/Paradox_of_choice).
-For example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
+For example, developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost.
 [Observability](https://en.wikipedia.org/wiki/Observability) and evaluations can help developers monitor their applications and rapidly answer these types of questions with confidence.
 
 
@@ -29,10 +29,10 @@ As an example, all [chat models](/docs/concepts/chat_models/) implement the [Bas
 This provides a standard way to interact with chat models, supporting important but often provider-specific features like [tool calling](/docs/concepts/tool_calling/) and [structured outputs](/docs/concepts/structured_outputs/).
 
 
-### Example: chat models 
+### Example: chat models
 
 Many [model providers](/docs/concepts/chat_models/) support [tool calling](/docs/concepts/tool_calling/), a critical feature for many applications (e.g., [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/)), that allows a developer to request model responses that match a particular schema.
-The APIs for each provider differ. 
+The APIs for each provider differ.
 LangChain's [chat model](/docs/concepts/chat_models/) interface provides a common way to bind [tools](/docs/concepts/tools) to a model in order to support [tool calling](/docs/concepts/tool_calling/):
 
 ```python
@@ -42,7 +42,7 @@ tools = [my_tool]
 model_with_tools = model.bind_tools(tools)
 ```
 
-Similarly, getting models to produce [structured outputs](/docs/concepts/structured_outputs/) is an extremely common use case. 
+Similarly, getting models to produce [structured outputs](/docs/concepts/structured_outputs/) is an extremely common use case.
 Providers support different approaches for this, including [JSON mode or tool calling](https://platform.openai.com/docs/guides/structured-outputs), with different APIs.
 LangChain's [chat model](/docs/concepts/chat_models/) interface provides a common way to produce structured outputs using the `with_structured_output()` method:
 
@@ -62,9 +62,9 @@ The underlying implementation of the retriever depends on the type of data store
 documents = my_retriever.invoke("What is the meaning of life?")
 ```
 
-## Orchestration 
+## Orchestration
 
-While standardization for individual components is useful, we've increasingly seen that developers want to *combine* components into more complex applications. 
+While standardization for individual components is useful, we've increasingly seen that developers want to *combine* components into more complex applications.
 This motivates the need for [orchestration](https://en.wikipedia.org/wiki/Orchestration_(computing)).
 There are several common characteristics of LLM applications that this orchestration layer should support:
 
@@ -75,7 +75,7 @@ There are several common characteristics of LLM applications that this orchestra
 The recommended way to orchestrate components for complex applications is [LangGraph](https://langchain-ai.github.io/langgraph/concepts/high_level/).
 LangGraph is a library that gives developers a high degree of control by expressing the flow of the application as a set of nodes and edges.
 LangGraph comes with built-in support for [persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/), [human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/), [memory](https://langchain-ai.github.io/langgraph/concepts/memory/), and other features.
-It's particularly well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications. 
+It's particularly well suited for building [agents](https://langchain-ai.github.io/langgraph/concepts/agentic_concepts/) or [multi-agent](https://langchain-ai.github.io/langgraph/concepts/multi_agent/) applications.
 Importantly, individual LangChain components can be used as LangGraph nodes, but you can also use LangGraph **without** using LangChain components.
 
 :::info[Further reading]
@@ -86,8 +86,8 @@ Have a look at our free course, [Introduction to LangGraph](https://academy.lang
 
 ## Observability and evaluation
 
-The pace of AI application development is often rate-limited by high-quality evaluations because there is a paradox of choice. 
-Developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost. 
+The pace of AI application development is often rate-limited by high-quality evaluations because there is a paradox of choice.
+Developers often wonder how to engineer their prompt or which LLM best balances accuracy, latency, and cost.
 High quality tracing and evaluations can help you rapidly answer these types of questions with confidence.
 [LangSmith](https://docs.smith.langchain.com/) is our platform that supports observability and evaluation for AI applications.
 See our conceptual guides on [evaluations](https://docs.smith.langchain.com/concepts/evaluation) and [tracing](https://docs.smith.langchain.com/concepts/tracing) for more details.

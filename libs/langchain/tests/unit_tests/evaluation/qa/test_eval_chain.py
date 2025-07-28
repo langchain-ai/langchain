@@ -91,7 +91,7 @@ def test_returns_expected_results(
 
 
 @pytest.mark.parametrize(
-    "output,expected",
+    ("output", "expected"),
     [
         (
             """ GRADE: CORRECT
