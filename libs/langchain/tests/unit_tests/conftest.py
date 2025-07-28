@@ -5,7 +5,6 @@ from importlib import util
 
 import pytest
 from blockbuster import blockbuster_ctx
-from pytest import Config, Function, Parser
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +39,7 @@ def blockbuster() -> Iterator[None]:
         yield
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
@@ -62,7 +61,9 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
@@ -77,6 +78,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
         @pytest.mark.requires("package1", "package2")
         def test_something():
             ...
+
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -129,8 +131,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                             pytest.mark.skip(reason=f"Requires pkg: `{pkg}`"),
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test."),
-                )
+        elif only_extended:
+            item.add_marker(
+                pytest.mark.skip(reason="Skipping not an extended test."),
+            )

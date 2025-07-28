@@ -15,7 +15,7 @@ class CombinedMemory(BaseMemory):
 
     @field_validator("memories")
     @classmethod
-    def check_repeated_memory_variable(
+    def _check_repeated_memory_variable(
         cls,
         value: list[BaseMemory],
     ) -> list[BaseMemory]:

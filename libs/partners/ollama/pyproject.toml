@@ -8,10 +8,10 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "ollama>=0.5.1,<1.0.0",
-    "langchain-core<1.0.0,>=0.3.68",
+    "langchain-core<1.0.0,>=0.3.70",
 ]
 name = "langchain-ollama"
-version = "0.3.4"
+version = "0.3.6"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
@@ -54,7 +54,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
