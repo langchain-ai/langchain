@@ -499,7 +499,10 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
         ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, MessageV1Types):
-        message_ = message
+        if isinstance(message, AIMessageChunkV1):
+            message_ = message.to_message()
+        else:
+            message_ = message
     elif isinstance(message, str):
         message_ = _create_message_from_message_type_v1("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
