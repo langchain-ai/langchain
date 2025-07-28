@@ -1,4 +1,4 @@
-.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -36,10 +36,6 @@ test_watch_extended:
 integration_tests:
 	uv run --group test --group test_integration pytest tests/integration_tests
 
-docker_tests:
-	docker build -t my-langchain-image:test .
-	docker run --rm my-langchain-image:test
-
 check_imports: $(shell find langchain -name '*.py')
 	uv run python ./scripts/check_imports.py $^
 
@@ -64,7 +60,7 @@ lint lint_diff lint_package lint_tests:
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
 spell_check:
 	uv run --all-groups codespell --toml pyproject.toml
@@ -98,5 +94,4 @@ help:
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
-	@echo 'docker_tests                 - run unit tests in docker'
 	@echo '-- DOCUMENTATION tasks are from the top-level Makefile --'

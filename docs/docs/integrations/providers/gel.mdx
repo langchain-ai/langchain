@@ -19,14 +19,14 @@ pip install langchain-gel
 
 ```gel
 using extension pgvector;
-                                    
+
 module default {
     scalar type EmbeddingVector extending ext::pgvector::vector<1536>;
 
     type Record {
         required collection: str;
         text: str;
-        embedding: EmbeddingVector; 
+        embedding: EmbeddingVector;
         external_id: str {
             constraint exclusive;
         };
@@ -34,7 +34,7 @@ module default {
 
         index ext::pgvector::hnsw_cosine(m := 16, ef_construction := 128)
             on (.embedding)
-    } 
+    }
 }
 ```
 
@@ -50,7 +50,7 @@ from langchain_gel import GelVectorStore
 
 vector_store = GelVectorStore(
     embeddings=embeddings,
-) 
+)
 ```
 
 See the full usage example [here](/docs/integrations/vectorstores/gel).

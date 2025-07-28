@@ -7,13 +7,13 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-openai<0.4,>=0.3.18",
-    "langchain-core<1.0.0,>=0.3.62",
+    "langchain-openai<0.4,>=0.3.28",
+    "langchain-core<1.0.0,>=0.3.70",
     "requests<3,>=2",
     "aiohttp<4,>=3.9.1",
 ]
 name = "langchain-xai"
-version = "0.2.4"
+version = "0.2.5"
 description = "An integration package connecting xAI and LangChain"
 readme = "README.md"
 
@@ -38,7 +38,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 typing = ["mypy<2.0,>=1.10", "types-requests<3,>=2", "langchain-core"]
 dev = ["langchain-core"]
 
@@ -54,8 +54,8 @@ disallow_untyped_defs = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "D", "UP"]
-ignore = [ "UP007", ]
+select = ["E", "F", "I", "D", "UP", "S"]
+ignore = [ "UP007", "D104", ]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -74,3 +74,9 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

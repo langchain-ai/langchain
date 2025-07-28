@@ -93,14 +93,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             Name of OpenAI model to use.
         dimensions: Optional[int] = None
             The number of dimensions the resulting output embeddings should have.
-            Only supported in `text-embedding-3` and later models.
+            Only supported in ``'text-embedding-3'`` and later models.
 
     Key init args — client params:
         api_key: Optional[SecretStr] = None
             OpenAI API key.
         organization: Optional[str] = None
             OpenAI organization ID. If not passed in will be read
-            from env var OPENAI_ORG_ID.
+            from env var ``OPENAI_ORG_ID``.
         max_retries: int = 2
             Maximum number of retries to make when generating.
         request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
@@ -157,6 +157,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -194,14 +195,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
     openai_organization: Optional[str] = Field(
         alias="organization",
         default_factory=from_env(
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     allowed_special: Union[Literal["all"], set[str], None] = None
     disallowed_special: Union[Literal["all"], set[str], Sequence[str], None] = None
     chunk_size: int = 1000
@@ -211,12 +212,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     headers: Any = None
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    the ``--extensions openai`` extension for ``text-generation-webui``"""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -243,12 +244,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify
-        http_async_client as well if you'd like a custom client for async invocations.
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
+        ``http_async_client`` as well if you'd like a custom client for async
+        invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
-        http_client as well if you'd like a custom client for sync invocations."""
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
@@ -289,8 +291,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """Validate that api key and python package exists in environment."""
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             raise ValueError(
-                "If you are using Azure, "
-                "please use the `AzureOpenAIEmbeddings` class."
+                "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
         client_params: dict = {
             "api_key": (

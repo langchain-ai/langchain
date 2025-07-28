@@ -1,7 +1,7 @@
 # MongoDB Atlas
 
 >[MongoDB Atlas](https://www.mongodb.com/docs/atlas/) is a fully-managed cloud
-> database available in AWS, Azure, and GCP.  It now has support for native 
+> database available in AWS, Azure, and GCP.  It now has support for native
 > Vector Search on the MongoDB document data.
 
 ## Installation and Setup
@@ -26,7 +26,7 @@ from langchain_mongodb import MongoDBAtlasVectorSearch
 
 ### Full Text Search Retriever
 
->`Hybrid Search Retriever` performs full-text searches using 
+>`Hybrid Search Retriever` performs full-text searches using
 > Lucene’s standard (`BM25`) analyzer.
 
 ```python
@@ -35,9 +35,9 @@ from langchain_mongodb.retrievers import MongoDBAtlasFullTextSearchRetriever
 
 ### Hybrid Search Retriever
 
->`Hybrid Search Retriever` combines vector and full-text searches weighting 
+>`Hybrid Search Retriever` combines vector and full-text searches weighting
 > them the via `Reciprocal Rank Fusion` (`RRF`) algorithm.
- 
+
 ```python
 from langchain_mongodb.retrievers import MongoDBAtlasHybridSearchRetriever
 ```
@@ -99,4 +99,3 @@ set_llm_cache(MongoDBAtlasSemanticCache(
     database_name=DATABASE_NAME,
 ))
 ```
-``

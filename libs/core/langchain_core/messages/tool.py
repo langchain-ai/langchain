@@ -59,6 +59,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
+
     """  # noqa: E501
 
     tool_call_id: str
@@ -126,8 +127,6 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                         raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
-        else:
-            pass
 
         tool_call_id = values["tool_call_id"]
         if isinstance(tool_call_id, (UUID, int, float)):
@@ -193,6 +192,7 @@ class ToolCall(TypedDict):
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
+
     """
 
     name: str
@@ -242,6 +242,7 @@ class ToolCallChunk(TypedDict):
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
         ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+
     """
 
     name: Optional[str]
@@ -366,4 +367,4 @@ def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]
 def _merge_status(
     left: Literal["success", "error"], right: Literal["success", "error"]
 ) -> Literal["success", "error"]:
-    return "error" if "error" in (left, right) else "success"
+    return "error" if "error" in {left, right} else "success"

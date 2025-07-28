@@ -38,26 +38,29 @@ _FunctionsAgentAction = AgentActionMessageLog
 def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message."""
     if not isinstance(message, AIMessage):
-        raise TypeError(f"Expected an AI message got {type(message)}")
+        msg = f"Expected an AI message got {type(message)}"
+        raise TypeError(msg)
 
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
         try:
             arguments = json.loads(function_call["arguments"], strict=False)
-        except JSONDecodeError:
-            raise OutputParserException(
+        except JSONDecodeError as e:
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
+            raise OutputParserException(msg) from e
 
         try:
             tools = arguments["actions"]
-        except (TypeError, KeyError):
-            raise OutputParserException(
+        except (TypeError, KeyError) as e:
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` JSON does not contain `actions` key."
             )
+            raise OutputParserException(msg) from e
 
         final_tools: list[AgentAction] = []
         for tool_schema in tools:
@@ -92,8 +95,12 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
         return final_tools
 
     return AgentFinish(
-        return_values={"output": message.content}, log=str(message.content)
+        return_values={"output": message.content},
+        log=str(message.content),
     )
+
+
+_NOT_SET = object()
 
 
 @deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
@@ -118,13 +125,14 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         return [t.name for t in self.tools]
 
     @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    def _validate_prompt(self) -> Self:
         prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
-            raise ValueError(
+            msg = (
                 "`agent_scratchpad` should be one of the variables in the prompt, "
                 f"got {prompt.input_variables}"
             )
+            raise ValueError(msg)
         return self
 
     @property
@@ -186,7 +194,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                             },
                             "required": ["action_name", "action"],
                         },
-                    }
+                    },
                 },
                 "required": ["actions"],
             },
@@ -218,10 +226,11 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -248,17 +257,16 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> BasePromptTemplate:
         """Create prompt for this agent.
@@ -273,18 +281,20 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             A prompt template to pass into this agent.
         """
         _prompts = extra_prompt_messages or []
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
-        if system_message:
-            messages = [system_message]
-        else:
-            messages = []
+        messages = [system_message_] if system_message_ else []
 
         messages.extend(
             [
                 *_prompts,
                 HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+            ],
         )
         return ChatPromptTemplate(messages=messages)
 
@@ -295,9 +305,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools.
@@ -311,9 +319,14 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 Default is a default system message.
             kwargs: Additional arguments.
         """
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            system_message=system_message_,
         )
         return cls(  # type: ignore[call-arg]
             llm=llm,

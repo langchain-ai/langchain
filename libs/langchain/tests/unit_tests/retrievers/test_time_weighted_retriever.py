@@ -8,6 +8,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import override
 
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
@@ -31,6 +32,7 @@ def _get_example_memories(k: int = 4) -> list[Document]:
 class MockVectorStore(VectorStore):
     """Mock invalid vector store."""
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
@@ -39,12 +41,17 @@ class MockVectorStore(VectorStore):
     ) -> list[str]:
         return list(texts)
 
+    @override
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         return []
 
     @classmethod
+    @override
     def from_texts(
         cls: type["MockVectorStore"],
         texts: list[str],
@@ -54,6 +61,7 @@ class MockVectorStore(VectorStore):
     ) -> "MockVectorStore":
         return cls()
 
+    @override
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -75,7 +83,8 @@ class MockVectorStore(VectorStore):
 def time_weighted_retriever() -> TimeWeightedVectorStoreRetriever:
     vectorstore = MockVectorStore()
     return TimeWeightedVectorStoreRetriever(
-        vectorstore=vectorstore, memory_stream=_get_example_memories()
+        vectorstore=vectorstore,
+        memory_stream=_get_example_memories(),
     )
 
 
@@ -98,7 +107,9 @@ def test_get_combined_score(
     expected_hours_passed = 2.5
     current_time = datetime(2023, 4, 14, 14, 30)
     combined_score = time_weighted_retriever._get_combined_score(
-        document, vector_salience, current_time
+        document,
+        vector_salience,
+        current_time,
     )
     expected_score = (
         1.0 - time_weighted_retriever.decay_rate
@@ -114,7 +125,7 @@ def test_get_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 
@@ -126,7 +137,7 @@ async def test_aget_salient_docs(
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(docs_and_scores, dict)
     assert len(docs_and_scores) == len(want)
-    for k, doc in docs_and_scores.items():
+    for doc in docs_and_scores.values():
         assert doc in want
 
 

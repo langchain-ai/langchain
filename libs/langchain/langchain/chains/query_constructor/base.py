@@ -22,6 +22,7 @@ from langchain_core.structured_query import (
     Operator,
     StructuredQuery,
 )
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
@@ -46,6 +47,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
+    @override
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
@@ -60,12 +62,11 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             if not parsed.get("limit"):
                 parsed.pop("limit", None)
             return StructuredQuery(
-                **{k: v for k, v in parsed.items() if k in allowed_keys}
+                **{k: v for k, v in parsed.items() if k in allowed_keys},
             )
         except Exception as e:
-            raise OutputParserException(
-                f"Parsing text\n{text}\n raised following error:\n{e}"
-            )
+            msg = f"Parsing text\n{text}\n raised following error:\n{e}"
+            raise OutputParserException(msg) from e
 
     @classmethod
     def from_components(
@@ -73,7 +74,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
         allowed_attributes: Optional[Sequence[str]] = None,
-        fix_invalid: bool = False,
+        fix_invalid: bool = False,  # noqa: FBT001,FBT002
     ) -> StructuredQueryOutputParser:
         """
         Create a structured query output parser from components.
@@ -89,14 +90,16 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         if fix_invalid:
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
-                filter = cast(Optional[FilterDirective], get_parser().parse(raw_filter))
-                fixed = fix_filter_directive(
-                    filter,
+                filter_directive = cast(
+                    "Optional[FilterDirective]",
+                    get_parser().parse(raw_filter),
+                )
+                return fix_filter_directive(
+                    filter_directive,
                     allowed_comparators=allowed_comparators,
                     allowed_operators=allowed_operators,
                     allowed_attributes=allowed_attributes,
                 )
-                return fixed
 
         else:
             ast_parse = get_parser(
@@ -108,7 +111,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
 
 def fix_filter_directive(
-    filter: Optional[FilterDirective],
+    filter: Optional[FilterDirective],  # noqa: A002
     *,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
@@ -130,18 +133,18 @@ def fix_filter_directive(
     ) or not filter:
         return filter
 
-    elif isinstance(filter, Comparison):
+    if isinstance(filter, Comparison):
         if allowed_comparators and filter.comparator not in allowed_comparators:
             return None
         if allowed_attributes and filter.attribute not in allowed_attributes:
             return None
         return filter
-    elif isinstance(filter, Operation):
+    if isinstance(filter, Operation):
         if allowed_operators and filter.operator not in allowed_operators:
             return None
         args = [
             cast(
-                FilterDirective,
+                "FilterDirective",
                 fix_filter_directive(
                     arg,
                     allowed_comparators=allowed_comparators,
@@ -154,15 +157,13 @@ def fix_filter_directive(
         ]
         if not args:
             return None
-        elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
+        if len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(
-                operator=filter.operator,
-                arguments=args,
-            )
-    else:
-        return filter
+        return Operation(
+            operator=filter.operator,
+            arguments=args,
+        )
+    return filter
 
 
 def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
@@ -237,7 +238,9 @@ def get_query_constructor_prompt(
         examples = construct_examples(examples)
         example_prompt = USER_SPECIFIED_EXAMPLE_PROMPT
         prefix = PREFIX_WITH_DATA_SOURCE.format(
-            schema=schema, content=document_contents, attributes=attribute_str
+            schema=schema,
+            content=document_contents,
+            attributes=attribute_str,
         )
         suffix = SUFFIX_WITHOUT_DATA_SOURCE.format(i=len(examples) + 1)
     else:
@@ -247,7 +250,9 @@ def get_query_constructor_prompt(
         example_prompt = EXAMPLE_PROMPT
         prefix = DEFAULT_PREFIX.format(schema=schema)
         suffix = DEFAULT_SUFFIX.format(
-            i=len(examples) + 1, content=document_contents, attributes=attribute_str
+            i=len(examples) + 1,
+            content=document_contents,
+            attributes=attribute_str,
         )
     return FewShotPromptTemplate(
         examples=list(examples),
@@ -271,7 +276,7 @@ def load_query_constructor_chain(
     examples: Optional[list] = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
-    enable_limit: bool = False,
+    enable_limit: bool = False,  # noqa: FBT001,FBT002
     schema_prompt: Optional[BasePromptTemplate] = None,
     **kwargs: Any,
 ) -> LLMChain:
@@ -302,11 +307,10 @@ def load_query_constructor_chain(
         enable_limit=enable_limit,
         schema_prompt=schema_prompt,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
@@ -361,11 +365,10 @@ def load_query_constructor_runnable(
         schema_prompt=schema_prompt,
         **kwargs,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

@@ -13,8 +13,11 @@ DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
 NOTEBOOKS_NO_CASSETTES = [
+    "docs/docs/tutorials/rag.ipynb",  # TODO: accommodate langsmith changes in cassettes
     "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
     "docs/docs/how_to/multi_vector.ipynb",  # Non-determinism due to batch
+    "docs/docs/how_to/qa_sources.ipynb",  # TODO: accommodate langsmith changes in cassettes
+    "docs/docs/how_to/qa_streaming.ipynb",  # TODO: accommodate langsmith changes in cassettes
 ]
 
 NOTEBOOKS_NO_EXECUTION = [
@@ -32,6 +35,7 @@ NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/how_to/migrate_agent.ipynb",  # TODO: resolve issue with asyncio / exception handling
     "docs/docs/how_to/qa_per_user.ipynb",  # Requires Pinecone instance
     "docs/docs/how_to/query_high_cardinality.ipynb",  # Heavy
+    "docs/docs/how_to/response_metadata.ipynb",  # Auth is annoying
     "docs/docs/how_to/split_by_token.ipynb",  # TODO: requires Korean document, also heavy deps
     "docs/docs/how_to/tools_error.ipynb",  # Deliberately raises error
     "docs/docs/how_to/tools_human.ipynb",  # Requires human input()

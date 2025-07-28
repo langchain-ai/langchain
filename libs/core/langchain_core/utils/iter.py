@@ -126,6 +126,7 @@ class Tee(Generic[T]):
     To enforce sequential use of ``anext``, provide a ``lock``
     - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
+
     """
 
     def __init__(

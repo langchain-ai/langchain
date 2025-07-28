@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Type
 
 import pytest
 from langchain_core.documents import Document
@@ -9,43 +8,32 @@ from langchain_tests.base import BaseStandardTests
 
 
 class RetrieversIntegrationTests(BaseStandardTests):
-    """
-    Base class for retrievers integration tests.
-    """
+    """Base class for retrievers integration tests."""
 
     @property
     @abstractmethod
-    def retriever_constructor(self) -> Type[BaseRetriever]:
-        """
-        A BaseRetriever subclass to be tested.
-        """
+    def retriever_constructor(self) -> type[BaseRetriever]:
+        """A BaseRetriever subclass to be tested."""
         ...
 
     @property
     def retriever_constructor_params(self) -> dict:
-        """
-        Returns a dictionary of parameters to pass to the retriever constructor.
-        """
+        """Returns a dictionary of parameters to pass to the retriever constructor."""
         return {}
 
     @property
     @abstractmethod
     def retriever_query_example(self) -> str:
-        """
-        Returns a str representing the "query" of an example retriever call.
-        """
+        """Returns a str representing the "query" of an example retriever call."""
         ...
 
     @pytest.fixture
     def retriever(self) -> BaseRetriever:
-        """
-        :private:
-        """
+        """:private:"""
         return self.retriever_constructor(**self.retriever_constructor_params)
 
     def test_k_constructor_param(self) -> None:
-        """
-        Test that the retriever constructor accepts a k parameter, representing
+        """Test that the retriever constructor accepts a k parameter, representing
         the number of documents to return.
 
         .. dropdown:: Troubleshooting
@@ -61,6 +49,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                     MyRetriever(k=3).invoke("query")
 
             should return 3 documents when invoked with a query.
+
         """
         params = {
             k: v for k, v in self.retriever_constructor_params.items() if k != "k"
@@ -78,8 +67,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_1)
 
     def test_invoke_with_k_kwarg(self, retriever: BaseRetriever) -> None:
-        """
-        Test that the invoke method accepts a k parameter, representing the number of
+        """Test that the invoke method accepts a k parameter, representing the number of
         documents to return.
 
         .. dropdown:: Troubleshooting
@@ -95,6 +83,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 MyRetriever().invoke("query", k=3)
 
             should return 3 documents when invoked with a query.
+
         """
         result_1 = retriever.invoke(self.retriever_query_example, k=1)
         assert len(result_1) == 1
@@ -105,8 +94,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_3)
 
     def test_invoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """
-        If invoked with the example params, the retriever should return a list of
+        """If invoked with the example params, the retriever should return a list of
         Documents.
 
         .. dropdown:: Troubleshooting
@@ -121,8 +109,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result)
 
     async def test_ainvoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """
-        If ainvoked with the example params, the retriever should return a list of
+        """If ainvoked with the example params, the retriever should return a list of
         Documents.
 
         See :meth:`test_invoke_returns_documents` for more information on

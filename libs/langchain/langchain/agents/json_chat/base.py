@@ -16,7 +16,7 @@ def create_json_chat_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
-    stop_sequence: Union[bool, list[str]] = True,
+    stop_sequence: Union[bool, list[str]] = True,  # noqa: FBT001,FBT002
     tools_renderer: ToolsRenderer = render_text_description,
     template_tool_response: str = TEMPLATE_TOOL_RESPONSE,
 ) -> Runnable:
@@ -27,10 +27,10 @@ def create_json_chat_agent(
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
         stop_sequence: bool or list of str.
-            If True, adds a stop token of "Observation:" to avoid hallucinates. 
+            If True, adds a stop token of "Observation:" to avoid hallucinates.
             If False, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
-            
+
             Default is True. You may to set this to False if the LLM you are using
             does not support stop sequences.
         tools_renderer: This controls how the tools are converted into a string and
@@ -43,7 +43,7 @@ def create_json_chat_agent(
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
-        
+
     Raises:
         ValueError: If the prompt is missing required variables.
         ValueError: If the template_tool_response is missing
@@ -79,18 +79,18 @@ def create_json_chat_agent(
             )
 
     Prompt:
-    
+
         The prompt must have input keys:
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
             * `agent_scratchpad`: must be a MessagesPlaceholder. Contains previous agent actions and tool outputs as messages.
-        
+
         Here's an example:
 
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            
+
             system = '''Assistant is a large language model trained by OpenAI.
 
             Assistant is designed to be able to assist with a wide range of tasks, from answering \
@@ -110,7 +110,7 @@ def create_json_chat_agent(
             and provide valuable insights and information on a wide range of topics. Whether \
             you need help with a specific question or just want to have a conversation about \
             a particular topic, Assistant is here to assist.'''
-            
+
             human = '''TOOLS
             ------
             Assistant can ask the user to use tools to look up information that may be helpful in \
@@ -151,7 +151,7 @@ def create_json_chat_agent(
             blob with a single action, and NOTHING else):
 
             {input}'''
-            
+
             prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", system),
@@ -160,17 +160,18 @@ def create_json_chat_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     if "{observation}" not in template_tool_response:
-        raise ValueError(
-            "Template tool response missing required variable 'observation'"
-        )
+        msg = "Template tool response missing required variable 'observation'"
+        raise ValueError(msg)
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
@@ -182,14 +183,14 @@ def create_json_chat_agent(
     else:
         llm_to_use = llm
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
-                x["intermediate_steps"], template_tool_response=template_tool_response
-            )
+                x["intermediate_steps"],
+                template_tool_response=template_tool_response,
+            ),
         )
         | prompt
         | llm_to_use
         | JSONAgentOutputParser()
     )
-    return agent

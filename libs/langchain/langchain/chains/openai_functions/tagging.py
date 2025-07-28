@@ -86,19 +86,19 @@ def create_tagging_chain(
 
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
+
     """
     function = _get_tagging_function(schema)
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = JsonOutputFunctionsParser()
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         **kwargs,
     )
-    return chain
 
 
 @deprecated(
@@ -155,6 +155,7 @@ def create_tagging_chain_pydantic(
 
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
+
     """
     if hasattr(pydantic_schema, "model_json_schema"):
         openai_schema = pydantic_schema.model_json_schema()
@@ -164,11 +165,10 @@ def create_tagging_chain_pydantic(
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         **kwargs,
     )
-    return chain

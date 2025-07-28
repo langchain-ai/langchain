@@ -9,6 +9,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
@@ -43,6 +44,7 @@ class _FakeTrajectoryChatModel(FakeChatModel):
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -54,9 +56,8 @@ class _FakeTrajectoryChatModel(FakeChatModel):
             response = self.queries[list(self.queries.keys())[self.response_index]]
             self.response_index = self.response_index + 1
             return response
-        else:
-            prompt = messages[0].content
-            return self.queries[prompt]
+        prompt = messages[0].content
+        return self.queries[prompt]
 
 
 def test_trajectory_output_parser_parse() -> None:
@@ -78,7 +79,7 @@ but otherwise poor performance, we give the model a score of 2.""",
     with pytest.raises(OutputParserException):
         trajectory_output_parser.parse(
             """Judgment: Given the good reasoning in the final answer
-but otherwise poor performance, we give the model a score of 2."""
+but otherwise poor performance, we give the model a score of 2.""",
         )
 
     with pytest.raises(OutputParserException):
@@ -86,7 +87,7 @@ but otherwise poor performance, we give the model a score of 2."""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 9"""
+Score: 9""",
         )
 
     with pytest.raises(OutputParserException):
@@ -94,7 +95,7 @@ Score: 9"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 10"""
+Score: 10""",
         )
 
     with pytest.raises(OutputParserException):
@@ -102,7 +103,7 @@ Score: 10"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 0.1"""
+Score: 0.1""",
         )
 
     with pytest.raises(OutputParserException):
@@ -110,7 +111,7 @@ Score: 0.1"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: One"""
+Score: One""",
         )
 
 
@@ -182,7 +183,7 @@ def test_old_api_works(intermediate_steps: list[tuple[AgentAction, str]]) -> Non
             "question": "What is your favorite food?",
             "agent_trajectory": intermediate_steps,
             "answer": "I like pie.",
-        }
+        },
     )
     assert res["score"] == 1.0
 
@@ -192,6 +193,6 @@ def test_old_api_works(intermediate_steps: list[tuple[AgentAction, str]]) -> Non
             "agent_trajectory": intermediate_steps,
             "answer": "I like pie.",
             "reference": "Paris",
-        }
+        },
     )
     assert res["score"] == 0.0

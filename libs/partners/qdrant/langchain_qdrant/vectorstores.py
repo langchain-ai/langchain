@@ -72,6 +72,7 @@ class Qdrant(VectorStore):
             client = QdrantClient()
             collection_name = "MyCollection"
             qdrant = Qdrant(client, collection_name, embedding_function)
+
     """
 
     CONTENT_KEY: str = "page_content"
@@ -105,7 +106,7 @@ class Qdrant(VectorStore):
 
         if embeddings is None and embedding_function is None:
             raise ValueError(
-                "`embeddings` value can't be None. Pass `Embeddings` instance."
+                "`embeddings` value can't be None. Pass `embeddings` instance."
             )
 
         if embeddings is not None and embedding_function is not None:
@@ -161,7 +162,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -196,7 +197,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -594,7 +595,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,
@@ -689,7 +690,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,
@@ -1306,6 +1307,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
+
         """
         qdrant = cls.construct_instance(
             texts,
@@ -1540,6 +1542,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
+
         """
         qdrant = await cls.aconstruct_instance(
             texts,
@@ -1669,10 +1672,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
                 raise QdrantException(
@@ -1829,11 +1833,11 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+            if not isinstance(current_vector_config, models.VectorParams):
+                raise ValueError(
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
 
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:

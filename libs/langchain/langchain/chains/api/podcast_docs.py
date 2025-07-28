@@ -1,4 +1,3 @@
-# flake8: noqa
 PODCAST_DOCS = """API documentation:
 Endpoint: https://listen-api.listennotes.com/api/v2
 GET /search
@@ -25,4 +24,4 @@ id | integer | optional
 title_highlighted | string | optional
 
 Use page_size: 3
-"""
+"""  # noqa: E501

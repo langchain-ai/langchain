@@ -1,5 +1,5 @@
-name: Run notebooks
-
+name: '📓 Validate Documentation Notebooks'
+run-name: 'Test notebooks in ${{ inputs.working-directory  }}'
 on:
   workflow_dispatch:
     inputs:
@@ -14,6 +14,9 @@ on:
   schedule:
     - cron: '0 13 * * *'
 
+permissions:
+  contents: read
+
 env:
   UV_FROZEN: "true"
 
@@ -21,43 +24,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
-    name: "Test docs"
+    name: '📑 Test Documentation Notebooks'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python + uv
+      - name: '🐍 Set up Python + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ github.event.inputs.python_version || '3.11' }}
 
-      - name: 'Authenticate to Google Cloud'
+      - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Configure AWS Credentials
+      - name: '🔐 Configure AWS Credentials'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install dependencies
+      - name: '📦 Install Dependencies'
         run: |
           uv sync --group dev --group test
 
-      - name: Pre-download files
+      - name: '📦 Pre-download Test Files'
         run: |
           uv run python docs/scripts/cache_data.py
           curl -s https://raw.githubusercontent.com/lerocha/chinook-database/master/ChinookDatabase/DataSources/Chinook_Sqlite.sql | sqlite3 docs/docs/how_to/Chinook.db
           cp docs/docs/how_to/Chinook.db docs/docs/tutorials/Chinook.db
 
-      - name: Prepare notebooks
+      - name: '🔧 Prepare Notebooks for CI'
         run: |
           uv run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory ${{ github.event.inputs.working-directory || 'all' }}
 
-      - name: Run notebooks
+      - name: '🚀 Execute Notebooks'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
