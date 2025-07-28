@@ -77,8 +77,8 @@ All out of scope targets defined by huntr as well as:
 
 Please report security vulnerabilities associated with LangSmith by email to `security@langchain.dev`.
 
-* LangSmith site: <https://smith.langchain.com>
-* SDK client: <https://github.com/langchain-ai/langsmith-sdk>
+* LangSmith site: [https://smith.langchain.com](https://smith.langchain.com)
+* SDK client: [https://github.com/langchain-ai/langsmith-sdk](https://github.com/langchain-ai/langsmith-sdk)
 
 ### Other Security Concerns
 
