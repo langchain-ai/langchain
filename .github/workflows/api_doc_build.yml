@@ -1,13 +1,15 @@
-name: API Docs Build
+name: '📚 API Documentation Build'
+# Runs daily or can be triggered manually for immediate updates
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 13 * * *'
+    - cron:  '0 13 * * *'  # Daily at 1PM UTC
 env:
   PYTHON_VERSION: "3.11"
 
 jobs:
+  # Only runs on main repository to prevent unnecessary builds on forks
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -23,7 +25,7 @@ jobs:
           path: langchain-api-docs-html
           token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
 
-      - name: Get repos with yq
+      - name: '📋 Extract Repository List with yq'
         id: get-unsorted-repos
         uses: mikefarah/yq@master
         with:
@@ -42,7 +44,7 @@ jobs:
               | .repo
             ' langchain/libs/packages.yml
 
-      - name: Parse YAML and checkout repos
+      - name: '📋 Parse YAML & Checkout Repositories'
         env:
           REPOS_UNSORTED: ${{ steps.get-unsorted-repos.outputs.result }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,39 +72,39 @@ jobs:
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
+      - name: '🐍 Setup Python ${{ env.PYTHON_VERSION }}'
         uses: actions/setup-python@v5
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install initial py deps
+      - name: '📦 Install Initial Python Dependencies'
         working-directory: langchain
         run: |
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
-      - name: Move libs
+      - name: '📦 Organize Library Directories'
         run: python langchain/.github/scripts/prep_api_docs_build.py
 
-      - name: Rm old html
+      - name: '🧹 Remove Old HTML Files'
         run:
           rm -rf langchain-api-docs-html/api_reference_build/html
 
-      - name: Install dependencies
+      - name: '📦 Install Documentation Dependencies'
         working-directory: langchain
         run: |
           python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           python -m uv pip install -r docs/api_reference/requirements.txt
 
-      - name: Set Git config
+      - name: '🔧 Configure Git Settings'
         working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
 
-      - name: Build docs
+      - name: '📚 Build API Documentation'
         working-directory: langchain
         run: |
           python docs/api_reference/create_api_rst.py

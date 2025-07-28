@@ -65,6 +65,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
     """
 
     client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment] # :meta private:

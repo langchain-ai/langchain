@@ -20,7 +20,7 @@ First-party Databricks integrations are now available in the databricks-langchai
 pip install databricks-langchain
 ```
 
-The legacy langchain-databricks partner package is still available but will be soon deprecated. 
+The legacy langchain-databricks partner package is still available but will be soon deprecated.
 
 Chat Model
 ----------
@@ -52,7 +52,6 @@ llm = Databricks(endpoint="your-completion-endpoint")
 
 See the [usage example](/docs/integrations/llms/databricks) for more guidance on how to use it within your LangChain application.
 
-
 Embeddings
 ----------
 
@@ -65,7 +64,6 @@ embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
 ```
 
 See the [usage example](/docs/integrations/text_embedding/databricks) for more guidance on how to use it within your LangChain application.
-
 
 Vector Search
 -------------
@@ -88,7 +86,6 @@ docs = dvs.similarity_search("What is vector search?)
 
 See the [usage example](/docs/integrations/vectorstores/databricks_vector_search) for how to set up vector indices and integrate them with LangChain.
 
-
 MLflow Integration
 ------------------
 
@@ -103,6 +100,7 @@ See [MLflow LangChain Integration](/docs/integrations/providers/mlflow_tracking)
 
 SQLDatabase
 -----------
+
 To connect to Databricks SQL or query structured data, see the [Databricks structured retriever tool documentation](https://docs.databricks.com/en/generative-ai/agent-framework/structured-retrieval-tools.html#table-query-tool) and to create an agent using the above created SQL UDF see [Databricks UC Integration](https://docs.unitycatalog.io/ai/integrations/langchain/).
 
 Open Models

@@ -102,6 +102,7 @@ class Blob(BaseMedia):
             # Read the blob as a byte stream
             with blob.as_bytes_io() as f:
                 print(f.read())
+
     """
 
     data: Union[bytes, str, None] = None
@@ -265,6 +266,7 @@ class Document(BaseMedia):
                 page_content="Hello, world!",
                 metadata={"source": "https://example.com"}
             )
+
     """
 
     page_content: str

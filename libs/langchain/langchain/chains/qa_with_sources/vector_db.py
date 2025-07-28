@@ -10,6 +10,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -48,6 +49,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
 
         return docs[:num_docs]
 
+    @override
     def _get_docs(
         self,
         inputs: dict[str, Any],

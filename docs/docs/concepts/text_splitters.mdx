@@ -69,7 +69,7 @@ texts = text_splitter.split_text(document)
 
 ### Text-structured based
 
-Text is naturally organized into hierarchical units such as paragraphs, sentences, and words. 
+Text is naturally organized into hierarchical units such as paragraphs, sentences, and words.
 We can leverage this inherent structure to inform our splitting strategy, creating split that maintain natural language flow, maintain semantic coherence within split, and adapts to varying levels of text granularity.
 LangChain's [`RecursiveCharacterTextSplitter`](/docs/how_to/recursive_text_splitter/) implements this concept:
 - The `RecursiveCharacterTextSplitter` attempts to keep larger units (e.g., paragraphs) intact.
@@ -92,7 +92,7 @@ texts = text_splitter.split_text(document)
 
 ### Document-structured based
 
-Some documents have an inherent structure, such as HTML, Markdown, or JSON files. 
+Some documents have an inherent structure, such as HTML, Markdown, or JSON files.
 In these cases, it's beneficial to split the document based on its structure, as it often naturally groups semantically related text.
 Key benefits of structure-based splitting:
 - Preserves the logical organization of the document
@@ -116,7 +116,7 @@ Examples of structure-based splitting:
 
 ### Semantic meaning based
 
-Unlike the previous methods, semantic-based splitting actually considers the *content* of the text. 
+Unlike the previous methods, semantic-based splitting actually considers the *content* of the text.
 While other approaches use document or text structure as proxies for semantic meaning, this method directly analyzes the text's semantics.
 There are several ways to implement this, but conceptually the approach is split text when there are significant changes in text *meaning*.
 As an example, we can use a sliding window approach to generate embeddings, and compare the embeddings to find significant differences:

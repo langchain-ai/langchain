@@ -49,6 +49,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                     MyRetriever(k=3).invoke("query")
 
             should return 3 documents when invoked with a query.
+
         """
         params = {
             k: v for k, v in self.retriever_constructor_params.items() if k != "k"
@@ -82,6 +83,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 MyRetriever().invoke("query", k=3)
 
             should return 3 documents when invoked with a query.
+
         """
         result_1 = retriever.invoke(self.retriever_query_example, k=1)
         assert len(result_1) == 1

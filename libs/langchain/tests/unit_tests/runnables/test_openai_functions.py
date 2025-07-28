@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
+from typing_extensions import override
 
 from langchain.runnables.openai_functions import OpenAIFunctionsRouter
 
@@ -15,6 +16,7 @@ class FakeChatOpenAI(BaseChatModel):
     def _llm_type(self) -> str:
         return "fake-openai-chat-model"
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],

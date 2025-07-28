@@ -25,7 +25,7 @@ async def test_init_chat_model_chain() -> None:
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-sonnet-20240229"},
+        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
     )
     prompt = ChatPromptTemplate.from_messages([("system", "foo"), ("human", "{input}")])
     chain = prompt | model_with_config
@@ -40,7 +40,7 @@ async def test_init_chat_model_chain() -> None:
 class TestStandard(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
-        return cast(type[BaseChatModel], init_chat_model)
+        return cast("type[BaseChatModel]", init_chat_model)
 
     @property
     def chat_model_params(self) -> dict:
