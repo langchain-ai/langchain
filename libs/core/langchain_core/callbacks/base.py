@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
 from typing_extensions import Self
+
+from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -65,9 +66,11 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: str | AIMessageChunk,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -76,8 +79,8 @@ class LLMManagerMixin:
 
         Args:
             token (str): The new token.
-            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
-              containing content and other information.
+            chunk (GenerationChunk | ChatGenerationChunk | AIMessageChunk): The new
+              generated chunk, containing content and other information.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             kwargs (Any): Additional keyword arguments.
@@ -85,7 +88,7 @@ class LLMManagerMixin:
 
     def on_llm_end(
         self,
-        response: LLMResult | AIMessage,
+        response: Union[LLMResult, AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -94,7 +97,7 @@ class LLMManagerMixin:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The response which was generated.
+            response (LLMResult | AIMessage): The response which was generated.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             kwargs (Any): Additional keyword arguments.
@@ -262,7 +265,7 @@ class CallbackManagerMixin:
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]] | list[MessageV1],
+        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -513,7 +516,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -542,9 +545,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[list[str]] = None,
@@ -554,8 +559,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         Args:
             token (str): The new token.
-            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
-              containing content and other information.
+            chunk (GenerationChunk | ChatGenerationChunk | AIMessageChunk): The new
+              generated chunk, containing content and other information.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[list[str]]): The tags.
@@ -564,7 +569,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_end(
         self,
-        response: LLMResult,
+        response: Union[LLMResult, AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -574,7 +579,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The response which was generated.
+            response (LLMResult | AIMessage): The response which was generated.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[list[str]]): The tags.
@@ -598,8 +603,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             parent_run_id: The parent run ID. This is the ID of the parent run.
             tags: The tags.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
+                - response (LLMResult | AIMessage): The response which was generated
+                    before the error occurred.
         """
 
     async def on_chain_start(

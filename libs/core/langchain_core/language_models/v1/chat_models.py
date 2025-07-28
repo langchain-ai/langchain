@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
-import inspect
+import copy
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -18,7 +17,6 @@ from typing import (
     cast,
 )
 
-from langchain_core.messages.v1 import AIMessageChunk, MessageV1, add_ai_message_chunks
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -26,44 +24,34 @@ from pydantic import (
 )
 from typing_extensions import override
 
-from langchain_core._api import deprecated
-from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
     CallbackManager,
     CallbackManagerForLLMRun,
-    Callbacks,
 )
-from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
 )
-from langchain_core.load.dump import dumps
 from langchain_core.messages import (
     AIMessage,
-    AnyMessage,
     BaseMessage,
-    BaseMessageChunk,
-    HumanMessage,
-    convert_to_messages,
     convert_to_openai_image_block,
     is_data_content_block,
-    message_chunk_to_message,
 )
-from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.messages.utils import convert_to_messages_v1
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
+from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
+from langchain_core.messages.v1 import MessageV1, add_ai_message_chunks
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
-    ChatResult,
-    LLMResult,
-    RunInfo,
 )
-from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
-from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
+from langchain_core.prompt_values import PromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
@@ -75,14 +63,12 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
-    import uuid
-
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
 
-def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
+def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
     if hasattr(error, "response"):
         response = error.response
         metadata: dict = {}
@@ -95,16 +81,14 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
-        generations = [
-            ChatGeneration(message=AIMessage(content="", response_metadata=metadata))
-        ]
+        generations = [AIMessageV1(content=[], response_metadata=metadata)]
     else:
         generations = []
 
     return generations
 
 
-def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
+def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
     """Format messages for tracing in on_chat_model_start.
 
     - Update image content blocks to OpenAI Chat Completions format (backward
@@ -120,51 +104,34 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
     messages_to_trace = []
     for message in messages:
         message_to_trace = message
-        if isinstance(message.content, list):
-            for idx, block in enumerate(message.content):
-                if isinstance(block, dict):
-                    # Update image content blocks to OpenAI # Chat Completions format.
-                    if (
-                        block.get("type") == "image"
-                        and is_data_content_block(block)
-                        and block.get("source_type") != "id"
-                    ):
-                        if message_to_trace is message:
-                            # Shallow copy
-                            message_to_trace = message.model_copy()
-                            message_to_trace.content = list(message_to_trace.content)
+        for idx, block in enumerate(message.content):
+            # Update image content blocks to OpenAI # Chat Completions format.
+            if (
+                block["type"] == "image"
+                and is_data_content_block(block)
+                and block.get("source_type") != "id"
+            ):
+                if message_to_trace is message:
+                    # Shallow copy
+                    message_to_trace = copy.copy(message)
+                    message_to_trace.content = list(message_to_trace.content)
 
-                        message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
-                            convert_to_openai_image_block(block)
-                        )
-                    elif len(block) == 1 and "type" not in block:
-                        # Tracing assumes all content blocks have a "type" key. Here
-                        # we add this key if it is missing, and there's an obvious
-                        # choice for the type (e.g., a single key in the block).
-                        if message_to_trace is message:
-                            # Shallow copy
-                            message_to_trace = message.model_copy()
-                            message_to_trace.content = list(message_to_trace.content)
-                        key = next(iter(block))
-                        message_to_trace.content[idx] = {  # type: ignore[index]
-                            "type": key,
-                            key: block[key],
-                        }
-                    else:
-                        pass
+                message_to_trace.content[idx] = convert_to_openai_image_block(block)
+            else:
+                pass
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace
 
 
-def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+def generate_from_stream(stream: Iterator[AIMessageChunkV1]) -> AIMessageV1:
     """Generate from a stream.
 
     Args:
-        stream: Iterator of ChatGenerationChunk.
+        stream: Iterator of AIMessageChunkV1.
 
     Returns:
-        ChatResult: Chat result.
+        AIMessageV1: aggregated message.
     """
     generation = next(stream, None)
     if generation:
@@ -172,26 +139,19 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     if generation is None:
         msg = "No generations found in stream."
         raise ValueError(msg)
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    return generation.to_message()
 
 
 async def agenerate_from_stream(
-    stream: AsyncIterator[ChatGenerationChunk],
-) -> ChatResult:
+    stream: AsyncIterator[AIMessageChunkV1],
+) -> AIMessageV1:
     """Async generate from a stream.
 
     Args:
-        stream: Iterator of ChatGenerationChunk.
+        stream: Iterator of AIMessageChunkV1.
 
     Returns:
-        ChatResult: Chat result.
+        AIMessageV1: aggregated message.
     """
     chunks = [chunk async for chunk in stream]
     return await run_in_executor(None, generate_from_stream, iter(chunks))
@@ -216,7 +176,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
+class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -324,15 +284,15 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
     @override
     def OutputType(self) -> Any:
         """Get the output type for this runnable."""
-        return AnyMessage
+        return AIMessageV1
 
-    def _convert_input(self, model_input: LanguageModelInput) -> list[BaseMessage]:
+    def _convert_input(self, model_input: LanguageModelInput) -> list[MessageV1]:
         if isinstance(model_input, PromptValue):
-            return model_input.to_messages()
+            return model_input.to_messages(output_version="v1")
         if isinstance(model_input, str):
-            return [HumanMessage(content=model_input)]
+            return [HumanMessageV1(content=model_input)]
         if isinstance(model_input, Sequence):
-            return convert_to_messages(model_input)
+            return convert_to_messages_v1(model_input)
         msg = (
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
@@ -349,8 +309,8 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModelFast._stream  # noqa: SLF001
-        async_not_implemented = type(self)._astream == BaseChatModelFast._astream  # noqa: SLF001
+        sync_not_implemented = type(self)._stream == BaseChatModelV1._stream  # noqa: SLF001
+        async_not_implemented = type(self)._astream == BaseChatModelV1._astream  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -380,7 +340,7 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         config = ensure_config(config)
         messages = self._convert_input(input)
         ls_structured_output_format = kwargs.pop(
@@ -421,15 +381,15 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         input_messages = _normalize_messages(messages)
 
         if self._should_stream(async_api=False, **kwargs):
-            chunks: list[AIMessageChunk] = []
+            chunks: list[AIMessageChunkV1] = []
             try:
                 for msg in self._stream(input_messages, **kwargs):
                     run_manager.on_llm_new_token(msg)
                     chunks.append(msg)
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
-            msg = add_ai_message_chunks(chunks[0], chunks[1:])
+            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
         else:
             try:
                 msg = self._invoke(input_messages, **kwargs)
@@ -484,26 +444,31 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
-        input_messages = _normalize_messages(messages)
+        # TODO: type openai image, audio, file types and permit in MessageV1
+        input_messages = _normalize_messages(messages)  # type: ignore[arg-type]
 
         if self._should_stream(async_api=True, **kwargs):
-            chunks: list[AIMessageChunk] = []
+            chunks: list[AIMessageChunkV1] = []
             try:
                 async for msg in self._astream(input_messages, **kwargs):
                     await run_manager.on_llm_new_token(msg)
                     chunks.append(msg)
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e, response=_generate_response_from_error(e)
+                )
                 raise
-            msg = add_ai_message_chunks(chunks[0], chunks[1:])
+            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
         else:
             try:
                 msg = await self._ainvoke(input_messages, **kwargs)
             except BaseException as e:
-                await run_manager.on_llm_error(e)
+                await run_manager.on_llm_error(
+                    e, response=_generate_response_from_error(e)
+                )
                 raise
 
-        await run_manager.on_llm_end(msg)
+        await run_manager.on_llm_end(msg.to_message())
         return msg
 
     @override
@@ -512,11 +477,11 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunk]:
+    ) -> Iterator[AIMessageChunkV1]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                "AIMessageChunk",
+                "AIMessageChunkV1",
                 self.invoke(input, config=config, **kwargs),
             )
         else:
@@ -554,23 +519,23 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
                 batch_size=1,
             )
 
-            chunks: list[AIMessageChunk] = []
+            chunks: list[AIMessageChunkV1] = []
 
             if self.rate_limiter:
                 self.rate_limiter.acquire(blocking=True)
 
             try:
-                # TODO replace this with something for new messages
+                # TODO: replace this with something for new messages
                 input_messages = _normalize_messages(messages)
                 for msg in self._stream(input_messages, **kwargs):
                     run_manager.on_llm_new_token(msg)
                     chunks.append(msg)
                     yield msg
             except BaseException as e:
-                run_manager.on_llm_error(e)
+                run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
 
-            msg = add_ai_message_chunks(chunks[0], chunks[1:])
+            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
             run_manager.on_llm_end(msg)
 
     @override
@@ -579,11 +544,11 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[AIMessageChunk]:
+    ) -> AsyncIterator[AIMessageChunkV1]:
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
-                "AIMessageChunk",
+                "AIMessageChunkV1",
                 await self.ainvoke(input, config=config, **kwargs),
             )
             return
@@ -626,7 +591,7 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
-        chunks: list[ChatGenerationChunk] = []
+        chunks: list[AIMessageChunkV1] = []
 
         try:
             input_messages = _normalize_messages(messages)
@@ -638,10 +603,10 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
                 chunks.append(msg)
                 yield msg
         except BaseException as e:
-            await run_manager.on_llm_error(e)
+            await run_manager.on_llm_error(e, response=_generate_response_from_error(e))
             raise
 
-        msg = add_ai_message_chunks(chunks[0], chunks[1:])
+        msg = add_ai_message_chunks(chunks[0], *chunks[1:])
         await run_manager.on_llm_end(msg)
 
     # --- Custom methods ---
@@ -724,14 +689,14 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunk]:
+    ) -> Iterator[AIMessageChunkV1]:
         raise NotImplementedError
 
     async def _astream(
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> AsyncIterator[AIMessageChunk]:
+    ) -> AsyncIterator[AIMessageChunkV1]:
         iterator = await run_in_executor(
             None,
             self._stream,
@@ -902,7 +867,7 @@ class BaseChatModelV1(BaseLanguageModel[BaseMessage], ABC):
             PydanticToolsParser,
         )
 
-        if type(self).bind_tools is BaseChatModelFast.bind_tools:
+        if type(self).bind_tools is BaseChatModelV1.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import atexit
-from dataclasses import is_dataclass
 import functools
 import logging
 import uuid
@@ -12,6 +11,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
+from dataclasses import is_dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,8 +23,6 @@ from typing import (
 )
 from uuid import UUID
 
-from langchain_core.messages.v1 import MessageV1
-from langchain_core.outputs.chat_generation import ChatGeneration
 from langsmith.run_helpers import get_tracing_context
 from typing_extensions import Self, override
 
@@ -40,6 +38,8 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.messages.v1 import AIMessage, AIMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.outputs import GenerationChunk
     from langchain_core.runnables.config import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -693,9 +693,11 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -720,11 +722,11 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(self, response: Union[LLMResult, AIMessage], **kwargs: Any) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -750,8 +752,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
@@ -789,9 +791,11 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, AIMessageChunk],
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -817,11 +821,13 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
     @shielded
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -848,11 +854,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
-
-
-
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
