@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import typing
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from operator import itemgetter
@@ -38,11 +39,14 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
     convert_to_openai_image_block,
+    get_buffer_string,
     is_data_content_block,
 )
-from langchain_core.messages.utils import convert_to_messages_v1
+from langchain_core.messages.utils import (
+    _convert_from_v1_message,
+    convert_to_messages_v1,
+)
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
@@ -735,7 +739,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessageV1]:
         """Bind tools to the model.
 
         Args:
@@ -898,6 +902,34 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[MessageV1],
+        tools: Optional[Sequence] = None,
+    ) -> int:
+        """Get the number of tokens in the messages.
+
+        Useful for checking if an input fits in a model's context window.
+
+        **Note**: the base implementation of get_num_tokens_from_messages ignores
+        tool schemas.
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+
+        Returns:
+            The sum of the number of tokens across the messages.
+        """
+        messages_v0 = [_convert_from_v1_message(message) for message in messages]
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
+                stacklevel=2,
+            )
+        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages_v0)
 
 
 def _gen_info_and_msg_metadata(

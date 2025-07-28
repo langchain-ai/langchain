@@ -384,38 +384,37 @@ def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
     Returns:
         BaseMessage: Converted message instance.
     """
-    # type ignores here are because AIMessageV1.content is a list of dicts.
-    # AIMessageV0.content expects str or list[str | dict].
+    content = cast("Union[str, list[str | dict]]", message.content)
     if isinstance(message, AIMessageV1):
         return AIMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
             tool_calls=message.tool_calls,
-            response_metadata=message.response_metadata,
+            response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, AIMessageChunkV1):
         return AIMessageChunk(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
-            response_metadata=message.response_metadata,
+            response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
             name=message.name,
         )
     if isinstance(message, SystemMessageV1):
         return SystemMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
         )
     if isinstance(message, ToolMessageV1):
         return ToolMessage(
-            content=message.content,  # type: ignore[arg-type]
+            content=content,
             id=message.id,
         )
     message = f"Unsupported message type: {type(message)}"
@@ -501,7 +500,10 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
         ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, MessageV1Types):
-        message_ = message
+        if isinstance(message, AIMessageChunkV1):
+            message_ = message.to_message()
+        else:
+            message_ = message
     elif isinstance(message, str):
         message_ = _create_message_from_message_type_v1("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:

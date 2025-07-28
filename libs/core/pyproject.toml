@@ -67,6 +67,7 @@ langchain-text-splitters = { path = "../text-splitters" }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
+disable_error_code = ["typeddict-unknown-key"]
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = "False"

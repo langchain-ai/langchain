@@ -34,6 +34,7 @@ from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.utils._merge import merge_lists
 
@@ -197,7 +198,7 @@ def test_message_chunks() -> None:
     assert (meaningful_id + default_id).id == "msg_def456"
 
 
-def test_message_chunks_v2() -> None:
+def test_message_chunks_v1() -> None:
     left = AIMessageChunkV1("foo ", id="abc")
     right = AIMessageChunkV1("bar")
     expected = AIMessageChunkV1("foo bar", id="abc")
@@ -230,7 +231,19 @@ def test_message_chunks_v2() -> None:
             )
         ],
     )
-    assert one + two + three == expected
+    result = one + two + three
+    assert result == expected
+
+    assert result.to_message() == AIMessageV1(
+        content=[
+            {
+                "name": "tool1",
+                "args": {"arg1": "value}"},
+                "id": "1",
+                "type": "tool_call",
+            }
+        ]
+    )
 
     assert (
         AIMessageChunkV1(
@@ -1326,6 +1339,7 @@ def test_known_block_types() -> None:
         "text",
         "text-plain",
         "tool_call",
+        "invalid_tool_call",
         "reasoning",
         "non_standard",
         "image",
