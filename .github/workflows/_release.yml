@@ -1,5 +1,5 @@
 name: '🚀 Package Release'
-run-name: 'Release ${{ inputs.working-directory }} by @${{ github.actor }}'
+run-name: 'Release ${{ inputs.working-directory }} ${{ inputs.release-version }}'
 on:
   workflow_call:
     inputs:
@@ -14,6 +14,11 @@ on:
         type: string
         description: "From which folder this pipeline executes"
         default: 'libs/langchain'
+      release-version:
+        required: true
+        type: string
+        default: '0.1.0'
+        description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
         type: boolean
