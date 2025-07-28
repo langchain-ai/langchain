@@ -299,6 +299,81 @@ def _create_message_from_message_type(
     return message
 
 
+def _create_message_from_message_type_v1(
+    message_type: str,
+    content: str,
+    name: Optional[str] = None,
+    tool_call_id: Optional[str] = None,
+    tool_calls: Optional[list[dict[str, Any]]] = None,
+    id: Optional[str] = None,
+    **kwargs: Any,
+) -> MessageV1:
+    """Create a message from a message type and content string.
+
+    Args:
+        message_type: (str) the type of the message (e.g., "human", "ai", etc.).
+        content: (str) the content string.
+        name: (str) the name of the message. Default is None.
+        tool_call_id: (str) the tool call id. Default is None.
+        tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
+        id: (str) the id of the message. Default is None.
+        kwargs: (dict[str, Any]) additional keyword arguments.
+
+    Returns:
+        a message of the appropriate type.
+
+    Raises:
+        ValueError: if the message type is not one of "human", "user", "ai",
+            "assistant", "tool", "system", or "developer".
+    """
+    kwargs: dict[str, Any] = {}
+    if name is not None:
+        kwargs["name"] = name
+    if tool_call_id is not None:
+        kwargs["tool_call_id"] = tool_call_id
+    if kwargs and (response_metadata := kwargs.pop("response_metadata", None)):
+        kwargs["response_metadata"] = response_metadata
+    if id is not None:
+        kwargs["id"] = id
+    if tool_calls is not None:
+        kwargs["tool_calls"] = []
+        for tool_call in tool_calls:
+            # Convert OpenAI-format tool call to LangChain format.
+            if "function" in tool_call:
+                args = tool_call["function"]["arguments"]
+                if isinstance(args, str):
+                    args = json.loads(args, strict=False)
+                kwargs["tool_calls"].append(
+                    {
+                        "name": tool_call["function"]["name"],
+                        "args": args,
+                        "id": tool_call["id"],
+                        "type": "tool_call",
+                    }
+                )
+            else:
+                kwargs["tool_calls"].append(tool_call)
+    if message_type in {"human", "user"}:
+        message = HumanMessageV1(content=content, **kwargs)
+    elif message_type in {"ai", "assistant"}:
+        message = AIMessageV1(content=content, **kwargs)
+    elif message_type in {"system", "developer"}:
+        if message_type == "developer":
+            kwargs["custom_role"] = "developer"
+        message = SystemMessageV1(content=content, **kwargs)
+    elif message_type == "tool":
+        artifact = kwargs.pop("artifact", None)
+        message = ToolMessageV1(content=content, artifact=artifact, **kwargs)
+    else:
+        msg = (
+            f"Unexpected message type: '{message_type}'. Use one of 'human',"
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
+        )
+        msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
+        raise ValueError(msg)
+    return message
+
+
 def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
     """Compatibility layer to convert v1 messages to current messages.
 
@@ -403,6 +478,61 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     return message_
 
 
+def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
+    """Instantiate a message from a variety of message formats.
+
+    The message format can be one of the following:
+
+    - BaseMessagePromptTemplate
+    - BaseMessage
+    - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+    - dict: a message dict with role and content keys
+    - string: shorthand for ("human", template); e.g., "{user_input}"
+
+    Args:
+        message: a representation of a message in one of the supported formats.
+
+    Returns:
+        an instance of a message or a message template.
+
+    Raises:
+        NotImplementedError: if the message type is not supported.
+        ValueError: if the message dict does not contain the required keys.
+    """
+    if isinstance(message, MessageV1Types):
+        message_ = message
+    elif isinstance(message, str):
+        message_ = _create_message_from_message_type_v1("human", message)
+    elif isinstance(message, Sequence) and len(message) == 2:
+        # mypy doesn't realise this can't be a string given the previous branch
+        message_type_str, template = message  # type: ignore[misc]
+        message_ = _create_message_from_message_type_v1(message_type_str, template)
+    elif isinstance(message, dict):
+        msg_kwargs = message.copy()
+        try:
+            try:
+                msg_type = msg_kwargs.pop("role")
+            except KeyError:
+                msg_type = msg_kwargs.pop("type")
+            # None msg content is not allowed
+            msg_content = msg_kwargs.pop("content") or ""
+        except KeyError as e:
+            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
+            msg = create_message(
+                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
+            )
+            raise ValueError(msg) from e
+        message_ = _create_message_from_message_type_v1(
+            msg_type, msg_content, **msg_kwargs
+        )
+    else:
+        msg = f"Unsupported message type: {type(message)}"
+        msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
+        raise NotImplementedError(msg)
+
+    return message_
+
+
 def convert_to_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> list[BaseMessage]:
@@ -420,6 +550,25 @@ def convert_to_messages(
     if isinstance(messages, PromptValue):
         return messages.to_messages()
     return [_convert_to_message(m) for m in messages]
+
+
+def convert_to_messages_v1(
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+) -> list[MessageV1]:
+    """Convert a sequence of messages to a list of messages.
+
+    Args:
+        messages: Sequence of messages to convert.
+
+    Returns:
+        list of messages (BaseMessages).
+    """
+    # Import here to avoid circular imports
+    from langchain_core.prompt_values import PromptValue
+
+    if isinstance(messages, PromptValue):
+        return messages.to_messages(output_version="v1")
+    return [_convert_to_message_v1(m) for m in messages]
 
 
 def _runnable_support(func: Callable) -> Callable:
