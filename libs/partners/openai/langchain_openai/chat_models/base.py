@@ -108,7 +108,12 @@ from langchain_openai.chat_models._client_utils import (
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _convert_to_v1_from_chat_completions,
+    _convert_to_v1_from_chat_completions_chunk,
+    _convert_to_v1_from_responses,
 )
 
 if TYPE_CHECKING:
@@ -458,7 +463,7 @@ class BaseChatOpenAI(BaseChatModel):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
@@ -489,7 +494,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Whether to return logprobs."""
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
-     an associated log probability. `logprobs` must be set to true 
+     an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
     logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -507,7 +512,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
-    Currently supported values are low, medium, and high. Reducing reasoning effort 
+    Currently supported values are low, medium, and high. Reducing reasoning effort
     can result in faster responses and fewer tokens used on reasoning in a response.
 
     .. versionadded:: 0.2.14
@@ -529,26 +534,26 @@ class BaseChatOpenAI(BaseChatModel):
 
     """
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -556,40 +561,40 @@ class BaseChatOpenAI(BaseChatModel):
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
     providers.
-    
+
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
-    
+
     Examples:
         - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
         - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
         - Any other provider-specific parameters
-        
+
     .. note::
-    
+
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
-        standard OpenAI API, as this will cause errors when making API calls. Use 
+        standard OpenAI API, as this will cause errors when making API calls. Use
         ``extra_body`` instead.
     """
 
     include_response_headers: bool = False
     """Whether to include response headers in the output message ``response_metadata``."""  # noqa: E501
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
-    
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
-    
+
     For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed
     in.
-    
+
     If a parameter is disabled then it will not be used by default in any methods, e.g.
     in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
-    invocation. 
+    invocation.
     """
 
     include: Optional[list[str]] = None
@@ -669,7 +674,7 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Literal["v0", "responses/v1"] = "v0"
+    output_version: str = "v0"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -680,6 +685,7 @@ class BaseChatOpenAI(BaseChatModel):
     - ``'v0'``: AIMessage format as of langchain-openai 0.3.x.
     - ``'responses/v1'``: Formats Responses API output
       items into AIMessage content blocks.
+    - ``"v1"``: v1 of LangChain cross-provider standard.
 
     Currently only impacts the Responses API. ``output_version='responses/v1'`` is
     recommended.
@@ -869,6 +875,10 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            if self.output_version == "v1":
+                generation_chunk.message = _convert_to_v1_from_chat_completions_chunk(
+                    cast(AIMessageChunk, generation_chunk.message)
+                )
             return generation_chunk
 
         choice = choices[0]
@@ -895,6 +905,20 @@ class BaseChatOpenAI(BaseChatModel):
 
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
+
+        if self.output_version == "v1":
+            message_chunk = cast(AIMessageChunk, message_chunk)
+            # Convert to v1 format
+            if isinstance(message_chunk.content, str):
+                message_chunk = _convert_to_v1_from_chat_completions_chunk(
+                    message_chunk
+                )
+                if message_chunk.content:
+                    message_chunk.content[0]["index"] = 0  # type: ignore[index]
+            else:
+                message_chunk = _convert_to_v1_from_chat_completions_chunk(
+                    message_chunk
+                )
 
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
@@ -1188,7 +1212,12 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 payload = _construct_responses_api_payload(messages, payload)
         else:
-            payload["messages"] = [_convert_message_to_dict(m) for m in messages]
+            payload["messages"] = [
+                _convert_message_to_dict(_convert_from_v1_to_chat_completions(m))
+                if isinstance(m, AIMessage)
+                else _convert_message_to_dict(m)
+                for m in messages
+            ]
         return payload
 
     def _create_chat_result(
@@ -1254,6 +1283,11 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
+        if self.output_version == "v1":
+            _ = llm_output.pop("token_usage", None)
+            generations[0].message = _convert_to_v1_from_chat_completions(
+                cast(AIMessage, generations[0].message)
+            )
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -3577,6 +3611,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
+            lc_msg = _convert_from_v1_to_responses(lc_msg)
         msg = _convert_message_to_dict(lc_msg)
         # "name" parameter unsupported
         if "name" in msg:
@@ -3720,7 +3755,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: str = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3859,6 +3894,27 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
+    elif output_version == "v1":
+        message = _convert_to_v1_from_responses(message)
+        if response.tools and any(
+            tool.type == "image_generation" for tool in response.tools
+        ):
+            # Get mime_time from tool definition and add to image generations
+            # if missing (primarily for tracing purposes).
+            image_generation_call = next(
+                tool for tool in response.tools if tool.type == "image_generation"
+            )
+            if image_generation_call.output_format:
+                mime_type = f"image/{image_generation_call.output_format}"
+                for content_block in message.content:
+                    # OK to mutate output message
+                    if (
+                        isinstance(content_block, dict)
+                        and content_block.get("type") == "image"
+                        and "base64" in content_block
+                        and "mime_type" not in block
+                    ):
+                        block["mime_type"] = mime_type
     else:
         pass
     return ChatResult(generations=[ChatGeneration(message=message)])
@@ -3872,7 +3928,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: str = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -3938,9 +3994,29 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        content.append({"annotations": [annotation], "index": current_index})
+        if output_version == "v1":
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "annotations": [annotation],
+                    "index": current_index,
+                }
+            )
+        else:
+            content.append({"annotations": [annotation], "index": current_index})
     elif chunk.type == "response.output_text.done":
-        content.append({"id": chunk.item_id, "index": current_index})
+        if output_version == "v1":
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "id": chunk.item_id,
+                    "index": current_index,
+                }
+            )
+        else:
+            content.append({"id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
@@ -4016,21 +4092,34 @@ def _convert_responses_chunk_to_generation_chunk(
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
         _advance(chunk.output_index)
+        current_sub_index = 0
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        _advance(chunk.output_index)
-        content.append(
-            {
-                # langchain-core uses the `index` key to aggregate text blocks.
-                "summary": [
-                    {"index": chunk.summary_index, "type": "summary_text", "text": ""}
-                ],
-                "index": current_index,
-                "type": "reasoning",
-            }
-        )
+        if output_version in ("v0", "responses/v1"):
+            _advance(chunk.output_index)
+            content.append(
+                {
+                    # langchain-core uses the `index` key to aggregate text blocks.
+                    "summary": [
+                        {
+                            "index": chunk.summary_index,
+                            "type": "summary_text",
+                            "text": "",
+                        }
+                    ],
+                    "index": current_index,
+                    "type": "reasoning",
+                }
+            )
+        else:
+            block: dict = {"type": "reasoning", "reasoning": ""}
+            if chunk.summary_index > 0:
+                _advance(chunk.output_index, chunk.summary_index)
+                block["id"] = chunk.item_id
+            block["index"] = current_index
+            content.append(block)
     elif chunk.type == "response.image_generation_call.partial_image":
         # Partial images are not supported yet.
         pass
@@ -4065,6 +4154,15 @@ def _convert_responses_chunk_to_generation_chunk(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
         )
+    elif output_version == "v1":
+        message = cast(AIMessageChunk, _convert_to_v1_from_responses(message))
+        for content_block in message.content:
+            if (
+                isinstance(content_block, dict)
+                and content_block.get("index", -1) > current_index
+            ):
+                # blocks were added for v1
+                current_index = content_block["index"]
     else:
         pass
     return (

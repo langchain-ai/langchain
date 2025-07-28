@@ -322,7 +322,7 @@ def init_chat_model(
 
     if not configurable_fields:
         return _init_chat_model_helper(
-            cast(str, model),
+            cast("str", model),
             model_provider=model_provider,
             **kwargs,
         )
@@ -632,7 +632,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> _ConfigurableModel:
         """Bind config to a Runnable, returning a new Runnable."""
-        config = RunnableConfig(**(config or {}), **cast(RunnableConfig, kwargs))
+        config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
         remaining_config["configurable"] = {
@@ -781,7 +781,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
-            yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
+            yield from self._model(cast("RunnableConfig", config)).batch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,
                 return_exceptions=return_exceptions,
@@ -811,7 +811,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             async for x in self._model(
-                cast(RunnableConfig, config),
+                cast("RunnableConfig", config),
             ).abatch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,

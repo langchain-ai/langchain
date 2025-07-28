@@ -70,6 +70,7 @@ def draw_mermaid(
 
     Returns:
         str: Mermaid graph syntax.
+
     """
     # Initialize Mermaid graph configuration
     original_frontmatter_config = frontmatter_config or {}

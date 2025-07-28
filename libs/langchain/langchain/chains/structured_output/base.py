@@ -132,6 +132,7 @@ def create_openai_fn_runnable(
                 structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
                 structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
@@ -390,6 +391,7 @@ def create_structured_output_runnable(
                 )
                 chain = prompt | structured_llm
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+
     """  # noqa: E501
     # for backwards compatibility
     force_function_usage = kwargs.get(

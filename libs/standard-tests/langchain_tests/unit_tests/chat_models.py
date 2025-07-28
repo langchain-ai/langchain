@@ -317,7 +317,7 @@ class ChatModelUnitTests(ChatModelTests):
         .. warning:: Deprecated since version 0.3.15:
            This property will be removed in version 0.3.20. If a model does not
            support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``. Otherwise, models should accept values of ``"any"`` or
+           return ``False``. Otherwise, models should accept values of ``'any'`` or
            the name of a tool in ``tool_choice``.
 
         Example:
@@ -653,8 +653,8 @@ class ChatModelUnitTests(ChatModelTests):
             To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
             directory and implement the ``vcr_config`` fixture there.
 
-            ``langchain-tests`` excludes the headers ``"authorization"``,
-            ``"x-api-key"``, and ``"api-key"`` from VCR cassettes. To pick up this
+            ``langchain-tests`` excludes the headers ``'authorization'``,
+            ``'x-api-key'``, and ``'api-key'`` from VCR cassettes. To pick up this
             configuration, you will need to add ``conftest.py`` as shown below. You can
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
@@ -689,7 +689,7 @@ class ChatModelUnitTests(ChatModelTests):
             .. dropdown:: Compressing cassettes
 
                 ``langchain-tests`` includes a custom VCR serializer that compresses
-                cassettes using gzip. To use it, register the ``"yaml.gz"`` serializer
+                cassettes using gzip. To use it, register the ``yaml.gz`` serializer
                 to your VCR fixture and enable this serializer in the config. See
                 example below:
 
@@ -798,6 +798,7 @@ class ChatModelUnitTests(ChatModelTests):
                             "my_api_key": "api_key",
                         },
                     )
+
     """  # noqa: E501
 
     @property
@@ -950,8 +951,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         .. dropdown:: Troubleshooting
 
-            If this test fails, check that the model accommodates standard parameters:
-            https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
+            If this test fails, check that the model accommodates `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__.
 
             Check also that the model class is named according to convention
             (e.g., ``ChatProviderName``).

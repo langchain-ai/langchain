@@ -4,6 +4,7 @@ from typing import Any, Union
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
 from pydantic import field_validator
+from typing_extensions import override
 
 from langchain.output_parsers.format_instructions import (
     PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS,
@@ -18,7 +19,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
     @field_validator("dataframe")
     @classmethod
-    def validate_dataframe(cls, val: Any) -> Any:
+    def _validate_dataframe(cls, val: Any) -> Any:
         import pandas as pd
 
         if issubclass(type(val), pd.DataFrame):
@@ -36,6 +37,18 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         array: str,
         original_request_params: str,
     ) -> tuple[list[Union[int, str]], str]:
+        """Parse the array from the request parameters.
+
+        Args:
+            array: The array string to parse.
+            original_request_params: The original request parameters string.
+
+        Returns:
+            A tuple containing the parsed array and the stripped request parameters.
+
+        Raises:
+            OutputParserException: If the array format is invalid or cannot be parsed.
+        """
         parsed_array: list[Union[int, str]] = []
 
         # Check if the format is [1,3,5]
@@ -76,6 +89,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
         return parsed_array, original_request_params.split("[")[0]
 
+    @override
     def parse(self, request: str) -> dict[str, Any]:
         stripped_request_params = None
         splitted_request = request.strip().split(":")
@@ -150,6 +164,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
         return result
 
+    @override
     def get_format_instructions(self) -> str:
         return PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS.format(
             columns=", ".join(self.dataframe.columns),
