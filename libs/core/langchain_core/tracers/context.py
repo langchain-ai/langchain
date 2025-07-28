@@ -62,7 +62,7 @@ def tracing_v2_enabled(
 
     Args:
         project_name (str, optional): The name of the project.
-            Defaults to "default".
+            Defaults to ``'default'``.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
         tags (list[str], optional): The tags to add to the run.

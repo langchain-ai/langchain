@@ -105,6 +105,7 @@ def trace_as_chain_group(
                 # Use the callback manager for the chain group
                 res = llm.invoke(llm_input, {"callbacks": manager})
                 manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -186,6 +187,7 @@ async def atrace_as_chain_group(
                 # Use the async callback manager for the chain group
                 res = await llm.ainvoke(llm_input, {"callbacks": manager})
                 await manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -1066,7 +1068,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
         Args:
             output (Any): The output of the tool.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): The keyword arguments to pass to the event handler
         """
         if not self.handlers:
             return
@@ -1470,7 +1472,7 @@ class CallbackManager(BaseCallbackManager):
                 input is needed.
                 If provided, the inputs are expected to be formatted as a dict.
                 The keys will correspond to the named-arguments in the tool.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): The keyword arguments to pass to the event handler
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.
@@ -2575,6 +2577,7 @@ async def adispatch_custom_event(
         behalf.
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2645,6 +2648,7 @@ def dispatch_custom_event(
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,

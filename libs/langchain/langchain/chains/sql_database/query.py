@@ -113,6 +113,7 @@ def create_sql_query_chain(
 
             Question: {input}'''
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     if prompt is not None:
         prompt_to_use = prompt
@@ -121,26 +122,27 @@ def create_sql_query_chain(
     else:
         prompt_to_use = PROMPT
     if {"input", "top_k", "table_info"}.difference(
-        prompt_to_use.input_variables + list(prompt_to_use.partial_variables)
+        prompt_to_use.input_variables + list(prompt_to_use.partial_variables),
     ):
-        raise ValueError(
+        msg = (
             f"Prompt must have input variables: 'input', 'top_k', "
             f"'table_info'. Received prompt with input variables: "
             f"{prompt_to_use.input_variables}. Full prompt:\n\n{prompt_to_use}"
         )
+        raise ValueError(msg)
     if "dialect" in prompt_to_use.input_variables:
         prompt_to_use = prompt_to_use.partial(dialect=db.dialect)
 
     table_info_kwargs = {}
     if get_col_comments:
         if db.dialect not in ("postgresql", "mysql", "oracle"):
-            raise ValueError(
+            msg = (
                 f"get_col_comments=True is only supported for dialects "
                 f"'postgresql', 'mysql', and 'oracle'. Received dialect: "
                 f"{db.dialect}"
             )
-        else:
-            table_info_kwargs["get_col_comments"] = True
+            raise ValueError(msg)
+        table_info_kwargs["get_col_comments"] = True
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",

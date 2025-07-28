@@ -116,12 +116,14 @@ def create_react_agent(
             Thought:{agent_scratchpad}'''
 
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
@@ -133,7 +135,7 @@ def create_react_agent(
     else:
         llm_with_stop = llm
     output_parser = output_parser or ReActSingleInputOutputParser()
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
@@ -141,4 +143,3 @@ def create_react_agent(
         | llm_with_stop
         | output_parser
     )
-    return agent

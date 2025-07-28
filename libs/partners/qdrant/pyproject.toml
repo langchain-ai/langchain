@@ -40,7 +40,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["langchain-core"]
 typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 

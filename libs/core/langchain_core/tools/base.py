@@ -74,7 +74,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
-TOOL_MESSAGE_BLOCK_TYPES = ("text", "image_url", "image", "json")
+TOOL_MESSAGE_BLOCK_TYPES = ("text", "image_url", "image", "json", "search_result")
 
 
 class SchemaAnnotationError(TypeError):
@@ -134,7 +134,7 @@ def _get_filtered_args(
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
         if k not in filter_args
-        and (i > 0 or param.name not in ("self", "cls"))
+        and (i > 0 or param.name not in {"self", "cls"})
         and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
@@ -336,7 +336,7 @@ def create_schema_from_function(
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
-        if existing_params and existing_params[0] in ("self", "cls") and in_class:
+        if existing_params and existing_params[0] in {"self", "cls"} and in_class:
             filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
@@ -443,9 +443,7 @@ class ChildTool(BaseTool):
     Args schema should be either:
 
     - A subclass of pydantic.BaseModel.
-    or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
-    or
     - a JSON schema dict
     """
     return_direct: bool = False
@@ -776,7 +774,7 @@ class ChildTool(BaseTool):
     def run(
         self,
         tool_input: Union[str, dict[str, Any]],
-        verbose: Optional[bool] = None,
+        verbose: Optional[bool] = None,  # noqa: FBT001
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
@@ -803,7 +801,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Keyword arguments to be passed to tool callbacks
+            kwargs: Keyword arguments to be passed to tool callbacks (event handler)
 
         Returns:
             The output of the tool.
@@ -846,9 +844,9 @@ class ChildTool(BaseTool):
                     tool_input, tool_call_id
                 )
                 if signature(self._run).parameters.get("run_manager"):
-                    tool_kwargs = tool_kwargs | {"run_manager": run_manager}
+                    tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs = tool_kwargs | {config_param: config}
+                    tool_kwargs |= {config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
@@ -888,7 +886,7 @@ class ChildTool(BaseTool):
     async def arun(
         self,
         tool_input: Union[str, dict],
-        verbose: Optional[bool] = None,
+        verbose: Optional[bool] = None,  # noqa: FBT001
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
@@ -1258,8 +1256,8 @@ class InjectedToolCallId(InjectedToolArg):
     This annotation is used to mark a tool parameter that should receive
     the tool call ID at runtime.
 
-    Example:
-        ```python
+    .. code-block:: python
+
         from typing_extensions import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
@@ -1275,7 +1273,7 @@ class InjectedToolCallId(InjectedToolArg):
                 name="foo",
                 tool_call_id=tool_call_id
             )
-        ```
+
     """
 
 

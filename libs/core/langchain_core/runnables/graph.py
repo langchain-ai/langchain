@@ -361,7 +361,7 @@ class Graph:
         """
         self.nodes.pop(node.id)
         self.edges = [
-            edge for edge in self.edges if node.id not in (edge.source, edge.target)
+            edge for edge in self.edges if node.id not in {edge.source, edge.target}
         ]
 
     def add_edge(
@@ -611,6 +611,7 @@ class Graph:
 
         Returns:
             The Mermaid syntax string.
+
         """
         from langchain_core.runnables.graph_mermaid import draw_mermaid
 
@@ -681,6 +682,7 @@ class Graph:
 
         Returns:
             The PNG image as bytes.
+
         """
         from langchain_core.runnables.graph_mermaid import draw_mermaid_png
 

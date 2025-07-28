@@ -17,20 +17,20 @@ from pydantic import (
     model_validator,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-from tokenizers import Tokenizer  # type: ignore
+from tokenizers import Tokenizer  # type: ignore[import]
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
 MAX_TOKENS = 16_000
 """A batching parameter for the Mistral API. This is NOT the maximum number of tokens
-accepted by the embedding model for each document/chunk, but rather the maximum number 
+accepted by the embedding model for each document/chunk, but rather the maximum number
 of tokens that can be sent in a single request to the Mistral API (across multiple
 documents/chunks)"""
 
 
 class DummyTokenizer:
-    """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
+    """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)."""
 
     @staticmethod
     def encode_batch(texts: list[str]) -> list[list[str]]:
@@ -121,14 +121,15 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """
 
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
     # is run.
-    client: httpx.Client = Field(default=None)  # type: ignore # : :meta private:
+    client: httpx.Client = Field(default=None)  # type: ignore[assignment] # :meta private:
 
-    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+    async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # :meta private:
         default=None
     )
     mistral_api_key: SecretStr = Field(
@@ -153,7 +154,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration."""
-
         api_key_str = self.mistral_api_key.get_secret_value()
         # todo: handle retries
         if not self.client:
@@ -187,14 +187,14 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Could not download mistral tokenizer from Huggingface for "
                     "calculating batch sizes. Set a Huggingface token via the "
                     "HF_TOKEN environment variable to download the real tokenizer. "
-                    "Falling back to a dummy tokenizer that uses `len()`."
+                    "Falling back to a dummy tokenizer that uses `len()`.",
+                    stacklevel=2,
                 )
                 self.tokenizer = DummyTokenizer()
         return self
 
     def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
-        """Split a list of texts into batches of less than 16k tokens for Mistral
-        API."""
+        """Split list of texts into batches of less than 16k tokens for Mistral API."""
         batch: list[str] = []
         batch_tokens = 0
 
@@ -224,6 +224,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         try:
             batch_responses = []
@@ -238,16 +239,17 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             def _embed_batch(batch: list[str]) -> Response:
                 response = self.client.post(
                     url="/embeddings",
-                    json=dict(
-                        model=self.model,
-                        input=batch,
-                    ),
+                    json={
+                        "model": self.model,
+                        "input": batch,
+                    },
                 )
                 response.raise_for_status()
                 return response
 
-            for batch in self._get_batches(texts):
-                batch_responses.append(_embed_batch(batch))
+            batch_responses = [
+                _embed_batch(batch) for batch in self._get_batches(texts)
+            ]
             return [
                 list(map(float, embedding_obj["embedding"]))
                 for response in batch_responses
@@ -265,16 +267,17 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         try:
             batch_responses = await asyncio.gather(
                 *[
                     self.async_client.post(
                         url="/embeddings",
-                        json=dict(
-                            model=self.model,
-                            input=batch,
-                        ),
+                        json={
+                            "model": self.model,
+                            "input": batch,
+                        },
                     )
                     for batch in self._get_batches(texts)
                 ]
@@ -296,6 +299,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embedding for the text.
+
         """
         return self.embed_documents([text])[0]
 
@@ -307,5 +311,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embedding for the text.
+
         """
         return (await self.aembed_documents([text]))[0]

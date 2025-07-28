@@ -11,8 +11,7 @@ def get_action_and_input(text: str) -> tuple[str, str]:
     output = output_parser.parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    else:
-        return "Final Answer", output.return_values["output"]
+    return "Final Answer", output.return_values["output"]
 
 
 def test_parse_with_language() -> None:

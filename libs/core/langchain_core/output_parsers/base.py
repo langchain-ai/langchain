@@ -28,7 +28,7 @@ T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
-class BaseLLMOutputParser(Generic[T], ABC):
+class BaseLLMOutputParser(ABC, Generic[T]):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
@@ -155,6 +155,7 @@ class BaseOutputParser(
                 @property
                 def _type(self) -> str:
                     return "boolean_output_parser"
+
     """  # noqa: E501
 
     @property
