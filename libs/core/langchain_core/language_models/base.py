@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import Mapping, Sequence
 from functools import cache
 from typing import (
@@ -164,7 +164,6 @@ class BaseLanguageModel(
             list[AnyMessage],
         ]
 
-    @abstractmethod
     def generate_prompt(
         self,
         prompts: list[PromptValue],
@@ -199,7 +198,6 @@ class BaseLanguageModel(
                 prompt and additional model provider-specific output.
         """
 
-    @abstractmethod
     async def agenerate_prompt(
         self,
         prompts: list[PromptValue],
@@ -243,7 +241,6 @@ class BaseLanguageModel(
         raise NotImplementedError
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -264,7 +261,6 @@ class BaseLanguageModel(
         """
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @abstractmethod
     def predict_messages(
         self,
         messages: list[BaseMessage],
@@ -289,7 +285,6 @@ class BaseLanguageModel(
         """
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -310,7 +305,6 @@ class BaseLanguageModel(
         """
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @abstractmethod
     async def apredict_messages(
         self,
         messages: list[BaseMessage],
