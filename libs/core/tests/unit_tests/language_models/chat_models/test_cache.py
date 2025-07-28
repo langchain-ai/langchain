@@ -13,7 +13,8 @@ from langchain_core.language_models.fake_chat_models import (
     GenericFakeChatModel,
 )
 from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration
+from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.outputs.chat_result import ChatResult
 
 
 class InMemoryCache(BaseCache):
@@ -303,6 +304,93 @@ def test_llm_representation_for_serializable() -> None:
         '["builtins", "list_iterator"], "lc": 1, "type": "not_implemented"}}, "lc": '
         '1, "name": "CustomChat", "type": "constructor"}---[(\'stop\', None)]'
     )
+
+
+def test_cache_with_generation_objects() -> None:
+    """Test that cache can handle Generation objects instead of ChatGeneration objects.
+
+    This test reproduces a bug where cache returns Generation objects
+    but ChatResult expects ChatGeneration objects, causing validation errors.
+
+    See #22389 for more info.
+    
+    """
+    cache = InMemoryCache()
+
+    # Create a simple fake chat model that we can control
+    from langchain_core.messages import AIMessage
+
+    class SimpleFakeChat:
+        """Simple fake chat model for testing."""
+
+        def __init__(self, cache: BaseCache) -> None:
+            self.cache = cache
+            self.response = "hello"
+
+        def _get_llm_string(self) -> str:
+            return "test_llm_string"
+
+        def generate_response(self, prompt: str) -> ChatResult:
+            """Simulate the cache lookup and generation logic."""
+            from langchain_core.load import dumps
+
+            llm_string = self._get_llm_string()
+            prompt_str = dumps([prompt])
+
+            # Check cache first
+            cache_val = self.cache.lookup(prompt_str, llm_string)
+            if cache_val:
+                # This is where our fix should work
+                converted_generations = []
+                for gen in cache_val:
+                    if isinstance(gen, Generation) and not isinstance(
+                        gen, ChatGeneration
+                    ):
+                        # Convert Generation to ChatGeneration by creating an AIMessage
+                        chat_gen = ChatGeneration(
+                            message=AIMessage(content=gen.text),
+                            generation_info=gen.generation_info,
+                        )
+                        converted_generations.append(chat_gen)
+                    else:
+                        converted_generations.append(gen)
+                return ChatResult(generations=converted_generations)
+
+            # Generate new response
+            chat_gen = ChatGeneration(
+                message=AIMessage(content=self.response), generation_info={}
+            )
+            result = ChatResult(generations=[chat_gen])
+
+            # Store in cache
+            self.cache.update(prompt_str, llm_string, result.generations)
+            return result
+
+    model = SimpleFakeChat(cache)
+
+    # First call - normal operation
+    result1 = model.generate_response("test prompt")
+    assert result1.generations[0].message.content == "hello"
+
+    # Manually corrupt the cache by replacing ChatGeneration with Generation
+    cache_key = next(iter(cache._cache.keys()))
+    cached_chat_generations = cache._cache[cache_key]
+
+    # Replace with Generation objects (missing message field)
+    corrupted_generations = [
+        Generation(
+            text=gen.text,
+            generation_info=gen.generation_info,
+            type="Generation",  # This is the key - wrong type
+        )
+        for gen in cached_chat_generations
+    ]
+    cache._cache[cache_key] = corrupted_generations
+
+    # Second call should handle the Generation objects gracefully
+    result2 = model.generate_response("test prompt")
+    assert result2.generations[0].message.content == "hello"
+    assert isinstance(result2.generations[0], ChatGeneration)
 
 
 def test_cleanup_serialized() -> None:
