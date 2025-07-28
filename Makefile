@@ -1,4 +1,4 @@
-.PHONY: all help clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_quick_preview api_docs_clean api_docs_linkcheck spell_check spell_fix lint lint_package lint_tests format format_diff update-package-downloads
+.PHONY: help clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_quick_preview api_docs_clean api_docs_linkcheck spell_check spell_fix lint lint_package lint_tests format format_diff update-package-downloads
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
