@@ -187,6 +187,7 @@ class ConstitutionalChain(Chain):
             )
 
             constitutional_chain.run(question="What is the meaning of life?")
+
     """  # noqa: E501
 
     chain: LLMChain
@@ -200,6 +201,12 @@ class ConstitutionalChain(Chain):
         cls,
         names: Optional[list[str]] = None,
     ) -> list[ConstitutionalPrinciple]:
+        """Get constitutional principles by name.
+
+        Args:
+            names: List of names of constitutional principles to retrieve.
+                If None (default), all principles are returned.
+        """
         if names is None:
             return list(PRINCIPLES.values())
         return [PRINCIPLES[name] for name in names]

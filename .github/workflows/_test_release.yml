@@ -1,4 +1,4 @@
-name: test-release
+name: '🧪 Test Release Package'
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python + uv
+      - name: '🐍 Set up Python + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -45,17 +45,17 @@ jobs:
       # > It is strongly advised to separate jobs for building [...]
       # > from the publish job.
       # https://github.com/pypa/gh-action-pypi-publish#non-goals
-      - name: Build project for distribution
+      - name: '📦 Build Project for Distribution'
         run: uv build
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Upload build
+      - name: '⬆️ Upload Build Artifacts'
         uses: actions/upload-artifact@v4
         with:
           name: test-dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Check Version
+      - name: '🔍 Extract Version Information'
         id: check-version
         shell: python
         working-directory: ${{ inputs.working-directory }}

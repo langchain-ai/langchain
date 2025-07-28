@@ -10,6 +10,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -38,7 +39,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
             StuffDocumentsChain,
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)
+                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)  # noqa: SLF001
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -48,6 +49,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
 
         return docs[:num_docs]
 
+    @override
     def _get_docs(
         self,
         inputs: dict[str, Any],
@@ -73,7 +75,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "
             "please use `from langchain.chains import RetrievalQAWithSourcesChain`",
