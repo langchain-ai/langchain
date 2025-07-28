@@ -108,6 +108,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         arbitrary_types_allowed=True,
     )
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -115,6 +116,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model("ChainInput", **dict.fromkeys(self.input_keys, (Any, None)))
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -174,7 +176,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         run_manager.on_chain_end(outputs)
 
         if include_run_info:
@@ -228,7 +230,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             )
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         await run_manager.on_chain_end(outputs)
 
         if include_run_info:
@@ -409,7 +411,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
         return self.invoke(
             inputs,
-            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None}),
+            cast("RunnableConfig", {k: v for k, v in config.items() if v is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
@@ -459,7 +461,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         }
         return await self.ainvoke(
             inputs,
-            cast(RunnableConfig, {k: v for k, v in config.items() if k is not None}),
+            cast("RunnableConfig", {k: v for k, v in config.items() if k is not None}),
             return_only_outputs=return_only_outputs,
             include_run_info=include_run_info,
         )
@@ -616,6 +618,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 context = "Weather report for Boise, Idaho on 07/03/23..."
                 chain.run(question=question, context=context)
                 # -> "The temperature in Boise is..."
+
         """
         # Run at start to make sure this is possible/defined
         _output_key = self._run_output_key
@@ -690,6 +693,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 context = "Weather report for Boise, Idaho on 07/03/23..."
                 await chain.arun(question=question, context=context)
                 # -> "The temperature in Boise is..."
+
         """
         if len(self.output_keys) != 1:
             msg = (
@@ -744,6 +748,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
+
         """
         _dict = super().dict(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -763,6 +768,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             .. code-block:: python
 
                 chain.save(file_path="path/chain.yaml")
+
         """
         if self.memory is not None:
             msg = "Saving of memory is not yet supported."
@@ -781,10 +787,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(chain_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

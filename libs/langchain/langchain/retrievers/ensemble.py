@@ -81,7 +81,7 @@ class EnsembleRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def set_weights(cls, values: dict[str, Any]) -> Any:
+    def _set_weights(cls, values: dict[str, Any]) -> Any:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
@@ -116,7 +116,7 @@ class EnsembleRetriever(BaseRetriever):
             result = self.rank_fusion(input, run_manager=run_manager, config=config)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -157,7 +157,7 @@ class EnsembleRetriever(BaseRetriever):
             )
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,
@@ -236,7 +236,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=cast(str, doc)) if isinstance(doc, str) else doc
+                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc
                 for doc in retriever_docs[i]
             ]
 

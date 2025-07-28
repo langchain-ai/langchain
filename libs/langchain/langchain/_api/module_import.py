@@ -106,10 +106,11 @@ def create_importer(
                             "<https://python.langchain.com/docs/versions/v0_2/>"
                         ),
                     )
-                return result
             except Exception as e:
                 msg = f"module {new_module} has no attribute {name}"
                 raise AttributeError(msg) from e
+
+            return result
 
         if fallback_module:
             try:
@@ -139,11 +140,12 @@ def create_importer(
                             "<https://python.langchain.com/docs/versions/v0_2/>"
                         ),
                     )
-                return result
 
             except Exception as e:
                 msg = f"module {fallback_module} has no attribute {name}"
                 raise AttributeError(msg) from e
+
+            return result
 
         msg = f"module {package} has no attribute {name}"
         raise AttributeError(msg)

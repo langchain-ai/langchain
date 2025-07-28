@@ -23,16 +23,16 @@ The LangChain [retriever](/docs/concepts/retrievers/) interface is straightforwa
 ## Key concept
 
 ![Retriever](/img/retriever_concept.png)
- 
+
 All retrievers implement a simple interface for retrieving documents using natural language queries.
 
-## Interface 
+## Interface
 
-The only requirement for a retriever is the ability to accepts a query and return documents. 
+The only requirement for a retriever is the ability to accepts a query and return documents.
 In particular, [LangChain's retriever class](https://python.langchain.com/api_reference/core/retrievers/langchain_core.retrievers.BaseRetriever.html#) only requires that the `_get_relevant_documents` method is implemented, which takes a `query: str` and returns a list of [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html) objects that are most relevant to the query.
 The underlying logic used to get relevant documents is specified by the retriever and can be whatever is most useful for the application.
 
-A LangChain retriever is a [runnable](/docs/how_to/lcel_cheatsheet/), which is a standard interface for LangChain components. 
+A LangChain retriever is a [runnable](/docs/how_to/lcel_cheatsheet/), which is a standard interface for LangChain components.
 This means that it has a few common methods, including `invoke`, that are used to interact with it. A retriever can be invoked with a query:
 
 ```python
@@ -42,23 +42,23 @@ docs = retriever.invoke(query)
 Retrievers return a list of [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html) objects, which have two attributes:
 
 * `page_content`: The content of this document. Currently is a string.
-* `metadata`: Arbitrary metadata associated with this document (e.g., document id, file name, source, etc). 
+* `metadata`: Arbitrary metadata associated with this document (e.g., document id, file name, source, etc).
 
 :::info[Further reading]
 
 * See our [how-to guide](/docs/how_to/custom_retriever/) on building your own custom retriever.
 
 :::
- 
+
 ## Common types
 
 Despite the flexibility of the retriever interface, a few common types of retrieval systems are frequently used.
 
 ### Search apis
 
-It's important to note that retrievers don't need to actually *store* documents. 
-For example, we can build retrievers on top of search APIs that simply return search results! 
-See our retriever integrations with [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](/docs/integrations/retrievers/wikipedia/). 
+It's important to note that retrievers don't need to actually *store* documents.
+For example, we can build retrievers on top of search APIs that simply return search results!
+See our retriever integrations with [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/) or [Wikipedia Search](/docs/integrations/retrievers/wikipedia/).
 
 ### Relational or graph database
 
@@ -75,7 +75,7 @@ For example, you can build a retriever for a SQL database using text-to-SQL conv
 
 ### Lexical search
 
-As discussed in our conceptual review of [retrieval](/docs/concepts/retrieval/), many search engines are based upon matching words in a query to the words in each document. 
+As discussed in our conceptual review of [retrieval](/docs/concepts/retrieval/), many search engines are based upon matching words in a query to the words in each document.
 [BM25](https://en.wikipedia.org/wiki/Okapi_BM25#:~:text=BM25%20is%20a%20bag%2Dof,slightly%20different%20components%20and%20parameters.) and [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) are [two popular lexical search algorithms](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
 LangChain has retrievers for many popular lexical search algorithms / engines.
 
@@ -85,11 +85,11 @@ LangChain has retrievers for many popular lexical search algorithms / engines.
 * See the [TF-IDF](/docs/integrations/retrievers/tf_idf/) retriever integration.
 * See the [Elasticsearch](/docs/integrations/retrievers/elasticsearch_retriever/) retriever integration.
 
-::: 
+:::
 
-### Vector store 
+### Vector store
 
-[Vector stores](/docs/concepts/vectorstores/) are a powerful and efficient way to index and retrieve unstructured data. 
+[Vector stores](/docs/concepts/vectorstores/) are a powerful and efficient way to index and retrieve unstructured data.
 A vectorstore can be used as a retriever by calling the `as_retriever()` method.
 
 ```python
@@ -99,7 +99,7 @@ retriever = vectorstore.as_retriever()
 
 ## Advanced retrieval patterns
 
-### Ensemble 
+### Ensemble
 
 Because the retriever interface is so simple, returning a list of `Document` objects given a search query, it is possible to combine multiple retrievers using ensembling.
 This is particularly useful when you have multiple retrievers that are good at finding different types of relevant documents.
@@ -112,24 +112,24 @@ ensemble_retriever = EnsembleRetriever(
 )
 ```
 
-When ensembling, how do we combine search results from many retrievers? 
+When ensembling, how do we combine search results from many retrievers?
 This motivates the concept of re-ranking, which takes the output of multiple retrievers and combines them using a more sophisticated algorithm such as [Reciprocal Rank Fusion (RRF)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf).
 
-### Source document retention 
+### Source document retention
 
 Many retrievers utilize some kind of index to make documents easily searchable.
-The process of indexing can include a transformation step (e.g., vectorstores often use document splitting). 
+The process of indexing can include a transformation step (e.g., vectorstores often use document splitting).
 Whatever transformation is used, can be very useful to retain a link between the *transformed document* and the original, giving the retriever the ability to return the *original* document.
 
 ![Retrieval with full docs](/img/retriever_full_docs.png)
 
 This is particularly useful in AI applications, because it ensures no loss in document context for the model.
-For example, you may use small chunk size for indexing documents in a vectorstore. 
-If you return *only* the chunks as the retrieval result, then the model will have lost the original document context for the chunks. 
+For example, you may use small chunk size for indexing documents in a vectorstore.
+If you return *only* the chunks as the retrieval result, then the model will have lost the original document context for the chunks.
 
-LangChain has two different retrievers that can be used to address this challenge. 
-The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to use any document transformation (e.g., use an LLM to write a summary of the document) for indexing while retaining linkage to the source document. 
-The [ParentDocument](/docs/how_to/parent_document_retriever/) retriever links document chunks from a text-splitter transformation for indexing while retaining linkage to the source document. 
+LangChain has two different retrievers that can be used to address this challenge.
+The [Multi-Vector](/docs/how_to/multi_vector/) retriever allows the user to use any document transformation (e.g., use an LLM to write a summary of the document) for indexing while retaining linkage to the source document.
+The [ParentDocument](/docs/how_to/parent_document_retriever/) retriever links document chunks from a text-splitter transformation for indexing while retaining linkage to the source document.
 
 | Name                                                      | Index Type                    | Uses an LLM               | When to Use                                                                                                                             | Description                                                                                                                                                                                                              |
 |-----------------------------------------------------------|-------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

@@ -3,6 +3,7 @@ from typing import Union
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 from langchain.agents.agent import MultiActionAgentOutputParser
 from langchain.agents.output_parsers.tools import (
@@ -53,6 +54,7 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
     def _type(self) -> str:
         return "openai-tools-agent-output-parser"
 
+    @override
     def parse_result(
         self,
         result: list[Generation],
@@ -61,10 +63,11 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
     ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
         return parse_ai_message_to_openai_tool_action(message)
 
+    @override
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         msg = "Can only parse messages"
         raise ValueError(msg)

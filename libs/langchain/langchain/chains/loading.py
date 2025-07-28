@@ -39,7 +39,8 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:
+    def load_llm(*_: Any, **__: Any) -> None:
+        """Import error for load_llm."""
         msg = (
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
@@ -47,7 +48,8 @@ except ImportError:
         )
         raise ImportError(msg)
 
-    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
+    def load_llm_from_config(*_: Any, **__: Any) -> None:
+        """Import error for load_llm_from_config."""
         msg = (
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "
@@ -117,7 +119,7 @@ def _load_stuff_documents_chain(config: dict, **kwargs: Any) -> StuffDocumentsCh
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "document_prompt" in config:
         prompt_config = config.pop("document_prompt")
@@ -150,7 +152,7 @@ def _load_map_reduce_documents_chain(
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "reduce_documents_chain" in config:
         reduce_documents_chain = load_chain_from_config(
@@ -713,10 +715,10 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
         msg = "File type must be json or yaml"

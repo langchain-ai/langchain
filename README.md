@@ -15,7 +15,7 @@
 [![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=flat-square)](https://star-history.com/#langchain-ai/langchain)
 [![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/issues)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode&style=flat-square)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
-[<img src="https://github.com/codespaces/badge.svg" title="Open in Github Codespace" width="150" height="20">](https://codespaces.new/langchain-ai/langchain)
+[<img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20">](https://codespaces.new/langchain-ai/langchain)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 [![CodSpeed Badge](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/langchain-ai/langchain)
 
@@ -40,9 +40,10 @@ controllable agent workflows.
 ## Why use LangChain?
 
 LangChain helps developers build applications powered by LLMs through a standard
-interface for models, embeddings, vector stores, and more. 
+interface for models, embeddings, vector stores, and more.
 
 Use LangChain for:
+
 - **Real-time data augmentation**. Easily connect LLMs to diverse data sources and
 external / internal systems, drawing from LangChain’s vast library of integrations with
 model providers, tools, vector stores, retrievers, and more.
@@ -52,9 +53,10 @@ frontier evolves, adapt quickly — LangChain’s abstractions keep you moving w
 losing momentum.
 
 ## LangChain’s ecosystem
+
 While the LangChain framework can be used standalone, it also integrates seamlessly
 with any LangChain product, giving developers a full suite of tools when building LLM
-applications. 
+applications.
 
 To improve your LLM application development, pair LangChain with:
 
@@ -73,11 +75,13 @@ teams — and iterate quickly with visual prototyping in
 [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/).
 
 ## Additional resources
+
 - [Tutorials](https://python.langchain.com/docs/tutorials/): Simple walkthroughs with
 guided examples on getting started with LangChain.
 - [How-to Guides](https://python.langchain.com/docs/how_to/): Quick, actionable code
 snippets for topics such as tool calling, RAG use cases, and more.
 - [Conceptual Guides](https://python.langchain.com/docs/concepts/): Explanations of key
 concepts behind the LangChain framework.
+- [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.

@@ -11,12 +11,12 @@ dependencies = [
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
     "jsonpatch<2.0,>=1.33",
     "PyYAML>=5.3",
-    "packaging<25,>=23.2",
     "typing-extensions>=4.7",
+    "packaging>=23.2",
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.68"
+version = "0.3.72"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -124,5 +124,5 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D", "S", "SLF",]
+"tests/**" = [ "D1", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]

@@ -2,12 +2,14 @@ from typing import Any
 
 from langchain_core.agents import AgentAction
 from langchain_core.prompts.chat import ChatPromptTemplate
+from typing_extensions import override
 
 
 class AgentScratchPadChatPromptTemplate(ChatPromptTemplate):
     """Chat prompt template for the agent scratchpad."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

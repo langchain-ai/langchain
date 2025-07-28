@@ -11,7 +11,7 @@ def create_chat_prompt(
     path: str,
     input_name_agent_scratchpad: str = "agent_scratchpad",
 ) -> Runnable[dict[str, Any], ChatPromptTemplate]:
-    """Create a chat prompt from a Langchain schema."""
+    """Create a chat prompt from a LangChain schema."""
 
     def runnable_chat_lambda(inputs: dict[str, Any]) -> ChatPromptTemplate:
         p = load(path)

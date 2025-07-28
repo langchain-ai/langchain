@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from datetime import timezone
 from typing import Any, Callable, Optional, TypeVar
 
 import pytest
@@ -7,6 +8,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from typing_extensions import override
 
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
@@ -20,6 +22,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     parse_count: int = 0  # Number of times parse has been called
     attemp_count_before_success: int  # Number of times to fail before succeeding
 
+    @override
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
@@ -61,7 +64,7 @@ def test_output_fixing_parser_parse(
 
 
 def test_output_fixing_parser_from_llm() -> None:
-    def fake_llm(prompt: str) -> AIMessage:
+    def fake_llm(_: str) -> AIMessage:
         return AIMessage("2024-07-08T00:00:00.000000Z")
 
     llm = RunnableLambda(fake_llm)
@@ -147,21 +150,21 @@ def test_output_fixing_parser_output_type(
 
 
 @pytest.mark.parametrize(
-    "completion,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
@@ -184,21 +187,21 @@ def test_output_fixing_parser_parse_with_retry_chain(
 
 
 @pytest.mark.parametrize(
-    "completion,base_parser,retry_chain,expected",
+    ("completion", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
             "2024/07/08",
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
