@@ -3,8 +3,8 @@
 import asyncio
 import re
 import time
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
-from typing import Any, Optional, Union, cast
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Callable, Optional, Sequence, Union, cast
 
 from typing_extensions import override
 
