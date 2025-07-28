@@ -673,6 +673,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             You can then commit the cassette to your repository. Subsequent test runs
             will use the cassette instead of making HTTP calls.
+
     """  # noqa: E501
 
     @property
@@ -698,6 +699,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         message=AIMessage(content="Output text")
                     )]
                 )
+
         """
         result = model.invoke("Hello")
         assert result is not None
@@ -730,6 +732,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         message=AIMessage(content="Output text")
                     )]
                 )
+
         """
         result = await model.ainvoke("Hello")
         assert result is not None
@@ -761,6 +764,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 yield ChatGenerationChunk(
                     message=AIMessageChunk(content="chunk text")
                 )
+
         """
         num_chunks = 0
         for chunk in model.stream("Hello"):
@@ -796,6 +800,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 yield ChatGenerationChunk(
                     message=AIMessageChunk(content="chunk text")
                 )
+
         """
         num_chunks = 0
         async for chunk in model.astream("Hello"):
@@ -1011,6 +1016,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Check also that the response includes a ``'model_name'`` key in its
             ``usage_metadata``.
+
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -1188,6 +1194,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Check also that the aggregated response includes a ``'model_name'`` key
             in its ``usage_metadata``.
+
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -1273,6 +1280,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     run_manager: Optional[CallbackManagerForLLMRun] = None,
                     **kwargs: Any,
                 ) -> ChatResult:
+
         """
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
@@ -1324,6 +1332,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Otherwise, in the case that only one tool is bound, ensure that
             ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1397,6 +1406,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Otherwise, in the case that only one tool is bound, ensure that
             ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1456,6 +1466,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Otherwise, ensure that the ``tool_choice_value`` property is correctly
             specified on the test class.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1520,6 +1531,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 @pytest.mark.xfail(reason=("Not implemented."))
                 def test_tool_message_histories_string_content(self, *args: Any) -> None:
                     super().test_tool_message_histories_string_content(*args)
+
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1604,6 +1616,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 @pytest.mark.xfail(reason=("Not implemented."))
                 def test_tool_message_histories_list_content(self, *args: Any) -> None:
                     super().test_tool_message_histories_list_content(*args)
+
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1733,6 +1746,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Otherwise, in the case that only one tool is bound, ensure that
             ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1788,6 +1802,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that the ``status`` field on ``ToolMessage``
             objects is either ignored or passed to the model appropriately.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1859,6 +1874,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 @pytest.mark.xfail(reason=("Not implemented."))
                 def test_structured_few_shot_examples(self, *args: Any) -> None:
                     super().test_structured_few_shot_examples(*args)
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1909,6 +1925,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
@@ -1987,6 +2004,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
@@ -2065,6 +2083,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
@@ -2126,6 +2145,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
@@ -2187,6 +2207,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
@@ -2263,6 +2284,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with pdf content blocks, including base64-encoded files. Otherwise, set
             the ``supports_pdf_inputs`` property to False.
+
         """
         if not self.supports_pdf_inputs:
             pytest.skip("Model does not support PDF inputs.")
@@ -2338,6 +2360,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with audio content blocks, specifically base64-encoded files. Otherwise,
             set the ``supports_audio_inputs`` property to False.
+
         """
         if not self.supports_audio_inputs:
             pytest.skip("Model does not support audio inputs.")
@@ -2438,6 +2461,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with image content blocks, including base64-encoded images. Otherwise, set
             the ``supports_image_inputs`` property to False.
+
         """
         if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
@@ -2544,6 +2568,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             with image content blocks in ToolMessages, including base64-encoded
             images. Otherwise, set the ``supports_image_tool_message`` property to
             False.
+
         """
         if not self.supports_image_tool_message:
             pytest.skip("Model does not support image tool message.")
@@ -2666,6 +2691,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Otherwise, if Anthropic tool call and result formats are not supported,
             set the ``supports_anthropic_inputs`` property to False.
+
         """  # noqa: E501
         if not self.supports_anthropic_inputs:
             pytest.skip("Model does not explicitly support Anthropic inputs.")
@@ -2782,6 +2808,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that the ``name`` field on ``HumanMessage``
             objects is either ignored or passed to the model appropriately.
+
         """
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None

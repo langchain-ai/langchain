@@ -58,6 +58,7 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 
 For backwards compatibility, this module provides functions to convert between the
 old and new formats. The functions are used internally by ChatOpenAI.
+
 """  # noqa: E501
 
 import json

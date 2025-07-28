@@ -26,6 +26,7 @@ class TransformChain(Chain):
             from langchain.chains import TransformChain
             transform_chain = TransformChain(input_variables=["text"],
              output_variables["entities"], transform=func())
+
     """
 
     input_variables: list[str]

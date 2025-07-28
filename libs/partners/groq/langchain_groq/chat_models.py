@@ -304,6 +304,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
+
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:

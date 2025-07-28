@@ -1273,6 +1273,7 @@ class InjectedToolCallId(InjectedToolArg):
                 name="foo",
                 tool_call_id=tool_call_id
             )
+
     """
 
 

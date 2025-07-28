@@ -236,6 +236,7 @@ class Runnable(ABC, Generic[Input, Output]):
             )
 
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
+
     """  # noqa: E501
 
     name: Optional[str]
@@ -391,6 +392,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 print(runnable.get_input_jsonschema())
 
         .. versionadded:: 0.3.0
+
         """
         return self.get_input_schema(config).model_json_schema()
 
@@ -464,6 +466,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 print(runnable.get_output_jsonschema())
 
         .. versionadded:: 0.3.0
+
         """
         return self.get_output_schema(config).model_json_schema()
 
@@ -620,6 +623,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 sequence.batch([1, 2, 3])
                 await sequence.abatch([1, 2, 3])
                 # -> [4, 6, 8]
+
         """
         return RunnableSequence(self, *others, name=name)
 
@@ -1361,6 +1365,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Raises:
             NotImplementedError: If the version is not `v1` or `v2`.
+
         """  # noqa: E501
         from langchain_core.tracers.event_stream import (
             _astream_events_implementation_v1,
@@ -1607,6 +1612,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 on_end=fn_end
             )
             chain.invoke(2)
+
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1825,6 +1831,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
                     runnable = RunnableLambda(_lambda)
                     print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
+
         """
         return RunnableEach(bound=self)
 
@@ -2446,6 +2453,7 @@ class Runnable(ABC, Generic[Input, Output]):
             as_tool.invoke("b")
 
         .. versionadded:: 0.2.14
+
         """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool
@@ -2517,6 +2525,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                 configurable={"output_token_number": 200}
                 ).invoke("tell me something about chess").content
             )
+
         """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
@@ -2577,6 +2586,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
                     configurable={"llm": "openai"}
                 ).invoke("which organization created you?").content
             )
+
         """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
@@ -2741,6 +2751,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             async for chunk in chain.astream({'topic': 'colors'}):
                 print('-')  # noqa: T201
                 print(chunk, sep='', flush=True)  # noqa: T201
+
     """
 
     # The steps are broken into first, middle and last, solely for type checking
@@ -3608,6 +3619,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 for key in chunk:
                     output[key] = output[key] + chunk[key].content
                 print(output)  # noqa: T201
+
     """
 
     steps__: Mapping[str, Runnable[Input, Any]]
@@ -4130,6 +4142,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
             runnable = chant_chain | RunnableLambda(reverse_generator)
             "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
+
     """
 
     def __init__(
@@ -4390,6 +4403,7 @@ class RunnableLambda(Runnable[Input, Output]):
             runnable = RunnableLambda(add_one, afunc=add_one_async)
             runnable.invoke(1) # Uses add_one
             await runnable.ainvoke(1) # Uses add_one_async
+
     """
 
     def __init__(
@@ -5244,6 +5258,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
                                         {'topic':'Art'},
                                         {'topic':'Biology'}])
             print(output)  # noqa: T201
+
     """
 
     @override
@@ -5778,6 +5793,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
                 kwargs={'stop': ['-']} # <-- Note the additional kwargs
             )
             runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+
     """
 
     @override
@@ -6058,5 +6074,6 @@ def chain(
 
             for chunk in llm.stream(formatted):
                 yield chunk
+
     """
     return RunnableLambda(func)

@@ -32,6 +32,7 @@ class ChatParrotLink(BaseChatModel):
             result = model.invoke([HumanMessage(content="hello")])
             result = model.batch([[HumanMessage(content="hello")],
                                  [HumanMessage(content="world")]])
+
     """
 
     model_name: str = Field(alias="model")

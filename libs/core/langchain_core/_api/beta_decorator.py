@@ -70,6 +70,7 @@ def beta(
             @beta
             def the_function_to_annotate():
                 pass
+
     """
 
     def beta(

@@ -30,6 +30,7 @@ class AzureOpenAI(BaseOpenAI):
             from langchain_openai import AzureOpenAI
 
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
+
     """
 
     azure_endpoint: Optional[str] = Field(

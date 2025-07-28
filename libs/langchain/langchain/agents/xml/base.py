@@ -37,7 +37,6 @@ class XMLAgent(BaseSingleActionAgent):
             tools = ...
             model =
 
-
     """
 
     tools: list[BaseTool]
@@ -209,6 +208,7 @@ def create_xml_agent(
             Question: {input}
             {agent_scratchpad}'''
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     missing_vars = {"tools", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

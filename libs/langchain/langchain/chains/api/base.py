@@ -191,6 +191,7 @@ try:
             )
             async for event in events:
                 event["messages"][-1].pretty_print()
+
         """  # noqa: E501
 
         api_request_chain: LLMChain

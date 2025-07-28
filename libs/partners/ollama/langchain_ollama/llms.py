@@ -33,6 +33,7 @@ class OllamaLLM(BaseLLM):
 
             model = OllamaLLM(model="llama3")
             print(model.invoke("Come up with 10 names for a song about parrots"))
+
     """
 
     model: str
