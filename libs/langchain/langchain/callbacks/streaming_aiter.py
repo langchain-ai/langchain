@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from typing import Any, Literal, Union, cast
 
 from langchain_core.callbacks import AsyncCallbackHandler
+from langchain_core.messages.v1 import AIMessage
 from langchain_core.outputs import LLMResult
 from typing_extensions import override
 
@@ -44,7 +45,9 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
             self.queue.put_nowait(token)
 
     @override
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         self.done.set()
 
     @override
