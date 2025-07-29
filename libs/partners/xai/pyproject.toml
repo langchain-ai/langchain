@@ -55,7 +55,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "D", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "D104", ]
 
 [tool.coverage.run]
 omit = ["tests/*"]

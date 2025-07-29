@@ -85,6 +85,7 @@ class LLMSummarizationCheckerChain(Chain):
             from langchain.chains import LLMSummarizationCheckerChain
             llm = OpenAI(temperature=0.0)
             checker_chain = LLMSummarizationCheckerChain.from_llm(llm)
+
     """
 
     sequential_chain: SequentialChain
