@@ -31,14 +31,13 @@ from langchain_core.callbacks import (
     CallbackManager,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models._utils import _normalize_messages_v1
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
 )
 from langchain_core.messages import (
-    AIMessage,
     convert_to_openai_image_block,
     get_buffer_string,
     is_data_content_block,
@@ -85,14 +84,15 @@ def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
-        generations = [AIMessageV1(content=[], response_metadata=metadata)]
+        # Permit response_metadata without model_name, model_provider fields
+        generations = [AIMessageV1(content=[], response_metadata=metadata)]  # type: ignore[arg-type]
     else:
         generations = []
 
     return generations
 
 
-def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
+def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
     """Format messages for tracing in on_chat_model_start.
 
     - Update image content blocks to OpenAI Chat Completions format (backward
@@ -112,7 +112,7 @@ def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
             # Update image content blocks to OpenAI # Chat Completions format.
             if (
                 block["type"] == "image"
-                and is_data_content_block(block)
+                and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
                 and block.get("source_type") != "id"
             ):
                 if message_to_trace is message:
@@ -120,7 +120,9 @@ def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
                     message_to_trace = copy.copy(message)
                     message_to_trace.content = list(message_to_trace.content)
 
-                message_to_trace.content[idx] = convert_to_openai_image_block(block)
+                # TODO: for tracing purposes we store non-standard types (OpenAI format)
+                # in message content. Consider typing these block formats.
+                message_to_trace.content[idx] = convert_to_openai_image_block(block)  # type: ignore[arg-type, call-overload]
             else:
                 pass
         messages_to_trace.append(message_to_trace)
@@ -299,7 +301,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             return convert_to_messages_v1(model_input)
         msg = (
             f"Invalid input type {type(model_input)}. "
-            "Must be a PromptValue, str, or list of BaseMessages."
+            "Must be a PromptValue, str, or list of Messages."
         )
         raise ValueError(msg)
 
@@ -382,27 +384,27 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         if self.rate_limiter:
             self.rate_limiter.acquire(blocking=True)
 
-        input_messages = _normalize_messages(messages)
+        input_messages = _normalize_messages_v1(messages)
 
         if self._should_stream(async_api=False, **kwargs):
             chunks: list[AIMessageChunkV1] = []
             try:
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg)
+                    run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
-            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+            full_message = add_ai_message_chunks(chunks[0], *chunks[1:]).to_message()
         else:
             try:
-                msg = self._invoke(input_messages, **kwargs)
+                full_message = self._invoke(input_messages, **kwargs)
             except BaseException as e:
                 run_manager.on_llm_error(e)
                 raise
 
-        run_manager.on_llm_end(msg)
-        return msg
+        run_manager.on_llm_end(full_message)
+        return full_message
 
     @override
     async def ainvoke(
@@ -410,7 +412,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         config = ensure_config(config)
         messages = self._convert_input(input)
         ls_structured_output_format = kwargs.pop(
@@ -449,31 +451,31 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             await self.rate_limiter.aacquire(blocking=True)
 
         # TODO: type openai image, audio, file types and permit in MessageV1
-        input_messages = _normalize_messages(messages)  # type: ignore[arg-type]
+        input_messages = _normalize_messages_v1(messages)
 
         if self._should_stream(async_api=True, **kwargs):
             chunks: list[AIMessageChunkV1] = []
             try:
                 async for msg in self._astream(input_messages, **kwargs):
-                    await run_manager.on_llm_new_token(msg)
+                    await run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
             except BaseException as e:
                 await run_manager.on_llm_error(
                     e, response=_generate_response_from_error(e)
                 )
                 raise
-            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+            full_message = add_ai_message_chunks(chunks[0], *chunks[1:]).to_message()
         else:
             try:
-                msg = await self._ainvoke(input_messages, **kwargs)
+                full_message = await self._ainvoke(input_messages, **kwargs)
             except BaseException as e:
                 await run_manager.on_llm_error(
                     e, response=_generate_response_from_error(e)
                 )
                 raise
 
-        await run_manager.on_llm_end(msg.to_message())
-        return msg
+        await run_manager.on_llm_end(full_message)
+        return full_message
 
     @override
     def stream(
@@ -530,9 +532,9 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
 
             try:
                 # TODO: replace this with something for new messages
-                input_messages = _normalize_messages(messages)
+                input_messages = _normalize_messages_v1(messages)
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg)
+                    run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
                     yield msg
             except BaseException as e:
@@ -598,12 +600,12 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         chunks: list[AIMessageChunkV1] = []
 
         try:
-            input_messages = _normalize_messages(messages)
+            input_messages = _normalize_messages_v1(messages)
             async for msg in self._astream(
                 input_messages,
                 **kwargs,
             ):
-                await run_manager.on_llm_new_token(msg)
+                await run_manager.on_llm_new_token(msg.text or "")
                 chunks.append(msg)
                 yield msg
         except BaseException as e:
@@ -674,14 +676,14 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         raise NotImplementedError
 
     async def _ainvoke(
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         return await run_in_executor(
             None,
             self._invoke,
