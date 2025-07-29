@@ -1347,6 +1347,7 @@ class ChatAnthropic(BaseChatModel):
     @classmethod
     def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
         """Validate max_tokens.
+
         Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
         """
         if values.get("max_tokens") is None and values.get("model"):
