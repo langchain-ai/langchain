@@ -11,22 +11,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
 from langchain_core._api import deprecated
@@ -63,6 +50,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
+    Generation,
     LLMResult,
     RunInfo,
 )
@@ -653,6 +641,34 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
 
+    def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
+        """Convert cached Generation objects to ChatGeneration objects.
+
+        Handle case where cache contains Generation objects instead of
+        ChatGeneration objects. This can happen due to serialization/deserialization
+        issues or legacy cache data (see #22389).
+
+        Args:
+            cache_val: List of cached generation objects.
+
+        Returns:
+            List of ChatGeneration objects.
+        """
+        converted_generations = []
+        for gen in cache_val:
+            if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
+                # Convert Generation to ChatGeneration by creating AIMessage
+                # from the text content
+                chat_gen = ChatGeneration(
+                    message=AIMessage(content=gen.text),
+                    generation_info=gen.generation_info,
+                )
+                converted_generations.append(chat_gen)
+            else:
+                # Already a ChatGeneration or other expected type
+                converted_generations.append(gen)
+        return converted_generations
+
     def _get_invocation_params(
         self,
         stop: Optional[list[str]] = None,
@@ -1010,7 +1026,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1082,7 +1099,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1367,12 +1385,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class,
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -1386,7 +1405,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1397,9 +1416,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
@@ -1465,6 +1485,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         .. versionchanged:: 0.2.26
 
                 Added support for TypedDict class.
+
         """  # noqa: E501
         _ = kwargs.pop("method", None)
         _ = kwargs.pop("strict", None)

@@ -994,6 +994,7 @@ class VectorStore(ABC):
             docsearch.as_retriever(
                 search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
             )
+
         """
         tags = kwargs.pop("tags", None) or [*self._get_retriever_tags()]
         return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)
