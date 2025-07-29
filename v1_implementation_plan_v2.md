@@ -366,7 +366,7 @@ text_block_with_extras: TextContentBlock = {
 **Extra Item Types:** Standard content blocks support extra keys via PEP 728 with `extra_items=Any`, meaning provider-specific fields can be of any type. This provides:
 
 - **Core fields** (like `type`, `text`, `id`) are **strongly typed** according to the TypedDict definition
-- **Extra fields** (provider-specific extensions) are typed as `Any`, allowing complete flexibility  
+- **Extra fields** (provider-specific extensions) are typed as `Any`, allowing complete flexibility
 - **Type safety** is maintained for the standard fields while allowing arbitrary extensions
 
 This is the most flexible approach - providers can add any kind of metadata, configuration, or custom data they need without breaking the type system or requiring changes to the core LangChain types.
@@ -633,3 +633,175 @@ When implementing v1 support for your specific provider:
 - Ensure streaming chunks are properly typed as `AIMessageChunkV1`
 - Implement proper chunk merging using the `+` operator
 - Handle provider-specific streaming features (like reasoning) appropriately
+```
+
+## Common Implementation Mistakes & Solutions
+
+### Message Structure Assumptions
+
+**❌ Mistake**: Assuming `ChatMessage` exists in v1 messages
+
+```python
+from langchain_core.messages.v1 import ChatMessage as ChatMessageV1  # DOES NOT EXIST
+```
+
+**✅ Solution**: V1 only has `AIMessage`, `HumanMessage`, `SystemMessage`, `ToolMessage`, `AIMessageChunk`
+
+```python
+from langchain_core.messages.v1 import (
+    AIMessage as AIMessageV1,
+    HumanMessage as HumanMessageV1,
+    SystemMessage as SystemMessageV1,
+    ToolMessage as ToolMessageV1,
+    AIMessageChunk as AIMessageChunkV1,
+    MessageV1,  # Union type for all message types
+)
+```
+
+### Reasoning Content Handling
+
+**❌ Mistake**: Storing reasoning content in `additional_kwargs` or `response_metadata`
+
+V1 messages don't have `additional_kwargs`
+
+**✅ Solution**: Use `ReasoningContentBlock` in the content list
+
+```python
+from langchain_core.messages.content_blocks import ReasoningContentBlock
+
+if reasoning_content:
+    content.append(ReasoningContentBlock(
+        type="reasoning",
+        reasoning=reasoning_content,
+    ))
+```
+
+Any other reasoning-related metadata should be stored as extra items in the content block. For instance, thought signatures or effort.
+
+### ResponseMetadata Type Safety
+
+**❌ Mistake**: Directly assigning provider-specific fields to ResponseMetadata
+
+```python
+response_metadata["created_at"] = response["created_at"]  # Type error
+```
+
+**✅ Solution**: Use type ignores for extra fields (allowed by PEP 728)
+
+```python
+response_metadata["created_at"] = response["created_at"]  # type: ignore[typeddict-unknown-key]
+```
+
+### Streaming Implementation
+
+**❌ Mistake**: Returning wrong message type from streaming methods
+
+```python
+def _generate_stream(self) -> Iterator[AIMessageChunkV1]:
+    # ...
+    ai_message = _convert_to_v1_from_ollama_format(response)  # Returns AIMessageV1
+    yield ai_message  # Type error: expected AIMessageChunkV1
+```
+
+**✅ Solution**: Convert AIMessageV1 to AIMessageChunkV1 for streaming
+
+```python
+ai_message = _convert_to_v1_from_ollama_format(response)
+chunk = AIMessageChunkV1(
+    content=ai_message.content,
+    response_metadata=ai_message.response_metadata,
+    usage_metadata=ai_message.usage_metadata,
+)
+yield chunk
+```
+
+### Generator Type Issues
+
+**❌ Mistake**: Using `.get()` on ContentBlock without type conversion
+
+**Why is this a problem?** While ContentBlock is a Union of TypedDict classes (like `TextContentBlock`, `ToolCall`, etc.), mypy treats accessing fields on the union as returning `Any` type because it can't guarantee which specific TypedDict variant you have. When you pass this to `"".join()`, mypy expects `Iterable[str]` but gets `Iterable[Any]`, causing a type error.
+
+```python
+text_content = "".join(
+    block.get("text", "")  # Returns Any, treated as object in strict mode
+    for block in chunk.content
+    if block.get("type") == "text"
+)
+```
+
+**✅ Solution**: Explicitly convert to string
+
+```python
+text_content = "".join(
+    str(block.get("text", ""))
+    for block in chunk.content
+    if block.get("type") == "text"
+)
+```
+
+### Test Type Annotations
+
+**❌ Mistake**: Missing return type annotations in tests
+
+```python
+def test_something(self):  # mypy error: no return type
+    pass
+```
+
+**✅ Solution**: Add `-> None` to all test methods
+
+```python
+def test_something(self) -> None:
+    pass
+```
+
+### Performance Optimizations
+
+**❌ Mistake**: Using append() in loops for list construction
+
+```python
+for tool_call in tool_calls:
+    content.append(ToolCall(...))  # Flagged by PERF401
+```
+
+**✅ Solution**: Use list comprehension with extend()
+
+```python
+content.extend([
+    ToolCall(
+        type="tool_call",
+        id=tool_call.get("id", str(uuid4())),
+        name=tool_call["function"]["name"],
+        args=tool_call["function"]["arguments"],
+    )
+    for tool_call in tool_calls
+])
+```
+
+## Implementation Debugging Tips
+
+### Type Checking Issues
+
+1. Run `mypy` early and often - type issues compound quickly
+2. Use `# type: ignore[specific-error]` comments for intentional violations
+3. Check `ResponseMetadata` usage - it allows extra keys but mypy doesn't know this
+
+### Import Issues
+
+1. V1 message imports are different - no `ChatMessage`, limited to core message types
+2. Always use grouped imports from the same module to avoid linter issues
+3. Remove unused imports that can be auto-detected
+
+### Testing Strategy
+
+1. Test message conversion utilities separately from the main chat model
+2. Use concrete test data rather than mocking for content block testing
+3. Include both streaming and non-streaming test cases
+4. Test error conditions (empty content, missing fields, etc.)
+
+### Common Error Patterns
+
+- **"AIMessage has no attribute 'additional_kwargs'"** → Use ReasoningContentBlock instead
+- **"ChatMessage not found"** → ChatMessage doesn't exist in V1, remove references
+- **Type errors with ResponseMetadata** → Add `# type: ignore[typeddict-unknown-key]` for extra fields
+- **Generator type mismatches** → Use `str()` conversion for text extraction from content blocks
