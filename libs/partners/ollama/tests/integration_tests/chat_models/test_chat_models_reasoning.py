@@ -35,12 +35,10 @@ def test_stream_no_reasoning(model: str) -> None:
         result += chunk
     assert isinstance(result, AIMessageChunk)
     assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
-    if not isinstance(result.content, list):
-        assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-        assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
+    if hasattr(result, "additional_kwargs"):
+        # v0 format
+        assert "reasoning_content" not in result.additional_kwargs
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -62,12 +60,10 @@ async def test_astream_no_reasoning(model: str) -> None:
         result += chunk
     assert isinstance(result, AIMessageChunk)
     assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
-    if not isinstance(result.content, list):
-        assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-        assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
+    if hasattr(result, "additional_kwargs"):
+        # v0 format
+        assert "reasoning_content" not in result.additional_kwargs
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -91,8 +87,8 @@ def test_stream_reasoning_none(model: str) -> None:
     assert result.content
     assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" in result.content and "</think>" in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
         assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
@@ -118,8 +114,8 @@ async def test_astream_reasoning_none(model: str) -> None:
     assert result.content
     assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" in result.content and "</think>" in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
         assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
@@ -146,8 +142,8 @@ def test_reasoning_stream(model: str) -> None:
     assert "reasoning_content" in result.additional_kwargs
     assert len(result.additional_kwargs["reasoning_content"]) > 0
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs["reasoning_content"]
         assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
@@ -174,8 +170,8 @@ async def test_reasoning_astream(model: str) -> None:
     assert "reasoning_content" in result.additional_kwargs
     assert len(result.additional_kwargs["reasoning_content"]) > 0
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs["reasoning_content"]
         assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
@@ -188,10 +184,9 @@ def test_invoke_no_reasoning(model: str) -> None:
     result = llm.invoke([message])
     assert result.content
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
-    if not isinstance(result.content, list):
-        assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-        assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
+    if hasattr(result, "additional_kwargs"):
+        # v0 format
+        assert "reasoning_content" not in result.additional_kwargs
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -202,10 +197,9 @@ async def test_ainvoke_no_reasoning(model: str) -> None:
     result = await llm.ainvoke([message])
     assert result.content
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
-    if not isinstance(result.content, list):
-        assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-        assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
+    if hasattr(result, "additional_kwargs"):
+        # v0 format
+        assert "reasoning_content" not in result.additional_kwargs
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
@@ -217,8 +211,8 @@ def test_invoke_reasoning_none(model: str) -> None:
     assert result.content
     assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" in result.content and "</think>" in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
         assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
@@ -232,8 +226,8 @@ async def test_ainvoke_reasoning_none(model: str) -> None:
     assert result.content
     assert "reasoning_content" not in result.additional_kwargs
     assert "<think>" in result.content and "</think>" in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
         assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
@@ -248,8 +242,8 @@ def test_reasoning_invoke(model: str) -> None:
     assert "reasoning_content" in result.additional_kwargs
     assert len(result.additional_kwargs["reasoning_content"]) > 0
     assert "<think>" not in result.content and "</think>" not in result.content
-    # Only check additional_kwargs for v0 format (content as string)
     if not isinstance(result.content, list):
+        # v0 format (content as string)
         assert "<think>" not in result.additional_kwargs["reasoning_content"]
         assert "</think>" not in result.additional_kwargs["reasoning_content"]
 

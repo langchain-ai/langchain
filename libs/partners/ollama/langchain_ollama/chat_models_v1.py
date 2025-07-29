@@ -2,6 +2,8 @@
 
 This implementation provides native support for v1 messages with structured
 content blocks and always returns AIMessageV1 format responses.
+
+.. versionadded:: 1.0.0
 """
 
 from __future__ import annotations

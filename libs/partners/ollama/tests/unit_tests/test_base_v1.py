@@ -13,6 +13,8 @@ from langchain_ollama._compat import (
 )
 from langchain_ollama.chat_models_v1 import ChatOllamaV1
 
+MODEL_NAME = "llama3.1"
+
 
 class TestMessageConversion:
     """Test v1 message conversion utilities."""
@@ -34,11 +36,10 @@ class TestMessageConversion:
         message = HumanMessageV1(
             content=[
                 TextContentBlock(type="text", text="Describe this image:"),
-                ImageContentBlock(  # type: ignore[typeddict-unknown-key]
+                ImageContentBlock(
                     type="image",
                     mime_type="image/jpeg",
-                    data="base64imagedata",
-                    source_type="base64",
+                    base64="base64imagedata",
                 ),
             ]
         )
@@ -74,7 +75,7 @@ class TestMessageConversion:
     def test_convert_from_ollama_format(self) -> None:
         """Test converting Ollama response to AIMessageV1."""
         ollama_response = {
-            "model": "llama3",
+            "model": MODEL_NAME,
             "created_at": "2024-01-01T00:00:00Z",
             "message": {
                 "role": "assistant",
@@ -93,13 +94,13 @@ class TestMessageConversion:
         assert len(result.content) == 1
         assert result.content[0]["type"] == "text"
         assert result.content[0]["text"] == "Hello! How can I help you today?"
-        assert result.response_metadata["model_name"] == "llama3"
-        assert result.response_metadata.get("done") is True  # type: ignore[typeddict-item]
+        assert result.response_metadata["model_name"] == MODEL_NAME  # type: ignore[typeddict-not-required-key]
+        assert result.response_metadata.get("done") is True
 
     def test_convert_chunk_to_v1(self) -> None:
         """Test converting Ollama streaming chunk to AIMessageChunkV1."""
         chunk = {
-            "model": "llama3",
+            "model": MODEL_NAME,
             "created_at": "2024-01-01T00:00:00Z",
             "message": {"role": "assistant", "content": "Hello"},
             "done": False,
@@ -127,14 +128,14 @@ class TestChatOllamaV1:
 
     def test_initialization(self) -> None:
         """Test ChatOllamaV1 initialization."""
-        llm = ChatOllamaV1(model="llama3")
+        llm = ChatOllamaV1(model=MODEL_NAME)
 
-        assert llm.model == "llama3"
+        assert llm.model == MODEL_NAME
         assert llm._llm_type == "chat-ollama-v1"
 
     def test_chat_params(self) -> None:
         """Test _chat_params method."""
-        llm = ChatOllamaV1(model="llama3", temperature=0.7)
+        llm = ChatOllamaV1(model=MODEL_NAME, temperature=0.7)
 
         messages: list[MessageV1] = [
             HumanMessageV1(content=[TextContentBlock(type="text", text="Hello")])
@@ -142,26 +143,28 @@ class TestChatOllamaV1:
 
         params = llm._chat_params(messages)
 
-        assert params["model"] == "llama3"
+        assert params["model"] == MODEL_NAME
         assert len(params["messages"]) == 1
         assert params["messages"][0]["role"] == "user"
         assert params["messages"][0]["content"] == "Hello"
+
+        # Ensure options carry thru
         assert params["options"].temperature == 0.7
 
     def test_ls_params(self) -> None:
         """Test LangSmith parameters."""
-        llm = ChatOllamaV1(model="llama3", temperature=0.5)
+        llm = ChatOllamaV1(model=MODEL_NAME, temperature=0.5)
 
         ls_params = llm._get_ls_params()
 
-        assert ls_params["ls_provider"] == "ollama"
-        assert ls_params["ls_model_name"] == "llama3"
-        assert ls_params["ls_model_type"] == "chat"
-        assert ls_params["ls_temperature"] == 0.5
+        assert ls_params["ls_provider"] == "ollama"  # type: ignore[typeddict-not-required-key]
+        assert ls_params["ls_model_name"] == MODEL_NAME  # type: ignore[typeddict-not-required-key]
+        assert ls_params["ls_model_type"] == "chat"  # type: ignore[typeddict-not-required-key]
+        assert ls_params["ls_temperature"] == 0.5  # type: ignore[typeddict-not-required-key]
 
     def test_bind_tools_basic(self) -> None:
         """Test basic tool binding functionality."""
-        llm = ChatOllamaV1(model="llama3")
+        llm = ChatOllamaV1(model=MODEL_NAME)
 
         def test_tool(query: str) -> str:
             """A test tool."""

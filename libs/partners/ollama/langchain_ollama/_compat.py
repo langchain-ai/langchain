@@ -53,8 +53,8 @@ def _convert_content_blocks_to_ollama_format(
             text_content += text_block["text"]
         elif block_type == "image":
             image_block = cast(ImageContentBlock, block)
-            if image_block.get("source_type") == "base64":
-                images.append(image_block.get("data", ""))
+            if image_block.get("base64"):
+                images.append(image_block.get("base64", ""))
             else:
                 msg = "Only base64 image data is supported by Ollama"
                 raise ValueError(msg)
