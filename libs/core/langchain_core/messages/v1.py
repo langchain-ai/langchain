@@ -188,7 +188,7 @@ class AIMessage:
 
 
 @dataclass
-class AIMessageChunk:
+class AIMessageChunk(AIMessage):
     """A partial chunk of an AI message during streaming.
 
     Represents a portion of an AI response that is delivered incrementally
@@ -203,43 +203,7 @@ class AIMessageChunk:
         usage_metadata: Optional metadata about token usage and costs.
     """
 
-    type: Literal["ai_chunk"] = "ai_chunk"
-
-    name: Optional[str] = None
-    """An optional name for the message.
-
-    This can be used to provide a human-readable name for the message.
-
-    Usage of this field is optional, and whether it's used or not is up to the
-    model implementation.
-    """
-
-    id: Optional[str] = None
-    """Unique identifier for the message chunk.
-
-    If the provider assigns a meaningful ID, it should be used here.
-    """
-
-    lc_version: str = "v1"
-    """Encoding version for the message."""
-
-    content: list[types.ContentBlock] = field(init=False)
-
-    usage_metadata: Optional[UsageMetadata] = None
-    """If provided, usage metadata for a message chunk, such as token counts.
-
-    These data represent incremental usage statistics, as opposed to a running total.
-    """
-
-    response_metadata: ResponseMetadata = field(init=False)
-    """Metadata about the response chunk.
-
-    This field should include non-standard data returned by the provider, such as
-    response headers, service tiers, or log probabilities.
-    """
-
-    parsed: Optional[Union[dict[str, Any], BaseModel]] = None
-    """Auto-parsed message contents, if applicable."""
+    type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
 
     tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
 
@@ -342,7 +306,7 @@ class AIMessageChunk:
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
-                            name=chunk.get("name", ""),
+                            name=chunk.get("name") or "",
                             args=args_,
                             id=chunk.get("id", ""),
                         )
