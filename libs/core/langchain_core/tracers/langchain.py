@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from uuid import UUID
 
 from langsmith import Client
@@ -21,6 +21,8 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.messages.utils import _convert_from_v1_message
+from langchain_core.messages.v1 import MessageV1Types
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -114,7 +116,7 @@ class LangChainTracer(BaseTracer):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,
@@ -141,6 +143,12 @@ class LangChainTracer(BaseTracer):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
+        if isinstance(messages[0], MessageV1Types):
+            # Convert from v1 messages to BaseMessage
+            messages = [
+                [_convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
+            ]
+        messages = cast("list[list[BaseMessage]]", messages)
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,

@@ -435,7 +435,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         )
         (run_manager,) = callback_manager.on_chat_model_start(
             {},
-            [_format_for_tracing(messages)],
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -501,7 +501,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             {},
-            [_format_for_tracing(messages)],
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -579,7 +579,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 {},
-                [_format_for_tracing(messages)],
+                _format_for_tracing(messages),
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
@@ -648,7 +648,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             {},
-            [_format_for_tracing(messages)],
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),

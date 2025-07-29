@@ -163,7 +163,7 @@ class _TracerCore(ABC):
     def _create_chat_model_run(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: UUID,
         tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
@@ -188,12 +188,12 @@ class _TracerCore(ABC):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
-        if isinstance(messages[0][0], MessageV1Types):
+        if isinstance(messages[0], MessageV1Types):
             # Convert from v1 messages to BaseMessage
             messages = [
-                [_convert_from_v1_message(msg) for msg in batch]  # type: ignore[arg-type]
-                for batch in messages
+                [_convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
             ]
+        messages = cast("list[list[BaseMessage]]", messages)
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,

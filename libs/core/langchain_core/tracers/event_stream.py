@@ -300,7 +300,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,

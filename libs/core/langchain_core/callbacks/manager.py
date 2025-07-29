@@ -254,10 +254,18 @@ def shielded(func: Func) -> Func:
 def _convert_llm_events(
     event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
 ) -> None:
-    if event_name == "on_chat_model_start" and isinstance(args[1], list):
-        for idx, item in enumerate(args[1]):
-            if isinstance(item, MessageV1Types):
-                args[1][idx] = _convert_from_v1_message(item)
+    if (
+        event_name == "on_chat_model_start"
+        and isinstance(args[1], list)
+        and args[1]
+        and isinstance(args[1][0], MessageV1Types)
+    ):
+        batch = [
+            _convert_from_v1_message(item)
+            for item in args[1]
+            if isinstance(item, MessageV1Types)
+        ]
+        args[1] = [batch]  # type: ignore[index]
     elif (
         event_name == "on_llm_new_token"
         and "chunk" in kwargs
@@ -1391,7 +1399,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
@@ -1901,7 +1909,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[AsyncCallbackManagerForLLMRun]:
