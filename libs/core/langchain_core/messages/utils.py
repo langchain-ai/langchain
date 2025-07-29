@@ -374,7 +374,7 @@ def _create_message_from_message_type_v1(
     return message
 
 
-def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
+def convert_from_v1_message(message: MessageV1) -> BaseMessage:
     """Compatibility layer to convert v1 messages to current messages.
 
     Args:
@@ -468,7 +468,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             msg_type, msg_content, **msg_kwargs
         )
     elif isinstance(message, MessageV1Types):
-        message_ = _convert_from_v1_message(message)
+        message_ = convert_from_v1_message(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)

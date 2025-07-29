@@ -18,7 +18,7 @@ from typing import (
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.messages.utils import _convert_from_v1_message
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.messages.v1 import (
     AIMessage,
     AIMessageChunk,
@@ -191,7 +191,7 @@ class _TracerCore(ABC):
         if isinstance(messages[0], MessageV1Types):
             # Convert from v1 messages to BaseMessage
             messages = [
-                [_convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
+                [convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
             ]
         messages = cast("list[list[BaseMessage]]", messages)
         return Run(
@@ -297,7 +297,7 @@ class _TracerCore(ABC):
         if isinstance(response, AIMessage):
             response = LLMResult(
                 generations=[
-                    [ChatGeneration(message=_convert_from_v1_message(response))]
+                    [ChatGeneration(message=convert_from_v1_message(response))]
                 ]
             )
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})

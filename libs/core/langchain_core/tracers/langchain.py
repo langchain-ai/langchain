@@ -21,7 +21,7 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.messages.utils import _convert_from_v1_message
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.messages.v1 import MessageV1Types
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
@@ -146,7 +146,7 @@ class LangChainTracer(BaseTracer):
         if isinstance(messages[0], MessageV1Types):
             # Convert from v1 messages to BaseMessage
             messages = [
-                [_convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
+                [convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
             ]
         messages = cast("list[list[BaseMessage]]", messages)
         chat_model_run = Run(

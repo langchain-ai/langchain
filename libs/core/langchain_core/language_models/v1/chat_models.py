@@ -47,7 +47,7 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages.utils import (
-    _convert_from_v1_message,
+    convert_from_v1_message,
     convert_to_messages_v1,
 )
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
@@ -1019,7 +1019,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         Returns:
             The sum of the number of tokens across the messages.
         """
-        messages_v0 = [_convert_from_v1_message(message) for message in messages]
+        messages_v0 = [convert_from_v1_message(message) for message in messages]
         if tools is not None:
             warnings.warn(
                 "Counting tokens in tool schemas is not yet supported. Ignoring tools.",

@@ -11,7 +11,7 @@ from typing_extensions import override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
-from langchain_core.messages.utils import _convert_from_v1_message
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatGeneration, LLMResult
 
@@ -68,7 +68,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
         if isinstance(response, AIMessageV1):
             response = LLMResult(
                 generations=[
-                    [ChatGeneration(message=_convert_from_v1_message(response))]
+                    [ChatGeneration(message=convert_from_v1_message(response))]
                 ]
             )
         try:

@@ -37,7 +37,7 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.messages.utils import _convert_from_v1_message
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.messages.v1 import (
     AIMessage,
     AIMessageChunk,
@@ -261,7 +261,7 @@ def _convert_llm_events(
         and isinstance(args[1][0], MessageV1Types)
     ):
         batch = [
-            _convert_from_v1_message(item)
+            convert_from_v1_message(item)
             for item in args[1]
             if isinstance(item, MessageV1Types)
         ]
