@@ -6,7 +6,7 @@ import copy
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -22,20 +22,24 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
 )
-from typing_extensions import override
+from typing_extensions import TypeAlias, override
 
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
     CallbackManager,
     CallbackManagerForLLMRun,
+    Callbacks,
 )
 from langchain_core.language_models._utils import _normalize_messages_v1
 from langchain_core.language_models.base import (
-    BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
+    _get_token_ids_default_method,
+    _get_verbosity,
 )
 from langchain_core.messages import (
     convert_to_openai_image_block,
@@ -57,6 +61,7 @@ from langchain_core.outputs import (
 from langchain_core.prompt_values import PromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import (
@@ -182,7 +187,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
+class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -280,11 +285,68 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
     does not properly support streaming.
     """
 
+    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
+    """Whether to cache the response.
+
+    * If true, will use the global cache.
+    * If false, will not use a cache
+    * If None, will use the global cache if it's set, otherwise no cache.
+    * If instance of BaseCache, will use the provided cache.
+
+    Caching is not currently supported for streaming methods of models.
+    """
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
+    """Whether to print out response text."""
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to add to the run trace."""
+    tags: Optional[list[str]] = Field(default=None, exclude=True)
+    """Tags to add to the run trace."""
+    metadata: Optional[dict[str, Any]] = Field(default=None, exclude=True)
+    """Metadata to add to the run trace."""
+    custom_get_token_ids: Optional[Callable[[str], list[int]]] = Field(
+        default=None, exclude=True
+    )
+    """Optional encoder to use for counting tokens."""
+
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
 
     # --- Runnable methods ---
+
+    @field_validator("verbose", mode="before")
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:  # noqa: FBT001
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+
+        Args:
+            verbose: The verbosity setting to use.
+
+        Returns:
+            The verbosity setting to use.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        return verbose
+
+    @property
+    @override
+    def InputType(self) -> TypeAlias:
+        """Get the input type for this runnable."""
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
+        )
+
+        # This is a version of LanguageModelInput which replaces the abstract
+        # base class BaseMessage with a union of its subclasses, which makes
+        # for a much better schema.
+        return Union[
+            str,
+            Union[StringPromptValue, ChatPromptValueConcrete],
+            list[MessageV1],
+        ]
 
     @property
     @override
@@ -904,6 +966,38 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return self.lc_attributes
+
+    def get_token_ids(self, text: str) -> list[int]:
+        """Return the ordered ids of the tokens in a text.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            A list of ids corresponding to the tokens in the text, in order they occur
+                in the text.
+        """
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
+        return _get_token_ids_default_method(text)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input fits in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        return len(self.get_token_ids(text))
 
     def get_num_tokens_from_messages(
         self,
