@@ -4,6 +4,7 @@ import sys
 from typing import Any, Optional
 
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
+from typing_extensions import override
 
 DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
@@ -63,6 +64,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         self.stream_prefix = stream_prefix
         self.answer_reached = False
 
+    @override
     def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -72,6 +74,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         """Run when LLM starts running."""
         self.answer_reached = False
 
+    @override
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
 

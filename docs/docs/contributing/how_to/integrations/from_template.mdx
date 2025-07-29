@@ -14,8 +14,8 @@ First, duplicate this template repository: https://github.com/langchain-ai/integ
 In this guide, we will create a `libs/langchain-parrot-link` folder, simulating the creation
 of a partner package for a fake company, "Parrot Link AI".
 
-A package is 
-installed by users with `pip install langchain-{partner}`, and the package members 
+A package is
+installed by users with `pip install langchain-{partner}`, and the package members
 can be imported with code like:
 
 ```python
@@ -93,11 +93,11 @@ to the relevant `docs/docs/integrations` directory in the monorepo root.
 
 ## (If Necessary) Deprecate community integration
 
-Note: this is only necessary if you're migrating an existing community integration into 
-a partner package. If the component you're integrating is net-new to LangChain (i.e. 
+Note: this is only necessary if you're migrating an existing community integration into
+a partner package. If the component you're integrating is net-new to LangChain (i.e.
 not already in the `community` package), you can skip this step.
 
-Let's pretend we migrated our `ChatParrotLink` chat model from the community package to 
+Let's pretend we migrated our `ChatParrotLink` chat model from the community package to
 the partner package. We would need to deprecate the old model in the community package.
 
 We would do that by adding a `@deprecated` decorator to the old model as follows, in
@@ -116,8 +116,8 @@ After our change, it would look like this:
 from langchain_core._api.deprecation import deprecated
 
 @deprecated(
-    since="0.0.<next community version>", 
-    removal="1.0.0", 
+    since="0.0.<next community version>",
+    removal="1.0.0",
     alternative_import="langchain_parrot_link.ChatParrotLink"
 )
 class ChatParrotLink(BaseChatModel):

@@ -29,14 +29,14 @@ export GOOGLE_API_KEY="YOUR_API_KEY"
 
 ### Chat Models
 
-Use the `ChatGoogleGenerativeAI` class to interact with Gemini 2.0 and 2.5 models. See
+Use the `ChatGoogleGenerativeAI` class to interact with Gemini models. See
 details in [this guide](/docs/integrations/chat/google_generative_ai).
 
 ```python
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 # Simple text invocation
 result = llm.invoke("Sing a ballad of LangChain.")
@@ -61,14 +61,14 @@ The `image_url` can be a public URL, a GCS URI (`gs://...`), a local file path, 
 
 ### Embedding Models
 
-Generate text embeddings using models like `gemini-embedding-exp-03-07` with the `GoogleGenerativeAIEmbeddings` class.
+Generate text embeddings using models like `gemini-embedding-001` with the `GoogleGenerativeAIEmbeddings` class.
 
 See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
 
 ```python
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-exp-03-07")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 vector = embeddings.embed_query("What are embeddings?")
 print(vector[:5])
 ```
@@ -83,7 +83,7 @@ See a [usage example](/docs/integrations/llms/google_ai).
 ```python
 from langchain_google_genai import GoogleGenerativeAI
 
-llm = GoogleGenerativeAI(model="gemini-2.0-flash")
+llm = GoogleGenerativeAI(model="gemini-2.5-flash")
 result = llm.invoke("Sing a ballad of LangChain.")
 print(result)
 ```
@@ -105,7 +105,7 @@ Google Cloud integrations typically use Application Default Credentials (ADC). R
 
 #### Vertex AI
 
-Access chat models like `Gemini` via the Vertex AI platform.
+Access chat models like Gemini via the Vertex AI platform.
 
 See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
@@ -135,7 +135,7 @@ from langchain_google_vertexai.model_garden_maas.mistral import VertexModelGarde
 
 #### Gemma local from Hugging Face
 
->Local `Gemma` model loaded from `HuggingFace`. Requires `langchain-google-vertexai`.
+>Local Gemma model loaded from HuggingFace. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.gemma import GemmaChatLocalHF
@@ -143,7 +143,7 @@ from langchain_google_vertexai.gemma import GemmaChatLocalHF
 
 #### Gemma local from Kaggle
 
->Local `Gemma` model loaded from `Kaggle`. Requires `langchain-google-vertexai`.
+>Local Gemma model loaded from Kaggle. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.gemma import GemmaChatLocalKaggle
@@ -159,7 +159,7 @@ from langchain_google_vertexai.gemma import GemmaChatVertexAIModelGarden
 
 #### Vertex AI image captioning
 
->Implementation of the `Image Captioning model` as a chat. Requires `langchain-google-vertexai`.
+>Implementation of the Image Captioning model as a chat. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.vision_models import VertexAIImageCaptioningChat
@@ -196,7 +196,7 @@ interface.
 
 #### Vertex AI Model Garden
 
-Access `Gemini`, and hundreds of OSS models via `Vertex AI Model Garden` service. Requires `langchain-google-vertexai`.
+Access Gemini, and hundreds of OSS models via Vertex AI Model Garden service. Requires `langchain-google-vertexai`.
 
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
 
@@ -206,7 +206,7 @@ from langchain_google_vertexai import VertexAIModelGarden
 
 #### Gemma local from Hugging Face
 
->Local `Gemma` model loaded from `HuggingFace`. Requires `langchain-google-vertexai`.
+>Local Gemma model loaded from HuggingFace. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.gemma import GemmaLocalHF
@@ -214,7 +214,7 @@ from langchain_google_vertexai.gemma import GemmaLocalHF
 
 #### Gemma local from Kaggle
 
->Local `Gemma` model loaded from `Kaggle`. Requires `langchain-google-vertexai`.
+>Local Gemma model loaded from Kaggle. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.gemma import GemmaLocalKaggle
@@ -230,7 +230,7 @@ from langchain_google_vertexai.gemma import GemmaVertexAIModelGarden
 
 #### Vertex AI image captioning
 
->Implementation of the `Image Captioning model` as an LLM. Requires `langchain-google-vertexai`.
+>Implementation of the Image Captioning model as an LLM. Requires `langchain-google-vertexai`.
 
 ```python
 from langchain_google_vertexai.vision_models import VertexAIImageCaptioning
@@ -1138,7 +1138,7 @@ Integrations with various Google services beyond the core Cloud Platform.
 
 #### Google Drive
 
->[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) file storage. Currently supports `Google Docs`.
+>[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) file storage. Currently supports Google Docs.
 
 Install with Drive dependencies:
 
@@ -1416,7 +1416,7 @@ from langchain_community.utilities import GoogleSerperAPIWrapper
 
 #### YouTube Search Tool
 
->Search `YouTube` videos without the official API. Requires `youtube_search` package.
+>Search YouTube videos without the official API. Requires `youtube_search` package.
 
 ```bash
 pip install youtube_search langchain # Requires base langchain

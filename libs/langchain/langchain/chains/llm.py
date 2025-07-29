@@ -74,6 +74,7 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
@@ -145,7 +146,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -172,7 +173,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -323,6 +324,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -340,6 +342,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 
