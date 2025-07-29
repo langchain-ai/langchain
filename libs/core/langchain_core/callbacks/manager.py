@@ -253,19 +253,20 @@ def shielded(func: Func) -> Func:
 
 def _convert_llm_events(
     event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
-) -> None:
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    args_list = list(args)
     if (
         event_name == "on_chat_model_start"
-        and isinstance(args[1], list)
-        and args[1]
-        and isinstance(args[1][0], MessageV1Types)
+        and isinstance(args_list[1], list)
+        and args_list[1]
+        and isinstance(args_list[1][0], MessageV1Types)
     ):
         batch = [
             convert_from_v1_message(item)
-            for item in args[1]
+            for item in args_list[1]
             if isinstance(item, MessageV1Types)
         ]
-        args[1] = [batch]  # type: ignore[index]
+        args_list[1] = [batch]
     elif (
         event_name == "on_llm_new_token"
         and "chunk" in kwargs
@@ -273,12 +274,21 @@ def _convert_llm_events(
     ):
         chunk = kwargs["chunk"]
         kwargs["chunk"] = ChatGenerationChunk(text=chunk.text, message=chunk)
-    elif event_name == "on_llm_end" and isinstance(args[0], MessageV1Types):
-        args[0] = LLMResult(  # type: ignore[index]
-            generations=[[ChatGeneration(text=args[0].text, message=args[0])]]
+    elif event_name == "on_llm_end" and isinstance(args_list[0], MessageV1Types):
+        args_list[0] = LLMResult(
+            generations=[
+                [
+                    ChatGeneration(
+                        text=args_list[0].text,
+                        message=convert_from_v1_message(args_list[0]),
+                    )
+                ]
+            ]
         )
     else:
-        return
+        pass
+
+    return tuple(args_list), kwargs
 
 
 def handle_event(
@@ -310,7 +320,7 @@ def handle_event(
                     handler, ignore_condition_name
                 ):
                     if not handler.accepts_new_messages:
-                        _convert_llm_events(event_name, args, kwargs)
+                        args, kwargs = _convert_llm_events(event_name, args, kwargs)
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
                         coros.append(event)
@@ -406,7 +416,7 @@ async def _ahandle_event_for_handler(
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             if not handler.accepts_new_messages:
-                _convert_llm_events(event_name, args, kwargs)
+                args, kwargs = _convert_llm_events(event_name, args, kwargs)
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
