@@ -123,7 +123,7 @@ if choices is None:
 
 Comprehensive test suite covering:
 - ✅ vLLM responses with null choices (enhanced error message)
-- ✅ Generic API responses with null choices (appropriate context)
+- ✅ Generic API responses with null choices (appropriate context)  
 - ✅ Minimal responses with null choices (debugging information)
 - ✅ Working vLLM responses (no regression)
 
