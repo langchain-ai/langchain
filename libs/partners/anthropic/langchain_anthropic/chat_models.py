@@ -1346,7 +1346,9 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
-        """Validate max_tokens."""
+        """Validate max_tokens.
+        Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
+        """
         if values.get("max_tokens") is None and values.get("model"):
             if "claude-opus-4" in values.get("model", ""):
                 values["max_tokens"] = 32000
@@ -1358,9 +1360,9 @@ class ChatAnthropic(BaseChatModel):
                 "model", ""
             ) or "claude-3-5-haiku" in values.get("model", ""):
                 values["max_tokens"] = 8192
-            # leaves us with "claude-3-5-opus", "claude-3-haiku"
+            # leaves us with "claude-3-haiku"
             else:
-                values["max_tokens"] = 1024
+                values["max_tokens"] = 4096
         return values
 
     @model_validator(mode="before")
