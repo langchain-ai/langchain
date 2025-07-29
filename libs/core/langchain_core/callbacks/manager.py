@@ -258,13 +258,19 @@ def _convert_llm_events(
         for idx, item in enumerate(args[1]):
             if isinstance(item, MessageV1Types):
                 args[1][idx] = _convert_from_v1_message(item)
-    elif event_name == "on_llm_new_token" and isinstance(args[0], MessageV1Types):
-        kwargs["chunk"] = ChatGenerationChunk(text=args[0].text, message=args[0])
-        args[0] = args[0].text  # type: ignore[index]
+    elif (
+        event_name == "on_llm_new_token"
+        and "chunk" in kwargs
+        and isinstance(kwargs["chunk"], MessageV1Types)
+    ):
+        chunk = kwargs["chunk"]
+        kwargs["chunk"] = ChatGenerationChunk(text=chunk.text, message=chunk)
     elif event_name == "on_llm_end" and isinstance(args[0], MessageV1Types):
         args[0] = LLMResult(  # type: ignore[index]
             generations=[[ChatGeneration(text=args[0].text, message=args[0])]]
         )
+    else:
+        return
 
 
 def handle_event(
