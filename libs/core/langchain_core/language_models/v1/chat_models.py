@@ -687,7 +687,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
-        params = self.dict()
+        params = self.dump()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -788,8 +788,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
-    @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dump(self, **kwargs: Any) -> dict:  # noqa: ARG002
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
