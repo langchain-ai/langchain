@@ -19,6 +19,7 @@ from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
+from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
@@ -43,6 +44,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
 
     from langchain_core.documents import Document
+    from langchain_core.messages.v1 import AIMessage as AIMessageV1
+    from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tracers.log_stream import LogEntry
 
@@ -297,7 +300,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,
@@ -307,6 +310,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
+        # below cast is because type is converted in handle_event
+        messages = cast("list[list[BaseMessage]]", messages)
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
 
@@ -407,13 +412,18 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunkV1]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
+        chunk = cast(
+            "Optional[Union[GenerationChunk, ChatGenerationChunk]]", chunk
+        )  # converted in handle_event
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
@@ -456,9 +466,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
     @override
     async def on_llm_end(
-        self, response: LLMResult, *, run_id: UUID, **kwargs: Any
+        self, response: Union[LLMResult, AIMessageV1], *, run_id: UUID, **kwargs: Any
     ) -> None:
         """End a trace for an LLM run."""
+        response = cast("LLMResult", response)  # converted in handle_event
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
 

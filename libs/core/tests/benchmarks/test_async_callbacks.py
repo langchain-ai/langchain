@@ -10,6 +10,8 @@ from typing_extensions import override
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
+from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 
@@ -18,7 +20,7 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -35,7 +37,9 @@ class MyCustomAsyncHandler(AsyncCallbackHandler):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunkV1]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[list[str]] = None,

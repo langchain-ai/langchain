@@ -26,6 +26,7 @@ from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
+    from langchain_core.messages.v1 import AIMessageChunk, MessageV1
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ class LangChainTracer(BaseTracer):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,
@@ -232,7 +233,9 @@ class LangChainTracer(BaseTracer):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
         """Append token event to LLM run and return the run."""

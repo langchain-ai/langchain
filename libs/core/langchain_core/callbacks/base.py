@@ -66,7 +66,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
@@ -545,7 +545,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
