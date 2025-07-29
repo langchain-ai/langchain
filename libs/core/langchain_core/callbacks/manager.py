@@ -11,7 +11,6 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from dataclasses import is_dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -38,7 +37,13 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk
+from langchain_core.messages.utils import convert_from_v1_message
+from langchain_core.messages.v1 import (
+    AIMessage,
+    AIMessageChunk,
+    MessageV1,
+    MessageV1Types,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
@@ -249,17 +254,31 @@ def shielded(func: Func) -> Func:
 def _convert_llm_events(
     event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
 ) -> None:
-    if event_name == "on_chat_model_start" and isinstance(args[1], list):
-        for idx, item in enumerate(args[1]):
-            if is_dataclass(item):
-                args[1][idx] = item  # convert to old message
-    elif event_name == "on_llm_new_token" and is_dataclass(args[0]):
-        kwargs["chunk"] = ChatGenerationChunk(text=args[0].text, message=args[0])
-        args[0] = args[0].text
-    elif event_name == "on_llm_end" and is_dataclass(args[0]):
-        args[0] = LLMResult(
+    if (
+        event_name == "on_chat_model_start"
+        and isinstance(args[1], list)
+        and args[1]
+        and isinstance(args[1][0], MessageV1Types)
+    ):
+        batch = [
+            convert_from_v1_message(item)
+            for item in args[1]
+            if isinstance(item, MessageV1Types)
+        ]
+        args[1] = [batch]  # type: ignore[index]
+    elif (
+        event_name == "on_llm_new_token"
+        and "chunk" in kwargs
+        and isinstance(kwargs["chunk"], MessageV1Types)
+    ):
+        chunk = kwargs["chunk"]
+        kwargs["chunk"] = ChatGenerationChunk(text=chunk.text, message=chunk)
+    elif event_name == "on_llm_end" and isinstance(args[0], MessageV1Types):
+        args[0] = LLMResult(  # type: ignore[index]
             generations=[[ChatGeneration(text=args[0].text, message=args[0])]]
         )
+    else:
+        return
 
 
 def handle_event(
@@ -695,7 +714,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
@@ -793,7 +812,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
@@ -1380,7 +1399,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
@@ -1388,7 +1407,7 @@ class CallbackManager(BaseCallbackManager):
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
-            messages (list[list[BaseMessage]]): The list of messages.
+            messages (list[list[BaseMessage | MessageV1]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
 
@@ -1890,7 +1909,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[AsyncCallbackManagerForLLMRun]:
@@ -1898,7 +1917,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
-            messages (list[list[BaseMessage]]): The list of messages.
+            messages (list[list[BaseMessage | MessageV1]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
 

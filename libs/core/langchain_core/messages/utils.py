@@ -327,7 +327,6 @@ def _create_message_from_message_type_v1(
         ValueError: if the message type is not one of "human", "user", "ai",
             "assistant", "tool", "system", or "developer".
     """
-    kwargs: dict[str, Any] = {}
     if name is not None:
         kwargs["name"] = name
     if tool_call_id is not None:
@@ -355,7 +354,7 @@ def _create_message_from_message_type_v1(
             else:
                 kwargs["tool_calls"].append(tool_call)
     if message_type in {"human", "user"}:
-        message = HumanMessageV1(content=content, **kwargs)
+        message: MessageV1 = HumanMessageV1(content=content, **kwargs)
     elif message_type in {"ai", "assistant"}:
         message = AIMessageV1(content=content, **kwargs)
     elif message_type in {"system", "developer"}:
@@ -375,7 +374,7 @@ def _create_message_from_message_type_v1(
     return message
 
 
-def _convert_from_v1_message(message: MessageV1) -> BaseMessage:
+def convert_from_v1_message(message: MessageV1) -> BaseMessage:
     """Compatibility layer to convert v1 messages to current messages.
 
     Args:
@@ -469,7 +468,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             msg_type, msg_content, **msg_kwargs
         )
     elif isinstance(message, MessageV1Types):
-        message_ = _convert_from_v1_message(message)
+        message_ = convert_from_v1_message(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
@@ -501,7 +500,7 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
     """
     if isinstance(message, MessageV1Types):
         if isinstance(message, AIMessageChunkV1):
-            message_ = message.to_message()
+            message_: MessageV1 = message.to_message()
         else:
             message_ = message
     elif isinstance(message, str):
