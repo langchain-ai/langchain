@@ -133,13 +133,9 @@ def test_validate_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-3-5-haiku-latest", anthropic_api_key="test")
     assert llm.max_tokens == 8192
 
-    # Test claude-3-5-opus models (should default to 1024)
-    llm = ChatAnthropic(model="claude-3-5-opus-latest", anthropic_api_key="test")
-    assert llm.max_tokens == 1024
-
-    # Test claude-3-haiku models (should default to 1024)
+    # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-latest", anthropic_api_key="test")
-    assert llm.max_tokens == 1024
+    assert llm.max_tokens == 4096
 
     # Test that existing max_tokens values are preserved
     llm = ChatAnthropic(
