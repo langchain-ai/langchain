@@ -803,5 +803,8 @@ content.extend([
 
 - **"AIMessage has no attribute 'additional_kwargs'"** → Use ReasoningContentBlock instead
 - **"ChatMessage not found"** → ChatMessage doesn't exist in V1, remove references
-- **Type errors with ResponseMetadata** → Add `# type: ignore[typeddict-unknown-key]` for extra fields
+- **Type errors with ResponseMetadata** → Use `.get()` instead of checking directly
+  - Bad: `assert result.response_metadata["model_name"] == MODEL_NAME  # type: ignore[typeddict-not-required-key]`
+  - Good: `assert result.response_metadata.get("model_name") == MODEL_NAME`
+
 - **Generator type mismatches** → Use `str()` conversion for text extraction from content blocks

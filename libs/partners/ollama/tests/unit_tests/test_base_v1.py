@@ -94,7 +94,7 @@ class TestMessageConversion:
         assert len(result.content) == 1
         assert result.content[0]["type"] == "text"
         assert result.content[0]["text"] == "Hello! How can I help you today?"
-        assert result.response_metadata["model_name"] == MODEL_NAME  # type: ignore[typeddict-not-required-key]
+        assert result.response_metadata.get("model_name") == MODEL_NAME
         assert result.response_metadata.get("done") is True
 
     def test_convert_chunk_to_v1(self) -> None:
@@ -157,10 +157,10 @@ class TestChatOllamaV1:
 
         ls_params = llm._get_ls_params()
 
-        assert ls_params["ls_provider"] == "ollama"  # type: ignore[typeddict-not-required-key]
-        assert ls_params["ls_model_name"] == MODEL_NAME  # type: ignore[typeddict-not-required-key]
-        assert ls_params["ls_model_type"] == "chat"  # type: ignore[typeddict-not-required-key]
-        assert ls_params["ls_temperature"] == 0.5  # type: ignore[typeddict-not-required-key]
+        assert ls_params.get("ls_provider") == "ollama"
+        assert ls_params.get("ls_model_name") == MODEL_NAME
+        assert ls_params.get("ls_model_type") == "chat"
+        assert ls_params.get("ls_temperature") == 0.5
 
     def test_bind_tools_basic(self) -> None:
         """Test basic tool binding functionality."""

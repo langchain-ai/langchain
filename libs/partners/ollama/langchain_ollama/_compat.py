@@ -75,7 +75,7 @@ def _convert_content_blocks_to_ollama_format(
             )
         # Skip other content block types that aren't supported
 
-    return text_content, images, tool_calls  # type: ignore[return-value]
+    return text_content, images, tool_calls
 
 
 def _convert_human_message_v1(message: HumanMessageV1) -> dict[str, Any]:
