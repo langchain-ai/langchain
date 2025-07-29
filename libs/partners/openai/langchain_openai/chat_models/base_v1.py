@@ -400,7 +400,7 @@ class BaseChatOpenAI(BaseChatModelV1):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -411,7 +411,7 @@ class BaseChatOpenAI(BaseChatModelV1):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
         None."""
     stream_usage: bool = False
     """Whether to include usage metadata in streaming output. If True, an additional
@@ -431,7 +431,7 @@ class BaseChatOpenAI(BaseChatModelV1):
     """Whether to return logprobs."""
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
-     an associated log probability. `logprobs` must be set to true 
+     an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
     logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -449,7 +449,7 @@ class BaseChatOpenAI(BaseChatModelV1):
 
     Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
-    Currently supported values are low, medium, and high. Reducing reasoning effort 
+    Currently supported values are low, medium, and high. Reducing reasoning effort
     can result in faster responses and fewer tokens used on reasoning in a response.
 
     .. versionadded:: 0.2.14
@@ -470,26 +470,26 @@ class BaseChatOpenAI(BaseChatModelV1):
     .. versionadded:: 0.3.24
     """
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -499,21 +499,21 @@ class BaseChatOpenAI(BaseChatModelV1):
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
-    
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
-    
-    For example, older models may not support the 'parallel_tool_calls' parameter at 
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
+
+    For example, older models may not support the 'parallel_tool_calls' parameter at
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed
     in.
-    
+
     If a parameter is disabled then it will not be used by default in any methods, e.g.
     in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
-    invocation. 
+    invocation.
     """
 
     include: Optional[list[str]] = None
