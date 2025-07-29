@@ -313,7 +313,7 @@ def test_cache_with_generation_objects() -> None:
     but ChatResult expects ChatGeneration objects, causing validation errors.
 
     See #22389 for more info.
-    
+
     """
     cache = InMemoryCache()
 
