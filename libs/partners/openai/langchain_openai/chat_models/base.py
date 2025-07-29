@@ -1217,7 +1217,36 @@ class BaseChatOpenAI(BaseChatModel):
             ) from e
 
         if choices is None:
-            raise TypeError("Received response with null value for `choices`.")
+            # Enhanced error message for vLLM and other OpenAI-compatible APIs
+            error_msg = "Received response with null value for `choices`."
+
+            # Check if this might be an error response from vLLM or other APIs
+            if response_dict.get("error"):
+                error_details = response_dict.get("error")
+                error_msg += f" The response contains an error: {error_details}"
+            elif "usage" in response_dict and response_dict.get("id"):
+                # Response has structure but choices is null - likely an API issue
+                error_msg += (
+                    f" This may indicate an issue with the API endpoint. "
+                    f"Response ID: {response_dict.get('id')}, "
+                    f"Model: {response_dict.get('model', 'unknown')}"
+                )
+                # For vLLM, provide specific troubleshooting advice
+                # Check for vLLM-specific fields (they exist in response keys)
+                if (
+                    "kv_transfer_params" in response_dict
+                    or "prompt_logprobs" in response_dict
+                ):
+                    error_msg += (
+                        " (vLLM detected). This may be due to vLLM configuration "
+                        "issues, model loading problems, or high server load. "
+                        "Please check vLLM logs."
+                    )
+            else:
+                # Include response structure for debugging
+                error_msg += f" Response keys: {list(response_dict.keys())}"
+
+            raise TypeError(error_msg)
 
         token_usage = response_dict.get("usage")
 
