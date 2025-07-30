@@ -2050,6 +2050,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -2162,6 +2163,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -2246,6 +2248,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2320,6 +2323,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2391,6 +2395,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2453,6 +2458,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2551,6 +2557,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2625,6 +2632,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2674,7 +2682,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2711,10 +2719,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -2729,14 +2733,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -2855,6 +2860,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2924,6 +2930,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2948,6 +2955,13 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -2976,13 +2990,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -2991,9 +3006,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -3055,12 +3070,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -3177,6 +3193,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3258,6 +3275,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3473,6 +3491,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -3585,6 +3604,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -3669,6 +3689,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3743,6 +3764,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3807,6 +3829,7 @@
             'const': 'ChatPromptValueConcrete',
             'default': 'ChatPromptValueConcrete',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3877,6 +3900,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -3939,6 +3963,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4037,6 +4062,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4111,6 +4137,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4160,7 +4187,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -4197,10 +4224,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -4215,14 +4238,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -4268,6 +4292,7 @@
             'const': 'StringPromptValue',
             'default': 'StringPromptValue',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4360,6 +4385,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4429,6 +4455,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4453,6 +4480,13 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -4481,13 +4515,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -4496,9 +4531,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -4560,12 +4595,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -4682,6 +4718,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4763,6 +4800,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -4911,6 +4949,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -4926,6 +4965,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -4974,6 +5014,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -4990,6 +5031,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -5014,6 +5056,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5029,6 +5072,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5077,6 +5121,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5102,6 +5147,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -5126,6 +5172,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5141,6 +5188,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5175,6 +5223,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5186,6 +5235,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5200,6 +5250,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5215,6 +5266,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5249,6 +5301,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5260,6 +5313,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5324,6 +5378,7 @@
             'const': 'ChatPromptValueConcrete',
             'default': 'ChatPromptValueConcrete',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5346,6 +5401,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5361,6 +5417,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5387,6 +5444,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5394,6 +5452,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5408,6 +5467,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5423,6 +5483,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5449,6 +5510,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5456,6 +5518,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5493,6 +5556,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5508,6 +5572,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5547,6 +5612,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5554,6 +5620,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5567,6 +5634,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5582,6 +5650,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5621,6 +5690,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5628,6 +5698,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5677,7 +5748,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -5714,10 +5785,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -5732,14 +5799,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -5785,6 +5853,7 @@
             'const': 'StringPromptValue',
             'default': 'StringPromptValue',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5821,6 +5890,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5836,6 +5906,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5870,6 +5941,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5877,6 +5949,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5890,6 +5963,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -5905,6 +5979,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -5939,6 +6014,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -5946,6 +6022,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -5970,9 +6047,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -5998,13 +6083,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6013,9 +6099,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -6077,12 +6163,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -6132,6 +6219,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6150,6 +6238,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6184,6 +6273,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6199,6 +6289,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6213,6 +6304,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6231,6 +6323,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6265,6 +6358,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6280,6 +6374,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6366,6 +6461,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6381,6 +6477,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6429,6 +6526,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6445,6 +6543,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -6469,6 +6568,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6484,6 +6584,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6532,6 +6633,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6557,6 +6659,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -6581,6 +6684,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6596,6 +6700,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6630,6 +6735,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6641,6 +6747,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6655,6 +6762,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6670,6 +6778,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6704,6 +6813,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6715,6 +6825,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6738,6 +6849,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6753,6 +6865,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6779,6 +6892,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6786,6 +6900,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6800,6 +6915,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6815,6 +6931,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6841,6 +6958,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6848,6 +6966,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6885,6 +7004,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6900,6 +7020,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -6939,6 +7060,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -6946,6 +7068,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -6959,6 +7082,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -6974,6 +7098,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7013,6 +7138,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7020,6 +7146,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -7069,7 +7196,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -7106,10 +7233,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -7124,14 +7247,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -7194,6 +7318,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7209,6 +7334,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7243,6 +7369,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7250,6 +7377,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -7263,6 +7391,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7278,6 +7407,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7312,6 +7442,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7319,6 +7450,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -7343,9 +7475,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -7371,13 +7511,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7386,9 +7527,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -7450,12 +7591,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -7505,6 +7647,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7523,6 +7666,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7557,6 +7701,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7572,6 +7717,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -7586,6 +7732,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7604,6 +7751,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7638,6 +7786,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7653,6 +7802,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -7831,6 +7981,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7846,6 +7997,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7894,6 +8046,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -7910,6 +8063,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -7934,6 +8088,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -7949,6 +8104,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -7997,6 +8153,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8022,6 +8179,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -8046,6 +8204,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8061,6 +8220,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8095,6 +8255,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8106,6 +8267,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8120,6 +8282,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8135,6 +8298,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8169,6 +8333,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8180,6 +8345,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8244,6 +8410,7 @@
             'const': 'ChatPromptValueConcrete',
             'default': 'ChatPromptValueConcrete',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8266,6 +8433,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8281,6 +8449,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8307,6 +8476,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8314,6 +8484,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8328,6 +8499,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8343,6 +8515,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8369,6 +8542,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8376,6 +8550,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8413,6 +8588,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8428,6 +8604,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8467,6 +8644,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8474,6 +8652,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8487,6 +8666,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8502,6 +8682,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8541,6 +8722,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8548,6 +8730,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8597,7 +8780,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -8634,10 +8817,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -8652,14 +8831,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -8705,6 +8885,7 @@
             'const': 'StringPromptValue',
             'default': 'StringPromptValue',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8741,6 +8922,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8756,6 +8938,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8790,6 +8973,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8797,6 +8981,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8810,6 +8995,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -8825,6 +9011,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -8859,6 +9046,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -8866,6 +9054,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -8890,9 +9079,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -8918,13 +9115,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -8933,9 +9131,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -8997,12 +9195,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -9052,6 +9251,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9070,6 +9270,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9104,6 +9305,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9119,6 +9321,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9133,6 +9336,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9151,6 +9355,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9185,6 +9390,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9200,6 +9406,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9331,6 +9538,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9346,6 +9554,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9394,6 +9603,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9410,6 +9620,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -9434,6 +9645,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9449,6 +9661,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9497,6 +9710,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9522,6 +9736,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -9546,6 +9761,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9561,6 +9777,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9595,6 +9812,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9606,6 +9824,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9620,6 +9839,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9635,6 +9855,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9669,6 +9890,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9680,6 +9902,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9703,6 +9926,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9718,6 +9942,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9744,6 +9969,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9751,6 +9977,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9765,6 +9992,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9780,6 +10008,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9806,6 +10035,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9813,6 +10043,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9850,6 +10081,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9865,6 +10097,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9904,6 +10137,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9911,6 +10145,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -9924,6 +10159,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -9939,6 +10175,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -9978,6 +10215,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -9985,6 +10223,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10034,7 +10273,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -10071,10 +10310,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -10089,14 +10324,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -10159,6 +10395,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10174,6 +10411,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10208,6 +10446,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10215,6 +10454,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10228,6 +10468,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10243,6 +10484,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10277,6 +10519,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10284,6 +10527,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10308,9 +10552,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -10336,13 +10588,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -10351,9 +10604,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -10415,12 +10668,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -10470,6 +10724,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10488,6 +10743,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10522,6 +10778,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10537,6 +10794,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10551,6 +10809,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10569,6 +10828,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10603,6 +10863,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10618,6 +10879,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10704,6 +10966,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10719,6 +10982,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10767,6 +11031,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10783,6 +11048,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -10807,6 +11073,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10822,6 +11089,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10870,6 +11138,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10895,6 +11164,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -10919,6 +11189,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -10934,6 +11205,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -10968,6 +11240,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -10979,6 +11252,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -10993,6 +11267,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11008,6 +11283,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11042,6 +11318,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11053,6 +11330,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11117,6 +11395,7 @@
             'const': 'ChatPromptValueConcrete',
             'default': 'ChatPromptValueConcrete',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11139,6 +11418,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11154,6 +11434,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11180,6 +11461,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11187,6 +11469,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11201,6 +11484,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11216,6 +11500,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11242,6 +11527,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11249,6 +11535,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11286,6 +11573,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11301,6 +11589,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11340,6 +11629,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11347,6 +11637,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11360,6 +11651,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11375,6 +11667,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11414,6 +11707,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11421,6 +11715,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11470,7 +11765,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -11507,10 +11802,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -11525,14 +11816,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -11589,6 +11881,7 @@
             'const': 'StringPromptValue',
             'default': 'StringPromptValue',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11625,6 +11918,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11640,6 +11934,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11674,6 +11969,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11681,6 +11977,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11694,6 +11991,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11709,6 +12007,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11743,6 +12042,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -11750,6 +12050,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -11774,9 +12075,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -11802,13 +12111,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -11817,9 +12127,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -11881,12 +12191,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -11936,6 +12247,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -11954,6 +12266,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -11988,6 +12301,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12003,6 +12317,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12017,6 +12332,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12035,6 +12351,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12069,6 +12386,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12084,6 +12402,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12182,6 +12501,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12197,6 +12517,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12245,6 +12566,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12261,6 +12583,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -12285,6 +12608,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12300,6 +12624,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12348,6 +12673,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12373,6 +12699,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -12397,6 +12724,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12412,6 +12740,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12446,6 +12775,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12457,6 +12787,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12471,6 +12802,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12486,6 +12818,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12520,6 +12853,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12531,6 +12865,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12595,6 +12930,7 @@
             'const': 'ChatPromptValueConcrete',
             'default': 'ChatPromptValueConcrete',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12617,6 +12953,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12632,6 +12969,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12658,6 +12996,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12665,6 +13004,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12679,6 +13019,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12694,6 +13035,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12720,6 +13062,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12727,6 +13070,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12764,6 +13108,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12779,6 +13124,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12818,6 +13164,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12825,6 +13172,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12838,6 +13186,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -12853,6 +13202,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -12892,6 +13242,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -12899,6 +13250,7 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -12948,7 +13300,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -12985,10 +13337,6 @@
             ]),
             'title': 'Id',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -13003,14 +13351,15 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
-          'type',
         ]),
         'title': 'InvalidToolCall',
         'type': 'object',
@@ -13056,6 +13405,7 @@
             'const': 'StringPromptValue',
             'default': 'StringPromptValue',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -13092,6 +13442,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -13107,6 +13458,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -13141,6 +13493,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -13148,6 +13501,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -13161,6 +13515,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -13176,6 +13531,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -13210,6 +13566,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -13217,6 +13574,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -13241,9 +13599,17 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -13269,13 +13635,14 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
-          'type',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -13284,9 +13651,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -13348,12 +13715,13 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -13403,6 +13771,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -13421,6 +13790,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -13455,6 +13825,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -13470,6 +13841,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -13484,6 +13856,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -13502,6 +13875,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -13536,6 +13910,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -13551,6 +13926,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
