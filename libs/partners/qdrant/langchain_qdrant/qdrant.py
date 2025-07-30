@@ -8,7 +8,6 @@ from operator import itemgetter
 from typing import (
     Any,
     Callable,
-    Optional,
     Union,
 )
 
@@ -175,13 +174,13 @@ class QdrantVectorStore(VectorStore):
         self,
         client: QdrantClient,
         collection_name: str,
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings | None = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
         vector_name: str = VECTOR_NAME,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         distance: models.Distance = models.Distance.COSINE,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embedding: SparseEmbeddings | None = None,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         validate_embeddings: bool = True,
         validate_collection_config: bool = True,
@@ -270,27 +269,27 @@ class QdrantVectorStore(VectorStore):
     def from_texts(
         cls: type[QdrantVectorStore],
         texts: list[str],
-        embedding: Optional[Embeddings] = None,
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str | int]] = None,
-        collection_name: Optional[str] = None,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        embedding: Embeddings | None = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
+        collection_name: str | None = None,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,
-        https: Optional[bool] = None,
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
+        https: bool | None = None,
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
         distance: models.Distance = models.Distance.COSINE,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         vector_name: str = VECTOR_NAME,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embedding: SparseEmbeddings | None = None,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         collection_create_options: dict[str, Any] = {},
         vector_params: dict[str, Any] = {},
@@ -359,25 +358,25 @@ class QdrantVectorStore(VectorStore):
     def from_existing_collection(
         cls: type[QdrantVectorStore],
         collection_name: str,
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings | None = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,
-        https: Optional[bool] = None,
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
+        https: bool | None = None,
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
         distance: models.Distance = models.Distance.COSINE,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         vector_name: str = VECTOR_NAME,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embedding: SparseEmbeddings | None = None,
         validate_embeddings: bool = True,
         validate_collection_config: bool = True,
         **kwargs: Any,
@@ -421,8 +420,8 @@ class QdrantVectorStore(VectorStore):
     def add_texts(  # type: ignore
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str | int]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str | int]:
@@ -446,12 +445,12 @@ class QdrantVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
-        hybrid_fusion: Optional[models.FusionQuery] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        hybrid_fusion: models.FusionQuery | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to query.
@@ -476,12 +475,12 @@ class QdrantVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
-        hybrid_fusion: Optional[models.FusionQuery] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
+        hybrid_fusion: models.FusionQuery | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
@@ -566,11 +565,11 @@ class QdrantVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
@@ -619,11 +618,11 @@ class QdrantVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to embedding vector.
@@ -649,10 +648,10 @@ class QdrantVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance with dense vectors.
@@ -690,10 +689,10 @@ class QdrantVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance with dense vectors.
@@ -723,10 +722,10 @@ class QdrantVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[models.Filter] = None,
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: models.Filter | None = None,
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
@@ -769,9 +768,9 @@ class QdrantVectorStore(VectorStore):
 
     def delete(  # type: ignore
         self,
-        ids: Optional[list[str | int]] = None,
+        ids: list[str | int] | None = None,
         **kwargs: Any,
-    ) -> Optional[bool]:
+    ) -> bool | None:
         """Delete documents by their ids.
 
         Args:
@@ -803,11 +802,11 @@ class QdrantVectorStore(VectorStore):
     @classmethod
     def construct_instance(
         cls: type[QdrantVectorStore],
-        embedding: Optional[Embeddings] = None,
+        embedding: Embeddings | None = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embedding: SparseEmbeddings | None = None,
         client_options: dict[str, Any] = {},
-        collection_name: Optional[str] = None,
+        collection_name: str | None = None,
         distance: models.Distance = models.Distance.COSINE,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
@@ -947,8 +946,8 @@ class QdrantVectorStore(VectorStore):
     def _generate_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str | int]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
         batch_size: int = 64,
     ) -> Generator[tuple[list[str | int], list[models.PointStruct]], Any, None]:
         texts_iterator = iter(texts)
@@ -981,7 +980,7 @@ class QdrantVectorStore(VectorStore):
     @staticmethod
     def _build_payloads(
         texts: Iterable[str],
-        metadatas: Optional[list[dict]],
+        metadatas: list[dict] | None,
         content_payload_key: str,
         metadata_payload_key: str,
     ) -> list[dict]:
@@ -1063,7 +1062,7 @@ class QdrantVectorStore(VectorStore):
         vector_name: str,
         sparse_vector_name: str,
         distance: models.Distance,
-        embedding: Optional[Embeddings],
+        embedding: Embeddings | None,
     ) -> None:
         if retrieval_mode == RetrievalMode.DENSE:
             cls._validate_collection_for_dense(
@@ -1176,8 +1175,8 @@ class QdrantVectorStore(VectorStore):
     def _validate_embeddings(
         cls: type[QdrantVectorStore],
         retrieval_mode: RetrievalMode,
-        embedding: Optional[Embeddings],
-        sparse_embedding: Optional[SparseEmbeddings],
+        embedding: Embeddings | None,
+        sparse_embedding: SparseEmbeddings | None,
     ) -> None:
         if retrieval_mode == RetrievalMode.DENSE and embedding is None:
             raise ValueError(
