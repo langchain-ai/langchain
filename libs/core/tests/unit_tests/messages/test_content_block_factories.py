@@ -10,7 +10,7 @@ from langchain_core.messages.content_blocks import (
     create_file_block,
     create_image_block,
     create_non_standard_block,
-    create_plain_text_block,
+    create_plaintext_block,
     create_reasoning_block,
     create_text_block,
     create_tool_call,
@@ -230,7 +230,7 @@ class TestPlainTextBlockFactory:
 
     def test_basic_creation(self) -> None:
         """Test basic plain text block creation."""
-        block = create_plain_text_block("This is plain text content.")
+        block = create_plaintext_block("This is plain text content.")
 
         assert block["type"] == "text-plain"
         assert block.get("mime_type") == "text/plain"
@@ -242,7 +242,7 @@ class TestPlainTextBlockFactory:
 
     def test_with_title_and_context(self) -> None:
         """Test plain text block creation with title and context."""
-        block = create_plain_text_block(
+        block = create_plaintext_block(
             "Document content here.",
             title="Important Document",
             context="This document contains important information.",
@@ -253,7 +253,7 @@ class TestPlainTextBlockFactory:
 
     def test_with_url(self) -> None:
         """Test plain text block creation with URL."""
-        block = create_plain_text_block(
+        block = create_plaintext_block(
             "Content", url="https://example.com/document.txt"
         )
 
@@ -308,7 +308,7 @@ class TestReasoningBlockFactory:
         block = create_reasoning_block(
             "Thinking...",
             thought_signature="thought-sig-123",  # type: ignore[call-arg]
-            signature="auth-sig-456",  # type: ignore[call-arg]
+            signature="auth-sig-456",
         )
 
         assert block.get("thought_signature") == "thought-sig-123"
@@ -464,7 +464,7 @@ class TestFactoryTypeConsistency:
         assert isinstance(file_block, dict)
         assert file_block["type"] == "file"
 
-        plain_text_block = create_plain_text_block("content")
+        plain_text_block = create_plaintext_block("content")
         assert isinstance(plain_text_block, dict)
         assert plain_text_block["type"] == "text-plain"
 
@@ -485,84 +485,127 @@ class TestFactoryTypeConsistency:
         assert non_standard_block["type"] == "non_standard"
 
 
-# TODO: add when PEP 728 is fully supported
-# class TestExtraItems:
-#     """Test that content blocks support extra items (PEP 728)."""
+class TestExtraItems:
+    """Test that content blocks support extra items via __extra_items__ field."""
 
-#     def test_text_block_extra_items(self) -> None:
-#         """Test that TextContentBlock can store extra provider-specific fields."""
-#         block = create_text_block("Hello world")
+    def test_text_block_extra_items(self) -> None:
+        """Test that TextContentBlock can store extra provider-specific fields."""
+        block = create_text_block("Hello world")
 
-#         block["openai_metadata"] = {"model": "gpt-4", "temperature": 0.7}
-#         block["anthropic_usage"] = {"input_tokens": 10, "output_tokens": 20}
-#         block["custom_field"] = "any value"
+        block["openai_metadata"] = {"model": "gpt-4", "temperature": 0.7}
+        block["anthropic_usage"] = {"input_tokens": 10, "output_tokens": 20}
+        block["custom_field"] = "any value"
 
-#         assert block["type"] == "text"
-#         assert block["text"] == "Hello world"
-#         assert "id" in block
-#         assert block.get("openai_metadata") == {"model": "gpt-4", "temperature": 0.7}
-#         assert block.get("anthropic_usage") == {"input_tokens": 10, "output_tokens": 20}  # noqa: E501
-#         assert block.get("custom_field") == "any value"
+        assert block["type"] == "text"
+        assert block["text"] == "Hello world"
+        assert "id" in block
+        assert block.get("openai_metadata") == {"model": "gpt-4", "temperature": 0.7}
+        assert block.get("anthropic_usage") == {"input_tokens": 10, "output_tokens": 20}
+        assert block.get("custom_field") == "any value"
 
-#     def test_mixed_extra_items_types(self) -> None:
-#         """Test that extra items can be various types (str, int, bool, dict, list)."""
-#         block = create_text_block("Test content")
+    def test_mixed_extra_items_types(self) -> None:
+        """Test that extra items can be various types (str, int, bool, dict, list)."""
+        block = create_text_block("Test content")
 
-#         # Add various types of extra fields
-#         block["string_field"] = "string value"
-#         block["int_field"] = 42
-#         block["float_field"] = 3.14
-#         block["bool_field"] = True
-#         block["list_field"] = ["item1", "item2", "item3"]
-#         block["dict_field"] = {"nested": {"deeply": "nested value"}}
-#         block["none_field"] = None
+        # Add various types of extra fields
+        block["string_field"] = "string value"
+        block["int_field"] = 42
+        block["float_field"] = 3.14
+        block["bool_field"] = True
+        block["list_field"] = ["item1", "item2", "item3"]
+        block["dict_field"] = {"nested": {"deeply": "nested value"}}
+        block["none_field"] = None
 
-#         # Verify all types are preserved
-#         assert block.get("string_field") == "string value"
-#         assert block.get("int_field") == 42
-#         assert block.get("float_field") == 3.14
-#         assert block.get("bool_field") is True
-#         assert block.get("list_field") == ["item1", "item2", "item3"]
-#         assert (
-#             block.get("dict_field", {}).get("nested", {}).get("deeply")
-#             == "nested value"
-#         )
-#         assert block.get("none_field") is None
+        # Verify all types are preserved
+        assert block.get("string_field") == "string value"
+        assert block.get("int_field") == 42
+        assert block.get("float_field") == 3.14
+        assert block.get("bool_field") is True
+        assert block.get("list_field") == ["item1", "item2", "item3"]
+        dict_field = block.get("dict_field", {})
+        assert isinstance(dict_field, dict)
+        nested = dict_field.get("nested", {})
+        assert isinstance(nested, dict)
+        assert nested.get("deeply") == "nested value"
+        assert block.get("none_field") is None
 
-#     def test_extra_items_do_not_interfere_with_standard_fields(self) -> None:
-#         """Test that extra items don't interfere with standard field access."""
-#         block = create_text_block("Original text", index=1)
+    def test_extra_items_do_not_interfere_with_standard_fields(self) -> None:
+        """Test that extra items don't interfere with standard field access."""
+        block = create_text_block("Original text", index=1)
 
-#         # Add many extra fields
-#         for i in range(10):
-#             block[f"extra_field_{i}"] = f"value_{i}"
+        # Add many extra fields
+        for i in range(10):
+            block[f"extra_field_{i}"] = f"value_{i}"  # type: ignore[literal-required]
 
-#         # Standard fields should still work correctly
-#         assert block["type"] == "text"
-#         assert block["text"] == "Original text"
-#         assert block["index"] == 1
-#         assert "id" in block
+        # Standard fields should still work correctly
+        assert block["type"] == "text"
+        assert block["text"] == "Original text"
+        assert block["index"] == 1
+        assert "id" in block
 
-#         # Extra fields should also be accessible
-#         for i in range(10):
-#             assert block.get(f"extra_field_{i}") == f"value_{i}"
+        # Extra fields should also be accessible
+        for i in range(10):
+            assert block.get(f"extra_field_{i}") == f"value_{i}"
 
-#     def test_extra_items_can_be_modified(self) -> None:
-#         """Test that extra items can be modified after creation."""
-#         block = create_image_block(url="https://example.com/image.jpg")
+    def test_extra_items_can_be_modified(self) -> None:
+        """Test that extra items can be modified after creation."""
+        block = create_image_block(url="https://example.com/image.jpg")
 
-#         # Add an extra field
-#         block["status"] = "pending"
-#         assert block.get("status") == "pending"
+        # Add an extra field
+        block["status"] = "pending"
+        assert block.get("status") == "pending"
 
-#         # Modify the extra field
-#         block["status"] = "processed"
-#         assert block.get("status") == "processed"
+        # Modify the extra field
+        block["status"] = "processed"
+        assert block.get("status") == "processed"
 
-#         # Add more fields
-#         block["metadata"] = {"version": 1}
-#         assert block.get("metadata", {}).get("version") == 1
+        # Add more fields
+        block["metadata"] = {"version": 1}  # type: ignore[typeddict-unknown-key]
+        metadata = block.get("metadata", {})
+        assert isinstance(metadata, dict)
+        assert metadata.get("version") == 1
 
-#         # Modify nested extra field
-#         block["metadata"]["version"] = 2
-#         assert block.get("metadata", {}).get("version") == 2
+        # Modify nested extra field
+        block["metadata"]["version"] = 2  # type: ignore[typeddict-item]
+        metadata = block.get("metadata", {})
+        assert isinstance(metadata, dict)
+        assert metadata.get("version") == 2
+
+    def test_all_content_blocks_support_extra_items(self) -> None:
+        """Test that all content block types support extra items."""
+        # Test each content block type
+        text_block = create_text_block("test")
+        text_block["extra"] = "text_extra"
+        assert text_block.get("extra") == "text_extra"
+
+        image_block = create_image_block(url="https://example.com/image.jpg")
+        image_block["extra"] = "image_extra"
+        assert image_block.get("extra") == "image_extra"
+
+        video_block = create_video_block(url="https://example.com/video.mp4")
+        video_block["extra"] = "video_extra"
+        assert video_block.get("extra") == "video_extra"
+
+        audio_block = create_audio_block(url="https://example.com/audio.mp3")
+        audio_block["extra"] = "audio_extra"
+        assert audio_block.get("extra") == "audio_extra"
+
+        file_block = create_file_block(url="https://example.com/file.pdf")
+        file_block["extra"] = "file_extra"
+        assert file_block.get("extra") == "file_extra"
+
+        plain_text_block = create_plaintext_block("content")
+        plain_text_block["extra"] = "plaintext_extra"
+        assert plain_text_block.get("extra") == "plaintext_extra"
+
+        tool_call = create_tool_call("tool", {"arg": "value"})
+        tool_call["extra"] = "tool_extra"
+        assert tool_call.get("extra") == "tool_extra"
+
+        reasoning_block = create_reasoning_block("reasoning")
+        reasoning_block["extra"] = "reasoning_extra"
+        assert reasoning_block.get("extra") == "reasoning_extra"
+
+        non_standard_block = create_non_standard_block({"data": "value"})
+        non_standard_block["extra"] = "non_standard_extra"
+        assert non_standard_block.get("extra") == "non_standard_extra"

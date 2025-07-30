@@ -14,8 +14,11 @@ Data **not yet mapped** to a standard block may be represented using the
 without losing the benefits of type checking and validation.
 
 Furthermore, provider-specific fields *within* a standard block are fully supported
-via `PEP 728 <https://peps.python.org/pep-0728/>`__ ``extra_items=Any``. This allows
-flexible provider-specific extensions while maintaining type safety for standard fields.
+by default. However, since current type checkers do not recognize this, we are temporarily
+applying type ignore comments to suppress warnings. In the future,
+`PEP 728 <https://peps.python.org/pep-0728/>`__ will add an extra param, ``extra_items=Any``.
+When this is supported, we will apply it to block signatures to signify to type checkers
+that additional provider-specific fields are allowed.
 
 **Example with PEP 728 provider-specific fields:**
 
@@ -76,24 +79,24 @@ The module defines several types of content blocks, including:
 
 .. code-block:: python
 
-    from langchain_core.messages.content_blocks import create_text_block, create_image_block
-
-    # RECOMMENDED: Use factory functions for creating content blocks
-    multimodal_message: AIMessage = [
-        create_text_block("What is shown in this image?"),
-        create_image_block(
-            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
-            mime_type="image/png",
-        ),
-    ]
-
-    # Alternative direct construction:
+    # Direct construction:
     from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
 
     multimodal_message: AIMessage = [
         TextContentBlock(type="text", text="What is shown in this image?"),
         ImageContentBlock(
             type="image",
+            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+            mime_type="image/png",
+        ),
+    ]
+
+    from langchain_core.messages.content_blocks import create_text_block, create_image_block
+
+    # Using factory functions:
+    multimodal_message: AIMessage = [
+        create_text_block("What is shown in this image?"),
+        create_image_block(
             url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
             mime_type="image/png",
         ),
@@ -116,12 +119,11 @@ class Citation(TypedDict):
         response, not the original document (as specified in the ``url``).
 
     .. note::
-        ``create_citation`` is the preferred way to create a ``Citation`` as it:
+        ``create_citation`` may also be used as a factory to create a ``Citation``.
+        Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -189,24 +191,18 @@ class NonStandardAnnotation(TypedDict):
 Annotation = Union[Citation, NonStandardAnnotation]
 
 
-class TextContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class TextContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class TextContentBlock(TypedDict):
     """Text output from a LLM.
 
     This typically represents the main text content of a message, such as the response
     from a language model or the text of a user message.
 
-    Provider-specific fields are supported via PEP 728's ``extra_items=Any``.
-    Type checkers that don't support PEP 728 will show warnings, which can be ignored.
-
     .. note::
-        ``create_text_block`` is the preferred way to create a ``TextContentBlock``
-        as it:
+        ``create_text_block`` may also be used as a factory to create a
+        ``TextContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -230,8 +226,7 @@ class TextContentBlock(TypedDict):  # type: ignore[call-arg]
     """Index of block in aggregate response. Used during streaming."""
 
 
-class ToolCall(TypedDict):  # type: ignore[call-arg]
-    # class ToolCall(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class ToolCall(TypedDict):
     """Represents a request to call a tool.
 
     Example:
@@ -248,12 +243,11 @@ class ToolCall(TypedDict):  # type: ignore[call-arg]
         and an identifier of "123".
 
     .. note::
-        ``create_tool_call`` is the preferred way to create a ``ToolCall`` as it:
+        ``create_tool_call`` may also be used as a factory to create a
+        ``TextCall``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -462,21 +456,15 @@ class CodeInterpreterResult(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
 
-class ReasoningContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class ReasoningContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class ReasoningContentBlock(TypedDict):
     """Reasoning output from a LLM.
 
-    Provider-specific fields (useful for signatures) are supported via PEP 728's
-    ``extra_items=Any``.
-
     .. note::
-        ``create_reasoning_block`` is the preferred way to create a
-        ``ReasoningContentBlock`` as it:
+        ``create_reasoning_block`` may also be used as a factory to create a
+        ``ReasoningContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -504,20 +492,15 @@ class ReasoningContentBlock(TypedDict):  # type: ignore[call-arg]
 # Note: `title` and `context` are fields that could be used to provide additional
 # information about the file, such as a description or summary of its content.
 # E.g. with Claude, you can provide a context for a file which is passed to the model.
-class ImageContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class ImageContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class ImageContentBlock(TypedDict):
     """Image data.
 
-    Provider-specific fields are supported via PEP 728's ``extra_items=Any``.
-
     .. note::
-        ``create_image_block`` is the preferred way to create an ``ImageContentBlock``
-        as it:
+        ``create_image_block`` may also be used as a factory to create a
+        ``ImageContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -556,20 +539,15 @@ class ImageContentBlock(TypedDict):  # type: ignore[call-arg]
     # """Context for the image, e.g., a description or summary of the image's content."""  # noqa: E501
 
 
-class VideoContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class VideoContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class VideoContentBlock(TypedDict):
     """Video data.
 
-    Provider-specific fields are supported via PEP 728's ``extra_items=Any``.
-
     .. note::
-        ``create_video_block`` is the preferred way to create a ``VideoContentBlock``
-        as it:
+        ``create_video_block`` may also be used as a factory to create a
+        ``VideoContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -608,20 +586,15 @@ class VideoContentBlock(TypedDict):  # type: ignore[call-arg]
     # """Context for the video, e.g., description or summary of the video's content."""
 
 
-class AudioContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class AudioContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class AudioContentBlock(TypedDict):
     """Audio data.
 
-    Provider-specific fields are supported via PEP 728's ``extra_items=Any``.
-
     .. note::
-        ``create_audio_block`` is the preferred way to create an ``AudioContentBlock``
-        as it:
+        ``create_audio_block`` may also be used as a factory to create a
+        ``AudioContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -660,8 +633,7 @@ class AudioContentBlock(TypedDict):  # type: ignore[call-arg]
     # """Context for the audio, e.g., description or summary of the audio's content."""
 
 
-class PlainTextContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class PlainTextContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class PlainTextContentBlock(TypedDict):
     """Plaintext data (e.g., from a document).
 
     .. note::
@@ -669,13 +641,11 @@ class PlainTextContentBlock(TypedDict):  # type: ignore[call-arg]
         Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
 
     .. note::
-        ``create_plaintext_block`` is the preferred way to create a
-        ``PlainTextContentBlock`` as it:
+        ``create_plaintext_block`` may also be used as a factory to create a
+        ``PlainTextContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -714,8 +684,7 @@ class PlainTextContentBlock(TypedDict):  # type: ignore[call-arg]
     """Context for the text, e.g., a description or summary of the text's content."""
 
 
-class FileContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class FileContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
+class FileContentBlock(TypedDict):
     """File data that doesn't fit into other multimodal blocks.
 
     This block is intended for files that are not images, audio, or plaintext. For
@@ -726,13 +695,11 @@ class FileContentBlock(TypedDict):  # type: ignore[call-arg]
     ``PlainTextContentBlock``).
 
     .. note::
-        ``create_file_block`` is the preferred way to create a ``FileContentBlock``s as
-        it:
+        ``create_file_block`` may also be used as a factory to create a
+        ``FileContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
@@ -776,8 +743,7 @@ class FileContentBlock(TypedDict):  # type: ignore[call-arg]
 # - Tabular data
 
 
-class NonStandardContentBlock(TypedDict):  # type: ignore[call-arg]
-    # class NonStandardContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]  # noqa: E501
+class NonStandardContentBlock(TypedDict):
     """Provider-specific data.
 
     This block contains data for which there is not yet a standard type.
@@ -788,13 +754,11 @@ class NonStandardContentBlock(TypedDict):  # type: ignore[call-arg]
     ReasoningContentBlock and ToolCallContentBlocks.
 
     .. note::
-        ``create_non_standard_block`` is the preferred way to create a
-        ``NonStandardContentBlock``s as it:
+        ``create_non_standard_block`` may also be used as a factory to create a
+        ``NonStandardContentBlock``. Benefits include:
 
-        * Automatically generate unique IDs when not provided
-        * Validate required arguments at creation time
-        * Provide clear, consistent interfaces with type safety
-        * Handle optional parameters gracefully
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
 
     """
 
