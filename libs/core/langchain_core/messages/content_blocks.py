@@ -110,6 +110,21 @@ from uuid import uuid4
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
 
+def _ensure_id(id_val: Optional[str]) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A valid string ID, either the provided value or a new UUID.
+    """
+    return id_val or str(f"lc_{uuid4()}")
+
+
 class Citation(TypedDict):
     """Annotation for citing data from a document.
 
@@ -950,7 +965,7 @@ def create_text_block(
     block = TextContentBlock(
         type="text",
         text=text,
-        id=id or str(f"lc_{uuid4()}"),
+        id=_ensure_id(id),
     )
     if annotations is not None:
         block["annotations"] = annotations
@@ -998,7 +1013,7 @@ def create_image_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = ImageContentBlock(type="image", id=id or str(f"lc_{uuid4()}"))
+    block = ImageContentBlock(type="image", id=_ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1053,7 +1068,7 @@ def create_video_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = VideoContentBlock(type="video", id=id or str(f"lc_{uuid4()}"))
+    block = VideoContentBlock(type="video", id=_ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1108,7 +1123,7 @@ def create_audio_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = AudioContentBlock(type="audio", id=id or str(f"lc_{uuid4()}"))
+    block = AudioContentBlock(type="audio", id=_ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1163,7 +1178,7 @@ def create_file_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = FileContentBlock(type="file", id=id or str(f"lc_{uuid4()}"))
+    block = FileContentBlock(type="file", id=_ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1214,7 +1229,7 @@ def create_plaintext_block(
         type="text-plain",
         mime_type="text/plain",
         text=text,
-        id=id or str(f"lc_{uuid4()}"),
+        id=_ensure_id(id),
     )
 
     if url is not None:
@@ -1260,7 +1275,7 @@ def create_tool_call(
         type="tool_call",
         name=name,
         args=args,
-        id=id or str(f"lc_{uuid4()}"),
+        id=_ensure_id(id),
     )
 
     if index is not None:
@@ -1293,7 +1308,7 @@ def create_reasoning_block(
     block = ReasoningContentBlock(
         type="reasoning",
         reasoning=reasoning,
-        id=id or str(f"lc_{uuid4()}"),
+        id=_ensure_id(id),
     )
 
     if index is not None:
@@ -1329,7 +1344,7 @@ def create_citation(
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
-    block = Citation(type="citation", id=id or str(f"lc_{uuid4()}"))
+    block = Citation(type="citation", id=_ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1369,7 +1384,7 @@ def create_non_standard_block(
     block = NonStandardContentBlock(
         type="non_standard",
         value=value,
-        id=id or str(f"lc_{uuid4()}"),
+        id=_ensure_id(id),
     )
 
     if index is not None:
