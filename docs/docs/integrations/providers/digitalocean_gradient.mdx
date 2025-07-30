@@ -1,27 +1,27 @@
-# ChatGradientAI
+# ChatGradient
 
-This will help you getting started with DigitalOcean GradientAI [chat models](/docs/concepts/chat_models).
+This will help you getting started with DigitalOcean Gradient [chat models](/docs/concepts/chat_models).
 
 ## Overview
 ### Integration details
 
 | Class | Package | Package downloads | Package latest |
 | :--- | :--- | :---: | :---: |
-| [ChatGradientAI](https://python.langchain.com/api_reference/digitalocean/chat_models/langchain_digitalocean.chat_models.ChatDigitalocean.html) | [langchain-gradientai](https://python.langchain.com/api_reference/digitalocean/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-gradientai?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-gradientai?style=flat-square&label=%20) |
+| [ChatGradient](https://python.langchain.com/api_reference/langchain-gradient/chat_models/langchain_gradient.chat_models.ChatGradient.html) | [langchain-gradient](https://python.langchain.com/api_reference/langchain-gradient/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-gradient?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-gradient?style=flat-square&label=%20) |
 
 
 ## Setup
 
-langchain-gradientai uses DigitalOcean GradientAI Platform.  
+langchain-gradient uses DigitalOcean Gradient Platform.  
 
-You can simply create an account in DigitalOcean, get DIGITALOCEAN_INFERENCE_KEY API key from GradientAI Platform, and install the `langchain-gradientai` integration package.
+You can simply create an account in DigitalOcean, get DIGITALOCEAN_INFERENCE_KEY API key from Gradient Platform, and install the `langchain-gradient` integration package.
 
 ### Credentials
 
-Head to [DigitalOcean GradientAI](https://www.digitalocean.com/products/gradientai) 
+Head to [DigitalOcean Gradient](https://www.digitalocean.com/products/gradient) 
 
 1. Sign up/Login to DigitalOcean Cloud Console
-2. Go to the GradienAI Platform and navigate to Serverless Inference.
+2. Go to the Gradient Platform and navigate to Serverless Inference.
 3. Click on Create model access key, enter a name, and create the key.
 
 Once you've done this set the DIGITALOCEAN_INFERENCE_KEY environment variable:
@@ -33,18 +33,18 @@ os.environ["DIGITALOCEAN_INFERENCE_KEY"] = "your-api-key"
 
 ### Installation
 
-The LangChain GradientAI integration is in the `langchain-gradientai` package:
+The LangChain Gradient integration is in the `langchain-gradient` package:
 
 ```bash
-pip install -qU langchain-gradientai
+pip install -qU langchain-gradient
 ```
 
 ## Instantiation
 
 ```python
-from langchain_gradientai import ChatGradientAI
+from langchain_gradient import ChatGradient
 
-llm = ChatGradientAI(
+llm = ChatGradient(
     model="llama3.3-70b-instruct",
     api_key=os.environ.get("DIGITALOCEAN_INFERENCE_KEY")
 )
