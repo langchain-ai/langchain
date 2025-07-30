@@ -203,9 +203,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                     strict=self.strict,
                     return_id=self.return_id,
                 )
-            # for backwards compatibility
-            for tc in tool_calls:
-                tc["type"] = tc.pop("name")
         elif result.tool_calls:
             # v1 message
             tool_calls = [dict(tc) for tc in result.tool_calls]
@@ -215,6 +212,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         else:
             return []
 
+        # for backwards compatibility
+        for tc in tool_calls:
+            tc["type"] = tc.pop("name")
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
         return tool_calls
@@ -279,9 +279,6 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                     strict=self.strict,
                     return_id=self.return_id,
                 )
-            # For backwards compatibility
-            for tc in parsed_tool_calls:
-                tc["type"] = tc.pop("name")
         elif result.tool_calls:
             # v1 message
             parsed_tool_calls = [dict(tc) for tc in result.tool_calls]
@@ -290,6 +287,10 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                     _ = tool_call.pop("id")
         else:
             return []
+
+        # For backwards compatibility
+        for tc in parsed_tool_calls:
+            tc["type"] = tc.pop("name")
 
         if self.first_tool_only:
             parsed_result = list(
