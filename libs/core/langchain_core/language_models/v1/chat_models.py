@@ -6,7 +6,8 @@ import copy
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -22,29 +23,33 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
 )
-from typing_extensions import override
+from typing_extensions import TypeAlias, override
 
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
     CallbackManager,
     CallbackManagerForLLMRun,
+    Callbacks,
 )
-from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models._utils import _normalize_messages_v1
 from langchain_core.language_models.base import (
-    BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
+    _get_token_ids_default_method,
+    _get_verbosity,
 )
+from langchain_core.load import dumpd
 from langchain_core.messages import (
-    AIMessage,
     convert_to_openai_image_block,
     get_buffer_string,
     is_data_content_block,
 )
 from langchain_core.messages.utils import (
-    _convert_from_v1_message,
+    convert_from_v1_message,
     convert_to_messages_v1,
 )
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
@@ -58,6 +63,7 @@ from langchain_core.outputs import (
 from langchain_core.prompt_values import PromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
+from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import (
@@ -85,14 +91,15 @@ def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
-        generations = [AIMessageV1(content=[], response_metadata=metadata)]
+        # Permit response_metadata without model_name, model_provider fields
+        generations = [AIMessageV1(content=[], response_metadata=metadata)]  # type: ignore[arg-type]
     else:
         generations = []
 
     return generations
 
 
-def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
+def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
     """Format messages for tracing in on_chat_model_start.
 
     - Update image content blocks to OpenAI Chat Completions format (backward
@@ -112,7 +119,7 @@ def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
             # Update image content blocks to OpenAI # Chat Completions format.
             if (
                 block["type"] == "image"
-                and is_data_content_block(block)
+                and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
                 and block.get("source_type") != "id"
             ):
                 if message_to_trace is message:
@@ -120,7 +127,9 @@ def _format_for_tracing(messages: list[MessageV1]) -> list[MessageV1]:
                     message_to_trace = copy.copy(message)
                     message_to_trace.content = list(message_to_trace.content)
 
-                message_to_trace.content[idx] = convert_to_openai_image_block(block)
+                # TODO: for tracing purposes we store non-standard types (OpenAI format)
+                # in message content. Consider typing these block formats.
+                message_to_trace.content[idx] = convert_to_openai_image_block(block)  # type: ignore[arg-type, call-overload]
             else:
                 pass
         messages_to_trace.append(message_to_trace)
@@ -180,7 +189,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
+class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -278,11 +287,72 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
     does not properly support streaming.
     """
 
+    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
+    """Whether to cache the response.
+
+    * If true, will use the global cache.
+    * If false, will not use a cache
+    * If None, will use the global cache if it's set, otherwise no cache.
+    * If instance of BaseCache, will use the provided cache.
+
+    Caching is not currently supported for streaming methods of models.
+    """
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
+    """Whether to print out response text."""
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to add to the run trace."""
+    tags: Optional[list[str]] = Field(default=None, exclude=True)
+    """Tags to add to the run trace."""
+    metadata: Optional[dict[str, Any]] = Field(default=None, exclude=True)
+    """Metadata to add to the run trace."""
+    custom_get_token_ids: Optional[Callable[[str], list[int]]] = Field(
+        default=None, exclude=True
+    )
+    """Optional encoder to use for counting tokens."""
+
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
 
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     # --- Runnable methods ---
+
+    @field_validator("verbose", mode="before")
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:  # noqa: FBT001
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+
+        Args:
+            verbose: The verbosity setting to use.
+
+        Returns:
+            The verbosity setting to use.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        return verbose
+
+    @property
+    @override
+    def InputType(self) -> TypeAlias:
+        """Get the input type for this runnable."""
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
+        )
+
+        # This is a version of LanguageModelInput which replaces the abstract
+        # base class BaseMessage with a union of its subclasses, which makes
+        # for a much better schema.
+        return Union[
+            str,
+            Union[StringPromptValue, ChatPromptValueConcrete],
+            list[MessageV1],
+        ]
 
     @property
     @override
@@ -299,7 +369,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             return convert_to_messages_v1(model_input)
         msg = (
             f"Invalid input type {type(model_input)}. "
-            "Must be a PromptValue, str, or list of BaseMessages."
+            "Must be a PromptValue, str, or list of Messages."
         )
         raise ValueError(msg)
 
@@ -370,8 +440,8 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             self.metadata,
         )
         (run_manager,) = callback_manager.on_chat_model_start(
-            {},
-            [_format_for_tracing(messages)],
+            self._serialized,
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -382,27 +452,27 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         if self.rate_limiter:
             self.rate_limiter.acquire(blocking=True)
 
-        input_messages = _normalize_messages(messages)
+        input_messages = _normalize_messages_v1(messages)
 
         if self._should_stream(async_api=False, **kwargs):
             chunks: list[AIMessageChunkV1] = []
             try:
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg)
+                    run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
-            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+            full_message = add_ai_message_chunks(chunks[0], *chunks[1:]).to_message()
         else:
             try:
-                msg = self._invoke(input_messages, **kwargs)
+                full_message = self._invoke(input_messages, **kwargs)
             except BaseException as e:
                 run_manager.on_llm_error(e)
                 raise
 
-        run_manager.on_llm_end(msg)
-        return msg
+        run_manager.on_llm_end(full_message)
+        return full_message
 
     @override
     async def ainvoke(
@@ -410,7 +480,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         config = ensure_config(config)
         messages = self._convert_input(input)
         ls_structured_output_format = kwargs.pop(
@@ -436,8 +506,8 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            {},
-            [_format_for_tracing(messages)],
+            self._serialized,
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -449,31 +519,31 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             await self.rate_limiter.aacquire(blocking=True)
 
         # TODO: type openai image, audio, file types and permit in MessageV1
-        input_messages = _normalize_messages(messages)  # type: ignore[arg-type]
+        input_messages = _normalize_messages_v1(messages)
 
         if self._should_stream(async_api=True, **kwargs):
             chunks: list[AIMessageChunkV1] = []
             try:
                 async for msg in self._astream(input_messages, **kwargs):
-                    await run_manager.on_llm_new_token(msg)
+                    await run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
             except BaseException as e:
                 await run_manager.on_llm_error(
                     e, response=_generate_response_from_error(e)
                 )
                 raise
-            msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+            full_message = add_ai_message_chunks(chunks[0], *chunks[1:]).to_message()
         else:
             try:
-                msg = await self._ainvoke(input_messages, **kwargs)
+                full_message = await self._ainvoke(input_messages, **kwargs)
             except BaseException as e:
                 await run_manager.on_llm_error(
                     e, response=_generate_response_from_error(e)
                 )
                 raise
 
-        await run_manager.on_llm_end(msg.to_message())
-        return msg
+        await run_manager.on_llm_end(full_message)
+        return full_message
 
     @override
     def stream(
@@ -514,8 +584,8 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                {},
-                [_format_for_tracing(messages)],
+                self._serialized,
+                _format_for_tracing(messages),
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
@@ -530,9 +600,9 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
 
             try:
                 # TODO: replace this with something for new messages
-                input_messages = _normalize_messages(messages)
+                input_messages = _normalize_messages_v1(messages)
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg)
+                    run_manager.on_llm_new_token(msg.text or "")
                     chunks.append(msg)
                     yield msg
             except BaseException as e:
@@ -583,8 +653,8 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            {},
-            [_format_for_tracing(messages)],
+            self._serialized,
+            _format_for_tracing(messages),
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -598,12 +668,12 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         chunks: list[AIMessageChunkV1] = []
 
         try:
-            input_messages = _normalize_messages(messages)
+            input_messages = _normalize_messages_v1(messages)
             async for msg in self._astream(
                 input_messages,
                 **kwargs,
             ):
-                await run_manager.on_llm_new_token(msg)
+                await run_manager.on_llm_new_token(msg.text or "")
                 chunks.append(msg)
                 yield msg
         except BaseException as e:
@@ -623,7 +693,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
-        params = self.dict()
+        params = self.dump()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -674,14 +744,14 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         raise NotImplementedError
 
     async def _ainvoke(
         self,
         messages: list[MessageV1],
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> AIMessageV1:
         return await run_in_executor(
             None,
             self._invoke,
@@ -724,8 +794,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
-    @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dump(self, **kwargs: Any) -> dict:  # noqa: ARG002
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -903,6 +972,38 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
 
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return self.lc_attributes
+
+    def get_token_ids(self, text: str) -> list[int]:
+        """Return the ordered ids of the tokens in a text.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            A list of ids corresponding to the tokens in the text, in order they occur
+                in the text.
+        """
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
+        return _get_token_ids_default_method(text)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text.
+
+        Useful for checking if an input fits in a model's context window.
+
+        Args:
+            text: The string input to tokenize.
+
+        Returns:
+            The integer number of tokens in the text.
+        """
+        return len(self.get_token_ids(text))
+
     def get_num_tokens_from_messages(
         self,
         messages: list[MessageV1],
@@ -923,7 +1024,7 @@ class BaseChatModelV1(BaseLanguageModel[AIMessageV1], ABC):
         Returns:
             The sum of the number of tokens across the messages.
         """
-        messages_v0 = [_convert_from_v1_message(message) for message in messages]
+        messages_v0 = [convert_from_v1_message(message) for message in messages]
         if tools is not None:
             warnings.warn(
                 "Counting tokens in tool schemas is not yet supported. Ignoring tools.",

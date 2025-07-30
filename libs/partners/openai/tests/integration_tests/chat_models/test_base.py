@@ -221,6 +221,7 @@ def test_openai_invoke() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
         service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
     )
 
     result = llm.invoke("Hello", config=dict(tags=["foo"]))
