@@ -12,7 +12,7 @@ from langchain_core.utils import get_from_dict_or_env
 # Optional dependency: google-generativeai
 # ------------------------------------------------------------------------------ #
 try:
-    import google.generativeai as genai  # type: ignore[import-not-found]
+    import google.generativeai as genai
 except ImportError:
     from typing import Any  # تأكد أن Any متوفّر
 
@@ -27,7 +27,7 @@ except ImportError:
             )
             raise ImportError(msg)
 
-    genai = _MissingGenAI()  # type: ignore[assignment]
+    genai = _MissingGenAI()
 
 
 class Gemini15Embeddings(Embeddings):
@@ -70,7 +70,7 @@ class Gemini15Embeddings(Embeddings):
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and return one vector per input text."""
-        response = self._client.embed_content(  # type: ignore[reportGeneralTypeIssues]
+        response = self._client.embed_content(
             input=texts
         )
         return response["embedding"]
