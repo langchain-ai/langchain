@@ -308,7 +308,7 @@ class TestReasoningBlockFactory:
         block = create_reasoning_block(
             "Thinking...",
             thought_signature="thought-sig-123",  # type: ignore[call-arg]
-            signature="auth-sig-456",  # type: ignore[call-arg]
+            signature="auth-sig-456",  # type: ignore[call-arg, unused-ignore]
         )
 
         assert block.get("thought_signature") == "thought-sig-123"

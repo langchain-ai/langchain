@@ -210,7 +210,7 @@ class AIMessageChunk(AIMessage):
         usage_metadata: Optional metadata about token usage and costs.
     """
 
-    type: Literal["ai_chunk"] = "ai_chunk"
+    type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
     """Used for serialization."""
 
     name: Optional[str] = None
