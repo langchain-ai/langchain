@@ -70,6 +70,7 @@ class Gemini15Embeddings(Embeddings):
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and return one vector per input text."""
-        # استدعاء embed_content يعيد dict يحتوي على "embedding"
-        response = self._client.embed_content(input=texts)  # type: ignore[reportGeneralTypeIssues]
+        response = self._client.embed_content(  # type: ignore[reportGeneralTypeIssues]
+            input=texts
+        )
         return response["embedding"]
