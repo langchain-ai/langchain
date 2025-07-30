@@ -1,13 +1,14 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic, Optional
+from typing import Annotated, Generic, Optional, Union
 
 import pydantic
 from pydantic import SkipValidation
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
@@ -43,7 +44,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
     ) -> Optional[TBaseModel]:
         """Parse the result of an LLM call to a pydantic object.
 
