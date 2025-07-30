@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Optional, Union, cast, get_args
 
 from pydantic import BaseModel
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import (
@@ -54,10 +54,10 @@ class ResponseMetadata(TypedDict, total=False):
     definition.
     """
 
-    model_provider: str
+    model_provider: NotRequired[str]
     """Name and version of the provider that created the message (e.g., openai)."""
 
-    model_name: str
+    model_name: NotRequired[str]
     """Name of the model that generated the message."""
 
 
