@@ -84,8 +84,6 @@ from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
-# --- Text and annotations ---
-
 
 class Citation(TypedDict):
     """Annotation for citing data from a document.
@@ -190,7 +188,6 @@ class TextContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     """Index of block in aggregate response. Used during streaming."""
 
 
-# --- Tool calls ---
 class ToolCall(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     """Represents a request to call a tool.
 
@@ -272,10 +269,7 @@ class ToolCallChunk(TypedDict):
     type: NotRequired[Literal["tool_call_chunk"]]
 
 
-# --- Provider tool calls (built-in tools) ---
 # Note: These are not standard tool calls, but rather provider-specific built-in tools.
-
-
 # Web search
 class WebSearchCall(TypedDict):
     """Content block for a built-in web search tool call."""
@@ -317,10 +311,6 @@ class WebSearchResult(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
 
-# Code interpreter
-
-
-# Call
 class CodeInterpreterCall(TypedDict):
     """Content block for a built-in code interpreter tool call."""
 
@@ -344,7 +334,6 @@ class CodeInterpreterCall(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
 
-# Result block is CodeInterpreterResult
 class CodeInterpreterOutput(TypedDict):
     """Content block for the output of a singular code interpreter tool call.
 
@@ -401,7 +390,6 @@ class CodeInterpreterResult(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
 
-# --- Reasoning ---
 class ReasoningContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     """Content block for reasoning output.
 
@@ -428,9 +416,6 @@ class ReasoningContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-ar
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
-
-
-# --- Multi-modal ---
 
 
 # Note: `title` and `context` are fields that could be used to provide additional
@@ -515,7 +500,7 @@ class VideoContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     # """Title of the video."""
 
     # context: NotRequired[str]
-    # """Context for the video, e.g., a description or summary of the video's content.""" # noqa: E501
+    # """Context for the video, e.g., description or summary of the video's content."""
 
 
 class AudioContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
@@ -556,7 +541,7 @@ class AudioContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     # """Title of the audio."""
 
     # context: NotRequired[str]
-    # """Context for the audio, e.g., a description or summary of the audio's content.""" # noqa: E501
+    # """Context for the audio, e.g., description or summary of the audio's content."""
 
 
 class PlainTextContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
@@ -653,7 +638,6 @@ class FileContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
 # - Tabular data
 
 
-# Non-standard
 class NonStandardContentBlock(TypedDict, extra_items=Any):  # type: ignore[call-arg]
     """Content block provider-specific data.
 
@@ -825,9 +809,6 @@ def convert_to_openai_data_block(block: dict) -> dict:
         raise ValueError(error_msg)
 
     return formatted_block
-
-
-# Factories
 
 
 def create_text_block(
