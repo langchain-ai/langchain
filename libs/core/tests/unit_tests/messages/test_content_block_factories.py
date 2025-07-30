@@ -308,7 +308,7 @@ class TestReasoningBlockFactory:
         block = create_reasoning_block(
             "Thinking...",
             thought_signature="thought-sig-123",  # type: ignore[call-arg]
-            signature="auth-sig-456",
+            signature="auth-sig-456",  # type: ignore[call-arg]
         )
 
         assert block.get("thought_signature") == "thought-sig-123"
@@ -492,9 +492,9 @@ class TestExtraItems:
         """Test that TextContentBlock can store extra provider-specific fields."""
         block = create_text_block("Hello world")
 
-        block["openai_metadata"] = {"model": "gpt-4", "temperature": 0.7}
-        block["anthropic_usage"] = {"input_tokens": 10, "output_tokens": 20}
-        block["custom_field"] = "any value"
+        block["openai_metadata"] = {"model": "gpt-4", "temperature": 0.7}  # type: ignore[typeddict-unknown-key]
+        block["anthropic_usage"] = {"input_tokens": 10, "output_tokens": 20}  # type: ignore[typeddict-unknown-key]
+        block["custom_field"] = "any value"  # type: ignore[typeddict-unknown-key]
 
         assert block["type"] == "text"
         assert block["text"] == "Hello world"
@@ -508,13 +508,13 @@ class TestExtraItems:
         block = create_text_block("Test content")
 
         # Add various types of extra fields
-        block["string_field"] = "string value"
-        block["int_field"] = 42
-        block["float_field"] = 3.14
-        block["bool_field"] = True
-        block["list_field"] = ["item1", "item2", "item3"]
-        block["dict_field"] = {"nested": {"deeply": "nested value"}}
-        block["none_field"] = None
+        block["string_field"] = "string value"  # type: ignore[typeddict-unknown-key]
+        block["int_field"] = 42  # type: ignore[typeddict-unknown-key]
+        block["float_field"] = 3.14  # type: ignore[typeddict-unknown-key]
+        block["bool_field"] = True  # type: ignore[typeddict-unknown-key]
+        block["list_field"] = ["item1", "item2", "item3"]  # type: ignore[typeddict-unknown-key]
+        block["dict_field"] = {"nested": {"deeply": "nested value"}}  # type: ignore[typeddict-unknown-key]
+        block["none_field"] = None  # type: ignore[typeddict-unknown-key]
 
         # Verify all types are preserved
         assert block.get("string_field") == "string value"
@@ -540,7 +540,7 @@ class TestExtraItems:
         # Standard fields should still work correctly
         assert block["type"] == "text"
         assert block["text"] == "Original text"
-        assert block["index"] == 1
+        assert block["index"] == 1 if "index" in block else None
         assert "id" in block
 
         # Extra fields should also be accessible
@@ -552,11 +552,11 @@ class TestExtraItems:
         block = create_image_block(url="https://example.com/image.jpg")
 
         # Add an extra field
-        block["status"] = "pending"
+        block["status"] = "pending"  # type: ignore[typeddict-unknown-key]
         assert block.get("status") == "pending"
 
         # Modify the extra field
-        block["status"] = "processed"
+        block["status"] = "processed"  # type: ignore[typeddict-unknown-key]
         assert block.get("status") == "processed"
 
         # Add more fields
@@ -575,37 +575,37 @@ class TestExtraItems:
         """Test that all content block types support extra items."""
         # Test each content block type
         text_block = create_text_block("test")
-        text_block["extra"] = "text_extra"
+        text_block["extra"] = "text_extra"  # type: ignore[typeddict-unknown-key]
         assert text_block.get("extra") == "text_extra"
 
         image_block = create_image_block(url="https://example.com/image.jpg")
-        image_block["extra"] = "image_extra"
+        image_block["extra"] = "image_extra"  # type: ignore[typeddict-unknown-key]
         assert image_block.get("extra") == "image_extra"
 
         video_block = create_video_block(url="https://example.com/video.mp4")
-        video_block["extra"] = "video_extra"
+        video_block["extra"] = "video_extra"  # type: ignore[typeddict-unknown-key]
         assert video_block.get("extra") == "video_extra"
 
         audio_block = create_audio_block(url="https://example.com/audio.mp3")
-        audio_block["extra"] = "audio_extra"
+        audio_block["extra"] = "audio_extra"  # type: ignore[typeddict-unknown-key]
         assert audio_block.get("extra") == "audio_extra"
 
         file_block = create_file_block(url="https://example.com/file.pdf")
-        file_block["extra"] = "file_extra"
+        file_block["extra"] = "file_extra"  # type: ignore[typeddict-unknown-key]
         assert file_block.get("extra") == "file_extra"
 
         plain_text_block = create_plaintext_block("content")
-        plain_text_block["extra"] = "plaintext_extra"
+        plain_text_block["extra"] = "plaintext_extra"  # type: ignore[typeddict-unknown-key]
         assert plain_text_block.get("extra") == "plaintext_extra"
 
         tool_call = create_tool_call("tool", {"arg": "value"})
-        tool_call["extra"] = "tool_extra"
+        tool_call["extra"] = "tool_extra"  # type: ignore[typeddict-unknown-key]
         assert tool_call.get("extra") == "tool_extra"
 
         reasoning_block = create_reasoning_block("reasoning")
-        reasoning_block["extra"] = "reasoning_extra"
+        reasoning_block["extra"] = "reasoning_extra"  # type: ignore[typeddict-unknown-key]
         assert reasoning_block.get("extra") == "reasoning_extra"
 
         non_standard_block = create_non_standard_block({"data": "value"})
-        non_standard_block["extra"] = "non_standard_extra"
+        non_standard_block["extra"] = "non_standard_extra"  # type: ignore[typeddict-unknown-key]
         assert non_standard_block.get("extra") == "non_standard_extra"
