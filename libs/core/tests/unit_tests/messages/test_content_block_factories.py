@@ -18,6 +18,20 @@ from langchain_core.messages.content_blocks import (
 )
 
 
+def _validate_lc_uuid(id_value: str) -> None:
+    """Validate that the ID has ``lc_`` prefix and valid UUID suffix.
+
+    Args:
+        id_value: The ID string to validate.
+
+    Raises:
+        AssertionError: If the ID doesn't have ``lc_`` prefix or invalid UUID.
+    """
+    assert id_value.startswith("lc_"), f"ID should start with 'lc_' but got: {id_value}"
+    # Validate the UUID part after the lc_ prefix
+    UUID(id_value[3:])
+
+
 class TestTextBlockFactory:
     """Test create_text_block factory function."""
 
@@ -30,7 +44,7 @@ class TestTextBlockFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_custom_id(self) -> None:
         """Test text block creation with custom ID."""
@@ -72,7 +86,7 @@ class TestImageBlockFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_base64(self) -> None:
         """Test image block creation with base64 data."""
@@ -224,7 +238,7 @@ class TestPlainTextBlockFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_title_and_context(self) -> None:
         """Test plain text block creation with title and context."""
@@ -259,7 +273,7 @@ class TestToolCallFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_custom_id(self) -> None:
         """Test tool call creation with custom ID."""
@@ -286,7 +300,7 @@ class TestReasoningBlockFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     @pytest.mark.xfail(reason="Optional fields not implemented yet")
     def test_with_signatures(self) -> None:
@@ -318,7 +332,7 @@ class TestCitationFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_all_fields(self) -> None:
         """Test citation creation with all fields."""
@@ -360,7 +374,7 @@ class TestNonStandardBlockFactory:
         assert "id" in block
         id_value = block.get("id")
         assert id_value is not None, "block id is None"
-        UUID(id_value[3:])
+        _validate_lc_uuid(id_value)
 
     def test_with_index(self) -> None:
         """Test non-standard block creation with index."""
@@ -375,6 +389,54 @@ class TestNonStandardBlockFactory:
         block = create_non_standard_block(value)
 
         assert "index" not in block
+
+
+class TestUUIDValidation:
+    """Test UUID generation and validation behavior."""
+
+    def test_custom_id_bypasses_lc_prefix_requirement(self) -> None:
+        """Test that custom IDs can use any format (don't require lc_ prefix)."""
+        custom_id = "custom-123"
+        block = create_text_block("Hello", id=custom_id)
+
+        assert block.get("id") == custom_id
+        # Custom IDs should not be validated with lc_ prefix requirement
+
+    def test_generated_ids_are_unique(self) -> None:
+        """Test that multiple factory calls generate unique IDs."""
+        blocks = [create_text_block("test") for _ in range(10)]
+        ids = [block.get("id") for block in blocks]
+
+        # All IDs should be unique
+        assert len(set(ids)) == len(ids)
+
+        # All generated IDs should have lc_ prefix
+        for id_value in ids:
+            _validate_lc_uuid(id_value or "")
+
+    def test_empty_string_id_generates_new_uuid(self) -> None:
+        """Test that empty string ID generates new UUID with lc_ prefix."""
+        block = create_text_block("Hello", id="")
+
+        id_value: str = block.get("id", "")
+        assert id_value != ""
+        _validate_lc_uuid(id_value)
+
+    def test_generated_id_length(self) -> None:
+        """Test that generated IDs have correct length (UUID4 + lc_ prefix)."""
+        block = create_text_block("Hello")
+
+        id_value = block.get("id")
+        assert id_value is not None
+
+        # UUID4 string length is 36 chars, plus 3 for "lc_" prefix = 39 total
+        expected_length = 36 + 3
+        assert len(id_value) == expected_length, (
+            f"Expected length {expected_length}, got {len(id_value)}"
+        )
+
+        # Validate it's properly formatted
+        _validate_lc_uuid(id_value)
 
 
 class TestFactoryTypeConsistency:
