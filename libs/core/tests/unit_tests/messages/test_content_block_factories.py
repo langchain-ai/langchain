@@ -483,3 +483,86 @@ class TestFactoryTypeConsistency:
         non_standard_block = create_non_standard_block({"data": "value"})
         assert isinstance(non_standard_block, dict)
         assert non_standard_block["type"] == "non_standard"
+
+
+# TODO: add when PEP 728 is fully supported
+# class TestExtraItems:
+#     """Test that content blocks support extra items (PEP 728)."""
+
+#     def test_text_block_extra_items(self) -> None:
+#         """Test that TextContentBlock can store extra provider-specific fields."""
+#         block = create_text_block("Hello world")
+
+#         block["openai_metadata"] = {"model": "gpt-4", "temperature": 0.7}
+#         block["anthropic_usage"] = {"input_tokens": 10, "output_tokens": 20}
+#         block["custom_field"] = "any value"
+
+#         assert block["type"] == "text"
+#         assert block["text"] == "Hello world"
+#         assert "id" in block
+#         assert block.get("openai_metadata") == {"model": "gpt-4", "temperature": 0.7}
+#         assert block.get("anthropic_usage") == {"input_tokens": 10, "output_tokens": 20}  # noqa: E501
+#         assert block.get("custom_field") == "any value"
+
+#     def test_mixed_extra_items_types(self) -> None:
+#         """Test that extra items can be various types (str, int, bool, dict, list)."""
+#         block = create_text_block("Test content")
+
+#         # Add various types of extra fields
+#         block["string_field"] = "string value"
+#         block["int_field"] = 42
+#         block["float_field"] = 3.14
+#         block["bool_field"] = True
+#         block["list_field"] = ["item1", "item2", "item3"]
+#         block["dict_field"] = {"nested": {"deeply": "nested value"}}
+#         block["none_field"] = None
+
+#         # Verify all types are preserved
+#         assert block.get("string_field") == "string value"
+#         assert block.get("int_field") == 42
+#         assert block.get("float_field") == 3.14
+#         assert block.get("bool_field") is True
+#         assert block.get("list_field") == ["item1", "item2", "item3"]
+#         assert (
+#             block.get("dict_field", {}).get("nested", {}).get("deeply")
+#             == "nested value"
+#         )
+#         assert block.get("none_field") is None
+
+#     def test_extra_items_do_not_interfere_with_standard_fields(self) -> None:
+#         """Test that extra items don't interfere with standard field access."""
+#         block = create_text_block("Original text", index=1)
+
+#         # Add many extra fields
+#         for i in range(10):
+#             block[f"extra_field_{i}"] = f"value_{i}"
+
+#         # Standard fields should still work correctly
+#         assert block["type"] == "text"
+#         assert block["text"] == "Original text"
+#         assert block["index"] == 1
+#         assert "id" in block
+
+#         # Extra fields should also be accessible
+#         for i in range(10):
+#             assert block.get(f"extra_field_{i}") == f"value_{i}"
+
+#     def test_extra_items_can_be_modified(self) -> None:
+#         """Test that extra items can be modified after creation."""
+#         block = create_image_block(url="https://example.com/image.jpg")
+
+#         # Add an extra field
+#         block["status"] = "pending"
+#         assert block.get("status") == "pending"
+
+#         # Modify the extra field
+#         block["status"] = "processed"
+#         assert block.get("status") == "processed"
+
+#         # Add more fields
+#         block["metadata"] = {"version": 1}
+#         assert block.get("metadata", {}).get("version") == 1
+
+#         # Modify nested extra field
+#         block["metadata"]["version"] = 2
+#         assert block.get("metadata", {}).get("version") == 2
