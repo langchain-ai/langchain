@@ -55,6 +55,8 @@ See the notebook example [here](/docs/integrations/llms/ollama).
 from langchain_ollama.chat_models import ChatOllama
 ```
 
+Note: ChatOllama does not support basic auth via the URL-only strategy. If you keep the Ollama server behind basic auth (such as by using a proxy) then you'll need to manually set authentication headers to access it.
+
 See the notebook example [here](/docs/integrations/chat/ollama).
 
 ### Ollama tool calling
