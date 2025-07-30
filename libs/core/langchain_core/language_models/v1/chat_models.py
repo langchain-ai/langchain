@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import copy
-from functools import cached_property
 import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
