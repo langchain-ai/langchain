@@ -216,8 +216,11 @@ def _load_package_modules(
 
         # Get the full namespace of the module
         namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
-        # Keep only the top level namespace
-        top_namespace = namespace.split(".")[0]
+        # Keep only the top level namespace, but make special exception for content_blocks
+        if namespace == "messages.content_blocks":
+            top_namespace = namespace  # Keep full namespace for content_blocks
+        else:
+            top_namespace = namespace.split(".")[0]
 
         try:
             # If submodule is present, we need to construct the paths in a slightly
