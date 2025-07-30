@@ -244,7 +244,7 @@ class ToolCall(TypedDict):
 
     .. note::
         ``create_tool_call`` may also be used as a factory to create a
-        ``TextCall``. Benefits include:
+        ``ToolCall``. Benefits include:
 
         * Automatic ID generation (when not provided)
         * Required arguments strictly validated at creation time
@@ -590,7 +590,7 @@ class AudioContentBlock(TypedDict):
     """Audio data.
 
     .. note::
-        ``create_audio_block`` may also be used as a factory to create a
+        ``create_audio_block`` may also be used as a factory to create an
         ``AudioContentBlock``. Benefits include:
 
         * Automatic ID generation (when not provided)
