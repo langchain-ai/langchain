@@ -2332,7 +2332,7 @@ dependencies = [
 
 [[package]]
 name = "langchain-chroma"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "libs/partners/chroma" }
 dependencies = [
     { name = "chromadb" },
@@ -2403,7 +2403,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.70"
+version = "0.3.72"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
