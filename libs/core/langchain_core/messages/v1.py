@@ -329,7 +329,11 @@ class AIMessageChunk(AIMessage):
     @property
     def reasoning(self) -> Optional[str]:
         """Extract all reasoning text from the AI message as a string."""
-        text_blocks = [block for block in self.content if block["type"] == "reasoning"]
+        text_blocks = [
+            block
+            for block in self.content
+            if block["type"] == "reasoning" and "reasoning" in block
+        ]
         if text_blocks:
             return "".join(block["reasoning"] for block in text_blocks)
         return None
