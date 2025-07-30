@@ -11497,6 +11497,59 @@
       }),
       'langchain_core__messages__v1__AIMessageChunk': dict({
         'properties': dict({
+          'content': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/TextContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/ReasoningContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/NonStandardContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/ImageContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/VideoContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/AudioContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/PlainTextContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/FileContentBlock',
+                }),
+                dict({
+                  '$ref': '#/definitions/CodeInterpreterCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/CodeInterpreterOutput',
+                }),
+                dict({
+                  '$ref': '#/definitions/CodeInterpreterResult',
+                }),
+                dict({
+                  '$ref': '#/definitions/WebSearchCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/WebSearchResult',
+                }),
+              ]),
+            }),
+            'title': 'Content',
+            'type': 'array',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -11540,6 +11593,9 @@
             ]),
             'default': None,
             'title': 'Parsed',
+          }),
+          'response_metadata': dict({
+            '$ref': '#/definitions/ResponseMetadata',
           }),
           'type': dict({
             'const': 'ai_chunk',
