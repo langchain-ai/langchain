@@ -8,6 +8,8 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
+from langchain_core.messages.utils import convert_from_v1_message
+from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatGeneration, Generation
 from typing_extensions import override
 
@@ -83,10 +85,12 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
     @override
     def parse_result(
         self,
-        result: list[Generation],
+        result: Union[list[Generation], AIMessageV1],
         *,
         partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
+        if isinstance(result, AIMessageV1):
+            result = [ChatGeneration(message=convert_from_v1_message(result))]
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
             raise ValueError(msg)  # noqa: TRY004

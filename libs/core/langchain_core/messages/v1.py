@@ -3,9 +3,10 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict, Union, cast, get_args
+from typing import Any, Literal, Optional, Union, cast, get_args
 
 from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
@@ -329,7 +330,11 @@ class AIMessageChunk(AIMessage):
     @property
     def reasoning(self) -> Optional[str]:
         """Extract all reasoning text from the AI message as a string."""
-        text_blocks = [block for block in self.content if block["type"] == "reasoning"]
+        text_blocks = [
+            block
+            for block in self.content
+            if block["type"] == "reasoning" and "reasoning" in block
+        ]
         if text_blocks:
             return "".join(block["reasoning"] for block in text_blocks)
         return None
