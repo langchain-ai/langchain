@@ -64,13 +64,15 @@ class Gemini15Embeddings(Embeddings):
         """Embed a batch of *documents*."""
         return self._embed_batch(texts)
 
+
     def embed_query(self, text: str) -> list[float]:
         """Embed a single *query*."""
         return self._embed_batch([text])[0]
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and return one vector per input text."""
-        response = self._client.embed_content(
-            input=texts
-        )
+        response = self._client.embed_content(input=texts)
         return response["embedding"]
+
+
+
