@@ -1,4 +1,8 @@
-"""LangChain 1.0 message format."""
+"""LangChain v1.0.0 message format.
+
+Each message has content that may be comprised of content blocks, defined under
+``langchain_core.messages.content_blocks``.
+"""
 
 import json
 import uuid
@@ -10,12 +14,8 @@ from pydantic import BaseModel
 import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
 from langchain_core.messages.base import merge_content
-from langchain_core.messages.tool import (
-    ToolCallChunk,
-)
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
+from langchain_core.messages.tool import ToolCallChunk
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
@@ -25,13 +25,16 @@ from langchain_core.utils.json import parse_partial_json
 def _ensure_id(id_val: Optional[str]) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
     Args:
         id_val: Optional string ID value to validate.
 
     Returns:
         A valid string ID, either the provided value or a new UUID.
     """
-    return id_val or str(uuid.uuid4())
+    return id_val or str(f"lc_{uuid.uuid4()}")
 
 
 class ResponseMetadata(TypedDict, total=False):
@@ -40,7 +43,9 @@ class ResponseMetadata(TypedDict, total=False):
     Contains additional information returned by the provider, such as
     response headers, service tiers, log probabilities, system fingerprints, etc.
 
-    Extra keys are permitted from what is typed here.
+    Extra keys are permitted from what is typed here (via `total=False`), allowing
+    for provider-specific metadata to be included without breaking the type
+    definition.
     """
 
     model_provider: str
@@ -69,6 +74,7 @@ class AIMessage:
     """
 
     type: Literal["ai"] = "ai"
+    """Used for serialization."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -86,7 +92,7 @@ class AIMessage:
     """
 
     lc_version: str = "v1"
-    """Encoding version for the message."""
+    """Encoding version for the message. Used for serialization."""
 
     content: list[types.ContentBlock] = field(default_factory=list)
 
@@ -137,7 +143,7 @@ class AIMessage:
         else:
             self.content = content
 
-        self.id = id
+        self.id = _ensure_id(id)
         self.name = name
         self.lc_version = lc_version
         self.usage_metadata = usage_metadata
@@ -204,6 +210,7 @@ class AIMessageChunk:
     """
 
     type: Literal["ai_chunk"] = "ai_chunk"
+    """Used for serialization."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -271,7 +278,7 @@ class AIMessageChunk:
         else:
             self.content = content
 
-        self.id = id
+        self.id = _ensure_id(id)
         self.name = name
         self.lc_version = lc_version
         self.usage_metadata = usage_metadata
@@ -498,7 +505,10 @@ class HumanMessage:
     """
 
     id: str
+    """Used for serialization."""
+
     content: list[types.ContentBlock]
+
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -560,7 +570,10 @@ class SystemMessage:
     """
 
     id: str
+    """Used for serialization."""
+
     content: list[types.ContentBlock]
+
     type: Literal["system"] = "system"
 
     name: Optional[str] = None
@@ -629,8 +642,12 @@ class ToolMessage:
     """
 
     id: str
+    """Used for serialization."""
+
     tool_call_id: str
+
     content: list[types.ContentBlock]
+
     artifact: Optional[Any] = None  # App-side payload not for the model
 
     name: Optional[str] = None
