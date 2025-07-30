@@ -195,7 +195,7 @@ class AIMessage:
 
 
 @dataclass
-class AIMessageChunk:
+class AIMessageChunk(AIMessage):
     """A partial chunk of an AI message during streaming.
 
     Represents a portion of an AI response that is delivered incrementally
@@ -351,7 +351,7 @@ class AIMessageChunk:
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
-                            name=chunk.get("name", ""),
+                            name=chunk.get("name") or "",
                             args=args_,
                             id=chunk.get("id", ""),
                         )

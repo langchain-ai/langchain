@@ -55,7 +55,6 @@ from langchain_core.messages import (
     HumanMessage,
     convert_to_messages,
     convert_to_openai_image_block,
-    get_buffer_string,
     is_data_content_block,
     message_chunk_to_message,
 )
@@ -1351,33 +1350,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
-
-    def get_num_tokens_from_messages(
-        self,
-        messages: list[BaseMessage],
-        tools: Optional[Sequence] = None,
-    ) -> int:
-        """Get the number of tokens in the messages.
-
-        Useful for checking if an input fits in a model's context window.
-
-        **Note**: the base implementation of get_num_tokens_from_messages ignores
-        tool schemas.
-
-        Args:
-            messages: The message inputs to tokenize.
-            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
-                to be converted to tool schemas.
-
-        Returns:
-            The sum of the number of tokens across the messages.
-        """
-        if tools is not None:
-            warnings.warn(
-                "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
-                stacklevel=2,
-            )
-        return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
 
     def bind_tools(
         self,
