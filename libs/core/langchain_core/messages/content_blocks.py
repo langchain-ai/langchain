@@ -233,6 +233,8 @@ class InvalidToolCall(TypedDict):
     """An identifier associated with the tool call."""
     error: Optional[str]
     """An error message associated with the tool call."""
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
     type: Literal["invalid_tool_call"]
 
 

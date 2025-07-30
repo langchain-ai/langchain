@@ -2711,6 +2711,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -4192,6 +4196,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -5706,6 +5714,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -7093,6 +7105,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -8618,6 +8634,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -10051,6 +10071,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'anyOf': list([
               dict({
@@ -11482,6 +11506,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -12956,6 +12984,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([

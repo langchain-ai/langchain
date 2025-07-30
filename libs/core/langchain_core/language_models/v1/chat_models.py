@@ -7,6 +7,7 @@ import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from functools import cached_property
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -41,6 +42,7 @@ from langchain_core.language_models.base import (
     _get_token_ids_default_method,
     _get_verbosity,
 )
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     convert_to_openai_image_block,
     get_buffer_string,
@@ -312,6 +314,10 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         arbitrary_types_allowed=True,
     )
 
+    @cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     # --- Runnable methods ---
 
     @field_validator("verbose", mode="before")
@@ -434,7 +440,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             self.metadata,
         )
         (run_manager,) = callback_manager.on_chat_model_start(
-            {},
+            self._serialized,
             _format_for_tracing(messages),
             invocation_params=params,
             options=options,
@@ -500,7 +506,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            {},
+            self._serialized,
             _format_for_tracing(messages),
             invocation_params=params,
             options=options,
@@ -578,7 +584,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
-                {},
+                self._serialized,
                 _format_for_tracing(messages),
                 invocation_params=params,
                 options=options,
@@ -647,7 +653,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
-            {},
+            self._serialized,
             _format_for_tracing(messages),
             invocation_params=params,
             options=options,
