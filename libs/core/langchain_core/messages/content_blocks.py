@@ -126,7 +126,7 @@ class Citation(TypedDict):
     """
 
     type: Literal["citation"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -173,7 +173,7 @@ class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
     type: Literal["non_standard_annotation"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -211,7 +211,7 @@ class TextContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["text"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -258,7 +258,7 @@ class ToolCall(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["tool_call"]
-    """Used for serialization."""
+    """Used for discrimination."""
 
     id: Optional[str]
     """An identifier associated with the tool call.
@@ -326,7 +326,7 @@ class InvalidToolCall(TypedDict):
     # TODO: Consider making fields NotRequired[str] in the future.
 
     type: Literal["invalid_tool_call"]
-    """Used for serialization."""
+    """Used for discrimination."""
 
     id: Optional[str]
     """An identifier associated with the tool call."""
@@ -347,7 +347,7 @@ class WebSearchCall(TypedDict):
     """Built-in web search tool call."""
 
     type: Literal["web_search_call"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -367,7 +367,7 @@ class WebSearchResult(TypedDict):
     """Result of a built-in web search tool call."""
 
     type: Literal["web_search_result"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -387,7 +387,7 @@ class CodeInterpreterCall(TypedDict):
     """Built-in code interpreter tool call."""
 
     type: Literal["code_interpreter_call"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -414,7 +414,7 @@ class CodeInterpreterOutput(TypedDict):
     """
 
     type: Literal["code_interpreter_output"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -446,7 +446,7 @@ class CodeInterpreterResult(TypedDict):
     """Result of a code interpreter tool call."""
 
     type: Literal["code_interpreter_result"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -481,7 +481,7 @@ class ReasoningContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["reasoning"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -522,7 +522,7 @@ class ImageContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["image"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -574,7 +574,7 @@ class VideoContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["video"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -626,7 +626,7 @@ class AudioContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["audio"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -680,7 +680,7 @@ class PlainTextContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["text-plain"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -737,7 +737,7 @@ class FileContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["file"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
@@ -799,7 +799,7 @@ class NonStandardContentBlock(TypedDict):  # type: ignore[call-arg]
     """
 
     type: Literal["non_standard"]
-    """Type of the content block. Used for serialization."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
