@@ -11,22 +11,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
 from langchain_core._api import deprecated
@@ -63,6 +50,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
+    Generation,
     LLMResult,
     RunInfo,
 )
@@ -326,20 +314,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     The main reason for this flag is that code might be written using ``.stream()`` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
-    """
-
-    output_version: str = "v0"
-    """Version of AIMessage output format to use.
-
-    This field is used to roll-out new output formats for chat model AIMessages
-    in a backwards-compatible way.
-
-    ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
-    recommend this for new applications.
-
-    All chat models currently support the default of ``"v0"``.
-
-    .. versionadded:: 0.4
     """
 
     @model_validator(mode="before")
@@ -666,6 +640,34 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
+
+    def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
+        """Convert cached Generation objects to ChatGeneration objects.
+
+        Handle case where cache contains Generation objects instead of
+        ChatGeneration objects. This can happen due to serialization/deserialization
+        issues or legacy cache data (see #22389).
+
+        Args:
+            cache_val: List of cached generation objects.
+
+        Returns:
+            List of ChatGeneration objects.
+        """
+        converted_generations = []
+        for gen in cache_val:
+            if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
+                # Convert Generation to ChatGeneration by creating AIMessage
+                # from the text content
+                chat_gen = ChatGeneration(
+                    message=AIMessage(content=gen.text),
+                    generation_info=gen.generation_info,
+                )
+                converted_generations.append(chat_gen)
+            else:
+                # Already a ChatGeneration or other expected type
+                converted_generations.append(gen)
+        return converted_generations
 
     def _get_invocation_params(
         self,
@@ -1024,7 +1026,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1096,7 +1099,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
