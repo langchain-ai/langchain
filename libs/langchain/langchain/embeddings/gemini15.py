@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 
@@ -22,37 +24,32 @@ except ImportError as e:  # pragma: no cover
 class Gemini15Embeddings(Embeddings):
     """Lightweight wrapper around the *Gemini 1.5 Preview* embeddings endpoint."""
 
-    # --------------------------------------------------------------------- #
-    # Construction
-    # --------------------------------------------------------------------- #
-
     def __init__(
         self,
         *,
         api_key: str | None = None,
         model: str = "models/embedding-001",
-        **genai_kwargs,
+        **genai_kwargs: Any,
     ) -> None:
         """
         Parameters
         ----------
         api_key
-            Google AI Studio API key.  If omitted, the value of the
-            ``GOOGLE_API_KEY`` environment variable is used.
+            Google AI Studio API key. If omitted, uses the 'GOOGLE_API_KEY'
+            environment variable.
         model
             Gemini model identifier to call for embeddings.
         **genai_kwargs
-            Extra keyword arguments forwarded to ``genai.configure``.
+            Extra keyword arguments forwarded to `genai.configure`.
         """
-        self.api_key: str = get_from_dict_or_env(
+        # احصل على المفتاح من المعامل أو من البيئة
+        self.api_key = get_from_dict_or_env(
             {"api_key": api_key}, "api_key", "GOOGLE_API_KEY"
         )
+        # اضبط إعدادات المكتبة
         genai.configure(api_key=self.api_key, **genai_kwargs)
+        # ابني العميل الداخلي
         self._client = genai.GenerativeModel(model)
-
-    # --------------------------------------------------------------------- #
-    # Public API
-    # --------------------------------------------------------------------- #
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of *documents*."""
@@ -62,13 +59,8 @@ class Gemini15Embeddings(Embeddings):
         """Embed a single *query*."""
         return self._embed_batch([text])[0]
 
-    # --------------------------------------------------------------------- #
-    # Internal helpers
-    # --------------------------------------------------------------------- #
-
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and return one vector per input text."""
-        # NOTE: GenerativeModel.embed_content returns a dict like
-        #       {"embedding": [[...], [...], ...]}
+        # الميثود embed_content تُرجع dict به المفتاح "embedding"
         response = self._client.embed_content(input=texts)  # type: ignore[attr-defined]
         return response["embedding"]
