@@ -66,7 +66,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
@@ -265,7 +265,7 @@ class CallbackManagerMixin:
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -516,7 +516,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: Union[list[list[BaseMessage]], list[list[MessageV1]]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -545,7 +545,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: Union[str, AIMessageChunk],
+        token: str,
         *,
         chunk: Optional[
             Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]

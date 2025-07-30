@@ -9,7 +9,7 @@ from typing import Annotated, Any, Optional
 from pydantic import SkipValidation, ValidationError
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIMessage, InvalidToolCall, ToolCall
+from langchain_core.messages import AIMessage, InvalidToolCall
 from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
@@ -26,7 +26,7 @@ def parse_tool_call(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[ToolCall]:
+) -> Optional[dict[str, Any]]:
     """Parse a single tool call.
 
     Args:

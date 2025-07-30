@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -19,6 +19,9 @@ from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
 
 SERIALIZED = {"id": ["llm"]}
 SERIALIZED_CHAT = {"id": ["chat_model"]}
@@ -89,8 +92,10 @@ def test_tracer_chat_model_run() -> None:
     """Test tracer on a Chat Model run."""
     tracer = FakeTracer()
     manager = CallbackManager(handlers=[tracer])
+    # TODO: why is this annotation needed
+    messages: list[list[BaseMessage]] = [[HumanMessage(content="")]]
     run_managers = manager.on_chat_model_start(
-        serialized=SERIALIZED_CHAT, messages=[[HumanMessage(content="")]]
+        serialized=SERIALIZED_CHAT, messages=messages
     )
     compare_run = Run(
         id=str(run_managers[0].run_id),  # type: ignore[arg-type]

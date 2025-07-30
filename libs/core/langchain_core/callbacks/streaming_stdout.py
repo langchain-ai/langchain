@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from typing_extensions import override
 
@@ -12,6 +12,7 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.messages import BaseMessage
+    from langchain_core.messages.v1 import AIMessage, MessageV1
     from langchain_core.outputs import LLMResult
 
 
@@ -32,7 +33,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running.
@@ -54,7 +55,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         sys.stdout.write(token)
         sys.stdout.flush()
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(self, response: Union[LLMResult, AIMessage], **kwargs: Any) -> None:
         """Run when LLM ends running.
 
         Args:
