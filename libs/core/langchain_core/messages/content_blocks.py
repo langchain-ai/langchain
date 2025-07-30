@@ -13,7 +13,7 @@ Data **not yet mapped** to a standard block may be represented using the
 ``NonStandardContentBlock``, which allows for provider-specific data to be included
 without losing the benefits of type checking and validation.
 
-Furthermore, provider-specific fields *within* a standard block are fully supported
+Furthermore, provider-specific fields **within** a standard block are fully supported
 by default. However, since current type checkers do not recognize this, we are temporarily
 applying type ignore comments to suppress warnings. In the future,
 `PEP 728 <https://peps.python.org/pep-0728/>`__ will add an extra param, ``extra_items=Any``.
