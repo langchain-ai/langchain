@@ -216,7 +216,8 @@ def _load_package_modules(
 
         # Get the full namespace of the module
         namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
-        # Keep only the top level namespace, but make special exception for content_blocks
+        # Keep only the top level namespace
+        # (but make special exception for content_blocks and messages.v1)
         if namespace == "messages.content_blocks" or namespace == "messages.v1":
             top_namespace = namespace  # Keep full namespace for content_blocks
         else:
