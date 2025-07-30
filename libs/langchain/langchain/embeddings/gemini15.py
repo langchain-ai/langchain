@@ -8,21 +8,24 @@ from typing import Any
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 
-# --------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------ #
 # Optional dependency: google-generativeai
-# --------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------ #
 try:
     import google.generativeai as genai  # type: ignore[import-not-found]
 except ImportError:
+    from typing import Any  # تأكد أن Any متوفّر
 
     class _MissingGenAI:
         """Placeholder for google.generativeai when it's not installed."""
 
         def __getattr__(self, _name: str) -> Any:
-            raise ImportError(
-                "Package 'google-generativeai' is required to use `Gemini15Embeddings`.\n"
+            msg = (
+                "Package 'google-generativeai' is required to use "
+                "`Gemini15Embeddings`.\n"
                 "Install it with:\n\n    pip install google-generativeai\n"
             )
+            raise ImportError(msg)
 
     genai = _MissingGenAI()  # type: ignore[assignment]
 
@@ -34,7 +37,7 @@ class Gemini15Embeddings(Embeddings):
         self,
         *,
         api_key: str | None = None,
-        model: str = "models/embedding-001",
+        model: str = "models/embedding-081",
         **genai_kwargs: Any,
     ) -> None:
         """
@@ -46,15 +49,15 @@ class Gemini15Embeddings(Embeddings):
         model
             Gemini model identifier to call for embeddings.
         **genai_kwargs
-            Extra keyword arguments forwarded to `genai.configure`.
+            Extra keyword arguments forwarded to ``genai.configure``.
         """
-        # احصل على المفتاح من المعامل أو من البيئة
+        # احصل على المفتاح من المتعامل أو من البيئة
         self.api_key = get_from_dict_or_env(
             {"api_key": api_key}, "api_key", "GOOGLE_API_KEY"
         )
         # اضبط إعدادات المكتبة
         genai.configure(api_key=self.api_key, **genai_kwargs)
-        # ابني العميل الداخلي
+        # اسم العميل الداخلي
         self._client = genai.GenerativeModel(model)
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -67,6 +70,6 @@ class Gemini15Embeddings(Embeddings):
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and return one vector per input text."""
-        # الميثود embed_content تُرجع dict به المفتاح "embedding"
-        response = self._client.embed_content(input=texts)  # type: ignore[attr-defined]
+        # استدعاء embed_content يعيد dict يحتوي على "embedding"
+        response = self._client.embed_content(input=texts)  # type: ignore[reportGeneralTypeIssues]
         return response["embedding"]
