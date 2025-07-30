@@ -238,6 +238,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=16,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -246,6 +247,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=17,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -254,6 +256,7 @@ responses_stream = [
         output_index=1,
         sequence_number=18,
         text="text block one",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -280,6 +283,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=21,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -288,6 +292,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=22,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -296,6 +301,7 @@ responses_stream = [
         output_index=1,
         sequence_number=23,
         text="another text block",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -444,6 +450,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=38,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -452,6 +459,7 @@ responses_stream = [
         output_index=3,
         sequence_number=39,
         text="more",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -476,6 +484,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=42,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -484,6 +493,7 @@ responses_stream = [
         output_index=3,
         sequence_number=43,
         text="text",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
