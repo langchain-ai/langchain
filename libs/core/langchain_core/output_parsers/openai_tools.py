@@ -286,6 +286,8 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 if not self.return_id:
                     _ = tool_call.pop("id")
         else:
+            if self.first_tool_only:
+                return None
             return []
 
         # For backwards compatibility
