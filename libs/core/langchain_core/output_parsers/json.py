@@ -13,6 +13,7 @@ from pydantic.v1 import BaseModel
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
@@ -53,7 +54,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             return pydantic_object.schema()
         return None
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -70,7 +73,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-        text = result[0].text
+        text = result.text or "" if isinstance(result, AIMessage) else result[0].text
         text = text.strip()
         if partial:
             try:
