@@ -88,7 +88,8 @@ class AIMessage:
     id: Optional[str] = None
     """Unique identifier for the message.
 
-    If the provider assigns a meaningful ID, it should be used here.
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
     """
 
     lc_version: str = "v1"
@@ -224,7 +225,8 @@ class AIMessageChunk:
     id: Optional[str] = None
     """Unique identifier for the message chunk.
 
-    If the provider assigns a meaningful ID, it should be used here.
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
     """
 
     lc_version: str = "v1"
@@ -505,7 +507,11 @@ class HumanMessage:
     """
 
     id: str
-    """Used for serialization."""
+    """Used for serialization.
+
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
+    """
 
     content: list[types.ContentBlock]
 
@@ -570,7 +576,11 @@ class SystemMessage:
     """
 
     id: str
-    """Used for serialization."""
+    """Used for serialization.
+
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
+    """
 
     content: list[types.ContentBlock]
 
