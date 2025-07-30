@@ -1,5 +1,11 @@
 """Utility functions for validating Ollama models."""
 
+from __future__ import annotations
+
+import base64
+from typing import Optional
+from urllib.parse import unquote, urlparse
+
 from httpx import ConnectError
 from ollama import Client, ResponseError
 
@@ -37,3 +43,51 @@ def validate_model(client: Client, model_name: str) -> None:
             "Please check your Ollama server logs."
         )
         raise ValueError(msg) from e
+
+
+def parse_url_with_auth(url: Optional[str]) -> tuple[Optional[str], Optional[dict]]:
+    """Parse URL and extract authentication credentials for headers.
+
+    Handles URLs of the form: ``https://user:password@host:port/path``
+
+    Args:
+        url: The URL to parse. Can be None.
+
+    Returns:
+        A tuple of ``(cleaned_url, headers_dict)`` where:
+        - ``cleaned_url`` is the URL without authentication credentials
+        - ``headers_dict`` contains Authorization header if credentials were found
+    """
+    if not url:
+        return None, None
+
+    parsed = urlparse(url)
+
+    # If no authentication info, return as-is
+    if not parsed.username:
+        return url, None
+
+    # Handle case where password might be empty string or None
+    password = parsed.password or ""
+
+    # Extract credentials and create basic auth header (decode percent-encoding)
+    username = unquote(parsed.username)
+    password = unquote(password)
+    credentials = f"{username}:{password}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    headers = {"Authorization": f"Basic {encoded_credentials}"}
+
+    # Reconstruct URL without authentication
+    cleaned_netloc = parsed.hostname or ""
+    if parsed.port:
+        cleaned_netloc += f":{parsed.port}"
+
+    cleaned_url = f"{parsed.scheme}://{cleaned_netloc}"
+    if parsed.path:
+        cleaned_url += parsed.path
+    if parsed.query:
+        cleaned_url += f"?{parsed.query}"
+    if parsed.fragment:
+        cleaned_url += f"#{parsed.fragment}"
+
+    return cleaned_url, headers

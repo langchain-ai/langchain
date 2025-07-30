@@ -6,15 +6,10 @@ from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    PrivateAttr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
-from ._utils import validate_model
+from ._utils import parse_url_with_auth, validate_model
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -260,6 +255,15 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
 
+        # Parse URL for basic auth credentials
+        cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
+
+        # Merge authentication headers with existing headers
+        if auth_headers:
+            headers = client_kwargs.get("headers", {})
+            headers.update(auth_headers)
+            client_kwargs = {**client_kwargs, "headers": headers}
+
         sync_client_kwargs = client_kwargs
         if self.sync_client_kwargs:
             sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
@@ -268,8 +272,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         if self.async_client_kwargs:
             async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
 
-        self._client = Client(host=self.base_url, **sync_client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        self._client = Client(host=cleaned_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=cleaned_url, **async_client_kwargs)
         if self.validate_model_on_init:
             validate_model(self._client, self.model)
         return self
