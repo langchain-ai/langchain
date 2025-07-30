@@ -341,14 +341,14 @@ def _convert_annotation_to_v1(annotation: dict[str, Any]) -> dict[str, Any]:
         return non_standard_annotation
 
 
-def _explode_reasoning(block: dict[str, Any]) -> Iterable[dict[str, Any]]:
-    if block.get("type") != "reasoning" or "summary" not in block:
-        yield block
+def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContentBlock]:
+    if "summary" not in block:
+        yield cast(types.ReasoningContentBlock, block)
         return
 
     if not block["summary"]:
         _ = block.pop("summary", None)
-        yield block
+        yield cast(types.ReasoningContentBlock, block)
         return
 
     # Common part for every exploded line, except 'summary'
@@ -364,7 +364,7 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[dict[str, Any]]:
         new_block["reasoning"] = part.get("text", "")
         if idx == 0:
             new_block.update(first_only)
-        yield new_block
+        yield cast(types.ReasoningContentBlock, new_block)
 
 
 def _convert_to_v1_from_responses(
@@ -374,7 +374,7 @@ def _convert_to_v1_from_responses(
 ) -> list[types.ContentBlock]:
     """Mutate a Responses message to v1 format."""
 
-    def _iter_blocks() -> Iterable[dict[str, Any]]:
+    def _iter_blocks() -> Iterable[types.ContentBlock]:
         for block in content:
             if not isinstance(block, dict):
                 continue
@@ -385,7 +385,7 @@ def _convert_to_v1_from_responses(
                     block["annotations"] = [
                         _convert_annotation_to_v1(a) for a in block["annotations"]
                     ]
-                yield block
+                yield cast(types.TextContentBlock, block)
 
             elif block_type == "reasoning":
                 yield from _explode_reasoning(block)
@@ -408,27 +408,29 @@ def _convert_to_v1_from_responses(
                 ):
                     if extra_key in block:
                         new_block[extra_key] = block[extra_key]
-                yield new_block
+                yield cast(types.ImageContentBlock, new_block)
 
             elif block_type == "function_call":
-                new_block = None
+                tool_call_block: Optional[types.ContentBlock] = None
                 call_id = block.get("call_id", "")
                 if call_id:
                     for tool_call in tool_calls or []:
                         if tool_call.get("id") == call_id:
-                            new_block = tool_call.copy()
+                            tool_call_block = cast(types.ToolCall, tool_call.copy())
                             break
                     else:
                         for invalid_tool_call in invalid_tool_calls or []:
                             if invalid_tool_call.get("id") == call_id:
-                                new_block = invalid_tool_call.copy()
+                                tool_call_block = cast(
+                                    types.InvalidToolCall, invalid_tool_call.copy()
+                                )
                                 break
-                if new_block:
+                if tool_call_block:
                     if "id" in block:
-                        new_block["item_id"] = block["id"]
+                        tool_call_block["item_id"] = block["id"]
                     if "index" in block:
-                        new_block["index"] = block["index"]
-                    yield new_block
+                        tool_call_block["index"] = block["index"]
+                    yield tool_call_block
 
             elif block_type == "web_search_call":
                 web_search_call = {"type": "web_search_call", "id": block["id"]}
@@ -448,8 +450,8 @@ def _convert_to_v1_from_responses(
                 web_search_result = {"type": "web_search_result", "id": block["id"]}
                 if "index" in block:
                     web_search_result["index"] = block["index"] + 1
-                yield web_search_call
-                yield web_search_result
+                yield cast(types.WebSearchCall, web_search_call)
+                yield cast(types.WebSearchResult, web_search_result)
 
             elif block_type == "code_interpreter_call":
                 code_interpreter_call = {
@@ -489,14 +491,14 @@ def _convert_to_v1_from_responses(
                 if "index" in block:
                     code_interpreter_result["index"] = block["index"] + 1
 
-                yield code_interpreter_call
-                yield code_interpreter_result
+                yield cast(types.CodeInterpreterCall, code_interpreter_call)
+                yield cast(types.CodeInterpreterResult, code_interpreter_result)
 
             else:
                 new_block = {"type": "non_standard", "value": block}
                 if "index" in new_block["value"]:
                     new_block["index"] = new_block["value"].pop("index")
-                yield new_block
+                yield cast(types.NonStandardContentBlock, new_block)
 
     return list(_iter_blocks())
 
@@ -511,9 +513,9 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
         if "title" in annotation:
             new_ann["filename"] = annotation["title"]
         if "file_id" in annotation:
-            new_ann["file_id"] = annotation["file_id"]
+            new_ann["file_id"] = annotation["file_id"]  # type: ignore[typeddict-item]
         if "file_index" in annotation:
-            new_ann["index"] = annotation["file_index"]
+            new_ann["index"] = annotation["file_index"]  # type: ignore[typeddict-item]
 
         return new_ann
 

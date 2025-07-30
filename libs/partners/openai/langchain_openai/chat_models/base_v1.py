@@ -154,7 +154,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> MessageV1:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
-        content.extend(tool_calls)
+        content.extend(cast(list[ToolCall], tool_calls))
         if audio := _dict.get("audio"):
             # TODO: populate standard fields
             content.append(
@@ -3796,7 +3796,7 @@ def _convert_responses_chunk_to_generation_chunk(
     for content_block in content_v1:
         if (
             isinstance(content_block, dict)
-            and content_block.get("index", -1) > current_index
+            and (content_block.get("index") or -1) > current_index  # type: ignore[operator]
         ):
             # blocks were added for v1
             current_index = content_block["index"]
