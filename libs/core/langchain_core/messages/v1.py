@@ -3,9 +3,10 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict, Union, cast, get_args
+from typing import Any, Literal, Optional, Union, cast, get_args
 
 from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 import langchain_core.messages.content_blocks as types
 from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
