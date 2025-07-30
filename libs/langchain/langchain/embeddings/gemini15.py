@@ -13,12 +13,18 @@ from langchain_core.utils import get_from_dict_or_env
 # --------------------------------------------------------------------------- #
 try:
     import google.generativeai as genai  # type: ignore[import-not-found]
-except ImportError as e:  # pragma: no cover
-    msg = (
-        "Package `google-generativeai` is required to use `Gemini15Embeddings`.\n"
-        "Install it with:\n\n    pip install google-generativeai\n"
-    )
-    raise ImportError(msg) from e
+except ImportError:
+
+    class _MissingGenAI:
+        """Placeholder for google.generativeai when it's not installed."""
+
+        def __getattr__(self, _name: str) -> Any:
+            raise ImportError(
+                "Package 'google-generativeai' is required to use `Gemini15Embeddings`.\n"
+                "Install it with:\n\n    pip install google-generativeai\n"
+            )
+
+    genai = _MissingGenAI()  # type: ignore[assignment]
 
 
 class Gemini15Embeddings(Embeddings):
