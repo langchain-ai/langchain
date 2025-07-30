@@ -133,7 +133,7 @@ Some tests use [syrupy](https://github.com/tophat/syrupy) for snapshot testing, 
 To update snapshots when the expected output has legitimately changed:
 
 ```bash
-pytest path/to/test.py --snapshot-update
+uv run --group test pytest path/to/test.py --snapshot-update
 ```
 
 ### Pydantic Version Compatibility Issues

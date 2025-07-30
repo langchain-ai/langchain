@@ -2586,6 +2586,59 @@
             }),
             'langchain_core__messages__v1__AIMessageChunk': dict({
               'properties': dict({
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -2629,6 +2682,9 @@
                   ]),
                   'default': None,
                   'title': 'Parsed',
+                }),
+                'response_metadata': dict({
+                  '$ref': '#/$defs/ResponseMetadata',
                 }),
                 'type': dict({
                   'const': 'ai_chunk',

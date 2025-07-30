@@ -13,7 +13,12 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 import langchain_core.messages.content_blocks as types
-from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
+from langchain_core.messages.ai import (
+    _LC_AUTO_PREFIX,
+    _LC_ID_PREFIX,
+    UsageMetadata,
+    add_usage,
+)
 from langchain_core.messages.base import merge_content
 from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
@@ -35,7 +40,7 @@ def _ensure_id(id_val: Optional[str]) -> str:
     Returns:
         A valid string ID, either the provided value or a new UUID.
     """
-    return id_val or str(f"lc_{uuid.uuid4()}")
+    return id_val or str(f"{_LC_AUTO_PREFIX}{uuid.uuid4()}")
 
 
 class ResponseMetadata(TypedDict, total=False):
@@ -213,43 +218,6 @@ class AIMessageChunk(AIMessage):
 
     type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
     """Used for serialization."""
-
-    name: Optional[str] = None
-    """An optional name for the message.
-
-    This can be used to provide a human-readable name for the message.
-
-    Usage of this field is optional, and whether it's used or not is up to the
-    model implementation.
-    """
-
-    id: Optional[str] = None
-    """Unique identifier for the message chunk.
-
-    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
-    LangChain-generated ID will be used.
-    """
-
-    lc_version: str = "v1"
-    """Encoding version for the message."""
-
-    content: list[types.ContentBlock] = field(init=False)
-
-    usage_metadata: Optional[UsageMetadata] = None
-    """If provided, usage metadata for a message chunk, such as token counts.
-
-    These data represent incremental usage statistics, as opposed to a running total.
-    """
-
-    response_metadata: ResponseMetadata = field(init=False)
-    """Metadata about the response chunk.
-
-    This field should include non-standard data returned by the provider, such as
-    response headers, service tiers, or log probabilities.
-    """
-
-    parsed: Optional[Union[dict[str, Any], BaseModel]] = None
-    """Auto-parsed message contents, if applicable."""
 
     tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
 
@@ -475,17 +443,27 @@ def add_ai_message_chunks(
 
     chunk_id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non-run-* id
+    # first pass: pick the first provider-assigned id (non-`run-*` and non-`lc_*`)
     for id_ in candidates:
-        if id_ and not id_.startswith(_LC_ID_PREFIX):
+        if (
+            id_
+            and not id_.startswith(_LC_ID_PREFIX)
+            and not id_.startswith(_LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non-null
+        # second pass: prefer lc_* ids over run-* ids
         for id_ in candidates:
-            if id_:
+            if id_ and id_.startswith(_LC_AUTO_PREFIX):
                 chunk_id = id_
                 break
+        else:
+            # third pass: take any remaining id (run-* ids)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
 
     return left.__class__(
         content=cast("list[types.ContentBlock]", content),

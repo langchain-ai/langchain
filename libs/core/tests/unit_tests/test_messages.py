@@ -331,10 +331,10 @@ def test_message_chunks_v1() -> None:
         content=[], id="msg_def456"
     )  # provider-assigned ID
 
-    # Provider-assigned IDs (non-run-*) have highest precedence
-    # Among provider-assigned IDs, the first one in the candidates list wins
-    assert (auto_id + meaningful_id).id == auto_id.id  # auto_id is first
-    assert (meaningful_id + auto_id).id == meaningful_id.id  # meaningful_id is first
+    # Provider-assigned IDs (non-run-* and non-lc_*) have highest precedence
+    # Provider-assigned IDs always win over LangChain-generated IDs
+    assert (auto_id + meaningful_id).id == "msg_def456"  # provider-assigned wins
+    assert (meaningful_id + auto_id).id == "msg_def456"  # provider-assigned wins
 
     assert (
         default_id + meaningful_id
