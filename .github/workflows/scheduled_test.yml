@@ -1,4 +1,5 @@
 name: '⏰ Scheduled Integration Tests'
+run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.9, 3.11' }})"
 
 on:
   workflow_dispatch:  # Allows maintainers to trigger the workflow manually in GitHub UI
@@ -161,7 +162,7 @@ jobs:
 
       - name: '🧹 Clean up External Libraries'
         # Clean up external libraries to avoid affecting git status check
-        run: | 
+        run: |
           rm -rf \
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
