@@ -71,7 +71,7 @@ import json
 from collections.abc import Iterable, Iterator
 from typing import Any, Literal, Optional, Union, cast
 
-from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
+from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content_blocks as types
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 
@@ -266,32 +266,6 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
 
 
 # v1 / Chat Completions
-def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
-    """Mutate a Chat Completions message to v1 format."""
-    if isinstance(message.content, str):
-        if message.content:
-            message.content = [{"type": "text", "text": message.content}]
-        else:
-            message.content = []
-
-    for tool_call in message.tool_calls:
-        if id_ := tool_call.get("id"):
-            message.content.append({"type": "tool_call", "id": id_})
-
-    if "tool_calls" in message.additional_kwargs:
-        _ = message.additional_kwargs.pop("tool_calls")
-
-    if "token_usage" in message.response_metadata:
-        _ = message.response_metadata.pop("token_usage")
-
-    return message
-
-
-def _convert_to_v1_from_chat_completions_chunk(chunk: AIMessageChunk) -> AIMessageChunk:
-    result = _convert_to_v1_from_chat_completions(cast(AIMessage, chunk))
-    return cast(AIMessageChunk, result)
-
-
 def _convert_from_v1_to_chat_completions(message: AIMessageV1) -> AIMessageV1:
     """Convert a v1 message to the Chat Completions format."""
     new_content: list[types.ContentBlock] = []
@@ -651,10 +625,11 @@ def _convert_from_v1_to_responses(
             new_block = {"type": "function_call", "call_id": block["id"]}
             if "item_id" in block:
                 new_block["id"] = block["item_id"]  # type: ignore[typeddict-item]
-            if "name" in block and "arguments" in block:
+            if "name" in block:
                 new_block["name"] = block["name"]
+            if "arguments" in block:
                 new_block["arguments"] = block["arguments"]  # type: ignore[typeddict-item]
-            else:
+            if any(key not in block for key in ("name", "arguments")):
                 matching_tool_calls = [
                     call for call in tool_calls if call["id"] == block["id"]
                 ]

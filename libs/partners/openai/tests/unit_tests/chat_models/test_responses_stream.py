@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -698,7 +698,9 @@ def _strip_none(obj: Any) -> Any:
         ),
     ],
 )
-def test_responses_stream(output_version: str, expected_content: list[dict]) -> None:
+def test_responses_stream(
+    output_version: Literal["v0", "responses/v1"], expected_content: list[dict]
+) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
