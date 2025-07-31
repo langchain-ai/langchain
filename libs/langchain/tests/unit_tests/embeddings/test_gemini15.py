@@ -16,11 +16,15 @@ def fake_embed_content(*args: Any, **kwargs: Any) -> dict[str, list[list[float]]
 
 @pytest.fixture(autouse=True)
 def patch_genai(monkeypatch: pytest.MonkeyPatch) -> None:
-    # إنشاء كائن genai.GenerativeModel وهمي
+    """Patch the internal ``genai`` module to avoid the dependency."""
     fake_model = types.SimpleNamespace(embed_content=fake_embed_content)
+    fake_genai = types.SimpleNamespace(
+        configure=lambda **_kwargs: None,
+        GenerativeModel=lambda *_: fake_model,
+    )
     monkeypatch.setattr(
-        "langchain.embeddings.gemini15.genai.GenerativeModel",
-        lambda _: fake_model,
+        "langchain.embeddings.gemini15.genai",
+        fake_genai,
     )
 
 
