@@ -5,9 +5,8 @@
     change in future releases.
 
 This module provides a standardized data structure for representing inputs to and
-outputs from Large Language Models. The core abstraction is the **Content Block**, a
-``TypedDict`` that can represent a piece of text, an image, a tool call, or other
-structured data.
+outputs from LLMs. The core abstraction is the **Content Block**, a ``TypedDict`` that
+can represent a piece of text, an image, a tool call, or other structured data.
 
 Data **not yet mapped** to a standard block may be represented using the
 ``NonStandardContentBlock``, which allows for provider-specific data to be included
@@ -58,8 +57,8 @@ that additional provider-specific fields are allowed.
 
 Different LLM providers use distinct and incompatible API schemas. This module
 introduces a unified, provider-agnostic format to standardize these interactions. A
-message to or from a model is simply a `list` of `ContentBlock` objects, allowing for
-the natural interleaving of text, images, and other content in a single, ordered
+message to or from a model is simply a ``list`` of ``ContentBlock`` objects, allowing
+for the natural interleaving of text, images, and other content in a single, ordered
 sequence.
 
 An adapter for a specific provider is responsible for translating this standard list of
@@ -129,7 +128,7 @@ class Citation(TypedDict):
     """Annotation for citing data from a document.
 
     .. note::
-        ``start/end`` indices refer to the **response text**,
+        ``start``/``end`` indices refer to the **response text**,
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the ``url``).
 
@@ -157,7 +156,7 @@ class Citation(TypedDict):
 
     # For future consideration, if needed:
     # provenance: NotRequired[str]
-    # """Provenance of the document, e.g., "Wikipedia", "arXiv", etc.
+    # """Provenance of the document, e.g., ``'Wikipedia'``, ``'arXiv'``, etc.
 
     # Included for future compatibility; not currently implemented.
     # """
@@ -299,7 +298,7 @@ class ToolCall(TypedDict):
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
-    When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
+    When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
     values of ``index`` are equal and not ``None``.
 
@@ -793,7 +792,7 @@ class NonStandardContentBlock(TypedDict):
     The purpose of this block should be to simply hold a provider-specific payload.
     If a provider's non-standard output includes reasoning and tool calls, it should be
     the adapter's job to parse that payload and emit the corresponding standard
-    ReasoningContentBlock and ToolCallContentBlocks.
+    ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
 
     .. note::
         ``create_non_standard_block`` may also be used as a factory to create a
@@ -822,6 +821,7 @@ class NonStandardContentBlock(TypedDict):
 
 
 # --- Aliases ---
+
 DataContentBlock = Union[
     ImageContentBlock,
     VideoContentBlock,
@@ -832,6 +832,7 @@ DataContentBlock = Union[
 
 ToolContentBlock = Union[
     ToolCall,
+    ToolCallChunk,
     CodeInterpreterCall,
     CodeInterpreterOutput,
     CodeInterpreterResult,
@@ -842,6 +843,9 @@ ToolContentBlock = Union[
 ContentBlock = Union[
     TextContentBlock,
     ToolCall,
+    ToolCallChunk,
+    Citation,
+    NonStandardAnnotation,
     InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,
@@ -851,7 +855,7 @@ ContentBlock = Union[
 
 
 def _extract_typedict_type_values(union_type: Any) -> set[str]:
-    """Extract the values of the 'type' field from a TypedDict union type."""
+    """Extract the values of the ``'type'`` field from a TypedDict union type."""
     result: set[str] = set()
     for value in get_args(union_type):
         annotation = value.__annotations__["type"]
