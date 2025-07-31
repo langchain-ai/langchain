@@ -19,7 +19,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         try:
-            from transformers import AutoConfig, AutoTokenizer  # type: ignore[import]
+            from transformers import AutoConfig, AutoTokenizer  # type: ignore[attr-defined]
         except ImportError:
             msg = (
                 "Could not import transformers python package. "
@@ -110,3 +110,4 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             truncation="do_not_truncate",
         )
         return cast("list[int]", token_ids_with_start_and_end_token_ids)
+
