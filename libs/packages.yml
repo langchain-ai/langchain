@@ -696,6 +696,6 @@ packages:
 - name: langchain-tensorlake
   path: .
   repo: tensorlakeai/langchain-tensorlake
-- name: langchain-gradientai
+- name: langchain-gradient
   path: .
-  repo: digitalocean/langchain-gradientai
+  repo: digitalocean/langchain-gradient
