@@ -14,11 +14,22 @@ DIST_DIR=dist
 install:
 	@echo "🔧 Installing all dependencies..."
 	uv venv
-	uv pip install -e .[lint,typing,test,docs,publish]
+	uv pip install -e . \
+		--group lint \
+		--group typing \
+		--group test \
+		--group docs \
+		--group publish
 
 update-dev:
 	@echo "🔄 Updating development dependencies..."
-	uv pip install -e .[lint,typing,test,docs] --upgrade
+	uv pip install -e . \
+		--group lint \
+		--group typing \
+		--group test \
+		--group docs \
+		--group publish \
+		--upgrade
 
 update-core:
 	@echo "🔄 Updating core dependencies..."
@@ -26,7 +37,12 @@ update-core:
 
 lock:
 	@echo "🔐 Locking all dependencies to uv.lock..."
-	uv pip compile --all-extras
+	uv pip compile \
+		--group lint \
+		--group typing \
+		--group test \
+		--group docs \
+		--group publish
 
 sync:
 	@echo "📦 Syncing dependencies from uv.lock..."

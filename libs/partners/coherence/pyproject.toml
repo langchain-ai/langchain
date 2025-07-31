@@ -1,6 +1,6 @@
 [project]
 name = "langchain-coherence"
-version = "0.0.1"
+version = "0.0.3"
 description = "LangChain integration for Oracle Coherence as a vector store."
 authors = [{ name = "Your Name", email = "you@example.com" }]
 license = {text = "MIT"}
@@ -15,7 +15,7 @@ requires-python = ">=3.9"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/coherence"
 repository = "https://github.com/langchain-ai/langchain"
 
-[project.optional-dependencies]
+[dependency-groups]
 lint = [
     "ruff<0.12.0,>=0.11.2",
 ]

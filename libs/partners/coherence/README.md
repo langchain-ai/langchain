@@ -36,7 +36,7 @@ async def do_run():
             model_name="sentence-transformers/all-MiniLM-l6-v2")
         # this embedding generates vectors of dimension 384
         cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-            named_map,embedding,384)
+            named_map,embedding)
         d1 :Document = Document(id="1", page_content="apple")
         d2 :Document = Document(id="2", page_content="orange")
         documents = [d1, d2]
@@ -61,7 +61,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
 from coherence import NamedMap, Session
-from langchain_core.vectorstores.coherence_store import CoherenceVectorStore
+from langchain_coherence import CoherenceVectorStore
 
 def test_data():
     d1 :Document = Document(id="1", page_content="apple")
@@ -87,7 +87,7 @@ async def test_asimilarity_search():
                 model_name="sentence-transformers/all-MiniLM-l6-v2")
         # this embedding generates vectors of dimension 384
         cvs :CoherenceVectorStore = await CoherenceVectorStore.create(
-                                            named_map,embedding,384)
+                                            named_map,embedding)
         await cvs.aadd_documents(documents)
         ids = [doc.id for doc in documents]
         l = await cvs.aget_by_ids(ids)
