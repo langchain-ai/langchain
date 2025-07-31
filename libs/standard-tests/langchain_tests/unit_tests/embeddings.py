@@ -1,3 +1,5 @@
+"""Embeddings unit tests."""
+
 import os
 from abc import abstractmethod
 from unittest import mock
@@ -10,18 +12,24 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """:private:"""
+    """Embeddings tests base class.
+
+    :private:
+    """
 
     @property
     @abstractmethod
-    def embeddings_class(self) -> type[Embeddings]: ...
+    def embeddings_class(self) -> type[Embeddings]:
+        """Embeddings class."""
 
     @property
     def embedding_model_params(self) -> dict:
+        """Embeddings model parameters."""
         return {}
 
     @pytest.fixture
     def model(self) -> Embeddings:
+        """Embeddings model fixture."""
         return self.embeddings_class(**self.embedding_model_params)
 
 
@@ -87,7 +95,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                         },
                     )
 
-    """
+    """  # noqa: D214
 
     def test_init(self) -> None:
         """Test model initialization.
@@ -102,7 +110,9 @@ class EmbeddingsUnitTests(EmbeddingsTests):
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
-        """This property is used in unit tests to test initialization from environment
+        """Init from env params.
+
+        This property is used in unit tests to test initialization from environment
         variables. It should return a tuple of three dictionaries that specify the
         environment variables, additional initialization args, and expected instance
         attributes to check.
@@ -110,9 +120,10 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         return {}, {}, {}
 
     def test_init_from_env(self) -> None:
-        """Test initialization from environment variables. Relies on the
-        ``init_from_env_params`` property. Test is skipped if that property is not
-        set.
+        """Test initialization from environment variables.
+
+        Relies on the ``init_from_env_params`` property.
+        Test is skipped if that property is not set.
 
         .. dropdown:: Troubleshooting
 

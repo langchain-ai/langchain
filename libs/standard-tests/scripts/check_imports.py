@@ -1,3 +1,5 @@
+"""Check imports script."""
+
 import random
 import string
 import sys
