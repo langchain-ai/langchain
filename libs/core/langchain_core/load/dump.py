@@ -19,6 +19,29 @@ def default(obj: Any) -> Any:
     """
     if isinstance(obj, Serializable):
         return obj.to_json()
+
+    # Handle v1 message classes
+    from langchain_core.messages.v1 import MessageV1Types
+
+    if type(obj) in MessageV1Types:
+        import dataclasses
+        import inspect
+
+        # Get the constructor signature to only include valid parameters
+        init_sig = inspect.signature(type(obj).__init__)
+        valid_params = set(init_sig.parameters.keys()) - {"self"}
+
+        # Filter the dataclass fields to only include constructor parameters
+        all_fields = dataclasses.asdict(obj)
+        kwargs = {k: v for k, v in all_fields.items() if k in valid_params}
+
+        return {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain_core", "messages", "v1", type(obj).__name__],
+            "kwargs": kwargs,
+        }
+
     return to_json_not_implemented(obj)
 
 
