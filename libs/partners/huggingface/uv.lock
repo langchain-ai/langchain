@@ -925,7 +925,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.70"
+version = "0.3.72"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -996,6 +996,10 @@ full = [
     { name = "sentence-transformers" },
     { name = "transformers" },
 ]
+lite = [
+    { name = "torch" },
+    { name = "transformers" },
+]
 
 [package.dev-dependencies]
 codespell = [
@@ -1032,9 +1036,11 @@ requires-dist = [
     { name = "langchain-core", editable = "../../core" },
     { name = "sentence-transformers", marker = "extra == 'full'", specifier = ">=2.6.0" },
     { name = "tokenizers", specifier = ">=0.19.1" },
+    { name = "torch", marker = "extra == 'lite'", specifier = ">=1.12.0" },
     { name = "transformers", marker = "extra == 'full'", specifier = ">=4.39.0" },
+    { name = "transformers", marker = "extra == 'lite'", specifier = ">=4.39.0" },
 ]
-provides-extras = ["full"]
+provides-extras = ["full", "lite"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
