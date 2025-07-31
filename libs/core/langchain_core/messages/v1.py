@@ -504,13 +504,6 @@ class HumanMessage:
         type: Message type identifier, always "human".
     """
 
-    type: Literal["human"] = "human"
-    """The type of the message. Must be a string that is unique to the message type.
-
-    The purpose of this field is to allow for easy identification of the message type
-    when deserializing messages.
-    """
-
     id: str
     """Used for serialization.
 
@@ -520,6 +513,13 @@ class HumanMessage:
 
     content: list[types.ContentBlock]
     """Message content as a list of content blocks."""
+
+    type: Literal["human"] = "human"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -575,13 +575,6 @@ class SystemMessage:
         type: Message type identifier, always "system".
     """
 
-    type: Literal["system"] = "system"
-    """The type of the message. Must be a string that is unique to the message type.
-
-    The purpose of this field is to allow for easy identification of the message type
-    when deserializing messages.
-    """
-
     id: str
     """Used for serialization.
 
@@ -591,6 +584,13 @@ class SystemMessage:
 
     content: list[types.ContentBlock]
     """Message content as a list of content blocks."""
+
+    type: Literal["system"] = "system"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -657,13 +657,6 @@ class ToolMessage:
         type: Message type identifier, always "tool".
     """
 
-    type: Literal["tool"] = "tool"
-    """The type of the message. Must be a string that is unique to the message type.
-
-    The purpose of this field is to allow for easy identification of the message type
-    when deserializing messages.
-    """
-
     id: str
     """Used for serialization."""
 
@@ -675,6 +668,13 @@ class ToolMessage:
 
     content: list[types.ContentBlock]
     """Message content as a list of content blocks."""
+
+    type: Literal["tool"] = "tool"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     artifact: Optional[Any] = None
     """App-side payload not for the model."""
