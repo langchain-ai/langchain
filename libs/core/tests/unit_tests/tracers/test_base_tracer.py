@@ -15,6 +15,8 @@ from langsmith import Client, traceable
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
+from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
+from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers.base import BaseTracer
@@ -94,6 +96,38 @@ def test_tracer_chat_model_run() -> None:
     manager = CallbackManager(handlers=[tracer])
     # TODO: why is this annotation needed
     messages: list[list[BaseMessage]] = [[HumanMessage(content="")]]
+    run_managers = manager.on_chat_model_start(
+        serialized=SERIALIZED_CHAT, messages=messages
+    )
+    compare_run = Run(
+        id=str(run_managers[0].run_id),  # type: ignore[arg-type]
+        name="chat_model",
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
+        events=[
+            {"name": "start", "time": datetime.now(timezone.utc)},
+            {"name": "end", "time": datetime.now(timezone.utc)},
+        ],
+        extra={},
+        serialized=SERIALIZED_CHAT,
+        inputs={"prompts": ["Human: "]},
+        outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
+        error=None,
+        run_type="llm",
+        trace_id=run_managers[0].run_id,
+        dotted_order=f"20230101T000000000000Z{run_managers[0].run_id}",
+    )
+    for run_manager in run_managers:
+        run_manager.on_llm_end(response=LLMResult(generations=[[]]))
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_chat_model_run_v1() -> None:
+    """Test tracer on a Chat Model run."""
+    tracer = FakeTracer()
+    manager = CallbackManager(handlers=[tracer])
+    messages: list[MessageV1] = [HumanMessageV1("")]
     run_managers = manager.on_chat_model_start(
         serialized=SERIALIZED_CHAT, messages=messages
     )
