@@ -52,6 +52,7 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 from langchain_text_splitters.spacy import SpacyTextSplitter
+from langchain_text_splitters.transformers_token import TransformersTokenTextSplitter
 
 __all__ = [
     "CharacterTextSplitter",
@@ -77,5 +78,6 @@ __all__ = [
     "TextSplitter",
     "TokenTextSplitter",
     "Tokenizer",
+    "TransformersTokenTextSplitter",
     "split_text_on_tokens",
 ]

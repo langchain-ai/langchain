@@ -26,6 +26,10 @@ full = [
     "transformers>=4.39.0",
     "sentence-transformers>=2.6.0",
 ]
+lite = [
+    "transformers>=4.39.0",
+    "torch>=1.12.0",
+]
 
 [dependency-groups]
 test = [
