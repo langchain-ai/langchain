@@ -1,3 +1,5 @@
+"""Character text splitters."""
+
 from __future__ import annotations
 
 import re
@@ -39,7 +41,7 @@ class CharacterTextSplitter(TextSplitter):
         )
 
         # 4. Decide merge separator:
-        #    - if keep_separator or lookaround → don’t re-insert
+        #    - if keep_separator or lookaround → don't re-insert
         #    - else → re-insert literal separator
         merge_sep = ""
         if not (self._keep_separator or is_lookaround):
