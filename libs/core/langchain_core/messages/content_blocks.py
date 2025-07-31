@@ -1309,8 +1309,7 @@ def create_tool_call(
 
 
 def create_reasoning_block(
-    reasoning: str,
-    *,
+    reasoning: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ReasoningContentBlock:
@@ -1331,7 +1330,7 @@ def create_reasoning_block(
     """
     block = ReasoningContentBlock(
         type="reasoning",
-        reasoning=reasoning,
+        reasoning=reasoning or "",
         id=_ensure_id(id),
     )
 
