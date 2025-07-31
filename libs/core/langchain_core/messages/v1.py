@@ -4,7 +4,6 @@ Each message has content that may be comprised of content blocks, defined under
 ``langchain_core.messages.content_blocks``.
 """
 
-import json
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Literal, Optional, Union, cast, get_args
@@ -20,11 +19,9 @@ from langchain_core.messages.ai import (
     add_usage,
 )
 from langchain_core.messages.base import merge_content
-from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
-from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.utils._merge import merge_dicts, merge_lists
+from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.json import parse_partial_json
 
 
@@ -182,10 +179,13 @@ class AIMessage:
                 for block in self.content
                 if block["type"] == "invalid_tool_call" and "id" in block
             }
-            for tool_call in invalid_tool_calls:
-                if "id" in tool_call and tool_call["id"] in content_tool_calls:
+            for invalid_tool_call in invalid_tool_calls:
+                if (
+                    "id" in invalid_tool_call
+                    and invalid_tool_call["id"] in content_tool_calls
+                ):
                     continue
-                self.content.append(tool_call)
+                self.content.append(invalid_tool_call)
         self._tool_calls = [
             block for block in self.content if block["type"] == "tool_call"
         ]
@@ -248,14 +248,6 @@ class AIMessageChunk(AIMessage):
     when deserializing messages.
     """
 
-    tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
-    """List of partial tool call data.
-
-    Emitted by the model during streaming, this field contains
-    tool call chunks that may not yet be complete. It is used to reconstruct
-    tool calls from the streamed content.
-    """
-
     def __init__(
         self,
         content: Union[str, list[types.ContentBlock]],
@@ -304,12 +296,58 @@ class AIMessageChunk(AIMessage):
                 if "id" in chunk and chunk["id"] in content_tool_call_chunks:
                     continue
                 self.content.append(chunk)
-        self._tool_calls_chunks = [
+        self._tool_call_chunks = [
             block for block in self.content if block.get("type") == "tool_call_chunk"
         ]
 
         self._tool_calls: list[types.ToolCall] = []
         self._invalid_tool_calls: list[types.InvalidToolCall] = []
+
+    @property
+    def tool_call_chunks(self) -> list[types.ToolCallChunk]:
+        """Get the tool calls made by the AI."""
+        if not self._tool_call_chunks:
+            self._tool_call_chunks = [
+                block
+                for block in self.content
+                if block.get("type") == "tool_call_chunk"
+            ]
+        return cast("list[types.ToolCallChunk]", self._tool_call_chunks)
+
+    @property
+    def tool_calls(self) -> list[types.ToolCall]:
+        """Get the tool calls made by the AI."""
+        if not self._tool_calls:
+            parsed_content = self._init_tool_calls()
+            self._tool_calls = [
+                block for block in parsed_content if block["type"] == "tool_call"
+            ]
+            self._invalid_tool_calls = [
+                block
+                for block in parsed_content
+                if block["type"] == "invalid_tool_call"
+            ]
+        return self._tool_calls
+
+    @tool_calls.setter
+    def tool_calls(self, value: list[types.ToolCall]) -> None:
+        """Set the tool calls for the AI message."""
+        self._tool_calls = value
+
+    @property
+    def invalid_tool_calls(self) -> list[types.InvalidToolCall]:
+        """Get the invalid tool calls made by the AI."""
+        if not self._invalid_tool_calls:
+            parsed_content = self._init_tool_calls()
+            self._tool_calls = [
+                block for block in parsed_content if block["type"] == "tool_call"
+            ]
+            self._invalid_tool_calls = [
+                block
+                for block in parsed_content
+                if block["type"] == "invalid_tool_call"
+            ]
+        return self._invalid_tool_calls
 
     def _init_tool_calls(self) -> list[types.ContentBlock]:
         """Initialize tool calls from tool call chunks.
@@ -326,117 +364,38 @@ class AIMessageChunk(AIMessage):
                 content.append(block)
                 continue
             try:
-                args_ = parse_partial_json(block["args"]) if block["args"] != "" else {}  # type: ignore[arg-type]
+                args_ = (
+                    parse_partial_json(cast("str", block.get("args") or ""))
+                    if block.get("args")
+                    else {}
+                )
                 if isinstance(args_, dict):
                     content.append(
                         create_tool_call(
-                            name=block.get("name") or "",
+                            name=cast("str", block.get("name") or ""),
                             args=args_,
-                            id=block.get("id", ""),
+                            id=cast("str", block.get("id", "")),
                         )
                     )
                 else:
                     content.append(
                         create_invalid_tool_call(
-                            name=block.get("name", ""),
-                            args=block.get("args", ""),
-                            id=block.get("id", ""),
+                            name=cast("str", block.get("name", "")),
+                            args=cast("str", block.get("args", "")),
+                            id=cast("str", block.get("id", "")),
                             error=None,
                         )
                     )
             except Exception:
-                add_chunk_to_invalid_tool_calls(block)
-
-        self._tool_calls = []
-        self.invalid_tool_calls = []
-        if not self.tool_call_chunks:
-            if self._tool_calls:
-                self.tool_call_chunks = [
-                    create_tool_call_chunk(
-                        name=tc["name"],
-                        args=json.dumps(tc["args"]),
-                        id=tc["id"],
-                        index=None,
+                content.append(
+                    create_invalid_tool_call(
+                        name=cast("str", block.get("name", "")),
+                        args=cast("str", block.get("args", "")),
+                        id=cast("str", block.get("id", "")),
+                        error=None,
                     )
-                    for tc in self._tool_calls
-                ]
-            if self.invalid_tool_calls:
-                tool_call_chunks = self.tool_call_chunks
-                tool_call_chunks.extend(
-                    [
-                        create_tool_call_chunk(
-                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
-                        )
-                        for tc in self.invalid_tool_calls
-                    ]
                 )
-                self.tool_call_chunks = tool_call_chunks
-
-        tool_calls = []
-        invalid_tool_calls = []
-
-        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
-            invalid_tool_calls.append(
-                create_invalid_tool_call(
-                    name=chunk.get("name", ""),
-                    args=chunk.get("args", ""),
-                    id=chunk.get("id", ""),
-                    error=None,
-                )
-            )
-
-        for chunk in self.tool_call_chunks:
-            try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
-                if isinstance(args_, dict):
-                    tool_calls.append(
-                        create_tool_call(
-                            name=chunk.get("name") or "",
-                            args=args_,
-                            id=chunk.get("id", ""),
-                        )
-                    )
-                else:
-                    add_chunk_to_invalid_tool_calls(chunk)
-            except Exception:
-                add_chunk_to_invalid_tool_calls(chunk)
-        self._tool_calls = tool_calls
-        self.invalid_tool_calls = invalid_tool_calls
-
-    @property
-    def text(self) -> Optional[str]:
-        """Extract all text content from the AI message as a string."""
-        text_blocks = [block for block in self.content if block["type"] == "text"]
-        if text_blocks:
-            return "".join(block["text"] for block in text_blocks)
-        return None
-
-    @property
-    def reasoning(self) -> Optional[str]:
-        """Extract all reasoning text from the AI message as a string."""
-        text_blocks = [
-            block
-            for block in self.content
-            if block["type"] == "reasoning" and "reasoning" in block
-        ]
-        if text_blocks:
-            return "".join(block["reasoning"] for block in text_blocks)
-        return None
-
-    @property
-    def tool_calls(self) -> list[types.ToolCall]:
-        """Get the tool calls made by the AI."""
-        if self._tool_calls:
-            return self._tool_calls
-        tool_calls = [block for block in self.content if block["type"] == "tool_call"]
-        if tool_calls:
-            self._tool_calls = tool_calls
-        return self._tool_calls
-
-    @tool_calls.setter
-    def tool_calls(self, value: list[types.ToolCall]) -> None:
-        """Set the tool calls for the AI message."""
-        self._tool_calls = value
+        return content
 
     def __add__(self, other: Any) -> "AIMessageChunk":
         """Add AIMessageChunk to this one."""
@@ -452,14 +411,12 @@ class AIMessageChunk(AIMessage):
     def to_message(self) -> "AIMessage":
         """Convert this AIMessageChunk to an AIMessage."""
         return AIMessage(
-            content=self.content,
+            content=self._init_tool_calls(),
             id=self.id,
             name=self.name,
             lc_version=self.lc_version,
             response_metadata=self.response_metadata,
             usage_metadata=self.usage_metadata,
-            tool_calls=self.tool_calls,
-            invalid_tool_calls=self.invalid_tool_calls,
             parsed=self.parsed,
         )
 
@@ -478,22 +435,6 @@ def add_ai_message_chunks(
         cast("dict", left.response_metadata),
         *(cast("dict", o.response_metadata) for o in others),
     )
-
-    # Merge tool call chunks
-    if raw_tool_calls := merge_lists(
-        left.tool_call_chunks, *(o.tool_call_chunks for o in others)
-    ):
-        tool_call_chunks = [
-            create_tool_call_chunk(
-                name=rtc.get("name"),
-                args=rtc.get("args"),
-                index=rtc.get("index"),
-                id=rtc.get("id"),
-            )
-            for rtc in raw_tool_calls
-        ]
-    else:
-        tool_call_chunks = []
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
@@ -538,7 +479,6 @@ def add_ai_message_chunks(
 
     return left.__class__(
         content=cast("list[types.ContentBlock]", content),
-        tool_call_chunks=tool_call_chunks,
         response_metadata=cast("ResponseMetadata", response_metadata),
         usage_metadata=usage_metadata,
         parsed=parsed,
