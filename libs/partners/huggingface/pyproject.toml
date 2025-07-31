@@ -24,7 +24,6 @@ repository = "https://github.com/langchain-ai/langchain"
 [project.optional-dependencies]
 full = [
     "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
 ]
 
 [dependency-groups]
@@ -36,7 +35,6 @@ test = [
     "scipy<2,>=1; python_version < \"3.12\"",
     "scipy<2.0.0,>=1.7.0; python_version >= \"3.12\"",
     "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
     "langchain-core",
     "langchain-tests",
     "langchain-community",
