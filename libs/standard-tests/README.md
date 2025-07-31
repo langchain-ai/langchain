@@ -80,3 +80,11 @@ as required is optional.
 - `chat_model_params`: The keyword arguments to pass to the chat model constructor
 - `chat_model_has_tool_calling`: Whether the chat model can call tools. By default, this is set to `hasattr(chat_model_class, 'bind_tools)`
 - `chat_model_has_structured_output`: Whether the chat model can structured output. By default, this is set to `hasattr(chat_model_class, 'with_structured_output')`
+
+## Content Blocks V1 Support
+
+For chat models that support the new content blocks v1 format (multimodal content, reasoning blocks, citations, etc.), use the v1 test suite instead:
+
+- See `QUICK_START.md` and `README_V1.md` for v1 testing documentation
+- Use `ChatModelV1UnitTests` from `langchain_tests.unit_tests.chat_models_v1`
+- V1 tests support `BaseChatModelV1` models with enhanced content block features
