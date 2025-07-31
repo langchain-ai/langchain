@@ -113,4 +113,3 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             truncation="do_not_truncate",
         )
         return cast("list[int]", token_ids_with_start_and_end_token_ids)
-
