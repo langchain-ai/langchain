@@ -1,4 +1,8 @@
-"""LangChain 1.0 message format."""
+"""LangChain v1.0.0 message format.
+
+Each message has content that may be comprised of content blocks, defined under
+``langchain_core.messages.content_blocks``.
+"""
 
 import json
 import uuid
@@ -9,14 +13,15 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 import langchain_core.messages.content_blocks as types
-from langchain_core.messages.ai import _LC_ID_PREFIX, UsageMetadata, add_usage
+from langchain_core.messages.ai import (
+    _LC_AUTO_PREFIX,
+    _LC_ID_PREFIX,
+    UsageMetadata,
+    add_usage,
+)
 from langchain_core.messages.base import merge_content
-from langchain_core.messages.tool import (
-    ToolCallChunk,
-)
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
+from langchain_core.messages.tool import ToolCallChunk
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
@@ -26,13 +31,16 @@ from langchain_core.utils.json import parse_partial_json
 def _ensure_id(id_val: Optional[str]) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
     Args:
         id_val: Optional string ID value to validate.
 
     Returns:
         A valid string ID, either the provided value or a new UUID.
     """
-    return id_val or str(uuid.uuid4())
+    return id_val or str(f"{_LC_AUTO_PREFIX}{uuid.uuid4()}")
 
 
 class ResponseMetadata(TypedDict, total=False):
@@ -41,7 +49,9 @@ class ResponseMetadata(TypedDict, total=False):
     Contains additional information returned by the provider, such as
     response headers, service tiers, log probabilities, system fingerprints, etc.
 
-    Extra keys are permitted from what is typed here.
+    Extra keys are permitted from what is typed here (via `total=False`), allowing
+    for provider-specific metadata to be included without breaking the type
+    definition.
     """
 
     model_provider: str
@@ -70,6 +80,11 @@ class AIMessage:
     """
 
     type: Literal["ai"] = "ai"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -83,13 +98,15 @@ class AIMessage:
     id: Optional[str] = None
     """Unique identifier for the message.
 
-    If the provider assigns a meaningful ID, it should be used here.
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
     """
 
     lc_version: str = "v1"
-    """Encoding version for the message."""
+    """Encoding version for the message. Used for serialization."""
 
     content: list[types.ContentBlock] = field(default_factory=list)
+    """Message content as a list of content blocks."""
 
     usage_metadata: Optional[UsageMetadata] = None
     """If provided, usage metadata for a message, such as token counts."""
@@ -138,7 +155,7 @@ class AIMessage:
         else:
             self.content = content
 
-        self.id = id
+        self.id = _ensure_id(id)
         self.name = name
         self.lc_version = lc_version
         self.usage_metadata = usage_metadata
@@ -205,8 +222,19 @@ class AIMessageChunk(AIMessage):
     """
 
     type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
+    """List of partial tool call data.
+
+    Emitted by the model during streaming, this field contains
+    tool call chunks that may not yet be complete. It is used to reconstruct
+    tool calls from the streamed content.
+    """
 
     def __init__(
         self,
@@ -236,7 +264,7 @@ class AIMessageChunk(AIMessage):
         else:
             self.content = content
 
-        self.id = id
+        self.id = _ensure_id(id)
         self.name = name
         self.lc_version = lc_version
         self.usage_metadata = usage_metadata
@@ -430,17 +458,27 @@ def add_ai_message_chunks(
 
     chunk_id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non-run-* id
+    # first pass: pick the first provider-assigned id (non-`run-*` and non-`lc_*`)
     for id_ in candidates:
-        if id_ and not id_.startswith(_LC_ID_PREFIX):
+        if (
+            id_
+            and not id_.startswith(_LC_ID_PREFIX)
+            and not id_.startswith(_LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non-null
+        # second pass: prefer lc_* ids over run-* ids
         for id_ in candidates:
-            if id_:
+            if id_ and id_.startswith(_LC_AUTO_PREFIX):
                 chunk_id = id_
                 break
+        else:
+            # third pass: take any remaining id (run-* ids)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
 
     return left.__class__(
         content=cast("list[types.ContentBlock]", content),
@@ -467,7 +505,22 @@ class HumanMessage:
     """
 
     id: str
+    """Used for serialization.
+
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
+    """
+
     content: list[types.ContentBlock]
+    """Message content as a list of content blocks."""
+
+    type: Literal["human"] = "human"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
+
     name: Optional[str] = None
     """An optional name for the message.
 
@@ -475,12 +528,6 @@ class HumanMessage:
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
-    """
-    type: Literal["human"] = "human"
-    """The type of the message. Must be a string that is unique to the message type.
-
-    The purpose of this field is to allow for easy identification of the message type
-    when deserializing messages.
     """
 
     def __init__(
@@ -529,8 +576,21 @@ class SystemMessage:
     """
 
     id: str
+    """Used for serialization.
+
+    If the provider assigns a meaningful ID, it should be used here. Otherwise, a
+    LangChain-generated ID will be used.
+    """
+
     content: list[types.ContentBlock]
+    """Message content as a list of content blocks."""
+
     type: Literal["system"] = "system"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -598,9 +658,26 @@ class ToolMessage:
     """
 
     id: str
+    """Used for serialization."""
+
     tool_call_id: str
+    """ID of the tool call this message responds to.
+
+    This should match the ID of the tool call that this message is responding to.
+    """
+
     content: list[types.ContentBlock]
-    artifact: Optional[Any] = None  # App-side payload not for the model
+    """Message content as a list of content blocks."""
+
+    type: Literal["tool"] = "tool"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
+
+    artifact: Optional[Any] = None
+    """App-side payload not for the model."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -612,7 +689,11 @@ class ToolMessage:
     """
 
     status: Literal["success", "error"] = "success"
-    type: Literal["tool"] = "tool"
+    """Execution status of the tool call.
+
+    Indicates whether the tool call was successful or encountered an error.
+    Defaults to "success".
+    """
 
     def __init__(
         self,
