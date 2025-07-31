@@ -32,19 +32,19 @@ KV_STORE_FEAT_TABLE = {
     "AstraDBByteStore": {
         "class": "[AstraDBByteStore](https://python.langchain.com/api_reference/astradb/storage/langchain_astradb.storage.AstraDBByteStore.html)",
         "local": False,
-        "package": "[langchain_astradb](https://python.langchain.com/api_reference/astradb/)",
+        "package": "[langchain-astradb](https://python.langchain.com/api_reference/astradb/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_astradb?style=flat-square&label=%20)",
     },
     "CassandraByteStore": {
         "class": "[CassandraByteStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.cassandra.CassandraByteStore.html)",
         "local": False,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "ElasticsearchEmbeddingsCache": {
         "class": "[ElasticsearchEmbeddingsCache](https://python.langchain.com/api_reference/elasticsearch/cache/langchain_elasticsearch.cache.ElasticsearchEmbeddingsCache.html)",
         "local": True,
-        "package": "[langchain_elasticsearch](https://python.langchain.com/api_reference/elasticsearch/)",
+        "package": "[langchain-elasticsearch](https://python.langchain.com/api_reference/elasticsearch/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_elasticsearch?style=flat-square&label=%20)",
     },
     "LocalFileStore": {
@@ -56,19 +56,19 @@ KV_STORE_FEAT_TABLE = {
     "InMemoryByteStore": {
         "class": "[InMemoryByteStore](https://python.langchain.com/api_reference/core/stores/langchain_core.stores.InMemoryByteStore.html)",
         "local": True,
-        "package": "[langchain_core](https://python.langchain.com/api_reference/core/)",
+        "package": "[langchain-core](https://python.langchain.com/api_reference/core/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_core?style=flat-square&label=%20)",
     },
     "RedisStore": {
         "class": "[RedisStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.redis.RedisStore.html)",
         "local": True,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "UpstashRedisByteStore": {
         "class": "[UpstashRedisByteStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.upstash_redis.UpstashRedisByteStore.html)",
         "local": False,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
 }
