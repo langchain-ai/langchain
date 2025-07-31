@@ -67,6 +67,7 @@ langchain-text-splitters = { path = "../text-splitters" }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
+disable_error_code = ["typeddict-unknown-key"]
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = "False"
@@ -86,6 +87,7 @@ ignore = [
     "FIX002", # Line contains TODO
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
+    "PLC0414",  # Enable re-export
     "PLR09", # Too many something (arg, statements, etc)
     "RUF012", # Doesn't play well with Pydantic
     "TC001", # Doesn't play well with Pydantic
@@ -105,6 +107,7 @@ unfixable = ["PLW1510",]
 
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"

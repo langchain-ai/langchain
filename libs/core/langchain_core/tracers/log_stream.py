@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from uuid import UUID
 
+    from langchain_core.messages.v1 import AIMessageChunk
     from langchain_core.runnables.utils import Input, Output
     from langchain_core.tracers.schemas import Run
 
@@ -485,7 +486,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self,
         run: Run,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]],
     ) -> None:
         """Process new LLM token."""
         index = self._key_map_by_run_id.get(run.id)

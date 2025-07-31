@@ -2,6 +2,7 @@ from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -36,7 +37,7 @@ from openai.types.responses.response_usage import (
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, ChatOpenAIV1
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
 responses_stream = [
@@ -621,7 +622,9 @@ def _strip_none(obj: Any) -> Any:
 
 
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -630,10 +633,12 @@ def test_responses_stream() -> None:
     mock_client.responses.create = mock_create
 
     full: Optional[BaseMessageChunk] = None
+    chunks = []
     with patch.object(llm, "root_client", mock_client):
         for chunk in llm.stream("test"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
+            chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
 
     expected_content = [
@@ -662,6 +667,74 @@ def test_responses_stream() -> None:
     ]
     assert full.content == expected_content
     assert full.additional_kwargs == {}
+    assert full.id == "resp_123"
+
+    # Test reconstruction
+    payload = llm._get_request_payload([full])
+    completed = [
+        item
+        for item in responses_stream
+        if item.type == "response.completed"  # type: ignore[attr-defined]
+    ]
+    assert len(completed) == 1
+    response = completed[0].response  # type: ignore[attr-defined]
+
+    assert len(response.output) == len(payload["input"])
+    for idx, item in enumerate(response.output):
+        dumped = _strip_none(item.model_dump())
+        _ = dumped.pop("status", None)
+        assert dumped == payload["input"][idx]
+
+
+def test_responses_stream_v1() -> None:
+    llm = ChatOpenAIV1(model="o4-mini", use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: Optional[AIMessageChunkV1] = None
+    chunks = []
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunkV1)
+            full = chunk if full is None else full + chunk
+            chunks.append(chunk)
+    assert isinstance(full, AIMessageChunkV1)
+
+    expected_content = [
+        {
+            "type": "reasoning",
+            "reasoning": "reasoning block one",
+            "id": "rs_123",
+            "index": 0,
+        },
+        {
+            "type": "reasoning",
+            "reasoning": "another reasoning block",
+            "id": "rs_123",
+            "index": 1,
+        },
+        {"type": "text", "text": "text block one", "index": 2, "id": "msg_123"},
+        {"type": "text", "text": "another text block", "index": 3, "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "reasoning": "more reasoning",
+            "id": "rs_234",
+            "index": 4,
+        },
+        {
+            "type": "reasoning",
+            "reasoning": "still more reasoning",
+            "id": "rs_234",
+            "index": 5,
+        },
+        {"type": "text", "text": "more", "index": 6, "id": "msg_234"},
+        {"type": "text", "text": "text", "index": 7, "id": "msg_234"},
+    ]
+    assert full.content == expected_content
     assert full.id == "resp_123"
 
     # Test reconstruction
