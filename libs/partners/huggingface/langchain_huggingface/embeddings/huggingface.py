@@ -44,23 +44,19 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models.
-    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    Can be also set by TRANSFORMERS_CACHE environment variable."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
-    `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
+    """Keyword arguments to pass to the transformer model, such as `device`,
+    `revision`, `trust_remote_code`, or `token`."""
     encode_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method for the documents of
-    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`,
-    `precision`, `normalize_embeddings`, and more.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
+    """Keyword arguments to pass when calling the `encode` method for the documents,
+    such as `batch_size`, `normalize_embeddings`, and more."""
     query_encode_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method for the query of
-    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`,
-    `precision`, `normalize_embeddings`, and more.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
+    """Keyword arguments to pass when calling the `encode` method for the query,
+    such as `batch_size`, `normalize_embeddings`, and more."""
     multi_process: bool = False
-    """Run encode() on multiple GPUs."""
+    """Run encode() on multiple GPUs. Note: This feature is not supported with transformers
+    and will be ignored with a warning."""
     show_progress: bool = False
     """Whether to show a progress bar."""
 
@@ -173,4 +169,5 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             else self.encode_kwargs
         )
         return self._embed([text], embed_kwargs)[0]
+
 
