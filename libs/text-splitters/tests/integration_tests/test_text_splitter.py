@@ -1,15 +1,9 @@
 """Test text splitters that require an integration."""
 
-from typing import Any
-
 import pytest
 
-from langchain_text_splitters import (
-    TokenTextSplitter,
-)
+from langchain_text_splitters import TokenTextSplitter
 from langchain_text_splitters.character import CharacterTextSplitter
-
-
 
 
 def test_huggingface_type_check() -> None:
@@ -51,5 +45,3 @@ def test_token_text_splitter_from_tiktoken() -> None:
     expected_tokenizer = "cl100k_base"
     actual_tokenizer = splitter._tokenizer.name
     assert expected_tokenizer == actual_tokenizer
-
-
