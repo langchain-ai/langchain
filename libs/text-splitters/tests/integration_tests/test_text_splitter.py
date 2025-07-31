@@ -73,7 +73,7 @@ def test_sentence_transformers_count_tokens() -> None:
     assert expected_token_count == token_count
 
 
-def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
+def test_sentence_transformers_split_text() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -113,5 +113,6 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
 
 
