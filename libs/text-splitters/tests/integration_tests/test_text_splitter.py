@@ -13,13 +13,8 @@ from langchain_text_splitters.sentence_transformers import (
 )
 
 
-@pytest.fixture
-def sentence_transformers() -> Any:
-    try:
-        import sentence_transformers
-    except ImportError:
-        pytest.skip("SentenceTransformers not installed.")
-    return sentence_transformers
+# Removed sentence_transformers fixture as it's no longer needed
+# The SentenceTransformersTokenTextSplitter now uses transformers library directly
 
 
 def test_huggingface_type_check() -> None:
@@ -118,3 +113,4 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
