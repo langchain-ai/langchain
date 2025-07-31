@@ -26,7 +26,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         except ImportError:
             msg = (
                 "Could not import transformers python package. "
-                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
+                "This is needed in order for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install transformers`."
             )
             raise ImportError(msg)
