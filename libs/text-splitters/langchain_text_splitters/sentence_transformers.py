@@ -6,7 +6,7 @@ from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
-    """Splitting text to tokens using sentence model tokenizer."""
+    """Splitting text to tokens using transformer model tokenizer."""
 
     def __init__(
         self,
@@ -110,4 +110,5 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             truncation="do_not_truncate",
         )
         return cast("list[int]", token_ids_with_start_and_end_token_ids)
+
 
