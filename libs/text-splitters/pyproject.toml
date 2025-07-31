@@ -40,7 +40,7 @@ test_integration = [
     "spacy<4.0.0,>=3.8.7",
     "thinc<9.0.0,>=8.3.6",
     "nltk<4.0.0,>=3.9.1",
-    "transformers>=4.51.3,<5.0.0",
+    "transformers<5.0.0,>=4.51.3",
     "sentence-transformers>=3.0.1",
     "torch>=1.12.0",
 ]
