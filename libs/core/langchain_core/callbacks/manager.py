@@ -1425,6 +1425,32 @@ class CallbackManager(BaseCallbackManager):
             list[CallbackManagerForLLMRun]: A callback manager for each
                 list of messages as an LLM run.
         """
+        if messages and isinstance(messages[0], MessageV1Types):
+            run_id_ = run_id if run_id is not None else uuid.uuid4()
+            handle_event(
+                self.handlers,
+                "on_chat_model_start",
+                "ignore_chat_model",
+                serialized,
+                messages,
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+            return [
+                CallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            ]
         managers = []
         for message_list in messages:
             if run_id is not None:
@@ -1936,10 +1962,51 @@ class AsyncCallbackManager(BaseCallbackManager):
                 async callback managers, one for each LLM Run
                 corresponding to each inner  message list.
         """
+        if messages and isinstance(messages[0], MessageV1Types):
+            run_id_ = run_id if run_id is not None else uuid.uuid4()
+            inline_tasks = []
+            non_inline_tasks = []
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
+                    "on_chat_model_start",
+                    "ignore_chat_model",
+                    serialized,
+                    messages,
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
+                )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
+            managers = [
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            ]
+            # Run inline tasks sequentially
+            for task in inline_tasks:
+                await task
+
+            # Run non-inline tasks concurrently
+            if non_inline_tasks:
+                await asyncio.gather(*non_inline_tasks)
+
+            return managers
         inline_tasks = []
         non_inline_tasks = []
         managers = []
-
         for message_list in messages:
             if run_id is not None:
                 run_id_ = run_id
