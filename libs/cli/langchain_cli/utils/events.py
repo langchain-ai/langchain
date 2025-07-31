@@ -1,3 +1,5 @@
+"""Events utilities."""
+
 import http.client
 import json
 from typing import Any, Optional, TypedDict
@@ -8,11 +10,14 @@ WRITE_KEY = "310apTK0HUFl4AOv"
 
 
 class EventDict(TypedDict):
+    """Event."""
+
     event: str
     properties: Optional[dict[str, Any]]
 
 
 def create_events(events: list[EventDict]) -> Optional[Any]:
+    """Create events."""
     try:
         data = {
             "events": [
