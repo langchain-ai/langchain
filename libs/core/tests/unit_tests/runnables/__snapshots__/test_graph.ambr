@@ -421,6 +421,10 @@
                   'title': 'Base64',
                   'type': 'string',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_id': dict({
                   'title': 'File Id',
                   'type': 'string',
@@ -634,6 +638,10 @@
                   'title': 'End Index',
                   'type': 'integer',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -669,6 +677,10 @@
                   'title': 'Code',
                   'type': 'string',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -701,6 +713,10 @@
                 ``CodeInterpreterResult`` which is a list of these blocks.
               ''',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_ids': dict({
                   'items': dict({
                     'type': 'string',
@@ -743,6 +759,10 @@
             'CodeInterpreterResult': dict({
               'description': 'Result of a code interpreter tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -793,6 +813,10 @@
                 'base64': dict({
                   'title': 'Base64',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -1052,6 +1076,10 @@
                   'title': 'Base64',
                   'type': 'string',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_id': dict({
                   'title': 'File Id',
                   'type': 'string',
@@ -1150,6 +1178,10 @@
                     }),
                   ]),
                   'title': 'Error',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -1311,6 +1343,10 @@
                   'title': 'Context',
                   'type': 'string',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_id': dict({
                   'title': 'File Id',
                   'type': 'string',
@@ -1365,6 +1401,10 @@
                     * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -1512,6 +1552,10 @@
                   'title': 'Annotations',
                   'type': 'array',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -1564,6 +1608,10 @@
               'properties': dict({
                 'args': dict({
                   'title': 'Args',
+                  'type': 'object',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
                   'type': 'object',
                 }),
                 'id': dict({
@@ -1631,6 +1679,10 @@
                     }),
                   ]),
                   'title': 'Args',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -1835,6 +1887,10 @@
                   'title': 'Base64',
                   'type': 'string',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_id': dict({
                   'title': 'File Id',
                   'type': 'string',
@@ -1870,6 +1926,10 @@
             'WebSearchCall': dict({
               'description': 'Built-in web search tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -1897,6 +1957,10 @@
             'WebSearchResult': dict({
               'description': 'Result of a built-in web search tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',

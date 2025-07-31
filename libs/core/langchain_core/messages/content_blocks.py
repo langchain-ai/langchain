@@ -185,6 +185,9 @@ class Citation(TypedDict):
     # is difficult to reliably extract spans from the raw document text across file
     # formats or encoding schemes.
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
@@ -240,6 +243,9 @@ class TextContentBlock(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class ToolCall(TypedDict):
     """Represents a request to call a tool.
@@ -286,6 +292,9 @@ class ToolCall(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
@@ -324,6 +333,9 @@ class ToolCallChunk(TypedDict):
     index: Optional[int]
     """The index of the tool call in a sequence."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
@@ -349,6 +361,9 @@ class InvalidToolCall(TypedDict):
     error: Optional[str]
     """An error message associated with the tool call."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 # Note: These are not standard tool calls, but rather provider-specific built-in tools.
 # Web search
@@ -371,6 +386,9 @@ class WebSearchCall(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class WebSearchResult(TypedDict):
     """Result of a built-in web search tool call."""
@@ -390,6 +408,9 @@ class WebSearchResult(TypedDict):
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class CodeInterpreterCall(TypedDict):
@@ -413,6 +434,9 @@ class CodeInterpreterCall(TypedDict):
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class CodeInterpreterOutput(TypedDict):
@@ -450,6 +474,9 @@ class CodeInterpreterOutput(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class CodeInterpreterResult(TypedDict):
     """Result of a code interpreter tool call."""
@@ -469,6 +496,9 @@ class CodeInterpreterResult(TypedDict):
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class ReasoningContentBlock(TypedDict):
@@ -502,6 +532,9 @@ class ReasoningContentBlock(TypedDict):
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 # Note: `title` and `context` are fields that could be used to provide additional
@@ -547,11 +580,8 @@ class ImageContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the image."""
-
-    # context: NotRequired[str]
-    # """Context for the image, e.g., a description or summary of the image's content."""  # noqa: E501
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class VideoContentBlock(TypedDict):
@@ -594,11 +624,8 @@ class VideoContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the video."""
-
-    # context: NotRequired[str]
-    # """Context for the video, e.g., description or summary of the video's content."""
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class AudioContentBlock(TypedDict):
@@ -641,11 +668,8 @@ class AudioContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the audio."""
-
-    # context: NotRequired[str]
-    # """Context for the audio, e.g., description or summary of the audio's content."""
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class PlainTextContentBlock(TypedDict):
@@ -698,6 +722,9 @@ class PlainTextContentBlock(TypedDict):
     context: NotRequired[str]
     """Context for the text, e.g., a description or summary of the text's content."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class FileContentBlock(TypedDict):
     """File data that doesn't fit into other multimodal blocks.
@@ -746,11 +773,8 @@ class FileContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the file, e.g., the name of a document or file."""
-
-    # context: NotRequired[str]
-    # """Context for the file, e.g., a description or summary of the file's content."""
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 # Future modalities to consider:

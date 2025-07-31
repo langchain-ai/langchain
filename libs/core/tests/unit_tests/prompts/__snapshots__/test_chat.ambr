@@ -752,6 +752,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1012,6 +1016,10 @@
             'title': 'Args',
             'type': 'object',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1077,6 +1085,10 @@
               }),
             ]),
             'title': 'Args',
+          }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -2197,6 +2209,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2457,6 +2473,10 @@
             'title': 'Args',
             'type': 'object',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2522,6 +2542,10 @@
               }),
             ]),
             'title': 'Args',
+          }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
