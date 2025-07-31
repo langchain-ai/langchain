@@ -618,7 +618,7 @@
                 Annotation for citing data from a document.
                 
                 .. note::
-                    ``start/end`` indices refer to the **response text**,
+                    ``start``/``end`` indices refer to the **response text**,
                     not the source text. This means that the indices are relative to the model's
                     response, not the original document (as specified in the ``url``).
                 
@@ -1258,7 +1258,7 @@
                 The purpose of this block should be to simply hold a provider-specific payload.
                 If a provider's non-standard output includes reasoning and tool calls, it should be
                 the adapter's job to parse that payload and emit the corresponding standard
-                ReasoningContentBlock and ToolCallContentBlocks.
+                ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
                 
                 .. note::
                     ``create_non_standard_block`` may also be used as a factory to create a
@@ -1440,7 +1440,7 @@
                 Contains additional information returned by the provider, such as
                 response headers, service tiers, log probabilities, system fingerprints, etc.
                 
-                Extra keys are permitted from what is typed here (via `total=False`), allowing
+                Extra keys are permitted from what is typed here (via ``total=False``), allowing
                 for provider-specific metadata to be included without breaking the type
                 definition.
               ''',
@@ -1656,7 +1656,7 @@
               'description': '''
                 A chunk of a tool call (e.g., as part of a stream).
                 
-                When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
+                When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
                 all string attributes are concatenated. Chunks are only merged if their
                 values of ``index`` are equal and not ``None``.
                 
@@ -2541,6 +2541,15 @@
                         '$ref': '#/$defs/ToolCall',
                       }),
                       dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
+                      }),
+                      dict({
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
@@ -2662,6 +2671,15 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
@@ -2787,6 +2805,15 @@
                         '$ref': '#/$defs/ToolCall',
                       }),
                       dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
+                      }),
+                      dict({
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
@@ -2870,6 +2897,15 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
@@ -2978,6 +3014,15 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
