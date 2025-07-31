@@ -62,7 +62,9 @@ class SyncCacheTestSuite(BaseStandardTests):
         assert cache.lookup(prompt, llm_string) == [generation]
 
     def test_cache_still_empty(self, cache: BaseCache) -> None:
-        """This test should follow a test that updates the cache.
+        """Test that the cache is still empty.
+
+        This test should follow a test that updates the cache.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
@@ -153,7 +155,9 @@ class AsyncCacheTestSuite(BaseStandardTests):
         assert await cache.alookup(prompt, llm_string) == [generation]
 
     async def test_cache_still_empty(self, cache: BaseCache) -> None:
-        """This test should follow a test that updates the cache.
+        """Test that the cache is still empty.
+
+        This test should follow a test that updates the cache.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.

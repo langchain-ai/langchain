@@ -1,3 +1,5 @@
+"""Integration tests for embeddings."""
+
 from langchain_core.embeddings import Embeddings
 
 from langchain_tests.unit_tests.embeddings import EmbeddingsTests
