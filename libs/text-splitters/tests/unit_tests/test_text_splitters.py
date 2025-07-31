@@ -2861,7 +2861,7 @@ def test_decode_returns_no_chunks() -> None:
     )
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)
     expected_output = []
-    assert output == expected_output, f"Expected {expected_output}, got {output}"
+    assert output == expected_output
 
 
 @pytest.mark.requires("bs4")
