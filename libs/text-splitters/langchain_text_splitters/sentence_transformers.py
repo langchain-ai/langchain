@@ -6,7 +6,7 @@ from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
-    """Splitting text to tokens using sentence model tokenizer."""
+    """Splitting text to tokens using HuggingFace tokenizer from sentence transformer models."""
 
     def __init__(
         self,
@@ -19,25 +19,37 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         try:
-            from sentence_transformers import SentenceTransformer
+            from transformers import AutoTokenizer
         except ImportError:
             msg = (
-                "Could not import sentence_transformers python package. "
+                "Could not import transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
-                "Please install it with `pip install sentence-transformers`."
+                "Please install it with `pip install transformers`."
             )
             raise ImportError(msg)
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name)
-        self.tokenizer = self._model.tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+
+        # Get the model configuration to determine max_seq_length
+        try:
+            from transformers import AutoConfig
+            config = AutoConfig.from_pretrained(self.model_name)
+            # Different models may have different attribute names for max length
+            self.maximum_tokens_per_chunk = getattr(
+                config, 'max_position_embeddings',
+                getattr(config, 'n_positions',
+                       getattr(config, 'max_seq_length', 512))
+            )
+        except Exception:
+            # Fallback to a reasonable default if config loading fails
+            self.maximum_tokens_per_chunk = 512
+
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
     def _initialize_chunk_configuration(
         self, *, tokens_per_chunk: Optional[int]
     ) -> None:
-        self.maximum_tokens_per_chunk = self._model.max_seq_length
-
         if tokens_per_chunk is None:
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
         else:
@@ -70,10 +82,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
             return self._encode(text)[1:-1]
 
+        def decode_tokens(token_ids: list[int]) -> str:
+            return self.tokenizer.decode(token_ids, skip_special_tokens=False)
+
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
             tokens_per_chunk=self.tokens_per_chunk,
-            decode=self.tokenizer.decode,
+            decode=decode_tokens,
             encode=encode_strip_start_and_stop_token_ids,
         )
 
@@ -99,6 +114,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         token_ids_with_start_and_end_token_ids = self.tokenizer.encode(
             text,
             max_length=self._max_length_equal_32_bit_integer,
-            truncation="do_not_truncate",
+            truncation=False,
+            add_special_tokens=True,
         )
         return cast("list[int]", token_ids_with_start_and_end_token_ids)
