@@ -116,4 +116,4 @@ def test_base_transform_output_parser() -> None:
     model_v1 = GenericFakeChatModelV1(message_chunks=["hello", " ", "world"])
     chain_v1 = model_v1 | StrInvertCase()
     chunks = list(chain_v1.stream(""))
-    assert chunks == ["HELLO", " ", "WORLD"]
+    assert chunks == ["HELLO", " ", "WORLD", ""]
