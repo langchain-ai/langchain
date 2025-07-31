@@ -1,3 +1,5 @@
+"""Text splitter base interface."""
+
 from __future__ import annotations
 
 import copy
@@ -16,11 +18,26 @@ from typing import (
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
+
+
+try:
+    import tiktoken
+
+    _HAS_TIKTOKEN = True
+except ImportError:
+    _HAS_TIKTOKEN = False
+
+try:
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    _HAS_TRANSFORMERS = True
+except ImportError:
+    _HAS_TRANSFORMERS = False
 
 logger = logging.getLogger(__name__)
 
@@ -126,8 +143,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             ):
                 if total > self._chunk_size:
                     logger.warning(
-                        f"Created a chunk of size {total}, "
-                        f"which is longer than the specified {self._chunk_size}"
+                        "Created a chunk of size %s, "
+                        "which is longer than the specified %s",
+                        total,
+                        self._chunk_size,
                     )
                 if len(current_doc) > 0:
                     doc = self._join_docs(current_doc, separator)
@@ -155,24 +174,20 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
-        try:
-            from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-
-            if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                msg = (
-                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
-                )
-                raise ValueError(msg)
-
-            def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.tokenize(text))
-
-        except ImportError as err:
+        if not _HAS_TRANSFORMERS:
             msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-            raise ValueError(msg) from err
+            raise ValueError(msg)
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            raise ValueError(msg)  # noqa: TRY004
+
+        def _huggingface_tokenizer_length(text: str) -> int:
+            return len(tokenizer.tokenize(text))
+
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
@@ -185,15 +200,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         **kwargs: Any,
     ) -> Self:
         """Text splitter that uses tiktoken encoder to count length."""
-        try:
-            import tiktoken
-        except ImportError as err:
+        if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -220,6 +233,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
+    @override
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
@@ -240,15 +254,13 @@ class TokenTextSplitter(TextSplitter):
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
-        try:
-            import tiktoken
-        except ImportError as err:
+        if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
