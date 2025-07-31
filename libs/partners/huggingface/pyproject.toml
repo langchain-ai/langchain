@@ -24,7 +24,6 @@ repository = "https://github.com/langchain-ai/langchain"
 [project.optional-dependencies]
 full = [
     "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
 ]
 
 [dependency-groups]
@@ -130,3 +129,4 @@ asyncio_mode = "auto"
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
+
