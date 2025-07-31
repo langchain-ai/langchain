@@ -110,8 +110,3 @@ def test_sentence_transformers_multiple_tokens() -> None:
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
-
-
-
-
-
