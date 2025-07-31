@@ -361,6 +361,9 @@ class InvalidToolCall(TypedDict):
     error: Optional[str]
     """An error message associated with the tool call."""
 
+    index: NotRequired[int]
+    """Index of block in aggregate response. Used during streaming."""
+
     extras: NotRequired[dict[str, Any]]
     """Provider-specific metadata."""
 
