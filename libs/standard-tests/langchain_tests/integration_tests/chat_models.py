@@ -32,9 +32,7 @@ from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-unt
 from typing_extensions import TypedDict
 from vcr.cassette import Cassette
 
-from langchain_tests.unit_tests.chat_models import (
-    ChatModelTests,
-)
+from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
