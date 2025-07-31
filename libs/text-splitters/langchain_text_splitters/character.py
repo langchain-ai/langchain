@@ -1,3 +1,5 @@
+"""Character text splitters."""
+
 from __future__ import annotations
 
 import re
