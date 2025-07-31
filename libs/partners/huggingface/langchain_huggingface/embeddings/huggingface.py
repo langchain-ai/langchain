@@ -5,22 +5,14 @@ from typing import Any, Optional
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_huggingface.utils.import_utils import (
-    IMPORT_ERROR,
-    is_ipex_available,
-    is_optimum_intel_available,
-    is_optimum_intel_version,
-)
-
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
-
-_MIN_OPTIMUM_VERSION = "1.22"
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
-    """HuggingFace sentence_transformers embedding models.
+    """HuggingFace transformer embedding models using Inference API.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    This implementation uses the HuggingFace Inference API for generating embeddings,
+    removing the need for heavy dependencies like torch, sentence-transformers, or pillow.
 
     Example:
         .. code-block:: python
@@ -28,11 +20,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             from langchain_huggingface import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': False}
             hf = HuggingFaceEmbeddings(
                 model_name=model_name,
-                model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
             )
 
@@ -41,63 +31,32 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
     """Model name to use."""
     cache_folder: Optional[str] = None
-    """Path to store models.
-    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    """Path to store models. (Not used with Inference API)"""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
-    `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
+    """Keyword arguments to pass to the model."""
     encode_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method for the documents of
-    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`,
-    `precision`, `normalize_embeddings`, and more.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
+    """Keyword arguments to pass when calling the encode method."""
     query_encode_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method for the query of
-    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`,
-    `precision`, `normalize_embeddings`, and more.
-    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
+    """Keyword arguments to pass when calling the encode method for queries."""
     multi_process: bool = False
-    """Run encode() on multiple GPUs."""
+    """Not supported with Inference API."""
     show_progress: bool = False
     """Whether to show a progress bar."""
 
     def __init__(self, **kwargs: Any):
-        """Initialize the sentence_transformer."""
+        """Initialize the HuggingFace Inference API client."""
         super().__init__(**kwargs)
+
         try:
-            import sentence_transformers  # type: ignore[import]
+            from huggingface_hub import InferenceClient
         except ImportError as exc:
             msg = (
-                "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence-transformers`."
+                "Could not import huggingface_hub. "
+                "Please install it with `pip install huggingface-hub`."
             )
             raise ImportError(msg) from exc
 
-        if self.model_kwargs.get("backend", "torch") == "ipex":
-            if not is_optimum_intel_available() or not is_ipex_available():
-                msg = f"Backend: ipex {IMPORT_ERROR.format('optimum[ipex]')}"
-                raise ImportError(msg)
-
-            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
-                msg = (
-                    f"Backend: ipex requires optimum-intel>="
-                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
-                    "`pip install --upgrade --upgrade-strategy eager "
-                    "`optimum[ipex]`."
-                )
-                raise ImportError(msg)
-
-            from optimum.intel import IPEXSentenceTransformer  # type: ignore[import]
-
-            model_cls = IPEXSentenceTransformer
-
-        else:
-            model_cls = sentence_transformers.SentenceTransformer
-
-        self._client = model_cls(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-        )
+        self._client = InferenceClient()
 
     model_config = ConfigDict(
         extra="forbid",
@@ -108,43 +67,38 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def _embed(
         self, texts: list[str], encode_kwargs: dict[str, Any]
     ) -> list[list[float]]:
-        """Embed a text using the HuggingFace transformer model.
+        """Embed texts using HuggingFace Inference API.
 
         Args:
             texts: The list of texts to embed.
             encode_kwargs: Keyword arguments to pass when calling the
-                `encode` method for the documents of the SentenceTransformer
                 encode method.
 
         Returns:
             List of embeddings, one for each text.
-
         """
-        import sentence_transformers  # type: ignore[import]
-
+        # Clean texts
         texts = [x.replace("\n", " ") for x in texts]
-        if self.multi_process:
-            pool = self._client.start_multi_process_pool()
-            embeddings = self._client.encode_multi_process(texts, pool)
-            sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
-        else:
-            embeddings = self._client.encode(
-                texts,
-                show_progress_bar=self.show_progress,
-                **encode_kwargs,
-            )
 
-        if isinstance(embeddings, list):
-            msg = (
-                "Expected embeddings to be a Tensor or a numpy array, "
-                "got a list instead."
-            )
-            raise TypeError(msg)
-
-        return embeddings.tolist()  # type: ignore[return-type]
+        try:
+            # Process texts one by one as the API expects individual strings
+            embeddings = []
+            for text in texts:
+                response = self._client.feature_extraction(
+                    text, model=self.model_name
+                )
+                # Convert numpy array to list of floats if needed
+                if hasattr(response, 'tolist'):
+                    embeddings.append(response.tolist())
+                else:
+                    embeddings.append(list(response))
+            return embeddings
+        except Exception as e:
+            msg = f"Failed to get embeddings from HuggingFace API: {e}"
+            raise RuntimeError(msg) from e
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Compute doc embeddings using a HuggingFace transformer model.
+        """Compute doc embeddings using HuggingFace Inference API.
 
         Args:
             texts: The list of texts to embed.
@@ -156,7 +110,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         return self._embed(texts, self.encode_kwargs)
 
     def embed_query(self, text: str) -> list[float]:
-        """Compute query embeddings using a HuggingFace transformer model.
+        """Compute query embeddings using HuggingFace Inference API.
 
         Args:
             text: The text to embed.
