@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import numpy as np
+import torch
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,9 +20,9 @@ _MIN_OPTIMUM_VERSION = "1.22"
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
-    """HuggingFace sentence_transformers embedding models.
+    """HuggingFace transformer embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the ``transformers`` python package installed.
 
     Example:
         .. code-block:: python
@@ -171,3 +173,4 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             else self.encode_kwargs
         )
         return self._embed([text], embed_kwargs)[0]
+
