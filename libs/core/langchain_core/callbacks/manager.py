@@ -279,7 +279,7 @@ def _convert_llm_events(
             generations=[
                 [
                     ChatGeneration(
-                        text=args_list[0].text,
+                        text=args_list[0].text or "",
                         message=convert_from_v1_message(args_list[0]),
                     )
                 ]
