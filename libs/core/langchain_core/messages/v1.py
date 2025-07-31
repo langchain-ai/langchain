@@ -159,10 +159,22 @@ class AIMessage:
                 if "id" in tool_call and tool_call["id"] in content_tool_calls:
                     continue
                 self.content.append(tool_call)
+        if invalid_tool_calls:
+            content_tool_calls = {
+                block["id"]
+                for block in self.content
+                if block["type"] == "invalid_tool_call" and "id" in block
+            }
+            for tool_call in invalid_tool_calls:
+                if "id" in tool_call and tool_call["id"] in content_tool_calls:
+                    continue
+                self.content.append(tool_call)
         self._tool_calls = [
             block for block in self.content if block["type"] == "tool_call"
         ]
-        self.invalid_tool_calls = invalid_tool_calls or []
+        self._invalid_tool_calls = [
+            block for block in self.content if block["type"] == "invalid_tool_call"
+        ]
 
     @property
     def text(self) -> Optional[str]:
@@ -173,19 +185,27 @@ class AIMessage:
         return None
 
     @property
-    def tool_calls(self) -> list[types.ToolCall]:  # update once we fix branch
+    def tool_calls(self) -> list[types.ToolCall]:
         """Get the tool calls made by the AI."""
-        if self._tool_calls:
-            return self._tool_calls
-        tool_calls = [block for block in self.content if block["type"] == "tool_call"]
-        if tool_calls:
-            self._tool_calls = tool_calls
-        return [block for block in self.content if block["type"] == "tool_call"]
+        if not self._tool_calls:
+            self._tool_calls = [
+                block for block in self.content if block["type"] == "tool_call"
+            ]
+        return self._tool_calls
 
     @tool_calls.setter
     def tool_calls(self, value: list[types.ToolCall]) -> None:
         """Set the tool calls for the AI message."""
         self._tool_calls = value
+
+    @property
+    def invalid_tool_calls(self) -> list[types.InvalidToolCall]:
+        """Get the invalid tool calls made by the AI."""
+        if not self._invalid_tool_calls:
+            self._invalid_tool_calls = [
+                block for block in self.content if block["type"] == "invalid_tool_call"
+            ]
+        return self._invalid_tool_calls
 
 
 @dataclass
@@ -205,8 +225,6 @@ class AIMessageChunk(AIMessage):
     """
 
     type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
-
-    tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
 
     def __init__(
         self,
@@ -245,16 +263,25 @@ class AIMessageChunk(AIMessage):
             self.response_metadata = {}
         else:
             self.response_metadata = response_metadata
-        if tool_call_chunks is None:
-            self.tool_call_chunks: list[types.ToolCallChunk] = []
-        else:
-            self.tool_call_chunks = tool_call_chunks
+
+        if tool_call_chunks:
+            content_tool_call_chunks = {
+                block["id"]
+                for block in self.content
+                if block.get("type") == "tool_call_chunk" and "id" in block
+            }
+            for chunk in tool_call_chunks:
+                if "id" in chunk and chunk["id"] in content_tool_call_chunks:
+                    continue
+                self.content.append(chunk)
+        self._tool_calls_chunks = [
+            block for block in self.content if block.get("type") == "tool_call_chunk"
+        ]
 
         self._tool_calls: list[types.ToolCall] = []
-        self.invalid_tool_calls: list[types.InvalidToolCall] = []
-        self._init_tool_calls()
+        self._invalid_tool_calls: list[types.InvalidToolCall] = []
 
-    def _init_tool_calls(self) -> None:
+    def _init_tool_calls(self) -> list[types.ContentBlock]:
         """Initialize tool calls from tool call chunks.
 
         Args:
@@ -263,6 +290,33 @@ class AIMessageChunk(AIMessage):
         Raises:
             ValueError: If the tool call chunks are malformed.
         """
+        content = []
+        for block in self.content:
+            if block.get("type") != "tool_call_chunk":
+                content.append(block)
+                continue
+            try:
+                args_ = parse_partial_json(block["args"]) if block["args"] != "" else {}  # type: ignore[arg-type]
+                if isinstance(args_, dict):
+                    content.append(
+                        create_tool_call(
+                            name=block.get("name") or "",
+                            args=args_,
+                            id=block.get("id", ""),
+                        )
+                    )
+                else:
+                    content.append(
+                        create_invalid_tool_call(
+                            name=block.get("name", ""),
+                            args=block.get("args", ""),
+                            id=block.get("id", ""),
+                            error=None,
+                        )
+                    )
+            except Exception:
+                add_chunk_to_invalid_tool_calls(block)
+
         self._tool_calls = []
         self.invalid_tool_calls = []
         if not self.tool_call_chunks:
