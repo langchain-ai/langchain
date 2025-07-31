@@ -41,7 +41,6 @@ test_integration = [
     "thinc<9.0.0,>=8.3.6",
     "nltk<4.0.0,>=3.9.1",
     "transformers<5.0.0,>=4.51.3",
-    "sentence-transformers>=3.0.1",
 ]
 
 [tool.uv.sources]
