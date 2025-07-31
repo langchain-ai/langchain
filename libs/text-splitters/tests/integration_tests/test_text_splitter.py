@@ -10,7 +10,6 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 
-
 # Removed sentence_transformers fixture as it's no longer needed
 # The SentenceTransformersTokenTextSplitter now uses transformers library directly
 
