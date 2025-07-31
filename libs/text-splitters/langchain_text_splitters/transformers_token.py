@@ -71,7 +71,7 @@ class TransformersTokenTextSplitter(TextSplitter):
 
         if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
             msg = (
-                f"The token limit of the models '{self.model_name}'"
+                f"The token limit of the model '{self.model_name}'"
                 f" is: {self.maximum_tokens_per_chunk}."
                 f" Argument tokens_per_chunk={self.tokens_per_chunk}"
                 f" > maximum token limit."
