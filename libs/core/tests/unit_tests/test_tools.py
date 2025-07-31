@@ -2586,6 +2586,18 @@ def test_title_property_preserved() -> None:
     }
 
 
+def test_nested_pydantic_fields() -> None:
+    class Address(BaseModel):
+        street: str
+
+    class Person(BaseModel):
+        name: str
+        address: Address = Field(description="Home address")
+
+    result = convert_to_openai_tool(Person)
+    assert len(result["function"]["parameters"]["properties"]) == 2
+
+
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
     """Verify that the inputs are not mutated when invoking a tool asynchronously."""
 

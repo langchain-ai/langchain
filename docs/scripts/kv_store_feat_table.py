@@ -1,9 +1,6 @@
 import sys
 from pathlib import Path
 
-from langchain_community import document_loaders
-from langchain_core.document_loaders.base import BaseLoader
-
 KV_STORE_TEMPLATE = """\
 ---
 sidebar_class_name: hidden

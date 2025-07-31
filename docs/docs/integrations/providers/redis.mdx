@@ -1,9 +1,9 @@
 # Redis
 
->[Redis (Remote Dictionary Server)](https://en.wikipedia.org/wiki/Redis) is an open-source in-memory storage, 
-> used as a distributed, in-memory key–value database, cache and message broker, with optional durability. 
-> Because it holds all data in memory and because of its design, `Redis` offers low-latency reads and writes, 
-> making it particularly suitable for use cases that require a cache. Redis is the most popular NoSQL database, 
+>[Redis (Remote Dictionary Server)](https://en.wikipedia.org/wiki/Redis) is an open-source in-memory storage,
+> used as a distributed, in-memory key–value database, cache and message broker, with optional durability.
+> Because it holds all data in memory and because of its design, `Redis` offers low-latency reads and writes,
+> making it particularly suitable for use cases that require a cache. Redis is the most popular NoSQL database,
 > and one of the most popular databases overall.
 
 This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
@@ -48,7 +48,7 @@ Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
 
 #### Redis Sentinel connection url
 
-For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel". 
+For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel".
 This is an unofficial extensions to the official IANA registered protocol schemes as long as there is no connection url
 for Sentinels available.
 
@@ -56,7 +56,7 @@ Example: `redis_url = "redis+sentinel://:secret-pass@sentinel-host:26379/mymaste
 
 The format is  `redis+sentinel://[[username]:[password]]@[host-or-ip]:[port]/[service-name]/[db-number]`
 with the default values of "service-name = mymaster" and "db-number = 0" if not set explicit.
-The service-name is the redis server monitoring group name as configured within the Sentinel. 
+The service-name is the redis server monitoring group name as configured within the Sentinel.
 
 The current url format limits the connection string to one sentinel host only (no list can be given) and
 both Redis server and sentinel must have the same password set (if used).
@@ -122,8 +122,8 @@ For a more detailed walkthrough of the Redis vectorstore wrapper, see [this note
 
 ## Retriever
 
-The Redis vector store retriever wrapper generalizes the vectorstore class to perform 
-low-latency document retrieval. To create the retriever, simply 
+The Redis vector store retriever wrapper generalizes the vectorstore class to perform
+low-latency document retrieval. To create the retriever, simply
 call `.as_retriever()` on the base vectorstore class.
 
 ## Memory

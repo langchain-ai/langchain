@@ -9,6 +9,7 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 
 @deprecated(
@@ -98,6 +99,7 @@ class CohereRerank(BaseDocumentCompressor):
             for res in results
         ]
 
+    @override
     def compress_documents(
         self,
         documents: Sequence[Document],

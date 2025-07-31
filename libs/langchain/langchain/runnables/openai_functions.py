@@ -36,6 +36,12 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
         ],
         functions: Optional[list[OpenAIFunction]] = None,
     ):
+        """Initialize the OpenAIFunctionsRouter.
+
+        Args:
+            runnables: A mapping of function names to runnables.
+            functions: Optional list of functions to check against the runnables.
+        """
         if functions is not None:
             if len(functions) != len(runnables):
                 msg = "The number of functions does not match the number of runnables."

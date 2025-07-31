@@ -86,6 +86,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                             "my_api_key": "api_key",
                         },
                     )
+
     """
 
     def test_init(self) -> None:

@@ -45,6 +45,14 @@ class FactWithEvidence(BaseModel):
             yield from s.spans()
 
     def get_spans(self, context: str) -> Iterator[str]:
+        """Get spans of the substring quote in the context.
+
+        Args:
+            context: The context in which to find the spans of the substring quote.
+
+        Returns:
+            An iterator over the spans of the substring quote in the context.
+        """
         for quote in self.substring_quote:
             yield from self._get_span(quote, context)
 
@@ -86,6 +94,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
 
     Returns:
         Runnable that can be used to answer questions with citations.
+
     """
     if llm.bind_tools is BaseChatModel.bind_tools:
         msg = "Language model must implement bind_tools to use this function."

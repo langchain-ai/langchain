@@ -9,6 +9,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
@@ -43,6 +44,7 @@ class _FakeTrajectoryChatModel(FakeChatModel):
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],

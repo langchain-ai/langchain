@@ -315,8 +315,8 @@ module.exports = {
                 },
               ],
               link: {
-                type: "doc",
-                id: "integrations/stores/index",
+                type: "generated-index",
+                slug: "integrations/stores",
               },
             },
             {

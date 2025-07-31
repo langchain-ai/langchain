@@ -418,7 +418,6 @@ class ChatOllama(BaseChatModel):
 
             AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
 
-
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
@@ -1044,8 +1043,7 @@ class ChatOllama(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - a Pydantic class,
                 - a JSON schema
@@ -1061,11 +1059,11 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Ollama's `structured output API <https://ollama.com/blog/structured-outputs>`__
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Ollama's tool-calling API
-                - "json_mode":
+                - ``'json_mode'``:
                     Specifies ``format="json"``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.
@@ -1076,20 +1074,20 @@ class ChatOllama(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         .. versionchanged:: 0.2.2
 
@@ -1097,7 +1095,7 @@ class ChatOllama(BaseChatModel):
 
         .. versionchanged:: 0.3.0
 
-            Updated default ``method`` to ``"json_schema"``.
+            Updated default ``method`` to ``'json_schema'``.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
 
@@ -1283,6 +1281,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501, D301
         _ = kwargs.pop("strict", None)
         if kwargs:

@@ -3,7 +3,7 @@
 This guide walks through how to run the repository locally and check in your first code.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
-## Dependency Management: `uv` and other env/dependency managers
+## Dependency management: `uv` and other env/dependency managers
 
 This project utilizes [uv](https://docs.astral.sh/uv/) v0.5+ as a dependency manager.
 
@@ -37,7 +37,7 @@ For this quickstart, start with `langchain`:
 cd libs/langchain
 ```
 
-## Local Development Dependencies
+## Local development dependencies
 
 Install development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
@@ -64,12 +64,6 @@ To run unit tests:
 make test
 ```
 
-To run unit tests in Docker:
-
-```bash
-make docker_tests
-```
-
 There are also [integration tests and code-coverage](../testing.mdx) available.
 
 ### Developing langchain_core
@@ -81,11 +75,11 @@ cd libs/core
 make test
 ```
 
-## Formatting and Linting
+## Formatting and linting
 
 Run these locally before submitting a PR; the CI system will check also.
 
-### Code Formatting
+### Code formatting
 
 Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules/).
 
@@ -163,7 +157,7 @@ If codespell is incorrectly flagging a word, you can skip spellcheck for that wo
 ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
 ```
 
-## Working with Optional Dependencies
+## Working with optional dependencies
 
 `langchain`, `langchain-community`, and `langchain-experimental` rely on optional dependencies to keep these packages lightweight.
 

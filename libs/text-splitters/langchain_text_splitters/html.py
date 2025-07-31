@@ -107,6 +107,7 @@ class HTMLHeaderTextSplitter:
             #   content="Conclusion"
             # - Document with metadata={"Main Topic": "Conclusion"} and
             #   content="Final thoughts."
+
     """
 
     def __init__(
@@ -562,6 +563,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 preserve_images=True,
                 custom_handlers={"iframe": custom_iframe_extractor}
             )
+
     """  # noqa: E501, D214
 
     def __init__(
@@ -842,6 +844,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         preserved_elements,
                         placeholder_count,
                     )
+                    content = " ".join(elem.find_all(string=True, recursive=False))
+                    if content:
+                        content = self._normalize_and_clean_text(content)
+                        current_content.append(content)
                     continue
 
                 if elem.name in [h[0] for h in self._headers_to_split_on]:

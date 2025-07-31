@@ -13,13 +13,13 @@ Not pinning your version will ensure you always have the latest tests, but it ma
 also break your CI if we introduce tests that your integration doesn't pass.
 
 Pip:
-    
+
     ```bash
     pip install -U langchain-tests
     ```
 
 Poetry:
-    
+
     ```bash
     poetry add langchain-tests
     ```
@@ -32,44 +32,44 @@ To add standard tests to an integration package's e.g. ChatModel, you need to cr
 2. An integration test class that inherits from ChatModelIntegrationTests
 
 `tests/unit_tests/test_standard.py`:
-    
-```python
-"""Standard LangChain interface tests"""
 
-from typing import Type
+    ```python
+    """Standard LangChain interface tests"""
 
-import pytest
-from langchain_core.language_models import BaseChatModel
-from langchain_tests.unit_tests import ChatModelUnitTests
+    from typing import Type
 
-from langchain_parrot_chain import ChatParrotChain
+    import pytest
+    from langchain_core.language_models import BaseChatModel
+    from langchain_tests.unit_tests import ChatModelUnitTests
+
+    from langchain_parrot_chain import ChatParrotChain
 
 
-class TestParrotChainStandard(ChatModelUnitTests):
-    @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        return ChatParrotChain
-```
+    class TestParrotChainStandard(ChatModelUnitTests):
+        @pytest.fixture
+        def chat_model_class(self) -> Type[BaseChatModel]:
+            return ChatParrotChain
+    ```
 
 `tests/integration_tests/test_standard.py`:
-    
-```python
-"""Standard LangChain interface tests"""
 
-from typing import Type
+    ```python
+    """Standard LangChain interface tests"""
 
-import pytest
-from langchain_core.language_models import BaseChatModel
-from langchain_tests.integration_tests import ChatModelIntegrationTests
+    from typing import Type
 
-from langchain_parrot_chain import ChatParrotChain
+    import pytest
+    from langchain_core.language_models import BaseChatModel
+    from langchain_tests.integration_tests import ChatModelIntegrationTests
+
+    from langchain_parrot_chain import ChatParrotChain
 
 
-class TestParrotChainStandard(ChatModelIntegrationTests):
-    @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        return ChatParrotChain
-```
+    class TestParrotChainStandard(ChatModelIntegrationTests):
+        @pytest.fixture
+        def chat_model_class(self) -> Type[BaseChatModel]:
+            return ChatParrotChain
+    ```
 
 ## Reference
 

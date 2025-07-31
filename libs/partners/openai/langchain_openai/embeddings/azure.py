@@ -99,6 +99,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """  # noqa: E501
 
     azure_endpoint: Optional[str] = Field(
@@ -106,7 +107,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
 
         Example: `https://example-resource.azure.openai.com/`
     """
@@ -125,30 +126,30 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
         ),
     )
-    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
+    """Automatically inferred from env var ``AZURE_OPENAI_API_KEY`` if not provided."""
     openai_api_version: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15"),
         alias="api_version",
     )
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
+    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided.
     
-    Set to "2023-05-15" by default if env variable `OPENAI_API_VERSION` is not set.
+    Set to ``'2023-05-15'`` by default if env variable ``OPENAI_API_VERSION`` is not
+    set.
     """
     azure_ad_token: Optional[SecretStr] = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
     )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
 
-        For more:
-        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+        `For more, see this page. <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__
     """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
-        will be invoked if `azure_ad_async_token_provider` is not provided.
+        will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
     azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
     """A function that returns an Azure Active Directory token.

@@ -45,6 +45,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
           Each PromptTemplate will be formatted and then passed
           to future prompt templates as a variable with
           the same name as `name`
+
     """
 
     final_prompt: BasePromptTemplate

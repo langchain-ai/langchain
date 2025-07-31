@@ -13,6 +13,7 @@ from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsPa
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -202,10 +203,12 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 
@@ -342,6 +345,7 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
+
     """  # noqa: E501
     try:
         from langchain_community.utilities.openapi import OpenAPISpec

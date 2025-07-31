@@ -9,6 +9,7 @@ from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_strin
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils import pre_init
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -37,6 +38,15 @@ class SummarizerMixin(BaseModel):
         messages: list[BaseMessage],
         existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -51,6 +61,15 @@ class SummarizerMixin(BaseModel):
         messages: list[BaseMessage],
         existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -89,6 +108,16 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         summarize_step: int = 2,
         **kwargs: Any,
     ) -> ConversationSummaryMemory:
+        """Create a ConversationSummaryMemory from a list of messages.
+
+        Args:
+            llm: The language model to use for summarization.
+            chat_memory: The chat history to summarize.
+            summarize_step: Number of messages to summarize at a time.
+            **kwargs: Additional keyword arguments to pass to the class.
+        Returns:
+            An instance of ConversationSummaryMemory with the summarized history.
+        """
         obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
         for i in range(0, len(obj.chat_memory.messages), summarize_step):
             obj.buffer = obj.predict_new_summary(
@@ -105,6 +134,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """
         return [self.memory_key]
 
+    @override
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
