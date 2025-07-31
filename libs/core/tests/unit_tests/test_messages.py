@@ -360,7 +360,7 @@ def test_chat_message_chunks() -> None:
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
-        )  # type: ignore[reportUnusedExpression]
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
     assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
         content=" indeed."
