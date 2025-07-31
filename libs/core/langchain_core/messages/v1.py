@@ -80,7 +80,11 @@ class AIMessage:
     """
 
     type: Literal["ai"] = "ai"
-    """Used for serialization."""
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -102,6 +106,7 @@ class AIMessage:
     """Encoding version for the message. Used for serialization."""
 
     content: list[types.ContentBlock] = field(default_factory=list)
+    """Message content as a list of content blocks."""
 
     usage_metadata: Optional[UsageMetadata] = None
     """If provided, usage metadata for a message, such as token counts."""
@@ -217,9 +222,19 @@ class AIMessageChunk(AIMessage):
     """
 
     type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
-    """Used for serialization."""
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     tool_call_chunks: list[types.ToolCallChunk] = field(init=False)
+    """List of partial tool call data.
+
+    Emitted by the model during streaming, this field contains
+    tool call chunks that may not yet be complete. It is used to reconstruct
+    tool calls from the streamed content.
+    """
 
     def __init__(
         self,
@@ -489,6 +504,13 @@ class HumanMessage:
         type: Message type identifier, always "human".
     """
 
+    type: Literal["human"] = "human"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
+
     id: str
     """Used for serialization.
 
@@ -497,6 +519,7 @@ class HumanMessage:
     """
 
     content: list[types.ContentBlock]
+    """Message content as a list of content blocks."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -505,12 +528,6 @@ class HumanMessage:
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
-    """
-    type: Literal["human"] = "human"
-    """The type of the message. Must be a string that is unique to the message type.
-
-    The purpose of this field is to allow for easy identification of the message type
-    when deserializing messages.
     """
 
     def __init__(
@@ -558,6 +575,13 @@ class SystemMessage:
         type: Message type identifier, always "system".
     """
 
+    type: Literal["system"] = "system"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
+
     id: str
     """Used for serialization.
 
@@ -566,8 +590,7 @@ class SystemMessage:
     """
 
     content: list[types.ContentBlock]
-
-    type: Literal["system"] = "system"
+    """Message content as a list of content blocks."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -634,14 +657,27 @@ class ToolMessage:
         type: Message type identifier, always "tool".
     """
 
+    type: Literal["tool"] = "tool"
+    """The type of the message. Must be a string that is unique to the message type.
+
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
+
     id: str
     """Used for serialization."""
 
     tool_call_id: str
+    """ID of the tool call this message responds to.
+
+    This should match the ID of the tool call that this message is responding to.
+    """
 
     content: list[types.ContentBlock]
+    """Message content as a list of content blocks."""
 
-    artifact: Optional[Any] = None  # App-side payload not for the model
+    artifact: Optional[Any] = None
+    """App-side payload not for the model."""
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -653,7 +689,11 @@ class ToolMessage:
     """
 
     status: Literal["success", "error"] = "success"
-    type: Literal["tool"] = "tool"
+    """Execution status of the tool call.
+
+    Indicates whether the tool call was successful or encountered an error.
+    Defaults to "success".
+    """
 
     def __init__(
         self,
