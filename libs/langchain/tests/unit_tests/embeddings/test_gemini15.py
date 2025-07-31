@@ -11,6 +11,7 @@ def fake_embed_content(*args: Any, **kwargs: Any) -> dict[str, list[list[float]]
     # استخرج النصوص سواءً أُرسلت positional أو keyword
     texts = args[0] if args else kwargs.get("input", [])
     # أرجِع متجهات وهميّة بطول 768
+    # Return fake vectors with a fixed length to avoid calling the API
     return {"embedding": [[0.0] * 768 for _ in texts]}
 
 
