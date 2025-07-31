@@ -3021,7 +3021,6 @@ test = [
 ]
 test-integration = [
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
-    { name = "sentence-transformers", specifier = ">=3.0.1" },
     { name = "spacy", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },
     { name = "transformers", specifier = ">=4.51.3,<5.0.0" },

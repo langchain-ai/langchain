@@ -1,7 +1,5 @@
 """Test text splitters that require an integration."""
 
-from typing import Any
-
 import pytest
 
 from langchain_text_splitters import (
@@ -12,14 +10,8 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 
-
-@pytest.fixture
-def sentence_transformers() -> Any:
-    try:
-        import sentence_transformers
-    except ImportError:
-        pytest.skip("SentenceTransformers not installed.")
-    return sentence_transformers
+# Removed sentence_transformers fixture as it's no longer needed
+# The SentenceTransformersTokenTextSplitter now uses transformers library directly
 
 
 def test_huggingface_type_check() -> None:
@@ -63,7 +55,7 @@ def test_token_text_splitter_from_tiktoken() -> None:
     assert expected_tokenizer == actual_tokenizer
 
 
-def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
+def test_sentence_transformers_count_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -78,7 +70,7 @@ def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
     assert expected_token_count == token_count
 
 
-def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
+def test_sentence_transformers_split_text() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -88,7 +80,7 @@ def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
     assert expected_text_chunks == text_chunks
 
 
-def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> None:
+def test_sentence_transformers_multiple_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
     text = "Lorem "
 
