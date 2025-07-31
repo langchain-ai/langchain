@@ -216,9 +216,9 @@ def init_embeddings(
 
         return MistralAIEmbeddings(model=model_name, **kwargs)
     if provider == "huggingface":
-        from langchain_huggingface import HuggingFaceEmbeddings
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
-        return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+        return HuggingFaceEndpointEmbeddings(model=model_name, **kwargs)
     if provider == "ollama":
         from langchain_ollama import OllamaEmbeddings
 

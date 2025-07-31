@@ -21,9 +21,6 @@ from langchain_text_splitters.markdown import (
 )
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
-from langchain_text_splitters.sentence_transformers import (
-    SentenceTransformersTokenTextSplitter,
-)
 from langchain_text_splitters.spacy import SpacyTextSplitter
 
 __all__ = [
@@ -41,7 +38,6 @@ __all__ = [
     "PythonCodeTextSplitter",
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
-    "SentenceTransformersTokenTextSplitter",
     "SpacyTextSplitter",
     "TextSplitter",
     "TokenTextSplitter",

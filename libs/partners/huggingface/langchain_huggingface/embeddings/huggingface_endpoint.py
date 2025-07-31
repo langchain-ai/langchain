@@ -8,7 +8,7 @@ from langchain_core.utils import from_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
-DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
+DEFAULT_MODEL = "microsoft/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
@@ -23,7 +23,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_huggingface import HuggingFaceEndpointEmbeddings
-            model = "sentence-transformers/all-mpnet-base-v2"
+            model = "microsoft/all-mpnet-base-v2"
             hf = HuggingFaceEndpointEmbeddings(
                 model=model,
                 task="feature-extraction",
