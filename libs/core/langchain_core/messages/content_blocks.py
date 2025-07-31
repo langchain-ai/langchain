@@ -13,31 +13,46 @@ Data **not yet mapped** to a standard block may be represented using the
 ``NonStandardContentBlock``, which allows for provider-specific data to be included
 without losing the benefits of type checking and validation.
 
-Furthermore, provider-specific fields *within* a standard block will be allowed as extra
-keys on the TypedDict per `PEP 728 <https://peps.python.org/pep-0728/>`__. This allows
-for flexibility in the data structure while maintaining a consistent interface.
+Furthermore, provider-specific fields **within** a standard block are fully supported
+by default. However, since current type checkers do not recognize this, we are temporarily
+applying type ignore comments to suppress warnings. In the future,
+`PEP 728 <https://peps.python.org/pep-0728/>`__ will add an extra param, ``extra_items=Any``.
+When this is supported, we will apply it to block signatures to signify to type checkers
+that additional provider-specific fields are allowed.
 
-**Example using ``extra_items=Any``:**
+**Example with PEP 728 provider-specific fields:**
 
 .. code-block:: python
+
+    # Note `extra_items=Any`
+    class TextContentBlock(TypedDict, extra_items=Any):
+        type: Literal["text"]
+        id: NotRequired[str]
+        text: str
+        annotations: NotRequired[list[Annotation]]
+        index: NotRequired[int]
+
+.. code-block:: python
+
     from langchain_core.messages.content_blocks import TextContentBlock
-    from typing import Any
 
     my_block: TextContentBlock = {
+        # Add required fields
         "type": "text",
         "text": "Hello, world!",
-        "extra_field": "This is allowed",
-        "another_field": 42,  # Any type is allowed
+        # Additional fields not specified in the TypedDict
+        # These are valid with PEP 728 and are typed as Any
+        "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
+        "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
+        "custom_field": "any value",
     }
 
-    # A type checker that supports PEP 728 would validate the object above.
-    # Accessing the provider-specific key is possible, and its type is 'Any'.
-    block_extra_field = my_block["extra_field"]
+    openai_data = my_block["openai_metadata"]  # Type: Any
 
-.. warning::
-    Type checkers such as MyPy do not yet support `PEP 728 <https://peps.python.org/pep-0728/>`__,
-    so you may see type errors when using provider-specific fields. These are safe to
-    ignore, as the fields are still validated at runtime.
+.. note::
+    PEP 728 is enabled with ``# type: ignore[call-arg]`` comments to suppress warnings
+    from type checkers that don't yet support it. The functionality works correctly
+    in Python 3.13+ and will be fully supported as the ecosystem catches up.
 
 **Rationale**
 
@@ -54,17 +69,17 @@ blocks into the format required by its API.
 
 The module defines several types of content blocks, including:
 
-- **``TextContentBlock``**: Standard text.
-- **``ImageContentBlock``**, **``AudioContentBlock``**, **``VideoContentBlock``**: For
-    multimodal data.
-- **``ToolCallContentBlock``**, **``ToolOutputContentBlock``**: For function calling.
-- **``ReasoningContentBlock``**: To capture a model's thought process.
-- **``Citation``**: For annotations that link generated text to a source document.
+- ``TextContentBlock``: Standard text.
+- ``ImageContentBlock``, ``Audio...``, ``Video...``, ``PlainText...``, ``File...``: For multimodal data.
+- ``ToolCallContentBlock``, ``ToolOutputContentBlock``: For function calling.
+- ``ReasoningContentBlock``: To capture a model's thought process.
+- ``Citation``: For annotations that link generated text to a source document.
 
 **Example Usage**
 
 .. code-block:: python
 
+    # Direct construction:
     from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
 
     multimodal_message: AIMessage = [
@@ -75,14 +90,39 @@ The module defines several types of content blocks, including:
             mime_type="image/png",
         ),
     ]
+
+    from langchain_core.messages.content_blocks import create_text_block, create_image_block
+
+    # Using factory functions:
+    multimodal_message: AIMessage = [
+        create_text_block("What is shown in this image?"),
+        create_image_block(
+            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+            mime_type="image/png",
+        ),
+    ]
 """  # noqa: E501
 
 import warnings
 from typing import Any, Literal, Optional, Union
+from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
-# --- Text and annotations ---
+
+def _ensure_id(id_val: Optional[str]) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A valid string ID, either the provided value or a new UUID.
+    """
+    return id_val or str(f"lc_{uuid4()}")
 
 
 class Citation(TypedDict):
@@ -92,16 +132,24 @@ class Citation(TypedDict):
         ``start/end`` indices refer to the **response text**,
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the ``url``).
+
+    .. note::
+        ``create_citation`` may also be used as a factory to create a ``Citation``.
+        Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
     type: Literal["citation"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     url: NotRequired[str]
@@ -137,18 +185,21 @@ class Citation(TypedDict):
     # is difficult to reliably extract spans from the raw document text across file
     # formats or encoding schemes.
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation format."""
 
     type: Literal["non_standard_annotation"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     value: dict[str, Any]
@@ -159,20 +210,28 @@ Annotation = Union[Citation, NonStandardAnnotation]
 
 
 class TextContentBlock(TypedDict):
-    """Content block for text output.
+    """Text output from a LLM.
 
     This typically represents the main text content of a message, such as the response
     from a language model or the text of a user message.
+
+    .. note::
+        ``create_text_block`` may also be used as a factory to create a
+        ``TextContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
     type: Literal["text"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     text: str
@@ -184,8 +243,10 @@ class TextContentBlock(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
-# --- Tool calls ---
+
 class ToolCall(TypedDict):
     """Represents a request to call a tool.
 
@@ -201,49 +262,46 @@ class ToolCall(TypedDict):
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
+
+    .. note::
+        ``create_tool_call`` may also be used as a factory to create a
+        ``ToolCall``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
-    name: str
-    """The name of the tool to be called."""
-    args: dict[str, Any]
-    """The arguments to the tool call."""
+    type: Literal["tool_call"]
+    """Used for discrimination."""
+
     id: Optional[str]
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
-    index: NotRequired[int]
-    """Index of block in aggregate response. Used during streaming."""
-    type: Literal["tool_call"]
+    # TODO: Consider making this NotRequired[str] in the future.
 
-
-class InvalidToolCall(TypedDict):
-    """Allowance for errors made by LLM.
-
-    Here we add an `error` key to surface errors made during generation
-    (e.g., invalid JSON arguments.)
-    """
-
-    name: Optional[str]
+    name: str
     """The name of the tool to be called."""
-    args: Optional[str]
+
+    args: dict[str, Any]
     """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call."""
-    error: Optional[str]
-    """An error message associated with the tool call."""
+
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
-    type: Literal["invalid_tool_call"]
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
-    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+    When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
+    values of ``index`` are equal and not ``None``.
 
     Example:
 
@@ -258,33 +316,68 @@ class ToolCallChunk(TypedDict):
         ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
     """
 
-    name: Optional[str]
-    """The name of the tool to be called."""
-    args: Optional[str]
-    """The arguments to the tool call."""
+    # TODO: Consider making fields NotRequired[str] in the future.
+
+    type: NotRequired[Literal["tool_call_chunk"]]
+    """Used for serialization."""
+
     id: Optional[str]
     """An identifier associated with the tool call."""
+
+    name: Optional[str]
+    """The name of the tool to be called."""
+
+    args: Optional[str]
+    """The arguments to the tool call."""
+
     index: Optional[int]
     """The index of the tool call in a sequence."""
-    type: NotRequired[Literal["tool_call_chunk"]]
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
-# --- Provider tool calls (built-in tools) ---
+class InvalidToolCall(TypedDict):
+    """Allowance for errors made by LLM.
+
+    Here we add an ``error`` key to surface errors made during generation
+    (e.g., invalid JSON arguments.)
+    """
+
+    # TODO: Consider making fields NotRequired[str] in the future.
+
+    type: Literal["invalid_tool_call"]
+    """Used for discrimination."""
+
+    id: Optional[str]
+    """An identifier associated with the tool call."""
+
+    name: Optional[str]
+    """The name of the tool to be called."""
+
+    args: Optional[str]
+    """The arguments to the tool call."""
+
+    error: Optional[str]
+    """An error message associated with the tool call."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
+
 # Note: These are not standard tool calls, but rather provider-specific built-in tools.
-
-
 # Web search
 class WebSearchCall(TypedDict):
-    """Content block for a built-in web search tool call."""
+    """Built-in web search tool call."""
 
     type: Literal["web_search_call"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     query: NotRequired[str]
@@ -293,18 +386,21 @@ class WebSearchCall(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class WebSearchResult(TypedDict):
-    """Content block for the result of a built-in web search tool call."""
+    """Result of a built-in web search tool call."""
 
     type: Literal["web_search_result"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     urls: NotRequired[list[str]]
@@ -313,26 +409,25 @@ class WebSearchResult(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
-# Code interpreter
 
-
-# Call
 class CodeInterpreterCall(TypedDict):
-    """Content block for a built-in code interpreter tool call."""
+    """Built-in code interpreter tool call."""
 
     type: Literal["code_interpreter_call"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     language: NotRequired[str]
-    """The programming language used in the code interpreter tool call."""
+    """The name of the programming language used in the code interpreter tool call."""
 
     code: NotRequired[str]
     """The code to be executed by the code interpreter."""
@@ -340,29 +435,31 @@ class CodeInterpreterCall(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
-# Result block is CodeInterpreterResult
+
 class CodeInterpreterOutput(TypedDict):
-    """Content block for the output of a singular code interpreter tool call.
+    """Output of a singular code interpreter tool call.
 
     Full output of a code interpreter tool call is represented by
     ``CodeInterpreterResult`` which is a list of these blocks.
     """
 
     type: Literal["code_interpreter_output"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     return_code: NotRequired[int]
     """Return code of the executed code.
 
-    Example: 0 for success, non-zero for failure.
+    Example: ``0`` for success, non-zero for failure.
     """
 
     stderr: NotRequired[str]
@@ -377,18 +474,21 @@ class CodeInterpreterOutput(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class CodeInterpreterResult(TypedDict):
-    """Content block for the result of a code interpreter tool call."""
+    """Result of a code interpreter tool call."""
 
     type: Literal["code_interpreter_result"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     output: list[CodeInterpreterOutput]
@@ -397,19 +497,30 @@ class CodeInterpreterResult(TypedDict):
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
-# --- Reasoning ---
+
 class ReasoningContentBlock(TypedDict):
-    """Content block for reasoning output."""
+    """Reasoning output from a LLM.
+
+    .. note::
+        ``create_reasoning_block`` may also be used as a factory to create a
+        ``ReasoningContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
+    """
 
     type: Literal["reasoning"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     reasoning: NotRequired[str]
@@ -419,48 +530,36 @@ class ReasoningContentBlock(TypedDict):
     from ``<think>`` tags in the model's response.
     """
 
-    thought_signature: NotRequired[str]
-    """Opaque state handle representation of the model's internal thought process.
-
-    Maintains the context of the model's thinking across multiple interactions
-    (e.g. multi-turn conversations) since many APIs are stateless.
-
-    Not to be used to verify authenticity or integrity of the response (`'signature'`).
-
-    Examples:
-    - https://ai.google.dev/gemini-api/docs/thinking#signatures
-    """
-
-    signature: NotRequired[str]
-    """Signature of the reasoning content block used to verify **authenticity**.
-
-    Prevents from modifying or fabricating the model's reasoning process.
-
-    Examples:
-    - https://docs.anthropic.com/en/docs/build-with-claude/context-windows#the-context-window-with-extended-thinking-and-tool-use
-    """
-
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
 
-
-# --- Multi-modal ---
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 # Note: `title` and `context` are fields that could be used to provide additional
 # information about the file, such as a description or summary of its content.
 # E.g. with Claude, you can provide a context for a file which is passed to the model.
 class ImageContentBlock(TypedDict):
-    """Content block for image data."""
+    """Image data.
+
+    .. note::
+        ``create_image_block`` may also be used as a factory to create a
+        ``ImageContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
+    """
 
     type: Literal["image"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     file_id: NotRequired[str]
@@ -481,24 +580,30 @@ class ImageContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the image."""
-
-    # context: NotRequired[str]
-    # """Context for the image, e.g., a description or summary of the image's content."""  # noqa: E501
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class VideoContentBlock(TypedDict):
-    """Content block for video data."""
+    """Video data.
+
+    .. note::
+        ``create_video_block`` may also be used as a factory to create a
+        ``VideoContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
+    """
 
     type: Literal["video"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     file_id: NotRequired[str]
@@ -519,24 +624,30 @@ class VideoContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the video."""
-
-    # context: NotRequired[str]
-    # """Context for the video, e.g., a description or summary of the video's content.""" # noqa: E501
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class AudioContentBlock(TypedDict):
-    """Content block for audio data."""
+    """Audio data.
+
+    .. note::
+        ``create_audio_block`` may also be used as a factory to create an
+        ``AudioContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
+    """
 
     type: Literal["audio"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     file_id: NotRequired[str]
@@ -557,29 +668,34 @@ class AudioContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the audio."""
-
-    # context: NotRequired[str]
-    # """Context for the audio, e.g., a description or summary of the audio's content.""" # noqa: E501
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class PlainTextContentBlock(TypedDict):
-    """Content block for plaintext data (e.g., from a document).
+    """Plaintext data (e.g., from a document).
 
     .. note::
         Title and context are optional fields that may be passed to the model. See
         Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
+
+    .. note::
+        ``create_plaintext_block`` may also be used as a factory to create a
+        ``PlainTextContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
     type: Literal["text-plain"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     file_id: NotRequired[str]
@@ -606,9 +722,12 @@ class PlainTextContentBlock(TypedDict):
     context: NotRequired[str]
     """Context for the text, e.g., a description or summary of the text's content."""
 
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
+
 
 class FileContentBlock(TypedDict):
-    """Content block for file data.
+    """File data that doesn't fit into other multimodal blocks.
 
     This block is intended for files that are not images, audio, or plaintext. For
     example, it can be used for PDFs, Word documents, etc.
@@ -616,16 +735,24 @@ class FileContentBlock(TypedDict):
     If the file is an image, audio, or plaintext, you should use the corresponding
     content block type (e.g., ``ImageContentBlock``, ``AudioContentBlock``,
     ``PlainTextContentBlock``).
+
+    .. note::
+        ``create_file_block`` may also be used as a factory to create a
+        ``FileContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
     type: Literal["file"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     file_id: NotRequired[str]
@@ -646,11 +773,8 @@ class FileContentBlock(TypedDict):
     base64: NotRequired[str]
     """Data as a base64 string."""
 
-    # title: NotRequired[str]
-    # """Title of the file, e.g., the name of a document or file."""
-
-    # context: NotRequired[str]
-    # """Context for the file, e.g., a description or summary of the file's content."""
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 # Future modalities to consider:
@@ -658,9 +782,8 @@ class FileContentBlock(TypedDict):
 # - Tabular data
 
 
-# Non-standard
 class NonStandardContentBlock(TypedDict):
-    """Content block provider-specific data.
+    """Provider-specific data.
 
     This block contains data for which there is not yet a standard type.
 
@@ -668,16 +791,24 @@ class NonStandardContentBlock(TypedDict):
     If a provider's non-standard output includes reasoning and tool calls, it should be
     the adapter's job to parse that payload and emit the corresponding standard
     ReasoningContentBlock and ToolCallContentBlocks.
+
+    .. note::
+        ``create_non_standard_block`` may also be used as a factory to create a
+        ``NonStandardContentBlock``. Benefits include:
+
+        * Automatic ID generation (when not provided)
+        * Required arguments strictly validated at creation time
+
     """
 
     type: Literal["non_standard"]
-    """Type of the content block."""
+    """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
     """Content block identifier. Either:
 
     - Generated by the provider (e.g., OpenAI's file ID)
-    - Generated by LangChain upon creation (as ``UUID4``)
+    - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
     """
 
     value: dict[str, Any]
@@ -830,3 +961,456 @@ def convert_to_openai_data_block(block: dict) -> dict:
         raise ValueError(error_msg)
 
     return formatted_block
+
+
+def create_text_block(
+    text: str,
+    *,
+    id: Optional[str] = None,
+    annotations: Optional[list[Annotation]] = None,
+    index: Optional[int] = None,
+) -> TextContentBlock:
+    """Create a ``TextContentBlock``.
+
+    Args:
+        text: The text content of the block.
+        id: Content block identifier. Generated automatically if not provided.
+        annotations: Citations and other annotations for the text.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``TextContentBlock``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = TextContentBlock(
+        type="text",
+        text=text,
+        id=_ensure_id(id),
+    )
+    if annotations is not None:
+        block["annotations"] = annotations
+    if index is not None:
+        block["index"] = index
+    return block
+
+
+def create_image_block(
+    *,
+    url: Optional[str] = None,
+    base64: Optional[str] = None,
+    file_id: Optional[str] = None,
+    mime_type: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> ImageContentBlock:
+    """Create an ``ImageContentBlock``.
+
+    Args:
+        url: URL of the image.
+        base64: Base64-encoded image data.
+        file_id: ID of the image file from a file storage system.
+        mime_type: MIME type of the image. Required for base64 data.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``ImageContentBlock``.
+
+    Raises:
+        ValueError: If no image source is provided or if ``base64`` is used without
+            ``mime_type``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    if not any([url, base64, file_id]):
+        msg = "Must provide one of: url, base64, or file_id"
+        raise ValueError(msg)
+
+    if base64 and not mime_type:
+        msg = "mime_type is required when using base64 data"
+        raise ValueError(msg)
+
+    block = ImageContentBlock(type="image", id=_ensure_id(id))
+
+    if url is not None:
+        block["url"] = url
+    if base64 is not None:
+        block["base64"] = base64
+    if file_id is not None:
+        block["file_id"] = file_id
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_video_block(
+    *,
+    url: Optional[str] = None,
+    base64: Optional[str] = None,
+    file_id: Optional[str] = None,
+    mime_type: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> VideoContentBlock:
+    """Create a ``VideoContentBlock``.
+
+    Args:
+        url: URL of the video.
+        base64: Base64-encoded video data.
+        file_id: ID of the video file from a file storage system.
+        mime_type: MIME type of the video. Required for base64 data.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``VideoContentBlock``.
+
+    Raises:
+        ValueError: If no video source is provided or if ``base64`` is used without
+            ``mime_type``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    if not any([url, base64, file_id]):
+        msg = "Must provide one of: url, base64, or file_id"
+        raise ValueError(msg)
+
+    if base64 and not mime_type:
+        msg = "mime_type is required when using base64 data"
+        raise ValueError(msg)
+
+    block = VideoContentBlock(type="video", id=_ensure_id(id))
+
+    if url is not None:
+        block["url"] = url
+    if base64 is not None:
+        block["base64"] = base64
+    if file_id is not None:
+        block["file_id"] = file_id
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_audio_block(
+    *,
+    url: Optional[str] = None,
+    base64: Optional[str] = None,
+    file_id: Optional[str] = None,
+    mime_type: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> AudioContentBlock:
+    """Create an ``AudioContentBlock``.
+
+    Args:
+        url: URL of the audio.
+        base64: Base64-encoded audio data.
+        file_id: ID of the audio file from a file storage system.
+        mime_type: MIME type of the audio. Required for base64 data.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``AudioContentBlock``.
+
+    Raises:
+        ValueError: If no audio source is provided or if ``base64`` is used without
+            ``mime_type``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    if not any([url, base64, file_id]):
+        msg = "Must provide one of: url, base64, or file_id"
+        raise ValueError(msg)
+
+    if base64 and not mime_type:
+        msg = "mime_type is required when using base64 data"
+        raise ValueError(msg)
+
+    block = AudioContentBlock(type="audio", id=_ensure_id(id))
+
+    if url is not None:
+        block["url"] = url
+    if base64 is not None:
+        block["base64"] = base64
+    if file_id is not None:
+        block["file_id"] = file_id
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_file_block(
+    *,
+    url: Optional[str] = None,
+    base64: Optional[str] = None,
+    file_id: Optional[str] = None,
+    mime_type: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> FileContentBlock:
+    """Create a ``FileContentBlock``.
+
+    Args:
+        url: URL of the file.
+        base64: Base64-encoded file data.
+        file_id: ID of the file from a file storage system.
+        mime_type: MIME type of the file. Required for base64 data.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``FileContentBlock``.
+
+    Raises:
+        ValueError: If no file source is provided or if ``base64`` is used without
+            ``mime_type``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    if not any([url, base64, file_id]):
+        msg = "Must provide one of: url, base64, or file_id"
+        raise ValueError(msg)
+
+    if base64 and not mime_type:
+        msg = "mime_type is required when using base64 data"
+        raise ValueError(msg)
+
+    block = FileContentBlock(type="file", id=_ensure_id(id))
+
+    if url is not None:
+        block["url"] = url
+    if base64 is not None:
+        block["base64"] = base64
+    if file_id is not None:
+        block["file_id"] = file_id
+    if mime_type is not None:
+        block["mime_type"] = mime_type
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_plaintext_block(
+    text: str,
+    *,
+    url: Optional[str] = None,
+    base64: Optional[str] = None,
+    file_id: Optional[str] = None,
+    title: Optional[str] = None,
+    context: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> PlainTextContentBlock:
+    """Create a ``PlainTextContentBlock``.
+
+    Args:
+        text: The plaintext content.
+        url: URL of the plaintext file.
+        base64: Base64-encoded plaintext data.
+        file_id: ID of the plaintext file from a file storage system.
+        title: Title of the text data.
+        context: Context or description of the text content.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``PlainTextContentBlock``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = PlainTextContentBlock(
+        type="text-plain",
+        mime_type="text/plain",
+        text=text,
+        id=_ensure_id(id),
+    )
+
+    if url is not None:
+        block["url"] = url
+    if base64 is not None:
+        block["base64"] = base64
+    if file_id is not None:
+        block["file_id"] = file_id
+    if title is not None:
+        block["title"] = title
+    if context is not None:
+        block["context"] = context
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_tool_call(
+    name: str,
+    args: dict[str, Any],
+    *,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> ToolCall:
+    """Create a ``ToolCall``.
+
+    Args:
+        name: The name of the tool to be called.
+        args: The arguments to the tool call.
+        id: An identifier for the tool call. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``ToolCall``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = ToolCall(
+        type="tool_call",
+        name=name,
+        args=args,
+        id=_ensure_id(id),
+    )
+
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_reasoning_block(
+    reasoning: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> ReasoningContentBlock:
+    """Create a ``ReasoningContentBlock``.
+
+    Args:
+        reasoning: The reasoning text or thought summary.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``ReasoningContentBlock``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = ReasoningContentBlock(
+        type="reasoning",
+        reasoning=reasoning or "",
+        id=_ensure_id(id),
+    )
+
+    if index is not None:
+        block["index"] = index
+
+    return block
+
+
+def create_citation(
+    *,
+    url: Optional[str] = None,
+    title: Optional[str] = None,
+    start_index: Optional[int] = None,
+    end_index: Optional[int] = None,
+    cited_text: Optional[str] = None,
+    id: Optional[str] = None,
+) -> Citation:
+    """Create a ``Citation``.
+
+    Args:
+        url: URL of the document source.
+        title: Source document title.
+        start_index: Start index in the response text where citation applies.
+        end_index: End index in the response text where citation applies.
+        cited_text: Excerpt of source text being cited.
+        id: Content block identifier. Generated automatically if not provided.
+
+    Returns:
+        A properly formatted ``Citation``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = Citation(type="citation", id=_ensure_id(id))
+
+    if url is not None:
+        block["url"] = url
+    if title is not None:
+        block["title"] = title
+    if start_index is not None:
+        block["start_index"] = start_index
+    if end_index is not None:
+        block["end_index"] = end_index
+    if cited_text is not None:
+        block["cited_text"] = cited_text
+
+    return block
+
+
+def create_non_standard_block(
+    value: dict[str, Any],
+    *,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> NonStandardContentBlock:
+    """Create a ``NonStandardContentBlock``.
+
+    Args:
+        value: Provider-specific data.
+        id: Content block identifier. Generated automatically if not provided.
+        index: Index of block in aggregate response. Used during streaming.
+
+    Returns:
+        A properly formatted ``NonStandardContentBlock``.
+
+    .. note::
+        The ``id`` is generated automatically if not provided, using a UUID4 format
+        prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
+
+    """
+    block = NonStandardContentBlock(
+        type="non_standard",
+        value=value,
+        id=_ensure_id(id),
+    )
+
+    if index is not None:
+        block["index"] = index
+
+    return block

@@ -406,11 +406,24 @@
         'data': dict({
           '$defs': dict({
             'AudioContentBlock': dict({
-              'description': 'Content block for audio data.',
+              'description': '''
+                Audio data.
+                
+                .. note::
+                    ``create_audio_block`` may also be used as a factory to create an
+                    ``AudioContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
               'properties': dict({
                 'base64': dict({
                   'title': 'Base64',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -608,6 +621,13 @@
                     ``start/end`` indices refer to the **response text**,
                     not the source text. This means that the indices are relative to the model's
                     response, not the original document (as specified in the ``url``).
+                
+                .. note::
+                    ``create_citation`` may also be used as a factory to create a ``Citation``.
+                    Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'cited_text': dict({
@@ -617,6 +637,10 @@
                 'end_index': dict({
                   'title': 'End Index',
                   'type': 'integer',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'title': 'Id',
@@ -647,11 +671,15 @@
               'type': 'object',
             }),
             'CodeInterpreterCall': dict({
-              'description': 'Content block for a built-in code interpreter tool call.',
+              'description': 'Built-in code interpreter tool call.',
               'properties': dict({
                 'code': dict({
                   'title': 'Code',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'title': 'Id',
@@ -679,12 +707,16 @@
             }),
             'CodeInterpreterOutput': dict({
               'description': '''
-                Content block for the output of a singular code interpreter tool call.
+                Output of a singular code interpreter tool call.
                 
                 Full output of a code interpreter tool call is represented by
                 ``CodeInterpreterResult`` which is a list of these blocks.
               ''',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'file_ids': dict({
                   'items': dict({
                     'type': 'string',
@@ -725,8 +757,12 @@
               'type': 'object',
             }),
             'CodeInterpreterResult': dict({
-              'description': 'Content block for the result of a code interpreter tool call.',
+              'description': 'Result of a code interpreter tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -757,7 +793,7 @@
             }),
             'FileContentBlock': dict({
               'description': '''
-                Content block for file data.
+                File data that doesn't fit into other multimodal blocks.
                 
                 This block is intended for files that are not images, audio, or plaintext. For
                 example, it can be used for PDFs, Word documents, etc.
@@ -765,11 +801,22 @@
                 If the file is an image, audio, or plaintext, you should use the corresponding
                 content block type (e.g., ``ImageContentBlock``, ``AudioContentBlock``,
                 ``PlainTextContentBlock``).
+                
+                .. note::
+                    ``create_file_block`` may also be used as a factory to create a
+                    ``FileContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'base64': dict({
                   'title': 'Base64',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -1014,11 +1061,24 @@
               'type': 'object',
             }),
             'ImageContentBlock': dict({
-              'description': 'Content block for image data.',
+              'description': '''
+                Image data.
+                
+                .. note::
+                    ``create_image_block`` may also be used as a factory to create a
+                    ``ImageContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
               'properties': dict({
                 'base64': dict({
                   'title': 'Base64',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -1093,7 +1153,7 @@
               'description': '''
                 Allowance for errors made by LLM.
                 
-                Here we add an `error` key to surface errors made during generation
+                Here we add an ``error`` key to surface errors made during generation
                 (e.g., invalid JSON arguments.)
               ''',
               'properties': dict({
@@ -1119,6 +1179,10 @@
                   ]),
                   'title': 'Error',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1129,10 +1193,6 @@
                     }),
                   ]),
                   'title': 'Id',
-                }),
-                'index': dict({
-                  'title': 'Index',
-                  'type': 'integer',
                 }),
                 'name': dict({
                   'anyOf': list([
@@ -1152,11 +1212,11 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
                 'error',
-                'type',
               ]),
               'title': 'InvalidToolCall',
               'type': 'object',
@@ -1187,7 +1247,7 @@
             }),
             'NonStandardContentBlock': dict({
               'description': '''
-                Content block provider-specific data.
+                Provider-specific data.
                 
                 This block contains data for which there is not yet a standard type.
                 
@@ -1195,6 +1255,13 @@
                 If a provider's non-standard output includes reasoning and tool calls, it should be
                 the adapter's job to parse that payload and emit the corresponding standard
                 ReasoningContentBlock and ToolCallContentBlocks.
+                
+                .. note::
+                    ``create_non_standard_block`` may also be used as a factory to create a
+                    ``NonStandardContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'id': dict({
@@ -1254,11 +1321,18 @@
             }),
             'PlainTextContentBlock': dict({
               'description': '''
-                Content block for plaintext data (e.g., from a document).
+                Plaintext data (e.g., from a document).
                 
                 .. note::
                     Title and context are optional fields that may be passed to the model. See
                     Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
+                
+                .. note::
+                    ``create_plaintext_block`` may also be used as a factory to create a
+                    ``PlainTextContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'base64': dict({
@@ -1268,6 +1342,10 @@
                 'context': dict({
                   'title': 'Context',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -1312,8 +1390,21 @@
               'type': 'object',
             }),
             'ReasoningContentBlock': dict({
-              'description': 'Content block for reasoning output.',
+              'description': '''
+                Reasoning output from a LLM.
+                
+                .. note::
+                    ``create_reasoning_block`` may also be used as a factory to create a
+                    ``ReasoningContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -1324,14 +1415,6 @@
                 }),
                 'reasoning': dict({
                   'title': 'Reasoning',
-                  'type': 'string',
-                }),
-                'signature': dict({
-                  'title': 'Signature',
-                  'type': 'string',
-                }),
-                'thought_signature': dict({
-                  'title': 'Thought Signature',
                   'type': 'string',
                 }),
                 'type': dict({
@@ -1353,7 +1436,9 @@
                 Contains additional information returned by the provider, such as
                 response headers, service tiers, log probabilities, system fingerprints, etc.
                 
-                Extra keys are permitted from what is typed here.
+                Extra keys are permitted from what is typed here (via `total=False`), allowing
+                for provider-specific metadata to be included without breaking the type
+                definition.
               ''',
               'properties': dict({
                 'model_name': dict({
@@ -1440,10 +1525,17 @@
             }),
             'TextContentBlock': dict({
               'description': '''
-                Content block for text output.
+                Text output from a LLM.
                 
                 This typically represents the main text content of a message, such as the response
                 from a language model or the text of a user message.
+                
+                .. note::
+                    ``create_text_block`` may also be used as a factory to create a
+                    ``TextContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'annotations': dict({
@@ -1459,6 +1551,10 @@
                   }),
                   'title': 'Annotations',
                   'type': 'array',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'title': 'Id',
@@ -1501,10 +1597,21 @@
                 
                     This represents a request to call the tool named "foo" with arguments {"a": 1}
                     and an identifier of "123".
+                
+                .. note::
+                    ``create_tool_call`` may also be used as a factory to create a
+                    ``ToolCall``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'args': dict({
                   'title': 'Args',
+                  'type': 'object',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
                   'type': 'object',
                 }),
                 'id': dict({
@@ -1533,10 +1640,10 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
-                'type',
               ]),
               'title': 'ToolCall',
               'type': 'object',
@@ -1545,9 +1652,9 @@
               'description': '''
                 A chunk of a tool call (e.g., as part of a stream).
                 
-                When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+                When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
                 all string attributes are concatenated. Chunks are only merged if their
-                values of `index` are equal and not None.
+                values of ``index`` are equal and not ``None``.
                 
                 Example:
                 
@@ -1572,6 +1679,10 @@
                     }),
                   ]),
                   'title': 'Args',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -1613,9 +1724,9 @@
                 }),
               }),
               'required': list([
+                'id',
                 'name',
                 'args',
-                'id',
                 'index',
               ]),
               'title': 'ToolCallChunk',
@@ -1761,11 +1872,24 @@
               'type': 'object',
             }),
             'VideoContentBlock': dict({
-              'description': 'Content block for video data.',
+              'description': '''
+                Video data.
+                
+                .. note::
+                    ``create_video_block`` may also be used as a factory to create a
+                    ``VideoContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
               'properties': dict({
                 'base64': dict({
                   'title': 'Base64',
                   'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'file_id': dict({
                   'title': 'File Id',
@@ -1800,8 +1924,12 @@
               'type': 'object',
             }),
             'WebSearchCall': dict({
-              'description': 'Content block for a built-in web search tool call.',
+              'description': 'Built-in web search tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',
@@ -1827,8 +1955,12 @@
               'type': 'object',
             }),
             'WebSearchResult': dict({
-              'description': 'Content block for the result of a built-in web search tool call.',
+              'description': 'Result of a built-in web search tool call.',
               'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'title': 'Id',
                   'type': 'string',

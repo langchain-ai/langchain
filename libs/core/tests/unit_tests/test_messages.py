@@ -223,6 +223,7 @@ def test_message_chunks_v1() -> None:
             create_tool_call_chunk(name=None, args='ue}"', id=None, index=0)
         ],
     )
+    result = one + two + three
     expected = AIMessageChunkV1(
         [],
         tool_call_chunks=[
@@ -230,11 +231,12 @@ def test_message_chunks_v1() -> None:
                 name="tool1", args='{"arg1": "value}"', id="1", index=0
             )
         ],
+        id=result.id,  # Use the same ID as the result
     )
-    result = one + two + three
     assert result == expected
 
-    assert result.to_message() == AIMessageV1(
+    converted_message = result.to_message()
+    assert converted_message == AIMessageV1(
         content=[
             {
                 "name": "tool1",
@@ -242,29 +244,31 @@ def test_message_chunks_v1() -> None:
                 "id": "1",
                 "type": "tool_call",
             }
-        ]
+        ],
+        id=converted_message.id,  # Use the same ID as the converted message
     )
 
-    assert (
-        AIMessageChunkV1(
-            [],
-            tool_call_chunks=[
-                create_tool_call_chunk(name="tool1", args="", id="1", index=0)
-            ],
-        )
-        + AIMessageChunkV1(
-            [],
-            tool_call_chunks=[
-                create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
-            ],
-        )
-        # Don't merge if `index` field does not match.
-    ) == AIMessageChunkV1(
+    chunk1 = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+        ],
+    )
+    chunk2 = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
+        ],
+    )
+    # Don't merge if `index` field does not match.
+    merge_result = chunk1 + chunk2
+    assert merge_result == AIMessageChunkV1(
         [],
         tool_call_chunks=[
             create_tool_call_chunk(name="tool1", args="", id="1", index=0),
             create_tool_call_chunk(name="tool1", args="a", id=None, index=1),
         ],
+        id=merge_result.id,  # Use the same ID as the merge result
     )
 
     ai_msg_chunk = AIMessageChunkV1([])
@@ -274,8 +278,14 @@ def test_message_chunks_v1() -> None:
             create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
         ],
     )
-    assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
-    assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
+    # These assertions test that adding empty chunks preserves the non-empty chunk
+    result1 = ai_msg_chunk + tool_calls_msg_chunk
+    assert result1.tool_call_chunks == tool_calls_msg_chunk.tool_call_chunks
+    assert result1.content == tool_calls_msg_chunk.content
+
+    result2 = tool_calls_msg_chunk + ai_msg_chunk
+    assert result2.tool_call_chunks == tool_calls_msg_chunk.tool_call_chunks
+    assert result2.content == tool_calls_msg_chunk.content
 
     ai_msg_chunk = AIMessageChunkV1(
         [],
@@ -294,15 +304,26 @@ def test_message_chunks_v1() -> None:
         [],
         usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
     )
-    assert left + right == AIMessageChunkV1(
+    usage_result = left + right
+    expected_usage = AIMessageChunkV1(
         content=[],
         usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+        id=usage_result.id,  # Use the same ID as the result
     )
-    assert AIMessageChunkV1(content=[]) + left == left
-    assert right + AIMessageChunkV1(content=[]) == right
+    assert usage_result == expected_usage
+
+    # Test adding empty chunks preserves the original
+    left_result = AIMessageChunkV1(content=[]) + left
+    assert left_result.usage_metadata == left.usage_metadata
+    assert left_result.content == left.content
+
+    right_result = right + AIMessageChunkV1(content=[])
+    assert right_result.usage_metadata == right.usage_metadata
+    assert right_result.content == right.content
 
     # Test ID order of precedence
-    null_id = AIMessageChunkV1(content=[], id=None)
+    # Note: AIMessageChunkV1 always generates an ID if none provided
+    auto_id = AIMessageChunkV1(content=[])  # Gets auto-generated lc_* ID
     default_id = AIMessageChunkV1(
         content=[], id="run-abc123"
     )  # LangChain-assigned run ID
@@ -310,14 +331,21 @@ def test_message_chunks_v1() -> None:
         content=[], id="msg_def456"
     )  # provider-assigned ID
 
-    assert (null_id + default_id).id == "run-abc123"
-    assert (default_id + null_id).id == "run-abc123"
+    # Provider-assigned IDs (non-run-* and non-lc_*) have highest precedence
+    # Provider-assigned IDs always win over LangChain-generated IDs
+    assert (auto_id + meaningful_id).id == "msg_def456"  # provider-assigned wins
+    assert (meaningful_id + auto_id).id == "msg_def456"  # provider-assigned wins
 
-    assert (null_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + null_id).id == "msg_def456"
+    assert (
+        default_id + meaningful_id
+    ).id == "msg_def456"  # meaningful_id is provider-assigned
+    assert (
+        meaningful_id + default_id
+    ).id == "msg_def456"  # meaningful_id is provider-assigned
 
-    assert (default_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + default_id).id == "msg_def456"
+    # Between auto-generated and run-* IDs, auto-generated wins (since lc_ != run-)
+    assert (auto_id + default_id).id == auto_id.id
+    assert (default_id + auto_id).id == auto_id.id
 
 
 def test_chat_message_chunks() -> None:
@@ -332,7 +360,7 @@ def test_chat_message_chunks() -> None:
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
     assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
         content=" indeed."
@@ -441,7 +469,7 @@ def test_function_message_chunks() -> None:
     ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
 
 def test_ai_message_chunks() -> None:
@@ -457,7 +485,7 @@ def test_ai_message_chunks() -> None:
     ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
 
 class TestGetBufferString(unittest.TestCase):
