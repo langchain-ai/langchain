@@ -1368,6 +1368,7 @@ def test_known_block_types() -> None:
         "text-plain",
         "tool_call",
         "invalid_tool_call",
+        "tool_call_chunk",
         "reasoning",
         "non_standard",
         "image",

@@ -2540,6 +2540,9 @@
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
                         '$ref': '#/$defs/ReasoningContentBlock',
                       }),
                       dict({
@@ -2661,6 +2664,9 @@
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
                       }),
                       dict({
                         '$ref': '#/$defs/ReasoningContentBlock',
@@ -2786,6 +2792,9 @@
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
                         '$ref': '#/$defs/ReasoningContentBlock',
                       }),
                       dict({
@@ -2869,6 +2878,9 @@
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
                       }),
                       dict({
                         '$ref': '#/$defs/ReasoningContentBlock',
@@ -2977,6 +2989,9 @@
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
                       }),
                       dict({
                         '$ref': '#/$defs/ReasoningContentBlock',
