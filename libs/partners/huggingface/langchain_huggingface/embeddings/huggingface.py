@@ -7,13 +7,6 @@ import torch
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_huggingface.utils.import_utils import (
-    IMPORT_ERROR,
-    is_ipex_available,
-    is_optimum_intel_available,
-    is_optimum_intel_version,
-)
-
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 
 _MIN_OPTIMUM_VERSION = "1.22"
@@ -55,8 +48,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass when calling the `encode` method for the query,
     such as `batch_size`, `normalize_embeddings`, and more."""
     multi_process: bool = False
-    """Run encode() on multiple GPUs. Note: This feature is not supported with transformers
-    and will be ignored with a warning."""
+    """Run encode() on multiple GPUs. Note: This feature is not supported with
+    transformers and will be ignored with a warning."""
     show_progress: bool = False
     """Whether to show a progress bar."""
 
@@ -76,32 +69,30 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         self.device = self.model_kwargs.get("device", "cpu")
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
-        
-        # Remove device from model_kwargs as it's not a valid argument for from_pretrained
+
+        # Remove device from model_kwargs as it's not a valid argument for
+        # from_pretrained
         model_kwargs = {k: v for k, v in self.model_kwargs.items() if k != "device"}
-        
+
         # Load tokenizer and model
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name, 
-            cache_dir=self.cache_folder,
-            **model_kwargs
+            self.model_name, cache_dir=self.cache_folder, **model_kwargs
         )
         self.model = AutoModel.from_pretrained(
-            self.model_name,
-            cache_dir=self.cache_folder,
-            **model_kwargs
+            self.model_name, cache_dir=self.cache_folder, **model_kwargs
         )
         self.model.to(self.device)
         self.model.eval()
-        
+
         # Warn about multi-process not being supported
         if self.multi_process:
             import warnings
+
             warnings.warn(
                 "Multi-process encoding is not supported with the transformers "
                 "implementation. This parameter will be ignored.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     model_config = ConfigDict(
@@ -116,12 +107,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         """Apply mean pooling to model output."""
         # Extract token embeddings from model output
         token_embeddings = model_output[0]
-        
+
         # Expand attention mask for broadcasting
         input_mask_expanded = (
             attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         )
-        
+
         # Apply mean pooling
         sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
         sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
@@ -131,8 +122,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         self,
         texts: list[str],
         batch_size: int = 32,
-        show_progress_bar: Optional[bool] = None,
-        normalize_embeddings: bool = False,
+        show_progress_bar: Optional[bool] = None,  # noqa: FBT001
+        normalize_embeddings: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> np.ndarray:
         """Encode texts into embeddings.
@@ -146,16 +137,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Array of embeddings.
+
         """
         if show_progress_bar is None:
             show_progress_bar = self.show_progress
-            
+
         all_embeddings = []
-        
+
         # Process in batches
         for i in range(0, len(texts), batch_size):
             batch_texts = texts[i : i + batch_size]
-            
+
             # Tokenize texts
             encoded_input = self.tokenizer(
                 batch_texts,
@@ -164,25 +156,25 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 return_tensors="pt",
                 **kwargs,
             )
-            
+
             # Move to device
             encoded_input = {k: v.to(self.device) for k, v in encoded_input.items()}
-            
+
             # Generate embeddings
             with torch.no_grad():
                 model_output = self.model(**encoded_input)
-            
+
             # Apply mean pooling
             embeddings = self._mean_pooling(
                 model_output, encoded_input["attention_mask"]
             )
-            
+
             # Normalize if requested
             if normalize_embeddings:
                 embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-            
+
             all_embeddings.append(embeddings.cpu().numpy())
-        
+
         # Concatenate all embeddings
         return np.vstack(all_embeddings)
 
@@ -206,7 +198,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             show_progress_bar=self.show_progress,
             **encode_kwargs,
         )
-        return embeddings.tolist()
+        return embeddings.tolist()  # type: ignore[return-value]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -236,7 +228,3 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             else self.encode_kwargs
         )
         return self._embed([text], embed_kwargs)[0]
-
-
-
-

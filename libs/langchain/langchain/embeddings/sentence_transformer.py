@@ -2,7 +2,7 @@
 
 This module previously provided SentenceTransformerEmbeddings which used the
 sentence-transformers library. The sentence-transformers dependency has been removed
-from LangChain. 
+from LangChain.
 
 For embedding functionality, please use:
 - HuggingFaceEmbeddings from langchain_huggingface which now uses transformers directly
@@ -12,11 +12,11 @@ Example migration:
     # Old way (deprecated):
     # from langchain.embeddings import SentenceTransformerEmbeddings
     # embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    
+
     # New way:
     from langchain_huggingface import HuggingFaceEmbeddings
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-"""
+"""  # noqa: E501
 
 from typing import TYPE_CHECKING, Any
 
@@ -39,4 +39,3 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = ["SentenceTransformerEmbeddings"]
-
