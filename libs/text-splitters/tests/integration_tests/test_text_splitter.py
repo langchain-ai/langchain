@@ -83,7 +83,7 @@ def test_sentence_transformers_split_text() -> None:
     assert expected_text_chunks == text_chunks
 
 
-def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> None:
+def test_sentence_transformers_multiple_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
     text = "Lorem "
 
@@ -113,6 +113,7 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
         - splitter.maximum_tokens_per_chunk
     )
     assert expected == actual
+
 
 
 
