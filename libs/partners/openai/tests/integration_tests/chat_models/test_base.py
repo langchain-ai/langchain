@@ -1197,7 +1197,7 @@ def test_prompt_cache_key_usage_methods() -> None:
 
     # Method 1: Direct kwargs
     chat1 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
-    payload1 = chat1._get_request_payload(messages, **{"prompt_cache_key": "cache-v1"})
+    payload1 = chat1._get_request_payload(messages, **{"prompt_cache_key": "cache-v1"})  # type: ignore[arg-type]
     assert "prompt_cache_key" in payload1
     assert payload1["prompt_cache_key"] == "cache-v1"
 
@@ -1252,7 +1252,7 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
 
     # Method 1: Direct kwargs
     chat1 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
-    response1 = chat1.invoke(messages, **{"prompt_cache_key": "integration-method1-v1"})
+    response1 = chat1.invoke(messages, **{"prompt_cache_key": "integration-method1-v1"})  # type: ignore[arg-type]
     assert isinstance(response1, AIMessage)
     assert isinstance(response1.content, str)
 
