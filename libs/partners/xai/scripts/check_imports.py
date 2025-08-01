@@ -1,4 +1,16 @@
-"""This module checks if the given python files can be imported without error."""
+"""Import validation script.
+
+Validates that Python files can be imported without errors by dynamically
+loading each file as a module. This is crucial for ensuring:
+
+1. All dependencies are properly installed and available
+2. Module-level code executes without syntax or runtime errors
+3. Import statements are valid and don't create circular dependencies
+4. The code structure follows Python import conventions
+
+Typically run in CI/CD to catch import problems before deployment, ensuring that
+all modules can be successfully imported in production environments.
+"""
 
 import sys
 import traceback

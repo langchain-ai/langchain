@@ -48,7 +48,7 @@ uv sync
 Then verify dependency installation:
 
 ```bash
-make test
+make unit_test
 ```
 
 ## Testing
@@ -61,7 +61,7 @@ If you add new logic, please add a unit test.
 To run unit tests:
 
 ```bash
-make test
+make unit_test
 ```
 
 There are also [integration tests and code-coverage](../testing.mdx) available.
@@ -72,7 +72,7 @@ If you are only developing `langchain_core`, you can simply install the dependen
 
 ```bash
 cd libs/core
-make test
+make unit_test
 ```
 
 ## Formatting and linting

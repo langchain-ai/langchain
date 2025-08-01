@@ -52,7 +52,7 @@ jobs:
       - name: '🧪 Run Core Tests'
         shell: bash
         run: |
-          make test
+          make unit_test
 
       - name: '🧹 Verify Clean Working Directory'
         shell: bash
