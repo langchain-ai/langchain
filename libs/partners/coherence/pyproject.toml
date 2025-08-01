@@ -25,6 +25,7 @@ typing = [
 test = [
     "pytest<9,>=8",
     "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-socket",
     "langchain_huggingface",
     "sentence_transformers"
 ]
