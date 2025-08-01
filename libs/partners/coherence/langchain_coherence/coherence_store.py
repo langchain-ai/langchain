@@ -44,8 +44,13 @@ from coherence.serialization import (  # type: ignore[import-untyped]
     JSONSerializer,
     SerializerRegistry,
 )
+
+if TYPE_CHECKING:
+    from coherence.extractor import ValueExtractor
+    from coherence.filter import Filter
+    from langchain_core.embeddings import Embeddings
+
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 

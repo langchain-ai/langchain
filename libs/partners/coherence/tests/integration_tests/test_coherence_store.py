@@ -1,13 +1,13 @@
+import inspect
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
-import inspect
-
-from typing import AsyncGenerator
-from langchain_core.embeddings import Embeddings
+from coherence import NamedCache, Session
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
-from coherence import NamedCache, Session
 from langchain_coherence import CoherenceVectorStore
 
 
@@ -139,7 +139,7 @@ async def test_afrom_texts():
         metadatas = [{"cat": "fruit"}, {"cat": "fruit"}]
         ids = ["id1", "id2"]
 
-        store = await CoherenceVectorStore.afrom_texts(
+        cvs = await CoherenceVectorStore.afrom_texts(
             texts=texts,
             embedding=embedding,
             cache=cache,
@@ -147,7 +147,7 @@ async def test_afrom_texts():
             ids=ids,
         )
 
-        results = await store.aget_by_ids(ids)
+        results = await cvs.aget_by_ids(ids)
         assert len(results) == 2
     finally:
         await session.close()

@@ -2,18 +2,17 @@
 .PHONY: install update-dev update-core lock sync lint format fix check test clean docs-ipynb readme-ipynb create-ipynb help
 
 # Paths to common tools (adjust if using .uv or other env)
-PYTHON := .venv/bin/python
-PIP := .venv/bin/pip
-RUFF := .venv/bin/ruff
-PYTEST := .venv/bin/pytest
-MYPY := .venv/bin/mypy
+PYTHON := $(VIRTUAL_ENV)/bin/python
+PIP := $(VIRTUAL_ENV)/bin/pip
+RUFF := $(VIRTUAL_ENV)/bin/ruff
+MYPY := $(VIRTUAL_ENV)/bin/mypy
+PYTEST := $(VIRTUAL_ENV)/bin/pytest
 
 PACKAGE_NAME=langchain-coherence
 DIST_DIR=dist
 
 install:
 	@echo "🔧 Installing all dependencies..."
-	uv venv
 	uv pip install -e . \
 		--group lint \
 		--group typing \
