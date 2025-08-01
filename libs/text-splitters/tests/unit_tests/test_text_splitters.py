@@ -2860,7 +2860,7 @@ def test_decode_returns_no_chunks() -> None:
         encode=(lambda it: [ord(c) for c in it]),
     )
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)
-    expected_output = []
+    expected_output: list[Any] = []
     assert output == expected_output
 
 
