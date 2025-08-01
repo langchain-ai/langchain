@@ -1,4 +1,5 @@
 import inspect
+import socket
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -9,6 +10,22 @@ from langchain_core.embeddings import Embeddings
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
 from langchain_coherence import CoherenceVectorStore
+
+
+# Utility: check if Coherence server is running locally
+def _coherence_server_running(host: str ="127.0.0.1", port: int =1408) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+# Skip all tests in this file if Coherence server is not running
+pytestmark = pytest.mark.skipif(
+    not _coherence_server_running(),
+    reason="Coherence server not running on 127.0.0.1:1408",
+)
 
 
 @pytest_asyncio.fixture

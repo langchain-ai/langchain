@@ -1524,6 +1524,7 @@ test = [
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "sentence-transformers" },
 ]
+test-integration = []
 typing = [{ name = "mypy", specifier = ">=1.15,<1.16" }]
 
 [[package]]

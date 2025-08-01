@@ -28,6 +28,7 @@ test = [
     "langchain_huggingface",
     "sentence_transformers"
 ]
+test-integration = []
 docs = [
     "jupytext>=1.16",
     "nbdoc>=0.0.29",
