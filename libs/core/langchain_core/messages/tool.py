@@ -184,21 +184,32 @@ class ToolCall(TypedDict):
 
         .. code-block:: python
 
+            # Structured tool call
             {
                 "name": "foo",
                 "args": {"a": 1},
                 "id": "123"
             }
 
-        This represents a request to call the tool named "foo" with arguments {"a": 1}
-        and an identifier of "123".
+            # Custom tool call with plaintext input
+            {
+                "name": "execute_code",
+                "text_input": "print('hello world')",
+                "id": "456"
+            }
+
+        The first example represents a request to call the tool named "foo" with
+        structured arguments ``{"a": 1}``. The second example represents a request to
+        call a custom tool with plaintext input.
 
     """
 
     name: str
     """The name of the tool to be called."""
-    args: dict[str, Any]
-    """The arguments to the tool call."""
+    args: NotRequired[dict[str, Any]]
+    """The arguments to the tool call (for structured tools)."""
+    text_input: NotRequired[str]
+    """Plaintext input for custom tools. Mutually exclusive with ``args``."""
     id: Optional[str]
     """An identifier associated with the tool call.
 
@@ -211,17 +222,42 @@ class ToolCall(TypedDict):
 def tool_call(
     *,
     name: str,
-    args: dict[str, Any],
+    args: Optional[dict[str, Any]] = None,
+    text_input: Optional[str] = None,
     id: Optional[str],  # noqa: A002
 ) -> ToolCall:
     """Create a tool call.
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call (for structured tools).
+        text_input: Plaintext input for custom tools.
         id: An identifier associated with the tool call.
+
+    .. note::
+        Either args or text_input should be provided, but not both. For custom tools,
+        use ``text_input``. For structured tools, use ``args``.
+
     """
-    return ToolCall(name=name, args=args, id=id, type="tool_call")
+    tool_call_dict: dict[str, Any] = {"name": name, "id": id, "type": "tool_call"}
+
+    if args:
+        tool_call_dict["args"] = args
+    if text_input is not None:
+        tool_call_dict["text_input"] = text_input
+
+    # If neither args nor text_input provided, include empty args for backward compat
+    if not args and text_input is None:
+        tool_call_dict["args"] = {}
+
+    result = ToolCall(name=name, id=id)
+    if args or (not args and text_input is None):
+        result["args"] = tool_call_dict.get("args", {})
+    if text_input is not None:
+        result["text_input"] = text_input
+    if "type" in tool_call_dict:
+        result["type"] = tool_call_dict["type"]
+    return result
 
 
 class ToolCallChunk(TypedDict):

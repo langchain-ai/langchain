@@ -69,7 +69,7 @@ from langchain_core.messages.ai import (
     OutputTokenDetails,
     UsageMetadata,
 )
-from langchain_core.messages.tool import tool_call_chunk
+from langchain_core.messages.tool import ToolCallChunk, tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -157,7 +157,21 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
-                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                    if raw_tool_call.get("type") == "custom":
+                        # Custom tool call uses text_input instead of args
+                        tool_calls.append(
+                            {
+                                "name": raw_tool_call.get("name", ""),
+                                "args": {},
+                                "text_input": raw_tool_call.get("input", ""),
+                                "id": raw_tool_call.get("id"),
+                                "type": "tool_call",
+                            }
+                        )
+                    else:
+                        parsed = parse_tool_call(raw_tool_call, return_id=True)
+                        if parsed:
+                            tool_calls.append(parsed)
                 except Exception as e:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
@@ -330,19 +344,30 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    tool_call_chunks = []
+    tool_call_chunks: list[ToolCallChunk] = []
     if raw_tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
-            tool_call_chunks = [
-                tool_call_chunk(
-                    name=rtc["function"].get("name"),
-                    args=rtc["function"].get("arguments"),
-                    id=rtc.get("id"),
-                    index=rtc["index"],
-                )
-                for rtc in raw_tool_calls
-            ]
+            tool_call_chunks = []
+            for rtc in raw_tool_calls:
+                if rtc.get("type") == "custom":
+                    tool_call_chunks.append(
+                        tool_call_chunk(
+                            name=rtc.get("name"),
+                            args=rtc.get("input", ""),
+                            id=rtc.get("id"),
+                            index=rtc.get("index"),
+                        )
+                    )
+                else:
+                    tool_call_chunks.append(
+                        tool_call_chunk(
+                            name=rtc["function"].get("name"),
+                            args=rtc["function"].get("arguments"),
+                            id=rtc.get("id"),
+                            index=rtc["index"],
+                        )
+                    )
         except KeyError:
             pass
 

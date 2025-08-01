@@ -22,6 +22,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    custom: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -37,6 +38,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    custom: bool = False,
 ) -> BaseTool: ...
 
 
@@ -51,6 +53,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    custom: bool = False,
 ) -> BaseTool: ...
 
 
@@ -65,6 +68,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    custom: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -79,6 +83,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    custom: bool = False,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -92,12 +97,12 @@ def tool(
             positional argument.
         description: Optional description for the tool.
             Precedence for the tool description value is as follows:
-                - `description` argument
-                    (used even if docstring and/or `args_schema` are provided)
+                - ``description`` argument
+                    (used even if docstring and/or ``args_schema`` are provided)
                 - tool function docstring
-                    (used even if `args_schema` is provided)
-                - `args_schema` description
-                    (used only if `description` / docstring are not provided)
+                    (used even if ``args_schema`` is provided)
+                - ``args_schema`` description
+                    (used only if ``description`` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
@@ -105,19 +110,22 @@ def tool(
             Defaults to None.
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
-            accept a dictionary input to its `run()` function.
+            accept a dictionary input to its ``run()`` function.
             Defaults to True.
-        response_format: The tool response format. If "content" then the output of
-            the tool is interpreted as the contents of a ToolMessage. If
-            "content_and_artifact" then the output is expected to be a two-tuple
-            corresponding to the (content, artifact) of a ToolMessage.
-            Defaults to "content".
+        response_format: The tool response format. If ``'content'`` then the output of
+            the tool is interpreted as the contents of a ``ToolMessage``. If
+            ``'content_and_artifact'`` then the output is expected to be a two-tuple
+            corresponding to the (content, artifact) of a ``ToolMessage``.
+            Defaults to ``'content'``.
         parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
             parse parameter descriptions from Google Style function docstrings.
             Defaults to False.
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        custom: Whether this is a custom tool that accepts plaintext input
+            instead of structured arguments. Custom tools are used with
+            OpenAI's custom tool calling feature. Defaults to False.
 
     Returns:
         The tool.
@@ -274,6 +282,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    custom_tool=custom,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -290,6 +299,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                custom_tool=custom,
             )
 
         return _tool_factory

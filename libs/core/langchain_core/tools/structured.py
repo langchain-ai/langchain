@@ -5,15 +5,7 @@ from __future__ import annotations
 import textwrap
 from collections.abc import Awaitable
 from inspect import signature
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, Optional, Union
 
 from pydantic import Field, SkipValidation
 from typing_extensions import override

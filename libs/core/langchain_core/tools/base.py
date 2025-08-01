@@ -455,6 +455,9 @@ class ChildTool(BaseTool):
     verbose: bool = False
     """Whether to log the tool's progress."""
 
+    custom_tool: bool = Field(default=False, exclude=True)
+    """Whether this is a custom tool that accepts plaintext input."""
+
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
 
@@ -626,8 +629,19 @@ class ChildTool(BaseTool):
             NotImplementedError: If args_schema is not a supported type.
         """
         input_args = self.args_schema
+
+        # Handle custom tools with text_input
+        if (
+            isinstance(tool_input, dict)
+            and "text_input" in tool_input
+            and self.custom_tool
+        ):
+            return tool_input["text_input"]
+
         if isinstance(tool_input, str):
             if input_args is not None:
+                if self.custom_tool:
+                    return tool_input
                 if isinstance(input_args, dict):
                     msg = (
                         "String tool inputs are not allowed when "
@@ -1106,8 +1120,13 @@ def _prep_run_args(
     """
     config = ensure_config(config)
     if _is_tool_call(value):
-        tool_call_id: Optional[str] = cast("ToolCall", value)["id"]
-        tool_input: Union[str, dict] = cast("ToolCall", value)["args"].copy()
+        tool_call = cast("ToolCall", value)
+        tool_call_id: Optional[str] = tool_call["id"]
+        # Prefer text_input over args for custom tools
+        if "text_input" in tool_call and tool_call["text_input"] is not None:
+            tool_input: Union[str, dict] = tool_call["text_input"]
+        else:
+            tool_input = tool_call.get("args", {}).copy()
     else:
         tool_call_id = None
         tool_input = cast("Union[str, dict]", value)
