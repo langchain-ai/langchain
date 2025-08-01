@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
+from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
     SerializedConstructor,
@@ -60,7 +61,6 @@ from langchain_core.runnables.config import (
     run_in_executor,
     set_config_context,
 )
-from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -81,6 +81,19 @@ from langchain_core.runnables.utils import (
     is_async_callable,
     is_async_generator,
 )
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers.event_stream import (
+    _astream_events_implementation_v1,
+    _astream_events_implementation_v2,
+)
+from langchain_core.tracers.log_stream import (
+    LogStreamCallbackHandler,
+    _astream_log_implementation,
+)
+from langchain_core.tracers.root_listeners import (
+    AsyncRootListenersTracer,
+    RootListenersTracer,
+)
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
@@ -94,6 +107,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.graph import Graph
     from langchain_core.runnables.retry import ExponentialJitterParams
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
@@ -533,6 +547,9 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+
         graph = Graph()
         try:
             input_node = graph.add_node(self.get_input_schema(config))
@@ -553,7 +570,8 @@ class Runnable(ABC, Generic[Input, Output]):
         self, config: Optional[RunnableConfig] = None
     ) -> list[BasePromptTemplate]:
         """Return a list of prompts used by this Runnable."""
-        from langchain_core.prompts.base import BasePromptTemplate
+        # Import locally to prevent circular import
+        from langchain_core.prompts.base import BasePromptTemplate  # noqa: PLC0415
 
         return [
             node.data
@@ -673,7 +691,8 @@ class Runnable(ABC, Generic[Input, Output]):
                 # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
 
         """
-        from langchain_core.runnables.passthrough import RunnablePick
+        # Import locally to prevent circular import
+        from langchain_core.runnables.passthrough import RunnablePick  # noqa: PLC0415
 
         return self | RunnablePick(keys)
 
@@ -719,7 +738,8 @@ class Runnable(ABC, Generic[Input, Output]):
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
 
         """
-        from langchain_core.runnables.passthrough import RunnableAssign
+        # Import locally to prevent circular import
+        from langchain_core.runnables.passthrough import RunnableAssign  # noqa: PLC0415
 
         return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
 
@@ -1109,11 +1129,6 @@ class Runnable(ABC, Generic[Input, Output]):
         Yields:
             A RunLogPatch or RunLog object.
         """
-        from langchain_core.tracers.log_stream import (
-            LogStreamCallbackHandler,
-            _astream_log_implementation,
-        )
-
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -1364,11 +1379,6 @@ class Runnable(ABC, Generic[Input, Output]):
             NotImplementedError: If the version is not `v1` or `v2`.
 
         """  # noqa: E501
-        from langchain_core.tracers.event_stream import (
-            _astream_events_implementation_v1,
-            _astream_events_implementation_v2,
-        )
-
         if version == "v2":
             event_stream = _astream_events_implementation_v2(
                 self,
@@ -1611,8 +1621,6 @@ class Runnable(ABC, Generic[Input, Output]):
             chain.invoke(2)
 
         """
-        from langchain_core.tracers.root_listeners import RootListenersTracer
-
         return RunnableBinding(
             bound=self,
             config_factories=[
@@ -1703,8 +1711,6 @@ class Runnable(ABC, Generic[Input, Output]):
             on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
         """
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
-
         return RunnableBinding(
             bound=self,
             config_factories=[
@@ -1797,7 +1803,8 @@ class Runnable(ABC, Generic[Input, Output]):
             assert (count == 2)
 
         """
-        from langchain_core.runnables.retry import RunnableRetry
+        # Import locally to prevent circular import
+        from langchain_core.runnables.retry import RunnableRetry  # noqa: PLC0415
 
         return RunnableRetry(
             bound=self,
@@ -1893,7 +1900,10 @@ class Runnable(ABC, Generic[Input, Output]):
             fallback in order, upon failures.
 
         """
-        from langchain_core.runnables.fallbacks import RunnableWithFallbacks
+        # Import locally to prevent circular import
+        from langchain_core.runnables.fallbacks import (  # noqa: PLC0415
+            RunnableWithFallbacks,
+        )
 
         return RunnableWithFallbacks(
             runnable=self,
@@ -2167,9 +2177,6 @@ class Runnable(ABC, Generic[Input, Output]):
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses.
         """
-        # Mixin that is used by both astream log and astream events implementation
-        from langchain_core.tracers._streaming import _StreamingCallbackHandler
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2271,9 +2278,6 @@ class Runnable(ABC, Generic[Input, Output]):
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses.
         """
-        # Mixin that is used by both astream log and astream events implementation
-        from langchain_core.tracers._streaming import _StreamingCallbackHandler
-
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
@@ -2453,7 +2457,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """
         # Avoid circular import
-        from langchain_core.tools import convert_runnable_to_tool
+        from langchain_core.tools import convert_runnable_to_tool  # noqa: PLC0415
 
         return convert_runnable_to_tool(
             self,
@@ -2524,7 +2528,10 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             )
 
         """
-        from langchain_core.runnables.configurable import RunnableConfigurableFields
+        # Import locally to prevent circular import
+        from langchain_core.runnables.configurable import (  # noqa: PLC0415
+            RunnableConfigurableFields,
+        )
 
         model_fields = type(self).model_fields
         for key in kwargs:
@@ -2585,7 +2592,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             )
 
         """
-        from langchain_core.runnables.configurable import (
+        # Import locally to prevent circular import
+        from langchain_core.runnables.configurable import (  # noqa: PLC0415
             RunnableConfigurableAlternatives,
         )
 
@@ -2601,7 +2609,11 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 def _seq_input_schema(
     steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    # Import locally to prevent circular import
+    from langchain_core.runnables.passthrough import (  # noqa: PLC0415
+        RunnableAssign,
+        RunnablePick,
+    )
 
     first = steps[0]
     if len(steps) == 1:
@@ -2627,7 +2639,11 @@ def _seq_input_schema(
 def _seq_output_schema(
     steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
 ) -> type[BaseModel]:
-    from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
+    # Import locally to prevent circular import
+    from langchain_core.runnables.passthrough import (  # noqa: PLC0415
+        RunnableAssign,
+        RunnablePick,
+    )
 
     last = steps[-1]
     if len(steps) == 1:
@@ -2876,7 +2892,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Returns:
             The config specs of the Runnable.
         """
-        from langchain_core.beta.runnables.context import (
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
             CONTEXT_CONFIG_PREFIX,
             _key_from_id,
         )
@@ -2933,7 +2950,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Raises:
             ValueError: If a Runnable has no first or last node.
         """
-        from langchain_core.runnables.graph import Graph
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
 
         graph = Graph()
         for step in self.steps:
@@ -3021,7 +3039,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        from langchain_core.beta.runnables.context import config_with_context
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            config_with_context,
+        )
 
         # setup callbacks and context
         config = config_with_context(ensure_config(config), self.steps)
@@ -3062,7 +3083,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain_core.beta.runnables.context import aconfig_with_context
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            aconfig_with_context,
+        )
 
         # setup callbacks and context
         config = aconfig_with_context(ensure_config(config), self.steps)
@@ -3106,8 +3130,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        from langchain_core.beta.runnables.context import config_with_context
-        from langchain_core.callbacks.manager import CallbackManager
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            config_with_context,
+        )
 
         if not inputs:
             return []
@@ -3236,8 +3262,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        from langchain_core.beta.runnables.context import aconfig_with_context
-        from langchain_core.callbacks.manager import AsyncCallbackManager
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            aconfig_with_context,
+        )
 
         if not inputs:
             return []
@@ -3367,7 +3395,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        from langchain_core.beta.runnables.context import config_with_context
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            config_with_context,
+        )
 
         steps = [self.first, *self.middle, self.last]
         config = config_with_context(config, self.steps)
@@ -3394,7 +3425,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        from langchain_core.beta.runnables.context import aconfig_with_context
+        # Import locally to prevent circular import
+        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
+            aconfig_with_context,
+        )
 
         steps = [self.first, *self.middle, self.last]
         config = aconfig_with_context(config, self.steps)
@@ -3692,7 +3726,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         Raises:
             ValueError: If a Runnable has no first or last node.
         """
-        from langchain_core.runnables.graph import Graph
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
 
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
@@ -3728,8 +3763,6 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> dict[str, Any]:
-        from langchain_core.callbacks.manager import CallbackManager
-
         # setup callbacks
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
@@ -4561,6 +4594,9 @@ class RunnableLambda(Runnable[Input, Output]):
     @override
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         if deps := self.deps:
+            # Import locally to prevent circular import
+            from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+
             graph = Graph()
             input_node = graph.add_node(self.get_input_schema(config))
             output_node = graph.add_node(self.get_output_schema(config))
@@ -5791,7 +5827,6 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         Returns:
             A new Runnable with the listeners bound.
         """
-        from langchain_core.tracers.root_listeners import RootListenersTracer
 
         def listener_config_factory(config: RunnableConfig) -> RunnableConfig:
             return {
