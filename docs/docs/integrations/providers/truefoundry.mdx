@@ -1,24 +1,31 @@
 # TrueFoundry
 
-[TrueFoundry](https://www.truefoundry.com/ai-gateway) is a comprehensive ML Engineering platform that provides LLM deployment, tracing, and observability capabilities. With its advanced tracing infrastructure, TrueFoundry enables teams to monitor, debug, and optimize their LangChain applications in production.
 
-## LLM Tracing for LangChain
+TrueFoundry provides an enterprise-ready [AI Gateway](https://www.truefoundry.com/ai-gateway) which can integrate with agentic frameworks like LangChain and provides governance and observability for your AI Applications. TrueFoundry AI Gateway serves as a unified interface for LLM access, providing:
 
-TrueFoundry brings production readiness to LangChain. With TrueFoundry, you can:
+- **Unified API Access**: Connect to 250+ LLMs (OpenAI, Claude, Gemini, Groq, Mistral) through one API
+- **Low Latency**: Sub-3ms internal latency with intelligent routing and load balancing
+- **Enterprise Security**: SOC 2, HIPAA, GDPR compliance with RBAC and audit logging
+- **Quota and cost management**: Token-based quotas, rate limiting, and comprehensive usage tracking
+- **Observability**: Full request/response logging, metrics, and traces with customizable retention
 
-- [x] **Connect to multiple LLM providers** through a unified API
-- [x] **Deploy and serve models** with automatic scaling
-- [x] **Monitor and trace** all LLM interactions
-- [x] **Track costs and performance** across different models
-- [x] **Implement fallbacks and retries** for production reliability
 
-## Quickstart - TrueFoundry & LangChain
+## Prerequisites
 
-TrueFoundry is compatible with the OpenAI signature, so you can connect to TrueFoundry's unified LLM gateway through the `ChatOpenAI` interface.
+Before integrating LangChain with TrueFoundry, ensure you have:
 
-- Set the `base_url` to your TrueFoundry endpoint
+1. **TrueFoundry Account**: A [TrueFoundry account](https://www.truefoundry.com/register) with at least one model provider configured. Follow quick start guide [here](https://docs.truefoundry.com/gateway/quick-start)
+2. **Personal Access Token**: Generate a token by following the [TrueFoundry token generation guide](https://docs.truefoundry.com/gateway/authentication)
+
+## Quickstart
+
+You can connect to TrueFoundry's unified LLM gateway through the `ChatOpenAI` interface.
+
+- Set the `base_url` to your TrueFoundry endpoint (explained below)
 - Set the `api_key` to your TrueFoundry [PAT (Personal Access Token)](https://docs.truefoundry.com/gateway/authentication#personal-access-token-pat)
-- Use TrueFoundry model names in the format `provider-main/model-name`
+- Use the same `model-name` as shown in the unified code snippet
+
+![TrueFoundry metrics](/img/unified-code-tfy.png)
 
 ### Installation
 
@@ -33,49 +40,19 @@ Connect to TrueFoundry by updating the `ChatOpenAI` model in LangChain:
 ```python
 from langchain_openai import ChatOpenAI
 
-TRUEFOUNDRY_PAT = "..."  # Your TrueFoundry Personal Access Token
-TRUEFOUNDRY_BASE_URL = "..."  # Your TrueFoundry unified endpoint
-
 llm = ChatOpenAI(
-    api_key=TRUEFOUNDRY_PAT,
-    base_url=TRUEFOUNDRY_BASE_URL,
-    model="openai-main/gpt-4o"
+    api_key=TRUEFOUNDRY_API_KEY,
+    base_url=TRUEFOUNDRY_GATEWAY_BASE_URL,
+    model="openai-main/gpt-4o"   #similarly you can call any model from any model provider
 )
 
 llm.invoke("What is the meaning of life, universe and everything?")
 ```
 
-The request is routed through your TrueFoundry gateway to the specified model provider. TrueFoundry automatically handles authentication, load balancing, and logging.
-
-### Using Different Models
-
-TrueFoundry supports multiple LLM providers through model names in the format `provider-main/model-name`:
-
-```python
-from langchain_openai import ChatOpenAI
-
-# OpenAI GPT-4o
-llm_openai = ChatOpenAI(
-    api_key=TRUEFOUNDRY_PAT,
-    base_url=TRUEFOUNDRY_BASE_URL,
-    model="openai-main/gpt-4o"
-)
-
-# Anthropic Claude
-llm_anthropic = ChatOpenAI(
-    api_key=TRUEFOUNDRY_PAT,
-    base_url=TRUEFOUNDRY_BASE_URL,
-    model="anthropic-main/claude-3-sonnet-20240229"
-)
-
-# Use either model with the same interface
-response = llm_openai.invoke("Hello from OpenAI!")
-response = llm_anthropic.invoke("Hello from Anthropic!")
-```
+The request is routed through your TrueFoundry gateway to the specified model provider. TrueFoundry automatically handles rate limiting, load balancing, and observability.
 
 ### LangGraph Integration
 
-TrueFoundry works seamlessly with LangGraph:
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -85,9 +62,9 @@ from langchain_core.messages import HumanMessage
 # Define your LangGraph workflow
 def call_model(state: MessagesState):
     model = ChatOpenAI(
-        api_key=TRUEFOUNDRY_PAT,
-        base_url=TRUEFOUNDRY_BASE_URL,
-        model="openai-main/gpt-4o"
+        api_key=TRUEFOUNDRY_API_KEY,
+        base_url=TRUEFOUNDRY_GATEWAY_BASE_URL,
+        model="openai-main/gpt-4o (Copy the exact model name from gateway)"
     )
     response = model.invoke(state["messages"])
     return {"messages": [response]}
@@ -104,39 +81,17 @@ app = workflow.compile()
 result = app.invoke({"messages": [HumanMessage(content="Hello!")]})
 ```
 
-## Environment Variables
 
-Set up your environment variables:
+## Observability and Governance
 
-```bash
-# TrueFoundry Configuration
-TRUEFOUNDRY_PAT=your_personal_access_token
-TRUEFOUNDRY_BASE_URL=https://your-truefoundry-endpoint.com
-```
+![TrueFoundry metrics](/img/gateway-metrics.png)
 
-## Monitoring and Observability
+With the Metrics Dashboard, you can monitor and analyze:
 
-All requests made through TrueFoundry are automatically:
-
-- **Logged** with detailed request/response information
-- **Traced** across your application components
-- **Monitored** for performance and costs
-- **Analyzed** for usage patterns and optimization
-
-Access your monitoring dashboard through the TrueFoundry platform to view:
-- Request logs and traces
-- Performance metrics
-- Cost breakdown by model
-- Error rates and debugging information
-
-
-
-## Additional Resources
-
-- [TrueFoundry Documentation](https://docs.truefoundry.com/)
-- [Tracing Guide](https://docs.truefoundry.com/docs/tracing/getting-started)
-- [LangGraph Tracing Tutorial](https://docs.truefoundry.com/docs/tracing/tracing-in-langgraph)
-- [API Reference](https://docs.truefoundry.com/docs/api-reference)
+- **Performance Metrics**: Track key latency metrics like Request Latency, Time to First Token (TTFS), and Inter-Token Latency (ITL) with P99, P90, and P50 percentiles
+- **Cost and Token Usage**: Gain visibility into your application's costs with detailed breakdowns of input/output tokens and the associated expenses for each model
+- **Usage Patterns**: Understand how your application is being used with detailed analytics on user activity, model distribution, and team-based usage
+- **Rate Limiting & Load Balancing**: Configure limits, distribute traffic across models, and set up fallbacks
 
 ## Support
 
@@ -144,4 +99,3 @@ For questions, issues, or support:
 
 - **Email**: [support@truefoundry.com](mailto:support@truefoundry.com)
 - **Documentation**: [https://docs.truefoundry.com/](https://docs.truefoundry.com/)
-- **Contact**: [TrueFoundry Contact Page](https://truefoundry.com/contact)
