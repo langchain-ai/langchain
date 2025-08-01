@@ -4,11 +4,11 @@
 # ======================
 # Environment Paths
 # ======================
-PYTHON := uv run --active python
+PYTHON := uv run python
 PIP := uv pip
-RUFF := uv run --active ruff
-MYPY := uv run --active mypy
-PYTEST := uv run --active pytest
+RUFF := uv run ruff
+MYPY := uv run mypy
+PYTEST := uv run pytest
 
 # ======================
 # Default
