@@ -52,6 +52,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: '⚡ Run Benchmarks: ${{ matrix.working-directory }}'
+        if: ${{ secrets.CODSPEED_TOKEN != '' }}
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
@@ -63,3 +64,6 @@ jobs:
               uv run --no-sync pytest ./tests/ --codspeed
             fi
           mode: ${{ matrix.mode || 'instrumentation' }}
+      - name: 'Skip CodSpeed (token missing)'
+        if: ${{ secrets.CODSPEED_TOKEN == '' }}
+        run: echo "CODSPEED_TOKEN is missing - skipping benchmarks"
