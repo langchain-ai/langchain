@@ -49,6 +49,10 @@ sync:
 
 lint: check
 
+# Lint only this package (required by LangChain CI)
+lint_package: check
+	@echo "✅ Package linting complete."
+
 check:
 	@echo "🔍 Running linter and type checker..."
 	$(RUFF) check langchain_coherence tests
