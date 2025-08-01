@@ -1,5 +1,6 @@
 """Test custom tools functionality."""
 
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.tool import tool_call
 from langchain_core.tools import tool
@@ -7,6 +8,11 @@ from langchain_core.tools import tool
 from langchain_openai.chat_models.base import (
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
+)
+from langchain_openai.chat_models.cfg_grammar import (
+    CFGValidator,
+    validate_cfg_format,
+    validate_custom_tool_output,
 )
 
 
@@ -299,3 +305,343 @@ def test_mixed_tool_streaming():
     assert "text_input" not in function_chunk
     assert function_chunk["id"] == "call_func_456"
     assert function_chunk["index"] == 1
+
+
+# CFG Grammar Tests
+
+
+class TestCFGValidator:
+    """Test CFG validator functionality."""
+
+    def test_cfg_validator_initialization(self):
+        """Test CFG validator can be initialized with valid grammar."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*") NUMBER
+        NUMBER: /[0-9]+/
+        """
+        validator = CFGValidator(grammar)
+        assert validator.grammar == grammar
+        assert validator.parser is not None
+
+    def test_cfg_validator_initialization_invalid_grammar(self):
+        """Test CFG validator raises error with invalid grammar."""
+        invalid_grammar = "invalid grammar string [["
+        with pytest.raises(Exception):
+            CFGValidator(invalid_grammar)
+
+    def test_cfg_validator_validate_valid_input(self):
+        """Test CFG validator accepts valid input."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        assert validator.validate("5 + 3") is True
+        assert validator.validate("10 * 2") is True
+        assert validator.validate("100 - 50") is True
+
+    def test_cfg_validator_validate_invalid_input(self):
+        """Test CFG validator rejects invalid input."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        assert validator.validate("hello") is False
+        assert validator.validate("5 + + 3") is False
+        assert validator.validate("5 + ") is False
+        assert validator.validate("+ 5") is False
+
+    def test_cfg_validator_parse_valid_input(self):
+        """Test CFG validator can parse valid input."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        tree = validator.parse("5 + 3")
+        assert tree is not None
+        assert str(tree.data) == "start"
+
+    def test_cfg_validator_parse_invalid_input(self):
+        """Test CFG validator raises error when parsing invalid input."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        with pytest.raises(Exception):
+            validator.parse("invalid input")
+
+    def test_cfg_validator_complex_grammar(self):
+        """Test CFG validator with more complex grammar."""
+        # SQL-like grammar
+        grammar = """
+        start: query
+        query: "SELECT" field_list "FROM" table_name where_clause?
+        field_list: field ("," field)*
+        field: IDENTIFIER
+        table_name: IDENTIFIER
+        where_clause: "WHERE" condition
+        condition: IDENTIFIER "=" STRING
+        IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+        STRING: /"[^"]*"/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        # Valid SQL queries
+        assert validator.validate("SELECT id FROM users") is True
+        assert (
+            validator.validate('SELECT id, name FROM users WHERE status = "active"')
+            is True
+        )
+
+        # Invalid SQL queries
+        assert validator.validate("SELECT FROM users") is False
+        assert validator.validate("INVALID QUERY") is False
+
+    def test_cfg_validator_python_code_grammar(self):
+        """Test CFG validator with Python code grammar."""
+        # Simple Python expression grammar
+        grammar = """
+        start: statement
+        statement: assignment | expression
+        assignment: IDENTIFIER "=" expression
+        expression: term (("+" | "-") term)*
+        term: factor (("*" | "/") factor)*
+        factor: NUMBER | IDENTIFIER | "(" expression ")"
+        IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        # Valid Python expressions
+        assert validator.validate("x = 5") is True
+        assert validator.validate("result = a + b * c") is True
+        assert validator.validate("(x + y) / 2") is True
+
+        # Invalid Python expressions
+        assert validator.validate("x =") is False
+        assert validator.validate("+ + +") is False
+
+
+class TestValidateCFGFormat:
+    """Test validate_cfg_format function."""
+
+    def test_validate_cfg_format_valid_grammar_format(self):
+        """Test validate_cfg_format with valid grammar format."""
+        tool_format = {
+            "type": "grammar",
+            "grammar": "start: expr\nexpr: NUMBER\nNUMBER: /[0-9]+/",
+        }
+
+        validator = validate_cfg_format(tool_format)
+        assert validator is not None
+        assert isinstance(validator, CFGValidator)
+
+    def test_validate_cfg_format_non_grammar_format(self):
+        """Test validate_cfg_format with non-grammar format."""
+        tool_format = {"type": "json_schema", "schema": {}}
+
+        validator = validate_cfg_format(tool_format)
+        assert validator is None
+
+    def test_validate_cfg_format_missing_grammar(self):
+        """Test validate_cfg_format with missing grammar field."""
+        tool_format = {"type": "grammar"}
+
+        with pytest.raises(ValueError, match="Grammar format requires 'grammar' field"):
+            validate_cfg_format(tool_format)
+
+    def test_validate_cfg_format_invalid_grammar_type(self):
+        """Test validate_cfg_format with non-string grammar."""
+        tool_format = {"type": "grammar", "grammar": ["not", "a", "string"]}
+
+        with pytest.raises(ValueError, match="Grammar must be a string"):
+            validate_cfg_format(tool_format)
+
+    def test_validate_cfg_format_invalid_grammar_syntax(self):
+        """Test validate_cfg_format with invalid grammar syntax."""
+        tool_format = {"type": "grammar", "grammar": "invalid grammar [[ syntax"}
+
+        with pytest.raises(ValueError, match="Invalid grammar specification"):
+            validate_cfg_format(tool_format)
+
+    def test_validate_cfg_format_non_dict_input(self):
+        """Test validate_cfg_format with non-dict input."""
+        assert validate_cfg_format("not a dict") is None
+        assert validate_cfg_format(None) is None
+        assert validate_cfg_format([]) is None
+
+
+class TestValidateCustomToolOutput:
+    """Test validate_custom_tool_output function."""
+
+    def test_validate_custom_tool_output_with_validator(self):
+        """Test validate_custom_tool_output with CFG validator."""
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        # Valid outputs
+        assert validate_custom_tool_output("5 + 3", validator) is True
+        assert validate_custom_tool_output("10 - 7", validator) is True
+
+        # Invalid outputs
+        assert validate_custom_tool_output("hello", validator) is False
+        assert validate_custom_tool_output("5 + + 3", validator) is False
+
+    def test_validate_custom_tool_output_without_validator(self):
+        """Test validate_custom_tool_output without CFG validator."""
+        # Should return True when no validator is provided
+        assert validate_custom_tool_output("any string", None) is True
+        assert validate_custom_tool_output("", None) is True
+        assert validate_custom_tool_output("invalid grammar", None) is True
+
+
+class TestCFGIntegration:
+    """Test CFG integration with custom tools."""
+
+    def test_custom_tool_call_with_cfg_validation(self):
+        """Test that CFG validation can be integrated with custom tool calls."""
+        # Arithmetic expressions
+        grammar = """
+        start: expr
+        expr: NUMBER ("+" | "-" | "*" | "/") NUMBER
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+
+        # Simulate custom tool definition with CFG format
+        tool_format = {"type": "grammar", "grammar": grammar}
+
+        validator = validate_cfg_format(tool_format)
+        assert validator is not None
+
+        # Test valid tool outputs
+        valid_outputs = ["5 + 3", "10 * 2", "100 / 5", "50 - 25"]
+        for output in valid_outputs:
+            assert validate_custom_tool_output(output, validator) is True
+
+        # Test invalid tool outputs
+        invalid_outputs = ["hello", "5 + + 3", "invalid", "5 +"]
+        for output in invalid_outputs:
+            assert validate_custom_tool_output(output, validator) is False
+
+    def test_sql_query_cfg_validation(self):
+        """Test CFG validation for SQL-like queries."""
+        sql_grammar = """
+        start: query
+        query: "SELECT" field "FROM" table
+        field: IDENTIFIER
+        table: IDENTIFIER
+        IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+        %import common.WS
+        %ignore WS
+        """
+
+        tool_format = {"type": "grammar", "grammar": sql_grammar}
+
+        validator = validate_cfg_format(tool_format)
+        assert validator is not None
+
+        # Valid SQL queries
+        assert validate_custom_tool_output("SELECT id FROM users", validator) is True
+        assert (
+            validate_custom_tool_output("SELECT name FROM products", validator) is True
+        )
+
+        # Invalid SQL queries
+        assert validate_custom_tool_output("SELECT FROM users", validator) is False
+        assert validate_custom_tool_output("INVALID QUERY", validator) is False
+
+    def test_python_expression_cfg_validation(self):
+        """Test CFG validation for Python expressions."""
+        python_grammar = """
+        start: assignment
+        assignment: IDENTIFIER "=" expression
+        expression: term (("+" | "-") term)*
+        term: factor (("*" | "/") factor)*
+        factor: NUMBER | IDENTIFIER
+        IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+        NUMBER: /[0-9]+/
+        %import common.WS
+        %ignore WS
+        """
+
+        tool_format = {"type": "grammar", "grammar": python_grammar}
+
+        validator = validate_cfg_format(tool_format)
+        assert validator is not None
+
+        # Valid Python assignments
+        assert validate_custom_tool_output("x = 5", validator) is True
+        assert validate_custom_tool_output("result = a + b", validator) is True
+        assert (
+            validate_custom_tool_output("total = price * quantity", validator) is True
+        )
+
+        # Invalid Python assignments
+        assert validate_custom_tool_output("x =", validator) is False
+        assert validate_custom_tool_output("= 5", validator) is False
+        assert validate_custom_tool_output("hello world", validator) is False
+
+
+@pytest.mark.skipif(CFGValidator is None, reason="lark package not available")
+class TestCFGErrorHandling:
+    """Test CFG error handling when lark is not available."""
+
+    def test_cfg_validator_import_error(self, monkeypatch):
+        """Test CFG validator handles missing lark import gracefully."""
+        # Mock the import to fail
+        monkeypatch.setattr("langchain_openai.chat_models.cfg_grammar.Lark", None)
+
+        with pytest.raises(ImportError, match="The 'lark' package is required"):
+            CFGValidator("start: NUMBER\nNUMBER: /[0-9]+/")
+
+    def test_cfg_edge_cases(self):
+        """Test CFG validator edge cases."""
+        grammar = """
+        start: item*
+        item: WORD
+        WORD: /\\w+/
+        %import common.WS
+        %ignore WS
+        """
+        validator = CFGValidator(grammar)
+
+        # Empty string should be valid (zero items)
+        assert validator.validate("") is True
+
+        # Single word should be valid
+        assert validator.validate("hello") is True
+
+        # Multiple words should be valid
+        assert validator.validate("hello world test") is True
