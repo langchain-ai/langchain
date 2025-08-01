@@ -290,24 +290,30 @@ class TokenTextSplitter(TextSplitter):
         self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
     ) -> list[Document]:
         """Override to create documents from a list of tokens."""
+        tokenizer = Tokenizer(
+            chunk_overlap=self._chunk_overlap,
+            tokens_per_chunk=self._chunk_size,
+            decode=self._tokenizer.decode,
+            encode=self._tokenizer.encode,
+        )
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
             metadata = _metadatas[i]
-            input_ids = self._tokenizer.encode(text)
+            input_ids = tokenizer.encode(text)
             start_idx = 0
             char_index = 0
             while start_idx < len(input_ids):
-                end_idx = min(start_idx + self._chunk_size, len(input_ids))
+                end_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
                 chunk_ids = input_ids[start_idx:end_idx]
-                chunk_text = self._tokenizer.decode(chunk_ids)
+                chunk_text = tokenizer.decode(chunk_ids)
                 if self._add_start_index:
                     char_index = text.find(chunk_text, char_index)
                     metadata["start_index"] = char_index
                 documents.append(Document(page_content=chunk_text, metadata=metadata))
                 if end_idx == len(input_ids):
                     break
-                start_idx += self._chunk_size - self._chunk_overlap
+                start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
         return documents
 
 
