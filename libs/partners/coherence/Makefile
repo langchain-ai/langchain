@@ -1,16 +1,95 @@
 # Makefile for LangChain-Coherence Integration
-.PHONY: install update-dev update-core lock sync lint format fix check test clean docs-ipynb readme-ipynb create-ipynb help
+.PHONY: all format lint fix check lint_package lint_tests lint_diff format_diff integration_tests check_imports test tests install update-dev update-core lock sync
 
-# Paths to common tools (adjust if using .uv or other env)
-PYTHON := uv run python
+# ======================
+# Environment Paths
+# ======================
+PYTHON := uv run --active python
 PIP := uv pip
-RUFF := uv run ruff
-MYPY := uv run mypy
-PYTEST := uv run pytest
+RUFF := uv run --active ruff
+MYPY := uv run --active mypy
+PYTEST := uv run --active pytest
 
-PACKAGE_NAME=langchain-coherence
-DIST_DIR=dist
+# ======================
+# Default
+# ======================
+all: help
 
+# ======================
+# Core Lint / Type Check
+# ======================
+lint: check
+
+check:
+	@echo "🔍 Running linter and type checker..."
+	$(RUFF) check langchain_coherence tests
+	$(MYPY) --explicit-package-bases langchain_coherence
+
+format:
+	@echo "🎨 Formatting Python code and docs notebooks..."
+	$(RUFF) format langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb
+
+fix:
+	@echo "🔧 Fixing lint issues..."
+	$(MAKE) format
+	$(RUFF) check langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb --fix
+
+# ======================
+# New CI-Expected Lint Targets
+# ======================
+lint_package:
+	@echo "🔍 Linting package..."
+	$(RUFF) check langchain_coherence
+	$(MYPY) --explicit-package-bases langchain_coherence
+
+lint_tests:
+	@echo "🔍 Linting tests..."
+	$(RUFF) check tests
+	$(MYPY) --explicit-package-bases tests
+
+lint_diff:
+	@echo "🔍 Linting changed files..."
+	@changed_files=$$(git diff --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' || true); \
+	if [ "$$changed_files" ]; then \
+		$(RUFF) check $$changed_files; \
+	else \
+		echo "No changed Python files."; \
+	fi
+
+format_diff:
+	@echo "🎨 Formatting changed files..."
+	@changed_files=$$(git diff --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' || true); \
+	if [ "$$changed_files" ]; then \
+		$(RUFF) format $$changed_files; \
+	else \
+		echo "No changed Python files."; \
+	fi
+
+# ======================
+# Import Checks
+# ======================
+check_imports:
+	@echo "🔍 Checking imports..."
+	$(PYTHON) ./scripts/check_imports.py
+
+# ======================
+# Testing
+# ======================
+test tests:
+	@if [ -d tests/unit_tests ] && [ "$$(find tests/unit_tests -type f -name 'test_*.py')" ]; then \
+		$(PYTEST) --disable-socket --allow-unix-socket tests/unit_tests; \
+	else \
+		echo "⚠️  No unit tests found — running all tests instead."; \
+		$(PYTEST) --disable-socket --allow-unix-socket tests; \
+	fi
+
+integration_tests:
+	@echo "🧪 Running integration tests..."
+	$(PYTEST) tests/integration_tests
+
+# ======================
+# Dependency Management
+# ======================
 install:
 	@echo "🔧 Installing all dependencies..."
 	$(PIP) install -e . \
@@ -47,57 +126,9 @@ sync:
 	@echo "📦 Syncing dependencies from uv.lock..."
 	uv pip install -r uv.lock
 
-lint: check
-
-# Lint only this package (required by LangChain CI)
-lint_package: check
-	@echo "✅ Package linting complete."
-
-check:
-	@echo "🔍 Running linter and type checker..."
-	$(RUFF) check langchain_coherence tests
-	$(MYPY) --explicit-package-bases langchain_coherence
-
-format:
-	@echo "🎨 Formatting Python code and docs notebooks..."
-	$(RUFF) format langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb
-
-fix:
-	@echo "🔧 Fixing lint issues..."
-	$(MAKE) format
-	$(RUFF) check langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb --fix
-
-test:
-	@echo "🧪 Running tests..."
-	$(PYTEST)
-
-clean:
-	@echo "🧹 Cleaning build/test artifacts..."
-	rm -rf .pytest_cache .mypy_cache .ruff_cache __pycache__ *.egg-info dist build
-
-build:
-	@echo "🧱 Building distribution using local virtualenv"
-	$(PYTHON) -m build --no-isolation
-
-upload-pypi:
-	@echo "🚀 Uploading to PyPI"
-	$(PYTHON) -m twine upload dist/*
-
-publish: build upload-pypi
-
+# ======================
+# Help
+# ======================
 help:
-	@echo "🛠 Available Make targets:"
-	@echo "  install       - Install all dependencies into .venv"
-	@echo "  update-dev    - Upgrade dev dependencies (ruff, pytest, etc.)"
-	@echo "  update-core   - Upgrade core runtime deps (langchain-core, coherence-client)"
-	@echo "  lock          - Generate uv.lock with pinned versions"
-	@echo "  sync          - Install from uv.lock (repeatable builds)"
-	@echo "  lint          - Run linter and mypy"
-	@echo "  fix           - Autoformat and fix issues"
-	@echo "  test          - Run all tests"
-	@echo "  build         - Building distribution using local virtualenv"
-	@echo "  upload-pypi   - Uploading to PyPI"
-	@echo "  publish       - calls build, upload-pypi"
-	@echo "  clean         - Remove temp and build files"
-
-
+	@echo "Available targets:"
+	@grep '^[a-zA-Z_-]\+:' Makefile | cut -d: -f1
