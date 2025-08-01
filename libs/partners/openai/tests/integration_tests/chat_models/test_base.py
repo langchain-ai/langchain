@@ -1110,3 +1110,164 @@ def test_tools_and_structured_output() -> None:
     assert isinstance(aggregated["raw"], AIMessage)
     assert aggregated["raw"].tool_calls
     assert aggregated["parsed"] is None
+
+
+def test_prompt_cache_key_parameter() -> None:
+    """Test that prompt_cache_key parameter is included in request payload."""
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+
+    # Test that the parameter is included in the request payload when passed
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(messages, prompt_cache_key="test-cache-key-v1")
+
+    assert "prompt_cache_key" in payload
+    assert payload["prompt_cache_key"] == "test-cache-key-v1"
+
+
+def test_prompt_cache_key_per_call() -> None:
+    """Test that prompt_cache_key can be passed per-call."""
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    messages = [HumanMessage("Hello")]
+
+    # Test different cache keys per call
+    payload1 = chat._get_request_payload(messages, prompt_cache_key="cache-v1")
+    payload2 = chat._get_request_payload(messages, prompt_cache_key="cache-v2")
+
+    assert payload1["prompt_cache_key"] == "cache-v1"
+    assert payload2["prompt_cache_key"] == "cache-v2"
+
+
+def test_prompt_cache_key_dynamic() -> None:
+    """Test that prompt_cache_key can be set dynamically per invocation."""
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    messages = [HumanMessage("Hello")]
+
+    # Test dynamic cache key assignment
+    cache_keys = ["customer-v1", "support-v1", "feedback-v1"]
+
+    for cache_key in cache_keys:
+        payload = chat._get_request_payload(messages, prompt_cache_key=cache_key)
+        assert "prompt_cache_key" in payload
+        assert payload["prompt_cache_key"] == cache_key
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_prompt_cache_key_responses_api(use_responses_api: bool) -> None:
+    """Test that prompt_cache_key works with both Chat Completions and Responses API."""
+    chat = ChatOpenAI(
+        model="gpt-4o-mini",
+        use_responses_api=use_responses_api,
+        max_completion_tokens=10,
+    )
+
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(
+        messages, prompt_cache_key="responses-api-cache-v1"
+    )
+
+    # prompt_cache_key should be present regardless of API type
+    assert "prompt_cache_key" in payload
+    assert payload["prompt_cache_key"] == "responses-api-cache-v1"
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_invoke() -> None:
+    """Test that prompt_cache_key works with invoke calls."""
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=20)
+    messages = [HumanMessage("Say hello")]
+
+    # Test that invoke works with prompt_cache_key parameter
+    response = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+
+    # Test that subsequent call with same cache key also works
+    response2 = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response2, AIMessage)
+    assert isinstance(response2.content, str)
+    assert len(response2.content) > 0
+
+
+def test_prompt_cache_key_usage_methods() -> None:
+    """Test all three usage methods for prompt_cache_key parameter."""
+    messages = [HumanMessage("Hello world")]
+
+    # Method 1: Direct kwargs
+    chat1 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    payload1 = chat1._get_request_payload(messages, **{"prompt_cache_key": "cache-v1"})
+    assert "prompt_cache_key" in payload1
+    assert payload1["prompt_cache_key"] == "cache-v1"
+
+    # Method 2: Keyword argument
+    chat2 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    payload2 = chat2._get_request_payload(messages, prompt_cache_key="cache-v1")
+    assert "prompt_cache_key" in payload2
+    assert payload2["prompt_cache_key"] == "cache-v1"
+
+    # Method 3: Model-level via model_kwargs
+    chat3 = ChatOpenAI(
+        model="gpt-4o-mini",
+        max_completion_tokens=10,
+        model_kwargs={"prompt_cache_key": "cache-v1"},
+    )
+    payload3 = chat3._get_request_payload(messages)
+    assert "prompt_cache_key" in payload3
+    assert payload3["prompt_cache_key"] == "cache-v1"
+
+    # Verify all methods produce identical payloads (excluding model_kwargs differences)
+    assert (
+        payload1["prompt_cache_key"]
+        == payload2["prompt_cache_key"]
+        == payload3["prompt_cache_key"]
+    )
+
+
+def test_prompt_cache_key_method_precedence() -> None:
+    """Test that per-call cache key overrides model-level cache key."""
+    messages = [HumanMessage("Hello world")]
+
+    # Model-level cache key
+    chat = ChatOpenAI(
+        model="gpt-4o-mini",
+        max_completion_tokens=10,
+        model_kwargs={"prompt_cache_key": "model-level-cache"},
+    )
+
+    # Per-call cache key should override model-level
+    payload = chat._get_request_payload(messages, prompt_cache_key="per-call-cache")
+    assert payload["prompt_cache_key"] == "per-call-cache"
+
+    # Without override, should use model-level
+    payload_default = chat._get_request_payload(messages)
+    assert payload_default["prompt_cache_key"] == "model-level-cache"
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_usage_methods_integration() -> None:
+    """Integration test for all three prompt_cache_key usage methods."""
+    messages = [HumanMessage("Say hi")]
+
+    # Method 1: Direct kwargs
+    chat1 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    response1 = chat1.invoke(messages, **{"prompt_cache_key": "integration-method1-v1"})
+    assert isinstance(response1, AIMessage)
+    assert isinstance(response1.content, str)
+
+    # Method 2: Keyword argument
+    chat2 = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    response2 = chat2.invoke(messages, prompt_cache_key="integration-method2-v1")
+    assert isinstance(response2, AIMessage)
+    assert isinstance(response2.content, str)
+
+    # Method 3: Model-level via model_kwargs
+    chat3 = ChatOpenAI(
+        model="gpt-4o-mini",
+        max_completion_tokens=10,
+        model_kwargs={"prompt_cache_key": "integration-method3-v1"},
+    )
+    response3 = chat3.invoke(messages)
+    assert isinstance(response3, AIMessage)
+    assert isinstance(response3.content, str)
