@@ -2,18 +2,18 @@
 .PHONY: install update-dev update-core lock sync lint format fix check test clean docs-ipynb readme-ipynb create-ipynb help
 
 # Paths to common tools (adjust if using .uv or other env)
-PYTHON := $(VIRTUAL_ENV)/bin/python
-PIP := $(VIRTUAL_ENV)/bin/pip
-RUFF := $(VIRTUAL_ENV)/bin/ruff
-MYPY := $(VIRTUAL_ENV)/bin/mypy
-PYTEST := $(VIRTUAL_ENV)/bin/pytest
+PYTHON := uv run python
+PIP := uv pip
+RUFF := uv run ruff
+MYPY := uv run mypy
+PYTEST := uv run pytest
 
 PACKAGE_NAME=langchain-coherence
 DIST_DIR=dist
 
 install:
 	@echo "🔧 Installing all dependencies..."
-	uv pip install -e . \
+	$(PIP) install -e . \
 		--group lint \
 		--group typing \
 		--group test \
@@ -22,7 +22,7 @@ install:
 
 update-dev:
 	@echo "🔄 Updating development dependencies..."
-	uv pip install -e . \
+	$(PIP) install -e . \
 		--group lint \
 		--group typing \
 		--group test \
@@ -32,7 +32,7 @@ update-dev:
 
 update-core:
 	@echo "🔄 Updating core dependencies..."
-	uv pip install --upgrade langchain-core coherence-client
+	$(PIP) install --upgrade langchain-core coherence-client
 
 lock:
 	@echo "🔐 Locking all dependencies to uv.lock..."
@@ -59,13 +59,13 @@ check:
 	$(MYPY) --explicit-package-bases langchain_coherence
 
 format:
-	@echo "🎨 Formatting code with Ruff..."
-	$(RUFF) format langchain_coherence tests
+	@echo "🎨 Formatting Python code and docs notebooks..."
+	$(RUFF) format langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb
 
 fix:
 	@echo "🔧 Fixing lint issues..."
 	$(MAKE) format
-	$(RUFF) check langchain_coherence tests --fix
+	$(RUFF) check langchain_coherence tests ../../../docs/docs/integrations/vectorstores/coherence.ipynb --fix
 
 test:
 	@echo "🧪 Running tests..."
