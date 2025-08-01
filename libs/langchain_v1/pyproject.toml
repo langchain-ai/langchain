@@ -9,7 +9,7 @@ requires-python = ">=3.9, <4.0"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.66",
     "langchain-text-splitters<1.0.0,>=0.3.8",
-    "langgraph>=0.5.4",
+    "langgraph>=0.6.0",
     "pydantic>=2.7.4",
 ]
 
