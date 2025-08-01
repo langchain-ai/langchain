@@ -156,8 +156,10 @@ class Reviver:
 
             cls = getattr(mod, name)
 
-            # The class must be a subclass of Serializable.
-            if not issubclass(cls, Serializable):
+            # The class must be a subclass of Serializable or a v1 message class.
+            from langchain_core.messages.v1 import MessageV1Types
+
+            if not (issubclass(cls, Serializable) or cls in MessageV1Types):
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 

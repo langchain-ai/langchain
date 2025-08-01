@@ -3,6 +3,7 @@ from langchain_ollama import __all__
 EXPECTED_ALL = [
     "OllamaLLM",
     "ChatOllama",
+    "ChatOllamaV1",
     "OllamaEmbeddings",
     "__version__",
 ]

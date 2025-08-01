@@ -21,7 +21,7 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
+      "source.organizeImports.ruff": "explicit",
       "source.fixAll": "explicit"
     },
     "editor.defaultFormatter": "charliermarsh.ruff"

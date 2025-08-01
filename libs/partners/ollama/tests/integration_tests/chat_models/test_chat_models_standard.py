@@ -168,7 +168,7 @@ class TestChatOllama(ChatModelIntegrationTests):
 
         with pytest.raises(ValidationError) as excinfo:
             ChatOllama(model="any-model", validate_model_on_init=True)
-        assert "not found in Ollama" in str(excinfo.value)
+        assert "Failed to connect to Ollama" in str(excinfo.value)
 
     @patch("langchain_ollama.chat_models.Client.list")
     def test_init_response_error(self, mock_list: MagicMock) -> None:
