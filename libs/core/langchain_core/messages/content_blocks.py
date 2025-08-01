@@ -1241,8 +1241,7 @@ def create_file_block(
 
 
 def create_plaintext_block(
-    text: str,
-    *,
+    text: Optional[str] = None,
     url: Optional[str] = None,
     base64: Optional[str] = None,
     file_id: Optional[str] = None,
