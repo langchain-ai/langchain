@@ -554,6 +554,13 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.24
 
     """
+    verbosity: Optional[str] = None
+    """Controls the verbosity level of responses for reasoning models. For use with the
+    Responses API.
+
+    Currently supported values are ``'low'``, ``'medium'``, and ``'high'``.
+    Controls how detailed the model's responses are.
+    """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -831,6 +838,7 @@ class BaseChatOpenAI(BaseChatModel):
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
+            "verbosity": self.verbosity,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
@@ -1723,7 +1731,26 @@ class BaseChatOpenAI(BaseChatModel):
             elif isinstance(tool_choice, bool):
                 tool_choice = "required"
             elif isinstance(tool_choice, dict):
-                pass
+                # Handle allowed_tools choice format
+                if tool_choice.get("type") == "allowed_tools":
+                    allowed_config = tool_choice.get("allowed_tools", {})
+                    mode = allowed_config.get("mode", "auto")
+                    allowed_tools = allowed_config.get("tools", [])
+
+                    if mode not in ["auto", "required"]:
+                        raise ValueError(
+                            f"allowed_tools mode must be 'auto' or 'required', "
+                            f"got: {mode}"
+                        )
+
+                    # Convert allowed_tools to the expected format
+                    tool_choice = {
+                        "type": "allowed_tools",
+                        "mode": mode,
+                        "tools": allowed_tools,
+                    }
+                else:
+                    pass
             else:
                 raise ValueError(
                     f"Unrecognized tool_choice type. Expected str, bool or dict. "
@@ -3543,6 +3570,14 @@ def _construct_responses_api_payload(
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
                 payload["text"] = {"format": {"type": "json_object"}}
+            elif schema_dict.get("type") == "grammar":
+                if "grammar" not in schema_dict:
+                    raise ValueError("Grammar format requires 'grammar' field")
+                payload["text"] = {
+                    "format": {"type": "grammar", "grammar": schema_dict["grammar"]}
+                }
+            elif schema_dict.get("type") == "python":
+                payload["text"] = {"format": {"type": "python"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -4037,6 +4072,27 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         content.append(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+        )
+    elif chunk.type == "response.custom_tool_call_input.delta":
+        _advance(chunk.output_index)
+        tool_call_chunks.append(
+            {
+                "type": "tool_call_chunk",
+                "text_input": chunk.delta,
+                "index": current_index,
+            }
+        )
+        content.append(
+            {"type": "custom_tool_call", "input": chunk.delta, "index": current_index}
+        )
+    elif chunk.type == "response.custom_tool_call_input.done":
+        content.append(
+            {
+                "type": "custom_tool_call_done",
+                "input": chunk.input,
+                "item_id": chunk.item_id,
+                "index": current_index,
+            }
         )
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
