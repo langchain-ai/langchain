@@ -119,6 +119,7 @@ def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> No
     )
     assert expected == actual
 
+
 def test_token_splitter_create_documents() -> None:
     splitter = TokenTextSplitter(add_start_index=True, chunk_size=10, chunk_overlap=5)
     text = """
