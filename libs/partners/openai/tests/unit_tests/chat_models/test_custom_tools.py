@@ -1,10 +1,13 @@
 """Test custom tools functionality."""
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.tool import tool_call
 from langchain_core.tools import tool
 
-from langchain_openai.chat_models.base import _convert_dict_to_message
+from langchain_openai.chat_models.base import (
+    _convert_delta_to_message_chunk,
+    _convert_dict_to_message,
+)
 
 
 def test_custom_tool_decorator():
@@ -123,3 +126,176 @@ def test_regular_tool_call_parsing_unchanged():
     assert tool_call.get("args") == {"location": "Paris", "unit": "celsius"}
     assert "text_input" not in tool_call
     assert tool_call["id"] == "call_def456"
+
+
+def test_custom_tool_streaming_text_input():
+    """Test streaming custom tool calls use `text_input` field."""
+    chunk1 = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "type": "custom",
+                "name": "execute_code",
+                "input": "print('hello",
+                "id": "call_abc123",
+                "index": 0,
+            }
+        ],
+    }
+
+    chunk2 = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "type": "custom",
+                "name": None,
+                "input": " world')",
+                "id": None,
+                "index": 0,
+            }
+        ],
+    }
+
+    message_chunk1 = _convert_delta_to_message_chunk(chunk1, AIMessageChunk)
+    message_chunk2 = _convert_delta_to_message_chunk(chunk2, AIMessageChunk)
+
+    # Verify first chunk
+    assert isinstance(message_chunk1, AIMessageChunk)
+    assert len(message_chunk1.tool_call_chunks) == 1
+    tool_call_chunk1 = message_chunk1.tool_call_chunks[0]
+    assert tool_call_chunk1["name"] == "execute_code"
+    assert tool_call_chunk1.get("text_input") == "print('hello"
+    assert tool_call_chunk1.get("args") == ""  # Empty for custom tools
+    assert tool_call_chunk1["id"] == "call_abc123"
+    assert tool_call_chunk1["index"] == 0
+
+    # Verify second chunk
+    assert isinstance(message_chunk2, AIMessageChunk)
+    assert len(message_chunk2.tool_call_chunks) == 1
+    tool_call_chunk2 = message_chunk2.tool_call_chunks[0]
+    assert tool_call_chunk2["name"] is None
+    assert tool_call_chunk2.get("text_input") == " world')"
+    assert tool_call_chunk2.get("args") == ""  # Empty for custom tools
+    assert tool_call_chunk2["id"] is None
+    assert tool_call_chunk2["index"] == 0
+
+    # Test chunk aggregation
+    combined = message_chunk1 + message_chunk2
+    assert isinstance(combined, AIMessageChunk)
+    assert len(combined.tool_call_chunks) == 1
+    combined_chunk = combined.tool_call_chunks[0]
+    assert combined_chunk["name"] == "execute_code"
+    assert combined_chunk.get("text_input") == "print('hello world')"
+    assert combined_chunk.get("args") == ""  # Empty for custom tools
+    assert combined_chunk["id"] == "call_abc123"
+
+
+def test_function_tool_streaming_args():
+    """Test streaming function tool calls still use args field with JSON."""
+    chunk1 = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"location": "Par'},
+                "id": "call_def456",
+                "index": 0,
+            }
+        ],
+    }
+
+    chunk2 = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "type": "function",
+                "function": {"name": None, "arguments": 'is", "unit": "celsius"}'},
+                "id": None,
+                "index": 0,
+            }
+        ],
+    }
+
+    # Parse the chunks
+    message_chunk1 = _convert_delta_to_message_chunk(chunk1, AIMessageChunk)
+    message_chunk2 = _convert_delta_to_message_chunk(chunk2, AIMessageChunk)
+
+    # Verify first chunk
+    assert isinstance(message_chunk1, AIMessageChunk)
+    assert len(message_chunk1.tool_call_chunks) == 1
+    tool_call_chunk1 = message_chunk1.tool_call_chunks[0]
+    assert tool_call_chunk1["name"] == "get_weather"
+    assert tool_call_chunk1.get("args") == '{"location": "Par'
+    assert "text_input" not in tool_call_chunk1
+    assert tool_call_chunk1["id"] == "call_def456"
+    assert tool_call_chunk1["index"] == 0
+
+    # Verify second chunk
+    assert isinstance(message_chunk2, AIMessageChunk)
+    assert len(message_chunk2.tool_call_chunks) == 1
+    tool_call_chunk2 = message_chunk2.tool_call_chunks[0]
+    assert tool_call_chunk2["name"] is None
+    assert tool_call_chunk2.get("args") == 'is", "unit": "celsius"}'
+    assert "text_input" not in tool_call_chunk2
+    assert tool_call_chunk2["id"] is None
+    assert tool_call_chunk2["index"] == 0
+
+    # Test chunk aggregation
+    combined = message_chunk1 + message_chunk2
+    assert isinstance(combined, AIMessageChunk)
+    assert len(combined.tool_call_chunks) == 1
+    combined_chunk = combined.tool_call_chunks[0]
+    assert combined_chunk["name"] == "get_weather"
+    assert combined_chunk.get("args") == '{"location": "Paris", "unit": "celsius"}'
+    assert "text_input" not in combined_chunk
+    assert combined_chunk["id"] == "call_def456"
+
+
+def test_mixed_tool_streaming():
+    """Test streaming with both custom and function tools in same response."""
+    # Simulate mixed tool streaming chunk from OpenAI
+    chunk = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "type": "custom",
+                "name": "execute_code",
+                "input": "x = 5",
+                "id": "call_custom_123",
+                "index": 0,
+            },
+            {
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
+                "id": "call_func_456",
+                "index": 1,
+            },
+        ],
+    }
+
+    # Parse the chunk
+    message_chunk = _convert_delta_to_message_chunk(chunk, AIMessageChunk)
+
+    assert isinstance(message_chunk, AIMessageChunk)
+    assert len(message_chunk.tool_call_chunks) == 2
+
+    # Verify custom tool chunk
+    custom_chunk = message_chunk.tool_call_chunks[0]
+    assert custom_chunk["name"] == "execute_code"
+    assert custom_chunk.get("text_input") == "x = 5"
+    assert custom_chunk.get("args") == ""  # Empty for custom tools
+    assert custom_chunk["id"] == "call_custom_123"
+    assert custom_chunk["index"] == 0
+
+    # Verify function tool chunk
+    function_chunk = message_chunk.tool_call_chunks[1]
+    assert function_chunk["name"] == "get_weather"
+    assert function_chunk.get("args") == '{"location": "NYC"}'
+    assert "text_input" not in function_chunk
+    assert function_chunk["id"] == "call_func_456"
+    assert function_chunk["index"] == 1

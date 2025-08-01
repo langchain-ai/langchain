@@ -8,11 +8,7 @@ from typing import Any, Literal, Optional, Union, cast
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -20,15 +16,9 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call as create_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
@@ -410,6 +400,7 @@ def add_ai_message_chunks(
             create_tool_call_chunk(
                 name=rtc.get("name"),
                 args=rtc.get("args"),
+                text_input=rtc.get("text_input"),
                 index=rtc.get("index"),
                 id=rtc.get("id"),
             )

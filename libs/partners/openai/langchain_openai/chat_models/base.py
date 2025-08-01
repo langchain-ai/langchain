@@ -354,7 +354,7 @@ def _convert_delta_to_message_chunk(
                     tool_call_chunks.append(
                         tool_call_chunk(
                             name=rtc.get("name"),
-                            args=rtc.get("input", ""),
+                            text_input=rtc.get("input", ""),
                             id=rtc.get("id"),
                             index=rtc.get("index"),
                         )
