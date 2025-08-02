@@ -222,7 +222,7 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         assert kwargs["tool_choice"] == "auto"
 
 
-def test_property_inheritance_integration(chat_hugging_face: Any):
+def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
     """Test that ChatHuggingFace inherits params from LLM object."""
     assert getattr(chat_hugging_face, "temperature", None) == 0.7
     assert getattr(chat_hugging_face, "max_tokens", None) == 512

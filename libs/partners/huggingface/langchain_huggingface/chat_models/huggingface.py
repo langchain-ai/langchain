@@ -524,11 +524,10 @@ class ChatHuggingFace(BaseChatModel):
             "stop": "stop_sequences",
         }
 
-        # Inherit properties if they exist in LLM and weren't explicitly set in ChatHuggingFace
+        # Inherit properties from LLM and not explicitly set here
         for chat_prop, llm_prop in property_mappings.items():
             if hasattr(self.llm, llm_prop):
                 llm_value = getattr(self.llm, llm_prop)
-                # Only inherit if the chat property is None/default and LLM has a non-None value
                 chat_value = getattr(self, chat_prop, None)
                 if not chat_value and llm_value:
                     setattr(self, chat_prop, llm_value)
