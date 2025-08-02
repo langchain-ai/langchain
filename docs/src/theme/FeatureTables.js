@@ -322,12 +322,12 @@ const FEATURE_TABLES = {
             {
                 name: "VertexAILLM",
                 link: "google_vertexai",
-                package: "langchain-google_vertexai",
+                package: "langchain-google-vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
             {
                 name: "NVIDIA",
-                link: "NVIDIA",
+                link: "nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
             },
@@ -1029,7 +1029,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "Chroma",
@@ -1039,10 +1039,10 @@ const FEATURE_TABLES = {
                 searchByVector: true,
                 searchWithScore: true,
                 async: true,
-                passesStandardTests: false,
-                multiTenancy: false,
+                passesStandardTests: true,
+                multiTenancy: true,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "Clickhouse",
@@ -1055,7 +1055,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "CouchbaseSearchVectorStore",
@@ -1081,7 +1081,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: false,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "ElasticsearchStore",
@@ -1094,7 +1094,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "FAISS",
@@ -1107,7 +1107,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "InMemoryVectorStore",
@@ -1120,7 +1120,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "Milvus",
@@ -1146,7 +1146,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "openGauss",
@@ -1172,7 +1172,20 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
+            },
+            {
+              name: "PGVectorStore",
+              link: "pgvectorstore",
+              deleteById: true,
+              filtering: true,
+              searchByVector: true,
+              searchWithScore: true,
+              async: true,
+              passesStandardTests: true,
+              multiTenancy: false,
+              local: true,
+              idsInAddDocuments: true,
             },
             {
                 name: "PineconeVectorStore",
@@ -1185,7 +1198,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "QdrantVectorStore",
@@ -1211,7 +1224,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "Weaviate",
@@ -1224,7 +1237,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: true,
                 local: true,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
             {
                 name: "SQLServer",
@@ -1237,7 +1250,7 @@ const FEATURE_TABLES = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: false,
-                idsInAddDocuments: false,
+                idsInAddDocuments: true,
             },
         ],
     }

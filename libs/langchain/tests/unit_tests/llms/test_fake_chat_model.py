@@ -7,6 +7,7 @@ from uuid import UUID
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from typing_extensions import override
 
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
@@ -166,6 +167,7 @@ async def test_callback_handlers() -> None:
             # Required to implement since this is an abstract method
             pass
 
+        @override
         async def on_llm_new_token(
             self,
             token: str,

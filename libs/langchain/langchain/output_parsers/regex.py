@@ -4,12 +4,14 @@ import re
 from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
+from typing_extensions import override
 
 
 class RegexParser(BaseOutputParser[dict[str, str]]):
     """Parse the output of an LLM call using a regex."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
