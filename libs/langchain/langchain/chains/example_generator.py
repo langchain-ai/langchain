@@ -1,3 +1,5 @@
+"""Example generation."""
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts.few_shot import FewShotPromptTemplate

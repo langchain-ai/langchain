@@ -1,3 +1,5 @@
+"""Flare chain prompts."""
+
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 from typing_extensions import override
