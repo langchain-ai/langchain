@@ -255,6 +255,7 @@ def load_qa_chain(
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
         callback_manager: Callback manager to use for the chain.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A chain to use for question answering.

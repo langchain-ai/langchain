@@ -49,6 +49,7 @@ def _check_numpy() -> bool:
 
 def _embedding_factory() -> Embeddings:
     """Create an Embeddings object.
+
     Returns:
         Embeddings: The created Embeddings object.
     """
@@ -298,7 +299,9 @@ class _EmbeddingDistanceChainMixin(Chain):
 
 
 class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
-    """Use embedding distances to score semantic difference between
+    """Embedding distance evaluation chain.
+
+    Use embedding distances to score semantic difference between
     a prediction and reference.
 
     Examples:
@@ -396,19 +399,20 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate the embedding distance between a prediction and
-        reference.
+        """Evaluate the embedding distance between a prediction and reference.
 
         Args:
-            prediction (str): The output string from the first model.
-            reference (str): The reference string (required)
-            callbacks (Callbacks, optional): The callbacks to use.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            reference: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = self(
             inputs={"prediction": prediction, "reference": reference},
@@ -431,19 +435,20 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate the embedding distance between
-        a prediction and reference.
+        """Evaluate the embedding distance between a prediction and reference.
 
         Args:
-            prediction (str): The output string from the first model.
-            reference (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            reference: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "reference": reference},
@@ -553,17 +558,17 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Evaluate the embedding distance between two predictions.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces
-            metadata (Dict[str, Any], optional): metadata to apply to
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = self(
             inputs={"prediction": prediction, "prediction_b": prediction_b},
@@ -586,22 +591,20 @@ class PairwiseEmbeddingDistanceEvalChain(
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate the embedding distance
-
-        between two predictions.
+        """Asynchronously evaluate the embedding distance between two predictions.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces
-            metadata (Dict[str, Any], optional): metadata to apply to traces
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+            - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "prediction_b": prediction_b},

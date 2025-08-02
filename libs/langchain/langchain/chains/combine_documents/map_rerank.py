@@ -28,7 +28,7 @@ from langchain.output_parsers.regex import RegexParser
     ),
 )
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
-    """Combining documents by mapping a chain over them, then reranking results.
+    r"""Combining documents by mapping a chain over them, then reranking results.
 
     This algorithm calls an LLMChain on each input document. The LLMChain is expected
     to have an OutputParser that parses the result into both an answer (``answer_key``)

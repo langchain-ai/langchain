@@ -26,6 +26,7 @@ def create_openai_tools_agent(
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more on the expected
             input variables.
+        strict: Whether strict mode should be used for OpenAI tools.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
