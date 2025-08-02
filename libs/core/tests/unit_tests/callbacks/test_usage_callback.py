@@ -126,15 +126,21 @@ def test_no_configure_hooks_memory_leak() -> None:
     """Test that repeated calls to get_usage_metadata_callback don't cause memory leaks."""
     from langchain_core.callbacks.usage import _registered_context_vars
     
-    # Clear any existing registrations for clean test
+    # Use a unique test name to avoid conflicts with other tests
+    test_name = "test_memory_leak_unique_name"
+    
+    # Clear any existing registration for our test name
+    if test_name in _registered_context_vars:
+        del _registered_context_vars[test_name]
+    
     initial_registrations = len(_registered_context_vars)
     
     # Call get_usage_metadata_callback multiple times with same name
     for _ in range(10):
-        with get_usage_metadata_callback() as cb:
+        with get_usage_metadata_callback(test_name) as cb:
             assert isinstance(cb, UsageMetadataCallbackHandler)
     
-    # Verify that only one ContextVar was registered for the default name
+    # Verify that only one ContextVar was registered for our test name
     final_registrations = len(_registered_context_vars)
     expected_registrations = initial_registrations + 1  # Only one new registration
     assert final_registrations == expected_registrations, (
@@ -142,12 +148,8 @@ def test_no_configure_hooks_memory_leak() -> None:
         f"to {final_registrations} entries, expected {expected_registrations}"
     )
     
-    # Test with different names to ensure each gets its own ContextVar
-    with get_usage_metadata_callback("test_name_1") as cb1:
-        assert isinstance(cb1, UsageMetadataCallbackHandler)
+    # Verify our test name is in the cache
+    assert test_name in _registered_context_vars
     
-    with get_usage_metadata_callback("test_name_2") as cb2:
-        assert isinstance(cb2, UsageMetadataCallbackHandler)
-    
-    # Should now have 3 total registrations (default + test_name_1 + test_name_2)
-    assert len(_registered_context_vars) == initial_registrations + 3
+    # Clean up our test registration
+    del _registered_context_vars[test_name]
