@@ -17,7 +17,7 @@ from langchain_core.output_parsers.openai_tools import (
 )
 from langchain_core.outputs import ChatGeneration
 
-STREAMED_MESSAGES: list = [
+STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
     AIMessageChunk(
         content="",
@@ -331,7 +331,7 @@ for message in STREAMED_MESSAGES:
         STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
 
 
-EXPECTED_STREAMED_JSON = [
+EXPECTED_STREAMED_JSON: list[dict[str, Any]] = [
     {},
     {"names": ["suz"]},
     {"names": ["suzy"]},
@@ -392,7 +392,7 @@ def test_partial_json_output_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser()
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -404,7 +404,7 @@ async def test_partial_json_output_parser_async(*, use_tool_calls: bool) -> None
     chain = input_iter | JsonOutputToolsParser()
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -416,7 +416,7 @@ def test_partial_json_output_parser_return_id(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser(return_id=True)
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [
             {
                 "type": "NameCollector",
@@ -435,7 +435,9 @@ def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
@@ -446,7 +448,9 @@ async def test_partial_json_output_parser_key_async(*, use_tool_calls: bool) -> 
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
