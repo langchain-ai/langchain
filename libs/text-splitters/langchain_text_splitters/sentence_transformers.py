@@ -6,7 +6,7 @@ from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
-    """Splitting text to tokens using HuggingFace tokenizer from sentence transformer models."""
+    """Splitting text to tokens using HuggingFace tokenizer."""
 
     def __init__(
         self,
@@ -19,7 +19,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         try:
-            from transformers import AutoTokenizer
+            from transformers.models.auto.tokenization_auto import AutoTokenizer
         except ImportError:
             msg = (
                 "Could not import transformers python package. "
@@ -33,13 +33,14 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         # Get the model configuration to determine max_seq_length
         try:
-            from transformers import AutoConfig
+            from transformers.models.auto.configuration_auto import AutoConfig
+
             config = AutoConfig.from_pretrained(self.model_name)
             # Different models may have different attribute names for max length
             self.maximum_tokens_per_chunk = getattr(
-                config, 'max_position_embeddings',
-                getattr(config, 'n_positions',
-                       getattr(config, 'max_seq_length', 512))
+                config,
+                "max_position_embeddings",
+                getattr(config, "n_positions", getattr(config, "max_seq_length", 512)),
             )
         except Exception:
             # Fallback to a reasonable default if config loading fails
@@ -82,7 +83,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
             return self._encode(text)[1:-1]
 
-        def decode_tokens(token_ids: list[int]) -> str:
+        def decode_tokens(token_ids: list[int]) -> Any:
             return self.tokenizer.decode(token_ids, skip_special_tokens=False)
 
         tokenizer = Tokenizer(
