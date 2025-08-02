@@ -12,7 +12,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace transformer embedding models using Inference API.
 
     This implementation uses the HuggingFace Inference API for generating embeddings,
-    removing the need for heavy dependencies like torch, sentence-transformers, or pillow.
+    removing the need for heavy dependencies like torch, sentence-transformers, or
+    pillow.
 
     Example:
         .. code-block:: python
@@ -20,7 +21,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             from langchain_huggingface import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            encode_kwargs = {'normalize_embeddings': False}
+            encode_kwargs = {"normalize_embeddings": False}
             hf = HuggingFaceEmbeddings(
                 model_name=model_name,
                 encode_kwargs=encode_kwargs
@@ -76,6 +77,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         # Clean texts
         texts = [x.replace("\n", " ") for x in texts]
@@ -84,11 +86,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             # Process texts one by one as the API expects individual strings
             embeddings = []
             for text in texts:
-                response = self._client.feature_extraction(
-                    text, model=self.model_name
-                )
+                response = self._client.feature_extraction(text, model=self.model_name)
                 # Convert numpy array to list of floats if needed
-                if hasattr(response, 'tolist'):
+                if hasattr(response, "tolist"):
                     embeddings.append(response.tolist())
                 else:
                     embeddings.append(list(response))
