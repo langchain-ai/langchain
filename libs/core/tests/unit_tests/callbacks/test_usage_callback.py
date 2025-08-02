@@ -124,19 +124,30 @@ async def test_usage_callback_async() -> None:
 
 def test_no_configure_hooks_memory_leak() -> None:
     """Test that repeated calls to get_usage_metadata_callback don't cause memory leaks."""
-    from langchain_core.tracers.context import _configure_hooks
+    from langchain_core.callbacks.usage import _registered_context_vars
     
-    # Record initial length of _configure_hooks
-    initial_length = len(_configure_hooks)
+    # Clear any existing registrations for clean test
+    initial_registrations = len(_registered_context_vars)
     
-    # Call get_usage_metadata_callback multiple times
+    # Call get_usage_metadata_callback multiple times with same name
     for _ in range(10):
         with get_usage_metadata_callback() as cb:
             assert isinstance(cb, UsageMetadataCallbackHandler)
     
-    # Verify that _configure_hooks hasn't grown
-    final_length = len(_configure_hooks)
-    assert final_length == initial_length, (
-        f"Memory leak detected: _configure_hooks grew from {initial_length} "
-        f"to {final_length} entries"
+    # Verify that only one ContextVar was registered for the default name
+    final_registrations = len(_registered_context_vars)
+    expected_registrations = initial_registrations + 1  # Only one new registration
+    assert final_registrations == expected_registrations, (
+        f"Memory leak detected: _registered_context_vars grew from {initial_registrations} "
+        f"to {final_registrations} entries, expected {expected_registrations}"
     )
+    
+    # Test with different names to ensure each gets its own ContextVar
+    with get_usage_metadata_callback("test_name_1") as cb1:
+        assert isinstance(cb1, UsageMetadataCallbackHandler)
+    
+    with get_usage_metadata_callback("test_name_2") as cb2:
+        assert isinstance(cb2, UsageMetadataCallbackHandler)
+    
+    # Should now have 3 total registrations (default + test_name_1 + test_name_2)
+    assert len(_registered_context_vars) == initial_registrations + 3

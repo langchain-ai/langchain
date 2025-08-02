@@ -88,6 +88,10 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
                     )
 
 
+# Cache for registered ContextVars to avoid memory leaks
+_registered_context_vars: dict[str, ContextVar[Optional[UsageMetadataCallbackHandler]]] = {}
+
+
 @contextmanager
 def get_usage_metadata_callback(
     name: str = "usage_metadata_callback",
@@ -130,21 +134,17 @@ def get_usage_metadata_callback(
     .. versionadded:: 0.3.49
 
     """
-    from langchain_core.tracers.context import register_configure_hook, _configure_hooks
+    from langchain_core.tracers.context import register_configure_hook
 
-    # Check if this ContextVar is already registered to prevent memory leak
-    usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
-        ContextVar(name, default=None)
-    )
-    
-    # Only register if not already in the hooks list
-    already_registered = any(
-        hook[0].name == name for hook in _configure_hooks 
-        if hasattr(hook[0], 'name')
-    )
-    
-    if not already_registered:
+    # Reuse existing ContextVar if already created to prevent memory leaks
+    if name not in _registered_context_vars:
+        usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
+            ContextVar(name, default=None)
+        )
         register_configure_hook(usage_metadata_callback_var, inheritable=True)
+        _registered_context_vars[name] = usage_metadata_callback_var
+    else:
+        usage_metadata_callback_var = _registered_context_vars[name]
     
     cb = UsageMetadataCallbackHandler()
     token = usage_metadata_callback_var.set(cb)
