@@ -120,3 +120,23 @@ async def test_usage_callback_async() -> None:
     callback = UsageMetadataCallbackHandler()
     _ = await llm.abatch(["Message 1", "Message 2"], config={"callbacks": [callback]})
     assert callback.usage_metadata == {"test_model": total_1_2}
+
+
+def test_no_configure_hooks_memory_leak() -> None:
+    """Test that repeated calls to get_usage_metadata_callback don't cause memory leaks."""
+    from langchain_core.tracers.context import _configure_hooks
+    
+    # Record initial length of _configure_hooks
+    initial_length = len(_configure_hooks)
+    
+    # Call get_usage_metadata_callback multiple times
+    for _ in range(10):
+        with get_usage_metadata_callback() as cb:
+            assert isinstance(cb, UsageMetadataCallbackHandler)
+    
+    # Verify that _configure_hooks hasn't grown
+    final_length = len(_configure_hooks)
+    assert final_length == initial_length, (
+        f"Memory leak detected: _configure_hooks grew from {initial_length} "
+        f"to {final_length} entries"
+    )
