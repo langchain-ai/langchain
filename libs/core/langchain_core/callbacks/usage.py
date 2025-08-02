@@ -89,7 +89,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 
 
 # Cache for registered ContextVars to avoid memory leaks
-_registered_context_vars: dict[str, ContextVar[Optional[UsageMetadataCallbackHandler]]] = {}
+_registered_context_vars: dict[str, Any] = {}
 
 
 @contextmanager
@@ -138,9 +138,7 @@ def get_usage_metadata_callback(
 
     # Reuse existing ContextVar if already created to prevent memory leaks
     if name not in _registered_context_vars:
-        usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
-            ContextVar(name, default=None)
-        )
+        usage_metadata_callback_var = ContextVar(name, default=None)
         register_configure_hook(usage_metadata_callback_var, inheritable=True)
         _registered_context_vars[name] = usage_metadata_callback_var
     else:
