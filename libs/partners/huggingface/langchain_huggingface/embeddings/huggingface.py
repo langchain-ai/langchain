@@ -87,11 +87,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = []
             for text in texts:
                 response = self._client.feature_extraction(text, model=self.model_name)
-                # Convert numpy array to list of floats if needed
-                if hasattr(response, "tolist"):
-                    embeddings.append(response.tolist())
-                else:
-                    embeddings.append(list(response))
+                list_response: list[float] = response.tolist()
+                embeddings.append(list_response)
             return embeddings
         except Exception as e:
             msg = f"Failed to get embeddings from HuggingFace API: {e}"
