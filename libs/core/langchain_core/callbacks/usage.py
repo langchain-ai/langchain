@@ -12,7 +12,6 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_core.tracers.context import register_configure_hook
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
@@ -93,8 +92,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 _usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
     ContextVar("usage_metadata_callback", default=None)
 )
-# Register the hook only once at module level to prevent memory leak
-register_configure_hook(_usage_metadata_callback_var, inheritable=True)
+_hook_registered = False
 
 
 @contextmanager
@@ -141,6 +139,13 @@ def get_usage_metadata_callback(
     .. versionadded:: 0.3.49
 
     """
+    # Register hook only once to prevent memory leak
+    global _hook_registered
+    if not _hook_registered:
+        from langchain_core.tracers.context import register_configure_hook
+        register_configure_hook(_usage_metadata_callback_var, inheritable=True)
+        _hook_registered = True
+    
     cb = UsageMetadataCallbackHandler()
     token = _usage_metadata_callback_var.set(cb)
     try:
