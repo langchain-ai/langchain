@@ -14,12 +14,12 @@ from langchain_text_splitters.sentence_transformers import (
 
 
 @pytest.fixture
-def sentence_transformers() -> Any:
+def transformers_lib() -> Any:
     try:
-        import sentence_transformers
+        import transformers
     except ImportError:
-        pytest.skip("SentenceTransformers not installed.")
-    return sentence_transformers
+        pytest.skip("transformers not installed.")
+    return transformers
 
 
 def test_huggingface_type_check() -> None:
@@ -63,7 +63,7 @@ def test_token_text_splitter_from_tiktoken() -> None:
     assert expected_tokenizer == actual_tokenizer
 
 
-def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
+def test_sentence_transformers_count_tokens(transformers_lib: Any) -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -78,7 +78,7 @@ def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
     assert expected_token_count == token_count
 
 
-def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
+def test_sentence_transformers_split_text(transformers_lib: Any) -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -88,7 +88,7 @@ def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
     assert expected_text_chunks == text_chunks
 
 
-def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> None:
+def test_sentence_transformers_multiple_tokens(transformers_lib: Any) -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
     text = "Lorem "
 
