@@ -23,6 +23,17 @@ from langchain_huggingface.llms import HuggingFaceEndpoint
 def mock_llm() -> Mock:
     llm = Mock(spec=HuggingFaceEndpoint)
     llm.inference_server_url = "test endpoint url"
+    llm.temperature = 0.7
+    llm.max_new_tokens = 512
+    llm.top_p = 0.9
+    llm.seed = 42
+    llm.streaming = True
+    llm.repetition_penalty = 1.1
+    llm.stop_sequences = ["</s>", "<|end|>"]
+    llm.model_kwargs = {"do_sample": True, "top_k": 50}
+    llm.server_kwargs = {"timeout": 120}
+    llm.repo_id = "test/model"
+    llm.model = "test/model"
     return llm
 
 
@@ -209,3 +220,11 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+def test_property_inheritance_integration(chat_hugging_face: Any):
+    """Test that ChatHuggingFace inherits params from LLM object."""
+    assert getattr(chat_hugging_face, "temperature", None) == 0.7
+    assert getattr(chat_hugging_face, "max_tokens", None) == 512
+    assert getattr(chat_hugging_face, "top_p", None) == 0.9
+    assert getattr(chat_hugging_face, "streaming", None) is True
