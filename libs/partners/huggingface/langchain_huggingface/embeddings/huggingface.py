@@ -87,7 +87,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = []
             for text in texts:
                 response = self._client.feature_extraction(text, model=self.model_name)
-                list_response: list[float] = response.tolist()
+                list_response: list[float] = response.tolist()  # type: ignore[assignment]
                 embeddings.append(list_response)
             return embeddings
         except Exception as e:
