@@ -11,3 +11,4 @@ The following may help resolve this error:
 - If many of your incoming requests are the same, utilize [model response caching](/docs/how_to/chat_model_caching/).
 - Spread requests across different providers if your application allows it.
 - Use a [`rate_limiter`](/docs/how_to/chat_model_rate_limiting/) to control the rate of requests to the model.
+- Note: LangChain's `batch` method does not currently use OpenAI's Batch API. See [issue #28508](https://github.com/langchain-ai/langchain/issues/28508) for details. Until this is implemented, consider using a custom batching approach or tools like [batch-bridge](https://github.com/hwchase17/batch-bridge) if you need to send high-throughput requests efficiently.
