@@ -304,6 +304,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
+
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -360,7 +361,7 @@ class ChatGroq(BaseChatModel):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Groq completion API. Can be float, httpx.Timeout or
+    """Timeout for requests to Groq completion API. Can be float, ``httpx.Timeout`` or
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -486,7 +487,7 @@ class ChatGroq(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     #
@@ -774,7 +775,7 @@ class ChatGroq(BaseChatModel):
                 their schema dictionary representation.
             function_call: Which function to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any).
             **kwargs: Any additional parameters to pass to
                 :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
@@ -869,8 +870,7 @@ class ChatGroq(BaseChatModel):
         r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
@@ -887,6 +887,7 @@ class ChatGroq(BaseChatModel):
                 .. versionchanged:: 0.1.9
 
                     Added support for TypedDict class.
+
             method:
                 The method for steering model generation, either ``'function_calling'``
                 or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
@@ -909,6 +910,7 @@ class ChatGroq(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
             kwargs:
                 Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -923,11 +925,12 @@ class ChatGroq(BaseChatModel):
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - ``"raw"``: BaseMessage
-            - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``"parsing_error"``: Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from typing import Optional
@@ -1337,7 +1340,7 @@ def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 

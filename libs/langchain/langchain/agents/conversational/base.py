@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -35,6 +36,7 @@ class ConversationalAgent(Agent):
     """Output parser for the agent."""
 
     @classmethod
+    @override
     def _get_default_output_parser(
         cls,
         ai_prefix: str = "AI",

@@ -1,15 +1,15 @@
 # Tensorlake
 
-Tensorlake is the AI Data Cloud that reliably transforms data from unstructured sources into ingestion-ready formats for AI Applications. 
+Tensorlake is the AI Data Cloud that reliably transforms data from unstructured sources into ingestion-ready formats for AI Applications.
 
-The `langchain-tensorlake` package provides seamless integration between [Tensorlake](https://tensorlake.ai) and [LangChain](https://langchain.com), 
+The `langchain-tensorlake` package provides seamless integration between [Tensorlake](https://tensorlake.ai) and [LangChain](https://langchain.com),
 enabling you to build sophisticated document processing agents with enhanced parsing features, like signature detection.
 
 ## Tensorlake feature overview
 
 Tensorlake gives you tools to:
 - Extract: Schema-driven structured data extraction to pull out specific fields from documents.
-- Parse: Convert documents to markdown to build RAG/Knowledge Graph systems. 
+- Parse: Convert documents to markdown to build RAG/Knowledge Graph systems.
 - Orchestrate: Build programmable workflows for large-scale ingestion and enrichment of Documents, Text, Audio, Video and more.
 
 Learn more at [docs.tensorlake.ai](https://docs.tensorlake.ai/introduction)
@@ -24,13 +24,13 @@ pip install -U langchain-tensorlake
 
 ---
 
-## Examples 
+## Examples
 
 Follow a [full tutorial](https://docs.tensorlake.ai/examples/tutorials/real-estate-agent-with-langgraph-cli) on how to detect signatures in unstructured documents using the `langchain-tensorlake` tool.
 
 Or check out this [colab notebook](https://colab.research.google.com/drive/1VRWIPCWYnjcRtQL864Bqm9CJ6g4EpRqs?usp=sharing) for a quick start.
 
---- 
+---
 ## Quick Start
 
 ### 1. Set up your environment
@@ -67,7 +67,7 @@ async def main(question):
             ),
             name="real-estate-agent",
         )
-    
+
     # Run the agent
     result = await agent.ainvoke({"messages": [{"role": "user", "content": question}]})
 
@@ -92,5 +92,5 @@ if __name__ == "__main__":
 
 ## Need help?
 
-Reach out to us on [Slack](https://join.slack.com/t/tensorlakecloud/shared_invite/zt-32fq4nmib-gO0OM5RIar3zLOBm~ZGqKg) or on the 
+Reach out to us on [Slack](https://join.slack.com/t/tensorlakecloud/shared_invite/zt-32fq4nmib-gO0OM5RIar3zLOBm~ZGqKg) or on the
 [package repository on GitHub](https://github.com/tensorlakeai/langchain-tensorlake) directly.

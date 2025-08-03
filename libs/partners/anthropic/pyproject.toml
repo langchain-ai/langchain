@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.57.0",
-    "langchain-core<1.0.0,>=0.3.68",
+    "anthropic<1,>=0.60.0",
+    "langchain-core<1.0.0,>=0.3.72",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.17"
+version = "0.3.18"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
@@ -67,7 +67,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes

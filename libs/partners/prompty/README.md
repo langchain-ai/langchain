@@ -17,9 +17,11 @@ from langchain_prompty import create_chat_prompt
 
 prompt = create_chat_prompt('<your .prompty file path>')
 ```
+
 Then you can use the prompt for next steps.
 
 Here is an example .prompty file:
+
 ```prompty
 ---
 name: Basic Prompt
