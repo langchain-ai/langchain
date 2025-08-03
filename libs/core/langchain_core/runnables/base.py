@@ -5948,47 +5948,54 @@ def chain(
     func: Callable[[Input], Coroutine[Any, Any, Output]],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
     func: Callable[[Input], Iterator[Output]],
 ) -> Runnable[Input, Output]: ...
+
 
 @overload
 def chain(
     func: Callable[[Input], AsyncIterator[Output]],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
     func: Callable[[Input], Output],
 ) -> Runnable[Input, Output]: ...
+
 
 @overload
 def chain(
     func: Callable[[Input, RunnableConfig], Output],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
     func: Callable[[Input, CallbackManagerForChainRun], Output],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
-    func: Callable[
-        [Input, CallbackManagerForChainRun, RunnableConfig], Output
-    ],
+    func: Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
 ) -> Runnable[Input, Output]: ...
+
 
 @overload
 def chain(
     func: Callable[[Input], Runnable[Input, Output]],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
     func: Callable[[Input, RunnableConfig], Coroutine[Any, Any, Output]],
 ) -> Runnable[Input, Output]: ...
+
 
 @overload
 def chain(
@@ -5997,13 +6004,15 @@ def chain(
     ],
 ) -> Runnable[Input, Output]: ...
 
+
 @overload
 def chain(
     func: Callable[
         [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-        Coroutine[Any, Any, Output]
+        Coroutine[Any, Any, Output],
     ],
 ) -> Runnable[Input, Output]: ...
+
 
 def chain(
     func: Union[
@@ -6013,18 +6022,13 @@ def chain(
         Callable[[Input], AsyncIterator[Output]],
         Callable[[Input, RunnableConfig], Output],
         Callable[[Input, CallbackManagerForChainRun], Output],
-        Callable[
-            [Input, CallbackManagerForChainRun, RunnableConfig], Output
-        ],
+        Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
         Callable[[Input], Runnable[Input, Output]],
         Callable[[Input, RunnableConfig], Coroutine[Any, Any, Output]],
-        Callable[
-            [Input, AsyncCallbackManagerForChainRun],
-            Coroutine[Any, Any, Output]
-        ],
+        Callable[[Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]],
         Callable[
             [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-            Coroutine[Any, Any, Output]
+            Coroutine[Any, Any, Output],
         ],
     ],
 ) -> Runnable[Input, Output]:
