@@ -232,7 +232,7 @@ if __name__ == "__main__":
         "extended-test": set(),
         "codspeed": set(),
     }
-    docs_edited = False
+    docs_edited tracking removed; test-doc-imports will always run
 
     if len(files) >= 300:
         # max diff length is 300 files - there are likely files missing
@@ -304,7 +304,6 @@ if __name__ == "__main__":
                 "an update for this new library!"
             )
         elif file.startswith("docs/") or file in ["pyproject.toml", "uv.lock"]: # docs or root uv files
-            docs_edited = True
             dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()
@@ -323,9 +322,7 @@ if __name__ == "__main__":
             "codspeed",
         ]
     }
-    map_job_to_configs["test-doc-imports"] = (
-        [{"python-version": "3.12"}] if docs_edited else []
-    )
+    map_job_to_configs["test-doc-imports"] = [{"python-version": "3.12"}]
 
     for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)
