@@ -97,7 +97,6 @@ jobs:
 
   test-doc-imports:
     needs: [ build ]
-    if: ${{ needs.build.outputs.test-doc-imports != '[]' }}
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.test-doc-imports) }}
