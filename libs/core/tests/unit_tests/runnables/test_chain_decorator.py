@@ -1,5 +1,5 @@
 """Test @chain decorator type compatibility."""
-import pytest
+
 from langchain_core.messages import AIMessage
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.runnables import chain, RunnableConfig
@@ -12,10 +12,10 @@ class TestChainDecorator:
         """Test that @chain works with functions accepting RunnableConfig."""
 
         @chain
-        def to_plain_text(input: ChatPromptValue, config: RunnableConfig) -> str:
+        def to_plain_text(data: ChatPromptValue, config: RunnableConfig) -> str:
             if config["configurable"].get("upper_case", False):
-                return input.to_string().upper()
-            return input.to_string()
+                return data.to_string().upper()
+            return data.to_string()
 
         prompt = ChatPromptValue(messages=[AIMessage("test message")])
 
@@ -35,8 +35,8 @@ class TestChainDecorator:
         """Test existing @chain usage still works."""
 
         @chain
-        def simple_chain(input: str) -> str:
-            return f"simple: {input}"
+        def simple_chain(data: str) -> str:
+            return f"simple: {data}"
 
         result = simple_chain.invoke("test")
         assert result == "simple: test"
