@@ -307,6 +307,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             prompt.format(variable1="foo")
+
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
@@ -323,6 +324,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             await prompt.aformat(variable1="foo")
+
         """
         return self.format(**kwargs)
 
@@ -363,6 +365,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             prompt.save(file_path="path/prompt.yaml")
+
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -442,6 +445,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
             prompt = PromptTemplate.from_template("Page {page}: {page_content}")
             format_document(doc, prompt)
             >>> "Page 1: This is a joke"
+
     """
     return prompt.format(**_get_document_info(doc, prompt))
 

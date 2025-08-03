@@ -189,6 +189,7 @@ class Tee(Generic[T]):
     To enforce sequential use of ``anext``, provide a ``lock``
     - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
+
     """
 
     def __init__(
@@ -280,6 +281,7 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
             <block>
         finally:
             await agen.aclose()
+
     """
 
     def __init__(

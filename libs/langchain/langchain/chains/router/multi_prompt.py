@@ -140,6 +140,7 @@ class MultiPromptChain(MultiRouteChain):
             result = await app.ainvoke({"query": "what color are carrots"})
             print(result["destination"])
             print(result["answer"])
+
     """  # noqa: E501
 
     @property

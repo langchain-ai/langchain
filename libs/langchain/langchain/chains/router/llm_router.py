@@ -96,6 +96,7 @@ class LLMRouterChain(RouterChain):
             )
 
             chain.invoke({"query": "what color are carrots"})
+
     """  # noqa: E501
 
     llm_chain: LLMChain

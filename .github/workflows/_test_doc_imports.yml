@@ -1,4 +1,4 @@
-name: test_doc_imports
+name: '📑 Documentation Import Testing'
 
 on:
   workflow_call:
@@ -18,29 +18,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: "check doc imports #${{ inputs.python-version }}"
+    name: '🔍 Check Doc Imports (Python ${{ inputs.python-version }})'
     steps:
-      - uses: actions/checkout@v4
+      - name: '📋 Checkout Code'
+        uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
+      - name: '📦 Install Test Dependencies'
         shell: bash
         run: uv sync --group test
 
-      - name: Install langchain editable
+      - name: '📦 Install LangChain in Editable Mode'
         run: |
           VIRTUAL_ENV=.venv uv pip install langchain-experimental langchain-community -e libs/core libs/langchain
 
-      - name: Check doc imports
+      - name: '🔍 Validate Documentation Import Statements'
         shell: bash
         run: |
           uv run python docs/scripts/check_imports.py
 
-      - name: Ensure the test did not create any additional files
+      - name: '🧹 Verify Clean Working Directory'
         shell: bash
         run: |
           set -eu

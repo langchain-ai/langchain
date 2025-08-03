@@ -466,6 +466,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "violence": {"filtered": False, "severity": "safe"},
                 },
             }
+
     """  # noqa: E501
 
     azure_endpoint: Optional[str] = Field(
@@ -1139,6 +1140,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     },
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs

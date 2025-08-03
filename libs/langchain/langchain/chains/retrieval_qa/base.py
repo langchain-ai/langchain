@@ -147,6 +147,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -191,6 +192,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]

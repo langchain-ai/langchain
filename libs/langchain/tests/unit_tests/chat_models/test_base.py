@@ -196,17 +196,17 @@ def test_configurable_with_default() -> None:
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-sonnet-20240229"},
+        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
     )
 
-    assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
+    assert model_with_config.model == "claude-3-7-sonnet-20250219"  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "model": "claude-3-sonnet-20240229",
+            "model": "claude-3-7-sonnet-20250219",
             "mcp_servers": None,
             "max_tokens": 1024,
             "temperature": None,

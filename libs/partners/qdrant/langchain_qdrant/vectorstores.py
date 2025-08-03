@@ -72,6 +72,7 @@ class Qdrant(VectorStore):
             client = QdrantClient()
             collection_name = "MyCollection"
             qdrant = Qdrant(client, collection_name, embedding_function)
+
     """
 
     CONTENT_KEY: str = "page_content"
@@ -1306,6 +1307,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
+
         """
         qdrant = cls.construct_instance(
             texts,
@@ -1540,6 +1542,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
+
         """
         qdrant = await cls.aconstruct_instance(
             texts,

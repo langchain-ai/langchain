@@ -140,6 +140,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         )
         print(result["score"])  # noqa: T201
         # 0
+
     """
 
     agent_tools: Optional[list[BaseTool]] = None

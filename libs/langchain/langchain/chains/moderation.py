@@ -27,6 +27,7 @@ class OpenAIModerationChain(Chain):
 
             from langchain.chains import OpenAIModerationChain
             moderation = OpenAIModerationChain()
+
     """
 
     client: Any = None  #: :meta private:

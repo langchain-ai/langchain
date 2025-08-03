@@ -97,6 +97,7 @@ class ConversationChain(LLMChain):
             from langchain_community.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
+
     """
 
     memory: BaseMemory = Field(default_factory=ConversationBufferMemory)

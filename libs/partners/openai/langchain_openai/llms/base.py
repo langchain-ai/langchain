@@ -289,6 +289,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 response = openai.generate(["Tell me a joke."])
+
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -508,6 +509,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -572,6 +574,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens

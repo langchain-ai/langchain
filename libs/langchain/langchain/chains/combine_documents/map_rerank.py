@@ -69,6 +69,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 rank_key="score",
                 answer_key="answer",
             )
+
     """
 
     llm_chain: LLMChain

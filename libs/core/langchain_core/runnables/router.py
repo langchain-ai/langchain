@@ -66,6 +66,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
             router = RouterRunnable(runnables={"add": add, "square": square})
             router.invoke({"key": "square", "input": 3})
+
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
