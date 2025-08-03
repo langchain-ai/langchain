@@ -15,6 +15,7 @@ env:
   AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo
   DEEPSEEK_API_KEY: foo
   FIREWORKS_API_KEY: foo
+  CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
 
 jobs:
   codspeed:
@@ -52,10 +53,10 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
 
       - name: '⚡ Run Benchmarks: ${{ matrix.working-directory }}'
-        if: ${{ secrets.CODSPEED_TOKEN != '' }}
+        if: ${{ env.CODSPEED_TOKEN != '' }}
         uses: CodSpeedHQ/action@v3
         with:
-          token: ${{ secrets.CODSPEED_TOKEN }}
+          token: ${{ env.CODSPEED_TOKEN }}
           run: |
             cd ${{ matrix.working-directory }}
             if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
@@ -65,5 +66,5 @@ jobs:
             fi
           mode: ${{ matrix.mode || 'instrumentation' }}
       - name: 'Skip CodSpeed (token missing)'
-        if: ${{ secrets.CODSPEED_TOKEN == '' }}
+        if: ${{ env.CODSPEED_TOKEN == '' }}
         run: echo "CODSPEED_TOKEN is missing - skipping benchmarks"
