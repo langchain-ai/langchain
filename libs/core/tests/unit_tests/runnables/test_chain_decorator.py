@@ -23,13 +23,13 @@ class TestChainDecorator:
         result = to_plain_text.invoke(
             prompt, config=RunnableConfig(configurable={"upper_case": True})
         )
-        assert result == "TEST MESSAGE"
+        assert result == "AI: TEST MESSAGE"
 
         # Test normal case
         result = to_plain_text.invoke(
             prompt, config=RunnableConfig(configurable={"upper_case": False})
         )
-        assert result == "test message"
+        assert result == "AI: test message"
 
     def test_chain_backward_compatibility(self) -> None:
         """Test existing @chain usage still works."""

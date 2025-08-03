@@ -5975,7 +5975,9 @@ def chain(
 
 @overload
 def chain(
-    func: Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+    func: Callable[
+        [Input, CallbackManagerForChainRun, RunnableConfig], Output
+    ],
 ) -> Runnable[Input, Output]: ...
 
 @overload
@@ -5990,12 +5992,17 @@ def chain(
 
 @overload
 def chain(
-    func: Callable[[Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]],
+    func: Callable[
+        [Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]
+    ],
 ) -> Runnable[Input, Output]: ...
 
 @overload
 def chain(
-    func: Callable[[Input, AsyncCallbackManagerForChainRun, RunnableConfig], Coroutine[Any, Any, Output]],
+    func: Callable[
+        [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+        Coroutine[Any, Any, Output]
+    ],
 ) -> Runnable[Input, Output]: ...
 
 def chain(
@@ -6006,11 +6013,19 @@ def chain(
         Callable[[Input], AsyncIterator[Output]],
         Callable[[Input, RunnableConfig], Output],
         Callable[[Input, CallbackManagerForChainRun], Output],
-        Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+        Callable[
+            [Input, CallbackManagerForChainRun, RunnableConfig], Output
+        ],
         Callable[[Input], Runnable[Input, Output]],
         Callable[[Input, RunnableConfig], Coroutine[Any, Any, Output]],
-        Callable[[Input, AsyncCallbackManagerForChainRun], Coroutine[Any, Any, Output]],
-        Callable[[Input, AsyncCallbackManagerForChainRun, RunnableConfig], Coroutine[Any, Any, Output]],
+        Callable[
+            [Input, AsyncCallbackManagerForChainRun],
+            Coroutine[Any, Any, Output]
+        ],
+        Callable[
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
+            Coroutine[Any, Any, Output]
+        ],
     ],
 ) -> Runnable[Input, Output]:
     """Decorate a function to make it a Runnable.
