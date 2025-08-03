@@ -149,7 +149,7 @@ class TestAnchorScreenshotTool:
         schema = tool.args_schema.schema()
 
         assert "url" in schema["required"]
-        # width, height, and image_quality have defaults, so not required
+        # width, height, and image_quality have defaults, so not required.
         assert "width" not in schema["required"]
         assert "height" not in schema["required"]
         assert "image_quality" not in schema["required"]

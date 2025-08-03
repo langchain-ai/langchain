@@ -699,3 +699,4 @@ packages:
 - name: langchain-anchorbrowser
   path: .
   repo: anchorbrowser/langchain-anchorbrowser
+  downloads: 0
