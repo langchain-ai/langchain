@@ -2,7 +2,7 @@
 
 from langchain_core.messages import AIMessage
 from langchain_core.prompt_values import ChatPromptValue
-from langchain_core.runnables import chain, RunnableConfig
+from langchain_core.runnables import RunnableConfig, chain
 
 
 class TestChainDecorator:
