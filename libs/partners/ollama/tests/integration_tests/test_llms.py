@@ -11,7 +11,7 @@ SAMPLE = "What is 3^3?"
 
 
 def test_stream_text_tokens() -> None:
-    """Test streaming raw string tokens from OllamaLLM."""
+    """Test streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -64,7 +64,7 @@ def test__stream_with_reasoning(model: str) -> None:
 
 
 async def test_astream_text_tokens() -> None:
-    """Test async streaming raw string tokens from OllamaLLM."""
+    """Test async streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):
@@ -109,7 +109,7 @@ async def test__astream_with_reasoning(model: str) -> None:
 
 
 async def test_abatch() -> None:
-    """Test batch sync token generation from OllamaLLM."""
+    """Test batch sync token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -129,7 +129,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch token generation from OllamaLLM."""
+    """Test batch token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])

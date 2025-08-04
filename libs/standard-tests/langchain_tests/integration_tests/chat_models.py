@@ -171,7 +171,7 @@ class ChatModelIntegrationTests(ChatModelTests):
           API references for individual test methods include troubleshooting tips.
 
 
-    Test subclasses must implement the following two properties:
+    Test subclasses **must** implement the following two properties:
 
     chat_model_class
         The chat model class to test, e.g., ``ChatParrotLink``.
@@ -424,10 +424,10 @@ class ChatModelIntegrationTests(ChatModelTests):
     .. dropdown:: returns_usage_metadata
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses.
+        on invoke and streaming responses. Defaults to ``True``.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
+        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -438,7 +438,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 return False
 
         Models supporting ``usage_metadata`` should also return the name of the
-        underlying model in the ``response_metadata`` of the AIMessage.
+        underlying model in the ``response_metadata`` of the ``AIMessage``.
 
     .. dropdown:: supports_anthropic_inputs
 
@@ -523,8 +523,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Property controlling what usage metadata details are emitted in both invoke
         and stream.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
+        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -944,7 +944,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Configuration
 
             By default, this test is run.
-            To disable this feature, set `returns_usage_metadata` to False in your
+
+            To disable this feature, set ``returns_usage_metadata`` to ``False`` in your
             test class:
 
             .. code-block:: python
@@ -955,7 +956,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         return False
 
             This test can also check the format of specific kinds of usage metadata
-            based on the `supported_usage_metadata_details` property. This property
+            based on the ``supported_usage_metadata_details`` property. This property
             should be configured as follows with the types of tokens that the model
             supports tracking:
 
@@ -1110,7 +1111,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Configuration
 
             By default, this test is run.
-            To disable this feature, set `returns_usage_metadata` to False in your
+            To disable this feature, set ``returns_usage_metadata`` to ``False`` in your
             test class:
 
             .. code-block:: python
@@ -1121,7 +1122,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         return False
 
             This test can also check the format of specific kinds of usage metadata
-            based on the `supported_usage_metadata_details` property. This property
+            based on the ``supported_usage_metadata_details`` property. This property
             should be configured as follows with the types of tokens that the model
             supports tracking:
 

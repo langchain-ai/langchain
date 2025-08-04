@@ -193,7 +193,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_tool_message(self) -> bool:
-        """(bool) whether the chat model supports ToolMessages that include image
+        """(bool) whether the chat model supports ``ToolMessage``s that include image
         content.
         """
         return False
@@ -261,7 +261,7 @@ class ChatModelUnitTests(ChatModelTests):
           API references for individual test methods include troubleshooting tips.
 
 
-    Test subclasses must implement the following two properties:
+    Test subclasses **must** implement the following two properties:
 
     chat_model_class
         The chat model class to test, e.g., ``ChatParrotLink``.
@@ -293,7 +293,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         Boolean property indicating whether the chat model supports tool calling.
 
-        By default, this is determined by whether the chat model's `bind_tools` method
+        By default, this is determined by whether the chat model's ``bind_tools`` method
         is overridden. It typically does not need to be overridden on the test class.
 
         Example override:
@@ -395,7 +395,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -431,7 +431,7 @@ class ChatModelUnitTests(ChatModelTests):
         URLs. Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -457,7 +457,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -484,7 +484,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -513,10 +513,10 @@ class ChatModelUnitTests(ChatModelTests):
     .. dropdown:: returns_usage_metadata
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses.
+        on invoke and streaming responses. Defaults to ``True``.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
+        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -527,7 +527,7 @@ class ChatModelUnitTests(ChatModelTests):
                 return False
 
         Models supporting ``usage_metadata`` should also return the name of the
-        underlying model in the ``response_metadata`` of the AIMessage.
+        underlying model in the ``response_metadata`` of the ``AIMessage``.
 
     .. dropdown:: supports_anthropic_inputs
 
@@ -561,7 +561,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     .. dropdown:: supports_image_tool_message
 
-        Boolean property indicating whether the chat model supports ToolMessages
+        Boolean property indicating whether the chat model supports ``ToolMessage``s
         that include image content, e.g.,
 
         .. code-block:: python
@@ -609,11 +609,11 @@ class ChatModelUnitTests(ChatModelTests):
 
     .. dropdown:: supported_usage_metadata_details
 
-        Property controlling what usage metadata details are emitted in both invoke
-        and stream.
+        Property controlling what usage metadata details are emitted in both ``invoke``
+        and ``stream``.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
+        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -817,7 +817,7 @@ class ChatModelUnitTests(ChatModelTests):
             If this test fails, ensure that:
 
             1. ``chat_model_params`` is specified and the model can be initialized from those params;
-            2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
+            2. The model accommodates `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
         """  # noqa: E501
         model = self.chat_model_class(
             **{

@@ -15,7 +15,7 @@ DEFAULT_MODEL_NAME = "llama3.1"
 
 @pytest.mark.parametrize(("method"), [("function_calling"), ("json_schema")])
 def test_structured_output(method: str) -> None:
-    """Test to verify structured output via tool calling and ``format`` parameter."""
+    """Test to verify structured output via tool calling and `format` parameter."""
 
     class Joke(BaseModel):
         """Joke to tell user."""

@@ -1,4 +1,4 @@
-"""Test chat model integration."""
+"""Unit tests for ChatOllama."""
 
 import json
 import logging
@@ -54,6 +54,7 @@ def _mock_httpx_client_stream(
 def test_arbitrary_roles_accepted_in_chatmessages(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test that `ChatOllama` accepts arbitrary roles in `ChatMessage`."""
     monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
     llm = ChatOllama(
         model=MODEL_NAME,
@@ -94,9 +95,6 @@ dummy_raw_tool_call = {
 }
 
 
-# --- Regression tests for tool-call argument parsing (see #30910) ---
-
-
 @pytest.mark.parametrize(
     "input_string, expected_output",
     [
@@ -113,14 +111,14 @@ dummy_raw_tool_call = {
 def test_parse_json_string_success_cases(
     input_string: str, expected_output: Any
 ) -> None:
-    """Tests that _parse_json_string correctly parses valid and fixable strings."""
+    """Tests that `_parse_json_string` correctly parses valid and fixable strings."""
     raw_tool_call = {"function": {"name": "test_func", "arguments": input_string}}
     result = _parse_json_string(input_string, raw_tool_call=raw_tool_call, skip=False)
     assert result == expected_output
 
 
 def test_parse_json_string_failure_case_raises_exception() -> None:
-    """Tests that _parse_json_string raises an exception for truly malformed strings."""
+    """Tests that `_parse_json_string` raises an exception for malformed strings."""
     malformed_string = "{'key': 'value',,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
     with pytest.raises(OutputParserException):
@@ -132,7 +130,7 @@ def test_parse_json_string_failure_case_raises_exception() -> None:
 
 
 def test_parse_json_string_skip_returns_input_on_failure() -> None:
-    """Tests that skip=True returns the original string on parse failure."""
+    """Tests that `skip=True` returns the original string on parse failure."""
     malformed_string = "{'not': valid,,,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
     result = _parse_json_string(
