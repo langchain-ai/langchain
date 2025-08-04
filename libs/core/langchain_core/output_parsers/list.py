@@ -83,7 +83,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                     continue
                 buffer += chunk_content
             elif isinstance(chunk, AIMessage):
-                buffer += chunk.text or ""
+                buffer += chunk.text
             else:
                 # add current chunk to buffer
                 buffer += chunk
@@ -119,7 +119,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                     continue
                 buffer += chunk_content
             elif isinstance(chunk, AIMessage):
-                buffer += chunk.text or ""
+                buffer += chunk.text
             else:
                 # add current chunk to buffer
                 buffer += chunk

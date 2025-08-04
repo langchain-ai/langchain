@@ -843,6 +843,7 @@ ContentBlock = Union[
     TextContentBlock,
     ToolCall,
     InvalidToolCall,
+    ToolCallChunk,
     ReasoningContentBlock,
     NonStandardContentBlock,
     DataContentBlock,
@@ -864,7 +865,22 @@ def _extract_typedict_type_values(union_type: Any) -> set[str]:
 
 
 KNOWN_BLOCK_TYPES = {
-    bt for bt in get_args(ContentBlock) for bt in get_args(bt.__annotations__["type"])
+    "text",
+    "text-plain",
+    "tool_call",
+    "invalid_tool_call",
+    "tool_call_chunk",
+    "reasoning",
+    "non_standard",
+    "image",
+    "audio",
+    "file",
+    "video",
+    "code_interpreter_call",
+    "code_interpreter_output",
+    "code_interpreter_result",
+    "web_search_call",
+    "web_search_result",
 }
 
 

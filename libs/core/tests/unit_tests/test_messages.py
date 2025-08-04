@@ -3,6 +3,7 @@ import uuid
 from typing import Optional, Union
 
 import pytest
+from typing_extensions import get_args
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
@@ -30,7 +31,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES
+from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES, ContentBlock
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -1363,20 +1364,19 @@ def test_convert_to_openai_image_block() -> None:
 
 
 def test_known_block_types() -> None:
-    assert {
-        "text",
-        "text-plain",
-        "tool_call",
-        "invalid_tool_call",
-        "reasoning",
-        "non_standard",
-        "image",
-        "audio",
-        "file",
-        "video",
-        "code_interpreter_call",
-        "code_interpreter_output",
-        "code_interpreter_result",
-        "web_search_call",
-        "web_search_result",
-    } == KNOWN_BLOCK_TYPES
+    expected = {
+        bt
+        for bt in get_args(ContentBlock)
+        for bt in get_args(bt.__annotations__["type"])
+    }
+    # Normalize any Literal[...] types in block types to their string values.
+    # This ensures all entries are plain strings, not Literal objects.
+    expected = {
+        t
+        if isinstance(t, str)
+        else t.__args__[0]
+        if hasattr(t, "__args__") and len(t.__args__) == 1
+        else t
+        for t in expected
+    }
+    assert expected == KNOWN_BLOCK_TYPES
