@@ -479,7 +479,7 @@ class ChatGroq(BaseChatModel):
         return self
 
     def _supports_structured_outputs(self) -> bool:
-        """Check if the current model supports Groq's structured outputs (json_schema)."""
+        """Check if the current model supports Groq's structured outputs."""
         # Models that support structured outputs as per Groq documentation
         structured_output_models = {
             "moonshotai/kimi-k2-instruct",
@@ -543,7 +543,10 @@ class ChatGroq(BaseChatModel):
             response_format = kwargs["response_format"]
             if response_format == {"type": "json_object"}:
                 return False
-            if isinstance(response_format, dict) and response_format.get("type") == "json_schema":
+            if (
+                isinstance(response_format, dict)
+                and response_format.get("type") == "json_schema"
+            ):
                 return False
         return base_should_stream
 
@@ -907,8 +910,8 @@ class ChatGroq(BaseChatModel):
                 or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If ``'json_mode'`` then JSON mode will be used.
-                
-                For models that support Groq's structured outputs (e.g., 
+
+                For models that support Groq's structured outputs (e.g.,
                 ``moonshotai/kimi-k2-instruct``, ``meta-llama/llama-4-maverick-17b-128e-instruct``,
                 ``meta-llama/llama-4-scout-17b-16e-instruct``), ``'json_mode'`` will automatically
                 use the enhanced structured outputs format which guarantees schema compliance.
@@ -916,8 +919,8 @@ class ChatGroq(BaseChatModel):
 
                 .. note::
                     When using ``'json_mode'`` with models that don't support structured outputs,
-                    you must include instructions for formatting the output into the desired 
-                    schema in the model call (either via the prompt itself or in the system 
+                    you must include instructions for formatting the output into the desired
+                    schema in the model call (either via the prompt itself or in the system
                     message/prompt/instructions).
 
                 .. warning::
@@ -1161,8 +1164,8 @@ class ChatGroq(BaseChatModel):
             if self._supports_structured_outputs() and schema is not None:
                 # Convert schema to JSON Schema format for structured outputs
                 if is_pydantic_schema:
-                    json_schema = schema.model_json_schema()
-                    schema_name = schema.__name__
+                    json_schema = schema.model_json_schema()  # type: ignore[union-attr]
+                    schema_name = schema.__name__  # type: ignore[union-attr]
                 elif isinstance(schema, dict):
                     # Handle different dict schema formats
                     if "function" in schema:
@@ -1178,15 +1181,12 @@ class ChatGroq(BaseChatModel):
                         json_schema = schema
                         schema_name = schema.get("title", "ExtractedData")
                 else:
-                    msg = f"Unsupported schema type for json_mode with structured outputs: {type(schema)}"
+                    msg = f"Unsupported schema type: {type(schema)}"
                     raise ValueError(msg)
-                
+
                 response_format = {
                     "type": "json_schema",
-                    "json_schema": {
-                        "name": schema_name,
-                        "schema": json_schema
-                    }
+                    "json_schema": {"name": schema_name, "schema": json_schema},
                 }
                 ls_format_info = {
                     "kwargs": {"method": "json_mode", "structured_outputs": True},
@@ -1199,7 +1199,7 @@ class ChatGroq(BaseChatModel):
                     "kwargs": {"method": "json_mode", "structured_outputs": False},
                     "schema": schema,
                 }
-            
+
             llm = self.bind(
                 response_format=response_format,
                 ls_structured_output_format=ls_format_info,
