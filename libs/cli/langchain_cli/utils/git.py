@@ -3,7 +3,7 @@ import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from git import Repo
 
@@ -19,7 +19,7 @@ class DependencySource(TypedDict):
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: dict
+    event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format
@@ -196,7 +196,7 @@ def copy_repo(
     Raises FileNotFound error if it can't find source
     """
 
-    def ignore_func(_, files):
+    def ignore_func(_: Any, files: list[str]) -> list[str]:
         return [f for f in files if f == ".git"]
 
     shutil.copytree(source, destination, ignore=ignore_func)

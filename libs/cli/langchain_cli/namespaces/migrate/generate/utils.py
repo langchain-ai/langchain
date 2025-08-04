@@ -3,6 +3,7 @@ import inspect
 import os
 import pathlib
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Optional
 
 HERE = Path(__file__).parent
@@ -17,10 +18,10 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 class ImportExtractor(ast.NodeVisitor):
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
-        self.imports: list = []
+        self.imports: list[tuple[str, str]] = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node) -> None:  # noqa: N802
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -39,7 +40,7 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node) -> None:  # noqa: N802
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -58,7 +59,7 @@ def is_subclass(class_obj: Any, classes_: list[type]) -> bool:
     )
 
 
-def find_subclasses_in_module(module, classes_: list[type]) -> list[str]:
+def find_subclasses_in_module(module: ModuleType, classes_: list[type]) -> list[str]:
     """Find all classes in the module that inherit from one of the classes."""
     subclasses = []
     # Iterate over all attributes of the module that are classes
