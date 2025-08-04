@@ -160,13 +160,10 @@ def _parse_arguments_from_tool_call(
     return parsed_arguments
 
 
-# Missing: _get_tool_calls_from_response
-
-
-# Missing: _lc_tool_call_to_openai_tool_call
-
-
-# Missing: _get_image_from_data_content_block
+# Removed from v0:
+# - _get_tool_calls_from_response
+# _lc_tool_call_to_openai_tool_call
+# _get_image_from_data_content_block
 
 
 def _is_pydantic_class(obj: Any) -> bool:
