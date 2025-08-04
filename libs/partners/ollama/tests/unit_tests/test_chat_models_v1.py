@@ -206,6 +206,11 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
         assert bound_llm is not None
 
 
+# Missing: `test_arbitrary_roles_accepted_in_chatmessages`
+# Not brought over since it would appear that it's just a workaround to `think=True`
+# But can be added if needed in the future.
+
+
 @patch("langchain_ollama.chat_models.validate_model")
 def test_validate_model_on_init(mock_validate_model: Any) -> None:
     """Test that the model is validated on initialization when requested."""
