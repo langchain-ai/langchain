@@ -1,10 +1,14 @@
 """Unit tests for ChatOllamaV1."""
 
-from langchain_core.messages.content_blocks import ImageContentBlock, TextContentBlock
+from langchain_core.messages.content_blocks import (
+    create_image_block,
+    create_text_block,
+)
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
 from langchain_core.messages.v1 import MessageV1
 from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
+from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
 
 from langchain_ollama._compat import (
     _convert_chunk_to_v1,
@@ -21,9 +25,7 @@ class TestMessageConversion:
 
     def test_convert_human_message_v1_text_only(self) -> None:
         """Test converting HumanMessageV1 with text content."""
-        message = HumanMessageV1(
-            content=[TextContentBlock(type="text", text="Hello world")]
-        )
+        message = HumanMessageV1("Hello world")
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -31,30 +33,9 @@ class TestMessageConversion:
         assert result["content"] == "Hello world"
         assert result["images"] == []
 
-    def test_convert_human_message_v1_with_image(self) -> None:
-        """Test converting HumanMessageV1 with text and image content."""
-        message = HumanMessageV1(
-            content=[
-                TextContentBlock(type="text", text="Describe this image:"),
-                ImageContentBlock(
-                    type="image",
-                    mime_type="image/jpeg",
-                    base64="base64imagedata",
-                ),
-            ]
-        )
-
-        result = _convert_from_v1_to_ollama_format(message)
-
-        assert result["role"] == "user"
-        assert result["content"] == "Describe this image:"
-        assert result["images"] == ["base64imagedata"]
-
     def test_convert_ai_message_v1(self) -> None:
         """Test converting AIMessageV1 with text content."""
-        message = AIMessageV1(
-            content=[TextContentBlock(type="text", text="Hello! How can I help?")]
-        )
+        message = AIMessageV1("Hello! How can I help?")
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -63,17 +44,51 @@ class TestMessageConversion:
 
     def test_convert_system_message_v1(self) -> None:
         """Test converting SystemMessageV1."""
-        message = SystemMessageV1(
-            content=[TextContentBlock(type="text", text="You are a helpful assistant.")]
-        )
+        message = SystemMessageV1("You are a helpful assistant.")
 
         result = _convert_from_v1_to_ollama_format(message)
 
         assert result["role"] == "system"
         assert result["content"] == "You are a helpful assistant."
 
+    def test_convert_human_message_v1_with_image(self) -> None:
+        """Test converting HumanMessageV1 with text and image content.
+
+        Each uses `_convert_from_v1_to_ollama_format` to ensure
+        that the conversion handles both text and image blocks correctly. Thus, we don't
+        need additional tests for other message types that also use this function.
+
+        """
+        message_a = HumanMessageV1(
+            content=[
+                create_text_block("Describe this image:"),
+                create_image_block(base64="base64imagedata"),
+            ]
+        )
+
+        result_a = _convert_from_v1_to_ollama_format(message_a)
+
+        assert result_a["role"] == "user"
+        assert result_a["content"] == "Describe this image:"
+        assert result_a["images"] == ["base64imagedata"]
+
+        # Make sure multiple images are handled correctly
+        message_b = HumanMessageV1(
+            content=[
+                create_text_block("Describe this image:"),
+                create_image_block(base64="base64imagedata"),
+                create_image_block(base64="base64dataimage"),
+            ]
+        )
+
+        result_b = _convert_from_v1_to_ollama_format(message_b)
+
+        assert result_b["role"] == "user"
+        assert result_b["content"] == "Describe this image:"
+        assert result_b["images"] == ["base64imagedata", "base64dataimage"]
+
     def test_convert_from_ollama_format(self) -> None:
-        """Test converting Ollama response to AIMessageV1."""
+        """Test converting Ollama response to `AIMessageV1`."""
         ollama_response = {
             "model": MODEL_NAME,
             "created_at": "2024-01-01T00:00:00Z",
@@ -92,13 +107,13 @@ class TestMessageConversion:
 
         assert isinstance(result, AIMessageV1)
         assert len(result.content) == 1
-        assert result.content[0]["type"] == "text"
-        assert result.content[0]["text"] == "Hello! How can I help you today?"
+        assert result.content[0].get("type") == "text"
+        assert result.content[0].get("text") == "Hello! How can I help you today?"
         assert result.response_metadata.get("model_name") == MODEL_NAME
         assert result.response_metadata.get("done") is True
 
     def test_convert_chunk_to_v1(self) -> None:
-        """Test converting Ollama streaming chunk to AIMessageChunkV1."""
+        """Test converting Ollama streaming chunk to `AIMessageChunkV1`."""
         chunk = {
             "model": MODEL_NAME,
             "created_at": "2024-01-01T00:00:00Z",
@@ -109,8 +124,8 @@ class TestMessageConversion:
         result = _convert_chunk_to_v1(chunk)
 
         assert len(result.content) == 1
-        assert result.content[0]["type"] == "text"
-        assert result.content[0]["text"] == "Hello"
+        assert result.content[0].get("type") == "text"
+        assert result.content[0].get("text") == "Hello"
 
     def test_convert_empty_content(self) -> None:
         """Test converting empty content blocks."""
@@ -123,23 +138,29 @@ class TestMessageConversion:
         assert result["images"] == []
 
 
-class TestChatOllamaV1:
-    """Test ChatOllamaV1 class."""
+class TestChatOllamaV1(ChatModelV1UnitTests):
+    """Test `ChatOllamaV1`."""
+
+    @property
+    def chat_model_class(self) -> type[ChatOllamaV1]:
+        return ChatOllamaV1
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": MODEL_NAME}
 
     def test_initialization(self) -> None:
-        """Test ChatOllamaV1 initialization."""
+        """Test `ChatOllamaV1` initialization."""
         llm = ChatOllamaV1(model=MODEL_NAME)
 
         assert llm.model == MODEL_NAME
         assert llm._llm_type == "chat-ollama-v1"
 
     def test_chat_params(self) -> None:
-        """Test _chat_params method."""
+        """Test `_chat_params()`."""
         llm = ChatOllamaV1(model=MODEL_NAME, temperature=0.7)
 
-        messages: list[MessageV1] = [
-            HumanMessageV1(content=[TextContentBlock(type="text", text="Hello")])
-        ]
+        messages: list[MessageV1] = [HumanMessageV1("Hello")]
 
         params = llm._chat_params(messages)
 
@@ -148,7 +169,7 @@ class TestChatOllamaV1:
         assert params["messages"][0]["role"] == "user"
         assert params["messages"][0]["content"] == "Hello"
 
-        # Ensure options carry thru
+        # Ensure options carry over
         assert params["options"].temperature == 0.7
 
     def test_ls_params(self) -> None:
@@ -174,4 +195,3 @@ class TestChatOllamaV1:
 
         # Should return a bound model
         assert bound_llm is not None
-        # The actual tool binding logic is handled by the parent class
