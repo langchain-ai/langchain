@@ -478,6 +478,16 @@ class ChatGroq(BaseChatModel):
             raise ImportError(msg) from exc
         return self
 
+    def _supports_structured_outputs(self) -> bool:
+        """Check if the current model supports Groq's structured outputs (json_schema)."""
+        # Models that support structured outputs as per Groq documentation
+        structured_output_models = {
+            "moonshotai/kimi-k2-instruct",
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+        }
+        return self.model_name in structured_output_models
+
     #
     # Serializable class method overrides
     #
@@ -529,8 +539,12 @@ class ChatGroq(BaseChatModel):
             async_api=async_api, run_manager=run_manager, **kwargs
         )
         if base_should_stream and ("response_format" in kwargs):
-            # Streaming not supported in JSON mode.
-            return kwargs["response_format"] != {"type": "json_object"}
+            # Streaming not supported in JSON mode or structured outputs.
+            response_format = kwargs["response_format"]
+            if response_format == {"type": "json_object"}:
+                return False
+            if isinstance(response_format, dict) and response_format.get("type") == "json_schema":
+                return False
         return base_should_stream
 
     def _generate(
@@ -892,16 +906,22 @@ class ChatGroq(BaseChatModel):
                 The method for steering model generation, either ``'function_calling'``
                 or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
-                function-calling API. If ``'json_mode'`` then OpenAI's JSON mode will be
-                used.
+                function-calling API. If ``'json_mode'`` then JSON mode will be used.
+                
+                For models that support Groq's structured outputs (e.g., 
+                ``moonshotai/kimi-k2-instruct``, ``meta-llama/llama-4-maverick-17b-128e-instruct``,
+                ``meta-llama/llama-4-scout-17b-16e-instruct``), ``'json_mode'`` will automatically
+                use the enhanced structured outputs format which guarantees schema compliance.
+                For other models, it falls back to the legacy JSON object mode.
 
                 .. note::
-                    If using ``'json_mode'`` then you must include instructions for formatting
-                    the output into the desired schema into the model call. (either via the
-                    prompt itself or in the system message/prompt/instructions).
+                    When using ``'json_mode'`` with models that don't support structured outputs,
+                    you must include instructions for formatting the output into the desired 
+                    schema in the model call (either via the prompt itself or in the system 
+                    message/prompt/instructions).
 
                 .. warning::
-                    ``'json_mode'`` does not support streaming responses stop sequences.
+                    ``'json_mode'`` does not support streaming responses.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -951,7 +971,7 @@ class ChatGroq(BaseChatModel):
                     )
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="moonshotai/kimi-k2-instruct", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -977,7 +997,7 @@ class ChatGroq(BaseChatModel):
                     justification: str
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="moonshotai/kimi-k2-instruct", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1010,7 +1030,7 @@ class ChatGroq(BaseChatModel):
                     ]
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="moonshotai/kimi-k2-instruct", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1039,7 +1059,7 @@ class ChatGroq(BaseChatModel):
                    }
                }
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="moonshotai/kimi-k2-instruct", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(
@@ -1060,7 +1080,9 @@ class ChatGroq(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="moonshotai/kimi-k2-instruct", temperature=0)
+                # Note: moonshotai/kimi-k2-instruct supports structured outputs, so this will
+                # automatically use Groq's enhanced json_schema format for better schema compliance
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -1134,12 +1156,53 @@ class ChatGroq(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(
-                response_format={"type": "json_object"},
-                ls_structured_output_format={
-                    "kwargs": {"method": "json_mode"},
+            # Use structured outputs (json_schema) for models that support it,
+            # otherwise fall back to legacy json_object mode
+            if self._supports_structured_outputs() and schema is not None:
+                # Convert schema to JSON Schema format for structured outputs
+                if is_pydantic_schema:
+                    json_schema = schema.model_json_schema()
+                    schema_name = schema.__name__
+                elif isinstance(schema, dict):
+                    # Handle different dict schema formats
+                    if "function" in schema:
+                        # OpenAI tool format - extract the parameters
+                        json_schema = schema["function"]["parameters"]
+                        schema_name = schema["function"]["name"]
+                    elif "name" in schema and "parameters" in schema:
+                        # OpenAI function format
+                        json_schema = schema["parameters"]
+                        schema_name = schema["name"]
+                    else:
+                        # Assume it's a JSON schema
+                        json_schema = schema
+                        schema_name = schema.get("title", "ExtractedData")
+                else:
+                    msg = f"Unsupported schema type for json_mode with structured outputs: {type(schema)}"
+                    raise ValueError(msg)
+                
+                response_format = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": schema_name,
+                        "schema": json_schema
+                    }
+                }
+                ls_format_info = {
+                    "kwargs": {"method": "json_mode", "structured_outputs": True},
+                    "schema": json_schema,
+                }
+            else:
+                # Fall back to legacy json_object mode
+                response_format = {"type": "json_object"}
+                ls_format_info = {
+                    "kwargs": {"method": "json_mode", "structured_outputs": False},
                     "schema": schema,
-                },
+                }
+            
+            llm = self.bind(
+                response_format=response_format,
+                ls_structured_output_format=ls_format_info,
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]

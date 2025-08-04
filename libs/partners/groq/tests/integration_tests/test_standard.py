@@ -13,10 +13,14 @@ from langchain_groq import ChatGroq
 rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 
 
-class BaseTestGroq(ChatModelIntegrationTests):
+class TestGroq(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "llama-3.3-70b-versatile", "rate_limiter": rate_limiter}
 
     @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(
@@ -29,11 +33,4 @@ class BaseTestGroq(ChatModelIntegrationTests):
         return True
 
 
-class TestGroqGemma(BaseTestGroq):
-    @property
-    def chat_model_params(self) -> dict:
-        return {"model": "gemma2-9b-it", "rate_limiter": rate_limiter}
 
-    @property
-    def supports_json_mode(self) -> bool:
-        return True
