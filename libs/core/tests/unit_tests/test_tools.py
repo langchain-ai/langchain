@@ -37,6 +37,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.documents import Document
 from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
+from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     Runnable,
@@ -70,6 +71,7 @@ from langchain_core.utils.pydantic import (
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.stubs import AnyStr
 
 
 def _get_tool_call_json_schema(tool: BaseTool) -> dict:
@@ -1392,6 +1394,27 @@ def test_tool_call_input_tool_message_output() -> None:
     )
     actual = tool.invoke(tool_call)
     assert actual == expected
+
+    tool_call.pop("type")
+    with pytest.raises(ValidationError):
+        tool.invoke(tool_call)
+
+    # v1
+    tool_call = {
+        "name": "structured_api",
+        "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
+        "id": "123",
+        "type": "tool_call",
+    }
+    tool = _MockStructuredTool(output_version="v1")
+    expected_v1 = ToolMessageV1(
+        "1 True {'img': 'base64string...'}",
+        tool_call_id="123",
+        name="structured_api",
+        id=AnyStr("lc_abc123"),
+    )
+    actual = tool.invoke(tool_call)
+    assert expected_v1 == actual
 
     tool_call.pop("type")
     with pytest.raises(ValidationError):
