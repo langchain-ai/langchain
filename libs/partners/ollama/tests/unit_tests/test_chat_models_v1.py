@@ -162,6 +162,36 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
         return {"model": MODEL_NAME}
 
     @property
+    def has_tool_calling(self) -> bool:
+        """`ChatOllamaV1` supports tool calling (e.g., `qwen3` models)."""
+        return True
+
+    @property
+    def has_tool_choice(self) -> bool:
+        """`ChatOllamaV1` supports tool choice parameter."""
+        return True
+
+    @property
+    def has_structured_output(self) -> bool:
+        """`ChatOllamaV1` supports structured output via `with_structured_output`."""
+        return True
+
+    @property
+    def supports_image_content_blocks(self) -> bool:
+        """`ChatOllamaV1` supports image content blocks (e.g., `gemma3`)."""
+        return True
+
+    @property
+    def supports_reasoning_content_blocks(self) -> bool:
+        """`ChatOllamaV1` supports reasoning/thinking content blocks (e.g., `qwen3`)."""
+        return True
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        """`ChatOllamaV1` returns usage metadata with token counts."""
+        return True
+
+    @property
     def supports_non_standard_blocks(self) -> bool:
         """Override to indicate Ollama doesn't support non-standard content blocks."""
         return False
