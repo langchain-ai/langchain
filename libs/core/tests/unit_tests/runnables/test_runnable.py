@@ -3204,7 +3204,9 @@ def test_map_stream() -> None:
     # Final value should be complete dict
     assert final_value == {"llm": "i'm a textbot"}
 
-    chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(itemgetter("llm")).pipe(llm)).pick(
+    chain_pick_two = chain.assign(
+        hello=RunnablePick("llm").pipe(itemgetter("llm")).pipe(llm)
+    ).pick(
         [
             "llm",
             "hello",
@@ -3233,9 +3235,13 @@ def test_map_stream() -> None:
             final_value += chunk
 
     # Find first non-empty chunk for chain_pick_two
-    first_content_chunk_two = next((chunk for chunk in streamed_chunks if chunk), {})
-    assert first_content_chunk_two.get("llm") == "i" or "chat" in first_content_chunk_two
-    
+    first_content_chunk_two: dict[str, Any] = next(
+        (chunk for chunk in streamed_chunks if chunk), {}
+    )
+    assert (
+        first_content_chunk_two.get("llm") == "i" or "chat" in first_content_chunk_two
+    )
+
     # Just check that final result is correct instead of chunk count
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("hello") == "i'm a textbot"
