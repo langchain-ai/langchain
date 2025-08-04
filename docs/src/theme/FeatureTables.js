@@ -776,7 +776,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Reddit",
-                link: "RedditPostsLoader",
+                link: "reddit",
                 loaderName: "RedditPostsLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.reddit.RedditPostsLoader.html"
             },
