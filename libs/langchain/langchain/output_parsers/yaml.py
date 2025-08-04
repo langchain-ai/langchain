@@ -34,9 +34,7 @@ class YamlOutputParser(BaseOutputParser[T]):
             yaml_str = match.group("yaml") if match else text
 
             json_object = yaml.safe_load(yaml_str)
-            if hasattr(self.pydantic_object, "model_validate"):
-                return self.pydantic_object.model_validate(json_object)
-            return self.pydantic_object.parse_obj(json_object)
+            return self.pydantic_object.model_validate(json_object)
 
         except (yaml.YAMLError, ValidationError) as e:
             name = self.pydantic_object.__name__
@@ -46,15 +44,7 @@ class YamlOutputParser(BaseOutputParser[T]):
     @override
     def get_format_instructions(self) -> str:
         # Copy schema to avoid altering original Pydantic schema.
-        if hasattr(self.pydantic_object, "model_json_schema"):
-            # Pydantic v2
-            schema = dict(self.pydantic_object.model_json_schema().items())
-        elif hasattr(self.pydantic_object, "schema"):
-            # Pydantic v1
-            schema = dict(self.pydantic_object.schema().items())
-        else:
-            msg = "Pydantic object must have either model_json_schema or schema method"
-            raise ValueError(msg)
+        schema = dict(self.pydantic_object.model_json_schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema
