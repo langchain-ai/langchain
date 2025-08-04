@@ -34,6 +34,9 @@ from langchain_core.messages.content_blocks import (
     create_plaintext_block,
     create_text_block,
     create_video_block,
+    is_reasoning_block,
+    is_text_block,
+    is_tool_call_block,
 )
 from langchain_core.messages.v1 import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.tools import tool
@@ -90,7 +93,7 @@ def _validate_tool_call_message(message: AIMessage) -> None:
         tool_call_blocks = [
             block
             for block in message.content
-            if isinstance(block, dict) and block.get("type") == "tool_call"
+            if isinstance(block, dict) and is_tool_call_block(block)
         ]
         assert len(tool_call_blocks) >= 1
 
@@ -170,7 +173,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         text_blocks = [
             block
             for block in result.content
-            if isinstance(block, dict) and block.get("type") == "text"
+            if isinstance(block, dict) and is_text_block(block)
         ]
         assert len(text_blocks) > 0
         if result.text:
@@ -244,7 +247,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             reasoning_blocks = [
                 block
                 for block in result.content
-                if isinstance(block, dict) and block.get("type") == "reasoning"
+                if isinstance(block, dict) and is_reasoning_block(block)
             ]
             assert len(reasoning_blocks) > 0
 
@@ -266,7 +269,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         for block in result.content:
             if (
                 isinstance(block, dict)
-                and block.get("type") == "text"
+                and is_text_block(block)
                 and "annotations" in block
             ):
                 annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
@@ -343,7 +346,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
     def test_tool_calling_with_content_blocks(self, model: BaseChatModelV1) -> None:
         """Test tool calling with content blocks."""
-        if not self.supports_enhanced_tool_calls:
+        if not self.has_tool_calling:
             pytest.skip("Model does not support tool calls.")
 
         @tool

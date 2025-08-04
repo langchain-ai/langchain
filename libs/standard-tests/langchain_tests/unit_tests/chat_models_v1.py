@@ -20,6 +20,9 @@ from langchain_core.messages.content_blocks import (
     create_image_block,
     create_non_standard_block,
     create_text_block,
+    is_reasoning_block,
+    is_text_block,
+    is_tool_call_block,
 )
 from langchain_core.messages.v1 import AIMessage, HumanMessage
 from langchain_core.tools import tool
@@ -55,7 +58,25 @@ class ChatModelV1Tests(BaseStandardTests):
     # Content Block Support Properties
     @property
     def supports_content_blocks_v1(self) -> bool:
-        """Whether the model supports content blocks v1 format."""
+        """Whether the model supports content blocks v1 format.
+
+        Defualts to True. This should not be overridden by a ChatV1 subclass. You may
+        override the following properties to enable specific content block support.
+        Each defaults to False:
+
+        - ``supports_reasoning_content_blocks``
+        - ``supports_plaintext_content_blocks``
+        - ``supports_file_content_blocks``
+        - ``supports_image_content_blocks``
+        - ``supports_audio_content_blocks``
+        - ``supports_video_content_blocks``
+        - ``supports_citations``
+        - ``supports_web_search_blocks``
+        - ``supports_enhanced_tool_calls``
+        - ``supports_invalid_tool_calls``
+        - ``supports_tool_call_chunks``
+
+        """
         return True
 
     @property
@@ -65,7 +86,11 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def supports_text_content_blocks(self) -> bool:
-        """Whether the model supports ``TextContentBlock``."""
+        """Whether the model supports ``TextContentBlock``.
+
+        This is a minimum requirement for v1 chat models.
+
+        """
         return self.supports_content_blocks_v1
 
     @property
@@ -109,19 +134,9 @@ class ChatModelV1Tests(BaseStandardTests):
         return False
 
     @property
-    def supports_enhanced_tool_calls(self) -> bool:
-        """Whether the model supports ``ToolCall`` format with content blocks."""
-        return self.has_tool_calling and self.supports_content_blocks_v1
-
-    @property
     def supports_invalid_tool_calls(self) -> bool:
         """Whether the model can handle ``InvalidToolCall`` blocks."""
         return False
-
-    @property
-    def supports_tool_call_chunks(self) -> bool:
-        """Whether the model supports streaming ``ToolCallChunk`` blocks."""
-        return self.supports_enhanced_tool_calls
 
 
 class ChatModelV1UnitTests(ChatModelV1Tests):
@@ -289,7 +304,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         ``TextContentBlock`` objects instead of plain strings.
         """
         if not self.supports_text_content_blocks:
-            pytest.skip("Model does not support TextContentBlock.")
+            pytest.skip("Model does not support TextContentBlock (rare!)")
 
         text_block = create_text_block("Hello, world!")
         message = HumanMessage(content=[text_block])
@@ -303,7 +318,9 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         if not (
             self.supports_text_content_blocks and self.supports_image_content_blocks
         ):
-            pytest.skip("Model does not support mixed content blocks.")
+            pytest.skip(
+                "Model doesn't support mixed content blocks (concurrent text and image)"
+            )
 
         content_blocks: list[ContentBlock] = [
             create_text_block("Describe this image:"),
@@ -332,7 +349,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             reasoning_blocks = [
                 block
                 for block in result.content
-                if isinstance(block, dict) and block.get("type") == "reasoning"
+                if isinstance(block, dict) and is_reasoning_block(block)
             ]
             assert len(reasoning_blocks) > 0
 
@@ -351,7 +368,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             for block in content_list:
                 if (
                     isinstance(block, dict)
-                    and block.get("type") == "text"
+                    and is_text_block(block)
                     and "annotations" in block
                     and isinstance(block.get("annotations"), list)
                     and len(cast(list, block.get("annotations", []))) > 0
@@ -394,7 +411,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         self, model: BaseChatModelV1
     ) -> None:
         """Test enhanced tool calling with content blocks format."""
-        if not self.supports_enhanced_tool_calls:
+        if not self.has_tool_calling:
             pytest.skip("Model does not support enhanced tool calls.")
 
         @tool
@@ -413,7 +430,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             tool_call_blocks = [
                 block
                 for block in result.content
-                if isinstance(block, dict) and block.get("type") == "tool_call"
+                if isinstance(block, dict) and is_tool_call_block(block)
             ]
             assert len(tool_call_blocks) > 0
         # Backwards compat?
