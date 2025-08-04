@@ -395,6 +395,7 @@ def convert_runnable_to_tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
     arg_types: Optional[dict[str, type]] = None,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool.
 
@@ -404,10 +405,15 @@ def convert_runnable_to_tool(
         name: The name of the tool. Defaults to None.
         description: The description of the tool. Defaults to None.
         arg_types: The types of the arguments. Defaults to None.
+        output_version: Version of ToolMessage to return given
+            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+            If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
 
     Returns:
         The tool.
-    """
+    """  # noqa: E501
     if args_schema:
         runnable = runnable.with_types(input_type=args_schema)
     description = description or _get_description_from_runnable(runnable)
@@ -420,6 +426,7 @@ def convert_runnable_to_tool(
             func=runnable.invoke,
             coroutine=runnable.ainvoke,
             description=description,
+            output_version=output_version,
         )
 
     async def ainvoke_wrapper(
@@ -447,4 +454,5 @@ def convert_runnable_to_tool(
         coroutine=ainvoke_wrapper,
         description=description,
         args_schema=args_schema,
+        output_version=output_version,
     )
