@@ -194,12 +194,10 @@ class AIMessage:
         ]
 
     @property
-    def text(self) -> Optional[str]:
+    def text(self) -> str:
         """Extract all text content from the AI message as a string."""
         text_blocks = [block for block in self.content if block["type"] == "text"]
-        if text_blocks:
-            return "".join(block["text"] for block in text_blocks)
-        return None
+        return "".join(block["text"] for block in text_blocks)
 
     @property
     def tool_calls(self) -> list[types.ToolCall]:

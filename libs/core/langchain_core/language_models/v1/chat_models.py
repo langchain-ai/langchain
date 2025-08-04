@@ -458,7 +458,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             chunks: list[AIMessageChunkV1] = []
             try:
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg.text or "")
+                    run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
@@ -525,7 +525,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             chunks: list[AIMessageChunkV1] = []
             try:
                 async for msg in self._astream(input_messages, **kwargs):
-                    await run_manager.on_llm_new_token(msg.text or "")
+                    await run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
             except BaseException as e:
                 await run_manager.on_llm_error(
@@ -602,7 +602,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 # TODO: replace this with something for new messages
                 input_messages = _normalize_messages_v1(messages)
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg.text or "")
+                    run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
                     yield msg
 
@@ -676,7 +676,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 input_messages,
                 **kwargs,
             ):
-                await run_manager.on_llm_new_token(msg.text or "")
+                await run_manager.on_llm_new_token(msg.text)
                 chunks.append(msg)
                 yield msg
             if not msg.is_last_chunk:

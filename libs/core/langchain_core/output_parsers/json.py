@@ -73,7 +73,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-        text = result.text or "" if isinstance(result, AIMessage) else result[0].text
+        text = result.text if isinstance(result, AIMessage) else result[0].text
         text = text.strip()
         if partial:
             try:
