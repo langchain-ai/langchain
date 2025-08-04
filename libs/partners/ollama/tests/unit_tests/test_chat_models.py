@@ -33,6 +33,16 @@ class TestChatOllama(ChatModelUnitTests):
 
 
 def test__parse_arguments_from_tool_call() -> None:
+    """Test that string arguments are preserved as strings in tool call parsing.
+
+    This test verifies the fix for PR #30154 which addressed an issue where
+    string-typed tool arguments (like IDs or long strings) were being incorrectly
+    processed. The parser should preserve string values as strings rather than
+    attempting to parse them as JSON when they're already valid string arguments.
+
+    The test uses a long string ID to ensure string arguments maintain their
+    original type after parsing, which is critical for tools expecting string inputs.
+    """
     raw_response = '{"model":"sample-model","message":{"role":"assistant","content":"","tool_calls":[{"function":{"name":"get_profile_details","arguments":{"arg_1":"12345678901234567890123456"}}}]},"done":false}'  # noqa: E501
     raw_tool_calls = json.loads(raw_response)["message"]["tool_calls"]
     response = _parse_arguments_from_tool_call(raw_tool_calls[0])
