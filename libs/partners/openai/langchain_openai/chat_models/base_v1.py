@@ -139,9 +139,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> MessageV1:
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
-        content: list[types.ContentBlock] = [
-            {"type": "text", "text": _dict.get("content", "") or ""}
-        ]
+        content: list[types.ContentBlock] = []
+        if (oai_content := _dict.get("content")) and isinstance(oai_content, str):
+            content.append({"type": "text", "text": oai_content})
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
@@ -314,7 +314,9 @@ def _convert_delta_to_message_chunk(_dict: Mapping[str, Any]) -> AIMessageChunkV
         except KeyError:
             pass
 
-    return AIMessageChunkV1(content=content, id=id_, tool_call_chunks=tool_call_chunks)
+    return AIMessageChunkV1(
+        content=content or [], id=id_, tool_call_chunks=tool_call_chunks
+    )
 
 
 def _update_token_usage(
@@ -838,7 +840,7 @@ class BaseChatOpenAI(BaseChatModelV1):
                 if generation_chunk:
                     if run_manager:
                         run_manager.on_llm_new_token(
-                            generation_chunk.text or "", chunk=generation_chunk
+                            generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
                     yield generation_chunk
@@ -888,7 +890,7 @@ class BaseChatOpenAI(BaseChatModelV1):
                 if generation_chunk:
                     if run_manager:
                         await run_manager.on_llm_new_token(
-                            generation_chunk.text or "", chunk=generation_chunk
+                            generation_chunk.text, chunk=generation_chunk
                         )
                     is_first_chunk = False
                     yield generation_chunk
@@ -959,9 +961,7 @@ class BaseChatOpenAI(BaseChatModelV1):
                     logprobs = message_chunk.response_metadata.get("logprobs")
                     if run_manager:
                         run_manager.on_llm_new_token(
-                            message_chunk.text or "",
-                            chunk=message_chunk,
-                            logprobs=logprobs,
+                            message_chunk.text, chunk=message_chunk, logprobs=logprobs
                         )
                     is_first_chunk = False
                     yield message_chunk
@@ -971,9 +971,7 @@ class BaseChatOpenAI(BaseChatModelV1):
             final_completion = response.get_final_completion()
             message_chunk = self._get_message_chunk_from_completion(final_completion)
             if run_manager:
-                run_manager.on_llm_new_token(
-                    message_chunk.text or "", chunk=message_chunk
-                )
+                run_manager.on_llm_new_token(message_chunk.text, chunk=message_chunk)
             yield message_chunk
 
     def _invoke(
@@ -1187,9 +1185,7 @@ class BaseChatOpenAI(BaseChatModelV1):
                     logprobs = message_chunk.response_metadata.get("logprobs")
                     if run_manager:
                         await run_manager.on_llm_new_token(
-                            message_chunk.text or "",
-                            chunk=message_chunk,
-                            logprobs=logprobs,
+                            message_chunk.text, chunk=message_chunk, logprobs=logprobs
                         )
                     is_first_chunk = False
                     yield message_chunk
@@ -1200,7 +1196,7 @@ class BaseChatOpenAI(BaseChatModelV1):
             message_chunk = self._get_message_chunk_from_completion(final_completion)
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    message_chunk.text or "", chunk=message_chunk
+                    message_chunk.text, chunk=message_chunk
                 )
             yield message_chunk
 
@@ -1940,7 +1936,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -2165,7 +2161,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
-            response.text()
+            response.text
 
         .. code-block:: python
 
@@ -2177,7 +2173,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What is my name?",
                 previous_response_id=response.response_metadata["id"],
             )
-            second_response.text()
+            second_response.text
 
         .. code-block:: python
 
@@ -2226,7 +2222,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response = llm.invoke("What is 3^3?")
 
             # Response text
-            print(f"Output: {response.text()}")
+            print(f"Output: {response.text}")
 
             # Reasoning summaries
             for block in response.content:
@@ -3799,7 +3795,7 @@ def _convert_responses_chunk_to_generation_chunk(
             and (content_block.get("index") or -1) > current_index  # type: ignore[operator]
         ):
             # blocks were added for v1
-            current_index = content_block["index"]
+            current_index = cast(int, content_block["index"])
 
     message = AIMessageChunkV1(
         content=content_v1,
