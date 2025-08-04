@@ -323,14 +323,15 @@ class AIMessageChunk(AIMessage):
         """Get the tool calls made by the AI."""
         if not self._tool_calls:
             parsed_content = _init_tool_calls(self.content)
-            self._tool_calls = [
-                block for block in parsed_content if types.is_tool_call_block(block)
-            ]
-            self._invalid_tool_calls = [
-                block
-                for block in parsed_content
-                if types.is_invalid_tool_call_block(block)
-            ]
+            tool_calls = []
+            invalid_tool_calls = []
+            for block in parsed_content:
+                if types.is_tool_call_block(block):
+                    tool_calls.append(block)
+                elif types.is_invalid_tool_call_block(block):
+                    invalid_tool_calls.append(block)
+            self._tool_calls = tool_calls
+            self._invalid_tool_calls = invalid_tool_calls
         return self._tool_calls
 
     @tool_calls.setter
@@ -343,14 +344,15 @@ class AIMessageChunk(AIMessage):
         """Get the invalid tool calls made by the AI."""
         if not self._invalid_tool_calls:
             parsed_content = _init_tool_calls(self.content)
-            self._tool_calls = [
-                block for block in parsed_content if types.is_tool_call_block(block)
-            ]
-            self._invalid_tool_calls = [
-                block
-                for block in parsed_content
-                if types.is_invalid_tool_call_block(block)
-            ]
+            tool_calls = []
+            invalid_tool_calls = []
+            for block in parsed_content:
+                if types.is_tool_call_block(block):
+                    tool_calls.append(block)
+                elif types.is_invalid_tool_call_block(block):
+                    invalid_tool_calls.append(block)
+            self._tool_calls = tool_calls
+            self._invalid_tool_calls = invalid_tool_calls
         return self._invalid_tool_calls
 
     def __add__(self, other: Any) -> "AIMessageChunk":
@@ -386,7 +388,7 @@ def _init_tool_calls(content: list[types.ContentBlock]) -> list[types.ContentBlo
             continue
         try:
             args_str = block.get("args")
-            args_ = parse_partial_json(args_str) if args_str else {}
+            args_ = parse_partial_json(str(args_str)) if args_str else {}
             if isinstance(args_, dict):
                 new_content.append(
                     create_tool_call(
@@ -558,9 +560,10 @@ class HumanMessage:
         Returns:
             Concatenated string of all text blocks in the message.
         """
-        return "".join(
+        text_parts = [
             block["text"] for block in self.content if types.is_text_block(block)
-        )
+        ]
+        return "".join(text_parts)
 
 
 @dataclass
@@ -637,9 +640,10 @@ class SystemMessage:
 
     def text(self) -> str:
         """Extract all text content from the system message."""
-        return "".join(
+        text_parts = [
             block["text"] for block in self.content if types.is_text_block(block)
-        )
+        ]
+        return "".join(text_parts)
 
 
 @dataclass
@@ -729,9 +733,10 @@ class ToolMessage:
     @property
     def text(self) -> str:
         """Extract all text content from the tool message."""
-        return "".join(
+        text_parts = [
             block["text"] for block in self.content if types.is_text_block(block)
-        )
+        ]
+        return "".join(text_parts)
 
     def __post_init__(self) -> None:
         """Initialize computed fields after dataclass creation.
