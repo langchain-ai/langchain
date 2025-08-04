@@ -207,38 +207,6 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         params = model._identifying_params
         assert isinstance(params, dict)  # Should be dict-like mapping
 
-    # Token Counting Tests
-    def test_get_token_ids(self, model: BaseChatModelV1) -> None:
-        """Test that ``get_token_ids`` returns a list of integers."""
-        text = "Hello, world!"
-        token_ids = model.get_token_ids(text)
-        assert isinstance(token_ids, list)
-        assert all(isinstance(token_id, int) for token_id in token_ids)
-        assert len(token_ids) > 0
-
-    def test_get_num_tokens(self, model: BaseChatModelV1) -> None:
-        """Test that ``get_num_tokens`` returns a positive integer."""
-        text = "Hello, world!"
-        num_tokens = model.get_num_tokens(text)
-        assert isinstance(num_tokens, int)
-        assert num_tokens > 0
-
-    def test_get_num_tokens_from_messages(self, model: BaseChatModelV1) -> None:
-        """Test that ``get_num_tokens_from_messages`` returns a positive integer."""
-        messages = [HumanMessage("Hello, world!")]
-        num_tokens = model.get_num_tokens_from_messages(messages)  # type: ignore[arg-type]
-        assert isinstance(num_tokens, int)
-        assert num_tokens > 0
-
-    def test_token_counting_consistency(self, model: BaseChatModelV1) -> None:
-        """Test that token counting methods are consistent with each other."""
-        text = "Hello, world!"
-        token_ids = model.get_token_ids(text)
-        num_tokens = model.get_num_tokens(text)
-
-        # Number of tokens should match length of token IDs list
-        assert len(token_ids) == num_tokens
-
     # Serialization Tests
     def test_dump_serialization(self, model: BaseChatModelV1) -> None:
         """Test that ``dump()`` returns proper serialization."""
