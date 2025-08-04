@@ -449,26 +449,26 @@ class ChatOllama(BaseChatModel):
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
+    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
 
     mirostat_eta: Optional[float] = None
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: 0.1)"""
+    the algorithm more responsive. (Default: ``0.1``)"""
 
     mirostat_tau: Optional[float] = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
-    coherent text. (Default: 5.0)"""
+    coherent text. (Default: ``5.0``)"""
 
     num_ctx: Optional[int] = None
     """Sets the size of the context window used to generate the
-    next token. (Default: 2048)	"""
+    next token. (Default: ``2048``)	"""
 
     num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to 1 to
-    enable metal support, 0 to disable."""
+    """The number of GPUs to use. On macOS it defaults to ``1`` to
+    enable metal support, ``0`` to disable."""
 
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
@@ -478,20 +478,20 @@ class ChatOllama(BaseChatModel):
 
     num_predict: Optional[int] = None
     """Maximum number of tokens to predict when generating text.
-    (Default: 128, -1 = infinite generation, -2 = fill context)"""
+    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)"""
 
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
+    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = num_ctx)"""
 
     repeat_penalty: Optional[float] = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., 1.5)
-    will penalize repetitions more strongly, while a lower value (e.g., 0.9)
-    will be more lenient. (Default: 1.1)"""
+    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
+    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
+    will be more lenient. (Default: ``1.1``)"""
 
     temperature: Optional[float] = None
     """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: 0.8)"""
+    make the model answer more creatively. (Default: ``0.8``)"""
 
     seed: Optional[int] = None
     """Sets the random number seed to use for generation. Setting this
@@ -503,21 +503,21 @@ class ChatOllama(BaseChatModel):
 
     tfs_z: Optional[float] = None
     """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., 2.0) will reduce the
-    impact more, while a value of 1.0 disables this setting. (default: 1)"""
+    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
+    impact more, while a value of ``1.0`` disables this setting. (default: ``1``)"""
 
     top_k: Optional[int] = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. 100)
-    will give more diverse answers, while a lower value (e.g. 10)
-    will be more conservative. (Default: 40)"""
+    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
+    will give more diverse answers, while a lower value (e.g. ``10``)
+    will be more conservative. (Default: ``40``)"""
 
     top_p: Optional[float] = None
-    """Works together with top-k. A higher value (e.g., 0.95) will lead
-    to more diverse text, while a lower value (e.g., 0.5) will
-    generate more focused and conservative text. (Default: 0.9)"""
+    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
+    to more diverse text, while a lower value (e.g., ``0.5``) will
+    generate more focused and conservative text. (Default: ``0.9``)"""
 
     format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
-    """Specify the format of the output (options: "json", JSON schema)."""
+    """Specify the format of the output (options: ``'json'``, JSON schema)."""
 
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
@@ -527,32 +527,35 @@ class ChatOllama(BaseChatModel):
 
     client_kwargs: Optional[dict] = {}
     """Additional kwargs to pass to the httpx clients.
+
     These arguments are passed to both synchronous and async clients.
-    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+
+    Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
     to synchronous and asynchronous clients.
+
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
+    """Additional kwargs to merge with ``client_kwargs`` before
     passing to the httpx AsyncClient.
+
     `Full list of params. <https://www.python-httpx.org/api/#asyncclient>`__
+
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
+    """Additional kwargs to merge with ``client_kwargs`` before
     passing to the httpx Client.
+
     `Full list of params. <https://www.python-httpx.org/api/#client>`__
+
     """
 
     _client: Client = PrivateAttr()
-    """
-    The client to use for making requests.
-    """
+    """The client to use for making requests."""
 
     _async_client: AsyncClient = PrivateAttr()
-    """
-    The async client to use for making requests.
-    """
+    """The async client to use for making requests."""
 
     def _chat_params(
         self,
