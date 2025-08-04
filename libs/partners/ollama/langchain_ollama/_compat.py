@@ -176,24 +176,29 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessageV1:
     response_metadata = ResponseMetadata()
     if "model" in response:
         response_metadata["model_name"] = response["model"]
+
+    # Cast to dict[str, Any] to allow provider-specific fields
+    # ResponseMetadata TypedDict only defines standard fields, but mypy doesn't
+    # understand that total=False allows arbitrary additional keys at runtime
+    metadata_as_dict = cast(dict[str, Any], response_metadata)
     if "created_at" in response:
-        response_metadata["created_at"] = response["created_at"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["created_at"] = response["created_at"]
     if "done" in response:
-        response_metadata["done"] = response["done"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["done"] = response["done"]
     if "done_reason" in response:
-        response_metadata["done_reason"] = response["done_reason"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["done_reason"] = response["done_reason"]
     if "total_duration" in response:
-        response_metadata["total_duration"] = response["total_duration"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["total_duration"] = response["total_duration"]
     if "load_duration" in response:
-        response_metadata["load_duration"] = response["load_duration"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["load_duration"] = response["load_duration"]
     if "prompt_eval_count" in response:
-        response_metadata["prompt_eval_count"] = response["prompt_eval_count"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["prompt_eval_count"] = response["prompt_eval_count"]
     if "prompt_eval_duration" in response:
-        response_metadata["prompt_eval_duration"] = response["prompt_eval_duration"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["prompt_eval_duration"] = response["prompt_eval_duration"]
     if "eval_count" in response:
-        response_metadata["eval_count"] = response["eval_count"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["eval_count"] = response["eval_count"]
     if "eval_duration" in response:
-        response_metadata["eval_duration"] = response["eval_duration"]  # type: ignore[typeddict-unknown-key]
+        metadata_as_dict["eval_duration"] = response["eval_duration"]
 
     return AIMessageV1(
         content=content,
