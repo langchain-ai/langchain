@@ -25,7 +25,6 @@ from langchain_core.language_models.v1.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.messages.v1 import MessageV1
@@ -56,21 +55,6 @@ from ._compat import (
 from ._utils import validate_model
 
 log = logging.getLogger(__name__)
-
-
-def _get_usage_metadata_from_response(
-    response: dict[str, Any],
-) -> Optional[UsageMetadata]:
-    """Extract usage metadata from Ollama response."""
-    input_tokens = response.get("prompt_eval_count")
-    output_tokens = response.get("eval_count")
-    if input_tokens is not None and output_tokens is not None:
-        return UsageMetadata(
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            total_tokens=input_tokens + output_tokens,
-        )
-    return None
 
 
 def _parse_json_string(
@@ -578,12 +562,6 @@ class ChatOllamaV1(BaseChatModelV1):
 
                     chunk = _convert_chunk_to_v1(part)
 
-                    # Add usage metadata for final chunks
-                    if part.get("done") is True:
-                        usage_metadata = _get_usage_metadata_from_response(part)
-                        if usage_metadata:
-                            chunk.usage_metadata = usage_metadata
-
                     if run_manager:
                         text_content = "".join(
                             str(block.get("text", ""))
@@ -599,9 +577,6 @@ class ChatOllamaV1(BaseChatModelV1):
             # Non-streaming case
             response = self._client.chat(**chat_params)
             ai_message = _convert_to_v1_from_ollama_format(response)
-            usage_metadata = _get_usage_metadata_from_response(response)
-            if usage_metadata:
-                ai_message.usage_metadata = usage_metadata
             # Convert to chunk for yielding
             chunk = AIMessageChunkV1(
                 content=ai_message.content,
@@ -637,12 +612,6 @@ class ChatOllamaV1(BaseChatModelV1):
 
                     chunk = _convert_chunk_to_v1(part)
 
-                    # Add usage metadata for final chunks
-                    if part.get("done") is True:
-                        usage_metadata = _get_usage_metadata_from_response(part)
-                        if usage_metadata:
-                            chunk.usage_metadata = usage_metadata
-
                     if run_manager:
                         text_content = "".join(
                             str(block.get("text", ""))
@@ -658,9 +627,6 @@ class ChatOllamaV1(BaseChatModelV1):
             # Non-streaming case
             response = await self._async_client.chat(**chat_params)
             ai_message = _convert_to_v1_from_ollama_format(response)
-            usage_metadata = _get_usage_metadata_from_response(response)
-            if usage_metadata:
-                ai_message.usage_metadata = usage_metadata
             # Convert to chunk for yielding
             chunk = AIMessageChunkV1(
                 content=ai_message.content,

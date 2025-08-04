@@ -211,23 +211,63 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
         mock_sync_client_class.return_value = mock_sync_client
         mock_async_client_class.return_value = mock_async_client
 
-        def mock_chat_response(*_args: Any, **_kwargs: Any) -> Iterator[dict[str, Any]]:
-            return iter(
-                [
-                    {
-                        "model": MODEL_NAME,
-                        "created_at": "2024-01-01T00:00:00Z",
-                        "message": {"role": "assistant", "content": "Test response"},
-                        "done": True,
-                        "done_reason": "stop",
-                    }
-                ]
+        def mock_chat_response(*args: Any, **kwargs: Any) -> Iterator[dict[str, Any]]:
+            # Check request characteristics
+            request_data = kwargs.get("messages", [])
+            has_tools = "tools" in kwargs
+
+            # Check if this is a reasoning request
+            is_reasoning_request = any(
+                isinstance(msg, dict)
+                and "Think step by step" in str(msg.get("content", ""))
+                for msg in request_data
             )
 
+            # Basic response structure
+            base_response = {
+                "model": MODEL_NAME,
+                "created_at": "2024-01-01T00:00:00Z",
+                "done": True,
+                "done_reason": "stop",
+                "prompt_eval_count": 10,
+                "eval_count": 20,
+            }
+
+            # Generate appropriate response based on request type
+            if has_tools:
+                # Mock tool call response
+                base_response["message"] = {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "sample_tool",
+                                "arguments": '{"query": "test"}',
+                            }
+                        }
+                    ],
+                }
+            elif is_reasoning_request:
+                # Mock response with reasoning content block
+                base_response["message"] = {
+                    "role": "assistant",
+                    "content": "The answer is 4.",
+                    "thinking": "Let me think step by step: 2 + 2 = 4",
+                }
+            else:
+                # Regular text response
+                base_response["message"] = {
+                    "role": "assistant",
+                    "content": "Test response",
+                }
+
+            return iter([base_response])
+
         async def mock_async_chat_iterator(
-            *_args: Any, **_kwargs: Any
+            *args: Any, **kwargs: Any
         ) -> AsyncIterator[dict[str, Any]]:
-            for item in mock_chat_response(*_args, **_kwargs):
+            for item in mock_chat_response(*args, **kwargs):
                 yield item
 
         mock_sync_client.chat.side_effect = mock_chat_response

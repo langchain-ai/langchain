@@ -6,6 +6,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from langchain_core.messages import content_blocks as types
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.content_blocks import (
     ImageContentBlock,
     ReasoningContentBlock,
@@ -18,6 +19,21 @@ from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
 from langchain_core.messages.v1 import MessageV1, ResponseMetadata
 from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
 from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
+
+
+def _get_usage_metadata_from_response(
+    response: dict[str, Any],
+) -> UsageMetadata | None:
+    """Extract usage metadata from Ollama response."""
+    input_tokens = response.get("prompt_eval_count")
+    output_tokens = response.get("eval_count")
+    if input_tokens is not None and output_tokens is not None:
+        return UsageMetadata(
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=input_tokens + output_tokens,
+        )
+    return None
 
 
 def _convert_from_v1_to_ollama_format(message: MessageV1) -> dict[str, Any]:
@@ -218,6 +234,7 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessageV1:
     return AIMessageV1(
         content=content,
         response_metadata=response_metadata,
+        usage_metadata=_get_usage_metadata_from_response(response),
     )
 
 
@@ -280,7 +297,12 @@ def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunkV1:
         if "eval_duration" in chunk:
             response_metadata["eval_duration"] = chunk["eval_duration"]  # type: ignore[typeddict-unknown-key]
 
+    usage_metadata = None
+    if chunk.get("done") is True:
+        usage_metadata = _get_usage_metadata_from_response(chunk)
+
     return AIMessageChunkV1(
         content=content,
         response_metadata=response_metadata or ResponseMetadata(),
+        usage_metadata=usage_metadata,
     )
