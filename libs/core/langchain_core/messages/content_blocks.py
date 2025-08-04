@@ -103,8 +103,13 @@ The module defines several types of content blocks, including:
 """  # noqa: E501
 
 import warnings
-from typing import Any, Literal, Optional, TypeGuard, Union
+from typing import Any, Literal, Optional, Union
 from uuid import uuid4
+
+try:
+    from typing import TypeGuard
+except ImportError:
+    from typing_extensions import TypeGuard
 
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
 
