@@ -103,7 +103,7 @@ The module defines several types of content blocks, including:
 """  # noqa: E501
 
 import warnings
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TypeGuard, Union
 from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, get_args, get_origin
@@ -844,8 +844,6 @@ ContentBlock = Union[
     TextContentBlock,
     ToolCall,
     ToolCallChunk,
-    Citation,
-    NonStandardAnnotation,
     InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,
@@ -884,7 +882,24 @@ def _extract_typedict_type_values(union_type: Any) -> set[str]:
     return result
 
 
-KNOWN_BLOCK_TYPES = _extract_typedict_type_values(ContentBlock)
+KNOWN_BLOCK_TYPES = {
+    "text",
+    "text-plain",
+    "tool_call",
+    "invalid_tool_call",
+    "tool_call_chunk",
+    "reasoning",
+    "non_standard",
+    "image",
+    "audio",
+    "file",
+    "video",
+    "code_interpreter_call",
+    "code_interpreter_output",
+    "code_interpreter_result",
+    "web_search_call",
+    "web_search_result",
+}
 
 
 def is_data_content_block(block: dict) -> bool:
@@ -912,6 +927,28 @@ def is_data_content_block(block: dict) -> bool:
             "source_type",  # backwards compatibility
         )
     )
+
+
+def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
+    """Type guard to check if a content block is a tool call."""
+    return block.get("type") == "tool_call"
+
+
+def is_tool_call_chunk(block: ContentBlock) -> TypeGuard[ToolCallChunk]:
+    """Type guard to check if a content block is a tool call chunk."""
+    return block.get("type") == "tool_call_chunk"
+
+
+def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
+    """Type guard to check if a content block is a text block."""
+    return block.get("type") == "text"
+
+
+def is_invalid_tool_call_block(
+    block: ContentBlock,
+) -> TypeGuard[InvalidToolCall]:
+    """Type guard to check if a content block is an invalid tool call."""
+    return block.get("type") == "invalid_tool_call"
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:

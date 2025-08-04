@@ -25,7 +25,7 @@ from pydantic import (
     Field,
     field_validator,
 )
-from typing_extensions import TypeAlias, override
+from typing_extensions import override
 
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -79,8 +79,8 @@ if TYPE_CHECKING:
 
 
 def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
-    if hasattr(error, "response"):
-        response = error.response
+    response = getattr(error, "response", None)
+    if response is not None:
         metadata: dict = {}
         if hasattr(response, "headers"):
             try:
@@ -90,7 +90,7 @@ def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
         if hasattr(response, "status_code"):
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
-            metadata["request_id"] = error.request_id
+            metadata["request_id"] = error.request_id  # type: ignore[arg-type]
         # Permit response_metadata without model_name, model_provider fields
         generations = [AIMessageV1(content=[], response_metadata=metadata)]  # type: ignore[arg-type]
     else:
@@ -118,7 +118,7 @@ def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
         for idx, block in enumerate(message.content):
             # Update image content blocks to OpenAI # Chat Completions format.
             if (
-                block["type"] == "image"
+                block.get("type") == "image"
                 and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
                 and block.get("source_type") != "id"
             ):
@@ -338,7 +338,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
 
     @property
     @override
-    def InputType(self) -> TypeAlias:
+    def InputType(self) -> Any:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (
             ChatPromptValueConcrete,
@@ -458,7 +458,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             chunks: list[AIMessageChunkV1] = []
             try:
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg.text or "")
+                    run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
@@ -525,7 +525,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             chunks: list[AIMessageChunkV1] = []
             try:
                 async for msg in self._astream(input_messages, **kwargs):
-                    await run_manager.on_llm_new_token(msg.text or "")
+                    await run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
             except BaseException as e:
                 await run_manager.on_llm_error(
@@ -602,9 +602,12 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 # TODO: replace this with something for new messages
                 input_messages = _normalize_messages_v1(messages)
                 for msg in self._stream(input_messages, **kwargs):
-                    run_manager.on_llm_new_token(msg.text or "")
+                    run_manager.on_llm_new_token(msg.text)
                     chunks.append(msg)
                     yield msg
+
+                if msg.chunk_position != "last":
+                    yield (AIMessageChunkV1([], chunk_position="last"))
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
@@ -673,9 +676,11 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 input_messages,
                 **kwargs,
             ):
-                await run_manager.on_llm_new_token(msg.text or "")
+                await run_manager.on_llm_new_token(msg.text)
                 chunks.append(msg)
                 yield msg
+            if msg.chunk_position != "last":
+                yield (AIMessageChunkV1([], chunk_position="last"))
         except BaseException as e:
             await run_manager.on_llm_error(e, response=_generate_response_from_error(e))
             raise
@@ -716,22 +721,23 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
-            ls_params["ls_model_name"] = self.model
-        elif hasattr(self, "model_name") and isinstance(self.model_name, str):
-            ls_params["ls_model_name"] = self.model_name
+        model = (
+            kwargs.get("model")
+            or getattr(self, "model", None)
+            or getattr(self, "model_name", None)
+        )
+        if isinstance(model, str):
+            ls_params["ls_model_name"] = model
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
-            ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
-            ls_params["ls_temperature"] = self.temperature
+        temperature = kwargs.get("temperature") or getattr(self, "temperature", None)
+        if isinstance(temperature, (int, float)):
+            ls_params["ls_temperature"] = temperature
 
         # max_tokens
-        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
-            ls_params["ls_max_tokens"] = kwargs["max_tokens"]
-        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
-            ls_params["ls_max_tokens"] = self.max_tokens
+        max_tokens = kwargs.get("max_tokens") or getattr(self, "max_tokens", None)
+        if isinstance(max_tokens, int):
+            ls_params["ls_max_tokens"] = max_tokens
 
         return ls_params
 
@@ -806,7 +812,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
         *,
-        tool_choice: Optional[Union[str]] = None,
+        tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessageV1]:
         """Bind tools to the model.

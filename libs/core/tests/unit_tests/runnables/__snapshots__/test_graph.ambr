@@ -2544,12 +2544,6 @@
                         '$ref': '#/$defs/ToolCallChunk',
                       }),
                       dict({
-                        '$ref': '#/$defs/Citation',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/NonStandardAnnotation',
-                      }),
-                      dict({
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
@@ -2674,12 +2668,6 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCallChunk',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/Citation',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
@@ -2808,12 +2796,6 @@
                         '$ref': '#/$defs/ToolCallChunk',
                       }),
                       dict({
-                        '$ref': '#/$defs/Citation',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/NonStandardAnnotation',
-                      }),
-                      dict({
                         '$ref': '#/$defs/InvalidToolCall',
                       }),
                       dict({
@@ -2900,12 +2882,6 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCallChunk',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/Citation',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',
@@ -3017,12 +2993,6 @@
                       }),
                       dict({
                         '$ref': '#/$defs/ToolCallChunk',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/Citation',
-                      }),
-                      dict({
-                        '$ref': '#/$defs/NonStandardAnnotation',
                       }),
                       dict({
                         '$ref': '#/$defs/InvalidToolCall',

@@ -283,7 +283,7 @@ class BaseOutputParser(
             Structured output.
         """
         if isinstance(result, AIMessage):
-            return self.parse(result.text or "")
+            return self.parse(result.text)
         return self.parse(result[0].text)
 
     @abstractmethod
