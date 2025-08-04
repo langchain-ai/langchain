@@ -46,7 +46,7 @@ jobs:
       - name: '🧪 Run Core Unit Tests'
         shell: bash
         run: |
-          make test
+          make unit_test
 
       - name: '🔍 Calculate Minimum Dependency Versions'
         working-directory: ${{ inputs.working-directory }}
@@ -79,4 +79,4 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
-          
+
