@@ -40,10 +40,13 @@ def _convert_content_blocks_to_ollama_format(
     """Convert v1 content blocks to Ollama API format.
 
     Returns:
-        Tuple of (text_content, images, tool_calls)
+        Tuple of `(text_content, images, tool_calls)`
     """
     text_content = ""
+
     images = []
+    """Base64 encoded image data."""
+
     tool_calls = []
 
     for block in content:
@@ -54,13 +57,22 @@ def _convert_content_blocks_to_ollama_format(
         elif block_type == "image":
             image_block = cast(ImageContentBlock, block)
             if image_block.get("base64"):
+                # Ollama doesn't need MIME type or other metadata
+                if not isinstance(image_block.get("base64"), str):
+                    # (This shouldn't happen in practice, but just in case)
+                    msg = "Image content must be base64 encoded string"
+                    raise ValueError(msg)
+                if not image_block.get("base64", "").strip():
+                    msg = "Image content cannot be empty"
+                    raise ValueError(msg)
+                # Ensure we have plain/raw base64 data
+                if image_block.get("base64", "").startswith("data:"):
+                    # Strip the data URI scheme (e.g., 'data:image/png;base64,')
+                    image_block["base64"] = image_block.get("base64", "").split(",")[1]
                 images.append(image_block.get("base64", ""))
             else:
                 msg = "Only base64 image data is supported by Ollama"
                 raise ValueError(msg)
-        elif block_type == "audio":
-            msg = "Audio content blocks are not supported by Ollama"
-            raise ValueError(msg)
         elif block_type == "tool_call":
             tool_call_block = cast(ToolCall, block)
             tool_calls.append(
@@ -73,7 +85,10 @@ def _convert_content_blocks_to_ollama_format(
                     },
                 }
             )
-        # Skip other content block types that aren't supported
+        else:
+            # Skip other content block types that aren't supported
+            msg = f"Unsupported content block type: {block_type}"
+            raise ValueError(msg)
 
     return text_content, images, tool_calls
 
