@@ -105,22 +105,38 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def supports_file_content_blocks(self) -> bool:
-        """Whether the model supports ``FileContentBlock``."""
+        """Whether the model supports ``FileContentBlock``.
+
+        Replaces ``supports_pdf_inputs`` from v0.
+
+        """
         return False
 
     @property
     def supports_image_content_blocks(self) -> bool:
-        """Whether the model supports ``ImageContentBlock``."""
+        """Whether the model supports ``ImageContentBlock``.
+
+        Replaces ``supports_image_inputs`` from v0.
+
+        """
         return False
 
     @property
     def supports_audio_content_blocks(self) -> bool:
-        """Whether the model supports ``AudioContentBlock``."""
+        """Whether the model supports ``AudioContentBlock``.
+
+        Replaces ``supports_audio_inputs`` from v0.
+
+        """
         return False
 
     @property
     def supports_video_content_blocks(self) -> bool:
-        """Whether the model supports ``VideoContentBlock``."""
+        """Whether the model supports ``VideoContentBlock``.
+
+        Replaces ``supports_video_inputs`` from v0.
+
+        """
         return False
 
     @property
