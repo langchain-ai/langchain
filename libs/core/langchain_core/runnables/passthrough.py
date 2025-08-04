@@ -679,7 +679,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
-    from the input dictionary. It returns a new dictionary containing only
+    from the input dictionary. It always returns a new dictionary containing only
     the selected keys.
 
     Example:
@@ -694,11 +694,15 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
                 'country': 'USA'
             }
 
+            # Picking multiple keys
             runnable = RunnablePick(keys=['name', 'age'])
-
             output_data = runnable.invoke(input_data)
-
             print(output_data)  # Output: {'name': 'John', 'age': 30}
+
+            # Picking a single key (still returns a dict)
+            runnable_single = RunnablePick(keys='name')
+            output_single = runnable_single.invoke(input_data)
+            print(output_single)  # Output: {'name': 'John'}
 
     """
 
@@ -734,17 +738,19 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         return super().get_name(suffix, name=name)
 
-    def _pick(self, value: dict[str, Any]) -> Any:
+    def _pick(self, value: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(value, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
             raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
-            return value.get(self.keys)
+            if self.keys in value:
+                return AddableDict({self.keys: value[self.keys]})
+            return AddableDict({})
         picked = {k: value.get(k) for k in self.keys if k in value}
         if picked:
             return AddableDict(picked)
-        return None
+        return AddableDict({})
 
     def _invoke(
         self,
