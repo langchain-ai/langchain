@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import Union
+from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -18,7 +18,7 @@ from langchain.agents.agent import MultiActionAgentOutputParser
 class ToolAgentAction(AgentActionMessageLog):
     """ "Tool agent action."""
 
-    tool_call_id: str
+    tool_call_id: Optional[str]
     """Tool call that this message is responding to."""
 
 
