@@ -435,7 +435,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/aws/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html",
-                package: "langchain_aws"
+                package: "langchain-aws"
             },
             {
                 name: "AzureAISearchRetriever",
@@ -443,7 +443,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "ElasticsearchRetriever",
@@ -451,7 +451,7 @@ const FEATURE_TABLES = {
                 selfHost: true,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/elasticsearch/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html",
-                package: "langchain_elasticsearch"
+                package: "langchain-elasticsearch"
             },
             {
                 name: "VertexAISearchRetriever",
@@ -459,7 +459,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/google_community/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html",
-                package: "langchain_google_community"
+                package: "langchain-google-community"
             }
         ],
     },
@@ -484,21 +484,21 @@ const FEATURE_TABLES = {
                 link: "arxiv",
                 source: (<>Scholarly articles on <a href="https://arxiv.org/">arxiv.org</a></>),
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.arxiv.ArxivRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "TavilySearchAPIRetriever",
                 link: "tavily",
                 source: "Internet search",
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "WikipediaRetriever",
                 link: "wikipedia",
                 source: (<><a href="https://www.wikipedia.org/">Wikipedia</a> articles</>),
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.wikipedia.WikipediaRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             }
         ]
 
