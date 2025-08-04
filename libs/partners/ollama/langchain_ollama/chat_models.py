@@ -482,7 +482,7 @@ class ChatOllama(BaseChatModel):
 
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = num_ctx)"""
+    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
 
     repeat_penalty: Optional[float] = None
     """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)

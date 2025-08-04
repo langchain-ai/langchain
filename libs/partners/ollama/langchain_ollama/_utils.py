@@ -29,7 +29,10 @@ def validate_model(client: Client, model_name: str) -> None:
             )
             raise ValueError(msg)
     except ConnectError as e:
-        msg = "Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"  # noqa: E501
+        msg = (
+            "Failed to connect to Ollama. Please check that Ollama is downloaded, "
+            "running and accessible. https://ollama.com/download"
+        )
         raise ValueError(msg) from e
     except ResponseError as e:
         msg = (
