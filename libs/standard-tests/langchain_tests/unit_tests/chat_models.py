@@ -22,7 +22,7 @@ from pydantic.v1 import (
     ValidationError as ValidationErrorV1,
 )
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
@@ -974,7 +974,7 @@ class ChatModelUnitTests(ChatModelTests):
         # Test optional params
         model = self.chat_model_class(
             max_tokens=10,  # type: ignore[call-arg]
-            stop=["test"],  # type: ignore[call-arg]
+            stop=["test"],
             **self.chat_model_params,
         )
         ls_params = model._get_ls_params()

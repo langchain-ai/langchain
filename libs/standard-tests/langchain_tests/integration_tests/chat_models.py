@@ -2222,10 +2222,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldProper(description="answer to resolve the joke")
 
         # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke, method="json_mode")  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, method="json_mode")
         msg = (
             "Tell me a joke about cats. Return the result as a JSON with 'setup' and "
             "'punchline' keys. Return nothing other than JSON."
