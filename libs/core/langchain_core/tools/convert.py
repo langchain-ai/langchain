@@ -22,6 +22,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -37,6 +38,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool: ...
 
 
@@ -51,6 +53,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool: ...
 
 
@@ -65,6 +68,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -79,6 +83,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -118,6 +123,11 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        output_version: Version of ToolMessage to return given
+            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+            If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
 
     Returns:
         The tool.
@@ -216,7 +226,7 @@ def tool(
                 \"\"\"
                 return bar
 
-    """  # noqa: D214, D410, D411
+    """  # noqa: D214, D410, D411, E501
 
     def _create_tool_factory(
         tool_name: str,
@@ -274,6 +284,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    output_version=output_version,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -290,6 +301,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                output_version=output_version,
             )
 
         return _tool_factory
