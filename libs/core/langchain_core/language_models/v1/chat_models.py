@@ -116,7 +116,7 @@ def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
     for message in messages:
         message_to_trace = message
         for idx, block in enumerate(message.content):
-            # Update image content blocks to OpenAI # Chat Completions format.
+            # Update image content blocks to OpenAI Chat Completions format.
             if (
                 block.get("type") == "image"
                 and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
