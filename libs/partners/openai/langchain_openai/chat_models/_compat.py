@@ -284,31 +284,47 @@ def _convert_from_v1_to_chat_completions(message: AIMessageV1) -> AIMessageV1:
 
 
 # v1 / Responses
-def _convert_annotation_to_v1(annotation: dict[str, Any]) -> dict[str, Any]:
+def _convert_annotation_to_v1(annotation: dict[str, Any]) -> types.Annotation:
     annotation_type = annotation.get("type")
 
     if annotation_type == "url_citation":
-        url_citation = {}
+        known_fields = {
+            "type",
+            "url",
+            "title",
+            "cited_text",
+            "start_index",
+            "end_index",
+        }
+        url_citation = cast(types.Citation, {})
         for field in ("end_index", "start_index", "title"):
             if field in annotation:
                 url_citation[field] = annotation[field]
         url_citation["type"] = "citation"
         url_citation["url"] = annotation["url"]
+        for field in annotation:
+            if field not in known_fields:
+                if "extras" not in url_citation:
+                    url_citation["extras"] = {}
+                url_citation["extras"][field] = annotation[field]
         return url_citation
 
     elif annotation_type == "file_citation":
-        document_citation = {"type": "citation"}
+        known_fields = {"type", "title", "cited_text", "start_index", "end_index"}
+        document_citation: types.Citation = {"type": "citation"}
         if "filename" in annotation:
-            document_citation["title"] = annotation["filename"]
-        if "file_id" in annotation:
-            document_citation["file_id"] = annotation["file_id"]
-        if "index" in annotation:
-            document_citation["file_index"] = annotation["index"]
+            document_citation["title"] = annotation.pop("filename")
+        for field in annotation:
+            if field not in known_fields:
+                if "extras" not in document_citation:
+                    document_citation["extras"] = {}
+                document_citation["extras"][field] = annotation[field]
+
         return document_citation
 
     # TODO: standardise container_file_citation?
     else:
-        non_standard_annotation = {
+        non_standard_annotation: types.NonStandardAnnotation = {
             "type": "non_standard_annotation",
             "value": annotation,
         }
@@ -320,23 +336,30 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
         yield cast(types.ReasoningContentBlock, block)
         return
 
+    known_fields = {"type", "reasoning", "id", "index"}
+    unknown_fields = [
+        field for field in block if field != "summary" and field not in known_fields
+    ]
+    if unknown_fields:
+        block["extras"] = {}
+    for field in unknown_fields:
+        block["extras"][field] = block.pop(field)
+
     if not block["summary"]:
         _ = block.pop("summary", None)
         yield cast(types.ReasoningContentBlock, block)
         return
 
     # Common part for every exploded line, except 'summary'
-    common = {k: v for k, v in block.items() if k != "summary"}
+    common = {k: v for k, v in block.items() if k in known_fields}
 
     # Optional keys that must appear only in the first exploded item
-    first_only = {
-        k: common.pop(k) for k in ("encrypted_content", "status") if k in common
-    }
+    first_only = block.pop("extras", None)
 
     for idx, part in enumerate(block["summary"]):
         new_block = dict(common)
         new_block["reasoning"] = part.get("text", "")
-        if idx == 0:
+        if idx == 0 and first_only:
             new_block.update(first_only)
         yield cast(types.ReasoningContentBlock, new_block)
 
@@ -370,9 +393,11 @@ def _convert_to_v1_from_responses(
                 new_block = {"type": "image", "base64": result}
                 if output_format := block.get("output_format"):
                     new_block["mime_type"] = f"image/{output_format}"
+                if "id" in block:
+                    new_block["id"] = block["id"]
+                if "index" in block:
+                    new_block["index"] = block["index"]
                 for extra_key in (
-                    "id",
-                    "index",
                     "status",
                     "background",
                     "output_format",
@@ -401,7 +426,9 @@ def _convert_to_v1_from_responses(
                                 break
                 if tool_call_block:
                     if "id" in block:
-                        tool_call_block["item_id"] = block["id"]
+                        if "extras" not in tool_call_block:
+                            tool_call_block["extras"] = {}
+                        tool_call_block["extras"]["item_id"] = block["id"]  # type: ignore[typeddict-item]
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
                     yield tool_call_block
@@ -479,17 +506,26 @@ def _convert_to_v1_from_responses(
 
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     if annotation["type"] == "citation":
+        new_ann: dict[str, Any] = {}
+        for field in ("end_index", "start_index"):
+            if field in annotation:
+                new_ann[field] = annotation[field]
+
         if "url" in annotation:
-            return {**annotation, "type": "url_citation"}
+            # URL citation
+            if "title" in annotation:
+                new_ann["title"] = annotation["title"]
+            new_ann["type"] = "url_citation"
+            new_ann["url"] = annotation["url"]
+        else:
+            # Document citation
+            new_ann["type"] = "file_citation"
+            if "title" in annotation:
+                new_ann["filename"] = annotation["title"]
 
-        new_ann: dict[str, Any] = {"type": "file_citation"}
-
-        if "title" in annotation:
-            new_ann["filename"] = annotation["title"]
-        if "file_id" in annotation:
-            new_ann["file_id"] = annotation["file_id"]  # type: ignore[typeddict-item]
-        if "file_index" in annotation:
-            new_ann["index"] = annotation["file_index"]  # type: ignore[typeddict-item]
+        if extra_fields := annotation.get("extras"):
+            for field, value in extra_fields.items():
+                new_ann[field] = value
 
         return new_ann
 
@@ -515,7 +551,8 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         elif "reasoning" not in block and "summary" not in block:
             # {"type": "reasoning", "id": "rs_..."}
             oai_format = {**block, "summary": []}
-            # Update key order
+            if "extras" in oai_format:
+                oai_format.update(oai_format.pop("extras"))
             oai_format["type"] = oai_format.pop("type", "reasoning")
             if "encrypted_content" in oai_format:
                 oai_format["encrypted_content"] = oai_format.pop("encrypted_content")
@@ -530,6 +567,8 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         ]
         # 'common' is every field except the exploded 'reasoning'
         common = {k: v for k, v in block.items() if k != "reasoning"}
+        if "extras" in common:
+            common.update(common.pop("extras"))
 
         i += 1
         while i < n:
@@ -623,12 +662,12 @@ def _convert_from_v1_to_responses(
             new_content.append(new_block)
         elif block["type"] == "tool_call":
             new_block = {"type": "function_call", "call_id": block["id"]}
-            if "item_id" in block:
-                new_block["id"] = block["item_id"]  # type: ignore[typeddict-item]
+            if "extras" in block and "item_id" in block["extras"]:
+                new_block["id"] = block["extras"]["item_id"]
             if "name" in block:
                 new_block["name"] = block["name"]
-            if "arguments" in block:
-                new_block["arguments"] = block["arguments"]  # type: ignore[typeddict-item]
+            if "extras" in block and "arguments" in block["extras"]:
+                new_block["arguments"] = block["extras"]["arguments"]
             if any(key not in block for key in ("name", "arguments")):
                 matching_tool_calls = [
                     call for call in tool_calls if call["id"] == block["id"]

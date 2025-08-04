@@ -2421,31 +2421,24 @@ def test_convert_from_v1_to_chat_completions(
                         "name": "get_weather",
                         "args": {"location": "San Francisco"},
                     },
-                    cast(
-                        ToolCall,
-                        {
-                            "type": "tool_call",
-                            "id": "call_234",
-                            "name": "get_weather_2",
-                            "args": {"location": "New York"},
-                            "item_id": "fc_123",
-                        },
-                    ),
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
                     {"type": "text", "text": "Hello "},
                     {
                         "type": "text",
                         "text": "world",
                         "annotations": [
                             {"type": "citation", "url": "https://example.com"},
-                            cast(
-                                types.Citation,
-                                {
-                                    "type": "citation",
-                                    "title": "my doc",
-                                    "file_index": 1,
-                                    "file_id": "file_123",
-                                },
-                            ),
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
                             {
                                 "type": "non_standard_annotation",
                                 "value": {"bar": "baz"},
@@ -2583,31 +2576,24 @@ def test_convert_from_v1_to_responses(
                     "name": "get_weather",
                     "args": {"location": "San Francisco"},
                 },
-                cast(
-                    ToolCall,
-                    {
-                        "type": "tool_call",
-                        "id": "call_234",
-                        "name": "get_weather_2",
-                        "args": {"location": "New York"},
-                        "item_id": "fc_123",
-                    },
-                ),
+                {
+                    "type": "tool_call",
+                    "id": "call_234",
+                    "name": "get_weather_2",
+                    "args": {"location": "New York"},
+                    "extras": {"item_id": "fc_123"},
+                },
                 {"type": "text", "text": "Hello "},
                 {
                     "type": "text",
                     "text": "world",
                     "annotations": [
                         {"type": "citation", "url": "https://example.com"},
-                        cast(
-                            types.Citation,
-                            {
-                                "type": "citation",
-                                "title": "my doc",
-                                "file_index": 1,
-                                "file_id": "file_123",
-                            },
-                        ),
+                        {
+                            "type": "citation",
+                            "title": "my doc",
+                            "extras": {"file_id": "file_123", "index": 1},
+                        },
                         {"type": "non_standard_annotation", "value": {"bar": "baz"}},
                     ],
                 },
