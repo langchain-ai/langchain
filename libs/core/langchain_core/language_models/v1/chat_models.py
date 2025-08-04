@@ -606,8 +606,8 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                     chunks.append(msg)
                     yield msg
 
-                if not msg.is_last_chunk:
-                    yield (AIMessageChunkV1([], is_last_chunk=True))
+                if msg.chunk_position != "last":
+                    yield (AIMessageChunkV1([], chunk_position="last"))
             except BaseException as e:
                 run_manager.on_llm_error(e, response=_generate_response_from_error(e))
                 raise
@@ -679,8 +679,8 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
                 await run_manager.on_llm_new_token(msg.text)
                 chunks.append(msg)
                 yield msg
-            if not msg.is_last_chunk:
-                yield (AIMessageChunkV1([], is_last_chunk=True))
+            if msg.chunk_position != "last":
+                yield (AIMessageChunkV1([], chunk_position="last"))
         except BaseException as e:
             await run_manager.on_llm_error(e, response=_generate_response_from_error(e))
             raise

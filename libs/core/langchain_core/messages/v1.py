@@ -257,7 +257,7 @@ class AIMessageChunk(AIMessage):
         usage_metadata: Optional[UsageMetadata] = None,
         tool_call_chunks: Optional[list[types.ToolCallChunk]] = None,
         parsed: Optional[Union[dict[str, Any], BaseModel]] = None,
-        is_last_chunk: bool = False,
+        chunk_position: Optional[Literal["last"]] = None,
     ):
         """Initialize an AI message.
 
@@ -270,7 +270,8 @@ class AIMessageChunk(AIMessage):
             usage_metadata: Optional metadata about token usage.
             tool_call_chunks: Optional list of partial tool call data.
             parsed: Optional auto-parsed message contents, if applicable.
-            is_last_chunk: Indicates if this is the last chunk of a stream.
+            chunk_position: Optional position of the chunk in the stream. If "last",
+                tool calls will be parsed when aggregated into a stream.
         """
         if isinstance(content, str):
             self.content = [{"type": "text", "text": content, "index": 0}]
@@ -282,7 +283,7 @@ class AIMessageChunk(AIMessage):
         self.lc_version = lc_version
         self.usage_metadata = usage_metadata
         self.parsed = parsed
-        self.is_last_chunk = is_last_chunk
+        self.chunk_position = chunk_position
         if response_metadata is None:
             self.response_metadata = {}
         else:
@@ -476,8 +477,10 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
-    is_last_chunk = left.is_last_chunk or any(o.is_last_chunk for o in others)
-    if is_last_chunk:
+    chunk_position: Optional[Literal["last"]] = (
+        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
+    )
+    if chunk_position == "last":
         content = _init_tool_calls(content)
 
     return left.__class__(
@@ -486,7 +489,7 @@ def add_ai_message_chunks(
         usage_metadata=usage_metadata,
         parsed=parsed,
         id=chunk_id,
-        is_last_chunk=is_last_chunk,
+        chunk_position=chunk_position,
     )
 
 
