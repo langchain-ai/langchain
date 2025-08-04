@@ -1273,10 +1273,11 @@ def create_plaintext_block(
     block = PlainTextContentBlock(
         type="text-plain",
         mime_type="text/plain",
-        text=text,
         id=_ensure_id(id),
     )
 
+    if text is not None:
+        block["text"] = text
     if url is not None:
         block["url"] = url
     if base64 is not None:
