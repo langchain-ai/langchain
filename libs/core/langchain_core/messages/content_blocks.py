@@ -949,6 +949,11 @@ def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
     return block.get("type") == "text"
 
 
+def is_reasoning_block(block: ContentBlock) -> TypeGuard[ReasoningContentBlock]:
+    """Type guard to check if a content block is a reasoning block."""
+    return block.get("type") == "reasoning"
+
+
 def is_invalid_tool_call_block(
     block: ContentBlock,
 ) -> TypeGuard[InvalidToolCall]:
@@ -1095,10 +1100,6 @@ def create_image_block(
     """
     if not any([url, base64, file_id]):
         msg = "Must provide one of: url, base64, or file_id"
-        raise ValueError(msg)
-
-    if base64 and not mime_type:
-        msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
     block = ImageContentBlock(type="image", id=_ensure_id(id))
