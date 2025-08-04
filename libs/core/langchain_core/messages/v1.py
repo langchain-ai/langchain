@@ -385,15 +385,12 @@ def _init_tool_calls(content: list[types.ContentBlock]) -> list[types.ContentBlo
             new_content.append(block)
             continue
         try:
-            args_ = (
-                parse_partial_json(cast("str", block.get("args") or ""))
-                if block.get("args")
-                else {}
-            )
+            args_str = block.get("args")
+            args_ = parse_partial_json(args_str) if args_str else {}
             if isinstance(args_, dict):
                 new_content.append(
                     create_tool_call(
-                        name=cast("str", block.get("name") or ""),
+                        name=cast("str", block.get("name")),
                         args=args_,
                         id=cast("str", block.get("id", "")),
                     )

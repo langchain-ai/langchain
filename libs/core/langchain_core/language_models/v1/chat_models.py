@@ -90,7 +90,7 @@ def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
         if hasattr(response, "status_code"):
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
-            metadata["request_id"] = error.request_id  # type: ignore[arg-type]
+            metadata["request_id"] = error.request_id
         # Permit response_metadata without model_name, model_provider fields
         generations = [AIMessageV1(content=[], response_metadata=metadata)]  # type: ignore[arg-type]
     else:
