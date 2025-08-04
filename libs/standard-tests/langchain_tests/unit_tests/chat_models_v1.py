@@ -7,7 +7,7 @@ This module provides updated test patterns for the new messages introduced in
 content blocks system.
 """
 
-from typing import cast
+from typing import Literal, cast
 
 import pytest
 from langchain_core.language_models.v1.chat_models import BaseChatModelV1
@@ -152,6 +152,49 @@ class ChatModelV1Tests(BaseStandardTests):
     @property
     def supports_invalid_tool_calls(self) -> bool:
         """Whether the model can handle ``InvalidToolCall`` blocks."""
+        return False
+
+    @property
+    def has_tool_choice(self) -> bool:
+        """Whether the model supports forcing tool calling via ``tool_choice``."""
+        return False
+
+    @property
+    def structured_output_kwargs(self) -> dict:
+        """Additional kwargs for ``with_structured_output``."""
+        return {}
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        """Whether the model supports Anthropic-style inputs."""
+        return False
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        """Whether the model returns usage metadata on invoke and streaming."""
+        return True
+
+    @property
+    def supported_usage_metadata_details(
+        self,
+    ) -> dict[
+        Literal["invoke", "stream"],
+        list[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
+    ]:
+        """What usage metadata details are emitted in ``invoke()`` and ``stream()``."""
+        return {"invoke": [], "stream": []}
+
+    @property
+    def enable_vcr_tests(self) -> bool:
+        """Whether to enable VCR tests for the chat model."""
         return False
 
 
