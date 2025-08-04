@@ -87,8 +87,8 @@ def _parse_json_string(
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
-    It first tries to use the standard json.loads. If that fails, it falls
-    back to ast.literal_eval to safely parse Python literals, which is more
+    It first tries to use the standard ``json.loads``. If that fails, it falls
+    back to ``ast.literal_eval`` to safely parse Python literals, which is more
     robust against models using single quotes or containing apostrophes.
 
     Args:
@@ -100,7 +100,8 @@ def _parse_json_string(
         The parsed JSON string or Python literal.
 
     Raises:
-        OutputParserException: If the string is invalid and skip=False.
+        OutputParserException: If the string is invalid and ``skip=False``.
+
     """
     try:
         return json.loads(json_string)
@@ -138,7 +139,9 @@ def _parse_arguments_from_tool_call(
 
     Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
     Should be removed/changed if fixed upstream.
+
     See https://github.com/ollama/ollama/issues/6155
+
     """
     if "function" not in raw_tool_call:
         return None
@@ -1064,14 +1067,14 @@ class ChatOllama(BaseChatModel):
                 - ``'function_calling'``:
                     Uses Ollama's tool-calling API
                 - ``'json_mode'``:
-                    Specifies ``format="json"``. Note that if using JSON mode then you
+                    Specifies ``format='json'``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a ``BaseMessage``) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
@@ -1085,7 +1088,7 @@ class ChatOllama(BaseChatModel):
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
+            - ``'raw'``: ``BaseMessage``
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
@@ -1130,7 +1133,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_schema'``, ``include_raw=True``
 
             .. code-block:: python
 
@@ -1159,7 +1162,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='function_calling'``, ``include_raw=False``
 
             .. code-block:: python
 
@@ -1223,7 +1226,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+        .. dropdown:: Example: ``schema=OpenAI`` function schema, ``method='function_calling'``, ``include_raw=False``
 
             .. code-block:: python
 
@@ -1253,7 +1256,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_mode'``, ``include_raw=True``
 
             .. code-block::
 
