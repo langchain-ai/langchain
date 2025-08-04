@@ -50,6 +50,11 @@ def _check_response(
                         key in annotation
                         for key in ["end_index", "start_index", "title", "type", "url"]
                     )
+                elif annotation["type"] == "citation":
+                    assert all(key in annotation for key in ["title", "type"])
+                    if "url" in annotation:
+                        assert "start_index" in annotation
+                        assert "end_index" in annotation
 
     if output_version == "v1":
         text_content = response.text
