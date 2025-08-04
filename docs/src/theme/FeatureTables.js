@@ -321,7 +321,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "VertexAILLM",
-                link: "google_vertexai",
+                link: "google_vertex_ai_palm",
                 package: "langchain-google-vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
