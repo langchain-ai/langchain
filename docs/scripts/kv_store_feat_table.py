@@ -50,7 +50,7 @@ KV_STORE_FEAT_TABLE = {
     "LocalFileStore": {
         "class": "[LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system/)",
         "local": True,
-        "package": "[langchain](https://python.langchain.com/api_reference/storage/langchain.storage.file_system.LocalFileStore.html)",
+        "package": "[langchain](https://python.langchain.com/api_reference/langchain/storage/langchain.storage.file_system.LocalFileStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain?style=flat-square&label=%20)",
     },
     "InMemoryByteStore": {
