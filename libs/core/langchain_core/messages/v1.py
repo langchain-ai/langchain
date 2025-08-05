@@ -19,6 +19,7 @@ from langchain_core.messages.ai import (
     add_usage,
 )
 from langchain_core.messages.base import merge_content
+from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.utils._merge import merge_dicts
@@ -645,7 +646,7 @@ class SystemMessage:
 
 
 @dataclass
-class ToolMessage:
+class ToolMessage(ToolOutputMixin):
     """A message containing the result of a tool execution.
 
     Represents the output from executing a tool or function call,

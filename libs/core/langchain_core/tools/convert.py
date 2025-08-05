@@ -22,6 +22,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -37,6 +38,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool: ...
 
 
@@ -51,6 +53,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool: ...
 
 
@@ -65,6 +68,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -79,6 +83,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -118,6 +123,11 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        output_version: Version of ToolMessage to return given
+            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+            If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
 
     Returns:
         The tool.
@@ -216,7 +226,7 @@ def tool(
                 \"\"\"
                 return bar
 
-    """  # noqa: D214, D410, D411
+    """  # noqa: D214, D410, D411, E501
 
     def _create_tool_factory(
         tool_name: str,
@@ -274,6 +284,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    output_version=output_version,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -290,6 +301,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                output_version=output_version,
             )
 
         return _tool_factory
@@ -383,6 +395,7 @@ def convert_runnable_to_tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
     arg_types: Optional[dict[str, type]] = None,
+    output_version: Literal["v0", "v1"] = "v0",
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool.
 
@@ -392,10 +405,15 @@ def convert_runnable_to_tool(
         name: The name of the tool. Defaults to None.
         description: The description of the tool. Defaults to None.
         arg_types: The types of the arguments. Defaults to None.
+        output_version: Version of ToolMessage to return given
+            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+            If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
 
     Returns:
         The tool.
-    """
+    """  # noqa: E501
     if args_schema:
         runnable = runnable.with_types(input_type=args_schema)
     description = description or _get_description_from_runnable(runnable)
@@ -408,6 +426,7 @@ def convert_runnable_to_tool(
             func=runnable.invoke,
             coroutine=runnable.ainvoke,
             description=description,
+            output_version=output_version,
         )
 
     async def ainvoke_wrapper(
@@ -435,4 +454,5 @@ def convert_runnable_to_tool(
         coroutine=ainvoke_wrapper,
         description=description,
         args_schema=args_schema,
+        output_version=output_version,
     )
