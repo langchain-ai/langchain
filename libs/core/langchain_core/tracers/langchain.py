@@ -22,14 +22,14 @@ from typing_extensions import override
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.messages.utils import convert_from_v1_message
-from langchain_core.messages.v1 import MessageV1Types
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import MessageV1Types
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
-    from langchain_core.messages.v1 import AIMessageChunk, MessageV1
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+    from langchain_core.v1.messages import AIMessageChunk, MessageV1
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()

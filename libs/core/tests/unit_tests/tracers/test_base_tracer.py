@@ -15,12 +15,12 @@ from langsmith import Client, traceable
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import MessageV1
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage

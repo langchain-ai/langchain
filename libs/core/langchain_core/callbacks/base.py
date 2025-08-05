@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 from typing_extensions import Self
 
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

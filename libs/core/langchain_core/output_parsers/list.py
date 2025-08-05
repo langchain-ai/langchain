@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, TypeVar, Union
 from typing_extensions import override
 
 from langchain_core.messages import BaseMessage
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+from langchain_core.v1.messages import AIMessage
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator

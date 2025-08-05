@@ -19,12 +19,6 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.messages.utils import convert_from_v1_message
-from langchain_core.messages.v1 import (
-    AIMessage,
-    AIMessageChunk,
-    MessageV1,
-    MessageV1Types,
-)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -32,6 +26,12 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import (
+    AIMessage,
+    AIMessageChunk,
+    MessageV1,
+    MessageV1Types,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence

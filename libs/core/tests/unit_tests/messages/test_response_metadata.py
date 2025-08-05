@@ -1,6 +1,6 @@
 """Unit tests for ResponseMetadata TypedDict."""
 
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, ResponseMetadata
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, ResponseMetadata
 
 
 class TestResponseMetadata:

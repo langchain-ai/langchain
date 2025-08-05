@@ -9412,19 +9412,19 @@
         ]),
       }),
       dict({
-        '$ref': '#/definitions/langchain_core__messages__v1__AIMessage',
+        '$ref': '#/definitions/langchain_core__v1__messages__AIMessage',
       }),
       dict({
-        '$ref': '#/definitions/langchain_core__messages__v1__AIMessageChunk',
+        '$ref': '#/definitions/langchain_core__v1__messages__AIMessageChunk',
       }),
       dict({
-        '$ref': '#/definitions/langchain_core__messages__v1__HumanMessage',
+        '$ref': '#/definitions/langchain_core__v1__messages__HumanMessage',
       }),
       dict({
-        '$ref': '#/definitions/langchain_core__messages__v1__SystemMessage',
+        '$ref': '#/definitions/langchain_core__v1__messages__SystemMessage',
       }),
       dict({
-        '$ref': '#/definitions/langchain_core__messages__v1__ToolMessage',
+        '$ref': '#/definitions/langchain_core__v1__messages__ToolMessage',
       }),
     ]),
     'definitions': dict({
@@ -11521,7 +11521,7 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
-      'langchain_core__messages__v1__AIMessage': dict({
+      'langchain_core__v1__messages__AIMessage': dict({
         'properties': dict({
           'content': dict({
             'items': dict({
@@ -11646,7 +11646,7 @@
         'title': 'AIMessage',
         'type': 'object',
       }),
-      'langchain_core__messages__v1__AIMessageChunk': dict({
+      'langchain_core__v1__messages__AIMessageChunk': dict({
         'properties': dict({
           'content': dict({
             'items': dict({
@@ -11771,7 +11771,7 @@
         'title': 'AIMessageChunk',
         'type': 'object',
       }),
-      'langchain_core__messages__v1__HumanMessage': dict({
+      'langchain_core__v1__messages__HumanMessage': dict({
         'properties': dict({
           'content': dict({
             'items': dict({
@@ -11858,7 +11858,7 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
-      'langchain_core__messages__v1__SystemMessage': dict({
+      'langchain_core__v1__messages__SystemMessage': dict({
         'properties': dict({
           'content': dict({
             'items': dict({
@@ -11957,7 +11957,7 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
-      'langchain_core__messages__v1__ToolMessage': dict({
+      'langchain_core__v1__messages__ToolMessage': dict({
         'properties': dict({
           'artifact': dict({
             'anyOf': list([

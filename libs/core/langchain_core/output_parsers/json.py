@@ -13,7 +13,6 @@ from pydantic.v1 import BaseModel
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
@@ -22,6 +21,7 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
+from langchain_core.v1.messages import AIMessage
 
 # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
 PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]

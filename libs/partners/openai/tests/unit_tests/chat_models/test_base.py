@@ -22,11 +22,11 @@ from langchain_core.messages import (
 )
 from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
 from openai.types.responses.response_error import ResponseError

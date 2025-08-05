@@ -38,11 +38,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.language_models.v1.chat_models import (
-    BaseChatModelV1,
-    agenerate_from_stream,
-    generate_from_stream,
-)
 from langchain_core.messages import (
     InvalidToolCall,
     ToolCall,
@@ -55,12 +50,6 @@ from langchain_core.messages.ai import (
     UsageMetadata,
 )
 from langchain_core.messages.tool import tool_call_chunk
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1, ResponseMetadata
-from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -88,6 +77,17 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.v1.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import MessageV1, ResponseMetadata
+from langchain_core.v1.messages import SystemMessage as SystemMessageV1
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
@@ -387,7 +387,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class BaseChatOpenAI(BaseChatModelV1):
+class BaseChatOpenAI(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     root_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -1631,7 +1631,7 @@ class BaseChatOpenAI(BaseChatModelV1):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`from langchain_core.language_models.v1.chat_models import BaseChatModelV1`.
+            A Runnable that takes same inputs as a :class:`from langchain_core.v1.chat_models import BaseChatModel`.
 
             | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
@@ -2646,7 +2646,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`from langchain_core.language_models.v1.chat_models import BaseChatModelV1`.
+            A Runnable that takes same inputs as a :class:`from langchain_core.v1.chat_models import BaseChatModel`.
 
             | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
