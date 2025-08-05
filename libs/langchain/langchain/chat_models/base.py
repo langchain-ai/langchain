@@ -40,7 +40,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Literal[None] = None,
     config_prefix: Optional[str] = None,
-    output_version: Literal["v0"] = "v0",
+    message_version: Literal["v0"] = "v0",
     **kwargs: Any,
 ) -> BaseChatModel: ...
 
@@ -52,7 +52,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Literal[None] = None,
     config_prefix: Optional[str] = None,
-    output_version: Literal["v1"] = "v1",
+    message_version: Literal["v1"] = "v1",
     **kwargs: Any,
 ) -> BaseChatModelV1: ...
 
@@ -64,7 +64,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Literal[None] = None,
     config_prefix: Optional[str] = None,
-    output_version: Literal["v0", "v1"] = "v0",
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
 
@@ -76,7 +76,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
     config_prefix: Optional[str] = None,
-    output_version: Literal["v0", "v1"] = "v0",
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
 
@@ -92,7 +92,7 @@ def init_chat_model(
         Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
-    output_version: Literal["v0", "v1"] = "v0",
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> Union[BaseChatModel, BaseChatModelV1, _ConfigurableModel]:
     """Initialize a ChatModel in a single line using the model's name and provider.
@@ -146,7 +146,7 @@ def init_chat_model(
             - ``grok...``                         -> ``xai``
             - ``sonar...``                        -> ``perplexity``
 
-        output_version: The version of the BaseChatModel to return. Either ``"v0"`` for
+        message_version: The version of the BaseChatModel to return. Either ``"v0"`` for
             a v0 :class:`~langchain_core.language_models.chat_models.BaseChatModel` or
             ``"v1"`` for a v1 :class:`~langchain_core.v1.chat_models.BaseChatModel`. The
             output version determines what type of message objects the model will
@@ -347,7 +347,7 @@ def init_chat_model(
         return _init_chat_model_helper(
             cast("str", model),
             model_provider=model_provider,
-            output_version=output_version,
+            message_version=message_version,
             **kwargs,
         )
     if model:
@@ -365,13 +365,13 @@ def _init_chat_model_helper(
     model: str,
     *,
     model_provider: Optional[str] = None,
-    output_version: Literal["v0", "v1"] = "v0",
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> Union[BaseChatModel, BaseChatModelV1]:
     model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
         _check_pkg("langchain_openai")
-        if output_version == "v0":
+        if message_version == "v0":
             from langchain_openai import ChatOpenAI
 
             return ChatOpenAI(model=model, **kwargs)

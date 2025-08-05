@@ -1381,16 +1381,16 @@ def test_tool_annotated_descriptions() -> None:
     }
 
 
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_tool_call_input_tool_message(output_version: Literal["v0", "v1"]) -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_call_input_tool_message(message_version: Literal["v0", "v1"]) -> None:
     tool_call = {
         "name": "structured_api",
         "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
         "id": "123",
         "type": "tool_call",
     }
-    tool = _MockStructuredTool(output_version=output_version)
-    if output_version == "v0":
+    tool = _MockStructuredTool(message_version=message_version)
+    if message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "1 True {'img': 'base64string...'}",
             tool_call_id="123",
@@ -1434,7 +1434,7 @@ def _mock_structured_tool_with_artifact(
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
-@tool("structured_api", response_format="content_and_artifact", output_version="v1")
+@tool("structured_api", response_format="content_and_artifact", message_version="v1")
 def _mock_structured_tool_with_artifact_v1(
     *, arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> tuple[str, dict]:
@@ -1469,7 +1469,7 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
 @pytest.mark.parametrize(
     "tool",
     [
-        _MockStructuredToolWithRawOutput(output_version="v1"),
+        _MockStructuredToolWithRawOutput(message_version="v1"),
         _mock_structured_tool_with_artifact_v1,
     ],
 )
@@ -1603,7 +1603,7 @@ def injected_tool(x: int, y: Annotated[str, InjectedToolArg]) -> str:
     return y
 
 
-@tool("foo", parse_docstring=True, output_version="v1")
+@tool("foo", parse_docstring=True, message_version="v1")
 def injected_tool_v1(x: int, y: Annotated[str, InjectedToolArg]) -> str:
     """Foo.
 
@@ -1651,12 +1651,12 @@ def injected_tool_with_schema(x: int, y: str) -> str:
     return y
 
 
-@tool("foo", args_schema=fooSchema, output_version="v1")
+@tool("foo", args_schema=fooSchema, message_version="v1")
 def injected_tool_with_schema_v1(x: int, y: str) -> str:
     return y
 
 
-@pytest.mark.parametrize("tool_", [InjectedTool(), InjectedTool(output_version="v1")])
+@pytest.mark.parametrize("tool_", [InjectedTool(), InjectedTool(message_version="v1")])
 def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
@@ -1676,7 +1676,7 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    if tool_.output_version == "v0":
+    if tool_.message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "bar", tool_call_id="123", name="foo"
         )
@@ -1718,7 +1718,7 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
         injected_tool_with_schema,
         InjectedToolWithSchema(),
         injected_tool_with_schema_v1,
-        InjectedToolWithSchema(output_version="v1"),
+        InjectedToolWithSchema(message_version="v1"),
     ],
 )
 def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
@@ -1740,7 +1740,7 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    if tool_.output_version == "v0":
+    if tool_.message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "bar", tool_call_id="123", name="foo"
         )
@@ -1776,9 +1776,9 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_tool_injected_arg(output_version: Literal["v0", "v1"]) -> None:
-    tool_ = injected_tool if output_version == "v0" else injected_tool_v1
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_injected_arg(message_version: Literal["v0", "v1"]) -> None:
+    tool_ = injected_tool if message_version == "v0" else injected_tool_v1
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
         "description": "Foo.",
@@ -1797,7 +1797,7 @@ def test_tool_injected_arg(output_version: Literal["v0", "v1"]) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    if output_version == "v0":
+    if message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "bar", tool_call_id="123", name="foo"
         )
@@ -1833,8 +1833,8 @@ def test_tool_injected_arg(output_version: Literal["v0", "v1"]) -> None:
     }
 
 
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_tool_inherited_injected_arg(output_version: Literal["v0", "v1"]) -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_inherited_injected_arg(message_version: Literal["v0", "v1"]) -> None:
     class BarSchema(BaseModel):
         """bar."""
 
@@ -1855,7 +1855,7 @@ def test_tool_inherited_injected_arg(output_version: Literal["v0", "v1"]) -> Non
         def _run(self, x: int, y: str) -> Any:
             return y
 
-    tool_ = InheritedInjectedArgTool(output_version=output_version)
+    tool_ = InheritedInjectedArgTool(message_version=message_version)
     assert tool_.get_input_schema().model_json_schema() == {
         "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
@@ -1875,7 +1875,7 @@ def test_tool_inherited_injected_arg(output_version: Literal["v0", "v1"]) -> Non
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    if output_version == "v0":
+    if message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "bar", tool_call_id="123", name="foo"
         )
@@ -2253,8 +2253,8 @@ def test_tool_annotations_preserved() -> None:
     assert schema.__annotations__ == expected_type_hints
 
 
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_create_retriever_tool(output_version: Literal["v0", "v1"]) -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_create_retriever_tool(message_version: Literal["v0", "v1"]) -> None:
     class MyRetriever(BaseRetriever):
         def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -2266,13 +2266,13 @@ def test_create_retriever_tool(output_version: Literal["v0", "v1"]) -> None:
         retriever,
         "retriever_tool_content",
         "Retriever Tool Content",
-        output_version=output_version,
+        message_version=message_version,
     )
     assert isinstance(retriever_tool, BaseTool)
     assert retriever_tool.name == "retriever_tool_content"
     assert retriever_tool.description == "Retriever Tool Content"
     assert retriever_tool.invoke("bar") == "foo bar\n\nbar"
-    if output_version == "v0":
+    if message_version == "v0":
         expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
             "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
         )
@@ -2300,13 +2300,13 @@ def test_create_retriever_tool(output_version: Literal["v0", "v1"]) -> None:
         "retriever_tool_artifact",
         "Retriever Tool Artifact",
         response_format="content_and_artifact",
-        output_version=output_version,
+        message_version=message_version,
     )
     assert isinstance(retriever_tool_artifact, BaseTool)
     assert retriever_tool_artifact.name == "retriever_tool_artifact"
     assert retriever_tool_artifact.description == "Retriever Tool Artifact"
     assert retriever_tool_artifact.invoke("bar") == "foo bar\n\nbar"
-    if output_version == "v0":
+    if message_version == "v0":
         expected = ToolMessage(
             "foo bar\n\nbar",
             artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
@@ -2666,7 +2666,7 @@ def test_empty_string_tool_call_id() -> None:
 
 
 def test_empty_string_tool_call_id_v1() -> None:
-    @tool(output_version="v1")
+    @tool(message_version="v1")
     def foo(x: int) -> str:
         """Foo."""
         return "hi"
