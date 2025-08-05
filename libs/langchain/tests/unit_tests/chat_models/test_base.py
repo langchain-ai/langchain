@@ -54,10 +54,10 @@ def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None
 
 @pytest.mark.requires("langchain_openai")
 def test_message_version() -> None:
-    model = init_chat_model("openai:gpt-4.1")
+    model = init_chat_model("openai:gpt-4.1", api_key="foo")
     assert isinstance(model, BaseChatModel)
 
-    model_v1 = init_chat_model("openai:gpt-4.1", message_version="v1")
+    model_v1 = init_chat_model("openai:gpt-4.1", api_key="foo", message_version="v1")
     assert isinstance(model_v1, BaseChatModelV1)
 
     # Test we emit a warning for unsupported providers
