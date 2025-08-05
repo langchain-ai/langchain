@@ -699,3 +699,6 @@ packages:
 - name: langchain-recallio
   path: .
   repo: recallio/langchain-recallio
+- name: langchain-gradient
+  path: .
+  repo: digitalocean/langchain-gradient
