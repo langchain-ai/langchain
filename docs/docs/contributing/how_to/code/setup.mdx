@@ -56,10 +56,10 @@ uv sync
 Then verify dependency installation:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make test
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
@@ -73,7 +73,7 @@ If you add new logic, please add a unit test.
 To run unit tests:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make test
 
 # If you don't have make (Windows alternative):
@@ -89,10 +89,10 @@ If you are only developing `langchain_core`, you can simply install the dependen
 ```bash
 cd libs/core
 
-# If you have make installed:
+# If you have `make` installed:
 make test
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
@@ -107,7 +107,7 @@ Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules
 To run formatting for docs, cookbook and templates:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make format
 
 # If you don't have make (Windows alternative):
@@ -120,7 +120,7 @@ To run formatting for a library, run the same command from the relevant library 
 ```bash
 cd libs/{LIBRARY}
 
-# If you have make installed:
+# If you have `make` installed:
 make format
 
 # If you don't have make (Windows alternative):
@@ -131,10 +131,10 @@ uv run --all-groups ruff check --fix .
 Additionally, you can run the formatter only on the files that have been modified in your current branch as compared to the master branch using the format_diff command:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make format_diff
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 # First, get the list of modified files:
 git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format
 git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check --fix
@@ -149,10 +149,10 @@ Linting for this project is done via a combination of [ruff](https://docs.astral
 To run linting for docs, cookbook and templates:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make lint
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --all-groups ruff check .
 uv run --all-groups ruff format . --diff
 uv run --all-groups mypy . --cache-dir .mypy_cache
@@ -163,10 +163,10 @@ To run linting for a library, run the same command from the relevant library dir
 ```bash
 cd libs/{LIBRARY}
 
-# If you have make installed:
+# If you have `make` installed:
 make lint
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --all-groups ruff check .
 uv run --all-groups ruff format . --diff
 uv run --all-groups mypy . --cache-dir .mypy_cache
@@ -175,10 +175,10 @@ uv run --all-groups mypy . --cache-dir .mypy_cache
 In addition, you can run the linter only on the files that have been modified in your current branch as compared to the master branch using the lint_diff command:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make lint_diff
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 # First, get the list of modified files:
 git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check
 git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format --diff
@@ -197,20 +197,20 @@ Note that `codespell` finds common typos, so it could have false-positive (corre
 To check spelling for this project:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make spell_check
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --all-groups codespell --toml pyproject.toml
 ```
 
 To fix spelling in place:
 
 ```bash
-# If you have make installed:
+# If you have `make` installed:
 make spell_fix
 
-# If you don't have make (Windows alternative):
+# If you don't have `make` (Windows alternative):
 uv run --all-groups codespell --toml pyproject.toml -w
 ```
 
