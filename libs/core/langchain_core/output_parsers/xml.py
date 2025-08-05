@@ -12,8 +12,10 @@ from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
+from langchain_core.v1.messages import AIMessage
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.
@@ -240,21 +242,28 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     @override
     def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
+        self, input: Iterator[Union[str, BaseMessage, AIMessage]]
     ) -> Iterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         for chunk in input:
-            yield from streaming_parser.parse(chunk)
+            if isinstance(chunk, AIMessage):
+                yield from streaming_parser.parse(convert_from_v1_message(chunk))
+            else:
+                yield from streaming_parser.parse(chunk)
         streaming_parser.close()
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[Union[str, BaseMessage, AIMessage]]
     ) -> AsyncIterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         async for chunk in input:
-            for output in streaming_parser.parse(chunk):
-                yield output
+            if isinstance(chunk, AIMessage):
+                for output in streaming_parser.parse(convert_from_v1_message(chunk)):
+                    yield output
+            else:
+                for output in streaming_parser.parse(chunk):
+                    yield output
         streaming_parser.close()
 
     def _root_to_dict(self, root: ET.Element) -> dict[str, Union[str, list[Any]]]:

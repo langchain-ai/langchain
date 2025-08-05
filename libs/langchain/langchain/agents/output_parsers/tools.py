@@ -9,7 +9,9 @@ from langchain_core.messages import (
     BaseMessage,
     ToolCall,
 )
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 from typing_extensions import override
 
 from langchain.agents.agent import MultiActionAgentOutputParser
@@ -47,7 +49,12 @@ def parse_ai_message_to_tool_action(
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
-                    ToolCall(name=function_name, args=args, id=tool_call["id"]),
+                    ToolCall(
+                        name=function_name,
+                        args=args,
+                        id=tool_call["id"],
+                        type="tool_call",
+                    )
                 )
             except JSONDecodeError as e:
                 msg = (
@@ -96,10 +103,12 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
     @override
     def parse_result(
         self,
-        result: list[Generation],
+        result: Union[list[Generation], AIMessageV1],
         *,
         partial: bool = False,
     ) -> Union[list[AgentAction], AgentFinish]:
+        if isinstance(result, AIMessageV1):
+            result = [ChatGeneration(message=convert_from_v1_message(result))]
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
             raise ValueError(msg)  # noqa: TRY004

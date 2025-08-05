@@ -217,7 +217,11 @@ def _load_package_modules(
         # Get the full namespace of the module
         namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
         # Keep only the top level namespace
-        top_namespace = namespace.split(".")[0]
+        # (but make special exception for content_blocks and messages.v1)
+        if namespace == "messages.content_blocks" or namespace == "messages.v1":
+            top_namespace = namespace  # Keep full namespace for content_blocks
+        else:
+            top_namespace = namespace.split(".")[0]
 
         try:
             # If submodule is present, we need to construct the paths in a slightly
@@ -283,7 +287,7 @@ def _construct_doc(
 .. toctree::
     :hidden:
     :maxdepth: 2
-    
+
 """
     index_autosummary = """
 """
@@ -365,9 +369,9 @@ def _construct_doc(
 
                 module_doc += f"""\
     :template: {template}
-    
+
     {class_["qualified_name"]}
-    
+
 """
                 index_autosummary += f"""
     {class_["qualified_name"]}
@@ -550,8 +554,8 @@ def _build_index(dirs: List[str]) -> None:
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     doc = """# LangChain Python API Reference
 
-Welcome to the LangChain Python API reference. This is a reference for all 
-`langchain-x` packages. 
+Welcome to the LangChain Python API reference. This is a reference for all
+`langchain-x` packages.
 
 For user guides see [https://python.langchain.com](https://python.langchain.com).
 

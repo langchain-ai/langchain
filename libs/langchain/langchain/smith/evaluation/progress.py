@@ -2,12 +2,13 @@
 
 import threading
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
 from typing_extensions import override
 
 
@@ -111,7 +112,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
     @override
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: Union[LLMResult, AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

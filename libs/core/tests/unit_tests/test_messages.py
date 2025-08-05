@@ -3,6 +3,7 @@ import uuid
 from typing import Optional, Union
 
 import pytest
+from typing_extensions import get_args
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
@@ -30,10 +31,13 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES, ContentBlock
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 
 
 def test_message_init() -> None:
@@ -195,6 +199,156 @@ def test_message_chunks() -> None:
     assert (meaningful_id + default_id).id == "msg_def456"
 
 
+def test_message_chunks_v1() -> None:
+    left = AIMessageChunkV1("foo ", id="abc")
+    right = AIMessageChunkV1("bar")
+    expected = AIMessageChunkV1("foo bar", id="abc")
+    assert left + right == expected
+
+    # Test tool calls
+    one = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+        ],
+    )
+    two = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args='{"arg1": "val', id=None, index=0)
+        ],
+    )
+    three = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args='ue}"', id=None, index=0)
+        ],
+    )
+    result = one + two + three
+    expected = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="tool1", args='{"arg1": "value}"', id="1", index=0
+            )
+        ],
+        id=result.id,  # Use the same ID as the result
+    )
+    assert result == expected
+
+    converted_message = result.to_message()
+    assert converted_message == AIMessageV1(
+        content=[
+            {
+                "name": "tool1",
+                "args": {"arg1": "value}"},
+                "id": "1",
+                "type": "tool_call",
+            }
+        ],
+        id=converted_message.id,  # Use the same ID as the converted message
+    )
+
+    chunk1 = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+        ],
+    )
+    chunk2 = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
+        ],
+    )
+    # Don't merge if `index` field does not match.
+    merge_result = chunk1 + chunk2
+    assert merge_result == AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0),
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1),
+        ],
+        id=merge_result.id,  # Use the same ID as the merge result
+    )
+
+    ai_msg_chunk = AIMessageChunkV1([])
+    tool_calls_msg_chunk = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
+        ],
+    )
+    # These assertions test that adding empty chunks preserves the non-empty chunk
+    result1 = ai_msg_chunk + tool_calls_msg_chunk
+    assert result1.tool_call_chunks == tool_calls_msg_chunk.tool_call_chunks
+    assert result1.content == tool_calls_msg_chunk.content
+
+    result2 = tool_calls_msg_chunk + ai_msg_chunk
+    assert result2.tool_call_chunks == tool_calls_msg_chunk.tool_call_chunks
+    assert result2.content == tool_calls_msg_chunk.content
+
+    ai_msg_chunk = AIMessageChunkV1(
+        [],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+        ],
+    )
+    assert ai_msg_chunk.tool_calls == [create_tool_call(name="tool1", args={}, id="1")]
+
+    # Test token usage
+    left = AIMessageChunkV1(
+        [],
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+    )
+    right = AIMessageChunkV1(
+        [],
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
+    )
+    usage_result = left + right
+    expected_usage = AIMessageChunkV1(
+        content=[],
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+        id=usage_result.id,  # Use the same ID as the result
+    )
+    assert usage_result == expected_usage
+
+    # Test adding empty chunks preserves the original
+    left_result = AIMessageChunkV1(content=[]) + left
+    assert left_result.usage_metadata == left.usage_metadata
+    assert left_result.content == left.content
+
+    right_result = right + AIMessageChunkV1(content=[])
+    assert right_result.usage_metadata == right.usage_metadata
+    assert right_result.content == right.content
+
+    # Test ID order of precedence
+    # Note: AIMessageChunkV1 always generates an ID if none provided
+    auto_id = AIMessageChunkV1(content=[])  # Gets auto-generated lc_* ID
+    default_id = AIMessageChunkV1(
+        content=[], id="run-abc123"
+    )  # LangChain-assigned run ID
+    meaningful_id = AIMessageChunkV1(
+        content=[], id="msg_def456"
+    )  # provider-assigned ID
+
+    # Provider-assigned IDs (non-run-* and non-lc_*) have highest precedence
+    # Provider-assigned IDs always win over LangChain-generated IDs
+    assert (auto_id + meaningful_id).id == "msg_def456"  # provider-assigned wins
+    assert (meaningful_id + auto_id).id == "msg_def456"  # provider-assigned wins
+
+    assert (
+        default_id + meaningful_id
+    ).id == "msg_def456"  # meaningful_id is provider-assigned
+    assert (
+        meaningful_id + default_id
+    ).id == "msg_def456"  # meaningful_id is provider-assigned
+
+    # Between auto-generated and run-* IDs, auto-generated wins (since lc_ != run-)
+    assert (auto_id + default_id).id == auto_id.id
+    assert (default_id + auto_id).id == auto_id.id
+
+
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
@@ -207,7 +361,7 @@ def test_chat_message_chunks() -> None:
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
     assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
         content=" indeed."
@@ -316,7 +470,7 @@ def test_function_message_chunks() -> None:
     ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
 
 def test_ai_message_chunks() -> None:
@@ -332,7 +486,7 @@ def test_ai_message_chunks() -> None:
     ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
-        )
+        )  # type: ignore[reportUnusedExpression, unused-ignore]
 
 
 class TestGetBufferString(unittest.TestCase):
@@ -1111,23 +1265,20 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "url",
             "url": "https://...",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
         }
     )
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
         }
@@ -1135,13 +1286,17 @@ def test_is_data_content_block() -> None:
     assert is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "metadata": {"cache_control": {"type": "ephemeral"}},
         }
     )
-
+    assert is_data_content_block(
+        {
+            "type": "image",
+            "source_type": "base64",  # backward compatibility
+        }
+    )
     assert not is_data_content_block(
         {
             "type": "text",
@@ -1157,43 +1312,71 @@ def test_is_data_content_block() -> None:
     assert not is_data_content_block(
         {
             "type": "image",
-            "source_type": "base64",
-        }
-    )
-    assert not is_data_content_block(
-        {
-            "type": "image",
             "source": "<base64 data>",
         }
     )
 
 
 def test_convert_to_openai_image_block() -> None:
-    input_block = {
-        "type": "image",
-        "source_type": "url",
-        "url": "https://...",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {"url": "https://..."},
-    }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
-
-    input_block = {
-        "type": "image",
-        "source_type": "base64",
-        "data": "<base64 data>",
-        "mime_type": "image/jpeg",
-        "cache_control": {"type": "ephemeral"},
-    }
-    expected = {
-        "type": "image_url",
-        "image_url": {
-            "url": "data:image/jpeg;base64,<base64 data>",
+    for input_block in [
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
         },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {"url": "https://..."},
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+    for input_block in [
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ]:
+        expected = {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/jpeg;base64,<base64 data>",
+            },
+        }
+        result = convert_to_openai_image_block(input_block)
+        assert result == expected
+
+
+def test_known_block_types() -> None:
+    expected = {
+        bt
+        for bt in get_args(ContentBlock)
+        for bt in get_args(bt.__annotations__["type"])
     }
-    result = convert_to_openai_image_block(input_block)
-    assert result == expected
+    # Normalize any Literal[...] types in block types to their string values.
+    # This ensures all entries are plain strings, not Literal objects.
+    expected = {
+        t
+        if isinstance(t, str)
+        else t.__args__[0]
+        if hasattr(t, "__args__") and len(t.__args__) == 1
+        else t
+        for t in expected
+    }
+    assert expected == KNOWN_BLOCK_TYPES

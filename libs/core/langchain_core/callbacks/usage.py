@@ -4,14 +4,16 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from typing_extensions import override
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
@@ -58,9 +60,17 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
         return str(self.usage_metadata)
 
     @override
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(
+        self, response: Union[LLMResult, AIMessageV1], **kwargs: Any
+    ) -> None:
         """Collect token usage."""
         # Check for usage_metadata (langchain-core >= 0.2.2)
+        if isinstance(response, AIMessageV1):
+            response = LLMResult(
+                generations=[
+                    [ChatGeneration(message=convert_from_v1_message(response))]
+                ]
+            )
         try:
             generation = response.generations[0][0]
         except IndexError:

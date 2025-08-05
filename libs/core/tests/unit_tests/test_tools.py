@@ -68,8 +68,10 @@ from langchain_core.utils.pydantic import (
     _create_subset_model,
     create_model_v2,
 )
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.stubs import AnyStr
 
 
 def _get_tool_call_json_schema(tool: BaseTool) -> dict:
@@ -1379,17 +1381,28 @@ def test_tool_annotated_descriptions() -> None:
     }
 
 
-def test_tool_call_input_tool_message_output() -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_call_input_tool_message(message_version: Literal["v0", "v1"]) -> None:
     tool_call = {
         "name": "structured_api",
         "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
         "id": "123",
         "type": "tool_call",
     }
-    tool = _MockStructuredTool()
-    expected = ToolMessage(
-        "1 True {'img': 'base64string...'}", tool_call_id="123", name="structured_api"
-    )
+    tool = _MockStructuredTool(message_version=message_version)
+    if message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "1 True {'img': 'base64string...'}",
+            tool_call_id="123",
+            name="structured_api",
+        )
+    else:
+        expected = ToolMessageV1(
+            "1 True {'img': 'base64string...'}",
+            tool_call_id="123",
+            name="structured_api",
+            id=AnyStr("lc_abc123"),
+        )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1421,6 +1434,14 @@ def _mock_structured_tool_with_artifact(
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
+@tool("structured_api", response_format="content_and_artifact", message_version="v1")
+def _mock_structured_tool_with_artifact_v1(
+    *, arg1: int, arg2: bool, arg3: Optional[dict] = None
+) -> tuple[str, dict]:
+    """A Structured Tool."""
+    return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
+
+
 @pytest.mark.parametrize(
     "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_artifact]
 )
@@ -1443,6 +1464,38 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
 
     actual_content = tool.invoke(tool_call["args"])
     assert actual_content == expected.content
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        _MockStructuredToolWithRawOutput(message_version="v1"),
+        _mock_structured_tool_with_artifact_v1,
+    ],
+)
+def test_tool_call_input_tool_message_with_artifact_v1(tool: BaseTool) -> None:
+    tool_call: dict = {
+        "name": "structured_api",
+        "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
+        "id": "123",
+        "type": "tool_call",
+    }
+    expected = ToolMessageV1(
+        "1 True",
+        artifact=tool_call["args"],
+        tool_call_id="123",
+        name="structured_api",
+        id=AnyStr("lc_abc123"),
+    )
+    actual = tool.invoke(tool_call)
+    assert actual == expected
+
+    tool_call.pop("type")
+    with pytest.raises(ValidationError):
+        tool.invoke(tool_call)
+
+    actual_content = tool.invoke(tool_call["args"])
+    assert actual_content == expected.text
 
 
 def test_convert_from_runnable_dict() -> None:
@@ -1550,6 +1603,17 @@ def injected_tool(x: int, y: Annotated[str, InjectedToolArg]) -> str:
     return y
 
 
+@tool("foo", parse_docstring=True, message_version="v1")
+def injected_tool_v1(x: int, y: Annotated[str, InjectedToolArg]) -> str:
+    """Foo.
+
+    Args:
+        x: abc
+        y: 123
+    """
+    return y
+
+
 class InjectedTool(BaseTool):
     name: str = "foo"
     description: str = "foo."
@@ -1587,7 +1651,12 @@ def injected_tool_with_schema(x: int, y: str) -> str:
     return y
 
 
-@pytest.mark.parametrize("tool_", [InjectedTool()])
+@tool("foo", args_schema=fooSchema, message_version="v1")
+def injected_tool_with_schema_v1(x: int, y: str) -> str:
+    return y
+
+
+@pytest.mark.parametrize("tool_", [InjectedTool(), InjectedTool(message_version="v1")])
 def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
@@ -1607,14 +1676,25 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    if tool_.message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "bar", tool_call_id="123", name="foo"
+        )
+    else:
+        expected = ToolMessageV1(
+            "bar", tool_call_id="123", name="foo", id=AnyStr("lc_abc123")
+        )
+    assert (
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        )
+        == expected
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -1634,7 +1714,12 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
 
 @pytest.mark.parametrize(
     "tool_",
-    [injected_tool_with_schema, InjectedToolWithSchema()],
+    [
+        injected_tool_with_schema,
+        InjectedToolWithSchema(),
+        injected_tool_with_schema_v1,
+        InjectedToolWithSchema(message_version="v1"),
+    ],
 )
 def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
@@ -1655,14 +1740,25 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    if tool_.message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "bar", tool_call_id="123", name="foo"
+        )
+    else:
+        expected = ToolMessageV1(
+            "bar", tool_call_id="123", name="foo", id=AnyStr("lc_abc123")
+        )
+    assert (
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        )
+        == expected
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -1680,8 +1776,9 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
-def test_tool_injected_arg() -> None:
-    tool_ = injected_tool
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_injected_arg(message_version: Literal["v0", "v1"]) -> None:
+    tool_ = injected_tool if message_version == "v0" else injected_tool_v1
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
         "description": "Foo.",
@@ -1700,14 +1797,25 @@ def test_tool_injected_arg() -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    if message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "bar", tool_call_id="123", name="foo"
+        )
+    else:
+        expected = ToolMessageV1(
+            "bar", tool_call_id="123", name="foo", id=AnyStr("lc_abc123")
+        )
+    assert (
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        )
+        == expected
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -1725,7 +1833,8 @@ def test_tool_injected_arg() -> None:
     }
 
 
-def test_tool_inherited_injected_arg() -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_tool_inherited_injected_arg(message_version: Literal["v0", "v1"]) -> None:
     class BarSchema(BaseModel):
         """bar."""
 
@@ -1746,7 +1855,7 @@ def test_tool_inherited_injected_arg() -> None:
         def _run(self, x: int, y: str) -> Any:
             return y
 
-    tool_ = InheritedInjectedArgTool()
+    tool_ = InheritedInjectedArgTool(message_version=message_version)
     assert tool_.get_input_schema().model_json_schema() == {
         "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
@@ -1766,14 +1875,25 @@ def test_tool_inherited_injected_arg() -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    if message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "bar", tool_call_id="123", name="foo"
+        )
+    else:
+        expected = ToolMessageV1(
+            "bar", tool_call_id="123", name="foo", id=AnyStr("lc_abc123")
+        )
+    assert (
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        )
+        == expected
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -2133,7 +2253,8 @@ def test_tool_annotations_preserved() -> None:
     assert schema.__annotations__ == expected_type_hints
 
 
-def test_create_retriever_tool() -> None:
+@pytest.mark.parametrize("message_version", ["v0", "v1"])
+def test_create_retriever_tool(message_version: Literal["v0", "v1"]) -> None:
     class MyRetriever(BaseRetriever):
         def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -2142,21 +2263,36 @@ def test_create_retriever_tool() -> None:
 
     retriever = MyRetriever()
     retriever_tool = tools.create_retriever_tool(
-        retriever, "retriever_tool_content", "Retriever Tool Content"
+        retriever,
+        "retriever_tool_content",
+        "Retriever Tool Content",
+        message_version=message_version,
     )
     assert isinstance(retriever_tool, BaseTool)
     assert retriever_tool.name == "retriever_tool_content"
     assert retriever_tool.description == "Retriever Tool Content"
     assert retriever_tool.invoke("bar") == "foo bar\n\nbar"
-    assert retriever_tool.invoke(
-        ToolCall(
-            name="retriever_tool_content",
-            args={"query": "bar"},
-            id="123",
-            type="tool_call",
+    if message_version == "v0":
+        expected: Union[ToolMessage, ToolMessageV1] = ToolMessage(
+            "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
         )
-    ) == ToolMessage(
-        "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
+    else:
+        expected = ToolMessageV1(
+            "foo bar\n\nbar",
+            tool_call_id="123",
+            name="retriever_tool_content",
+            id=AnyStr("lc_abc123"),
+        )
+    assert (
+        retriever_tool.invoke(
+            ToolCall(
+                name="retriever_tool_content",
+                args={"query": "bar"},
+                id="123",
+                type="tool_call",
+            )
+        )
+        == expected
     )
 
     retriever_tool_artifact = tools.create_retriever_tool(
@@ -2164,23 +2300,37 @@ def test_create_retriever_tool() -> None:
         "retriever_tool_artifact",
         "Retriever Tool Artifact",
         response_format="content_and_artifact",
+        message_version=message_version,
     )
     assert isinstance(retriever_tool_artifact, BaseTool)
     assert retriever_tool_artifact.name == "retriever_tool_artifact"
     assert retriever_tool_artifact.description == "Retriever Tool Artifact"
     assert retriever_tool_artifact.invoke("bar") == "foo bar\n\nbar"
-    assert retriever_tool_artifact.invoke(
-        ToolCall(
+    if message_version == "v0":
+        expected = ToolMessage(
+            "foo bar\n\nbar",
+            artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
+            tool_call_id="123",
             name="retriever_tool_artifact",
-            args={"query": "bar"},
-            id="123",
-            type="tool_call",
         )
-    ) == ToolMessage(
-        "foo bar\n\nbar",
-        artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
-        tool_call_id="123",
-        name="retriever_tool_artifact",
+    else:
+        expected = ToolMessageV1(
+            "foo bar\n\nbar",
+            artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
+            tool_call_id="123",
+            name="retriever_tool_artifact",
+            id=AnyStr("lc_abc123"),
+        )
+    assert (
+        retriever_tool_artifact.invoke(
+            ToolCall(
+                name="retriever_tool_artifact",
+                args={"query": "bar"},
+                id="123",
+                type="tool_call",
+            )
+        )
+        == expected
     )
 
 
@@ -2313,6 +2463,45 @@ def test_tool_injected_tool_call_id() -> None:
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
 
 
+def test_tool_injected_tool_call_id_v1() -> None:
+    @tool
+    def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessageV1:
+        """Foo."""
+        return ToolMessageV1(str(x), tool_call_id=tool_call_id)
+
+    assert foo.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
+    ) == ToolMessageV1("0", tool_call_id="bar", id=AnyStr("lc_abc123"))
+
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
+        assert foo.invoke({"x": 0})
+
+    @tool
+    def foo2(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId()]
+    ) -> ToolMessageV1:
+        """Foo."""
+        return ToolMessageV1(str(x), tool_call_id=tool_call_id)
+
+    assert foo2.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
+    ) == ToolMessageV1("0", tool_call_id="bar", id=AnyStr("lc_abc123"))
+
+
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
@@ -2330,6 +2519,25 @@ def test_tool_uninjected_tool_call_id() -> None:
             "id": "bar",
         }
     ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
+
+
+def test_tool_uninjected_tool_call_id_v1() -> None:
+    @tool
+    def foo(x: int, tool_call_id: str) -> ToolMessageV1:
+        """Foo."""
+        return ToolMessageV1(str(x), tool_call_id=tool_call_id)
+
+    with pytest.raises(ValueError, match="1 validation error for foo"):
+        foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
+
+    assert foo.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0, "tool_call_id": "zap"},
+            "name": "foo",
+            "id": "bar",
+        }
+    ) == ToolMessageV1("0", tool_call_id="zap", id=AnyStr("lc_abc123"))
 
 
 def test_tool_return_output_mixin() -> None:
@@ -2454,6 +2662,19 @@ def test_empty_string_tool_call_id() -> None:
 
     assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
         content="hi", name="foo", tool_call_id=""
+    )
+
+
+def test_empty_string_tool_call_id_v1() -> None:
+    @tool(message_version="v1")
+    def foo(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "id": ""}
+    ) == ToolMessageV1(
+        content="hi", name="foo", tool_call_id="", id=AnyStr("lc_abc123")
     )
 
 
