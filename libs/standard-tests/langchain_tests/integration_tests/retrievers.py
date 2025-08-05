@@ -11,6 +11,16 @@ class RetrieversIntegrationTests(BaseStandardTests):
     """Base class for retrievers integration tests."""
 
     @property
+    def has_k_init_arg(self) -> bool:
+        """Whether the retriever supports a `k` parameter in its constructor."""
+        return True
+
+    @property
+    def has_k_invoke_kwarg(self) -> bool:
+        """Whether the retriever supports a `k` parameter in its `invoke` method."""
+        return True
+
+    @property
     @abstractmethod
     def retriever_constructor(self) -> type[BaseRetriever]:
         """A BaseRetriever subclass to be tested."""
@@ -41,6 +51,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
             If this test fails, either the retriever constructor does not accept a k
             parameter, or the retriever does not return the correct number of documents
             (`k`) when it is set.
+            The test can be skipped by setting the `has_k_init_arg` property to False.
 
             For example, a retriever like
 
@@ -51,6 +62,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
             should return 3 documents when invoked with a query.
 
         """
+        if not self.has_k_init_arg:
+            pytest.skip("Retriever does not support k init arg")
         params = {
             k: v for k, v in self.retriever_constructor_params.items() if k != "k"
         }
@@ -75,6 +88,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
             If this test fails, the retriever's invoke method does not accept a k
             parameter, or the retriever does not return the correct number of documents
             (`k`) when it is set.
+            The test can be skipped by setting the `has_k_invoke_kwarg` property to
+            False.
 
             For example, a retriever like
 
@@ -85,6 +100,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
             should return 3 documents when invoked with a query.
 
         """
+        if not self.has_k_invoke_kwarg:
+            pytest.skip("Retriever does not support k invoke arg")
         result_1 = retriever.invoke(self.retriever_query_example, k=1)
         assert len(result_1) == 1
         assert all(isinstance(doc, Document) for doc in result_1)
