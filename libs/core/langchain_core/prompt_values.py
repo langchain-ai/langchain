@@ -96,15 +96,15 @@ class PromptValue(Serializable, ABC):
 
     @overload
     def to_messages(
-        self, output_version: Literal["v0"] = "v0"
+        self, message_version: Literal["v0"] = "v0"
     ) -> list[BaseMessage]: ...
 
     @overload
-    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+    def to_messages(self, message_version: Literal["v1"]) -> list[MessageV1]: ...
 
     @abstractmethod
     def to_messages(
-        self, output_version: Literal["v0", "v1"] = "v0"
+        self, message_version: Literal["v0", "v1"] = "v0"
     ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt as a list of Messages."""
 
@@ -131,17 +131,17 @@ class StringPromptValue(PromptValue):
 
     @overload
     def to_messages(
-        self, output_version: Literal["v0"] = "v0"
+        self, message_version: Literal["v0"] = "v0"
     ) -> list[BaseMessage]: ...
 
     @overload
-    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+    def to_messages(self, message_version: Literal["v1"]) -> list[MessageV1]: ...
 
     def to_messages(
-        self, output_version: Literal["v0", "v1"] = "v0"
+        self, message_version: Literal["v0", "v1"] = "v0"
     ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt as messages."""
-        if output_version == "v1":
+        if message_version == "v1":
             return [HumanMessageV1(content=self.text)]
         return [HumanMessage(content=self.text)]
 
@@ -161,21 +161,21 @@ class ChatPromptValue(PromptValue):
 
     @overload
     def to_messages(
-        self, output_version: Literal["v0"] = "v0"
+        self, message_version: Literal["v0"] = "v0"
     ) -> list[BaseMessage]: ...
 
     @overload
-    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+    def to_messages(self, message_version: Literal["v1"]) -> list[MessageV1]: ...
 
     def to_messages(
-        self, output_version: Literal["v0", "v1"] = "v0"
+        self, message_version: Literal["v0", "v1"] = "v0"
     ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt as a list of messages.
 
         Args:
-            output_version: The output version, either "v0" (default) or "v1".
+            message_version: The output version, either "v0" (default) or "v1".
         """
-        if output_version == "v1":
+        if message_version == "v1":
             return [_convert_to_v1(m) for m in self.messages]
         return list(self.messages)
 
@@ -213,17 +213,17 @@ class ImagePromptValue(PromptValue):
 
     @overload
     def to_messages(
-        self, output_version: Literal["v0"] = "v0"
+        self, message_version: Literal["v0"] = "v0"
     ) -> list[BaseMessage]: ...
 
     @overload
-    def to_messages(self, output_version: Literal["v1"]) -> list[MessageV1]: ...
+    def to_messages(self, message_version: Literal["v1"]) -> list[MessageV1]: ...
 
     def to_messages(
-        self, output_version: Literal["v0", "v1"] = "v0"
+        self, message_version: Literal["v0", "v1"] = "v0"
     ) -> Union[Sequence[BaseMessage], Sequence[MessageV1]]:
         """Return prompt (image URL) as messages."""
-        if output_version == "v1":
+        if message_version == "v1":
             block: types.ImageContentBlock = {
                 "type": "image",
                 "url": self.image_url["url"],

@@ -72,7 +72,7 @@ def create_retriever_tool(
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
-    output_version: Literal["v0", "v1"] = "v1",
+    message_version: Literal["v0", "v1"] = "v1",
 ) -> Tool:
     r"""Create a tool to do retrieval of documents.
 
@@ -89,7 +89,7 @@ def create_retriever_tool(
             "content_and_artifact" then the output is expected to be a two-tuple
             corresponding to the (content, artifact) of a ToolMessage (artifact
             being a list of documents in this case). Defaults to "content".
-        output_version: Version of ToolMessage to return given
+        message_version: Version of ToolMessage to return given
             :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
             If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
@@ -120,5 +120,5 @@ def create_retriever_tool(
         coroutine=afunc,
         args_schema=RetrieverInput,
         response_format=response_format,
-        output_version=output_version,
+        message_version=message_version,
     )
