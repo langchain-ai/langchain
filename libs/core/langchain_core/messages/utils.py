@@ -415,6 +415,10 @@ def convert_from_v1_message(message: MessageV1) -> BaseMessage:
         return ToolMessage(
             content=content,
             id=message.id,
+            tool_call_id=message.tool_call_id,
+            artifact=message.artifact,
+            name=message.name,
+            status=message.status,
         )
     message = f"Unsupported message type: {type(message)}"
     raise NotImplementedError(message)
@@ -569,7 +573,7 @@ def convert_to_messages_v1(
     from langchain_core.prompt_values import PromptValue
 
     if isinstance(messages, PromptValue):
-        return messages.to_messages(output_version="v1")
+        return messages.to_messages(message_version="v1")
     return [_convert_to_message_v1(m) for m in messages]
 
 

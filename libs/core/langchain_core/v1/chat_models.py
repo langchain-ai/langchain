@@ -362,7 +362,7 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
 
     def _convert_input(self, model_input: LanguageModelInput) -> list[MessageV1]:
         if isinstance(model_input, PromptValue):
-            return model_input.to_messages(output_version="v1")
+            return model_input.to_messages(message_version="v1")
         if isinstance(model_input, str):
             return [HumanMessageV1(content=model_input)]
         if isinstance(model_input, Sequence):

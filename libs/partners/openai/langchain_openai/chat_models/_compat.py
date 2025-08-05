@@ -1,7 +1,7 @@
 """
 This module converts between AIMessage output formats, which are governed by the
-``output_version`` attribute on ChatOpenAI. Supported values are ``"v0"``,
-``"responses/v1"``, and ``"v1"``.
+``output_version`` attribute on ChatOpenAI. Supported values are ``"v0"`` and
+``"responses/v1"``.
 
 ``"v0"`` corresponds to the format as of ChatOpenAI v0.3. For the Responses API, it
 stores reasoning and tool outputs in AIMessage.additional_kwargs:
@@ -59,8 +59,6 @@ representing these items in the content sequence:
 
 There are other, small improvements as well-- e.g., we store message IDs on text
 content blocks, rather than on the AIMessage.id, which now stores the response ID.
-
-``"v1"`` represents LangChain's cross-provider standard format.
 
 For backwards compatibility, this module provides functions to convert between the
 formats. The functions are used internally by ChatOpenAI.

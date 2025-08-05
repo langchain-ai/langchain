@@ -20,7 +20,8 @@ from langchain_core.v1.messages import HumanMessage as HumanMessageV1
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAI, ChatOpenAIV1
+from langchain_openai import ChatOpenAI
+from langchain_openai.v1 import ChatOpenAI as ChatOpenAIV1
 
 MODEL_NAME = "gpt-4o-mini"
 

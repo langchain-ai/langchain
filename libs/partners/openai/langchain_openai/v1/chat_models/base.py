@@ -594,25 +594,6 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: str = "v1"
-    """Version of AIMessage output format to use.
-
-    This field is used to roll-out new output formats for chat model AIMessages
-    in a backwards-compatible way.
-
-    Supported values:
-
-    - ``"v0"``: AIMessage format as of langchain-openai 0.3.x.
-    - ``"responses/v1"``: Formats Responses API output
-      items into AIMessage content blocks.
-    - ``"v1"``: v1 of LangChain cross-provider standard.
-
-    ``output_version="v1"`` is recommended.
-
-    .. versionadded:: 0.3.25
-
-    """
-
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -1026,8 +1007,6 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
-        elif self.output_version == "responses/v1":
-            return True
         elif self.include is not None:
             return True
         elif self.reasoning is not None:
@@ -1866,7 +1845,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(
                 model="gpt-4o",
@@ -1886,7 +1865,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
             import openai
 
             ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
@@ -2100,23 +2079,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
         detail.
 
-        .. note::
-            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
-            AIMessage format when using the Responses API. Setting
-
-            ..  code-block:: python
-
-                llm = ChatOpenAI(model="...", output_version="responses/v1")
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's ``content`` field, rather than
-            ``additional_kwargs``. We recommend this format for new applications.
-
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
+            llm = ChatOpenAI(model="gpt-4.1-mini")
 
             tool = {"type": "web_search_preview"}
             llm_with_tools = llm.bind_tools([tool])
@@ -2157,7 +2124,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
@@ -2195,30 +2162,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
 
-        .. note::
-            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
-            AIMessage format when using the Responses API. Setting
-
-            ..  code-block:: python
-
-                llm = ChatOpenAI(model="...", output_version="responses/v1")
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's ``content`` field, rather than
-            ``additional_kwargs``. We recommend this format for new applications.
-
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             reasoning = {
                 "effort": "medium",  # 'low', 'medium', or 'high'
                 "summary": "auto",  # 'detailed', 'auto', or None
             }
 
-            llm = ChatOpenAI(
-                model="o4-mini", reasoning=reasoning, output_version="responses/v1"
-            )
+            llm = ChatOpenAI(model="o4-mini", reasoning=reasoning)
             response = llm.invoke("What is 3^3?")
 
             # Response text
@@ -2436,7 +2389,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(model="o4-mini", service_tier="flex")
 
@@ -2688,7 +2641,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 from typing import Optional
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel, Field
 
 
@@ -2719,7 +2672,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 from typing import Optional
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel, Field
 
 
@@ -2750,7 +2703,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel
 
 
@@ -2783,7 +2736,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 # from typing_extensions, not from typing.
                 from typing_extensions import Annotated, TypedDict
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
 
 
                 class AnswerWithJustification(TypedDict):
@@ -2810,7 +2763,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
 
                 oai_schema = {
                     'name': 'AnswerWithJustification',
@@ -2840,7 +2793,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):

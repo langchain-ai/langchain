@@ -499,7 +499,7 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
-    output_version: Literal["v0", "v1"] = "v0"
+    message_version: Literal["v0", "v1"] = "v0"
     """Version of ToolMessage to return given
     :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
@@ -894,7 +894,7 @@ class ChildTool(BaseTool):
             tool_call_id,
             self.name,
             status,
-            output_version=self.output_version,
+            message_version=self.message_version,
         )
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
@@ -1015,7 +1015,7 @@ class ChildTool(BaseTool):
             tool_call_id,
             self.name,
             status,
-            output_version=self.output_version,
+            message_version=self.message_version,
         )
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
@@ -1156,7 +1156,7 @@ def _format_output(
     name: str,
     status: Literal["success", "error"],
     *,
-    output_version: Literal["v0", "v1"] = "v0",
+    message_version: Literal["v0", "v1"] = "v0",
 ) -> Union[ToolOutputMixin, Any]:
     """Format tool output as a ToolMessage if appropriate.
 
@@ -1166,7 +1166,7 @@ def _format_output(
         tool_call_id: The ID of the tool call.
         name: The name of the tool.
         status: The execution status.
-        output_version: The version of the ToolMessage to return.
+        message_version: The version of the ToolMessage to return.
 
     Returns:
         The formatted output, either as a ToolMessage or the original content.
@@ -1175,7 +1175,7 @@ def _format_output(
         return content
     if not _is_message_content_type(content):
         content = _stringify(content)
-    if output_version == "v0":
+    if message_version == "v0":
         return ToolMessage(
             content,
             artifact=artifact,

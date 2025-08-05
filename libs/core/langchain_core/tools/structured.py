@@ -129,7 +129,7 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
-        output_version: Literal["v0", "v1"] = "v0",
+        message_version: Literal["v0", "v1"] = "v0",
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -158,7 +158,7 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
-            output_version: Version of ToolMessage to return given
+            message_version: Version of ToolMessage to return given
                 :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
                 If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
@@ -239,7 +239,7 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
-            output_version=output_version,
+            message_version=message_version,
             **kwargs,
         )
 
