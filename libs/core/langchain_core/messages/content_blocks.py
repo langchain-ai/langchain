@@ -106,12 +106,7 @@ import warnings
 from typing import Any, Literal, Optional, Union
 from uuid import uuid4
 
-try:
-    from typing import TypeGuard
-except ImportError:
-    from typing_extensions import TypeGuard
-
-from typing_extensions import NotRequired, TypedDict, get_args, get_origin
+from typing_extensions import NotRequired, TypedDict, TypeGuard, get_args, get_origin
 
 
 def _ensure_id(id_val: Optional[str]) -> str:
