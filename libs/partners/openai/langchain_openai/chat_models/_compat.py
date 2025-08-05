@@ -73,7 +73,7 @@ from typing import Any, Literal, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content_blocks as types
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
