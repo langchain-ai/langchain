@@ -1845,7 +1845,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(
                 model="gpt-4o",
@@ -1865,7 +1865,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
             import openai
 
             ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
@@ -2081,7 +2081,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(model="gpt-4.1-mini")
 
@@ -2124,7 +2124,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
             response = llm.invoke("Hi, I'm Bob.")
@@ -2164,7 +2164,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             reasoning = {
                 "effort": "medium",  # 'low', 'medium', or 'high'
@@ -2389,7 +2389,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_openai.v1 import ChatOpenAI
 
             llm = ChatOpenAI(model="o4-mini", service_tier="flex")
 
@@ -2641,7 +2641,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 from typing import Optional
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel, Field
 
 
@@ -2672,7 +2672,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 from typing import Optional
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel, Field
 
 
@@ -2703,7 +2703,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel
 
 
@@ -2736,7 +2736,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 # from typing_extensions, not from typing.
                 from typing_extensions import Annotated, TypedDict
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
 
 
                 class AnswerWithJustification(TypedDict):
@@ -2763,7 +2763,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
 
                 oai_schema = {
                     'name': 'AnswerWithJustification',
@@ -2793,7 +2793,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
+                from langchain_openai.v1 import ChatOpenAI
                 from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
