@@ -644,6 +644,7 @@ class Graph:
         max_retries: int = 1,
         retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
+        proxies: Optional[dict] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -680,9 +681,10 @@ class Graph:
                     }
                 }
 
+            proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
+
         Returns:
             The PNG image as bytes.
-
         """
         from langchain_core.runnables.graph_mermaid import draw_mermaid_png
 
@@ -700,6 +702,7 @@ class Graph:
             padding=padding,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            proxies=proxies,
         )
 
 
