@@ -699,3 +699,6 @@ packages:
 - name: langchain-gradient
   path: .
   repo: digitalocean/langchain-gradient
+- name: langchain-anchorbrowser
+  path: .
+  repo: anchorbrowser/langchain-anchorbrowser
