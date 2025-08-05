@@ -369,6 +369,12 @@ def _init_chat_model_helper(
     **kwargs: Any,
 ) -> Union[BaseChatModel, BaseChatModelV1]:
     model, model_provider = _parse_model(model, model_provider)
+    if message_version != "v0" and model_provider not in ("openai",):
+        warnings.warn(
+            f"Model provider {model_provider} does not support "
+            f"message_version={message_version}. Defaulting to v0.",
+            stacklevel=2,
+        )
     if model_provider == "openai":
         _check_pkg("langchain_openai")
         if message_version == "v0":
