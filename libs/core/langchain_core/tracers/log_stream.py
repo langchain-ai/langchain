@@ -32,9 +32,9 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from uuid import UUID
 
-    from langchain_core.messages.v1 import AIMessageChunk
     from langchain_core.runnables.utils import Input, Output
     from langchain_core.tracers.schemas import Run
+    from langchain_core.v1.messages import AIMessageChunk
 
 
 class LogEntry(TypedDict):

@@ -10,14 +10,14 @@ from langchain_core.messages import (
     BaseMessage,
     ToolCallChunk,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),

@@ -28,10 +28,10 @@ from langchain_core.messages import (
     MessageLikeRepresentation,
     get_buffer_string,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult

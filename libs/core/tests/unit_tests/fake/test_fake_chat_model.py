@@ -15,9 +15,9 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import MessageV1
 from tests.unit_tests.stubs import (
     _any_id_ai_message,
     _any_id_ai_message_chunk,

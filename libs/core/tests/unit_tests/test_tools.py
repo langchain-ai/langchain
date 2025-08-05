@@ -37,7 +37,6 @@ from langchain_core.callbacks.manager import (
 from langchain_core.documents import Document
 from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     Runnable,
@@ -69,6 +68,7 @@ from langchain_core.utils.pydantic import (
     _create_subset_model,
     create_model_v2,
 )
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 from tests.unit_tests.stubs import AnyStr

@@ -12,7 +12,6 @@ from typing import (
 from typing_extensions import override
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
 from langchain_core.outputs import (
     ChatGeneration,
@@ -21,6 +20,7 @@ from langchain_core.outputs import (
     GenerationChunk,
 )
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.v1.messages import AIMessage, AIMessageChunk
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator

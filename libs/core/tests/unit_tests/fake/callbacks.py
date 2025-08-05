@@ -9,7 +9,7 @@ from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.messages.v1 import MessageV1
+from langchain_core.v1.messages import MessageV1
 
 
 class BaseFakeCallbackHandler(BaseModel):

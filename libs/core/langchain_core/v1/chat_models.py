@@ -52,10 +52,6 @@ from langchain_core.messages.utils import (
     convert_from_v1_message,
     convert_to_messages_v1,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1, add_ai_message_chunks
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -71,6 +67,10 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import MessageV1, add_ai_message_chunks
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
