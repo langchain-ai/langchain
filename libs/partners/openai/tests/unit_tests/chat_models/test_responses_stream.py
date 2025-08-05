@@ -37,7 +37,8 @@ from openai.types.responses.response_usage import (
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
-from langchain_openai import ChatOpenAI, ChatOpenAIV1
+from langchain_openai import ChatOpenAI
+from langchain_openai.v1 import ChatOpenAI as ChatOpenAIV1
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
 responses_stream = [
