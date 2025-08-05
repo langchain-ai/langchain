@@ -2529,7 +2529,7 @@
               'title': 'ToolMessage',
               'type': 'object',
             }),
-            'langchain_core__messages__v1__AIMessage': dict({
+            'langchain_core__v1__messages__AIMessage': dict({
               'properties': dict({
                 'content': dict({
                   'items': dict({
@@ -2655,7 +2655,7 @@
               'title': 'AIMessage',
               'type': 'object',
             }),
-            'langchain_core__messages__v1__AIMessageChunk': dict({
+            'langchain_core__v1__messages__AIMessageChunk': dict({
               'properties': dict({
                 'content': dict({
                   'items': dict({
@@ -2781,7 +2781,7 @@
               'title': 'AIMessageChunk',
               'type': 'object',
             }),
-            'langchain_core__messages__v1__HumanMessage': dict({
+            'langchain_core__v1__messages__HumanMessage': dict({
               'properties': dict({
                 'content': dict({
                   'items': dict({
@@ -2869,7 +2869,7 @@
               'title': 'HumanMessage',
               'type': 'object',
             }),
-            'langchain_core__messages__v1__SystemMessage': dict({
+            'langchain_core__v1__messages__SystemMessage': dict({
               'properties': dict({
                 'content': dict({
                   'items': dict({
@@ -2969,7 +2969,7 @@
               'title': 'SystemMessage',
               'type': 'object',
             }),
-            'langchain_core__messages__v1__ToolMessage': dict({
+            'langchain_core__v1__messages__ToolMessage': dict({
               'properties': dict({
                 'artifact': dict({
                   'anyOf': list([
@@ -3123,19 +3123,19 @@
               ]),
             }),
             dict({
-              '$ref': '#/$defs/langchain_core__messages__v1__AIMessage',
+              '$ref': '#/$defs/langchain_core__v1__messages__AIMessage',
             }),
             dict({
-              '$ref': '#/$defs/langchain_core__messages__v1__AIMessageChunk',
+              '$ref': '#/$defs/langchain_core__v1__messages__AIMessageChunk',
             }),
             dict({
-              '$ref': '#/$defs/langchain_core__messages__v1__HumanMessage',
+              '$ref': '#/$defs/langchain_core__v1__messages__HumanMessage',
             }),
             dict({
-              '$ref': '#/$defs/langchain_core__messages__v1__SystemMessage',
+              '$ref': '#/$defs/langchain_core__v1__messages__SystemMessage',
             }),
             dict({
-              '$ref': '#/$defs/langchain_core__messages__v1__ToolMessage',
+              '$ref': '#/$defs/langchain_core__v1__messages__ToolMessage',
             }),
           ]),
           'title': 'RunnableParallel<as_list,as_str>Input',
