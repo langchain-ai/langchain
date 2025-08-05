@@ -14,62 +14,68 @@ also break your CI if we introduce tests that your integration doesn't pass.
 
 Pip:
 
-    ```bash
-    pip install -U langchain-tests
-    ```
+```bash
+pip install -U langchain-tests
+```
 
 Poetry:
 
-    ```bash
-    poetry add langchain-tests
-    ```
+```bash
+poetry add langchain-tests
+```
+
+uv:
+
+```bash
+uv add langchain-tests
+```
 
 ## Usage
 
-To add standard tests to an integration package's e.g. ChatModel, you need to create
+To add standard tests to an integration package (e.g., for a ChatModel), you need to create
 
-1. A unit test class that inherits from ChatModelUnitTests
-2. An integration test class that inherits from ChatModelIntegrationTests
+1. A unit test class that inherits from `ChatModelUnitTests`
+2. An integration test class that inherits from `ChatModelIntegrationTests`
 
 `tests/unit_tests/test_standard.py`:
 
-    ```python
-    """Standard LangChain interface tests"""
+```python
+"""Standard LangChain interface tests"""
 
-    from typing import Type
+from typing import Type
 
-    import pytest
-    from langchain_core.language_models import BaseChatModel
-    from langchain_tests.unit_tests import ChatModelUnitTests
+import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_tests.unit_tests import ChatModelUnitTests
 
-    from langchain_parrot_chain import ChatParrotChain
+from langchain_parrot_chain import ChatParrotChain
 
 
-    class TestParrotChainStandard(ChatModelUnitTests):
-        @pytest.fixture
-        def chat_model_class(self) -> Type[BaseChatModel]:
-            return ChatParrotChain
-    ```
+class TestParrotChainStandard(ChatModelUnitTests):
+    @pytest.fixture
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatParrotChain
+```
 
 `tests/integration_tests/test_standard.py`:
 
-    ```python
-    """Standard LangChain interface tests"""
+```python
+"""Standard LangChain interface tests"""
 
-    from typing import Type
+from typing import Type
 
-    import pytest
-    from langchain_core.language_models import BaseChatModel
-    from langchain_tests.integration_tests import ChatModelIntegrationTests
+import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
-    from langchain_parrot_chain import ChatParrotChain
+from langchain_parrot_chain import ChatParrotChain
 
 
-    class TestParrotChainStandard(ChatModelIntegrationTests):
-        @pytest.fixture
-        def chat_model_class(self) -> Type[BaseChatModel]:
-            return ChatParrotChain
-    ```
+class TestParrotChainStandard(ChatModelIntegrationTests):
+    @pytest.fixture
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatParrotChain
+```
 
 ## Reference
 
@@ -86,5 +92,4 @@ as required is optional.
 For chat models that support the new content blocks v1 format (multimodal content, reasoning blocks, citations, etc.), use the v1 test suite instead:
 
 - See `QUICK_START.md` and `README_V1.md` for v1 testing documentation
-- Use `ChatModelV1UnitTests` from `langchain_tests.unit_tests.chat_models_v1`
-- V1 tests support `BaseChatModelV1` models with enhanced content block features
+- Use `ChatModelV1Tests` from `langchain_tests.unit_tests.chat_models_v1`
