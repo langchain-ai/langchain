@@ -102,6 +102,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
+
     It replaces run ids with deterministic UUIDs for snapshotting.
     """
 
@@ -4867,7 +4868,9 @@ async def test_runnable_gen_async() -> None:
 
 
 def test_runnable_gen_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -4942,9 +4945,11 @@ def test_runnable_gen_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_gen_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     async def agen(_: AsyncIterator[Any]) -> AsyncIterator[int]:
@@ -5010,7 +5015,9 @@ async def test_runnable_gen_context_config_async() -> None:
 
 
 def test_runnable_iter_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5069,9 +5076,11 @@ def test_runnable_iter_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_iter_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5135,7 +5144,9 @@ async def test_runnable_iter_context_config_async() -> None:
 
 
 def test_runnable_lambda_context_config() -> None:
-    """Test that a function can call other runnables with config
+    """Test function runnable config propagation.
+
+    Test that a function can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5192,9 +5203,11 @@ def test_runnable_lambda_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_lambda_context_config_async() -> None:
-    """Test that a function can call other runnables with config
-    propagated from the context."""
+    """Test function runnable config propagation.
 
+    Test that a function can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5295,7 +5308,9 @@ def test_with_config_callbacks() -> None:
 
 
 async def test_ainvoke_on_returned_runnable() -> None:
-    """Verify that a runnable returned by a sync runnable in the async path will
+    """Test ainvoke on a returned runnable.
+
+    Verify that a runnable returned by a sync runnable in the async path will
     be runthroughaasync path (issue #13407).
     """
 
@@ -5637,7 +5652,9 @@ def test_pydantic_protected_namespaces() -> None:
 
 
 def test_schema_for_prompt_and_chat_model() -> None:
-    """Testing that schema is generated properly when using variable names
+    """Test schema generation for prompt and chat model.
+
+    Testing that schema is generated properly when using variable names
     that collide with pydantic attributes.
     """
     prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}, {json}")])

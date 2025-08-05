@@ -4,6 +4,7 @@
 # Purpose:
 #   Enforces Conventional Commits format for pull request titles to maintain a
 #   clear, consistent, and machine-readable change history across our repository.
+#   This helps with automated changelog generation and semantic versioning.
 #
 # Enforced Commit Message Format (Conventional Commits 1.0.0):
 #   <type>[optional scope]: <description>
@@ -45,7 +46,7 @@
 #   • Conventional Commits spec: https://www.conventionalcommits.org/en/v1.0.0/
 # -----------------------------------------------------------------------------
 
-name: PR Title Lint
+name: '🏷️ PR Title Lint'
 
 permissions:
   pull-requests: read
@@ -55,11 +56,12 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
+  # Validates that PR title follows Conventional Commits specification
   lint-pr-title:
-    name: Validate PR Title
+    name: 'Validate PR Title Format'
     runs-on: ubuntu-latest
     steps:
-      - name: Validate PR Title
+      - name: '✅ Validate Conventional Commits Format'
         uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +83,9 @@ jobs:
             core
             cli
             langchain
+            langchain_v1
             standard-tests
+            text-splitters
             docs
             anthropic
             chroma
@@ -98,14 +102,10 @@ jobs:
             prompty
             qdrant
             xai
+            infra
           requireScope: false
           disallowScopes: |
             release
             [A-Z]+
-          subjectPattern: ^(?![A-Z]).+$
-          subjectPatternError: |
-            The subject "{subject}" found in the pull request title "{title}"
-            didn't match the configured pattern. Please ensure that the subject
-            doesn't start with an uppercase character.
           ignoreLabels: |
             ignore-lint-pr-title

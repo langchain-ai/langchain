@@ -4,14 +4,14 @@
 
 [JSON Lines](https://jsonlines.org/) is a file format where each line is a valid JSON value.
 
-LangChain implements a [JSONLoader](https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html) 
-to convert JSON and JSONL data into LangChain [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html#langchain_core.documents.base.Document) 
-objects. It uses a specified [jq schema](https://en.wikipedia.org/wiki/Jq_(programming_language)) to parse the JSON files, allowing for the extraction of specific fields into the content 
+LangChain implements a [JSONLoader](https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html)
+to convert JSON and JSONL data into LangChain [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html#langchain_core.documents.base.Document)
+objects. It uses a specified [jq schema](https://en.wikipedia.org/wiki/Jq_(programming_language)) to parse the JSON files, allowing for the extraction of specific fields into the content
 and metadata of the LangChain Document.
 
 It uses the `jq` python package. Check out this [manual](https://stedolan.github.io/jq/manual/#Basicfilters) for a detailed documentation of the `jq` syntax.
 
-Here we will demonstrate: 
+Here we will demonstrate:
 
 - How to load JSON and JSONL data into the content of a LangChain `Document`;
 - How to load JSON and JSONL data into metadata associated with a `Document`.
@@ -194,7 +194,7 @@ pprint(data)
 
 ### JSON file with jq schema `content_key`
 
-To load documents from a JSON file using the content_key within the jq schema, set is_content_key_jq_parsable=True. 
+To load documents from a JSON file using the content_key within the jq schema, set is_content_key_jq_parsable=True.
 Ensure that content_key is compatible and can be parsed using the jq schema.
 
 ```python

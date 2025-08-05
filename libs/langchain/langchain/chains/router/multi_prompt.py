@@ -7,6 +7,7 @@ from typing import Any, Optional
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
+from typing_extensions import override
 
 from langchain.chains import ConversationChain
 from langchain.chains.base import Chain
@@ -139,9 +140,11 @@ class MultiPromptChain(MultiRouteChain):
             result = await app.ainvoke({"query": "what color are carrots"})
             print(result["destination"])
             print(result["answer"])
+
     """  # noqa: E501
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["text"]
 

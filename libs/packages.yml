@@ -253,6 +253,7 @@ packages:
 - name: langchain-cerebras
   path: libs/cerebras
   repo: langchain-ai/langchain-cerebras
+  js: '@langchain/cerebras'
   downloads: 30056
   downloads_updated_at: '2025-06-25T19:50:54.884652+00:00'
 - name: langchain-snowflake
@@ -434,6 +435,7 @@ packages:
 - name: langchain-xai
   path: libs/partners/xai
   repo: langchain-ai/langchain
+  js: '@langchain/xai'
   downloads: 47996
   downloads_updated_at: '2025-06-25T19:51:13.393705+00:00'
 - name: langchain-salesforce
@@ -621,6 +623,7 @@ packages:
 - name: langchain-cloudflare
   path: libs/langchain-cloudflare
   repo: cloudflare/langchain-cloudflare
+  js: '@langchain/cloudflare'
   downloads: 381
   downloads_updated_at: '2025-06-25T19:52:06.942587+00:00'
 - name: langchain-ydb
@@ -690,6 +693,12 @@ packages:
 - name: langchain-greennode
   path: libs/greennode
   repo: greennode-ai/langchain-greennode
+- name: langchain-tensorlake
+  path: .
+  repo: tensorlakeai/langchain-tensorlake
+- name: langchain-gradient
+  path: .
+  repo: digitalocean/langchain-gradient
 - name: langchain-scraperapi
   path: .
   repo: scraperapi/langchain-scraperapi

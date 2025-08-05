@@ -320,7 +320,7 @@ class SelfQueryRetriever(BaseRetriever):
             config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return self._get_docs_with_query(new_query, search_kwargs)
 
@@ -343,7 +343,7 @@ class SelfQueryRetriever(BaseRetriever):
             config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return await self._aget_docs_with_query(new_query, search_kwargs)
 
@@ -360,6 +360,25 @@ class SelfQueryRetriever(BaseRetriever):
         use_original_query: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
+        """Create a SelfQueryRetriever from an LLM and a vector store.
+
+        Args:
+            llm: The language model to use for generating queries.
+            vectorstore: The vector store to use for retrieving documents.
+            document_contents: Description of the page contents of the document to be
+                queried.
+            metadata_field_info: Metadata field information for the documents.
+            structured_query_translator: Optional translator for turning internal query
+                language into vectorstore search params.
+            chain_kwargs: Additional keyword arguments for the query constructor.
+            enable_limit: Whether to enable the limit operator.
+            use_original_query: Whether to use the original query instead of the revised
+                query from the LLM.
+            **kwargs: Additional keyword arguments for the SelfQueryRetriever.
+
+        Returns:
+            An instance of SelfQueryRetriever.
+        """
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore)
         chain_kwargs = chain_kwargs or {}

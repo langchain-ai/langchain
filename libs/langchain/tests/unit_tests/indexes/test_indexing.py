@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import (
     Any,
     Optional,
@@ -13,6 +13,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
+from typing_extensions import override
 
 from langchain.indexes import aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -45,18 +46,21 @@ class InMemoryVectorStore(VectorStore):
         self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
 
+    @override
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     def add_documents(
         self,
         documents: Sequence[Document],
@@ -81,6 +85,7 @@ class InMemoryVectorStore(VectorStore):
 
         return list(ids)
 
+    @override
     async def aadd_documents(
         self,
         documents: Sequence[Document],
@@ -164,6 +169,10 @@ def vector_store() -> InMemoryVectorStore:
 def upserting_vector_store() -> InMemoryVectorStore:
     """Vector store fixture."""
     return InMemoryVectorStore(permit_upserts=True)
+
+
+_JANUARY_FIRST = datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+_JANUARY_SECOND = datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()
 
 
 def test_indexing_same_content(
@@ -256,7 +265,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1).timestamp(),
+        return_value=_JANUARY_FIRST,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 2,
@@ -268,7 +277,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1).timestamp(),
+        return_value=_JANUARY_FIRST,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -291,7 +300,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 1,
@@ -311,7 +320,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -341,7 +350,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 1).timestamp(),
+        return_value=_JANUARY_FIRST,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 2,
@@ -353,7 +362,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 1).timestamp(),
+        return_value=_JANUARY_FIRST,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -376,7 +385,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 1,
@@ -396,7 +405,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -428,11 +437,19 @@ def test_incremental_fails_with_bad_source_ids(
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(
             loader,
@@ -466,7 +483,11 @@ async def test_aincremental_fails_with_bad_source_ids(
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
@@ -475,7 +496,11 @@ async def test_aincremental_fails_with_bad_source_ids(
             cleanup="incremental",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
@@ -507,7 +532,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -526,7 +551,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -558,7 +583,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -596,7 +621,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -615,7 +640,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -647,7 +672,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -684,7 +709,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -710,7 +735,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -747,7 +772,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         assert index(
             loader,
@@ -803,7 +828,7 @@ def test_incremental_indexing_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -870,7 +895,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -897,7 +922,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -917,7 +942,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2022, 1, 3).timestamp(),
+        return_value=datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -948,7 +973,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2023, 1, 3).timestamp(),
+        return_value=datetime(2023, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -979,7 +1004,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2024, 1, 3).timestamp(),
+        return_value=datetime(2024, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1028,7 +1053,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1054,7 +1079,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 2).timestamp(),
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1091,7 +1116,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 3).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1169,7 +1194,7 @@ def test_deduplication(
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 1,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
@@ -1195,7 +1220,7 @@ async def test_adeduplication(
     assert await aindex(docs, arecord_manager, vector_store, cleanup="full") == {
         "num_added": 1,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
@@ -1312,7 +1337,7 @@ def test_deduplication_v2(
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 3,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
@@ -1372,14 +1397,14 @@ def test_indexing_force_update(
     assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
         "num_added": 2,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
     assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 2,
+        "num_skipped": 3,
         "num_updated": 0,
     }
 
@@ -1392,7 +1417,7 @@ def test_indexing_force_update(
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 2,
     }
 
@@ -1426,7 +1451,7 @@ async def test_aindexing_force_update(
     ) == {
         "num_added": 2,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
@@ -1438,7 +1463,7 @@ async def test_aindexing_force_update(
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 2,
+        "num_skipped": 3,
         "num_updated": 0,
     }
 
@@ -1451,7 +1476,7 @@ async def test_aindexing_force_update(
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 2,
     }
 

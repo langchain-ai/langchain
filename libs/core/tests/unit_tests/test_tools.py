@@ -544,8 +544,9 @@ def test_empty_args_decorator() -> None:
 def test_tool_from_function_with_run_manager() -> None:
     """Test run of tool when using run_manager."""
 
-    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Docstring
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:  # noqa: D417
+        """Docstring.
+
         Args:
             bar: str.
         """
@@ -562,7 +563,7 @@ def test_tool_from_function_with_run_manager() -> None:
 def test_structured_tool_from_function_with_run_manager() -> None:
     """Test args and schema of structured tool when using callbacks."""
 
-    def foo(
+    def foo(  # noqa: D417
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring.
@@ -699,6 +700,12 @@ def test_missing_docstring() -> None:
         @tool
         def search_api(query: str) -> str:
             return "API result"
+
+    @tool
+    class MyTool(BaseModel):
+        foo: str
+
+    assert MyTool.description == ""  # type: ignore[attr-defined]
 
 
 def test_create_tool_positional_args() -> None:
@@ -1193,7 +1200,7 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema == expected
 
     # Test parsing with run_manager does not raise error
-    def foo3(
+    def foo3(  # noqa: D417
         bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """The foo.
@@ -1310,7 +1317,7 @@ def test_docstring_parsing() -> None:
 
 
 def test_tool_invalid_docstrings() -> None:
-    """Test invalid docstrings"""
+    """Test invalid docstrings."""
 
     def foo3(bar: str, baz: int) -> str:
         """The foo."""
@@ -1321,14 +1328,14 @@ def test_tool_invalid_docstrings() -> None:
         Args:
             bar: The bar.
             baz: The baz.
-        """
+        """  # noqa: D205,D411
         return bar
 
     for func in {foo3, foo4}:
         with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
             _ = tool(func, parse_docstring=True)
 
-    def foo5(bar: str, baz: int) -> str:
+    def foo5(bar: str, baz: int) -> str:  # noqa: D417
         """The foo.
 
         Args:
@@ -2577,6 +2584,18 @@ def test_title_property_preserved() -> None:
         },
         "type": "function",
     }
+
+
+def test_nested_pydantic_fields() -> None:
+    class Address(BaseModel):
+        street: str
+
+    class Person(BaseModel):
+        name: str
+        address: Address = Field(description="Home address")
+
+    result = convert_to_openai_tool(Person)
+    assert len(result["function"]["parameters"]["properties"]) == 2
 
 
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:

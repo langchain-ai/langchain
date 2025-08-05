@@ -210,7 +210,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             exclude_tags: Exclude runs from Runnables with matching tags.
             _schema_format: Primarily changes how the inputs and outputs are
                 handled.
+
                 **For internal use only. This API will change.**
+
                 - 'original' is the format used by all current tracers.
                   This format is slightly inconsistent with respect to inputs
                   and outputs.

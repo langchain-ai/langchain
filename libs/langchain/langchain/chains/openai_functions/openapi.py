@@ -13,6 +13,7 @@ from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsPa
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -51,13 +52,12 @@ def _format_url(url: str, path_params: dict) -> str:
                 sep = ","
                 new_val = ""
             new_val += sep.join(kv_strs)
+        elif param[0] == ".":
+            new_val = f".{val}"
+        elif param[0] == ";":
+            new_val = f";{clean_param}={val}"
         else:
-            if param[0] == ".":
-                new_val = f".{val}"
-            elif param[0] == ";":
-                new_val = f";{clean_param}={val}"
-            else:
-                new_val = val
+            new_val = val
         new_params[param] = new_val
     return url.format(**new_params)
 
@@ -203,10 +203,12 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 
@@ -224,7 +226,7 @@ class SimpleRequestChain(Chain):
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
         _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)
-        if api_response.status_code != 200:
+        if api_response.status_code != requests.codes.ok:
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
                 f"\nFor {name} "
@@ -343,6 +345,7 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
+
     """  # noqa: E501
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
@@ -361,13 +364,13 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)
                 break
-            except ImportError as e:
-                raise e
+            except ImportError:
+                raise
             except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
             msg = f"Unable to parse spec from source {spec}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
         msg = (

@@ -61,6 +61,7 @@ class __ModuleName__Loader(BaseLoader):
         .. code-block:: python
 
             TODO: Example output
+
     """  # noqa: E501
 
     # TODO: This method must be implemented to load documents.
