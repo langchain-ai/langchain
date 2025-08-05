@@ -5,11 +5,9 @@
 The standard tests v1 package provides comprehensive testing for chat models that support the new content blocks format. This includes:
 
 - **Streaming support**: Content blocks in streaming responses
-- **Multimodal content**: Text, images, video, audio, and file content blocks
-- **Reasoning content**: Structured reasoning steps as content blocks
-- **Enhanced tool calling**: Tool calls as content blocks with richer metadata
-- **Structured annotations**: Citations, reasoning blocks, and custom annotations
-- **Provider-specific extensions**: Non-standard content blocks for custom functionality
+- **Multimodal content**: `Text`, `Image`, `Video`, `Audio`, and `File` `ContentBlock`s
+- **Reasoning content**: Reasoning steps as `ReasoningContentBlock`
+- **Provider-specific extensions**: `NonStandardContentBlock` for unique provider features
 
 ## Usage
 
@@ -101,7 +99,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
 
 ## Test Categories
 
-### Unit Tests (`ChatModelV1UnitTests`)
+### Unit Tests (`ChatModelV1Tests`)
 
 - Content block format validation
 - Ser/deserialization
@@ -143,16 +141,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
        return True  # Enable v1 features
    ```
 
-3. **Set feature flags** based on your model's capabilities
-
-## Backward Compatibility
-
-The v1 tests maintain full backward compatibility:
-
-- Legacy string content is still tested
-- Mixed message formats (legacy + content blocks) are validated
-- All original test functionality is preserved
-- Models can gradually adopt content blocks features
+3. **Set feature flags** based on your chat model's capabilities
 
 ## Examples
 
@@ -161,11 +150,9 @@ See the test files in `tests/unit_tests/test_chat_models_v1.py` and `tests/integ
 ## Best Practices
 
 1. **Start with basic content blocks** (text) and gradually enable advanced features
-2. **Use feature flags** to selectively enable tests based on your model's capabilities
-3. **Test error handling** for unsupported content block types
-4. **Validate serialization** to persist message histories (passing back in content blocks)
-5. **Benchmark performance** with content blocks vs. legacy format
-6. **Test streaming** if your model supports it with content blocks
+2. **Test error handling** for unsupported content block types
+3. **Validate serialization** to persist message histories (passing back in content blocks)
+4. **Test streaming** if your model supports it with content blocks
 
 ## Contributing
 
@@ -176,4 +163,4 @@ When new content block types or features are added:
 3. Add configuration properties for the feature
 4. Implement corresponding test methods
 5. Update this documentation
-6. Add examples in the test files
+6. Add examples in the test files (`tests/unit_tests/test_chat_models_v1.py` and `tests/integration_tests/test_chat_models_v1.py`)
