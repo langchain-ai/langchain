@@ -323,8 +323,8 @@ class AIMessageChunk(AIMessage):
         """Get the tool calls made by the AI."""
         if not self._tool_calls:
             parsed_content = _init_tool_calls(self.content)
-            tool_calls = []
-            invalid_tool_calls = []
+            tool_calls: list[types.ToolCall] = []
+            invalid_tool_calls: list[types.InvalidToolCall] = []
             for block in parsed_content:
                 if types.is_tool_call_block(block):
                     tool_calls.append(block)
@@ -344,8 +344,8 @@ class AIMessageChunk(AIMessage):
         """Get the invalid tool calls made by the AI."""
         if not self._invalid_tool_calls:
             parsed_content = _init_tool_calls(self.content)
-            tool_calls = []
-            invalid_tool_calls = []
+            tool_calls: list[types.ToolCall] = []
+            invalid_tool_calls: list[types.InvalidToolCall] = []
             for block in parsed_content:
                 if types.is_tool_call_block(block):
                     tool_calls.append(block)
