@@ -24,7 +24,7 @@ from tests.unit_tests.fake.callbacks import (
     FakeCallbackHandlerWithChatStart,
 )
 
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "moonshotai/kimi-k2-instruct"
 
 
 #
