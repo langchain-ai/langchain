@@ -190,7 +190,7 @@ class AIMessage:
         self._tool_calls: list[types.ToolCall] = [
             block for block in self.content if types.is_tool_call_block(block)
         ]
-        self._invalid_tool_calls = [
+        self._invalid_tool_calls: list[types.InvalidToolCall] = [
             block for block in self.content if types.is_invalid_tool_call_block(block)
         ]
 
