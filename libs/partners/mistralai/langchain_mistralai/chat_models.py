@@ -296,7 +296,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
     result: dict[str, Any] = {
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
+            "arguments": json.dumps(tool_call["args"] or {}, ensure_ascii=False),
         }
     }
     if _id := tool_call.get("id"):

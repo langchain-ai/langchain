@@ -2556,6 +2556,27 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
     assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
 
 
+def test_lc_tool_call_to_openai_tool_call_with_none_args() -> None:
+    """Test that ToolCall with None args is converted to {} in OpenAI format."""
+    from langchain_core.messages import ToolCall
+
+    from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call
+
+    tool_call = ToolCall(id="call_none", name="do_nothing", args=None, type="tool_call")  # type: ignore[typeddict-item]
+
+    result = _lc_tool_call_to_openai_tool_call(tool_call)
+
+    # Check structure
+    assert result["type"] == "function"
+    assert result["id"] == "call_none"
+    assert result["function"]["name"] == "do_nothing"
+
+    # Check arguments
+    arguments_str = result["function"]["arguments"]
+    assert arguments_str == "{}"
+    assert json.loads(arguments_str) == {}
+
+
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(
