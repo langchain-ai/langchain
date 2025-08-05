@@ -50,6 +50,7 @@ def _get_default_httpx_client(
     *,
     base_url: Optional[str],
     timeout: Any = _NOT_GIVEN,
+    proxy: Optional[str] = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -58,6 +59,8 @@ def _get_default_httpx_client(
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
+    if proxy is not None:
+        kwargs["proxy"] = proxy
     return _SyncHttpxClientWrapper(**kwargs)
 
 
