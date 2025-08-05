@@ -189,7 +189,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
+class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -383,8 +383,8 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
         **kwargs: Any,
     ) -> bool:
         """Determine if a given model call should hit the streaming API."""
-        sync_not_implemented = type(self)._stream == BaseChatModelV1._stream  # noqa: SLF001
-        async_not_implemented = type(self)._astream == BaseChatModelV1._astream  # noqa: SLF001
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
+        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
 
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
@@ -945,7 +945,7 @@ class BaseChatModelV1(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC
             PydanticToolsParser,
         )
 
-        if type(self).bind_tools is BaseChatModelV1.bind_tools:
+        if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 

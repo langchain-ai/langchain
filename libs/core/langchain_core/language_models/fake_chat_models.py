@@ -16,7 +16,7 @@ from langchain_core.language_models.chat_models import BaseChatModel, SimpleChat
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableConfig
-from langchain_core.v1.chat_models import BaseChatModelV1
+from langchain_core.v1.chat_models import BaseChatModel as BaseChatModelV1
 from langchain_core.v1.messages import AIMessage as AIMessageV1
 from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from langchain_core.v1.messages import MessageV1

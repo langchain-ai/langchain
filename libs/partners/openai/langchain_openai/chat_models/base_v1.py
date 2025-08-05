@@ -78,7 +78,7 @@ from langchain_core.utils.pydantic import (
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from langchain_core.v1.chat_models import (
-    BaseChatModelV1,
+    BaseChatModel,
     agenerate_from_stream,
     generate_from_stream,
 )
@@ -387,7 +387,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class BaseChatOpenAI(BaseChatModelV1):
+class BaseChatOpenAI(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     root_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -1631,7 +1631,7 @@ class BaseChatOpenAI(BaseChatModelV1):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`from langchain_core.language_models.v1.chat_models import BaseChatModelV1`.
+            A Runnable that takes same inputs as a :class:`from langchain_core.v1.chat_models import BaseChatModel`.
 
             | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
@@ -2646,7 +2646,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`from langchain_core.language_models.v1.chat_models import BaseChatModelV1`.
+            A Runnable that takes same inputs as a :class:`from langchain_core.v1.chat_models import BaseChatModel`.
 
             | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
