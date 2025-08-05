@@ -586,6 +586,8 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        buffered_chunk: Optional[ChatGenerationChunk] = None
+
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -609,11 +611,46 @@ class ChatGroq(BaseChatModel):
                 message=message_chunk, generation_info=generation_info or None
             )
 
+            # Smart buffering: handle empty content chunks elegantly
+            if not generation_chunk.text.strip():  # Empty or whitespace-only content
+                if buffered_chunk is None:
+                    # Start buffering - store the first empty chunk
+                    buffered_chunk = generation_chunk
+                else:
+                    # Accumulate metadata from subsequent empty chunks
+                    buffered_chunk = ChatGenerationChunk(
+                        message=buffered_chunk.message + generation_chunk.message,
+                        generation_info={
+                            **(buffered_chunk.generation_info or {}),
+                            **(generation_info or {}),
+                        },
+                    )
+
+                # If this is a finish chunk, yield the buffered chunk (even if empty)
+                if finish_reason:
+                    chunk_to_yield = buffered_chunk
+                    buffered_chunk = None
+                else:
+                    continue  # Keep buffering
+            else:
+                # Non-empty content found
+                if buffered_chunk is not None:
+                    # Merge buffered metadata with current chunk
+                    generation_chunk = ChatGenerationChunk(
+                        message=buffered_chunk.message + generation_chunk.message,
+                        generation_info={
+                            **(buffered_chunk.generation_info or {}),
+                            **(generation_info or {}),
+                        },
+                    )
+                    buffered_chunk = None
+                chunk_to_yield = generation_chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(
-                    generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
+                    chunk_to_yield.text, chunk=chunk_to_yield, logprobs=logprobs
                 )
-            yield generation_chunk
+            yield chunk_to_yield
 
     async def _astream(
         self,
@@ -627,6 +664,8 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        buffered_chunk: Optional[ChatGenerationChunk] = None
+
         async for chunk in await self.async_client.create(
             messages=message_dicts, **params
         ):
@@ -652,13 +691,48 @@ class ChatGroq(BaseChatModel):
                 message=message_chunk, generation_info=generation_info or None
             )
 
+            # Smart buffering: handle empty content chunks elegantly
+            if not generation_chunk.text.strip():  # Empty or whitespace-only content
+                if buffered_chunk is None:
+                    # Start buffering - store the first empty chunk
+                    buffered_chunk = generation_chunk
+                else:
+                    # Accumulate metadata from subsequent empty chunks
+                    buffered_chunk = ChatGenerationChunk(
+                        message=buffered_chunk.message + generation_chunk.message,
+                        generation_info={
+                            **(buffered_chunk.generation_info or {}),
+                            **(generation_info or {}),
+                        },
+                    )
+
+                # If this is a finish chunk, yield the buffered chunk (even if empty)
+                if finish_reason:
+                    chunk_to_yield = buffered_chunk
+                    buffered_chunk = None
+                else:
+                    continue  # Keep buffering
+            else:
+                # Non-empty content found
+                if buffered_chunk is not None:
+                    # Merge buffered metadata with current chunk
+                    generation_chunk = ChatGenerationChunk(
+                        message=buffered_chunk.message + generation_chunk.message,
+                        generation_info={
+                            **(buffered_chunk.generation_info or {}),
+                            **(generation_info or {}),
+                        },
+                    )
+                    buffered_chunk = None
+                chunk_to_yield = generation_chunk
+
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    token=generation_chunk.text,
-                    chunk=generation_chunk,
+                    token=chunk_to_yield.text,
+                    chunk=chunk_to_yield,
                     logprobs=logprobs,
                 )
-            yield generation_chunk
+            yield chunk_to_yield
 
     #
     # Internal methods
