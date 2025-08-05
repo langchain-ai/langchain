@@ -368,7 +368,7 @@ class AIMessageChunk(AIMessage):
         raise NotImplementedError(error_msg)
 
     def to_message(self) -> "AIMessage":
-        """Convert this ``AIMessageChunk`` to an AIMessage."""
+        """Convert this ``AIMessageChunk`` to an ``AIMessage``."""
         return AIMessage(
             content=_init_tool_calls(self.content),
             id=self.id,
