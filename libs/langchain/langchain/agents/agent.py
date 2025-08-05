@@ -706,7 +706,6 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
             intermediate_steps=intermediate_steps,
             stop=self.stop,
             callbacks=callbacks,
-
             **kwargs,
         )
         return self.output_parser.parse(output)
@@ -1052,6 +1051,7 @@ class AgentExecutor(Chain):
 
     Setting to 'None' could lead to an infinite loop."""
     metadata : Optional[dict[str, Any]] = None
+    "metadata for organisations to pass unique values"
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
     loop.
