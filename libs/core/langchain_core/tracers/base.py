@@ -16,8 +16,8 @@ from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.exceptions import TracerException  # noqa: F401
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
 from langchain_core.tracers.core import _TracerCore
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -8,13 +8,13 @@ from pydantic import SkipValidation
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
     PydanticBaseModel,
     TBaseModel,
 )
+from langchain_core.v1.messages import AIMessage
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):

@@ -35,9 +35,9 @@ from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES, ContentBlo
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.utils._merge import merge_lists
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 
 
 def test_message_init() -> None:

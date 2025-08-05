@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 from langchain_core.messages import BaseMessage
-from langchain_core.messages.v1 import MessageV1
+from langchain_core.v1.messages import MessageV1
 
 
 def _is_openai_data_block(block: dict) -> bool:

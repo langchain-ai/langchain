@@ -2,7 +2,7 @@ from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,

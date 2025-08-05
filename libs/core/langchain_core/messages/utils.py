@@ -40,12 +40,12 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1, MessageV1Types
-from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import MessageV1, MessageV1Types
+from langchain_core.v1.messages import SystemMessage as SystemMessageV1
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter

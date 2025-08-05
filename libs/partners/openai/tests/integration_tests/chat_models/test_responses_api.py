@@ -14,9 +14,9 @@ from langchain_core.messages import (
     HumanMessage,
     MessageLikeRepresentation,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 

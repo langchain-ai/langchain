@@ -23,11 +23,11 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.messages import content_blocks as types
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1, ResponseMetadata
-from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import MessageV1, ResponseMetadata
+from langchain_core.v1.messages import SystemMessage as SystemMessageV1
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
 
 def _convert_to_v1(message: BaseMessage) -> MessageV1:

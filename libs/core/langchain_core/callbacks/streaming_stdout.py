@@ -12,8 +12,8 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.messages import BaseMessage
-    from langchain_core.messages.v1 import AIMessage, MessageV1
     from langchain_core.outputs import LLMResult
+    from langchain_core.v1.messages import AIMessage, MessageV1
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):

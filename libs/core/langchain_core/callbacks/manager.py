@@ -38,15 +38,15 @@ from langchain_core.callbacks.base import (
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.messages.utils import convert_from_v1_message
-from langchain_core.messages.v1 import (
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
+from langchain_core.tracers.schemas import Run
+from langchain_core.utils.env import env_var_is_set
+from langchain_core.v1.messages import (
     AIMessage,
     AIMessageChunk,
     MessageV1,
     MessageV1Types,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
-from langchain_core.tracers.schemas import Run
-from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence

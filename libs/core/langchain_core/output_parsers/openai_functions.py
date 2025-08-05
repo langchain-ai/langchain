@@ -11,13 +11,13 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):

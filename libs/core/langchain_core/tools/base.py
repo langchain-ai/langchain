@@ -47,7 +47,6 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -69,6 +68,7 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
 if TYPE_CHECKING:
     import uuid

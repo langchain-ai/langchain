@@ -25,7 +25,6 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
@@ -33,6 +32,7 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,

@@ -8,12 +8,12 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModelV1
 from langchain_core.messages import AIMessage
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseTransformOutputParser,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 
 def test_base_generation_parser() -> None:

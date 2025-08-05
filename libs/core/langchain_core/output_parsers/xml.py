@@ -13,9 +13,9 @@ from typing_extensions import override
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.messages.utils import convert_from_v1_message
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
+from langchain_core.v1.messages import AIMessage
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.

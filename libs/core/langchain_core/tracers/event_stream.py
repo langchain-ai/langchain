@@ -19,7 +19,6 @@ from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
-from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
@@ -39,15 +38,16 @@ from langchain_core.runnables.utils import (
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
+from langchain_core.v1.messages import MessageV1
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
 
     from langchain_core.documents import Document
-    from langchain_core.messages.v1 import AIMessage as AIMessageV1
-    from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tracers.log_stream import LogEntry
+    from langchain_core.v1.messages import AIMessage as AIMessageV1
+    from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 
 logger = logging.getLogger(__name__)
 

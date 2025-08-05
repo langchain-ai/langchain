@@ -10,9 +10,9 @@ from typing_extensions import override
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import MessageV1
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import MessageV1
 
 
 class MyCustomAsyncHandler(AsyncCallbackHandler):
