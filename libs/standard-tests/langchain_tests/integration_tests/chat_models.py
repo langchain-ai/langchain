@@ -135,6 +135,7 @@ def unicode_customer(customer_name: str, description: str) -> str:
 
     Returns:
         A confirmation message about the customer creation.
+
     """
     return f"Created customer: {customer_name} - {description}"
 
@@ -680,13 +681,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
-        """Test to verify that `model.invoke(simple_message)` works.
+        """Test to verify that ``model.invoke(simple_message)`` works.
 
         This should pass for all integrations.
 
         .. dropdown:: Troubleshooting
 
-            If this test fails, you should make sure your _generate method
+            If this test fails, you should make sure your ``_generate`` method
             does not raise any exceptions, and that it returns a valid
             :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
 
@@ -706,7 +707,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
-        """Test to verify that `await model.ainvoke(simple_message)` works.
+        """Test to verify that ``await model.ainvoke(simple_message)`` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "natively async" implementation, but rather that the model can be used
@@ -716,7 +717,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             First, debug
             :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
-            because `ainvoke` has a default implementation that calls `invoke` in an
+            because ``ainvoke`` has a default implementation that calls ``invoke`` in an
             async context.
 
             If that test passes but not this one, you should make sure your _agenerate
@@ -739,7 +740,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
-        """Test to verify that `model.stream(simple_message)` works.
+        """Test to verify that ``model.stream(simple_message)`` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "streaming" implementation, but rather that the model can be used in a
@@ -772,7 +773,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert num_chunks > 0
 
     async def test_astream(self, model: BaseChatModel) -> None:
-        """Test to verify that `await model.astream(simple_message)` works.
+        """Test to verify that ``await model.astream(simple_message)`` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "natively async" or "streaming" implementation, but rather that the model can
@@ -809,7 +810,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert num_chunks > 0
 
     def test_batch(self, model: BaseChatModel) -> None:
-        """Test to verify that `model.batch([messages])` works.
+        """Test to verify that ``model.batch([messages])`` works.
 
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch.
@@ -836,7 +837,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
-        """Test to verify that `await model.abatch([messages])` works.
+        """Test to verify that ``await model.abatch([messages])`` works.
 
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch asynchronously.
@@ -853,6 +854,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             If those tests pass but not this one, you should make sure your `abatch`
             method does not raise any exceptions, and that it returns a list of valid
             :class:`~langchain_core.messages.AIMessage` objects.
+
         """
         batch_results = await model.abatch(["Hello", "Hey"])
         assert batch_results is not None
@@ -881,6 +883,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             1. Your model correctly processes the message history
             2. The model maintains appropriate context from previous messages
             3. The response is a valid :class:`~langchain_core.messages.AIMessage`
+
         """
         messages = [
             HumanMessage("hello"),
@@ -914,6 +917,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             1. Your model API can handle double messages, or the integration should
                merge messages before sending them to the API.
             2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+
         """
         messages = [
             SystemMessage("hello"),
@@ -938,7 +942,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         .. versionchanged:: 0.3.17
 
-            Additionally check for the presence of `model_name` in the response
+            Additionally check for the presence of ``model_name`` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
         .. dropdown:: Configuration
@@ -987,7 +991,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, first verify that your model returns
             :class:`~langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in `_generate`:
+            attached to the returned AIMessage object in ``_generate``:
 
             .. code-block:: python
 
@@ -1105,7 +1109,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         .. versionchanged:: 0.3.17
 
-            Additionally check for the presence of `model_name` in the response
+            Additionally check for the presence of ``model_name`` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
         .. dropdown:: Configuration
@@ -1152,16 +1156,16 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, first verify that your model yields
             :class:`~langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in `_stream`
+            attached to the returned AIMessage object in ``_stream``
             that sum up to the total usage metadata.
 
-            Note that `input_tokens` should only be included on one of the chunks
-            (typically the first or the last chunk), and the rest should have 0 or None
-            to avoid counting input tokens multiple times.
+            Note that ``input_tokens`` should only be included on one of the chunks
+            (typically the first or the last chunk), and the rest should have ``0`` or
+            ``None`` to avoid counting input tokens multiple times.
 
-            `output_tokens` typically count the number of tokens in each chunk, not the
-            sum. This test will pass as long as the sum of `output_tokens` across all
-            chunks is not 0.
+            ``output_tokens`` typically count the number of tokens in each chunk, not
+            the sum. This test will pass as long as the sum of ``output_tokens`` across
+            all chunks is not ``0``.
 
             .. code-block:: python
 
@@ -1261,7 +1265,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that model does not fail when invoked with the ``stop`` parameter,
         which is a standard parameter for stopping generation at a certain token.
 
-        More on standard parameters here: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
+        `More on standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
 
         This should pass for all integrations.
 
@@ -1569,7 +1573,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that message histories are compatible with list tool contents
         (e.g. Anthropic format).
 
-        These message histories will include AIMessage objects with "tool use" and
+        These message histories will include ``AIMessage`` objects with "tool use" and
         content blocks, e.g.,
 
         .. code-block:: python
@@ -1603,8 +1607,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include AIMessage objects with list content.
-            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled and passed to the model in an appropriate format.
+            1. The model can correctly handle message histories that include ``AIMessage`` objects with list content.
+            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly handled and passed to the model in an appropriate format.
             3. The model can correctly handle ToolMessage objects with string content and arbitrary string values for ``tool_call_id``.
 
             You can ``xfail`` the test if tool calling is implemented but this format
@@ -2052,9 +2056,9 @@ class ChatModelIntegrationTests(ChatModelTests):
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         """Test to verify we can generate structured output using
-        pydantic.v1.BaseModel.
+        ``pydantic.v1.BaseModel``.
 
-        pydantic.v1.BaseModel is available in the pydantic 2 package.
+        ``pydantic.v1.BaseModel`` is available in the pydantic 2 package.
 
         This test is optional and should be skipped if the model does not support
         structured output (see Configuration below).
@@ -2686,7 +2690,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             1. The model can correctly handle message histories that include message objects with list content.
             2. The ``tool_calls`` attribute on AIMessage objects is correctly handled and passed to the model in an appropriate format.
-            3. HumanMessages with "tool_result" content blocks are correctly handled.
+            3. ``HumanMessage``s with "tool_result" content blocks are correctly handled.
 
             Otherwise, if Anthropic tool call and result formats are not supported,
             set the ``supports_anthropic_inputs`` property to False.
@@ -2792,7 +2796,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(response, AIMessage)
 
     def test_message_with_name(self, model: BaseChatModel) -> None:
-        """Test that HumanMessage with values for the ``name`` field can be handled.
+        """Test that ``HumanMessage`` with values for the ``name`` field can be handled.
 
         These messages may take the form:
 
@@ -2953,11 +2957,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         Args:
             model: The chat model to test
             tool_choice: Tool choice parameter to pass to bind_tools (provider-specific)
-            force_tool_call: Whether to force a tool call (use tool_choice=True if None)
+            force_tool_call: Whether to force a tool call (use ``tool_choice=True`` if None)
 
         Tests that Unicode characters in tool call arguments are preserved correctly,
-        not escaped as \\uXXXX sequences.
-        """
+        not escaped as ``\\uXXXX`` sequences.
+
+        """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling support.")
 

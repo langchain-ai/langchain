@@ -70,7 +70,7 @@ The module defines several types of content blocks, including:
 
 - ``TextContentBlock``: Standard text.
 - ``ImageContentBlock``, ``Audio...``, ``Video...``, ``PlainText...``, ``File...``: For multimodal data.
-- ``ToolCallContentBlock``, ``ToolOutputContentBlock``: For function calling.
+- ``ToolCallContentBlock``: For function calling.
 - ``ReasoningContentBlock``: To capture a model's thought process.
 - ``Citation``: For annotations that link generated text to a source document.
 

@@ -102,8 +102,8 @@ class TestChatParrotLinkV1Unit(ChatModelV1UnitTests):
         return False
 
     @property
-    def supports_enhanced_tool_calls(self) -> bool:
-        """``ChatParrotLinkV1`` does not support enhanced tool calls."""
+    def supports_tool_calls(self) -> bool:
+        """``ChatParrotLinkV1`` does not support tool calls."""
         return False
 
     @property

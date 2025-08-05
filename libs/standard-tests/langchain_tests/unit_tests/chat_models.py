@@ -26,6 +26,7 @@ def generate_schema_pydantic_v1_from_2() -> Any:
     """Use to generate a schema from v1 namespace in pydantic 2.
 
     :private:
+
     """
     if PYDANTIC_MAJOR_VERSION != 2:
         msg = "This function is only compatible with Pydantic v2."
@@ -44,6 +45,7 @@ def generate_schema_pydantic() -> Any:
     """Works with either pydantic 1 or 2.
 
     :private:
+
     """
 
     class PersonA(BaseModel):
@@ -65,6 +67,7 @@ class ChatModelTests(BaseStandardTests):
     """Base class for chat model tests.
 
     :private:
+
     """
 
     @property
@@ -148,16 +151,12 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_inputs(self) -> bool:
-        """(bool) whether the chat model supports image inputs, defaults to
-        ``False``.
-        """
+        """(bool) whether the chat model supports image inputs, defaults to ``False``."""  # noqa: E501
         return False
 
     @property
     def supports_image_urls(self) -> bool:
-        """(bool) whether the chat model supports image inputs from URLs, defaults to
-        ``False``.
-        """
+        """(bool) whether the chat model supports image inputs from URLs, defaults to ``False``."""  # noqa: E501
         return False
 
     @property
@@ -167,23 +166,21 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_audio_inputs(self) -> bool:
-        """(bool) whether the chat model supports audio inputs, defaults to
-        ``False``.
-        """
+        """(bool) whether the chat model supports audio inputs, defaults to ``False``."""  # noqa: E501
         return False
 
     @property
     def supports_video_inputs(self) -> bool:
         """(bool) whether the chat model supports video inputs, defaults to ``False``.
+
         No current tests are written for this feature.
+
         """
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
-        """(bool) whether the chat model returns usage metadata on invoke and streaming
-        responses.
-        """
+        """(bool) whether the chat model returns usage metadata on invoke and streaming responses."""  # noqa: E501
         return True
 
     @property
@@ -193,9 +190,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_tool_message(self) -> bool:
-        """(bool) whether the chat model supports ``ToolMessage``s that include image
-        content.
-        """
+        """(bool) whether the chat model supports ``ToolMessage``s that include image content."""  # noqa: E501
         return False
 
     @property
@@ -205,6 +200,7 @@ class ChatModelTests(BaseStandardTests):
         .. important::
             See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
             information.
+
         """
         return False
 
@@ -806,6 +802,7 @@ class ChatModelUnitTests(ChatModelTests):
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """(tuple) environment variables, additional initialization args, and expected
         instance attributes for testing initialization from environment variables.
+
         """
         return {}, {}, {}
 
@@ -818,6 +815,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             1. ``chat_model_params`` is specified and the model can be initialized from those params;
             2. The model accommodates `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
+
         """  # noqa: E501
         model = self.chat_model_class(
             **{
@@ -837,6 +835,7 @@ class ChatModelUnitTests(ChatModelTests):
             If this test fails, ensure that ``init_from_env_params`` is specified
             correctly and that model parameters are properly set from environment
             variables during initialization.
+
         """
         env_params, model_params, expected_attrs = self.init_from_env_params
         if not env_params:
@@ -861,6 +860,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             If this test fails, ensure that the model can be initialized with a
             boolean ``streaming`` parameter.
+
         """
         model = self.chat_model_class(
             **{
@@ -887,6 +887,7 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``bind_tools`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
+
         """
         if not self.has_tool_calling:
             return
@@ -927,6 +928,7 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             return
@@ -949,6 +951,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             Check also that the model class is named according to convention
             (e.g., ``ChatProviderName``).
+
         """
 
         class ExpectedParams(BaseModelV1):
@@ -986,6 +989,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             If this test fails, check that the ``init_from_env_params`` property is
             correctly set on the test class.
+
         """
         if not self.chat_model_class.is_lc_serializable():
             pytest.skip("Model is not serializable.")
@@ -1005,6 +1009,7 @@ class ChatModelUnitTests(ChatModelTests):
     def test_init_time(self, benchmark: BenchmarkFixture) -> None:
         """Test initialization time of the chat model. If this test fails, check that
         we are not introducing undue overhead in the model's initialization.
+
         """
 
         def _init_in_loop() -> None:
