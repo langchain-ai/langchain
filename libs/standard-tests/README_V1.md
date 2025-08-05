@@ -86,7 +86,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
 
 ### Tool Calling
 
-- `supports_enhanced_tool_calls`: Enhanced tool calling with content blocks
+- `supports_tool_calls`: Tool calling with content blocks
 - `supports_invalid_tool_calls`: Error handling for invalid tool calls
 - `supports_tool_call_chunks`: Streaming tool call support
 

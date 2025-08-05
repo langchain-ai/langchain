@@ -73,8 +73,8 @@ class TestAdvancedModelV1(ChatModelV1UnitTests):
         return True
 
     @property
-    def supports_enhanced_tool_calls(self):
-        """Enhanced tool calling with metadata"""
+    def supports_tool_calls(self):
+        """Tool calling with metadata"""
         return True
 ```
 
@@ -91,7 +91,7 @@ class TestAdvancedModelV1(ChatModelV1UnitTests):
 | `supports_reasoning_content_blocks` | Reasoning/thinking blocks | `False` |
 | `supports_citations` | Citation annotations | `False` |
 | `supports_web_search_blocks` | Web search integration | `False` |
-| `supports_enhanced_tool_calls` | Enhanced tool calling | `False` |
+| `supports_enhanced_tool_calls` | Tool calling | `False` |
 | `supports_non_standard_blocks` | Custom content blocks | `True` |
 
 **Note:** These defaults are provided by the base test class. You only need to override properties where your model's capabilities differ from the default.
@@ -236,8 +236,8 @@ class TestFakeChatModelV1(ChatModelV1UnitTests):
         return False
 
     @property
-    def supports_enhanced_tool_calls(self) -> bool:
-        """This fake model supports enhanced tool calls."""
+    def supports_tool_calls(self) -> bool:
+        """This fake model supports tool calls."""
         return True
 
     @property
@@ -340,8 +340,8 @@ class TestFakeChatModelV1Integration(ChatModelV1IntegrationTests):
         return False
 
     @property
-    def supports_enhanced_tool_calls(self) -> bool:
-        """Enable enhanced tool calling tests."""
+    def supports_tool_calls(self) -> bool:
+        """Enable tool calling tests."""
         return True
 
     @property
