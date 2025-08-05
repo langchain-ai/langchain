@@ -230,6 +230,8 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessageV1:
         metadata_as_dict["eval_count"] = response["eval_count"]
     if "eval_duration" in response:
         metadata_as_dict["eval_duration"] = response["eval_duration"]
+    if "context" in response:
+        metadata_as_dict["context"] = response["context"]
 
     return AIMessageV1(
         content=content,
@@ -296,6 +298,8 @@ def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunkV1:
             response_metadata["eval_count"] = chunk["eval_count"]  # type: ignore[typeddict-unknown-key]
         if "eval_duration" in chunk:
             response_metadata["eval_duration"] = chunk["eval_duration"]  # type: ignore[typeddict-unknown-key]
+        if "context" in chunk:
+            response_metadata["context"] = chunk["context"]  # type: ignore[typeddict-unknown-key]
 
     usage_metadata = None
     if chunk.get("done") is True:

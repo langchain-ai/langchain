@@ -124,6 +124,34 @@ class TestMessageConversion:
         assert result.response_metadata.get("model_name") == MODEL_NAME
         assert result.response_metadata.get("done") is True
 
+    def test_convert_from_ollama_format_with_context(self) -> None:
+        """Test converting Ollama response with context field to `AIMessageV1`."""
+        test_context = [1, 2, 3, 4, 5]  # Example tokenized context
+        ollama_response = {
+            "model": MODEL_NAME,
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {
+                "role": "assistant",
+                "content": "Hello! How can I help you today?",
+            },
+            "done": True,
+            "done_reason": "stop",
+            "total_duration": 1000000,
+            "prompt_eval_count": 10,
+            "eval_count": 20,
+            "context": test_context,
+        }
+
+        result = _convert_to_v1_from_ollama_format(ollama_response)
+
+        assert isinstance(result, AIMessageV1)
+        assert len(result.content) == 1
+        assert result.content[0].get("type") == "text"
+        assert result.content[0].get("text") == "Hello! How can I help you today?"
+        assert result.response_metadata.get("model_name") == MODEL_NAME
+        assert result.response_metadata.get("done") is True
+        assert result.response_metadata.get("context") == test_context
+
     def test_convert_chunk_to_v1(self) -> None:
         """Test converting Ollama streaming chunk to `AIMessageChunkV1`."""
         chunk = {
@@ -138,6 +166,27 @@ class TestMessageConversion:
         assert len(result.content) == 1
         assert result.content[0].get("type") == "text"
         assert result.content[0].get("text") == "Hello"
+
+    def test_convert_chunk_to_v1_with_context(self) -> None:
+        """Test converting Ollama streaming chunk with context to `AIMessageChunkV1`."""
+        test_context = [10, 20, 30, 40, 50]  # Example tokenized context
+        chunk = {
+            "model": MODEL_NAME,
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {"role": "assistant", "content": "Hello"},
+            "done": True,
+            "done_reason": "stop",
+            "context": test_context,
+            "prompt_eval_count": 5,
+            "eval_count": 3,
+        }
+
+        result = _convert_chunk_to_v1(chunk)
+
+        assert len(result.content) == 1
+        assert result.content[0].get("type") == "text"
+        assert result.content[0].get("text") == "Hello"
+        assert result.response_metadata.get("context") == test_context
 
     def test_convert_empty_content(self) -> None:
         """Test converting empty content blocks."""
@@ -193,7 +242,12 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
 
     @property
     def supports_non_standard_blocks(self) -> bool:
-        """Override to indicate Ollama doesn't support non-standard content blocks."""
+        """Override to indicate Ollama doesn't support non-standard content blocks.
+
+        So far, everything returned by Ollama fits into the standard
+        `text`, `image`, and `thinking` content blocks.
+
+        """
         return False
 
     @pytest.fixture
