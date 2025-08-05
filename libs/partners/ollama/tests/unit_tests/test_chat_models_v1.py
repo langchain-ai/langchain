@@ -1,4 +1,4 @@
-"""Unit tests for ChatOllamaV1."""
+"""Unit tests for ChatOllama."""
 
 import json
 import logging
@@ -12,10 +12,7 @@ from langchain_core.messages.content_blocks import (
     create_image_block,
     create_text_block,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1
-from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
+from langchain_core.v1.messages import AIMessage, HumanMessage, MessageV1, SystemMessage
 from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
 
 from langchain_ollama._compat import (
@@ -24,7 +21,7 @@ from langchain_ollama._compat import (
     _convert_to_v1_from_ollama_format,
 )
 from langchain_ollama.chat_models_v1 import (
-    ChatOllamaV1,
+    ChatOllama,
     _parse_arguments_from_tool_call,
     _parse_json_string,
 )
@@ -36,8 +33,8 @@ class TestMessageConversion:
     """Test v1 message conversion utilities."""
 
     def test_convert_human_message_v1_text_only(self) -> None:
-        """Test converting HumanMessageV1 with text content."""
-        message = HumanMessageV1("Hello world")
+        """Test converting HumanMessage with text content."""
+        message = HumanMessage("Hello world")
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -46,8 +43,8 @@ class TestMessageConversion:
         assert result["images"] == []
 
     def test_convert_ai_message_v1(self) -> None:
-        """Test converting AIMessageV1 with text content."""
-        message = AIMessageV1("Hello! How can I help?")
+        """Test converting AIMessage with text content."""
+        message = AIMessage("Hello! How can I help?")
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -55,8 +52,8 @@ class TestMessageConversion:
         assert result["content"] == "Hello! How can I help?"
 
     def test_convert_system_message_v1(self) -> None:
-        """Test converting SystemMessageV1."""
-        message = SystemMessageV1("You are a helpful assistant.")
+        """Test converting SystemMessage."""
+        message = SystemMessage("You are a helpful assistant.")
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -64,14 +61,14 @@ class TestMessageConversion:
         assert result["content"] == "You are a helpful assistant."
 
     def test_convert_human_message_v1_with_image(self) -> None:
-        """Test converting HumanMessageV1 with text and image content.
+        """Test converting HumanMessage with text and image content.
 
         Each uses `_convert_from_v1_to_ollama_format` to ensure
         that the conversion handles both text and image blocks correctly. Thus, we don't
         need additional tests for other message types that also use this function.
 
         """
-        message_a = HumanMessageV1(
+        message_a = HumanMessage(
             content=[
                 create_text_block("Describe this image:"),
                 create_image_block(base64="base64imagedata"),
@@ -85,7 +82,7 @@ class TestMessageConversion:
         assert result_a["images"] == ["base64imagedata"]
 
         # Make sure multiple images are handled correctly
-        message_b = HumanMessageV1(
+        message_b = HumanMessage(
             content=[
                 create_text_block("Describe this image:"),
                 create_image_block(base64="base64imagedata"),
@@ -100,7 +97,7 @@ class TestMessageConversion:
         assert result_b["images"] == ["base64imagedata", "base64dataimage"]
 
     def test_convert_from_ollama_format(self) -> None:
-        """Test converting Ollama response to `AIMessageV1`."""
+        """Test converting Ollama response to `AIMessage`."""
         ollama_response = {
             "model": MODEL_NAME,
             "created_at": "2024-01-01T00:00:00Z",
@@ -117,7 +114,7 @@ class TestMessageConversion:
 
         result = _convert_to_v1_from_ollama_format(ollama_response)
 
-        assert isinstance(result, AIMessageV1)
+        assert isinstance(result, AIMessage)
         assert len(result.content) == 1
         assert result.content[0].get("type") == "text"
         assert result.content[0].get("text") == "Hello! How can I help you today?"
@@ -125,7 +122,7 @@ class TestMessageConversion:
         assert result.response_metadata.get("done") is True
 
     def test_convert_from_ollama_format_with_context(self) -> None:
-        """Test converting Ollama response with context field to `AIMessageV1`."""
+        """Test converting Ollama response with context field to `AIMessage`."""
         test_context = [1, 2, 3, 4, 5]  # Example tokenized context
         ollama_response = {
             "model": MODEL_NAME,
@@ -144,7 +141,7 @@ class TestMessageConversion:
 
         result = _convert_to_v1_from_ollama_format(ollama_response)
 
-        assert isinstance(result, AIMessageV1)
+        assert isinstance(result, AIMessage)
         assert len(result.content) == 1
         assert result.content[0].get("type") == "text"
         assert result.content[0].get("text") == "Hello! How can I help you today?"
@@ -190,7 +187,7 @@ class TestMessageConversion:
 
     def test_convert_empty_content(self) -> None:
         """Test converting empty content blocks."""
-        message = HumanMessageV1(content=[])
+        message = HumanMessage(content=[])
 
         result = _convert_from_v1_to_ollama_format(message)
 
@@ -199,12 +196,12 @@ class TestMessageConversion:
         assert result["images"] == []
 
 
-class TestChatOllamaV1(ChatModelV1UnitTests):
-    """Test `ChatOllamaV1`."""
+class TestChatOllama(ChatModelV1UnitTests):
+    """Test `ChatOllama`."""
 
     @property
-    def chat_model_class(self) -> type[ChatOllamaV1]:
-        return ChatOllamaV1
+    def chat_model_class(self) -> type[ChatOllama]:
+        return ChatOllama
 
     @property
     def chat_model_params(self) -> dict:
@@ -212,32 +209,32 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
 
     @property
     def has_tool_calling(self) -> bool:
-        """`ChatOllamaV1` supports tool calling (e.g., `qwen3` models)."""
+        """`ChatOllama` supports tool calling (e.g., `qwen3` models)."""
         return True
 
     @property
     def has_tool_choice(self) -> bool:
-        """`ChatOllamaV1` supports tool choice parameter."""
+        """`ChatOllama` supports tool choice parameter."""
         return True
 
     @property
     def has_structured_output(self) -> bool:
-        """`ChatOllamaV1` supports structured output via `with_structured_output`."""
+        """`ChatOllama` supports structured output via `with_structured_output`."""
         return True
 
     @property
     def supports_image_content_blocks(self) -> bool:
-        """`ChatOllamaV1` supports image content blocks (e.g., `gemma3`)."""
+        """`ChatOllama` supports image content blocks (e.g., `gemma3`)."""
         return True
 
     @property
     def supports_reasoning_content_blocks(self) -> bool:
-        """`ChatOllamaV1` supports reasoning/thinking content blocks (e.g., `qwen3`)."""
+        """`ChatOllama` supports reasoning/thinking content blocks (e.g., `qwen3`)."""
         return True
 
     @property
     def returns_usage_metadata(self) -> bool:
-        """`ChatOllamaV1` returns usage metadata with token counts."""
+        """`ChatOllama` returns usage metadata with token counts."""
         return True
 
     @property
@@ -251,8 +248,8 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
         return False
 
     @pytest.fixture
-    def model(self) -> Iterator[ChatOllamaV1]:
-        """Create a ChatOllamaV1 instance for testing."""
+    def model(self) -> Iterator[ChatOllama]:
+        """Create a ChatOllama instance for testing."""
         sync_patcher = patch("langchain_ollama.chat_models_v1.Client")
         async_patcher = patch("langchain_ollama.chat_models_v1.AsyncClient")
 
@@ -333,12 +330,12 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
         async_patcher.stop()
 
     def test_initialization(self) -> None:
-        """Test `ChatOllamaV1` initialization."""
+        """Test `ChatOllama` initialization."""
         with (
             patch("langchain_ollama.chat_models_v1.Client"),
             patch("langchain_ollama.chat_models_v1.AsyncClient"),
         ):
-            llm = ChatOllamaV1(model=MODEL_NAME)
+            llm = ChatOllama(model=MODEL_NAME)
 
             assert llm.model == MODEL_NAME
             assert llm._llm_type == "chat-ollama-v1"
@@ -349,9 +346,9 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
             patch("langchain_ollama.chat_models_v1.Client"),
             patch("langchain_ollama.chat_models_v1.AsyncClient"),
         ):
-            llm = ChatOllamaV1(model=MODEL_NAME, temperature=0.7)
+            llm = ChatOllama(model=MODEL_NAME, temperature=0.7)
 
-            messages: list[MessageV1] = [HumanMessageV1("Hello")]
+            messages: list[MessageV1] = [HumanMessage("Hello")]
 
             params = llm._chat_params(messages)
 
@@ -369,7 +366,7 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
             patch("langchain_ollama.chat_models_v1.Client"),
             patch("langchain_ollama.chat_models_v1.AsyncClient"),
         ):
-            llm = ChatOllamaV1(model=MODEL_NAME, temperature=0.5)
+            llm = ChatOllama(model=MODEL_NAME, temperature=0.5)
 
             ls_params = llm._get_ls_params()
 
@@ -384,7 +381,7 @@ class TestChatOllamaV1(ChatModelV1UnitTests):
             patch("langchain_ollama.chat_models_v1.Client"),
             patch("langchain_ollama.chat_models_v1.AsyncClient"),
         ):
-            llm = ChatOllamaV1(model=MODEL_NAME)
+            llm = ChatOllama(model=MODEL_NAME)
 
             def test_tool(query: str) -> str:
                 """A test tool."""
@@ -411,16 +408,16 @@ def test_validate_model_on_init(
     mock_client_class.return_value = mock_client
 
     # Test that validate_model is called when validate_model_on_init=True
-    ChatOllamaV1(model=MODEL_NAME, validate_model_on_init=True)
+    ChatOllama(model=MODEL_NAME, validate_model_on_init=True)
     mock_validate_model.assert_called_once()
     mock_validate_model.reset_mock()
 
     # Test that validate_model is NOT called when validate_model_on_init=False
-    ChatOllamaV1(model=MODEL_NAME, validate_model_on_init=False)
+    ChatOllama(model=MODEL_NAME, validate_model_on_init=False)
     mock_validate_model.assert_not_called()
 
     # Test that validate_model is NOT called by default
-    ChatOllamaV1(model=MODEL_NAME)
+    ChatOllama(model=MODEL_NAME)
     mock_validate_model.assert_not_called()
 
 
@@ -513,13 +510,13 @@ def test_load_response_with_empty_content_is_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_only_response)
 
-        llm = ChatOllamaV1(model="test-model")
+        llm = ChatOllama(model="test-model")
 
         with (
             caplog.at_level(logging.WARNING),
             pytest.raises(ValueError, match="No generations found in stream"),
         ):
-            llm.invoke([HumanMessageV1("Hello")])
+            llm.invoke([HumanMessage("Hello")])
 
         assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
@@ -543,13 +540,13 @@ def test_load_response_with_whitespace_content_is_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_whitespace_response)
 
-        llm = ChatOllamaV1(model="test-model")
+        llm = ChatOllama(model="test-model")
 
         with (
             caplog.at_level(logging.WARNING),
             pytest.raises(ValueError, match="No generations found in stream"),
         ):
-            llm.invoke([HumanMessageV1("Hello")])
+            llm.invoke([HumanMessage("Hello")])
         assert "Ollama returned empty response with done_reason='load'" in caplog.text
 
 
@@ -582,10 +579,10 @@ def test_load_followed_by_content_response(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_then_content_response)
 
-        llm = ChatOllamaV1(model="test-model")
+        llm = ChatOllama(model="test-model")
 
         with caplog.at_level(logging.WARNING):
-            result = llm.invoke([HumanMessageV1("Hello")])
+            result = llm.invoke([HumanMessage("Hello")])
 
         assert "Ollama returned empty response with done_reason='load'" in caplog.text
         assert len(result.content) == 1
@@ -612,10 +609,10 @@ def test_load_response_with_actual_content_is_not_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_with_content_response)
 
-        llm = ChatOllamaV1(model="test-model")
+        llm = ChatOllama(model="test-model")
 
         with caplog.at_level(logging.WARNING):
-            result = llm.invoke([HumanMessageV1("Hello")])
+            result = llm.invoke([HumanMessage("Hello")])
 
         assert len(result.content) == 1
         assert result.text == "This is actual content"

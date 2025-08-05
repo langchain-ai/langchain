@@ -21,7 +21,7 @@ def default(obj: Any) -> Any:
         return obj.to_json()
 
     # Handle v1 message classes
-    from langchain_core.messages.v1 import MessageV1Types
+    from langchain_core.v1.messages import MessageV1Types
 
     if type(obj) in MessageV1Types:
         import dataclasses
@@ -38,7 +38,7 @@ def default(obj: Any) -> Any:
         return {
             "lc": 1,
             "type": "constructor",
-            "id": ["langchain_core", "messages", "v1", type(obj).__name__],
+            "id": ["langchain_core", "v1", "messages", type(obj).__name__],
             "kwargs": kwargs,
         }
 

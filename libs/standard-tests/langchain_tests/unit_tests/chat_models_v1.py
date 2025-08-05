@@ -10,7 +10,6 @@ content blocks system.
 from typing import Literal, cast
 
 import pytest
-from langchain_core.language_models.v1.chat_models import BaseChatModelV1
 from langchain_core.load import dumpd, load
 from langchain_core.messages.content_blocks import (
     ContentBlock,
@@ -24,8 +23,9 @@ from langchain_core.messages.content_blocks import (
     is_text_block,
     is_tool_call_block,
 )
-from langchain_core.messages.v1 import AIMessage, HumanMessage
 from langchain_core.tools import tool
+from langchain_core.v1.chat_models import BaseChatModel
+from langchain_core.v1.messages import AIMessage, HumanMessage
 
 from langchain_tests.base import BaseStandardTests
 
@@ -205,26 +205,26 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
     """
 
     # Core Method Tests
-    def test_invoke_basic(self, model: BaseChatModelV1) -> None:
+    def test_invoke_basic(self, model: BaseChatModel) -> None:
         """Test basic invoke functionality with simple string input."""
         result = model.invoke("Hello, world!")
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    def test_invoke_with_message_list(self, model: BaseChatModelV1) -> None:
+    def test_invoke_with_message_list(self, model: BaseChatModel) -> None:
         """Test invoke with list of messages."""
         messages = [HumanMessage("Hello, world!")]
         result = model.invoke(messages)
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    async def test_ainvoke_basic(self, model: BaseChatModelV1) -> None:
+    async def test_ainvoke_basic(self, model: BaseChatModel) -> None:
         """Test basic async invoke functionality."""
         result = await model.ainvoke("Hello, world!")
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    def test_stream_basic(self, model: BaseChatModelV1) -> None:
+    def test_stream_basic(self, model: BaseChatModel) -> None:
         """Test basic streaming functionality."""
         chunks = []
         for chunk in model.stream("Hello, world!"):
@@ -239,7 +239,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
                 final_message = final_message + chunk
             assert isinstance(final_message.content, (str, list))
 
-    async def test_astream_basic(self, model: BaseChatModelV1) -> None:
+    async def test_astream_basic(self, model: BaseChatModel) -> None:
         """Test basic async streaming functionality."""
         chunks = []
         async for chunk in model.astream("Hello, world!"):
@@ -255,19 +255,19 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             assert isinstance(final_message.content, (str, list))
 
     # Property Tests
-    def test_llm_type_property(self, model: BaseChatModelV1) -> None:
+    def test_llm_type_property(self, model: BaseChatModel) -> None:
         """Test that ``_llm_type`` property is implemented and returns a string."""
         llm_type = model._llm_type
         assert isinstance(llm_type, str)
         assert len(llm_type) > 0
 
-    def test_identifying_params_property(self, model: BaseChatModelV1) -> None:
+    def test_identifying_params_property(self, model: BaseChatModel) -> None:
         """Test that ``_identifying_params`` property returns a mapping."""
         params = model._identifying_params
         assert isinstance(params, dict)  # Should be dict-like mapping
 
     # Serialization Tests
-    def test_dump_serialization(self, model: BaseChatModelV1) -> None:
+    def test_dump_serialization(self, model: BaseChatModel) -> None:
         """Test that ``dump()`` returns proper serialization."""
         dumped = model.dump()
         assert isinstance(dumped, dict)
@@ -280,20 +280,20 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             assert dumped[key] == value
 
     # Input Conversion Tests
-    def test_input_conversion_string(self, model: BaseChatModelV1) -> None:
+    def test_input_conversion_string(self, model: BaseChatModel) -> None:
         """Test that string input is properly converted to messages."""
         # This test verifies the _convert_input method works correctly
         result = model.invoke("Test string input")
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    def test_input_conversion_empty_string(self, model: BaseChatModelV1) -> None:
+    def test_input_conversion_empty_string(self, model: BaseChatModel) -> None:
         """Test that empty string input is handled gracefully."""
         result = model.invoke("")
         assert isinstance(result, AIMessage)
         # Content might be empty or some default response
 
-    def test_input_conversion_message_v1_list(self, model: BaseChatModelV1) -> None:
+    def test_input_conversion_message_v1_list(self, model: BaseChatModel) -> None:
         """Test that v1 message list input is handled correctly."""
         messages = [HumanMessage("Test message")]
         result = model.invoke(messages)
@@ -301,7 +301,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert result.content is not None
 
     # Batch Processing Tests
-    def test_batch_basic(self, model: BaseChatModelV1) -> None:
+    def test_batch_basic(self, model: BaseChatModel) -> None:
         """Test basic batch processing functionality."""
         inputs = ["Hello", "How are you?", "Goodbye"]
         results = model.batch(inputs)  # type: ignore[arg-type]
@@ -312,7 +312,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             assert isinstance(result, AIMessage)
             assert result.content is not None
 
-    async def test_abatch_basic(self, model: BaseChatModelV1) -> None:
+    async def test_abatch_basic(self, model: BaseChatModel) -> None:
         """Test basic async batch processing functionality."""
         inputs = ["Hello", "How are you?", "Goodbye"]
         results = await model.abatch(inputs)  # type: ignore[arg-type]
@@ -324,7 +324,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             assert result.content is not None
 
     # Content Block Tests
-    def test_text_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_text_content_blocks(self, model: BaseChatModel) -> None:
         """Test that the model can handle the ``TextContentBlock`` format.
 
         This test verifies that the model correctly processes messages containing
@@ -340,7 +340,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    def test_mixed_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_mixed_content_blocks(self, model: BaseChatModel) -> None:
         """Test that the model can handle messages with mixed content blocks."""
         if not (
             self.supports_text_content_blocks and self.supports_image_content_blocks
@@ -363,7 +363,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert isinstance(result, AIMessage)
         assert result.content is not None
 
-    def test_reasoning_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_reasoning_content_blocks(self, model: BaseChatModel) -> None:
         """Test that the model can generate ``ReasoningContentBlock``."""
         if not self.supports_reasoning_content_blocks:
             pytest.skip("Model does not support ReasoningContentBlock.")
@@ -380,7 +380,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             ]
             assert len(reasoning_blocks) > 0
 
-    def test_citations_in_response(self, model: BaseChatModelV1) -> None:
+    def test_citations_in_response(self, model: BaseChatModel) -> None:
         """Test that the model can generate ``Citations`` in text blocks."""
         if not self.supports_citations:
             pytest.skip("Model does not support citations.")
@@ -416,7 +416,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             )
             assert has_citation, "No citations found in text blocks."
 
-    def test_non_standard_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_non_standard_content_blocks(self, model: BaseChatModel) -> None:
         """Test that the model can handle ``NonStandardContentBlock``."""
         if not self.supports_non_standard_blocks:
             pytest.skip("Model does not support NonStandardContentBlock.")
@@ -435,7 +435,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert isinstance(result, AIMessage)
 
     def test_enhanced_tool_calls_with_content_blocks(
-        self, model: BaseChatModelV1
+        self, model: BaseChatModel
     ) -> None:
         """Test enhanced tool calling with content blocks format."""
         if not self.has_tool_calling:
@@ -465,7 +465,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         #     # Fallback to legacy tool_calls attribute
         #     assert hasattr(result, "tool_calls") and result.tool_calls
 
-    def test_invalid_tool_call_handling(self, model: BaseChatModelV1) -> None:
+    def test_invalid_tool_call_handling(self, model: BaseChatModel) -> None:
         """Test that the model can handle ``InvalidToolCall`` blocks gracefully."""
         if not self.supports_invalid_tool_calls:
             pytest.skip("Model does not support InvalidToolCall handling.")
@@ -487,7 +487,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert result.content is not None
         # TODO: enhance/double check this
 
-    def test_web_search_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_web_search_content_blocks(self, model: BaseChatModel) -> None:
         """Test generating ``WebSearchCall``/``WebSearchResult`` blocks."""
         if not self.supports_web_search_blocks:
             pytest.skip("Model does not support web search blocks.")
@@ -505,7 +505,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
             ]
             assert len(search_blocks) > 0
 
-    def test_file_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_file_content_blocks(self, model: BaseChatModel) -> None:
         """Test that the model can handle ``FileContentBlock``."""
         if not self.supports_file_content_blocks:
             pytest.skip("Model does not support FileContentBlock.")
@@ -522,7 +522,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert result.content is not None
         # TODO: make more robust?
 
-    def test_content_block_streaming(self, model: BaseChatModelV1) -> None:
+    def test_content_block_streaming(self, model: BaseChatModel) -> None:
         """Test that content blocks work correctly with streaming."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")
@@ -544,7 +544,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
 
         assert isinstance(final_message.content, (str, list))
 
-    def test_content_block_serialization(self, model: BaseChatModelV1) -> None:
+    def test_content_block_serialization(self, model: BaseChatModel) -> None:
         """Test that messages with content blocks can be serialized/deserialized."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")
@@ -562,7 +562,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert deserialized.content == message.content
         # TODO: make more robust
 
-    def test_backwards_compatibility(self, model: BaseChatModelV1) -> None:
+    def test_backwards_compatibility(self, model: BaseChatModel) -> None:
         """Test that models still work with legacy string content."""
         # This should work regardless of content blocks support
         legacy_message = HumanMessage("Hello, world!")
@@ -577,7 +577,7 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
         assert isinstance(result_named_param, AIMessage)
         assert result_named_param.content is not None
 
-    def test_content_block_validation(self, model: BaseChatModelV1) -> None:
+    def test_content_block_validation(self, model: BaseChatModel) -> None:
         """Test that invalid content blocks are handled gracefully."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")

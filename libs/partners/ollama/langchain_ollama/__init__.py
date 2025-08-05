@@ -16,7 +16,7 @@ service.
 from importlib import metadata
 
 from langchain_ollama.chat_models import ChatOllama
-from langchain_ollama.chat_models_v1 import ChatOllamaV1
+from langchain_ollama.chat_models_v1 import ChatOllama as ChatOllamaV1
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 

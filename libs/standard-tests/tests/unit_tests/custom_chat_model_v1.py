@@ -1,6 +1,6 @@
 """``ChatParrotLinkV1`` implementation for standard-tests with v1 messages.
 
-This module provides a test implementation of ``BaseChatModelV1`` that supports the new
+This module provides a test implementation of ``BaseChatModel`` that supports the new
 v1 message format with content blocks.
 """
 
@@ -9,13 +9,13 @@ from typing import Any, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
-from langchain_core.language_models.v1.chat_models import BaseChatModelV1
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, MessageV1
+from langchain_core.v1.chat_models import BaseChatModel
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 from pydantic import Field
 
 
-class ChatParrotLinkV1(BaseChatModelV1):
+class ChatParrotLinkV1(BaseChatModel):
     """A custom v1 chat model that echoes input with content blocks support.
 
     This model is designed for testing the v1 message format and content blocks. Echoes

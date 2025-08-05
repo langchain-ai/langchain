@@ -1,7 +1,7 @@
 """Ollama chat model v1 implementation.
 
 This implementation provides native support for v1 messages with structured
-content blocks and always returns AIMessageV1 format responses.
+content blocks.
 
 .. versionadded:: 1.0.0
 """
@@ -20,14 +20,6 @@ from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.language_models.v1.chat_models import (
-    BaseChatModelV1,
-    agenerate_from_stream,
-    generate_from_stream,
-)
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import MessageV1
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
     JsonOutputParser,
@@ -41,6 +33,12 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.v1.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 from ollama import AsyncClient, Client, Options
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
@@ -154,11 +152,10 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
-class ChatOllamaV1(BaseChatModelV1):
+class ChatOllama(BaseChatModel):
     r"""Ollama chat model with native v1 message/content block support.
 
-    This implementation provides native support for structured content blocks
-    and always returns AIMessageV1 format responses with structured content.
+    This implementation provides native support for structured content blocks.
 
     .. dropdown:: Setup
         :open:
@@ -196,9 +193,9 @@ class ChatOllamaV1(BaseChatModelV1):
     Instantiate:
         .. code-block:: python
 
-            from langchain_ollama import ChatOllamaV1
+            from langchain_ollama import ChatOllama
 
-            llm = ChatOllamaV1(
+            llm = ChatOllama(
                 model = "llama3",
                 temperature = 0.8,
                 num_predict = 256,
@@ -208,7 +205,7 @@ class ChatOllamaV1(BaseChatModelV1):
     Invoke:
         .. code-block:: python
 
-            from langchain_core.messages.v1 import HumanMessage
+            from langchain_core.v1.messages import HumanMessage
             from langchain_core.messages.content_blocks import TextContentBlock
 
             messages = [
@@ -220,12 +217,12 @@ class ChatOllamaV1(BaseChatModelV1):
 
         .. code-block:: python
 
-            AIMessageV1(content=[{'type': 'text', 'text': 'Hello! How can I help you today?'}], response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:37:50.182604Z', 'done_reason': 'stop', 'done': True, 'total_duration': 3576619666, 'load_duration': 788524916, 'prompt_eval_count': 32, 'prompt_eval_duration': 128125000, 'eval_count': 71, 'eval_duration': 2656556000}, id='run-ba48f958-6402-41a5-b461-5e250a4ebd36-0')
+            AIMessage(content=[{'type': 'text', 'text': 'Hello! How can I help you today?'}], response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:37:50.182604Z', 'done_reason': 'stop', 'done': True, 'total_duration': 3576619666, 'load_duration': 788524916, 'prompt_eval_count': 32, 'prompt_eval_duration': 128125000, 'eval_count': 71, 'eval_duration': 2656556000}, id='run-ba48f958-6402-41a5-b461-5e250a4ebd36-0')
 
     Stream:
         .. code-block:: python
 
-            from langchain_core.messages.v1 import HumanMessage
+            from langchain_core.v1.messages import HumanMessage
             from langchain_core.messages.content_blocks import TextContentBlock
 
             messages = [
@@ -261,7 +258,7 @@ class ChatOllamaV1(BaseChatModelV1):
     Tool Calling:
         .. code-block:: python
 
-            from langchain_ollama import ChatOllamaV1
+            from langchain_ollama import ChatOllama
             from pydantic import BaseModel, Field
 
             class Multiply(BaseModel):
@@ -541,7 +538,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunkV1]:
+    ) -> Iterator[AIMessageChunk]:
         """Generate streaming response with native v1 chunks."""
         chat_params = self._chat_params(messages, stop, **kwargs)
 
@@ -578,7 +575,7 @@ class ChatOllamaV1(BaseChatModelV1):
             response = self._client.chat(**chat_params)
             ai_message = _convert_to_v1_from_ollama_format(response)
             # Convert to chunk for yielding
-            chunk = AIMessageChunkV1(
+            chunk = AIMessageChunk(
                 content=ai_message.content,
                 response_metadata=ai_message.response_metadata,
                 usage_metadata=ai_message.usage_metadata,
@@ -591,7 +588,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[AIMessageChunkV1]:
+    ) -> AsyncIterator[AIMessageChunk]:
         """Generate async streaming response with native v1 chunks."""
         chat_params = self._chat_params(messages, stop, **kwargs)
 
@@ -628,7 +625,7 @@ class ChatOllamaV1(BaseChatModelV1):
             response = await self._async_client.chat(**chat_params)
             ai_message = _convert_to_v1_from_ollama_format(response)
             # Convert to chunk for yielding
-            chunk = AIMessageChunkV1(
+            chunk = AIMessageChunk(
                 content=ai_message.content,
                 response_metadata=ai_message.response_metadata,
                 usage_metadata=ai_message.usage_metadata,
@@ -641,7 +638,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AIMessageV1:
+    ) -> AIMessage:
         """Invoke the model with v1 messages and return a complete response.
 
         Args:
@@ -664,7 +661,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AIMessageV1:
+    ) -> AIMessage:
         """Async invoke the model with v1 messages and return a complete response.
 
         Args:
@@ -687,7 +684,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunkV1]:
+    ) -> Iterator[AIMessageChunk]:
         """Stream response chunks using the v1 format.
 
         Args:
@@ -709,7 +706,7 @@ class ChatOllamaV1(BaseChatModelV1):
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[AIMessageChunkV1]:
+    ) -> AsyncIterator[AIMessageChunk]:
         """Async stream response chunks using the v1 format.
 
         Args:
@@ -732,7 +729,7 @@ class ChatOllamaV1(BaseChatModelV1):
         *,
         tool_choice: Optional[Union[dict, str, bool]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessageV1]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Args:

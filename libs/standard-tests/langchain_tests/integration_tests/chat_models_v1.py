@@ -9,7 +9,6 @@ from typing import Any, Union, cast
 import langchain_core.messages.content_blocks as types
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.language_models.v1.chat_models import BaseChatModelV1
 from langchain_core.messages.base import BaseMessage
 from langchain_core.messages.content_blocks import (
     AudioContentBlock,
@@ -38,8 +37,9 @@ from langchain_core.messages.content_blocks import (
     is_text_block,
     is_tool_call_block,
 )
-from langchain_core.messages.v1 import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.tools import tool
+from langchain_core.v1.chat_models import BaseChatModel
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, HumanMessage
 
 from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1Tests
 
@@ -156,7 +156,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         return True
 
     # Multimodal testing
-    def test_image_content_blocks_with_analysis(self, model: BaseChatModelV1) -> None:
+    def test_image_content_blocks_with_analysis(self, model: BaseChatModel) -> None:
         """Test image analysis using ``ImageContentBlock``s."""
         if not self.supports_image_content_blocks:
             pytest.skip("Model does not support image inputs.")
@@ -179,7 +179,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if result.text:
             assert len(result.text) > 10  # Substantial response
 
-    def test_video_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_video_content_blocks(self, model: BaseChatModel) -> None:
         """Test video content block processing."""
         if not self.supports_video_content_blocks:
             pytest.skip("Model does not support video inputs.")
@@ -196,7 +196,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if result.text:
             assert len(result.text) > 10  # Substantial response
 
-    def test_audio_content_blocks_processing(self, model: BaseChatModelV1) -> None:
+    def test_audio_content_blocks_processing(self, model: BaseChatModel) -> None:
         """Test audio content block processing with transcription."""
         if not self.supports_audio_content_blocks:
             pytest.skip("Model does not support audio inputs.")
@@ -213,7 +213,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if result.text:
             assert len(result.text) > 10  # Substantial response
 
-    def test_complex_multimodal_reasoning(self, model: BaseChatModelV1) -> None:
+    def test_complex_multimodal_reasoning(self, model: BaseChatModel) -> None:
         """Test complex reasoning with multiple content types."""
         # TODO: come back to this, seems like a unique scenario
         if not self.supports_multimodal_reasoning:
@@ -251,7 +251,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             ]
             assert len(reasoning_blocks) > 0
 
-    def test_citation_generation_with_sources(self, model: BaseChatModelV1) -> None:
+    def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
         """Test that the model can generate ``Citations`` with source links."""
         if not self.supports_structured_citations:
             pytest.skip("Model does not support structured citations.")
@@ -293,7 +293,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                     assert "start_index" in annotation
                     assert "end_index" in annotation
 
-    def test_web_search_integration(self, model: BaseChatModelV1) -> None:
+    def test_web_search_integration(self, model: BaseChatModel) -> None:
         """Test web search content blocks integration."""
         if not self.supports_web_search_blocks:
             pytest.skip("Model does not support web search blocks.")
@@ -319,7 +319,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         # TODO: should this be one or the other or both?
         assert len(search_call_blocks) > 0 or len(search_result_blocks) > 0
 
-    def test_code_interpreter_blocks(self, model: BaseChatModelV1) -> None:
+    def test_code_interpreter_blocks(self, model: BaseChatModel) -> None:
         """Test code interpreter content blocks."""
         if not self.supports_code_interpreter:
             pytest.skip("Model does not support code interpreter blocks.")
@@ -344,7 +344,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         # TODO: should we require all three types or just an output/result?
         assert len(code_blocks) > 0
 
-    def test_tool_calling_with_content_blocks(self, model: BaseChatModelV1) -> None:
+    def test_tool_calling_with_content_blocks(self, model: BaseChatModel) -> None:
         """Test tool calling with content blocks."""
         if not self.has_tool_calling:
             pytest.skip("Model does not support tool calls.")
@@ -364,7 +364,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         _validate_tool_call_message(result)
 
     def test_plaintext_content_blocks_from_documents(
-        self, model: BaseChatModelV1
+        self, model: BaseChatModel
     ) -> None:
         """Test PlainTextContentBlock for document plaintext content."""
         if not self.supports_plaintext_content_blocks:
@@ -384,7 +384,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         assert isinstance(result, AIMessage)
         # TODO expand
 
-    def test_content_block_streaming_integration(self, model: BaseChatModelV1) -> None:
+    def test_content_block_streaming_integration(self, model: BaseChatModel) -> None:
         """Test streaming with content blocks."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")
@@ -413,7 +413,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         assert isinstance(final_message.content, list)
 
     def test_error_handling_with_invalid_content_blocks(
-        self, model: BaseChatModelV1
+        self, model: BaseChatModel
     ) -> None:
         """Test error handling with various invalid content block configurations."""
         if not self.supports_content_blocks_v1:
@@ -436,9 +436,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 # Acceptable to raise validation errors
                 assert len(str(e)) > 0
 
-    async def test_async_content_blocks_processing(
-        self, model: BaseChatModelV1
-    ) -> None:
+    async def test_async_content_blocks_processing(self, model: BaseChatModel) -> None:
         """Test asynchronous processing of content blocks."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")
@@ -448,7 +446,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         result = await model.ainvoke([message])
         assert isinstance(result, AIMessage)
 
-    def test_content_blocks_with_callbacks(self, model: BaseChatModelV1) -> None:
+    def test_content_blocks_with_callbacks(self, model: BaseChatModel) -> None:
         """Test that content blocks work correctly with callback handlers."""
         if not self.supports_content_blocks_v1:
             pytest.skip("Model does not support content blocks v1.")

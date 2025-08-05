@@ -13,12 +13,15 @@ from langchain_core.messages.content_blocks import (
     TextContentBlock,
     ToolCall,
 )
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
-from langchain_core.messages.v1 import AIMessageChunk as AIMessageChunkV1
-from langchain_core.messages.v1 import HumanMessage as HumanMessageV1
-from langchain_core.messages.v1 import MessageV1, ResponseMetadata
-from langchain_core.messages.v1 import SystemMessage as SystemMessageV1
-from langchain_core.messages.v1 import ToolMessage as ToolMessageV1
+from langchain_core.v1.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    MessageV1,
+    ResponseMetadata,
+    SystemMessage,
+    ToolMessage,
+)
 
 
 def _get_usage_metadata_from_response(
@@ -38,13 +41,13 @@ def _get_usage_metadata_from_response(
 
 def _convert_from_v1_to_ollama_format(message: MessageV1) -> dict[str, Any]:
     """Convert v1 message to Ollama API format."""
-    if isinstance(message, HumanMessageV1):
+    if isinstance(message, HumanMessage):
         return _convert_human_message_v1(message)
-    if isinstance(message, AIMessageV1):
+    if isinstance(message, AIMessage):
         return _convert_ai_message_v1(message)
-    if isinstance(message, SystemMessageV1):
+    if isinstance(message, SystemMessage):
         return _convert_system_message_v1(message)
-    if isinstance(message, ToolMessageV1):
+    if isinstance(message, ToolMessage):
         return _convert_tool_message_v1(message)
     msg = f"Unsupported message type: {type(message)}"
     raise ValueError(msg)
@@ -109,8 +112,8 @@ def _convert_content_blocks_to_ollama_format(
     return text_content, images, tool_calls
 
 
-def _convert_human_message_v1(message: HumanMessageV1) -> dict[str, Any]:
-    """Convert HumanMessageV1 to Ollama format."""
+def _convert_human_message_v1(message: HumanMessage) -> dict[str, Any]:
+    """Convert HumanMessage to Ollama format."""
     text_content, images, _ = _convert_content_blocks_to_ollama_format(message.content)
 
     msg: dict[str, Any] = {
@@ -125,8 +128,8 @@ def _convert_human_message_v1(message: HumanMessageV1) -> dict[str, Any]:
     return msg
 
 
-def _convert_ai_message_v1(message: AIMessageV1) -> dict[str, Any]:
-    """Convert AIMessageV1 to Ollama format."""
+def _convert_ai_message_v1(message: AIMessage) -> dict[str, Any]:
+    """Convert AIMessage to Ollama format."""
     text_content, _, tool_calls = _convert_content_blocks_to_ollama_format(
         message.content
     )
@@ -146,8 +149,8 @@ def _convert_ai_message_v1(message: AIMessageV1) -> dict[str, Any]:
     return msg
 
 
-def _convert_system_message_v1(message: SystemMessageV1) -> dict[str, Any]:
-    """Convert SystemMessageV1 to Ollama format."""
+def _convert_system_message_v1(message: SystemMessage) -> dict[str, Any]:
+    """Convert SystemMessage to Ollama format."""
     text_content, _, _ = _convert_content_blocks_to_ollama_format(message.content)
 
     return {
@@ -156,8 +159,8 @@ def _convert_system_message_v1(message: SystemMessageV1) -> dict[str, Any]:
     }
 
 
-def _convert_tool_message_v1(message: ToolMessageV1) -> dict[str, Any]:
-    """Convert ToolMessageV1 to Ollama format."""
+def _convert_tool_message_v1(message: ToolMessage) -> dict[str, Any]:
+    """Convert ToolMessage to Ollama format."""
     text_content, _, _ = _convert_content_blocks_to_ollama_format(message.content)
 
     return {
@@ -167,8 +170,8 @@ def _convert_tool_message_v1(message: ToolMessageV1) -> dict[str, Any]:
     }
 
 
-def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessageV1:
-    """Convert Ollama API response to AIMessageV1."""
+def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessage:
+    """Convert Ollama API response to AIMessage."""
     content: list[types.ContentBlock] = []
 
     # Handle text content
@@ -233,15 +236,15 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessageV1:
     if "context" in response:
         metadata_as_dict["context"] = response["context"]
 
-    return AIMessageV1(
+    return AIMessage(
         content=content,
         response_metadata=response_metadata,
         usage_metadata=_get_usage_metadata_from_response(response),
     )
 
 
-def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunkV1:
-    """Convert Ollama streaming chunk to AIMessageChunkV1."""
+def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunk:
+    """Convert Ollama streaming chunk to AIMessageChunk."""
     content: list[types.ContentBlock] = []
 
     # Handle reasoning content first in chunks
@@ -305,7 +308,7 @@ def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunkV1:
     if chunk.get("done") is True:
         usage_metadata = _get_usage_metadata_from_response(chunk)
 
-    return AIMessageChunkV1(
+    return AIMessageChunk(
         content=content,
         response_metadata=response_metadata or ResponseMetadata(),
         usage_metadata=usage_metadata,
