@@ -25,6 +25,8 @@ from tests.unit_tests.fake.callbacks import (
 )
 
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
+
+# gpt-oss doesn't support `reasoning_effort`
 REASONING_MODEL_NAME = "deepseek-r1-distill-llama-70b"
 
 
@@ -272,7 +274,7 @@ def test_reasoning_output_stream() -> None:
 def test_reasoning_effort_none() -> None:
     """Test that no reasoning output is returned if effort is set to none."""
     chat = ChatGroq(
-        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort
+        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort = none
         reasoning_effort="none",
     )
     message = HumanMessage(content="What is the capital of France?")
@@ -280,6 +282,79 @@ def test_reasoning_effort_none() -> None:
     assert isinstance(response, AIMessage)
     assert "reasoning_content" not in response.additional_kwargs
     assert "<think>" not in response.content and "<think/>" not in response.content
+
+
+@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+def test_reasoning_effort_levels(effort: str) -> None:
+    """Test reasoning effort options for different levels."""
+    # As of now, only the new gpt-oss models support `'low'`, `'medium'`, and `'high'`
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+        reasoning_effort=effort,
+    )
+    message = HumanMessage(content="What is the capital of France?")
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    assert response.response_metadata.get("reasoning_effort") == effort
+
+
+@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+def test_reasoning_effort_invoke_override(effort: str) -> None:
+    """Test that reasoning_effort in invoke() overrides class-level setting."""
+    # Create chat with no reasoning effort at class level
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    # Override reasoning_effort in invoke()
+    response = chat.invoke([message], reasoning_effort=effort)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    assert response.response_metadata.get("reasoning_effort") == effort
+
+
+def test_reasoning_effort_invoke_override_different_level() -> None:
+    """Test that reasoning_effort in invoke() overrides class-level setting."""
+    # Create chat with reasoning effort at class level
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,  # openai/gpt-oss-20b supports reasoning_effort
+        reasoning_effort="high",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    # Override reasoning_effort to 'low' in invoke()
+    response = chat.invoke([message], reasoning_effort="low")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    # Should reflect the overridden value, not the class-level setting
+    assert response.response_metadata.get("reasoning_effort") == "low"
+
+
+def test_reasoning_effort_streaming() -> None:
+    """Test that reasoning_effort is captured in streaming response metadata."""
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+        reasoning_effort="medium",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    chunks = list(chat.stream([message]))
+    assert len(chunks) > 0
+
+    # Find the final chunk with finish_reason
+    final_chunk = None
+    for chunk in chunks:
+        if chunk.response_metadata.get("finish_reason"):
+            final_chunk = chunk
+            break
+
+    assert final_chunk is not None
+    assert final_chunk.response_metadata.get("reasoning_effort") == "medium"
 
 
 #
