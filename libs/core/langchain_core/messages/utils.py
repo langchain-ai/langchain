@@ -415,6 +415,10 @@ def convert_from_v1_message(message: MessageV1) -> BaseMessage:
         return ToolMessage(
             content=content,
             id=message.id,
+            tool_call_id=message.tool_call_id,
+            artifact=message.artifact,
+            name=message.name,
+            status=message.status,
         )
     message = f"Unsupported message type: {type(message)}"
     raise NotImplementedError(message)
