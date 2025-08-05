@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional, Union
 
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
 from typing_extensions import override
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler

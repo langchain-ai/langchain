@@ -7,8 +7,8 @@ from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
 from langchain_core.documents import Document
-from langchain_core.messages.v1 import AIMessage
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
 from typing_extensions import override
 
 

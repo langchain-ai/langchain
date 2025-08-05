@@ -10,8 +10,8 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.messages.utils import convert_from_v1_message
-from langchain_core.messages.v1 import AIMessage as AIMessageV1
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 from typing_extensions import override
 
 from langchain.agents.agent import MultiActionAgentOutputParser
