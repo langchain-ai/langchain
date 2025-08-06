@@ -393,26 +393,26 @@ def _init_tool_calls(content: list[types.ContentBlock]) -> list[types.ContentBlo
             if isinstance(args_, dict):
                 new_content.append(
                     create_tool_call(
-                        name=cast("str", block.get("name")),
+                        name=block.get("name") or "",
                         args=args_,
-                        id=cast("str", block.get("id", "")),
+                        id=block.get("id", ""),
                     )
                 )
             else:
                 new_content.append(
                     create_invalid_tool_call(
-                        name=cast("str", block.get("name", "")),
-                        args=cast("str", block.get("args", "")),
-                        id=cast("str", block.get("id", "")),
+                        name=block.get("name", ""),
+                        args=block.get("args", ""),
+                        id=block.get("id", ""),
                         error=None,
                     )
                 )
         except Exception:
             new_content.append(
                 create_invalid_tool_call(
-                    name=cast("str", block.get("name", "")),
-                    args=cast("str", block.get("args", "")),
-                    id=cast("str", block.get("id", "")),
+                    name=block.get("name", ""),
+                    args=block.get("args", ""),
+                    id=block.get("id", ""),
                     error=None,
                 )
             )
