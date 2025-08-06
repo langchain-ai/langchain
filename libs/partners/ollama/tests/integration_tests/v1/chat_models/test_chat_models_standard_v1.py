@@ -159,29 +159,10 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
         assert final_tool_call["id"] == tool_call_id
 
     @pytest.mark.xfail(
-        reason=(
-            "Will sometime encounter AssertionErrors where tool responses are "
-            "`'3'` instead of `3`"
-        )
-    )
-    def test_tool_calling(self, model: BaseChatModel) -> None:
-        super().test_tool_calling(model)
-
-    @pytest.mark.xfail(
-        reason=(
-            "Will sometime encounter AssertionErrors where tool responses are "
-            "`'3'` instead of `3`"
-        )
-    )
-    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
-        await super().test_tool_calling_async(model)
-
-    @pytest.mark.xfail(
-        reason=(
-            "Ollama does not support tool_choice forcing, tool calls may be unreliable"
-        )
+        reason=("Ollama does not yet support tool_choice forcing, may be unreliable")
     )
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        # TODO: shouldn't need to xfail this
         super().test_tool_calling_with_no_arguments(model)
 
     @pytest.mark.xfail(
@@ -208,14 +189,9 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
         if not self.supports_multimodal_reasoning:
             pytest.skip("Model does not support multimodal reasoning.")
 
-        # For multimodal reasoning, we need a model that supports both images
-        # and reasoning.
-        # TODO: Update this when we have a model that supports both multimodal
-        # and reasoning.
-
         pytest.skip(
-            "No single model available that supports both multimodal content "
-            "and reasoning."
+            "TODO: Update this when we have a model that supports both multimodal and "
+            "reasoning."
         )
 
     @pytest.mark.xfail(
