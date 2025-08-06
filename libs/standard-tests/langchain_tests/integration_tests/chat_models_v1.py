@@ -65,7 +65,7 @@ from langchain_core.v1.messages import (
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
-from pytest_benchmark.fixture import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1Tests
@@ -692,7 +692,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             AIMessage("hello"),
             HumanMessage("how are you"),
         ]
-        result = model.invoke(messages)
+        result = model.invoke(messages)  # type: ignore[arg-type]
         assert result is not None
         assert isinstance(result, AIMessage)
         assert len(result.content) > 0
@@ -733,7 +733,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             AIMessage("hello"),
             HumanMessage("how are you"),
         ]
-        result = model.invoke(messages)
+        result = model.invoke(messages)  # type: ignore[arg-type]
         assert result is not None
         assert isinstance(result, AIMessage)
         assert len(result.content) > 0
@@ -1105,7 +1105,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         # Test stream()
         full: Optional[AIMessageChunk] = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -1163,7 +1163,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         # Test astream()
         full: Optional[AIMessageChunk] = None
         async for chunk in model_with_tools.astream(query):
-            full = chunk if full is None else full + chunk
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -1294,7 +1294,9 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 json.dumps({"result": 3}), tool_call_id="abc123", status="success"
             ),
         ]
-        result_string_content = model_with_tools.invoke(messages_string_content)  # TODO
+        result_string_content = model_with_tools.invoke(
+            messages_string_content  # type: ignore[arg-type]
+        )  # TODO
         assert isinstance(result_string_content, AIMessage)
 
     def test_tool_message_histories_list_content(
@@ -1502,7 +1504,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         full: Optional[AIMessageChunk] = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk
+            full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
 
@@ -1559,7 +1561,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 status="error",
             ),
         ]
-        result = model_with_tools.invoke(messages)
+        result = model_with_tools.invoke(messages)  # type: ignore[arg-type]
         assert isinstance(result, AIMessage)
 
     def test_structured_few_shot_examples(
@@ -1628,7 +1630,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         )
 
         messages = [*few_shot_messages, HumanMessage("What is 3 + 4")]
-        result = model_with_tools.invoke(messages)
+        result = model_with_tools.invoke(messages)  # type: ignore[arg-type]
         assert isinstance(result, AIMessage)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
@@ -1668,7 +1670,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
-        schema, validation_function = _get_joke_class(schema_type)
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         mock_callback = MagicMock()
         mock_callback.on_chat_model_start = MagicMock()
@@ -1749,7 +1751,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
-        schema, validation_function = _get_joke_class(schema_type)
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
 
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         ainvoke_callback = _TestCallbackHandler()
