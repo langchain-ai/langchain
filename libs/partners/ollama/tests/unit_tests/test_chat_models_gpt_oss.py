@@ -315,7 +315,7 @@ class TestGptOssIntegration:
         calc_tool = tool(calculate)
         
         # Bind multiple tools
-        llm_with_tools = llm.bind_tools([get_weather, search_web, calculate])
+        llm_with_tools = llm.bind_tools([get_weather, search_tool, calc_tool])
         
         # Check that all tools are bound correctly
         assert hasattr(llm_with_tools, "kwargs")
@@ -396,6 +396,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
