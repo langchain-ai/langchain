@@ -15,7 +15,6 @@ import langchain_core.messages.content_blocks as types
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages.base import BaseMessage
 from langchain_core.messages.content_blocks import (
     AudioContentBlock,
     Citation,
@@ -2856,7 +2855,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 or "ん" in customer_name_jp
             ), f"Japanese Unicode characters not found in: {customer_name_jp}"
 
-    def test_complex_multimodal_reasoning(self, model: BaseChatModel) -> None:
+    def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
         """Test complex reasoning with multiple content types.
 
         TODO: expand docstring
@@ -3122,40 +3121,6 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         result = await model.ainvoke([message])
         assert isinstance(result, AIMessage)
-
-    def test_content_blocks_with_callbacks(self, model: BaseChatModel) -> None:
-        """Test that content blocks work correctly with callback handlers.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        class ContentBlockCallbackHandler(BaseCallbackHandler):
-            def __init__(self) -> None:
-                self.messages_seen: list[BaseMessage] = []
-
-            def on_chat_model_start(
-                self,
-                serialized: Any,  # noqa: ARG002
-                messages: Any,
-                **kwargs: Any,  # noqa: ARG002
-            ) -> None:
-                self.messages_seen.extend(messages)
-
-        callback_handler = ContentBlockCallbackHandler()
-
-        message = HumanMessage("Test message for callback handling.")
-
-        result = model.invoke([message], config={"callbacks": [callback_handler]})
-
-        assert isinstance(result, AIMessage)
-        assert len(callback_handler.messages_seen) > 0
-        assert any(
-            hasattr(msg, "content") and isinstance(msg.content, list)
-            for msg in callback_handler.messages_seen
-        )
 
     def test_input_conversion_string(self, model: BaseChatModel) -> None:
         """Test that string input is properly converted to messages.

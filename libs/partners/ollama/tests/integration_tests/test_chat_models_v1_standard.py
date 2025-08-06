@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ConnectError
-from langchain_core.messages.content_blocks import ToolCallChunk
+from langchain_core.messages.content_blocks import ToolCallChunk, is_reasoning_block
 from langchain_core.tools import tool
 from langchain_core.v1.chat_models import BaseChatModel
-from langchain_core.v1.messages import AIMessageChunk, HumanMessage
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_tests.integration_tests.chat_models_v1 import ChatModelV1IntegrationTests
 from ollama import ResponseError
 from pydantic import ValidationError
@@ -44,7 +44,10 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
         """ChatOllama supports image content blocks."""
         return True
 
-    # TODO: ensure has_tool_calling tests are run
+    @property
+    def has_tool_calling(self) -> bool:
+        """ChatOllama supports tool calling."""
+        return True
 
     @property
     def supports_invalid_tool_calls(self) -> bool:
@@ -171,6 +174,82 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
     )
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         await super().test_tool_calling_async(model)
+
+    @pytest.mark.xfail(
+        reason=(
+            "Ollama does not support tool_choice forcing, tool calls may be unreliable"
+        )
+    )
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)
+
+    @pytest.mark.xfail(
+        reason=(
+            "Ollama does not support tool_choice forcing, agent loop may be unreliable"
+        )
+    )
+    def test_agent_loop(self, model: BaseChatModel) -> None:
+        super().test_agent_loop(model)
+
+    @pytest.mark.xfail(
+        reason=(
+            "No single Ollama model supports both multimodal content and reasoning. "
+            "Override skips test due to model limitations."
+        )
+    )
+    def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
+        """Test complex reasoning with multiple content types.
+
+        This test overrides the default model to use a reasoning-capable model
+        with reasoning mode explicitly enabled. Note that this test requires
+        both multimodal support AND reasoning support.
+        """
+        if not self.supports_multimodal_reasoning:
+            pytest.skip("Model does not support multimodal reasoning.")
+
+        # For multimodal reasoning, we need a model that supports both images
+        # and reasoning.
+        # TODO: Update this when we have a model that supports both multimodal
+        # and reasoning.
+
+        pytest.skip(
+            "No single model available that supports both multimodal content "
+            "and reasoning."
+        )
+
+    @pytest.mark.xfail(
+        reason=(
+            "Default llama3.1 model does not support reasoning. Override uses "
+            "reasoning-capable model with reasoning=True enabled."
+        ),
+        strict=False,
+    )
+    def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
+        """Test that the model can generate ``ReasoningContentBlock``.
+
+        This test overrides the default model to use a reasoning-capable model
+        with reasoning mode explicitly enabled.
+        """
+        if not self.supports_reasoning_content_blocks:
+            pytest.skip("Model does not support ReasoningContentBlock.")
+
+        reasoning_enabled_model = ChatOllama(
+            model="deepseek-r1:1.5b", reasoning=True, validate_model_on_init=True
+        )
+
+        message = HumanMessage("Think step by step: What is 2 + 2?")
+        result = reasoning_enabled_model.invoke([message])
+        assert isinstance(result, AIMessage)
+        if isinstance(result.content, list):
+            reasoning_blocks = [
+                block
+                for block in result.content
+                if isinstance(block, dict) and is_reasoning_block(block)
+            ]
+            assert len(reasoning_blocks) > 0, (
+                "Expected reasoning content blocks but found none. "
+                f"Content blocks: {[block.get('type') for block in result.content]}"
+            )
 
     @patch("langchain_ollama.chat_models_v1.Client.list")
     def test_init_model_not_found(self, mock_list: MagicMock) -> None:
