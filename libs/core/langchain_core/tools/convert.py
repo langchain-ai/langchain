@@ -127,7 +127,7 @@ def tool(
             :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
             If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
-            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
 
     Returns:
         The tool.
@@ -409,7 +409,7 @@ def convert_runnable_to_tool(
             :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
             If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
-            If ``"v1"``, output will be a v1 :class:`~langchain_core.messages.v1.ToolMessage`.
+            If ``"v1"``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
 
     Returns:
         The tool.

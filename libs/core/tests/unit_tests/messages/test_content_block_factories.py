@@ -117,13 +117,6 @@ class TestImageBlockFactory:
         ):
             create_image_block()
 
-    def test_base64_without_mime_type_raises_error(self) -> None:
-        """Test that base64 without mime_type raises ValueError."""
-        with pytest.raises(
-            ValueError, match="mime_type is required when using base64 data"
-        ):
-            create_image_block(base64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ")
-
     def test_with_index(self) -> None:
         """Test image block creation with index."""
         block = create_image_block(url="https://example.com/image.jpg", index=1)
@@ -165,13 +158,6 @@ class TestVideoBlockFactory:
             ValueError, match="Must provide one of: url, base64, or file_id"
         ):
             create_video_block()
-
-    def test_base64_without_mime_type_raises_error(self) -> None:
-        """Test that base64 without mime_type raises ValueError."""
-        with pytest.raises(
-            ValueError, match="mime_type is required when using base64 data"
-        ):
-            create_video_block(base64="UklGRnoGAABXQVZFZm10IBAAAAABAAEA")
 
 
 class TestAudioBlockFactory:

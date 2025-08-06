@@ -185,16 +185,17 @@ def test_message_chunks() -> None:
     # Test ID order of precedence
     null_id = AIMessageChunk(content="", id=None)
     default_id = AIMessageChunk(
-        content="", id="run-abc123"
+        content="", id="lc_run--abc123"
     )  # LangChain-assigned run ID
     meaningful_id = AIMessageChunk(content="", id="msg_def456")  # provider-assigned ID
 
-    assert (null_id + default_id).id == "run-abc123"
-    assert (default_id + null_id).id == "run-abc123"
+    assert (null_id + default_id).id == "lc_run--abc123"
+    assert (default_id + null_id).id == "lc_run--abc123"
 
     assert (null_id + meaningful_id).id == "msg_def456"
     assert (meaningful_id + null_id).id == "msg_def456"
 
+    # Provider assigned IDs have highest precedence
     assert (default_id + meaningful_id).id == "msg_def456"
     assert (meaningful_id + default_id).id == "msg_def456"
 
@@ -326,13 +327,12 @@ def test_message_chunks_v1() -> None:
     # Note: AIMessageChunkV1 always generates an ID if none provided
     auto_id = AIMessageChunkV1(content=[])  # Gets auto-generated lc_* ID
     default_id = AIMessageChunkV1(
-        content=[], id="run-abc123"
+        content=[], id="lc_run--abc123"
     )  # LangChain-assigned run ID
     meaningful_id = AIMessageChunkV1(
         content=[], id="msg_def456"
     )  # provider-assigned ID
 
-    # Provider-assigned IDs (non-run-* and non-lc_*) have highest precedence
     # Provider-assigned IDs always win over LangChain-generated IDs
     assert (auto_id + meaningful_id).id == "msg_def456"  # provider-assigned wins
     assert (meaningful_id + auto_id).id == "msg_def456"  # provider-assigned wins
@@ -344,9 +344,9 @@ def test_message_chunks_v1() -> None:
         meaningful_id + default_id
     ).id == "msg_def456"  # meaningful_id is provider-assigned
 
-    # Between auto-generated and run-* IDs, auto-generated wins (since lc_ != run-)
-    assert (auto_id + default_id).id == auto_id.id
-    assert (default_id + auto_id).id == auto_id.id
+    # Between auto-generated and lc_run--* IDs, run IDs win
+    assert (auto_id + default_id).id == default_id.id
+    assert (default_id + auto_id).id == default_id.id
 
 
 def test_chat_message_chunks() -> None:
