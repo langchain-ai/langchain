@@ -223,18 +223,13 @@ class TestChatOllama(ChatModelV1UnitTests):
         return True
 
     @property
-    def supports_image_content_blocks(self) -> bool:
-        """`ChatOllama` supports image content blocks (e.g., `gemma3`)."""
-        return True
-
-    @property
     def supports_reasoning_content_blocks(self) -> bool:
         """`ChatOllama` supports reasoning/thinking content blocks (e.g., `qwen3`)."""
         return True
 
     @property
-    def returns_usage_metadata(self) -> bool:
-        """`ChatOllama` returns usage metadata with token counts."""
+    def supports_image_content_blocks(self) -> bool:
+        """`ChatOllama` supports image content blocks (e.g., `gemma3`)."""
         return True
 
     @property
@@ -403,7 +398,7 @@ class TestChatOllama(ChatModelV1UnitTests):
 def test_validate_model_on_init(
     mock_client_class: Any, mock_validate_model: Any
 ) -> None:
-    """Test that the model is validated on initialization when requested."""
+    """Test that local model presence is validated on initialization when requested."""
     mock_client = MagicMock()
     mock_client_class.return_value = mock_client
 
