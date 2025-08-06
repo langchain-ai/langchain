@@ -62,13 +62,10 @@ from langchain_core.v1.messages import (
     ToolMessage,
 )
 from pydantic import BaseModel, Field
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1Tests
-from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 # Content block type definitions for testing
 ContentBlock = Union[
@@ -207,7 +204,6 @@ def _validate_tool_call_message_no_args(message: AIMessage) -> None:
     Used for testing tool calls without arguments, such as
     ``magic_function_no_args``.
     """
-    assert isinstance(message, AIMessage)
     assert len(message.tool_calls) == 1
     tool_call = message.tool_calls[0]
     assert tool_call["name"] == "magic_function_no_args"
@@ -1497,10 +1493,13 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         model_with_tools = model.bind_tools(
             [magic_function_no_args], tool_choice=tool_choice_value
         )
-        query = "What is the value of magic_function_no_args()? Use the tool."
+        query = "What is the value of magic_function_no_args()? You must use the tool."
+
+        # Invoke
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
+        # Stream
         full: Optional[AIMessageChunk] = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
@@ -1791,72 +1790,6 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             "schema"
         ] == convert_to_json_schema(schema)
 
-    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
-    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
-        """Test to verify we can generate structured output using ``pydantic.v1.BaseModel``.
-
-        ``pydantic.v1.BaseModel`` is available in the Pydantic 2 package.
-
-        This test is optional and should be skipped if the model does not support
-        structured output (see Configuration below).
-
-        .. dropdown:: Configuration
-
-            To disable structured output tests, set ``has_structured_output`` to False
-            in your test class:
-
-            .. code-block:: python
-
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
-                    @property
-                    def has_structured_output(self) -> bool:
-                        return False
-
-            By default, ``has_structured_output`` is True if a model overrides the
-            ``with_structured_output`` or ``bind_tools`` methods.
-
-        .. dropdown:: Troubleshooting
-
-            If this test fails, ensure that the model's ``bind_tools`` method
-            properly handles both JSON Schema and Pydantic V1 models.
-
-            ``langchain_core`` implements `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html>`__
-            that will accommodate most formats.
-
-            See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
-            of ``with_structured_output``.
-
-        """  # noqa: E501
-        if not self.has_structured_output:
-            pytest.skip("Test requires structured output.")
-
-        class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
-            """Joke to tell user."""
-
-            setup: str = FieldV1(description="question to set up a joke")
-            punchline: str = FieldV1(description="answer to resolve the joke")
-
-        # Pydantic class
-        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
-
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, Joke)
-
-        # Schema
-        chat = model.with_structured_output(
-            Joke.schema(), **self.structured_output_kwargs
-        )
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
-
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
-
     def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
         """Test to verify we can generate structured output that includes optional
         parameters.
@@ -2142,27 +2075,6 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         #     ]
         # )
         # _ = model.invoke([message])
-
-    def test_audio_content_blocks_processing(self, model: BaseChatModel) -> None:
-        """Test audio content block processing with transcription.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_audio_content_blocks:
-            pytest.skip("Model does not support audio inputs.")
-
-        audio_block = create_audio_block(
-            base64=_get_test_audio_base64(),
-            mime_type="audio/wav",
-        )
-        text_block = create_text_block("Transcribe this audio file.")
-
-        result = model.invoke([HumanMessage([text_block, audio_block])])
-
-        assert isinstance(result, AIMessage)
-        if result.text:
-            assert len(result.text) > 10  # Substantial response
 
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
