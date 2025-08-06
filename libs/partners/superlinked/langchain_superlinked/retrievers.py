@@ -77,7 +77,6 @@ class SuperlinkedRetriever(BaseRetriever):
             source.put(documents_data)
 
             # 4. Create the retriever
-            from langchain_superlinked import SuperlinkedRetriever
             retriever = SuperlinkedRetriever(
                 sl_client=app,
                 sl_query=superlinked_query,

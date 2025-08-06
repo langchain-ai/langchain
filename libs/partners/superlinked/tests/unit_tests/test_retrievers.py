@@ -1,6 +1,6 @@
 """Unit tests for SuperlinkedRetriever."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
