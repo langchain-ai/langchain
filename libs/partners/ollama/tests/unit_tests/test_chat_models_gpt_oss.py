@@ -340,11 +340,11 @@ class TestGptOssIntegration:
 
         # First binding
         llm_with_tool1 = llm.bind_tools([get_weather])
-        tools1 = llm_with_tool1.kwargs["tools"]
+        tools1 = llm_with_tool1.kwargs["tools"]  # type: ignore[attr-defined]
 
         # Second binding with same tool
         llm_with_tool2 = llm.bind_tools([get_weather])
-        tools2 = llm_with_tool2.kwargs["tools"]
+        tools2 = llm_with_tool2.kwargs["tools"]  # type: ignore[attr-defined]
 
         # Tools should be formatted identically
         assert tools1 == tools2
@@ -396,3 +396,4 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
