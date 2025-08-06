@@ -395,16 +395,12 @@ def convert_from_v1_message(message: MessageV1) -> BaseMessage:
             response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, AIMessageChunkV1):
-        response_metadata_chunk: dict[str, Any] = {}
-        if message.response_metadata:
-            # Copy all fields from the v1 ResponseMetadata to a plain dict
-            response_metadata_chunk.update(message.response_metadata)
         return AIMessageChunk(
             content=content,
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
-            response_metadata=response_metadata_chunk,
+            response_metadata=cast("dict", message.response_metadata),
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(
