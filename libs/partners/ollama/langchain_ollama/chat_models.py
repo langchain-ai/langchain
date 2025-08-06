@@ -168,22 +168,22 @@ def _get_tool_calls_from_response(
     model_name: str = "",
 ) -> list[ToolCall]:
     """Get tool calls from ollama response.
-    
+
     Args:
         response: The response from Ollama.
         model_name: Optional model name to determine if special parsing is needed.
-    
+
     Returns:
         List of tool calls extracted from the response.
     """
     tool_calls = []
-    
+
     # Check if this is a gpt-oss model that might have different response format
     is_gpt_oss = model_name and _is_gpt_oss_model(model_name)
-    
+
     if "message" in response:
         raw_tool_calls = response["message"].get("tool_calls")
-        
+
         if raw_tool_calls:
             for tc in raw_tool_calls:
                 try:
@@ -211,7 +211,7 @@ def _get_tool_calls_from_response(
                         # Standard OpenAI format for non-gpt-oss models
                         name = tc["function"]["name"]
                         args = _parse_arguments_from_tool_call(tc) or {}
-                    
+
                     if name:  # Only add if we have a valid name
                         tool_calls.append(
                             tool_call(
@@ -227,7 +227,7 @@ def _get_tool_calls_from_response(
                         f"Tool call data: {tc}"
                     )
                     continue
-    
+
     return tool_calls
 
 
@@ -261,10 +261,10 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 def _is_gpt_oss_model(model_name: str) -> bool:
     """Check if the model is a gpt-oss variant that requires Harmony format.
-    
+
     Args:
         model_name: The name of the model.
-        
+
     Returns:
         True if the model is a gpt-oss variant, False otherwise.
     """
@@ -273,12 +273,12 @@ def _is_gpt_oss_model(model_name: str) -> bool:
 
 def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
     """Convert an OpenAI-format tool to Harmony format for gpt-oss models.
-    
+
     The Harmony format differs from OpenAI format in how it structures tool
     definitions, particularly in parameter type specifications. The error
     "index $prop.Type 0: error calling index: reflect: slice index out of range"
     suggests that Ollama's gpt-oss template expects Type to be a string, not an array.
-    
+
     Args:
         tool: Tool in OpenAI format with structure:
             {
@@ -293,39 +293,36 @@ def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
                     }
                 }
             }
-    
+
     Returns:
         Tool in Harmony format compatible with gpt-oss models.
     """
     if not tool or "function" not in tool:
         return tool
-    
+
     # Extract the function definition
     function = tool.get("function", {})
-    
+
     # Create Harmony-compatible format
     harmony_tool = {
         "type": "function",
         "function": {
             "name": function.get("name", ""),
             "description": function.get("description", ""),
-        }
+        },
     }
-    
+
     # Convert parameters to Harmony format
     if "parameters" in function:
         params = function["parameters"]
-        harmony_params = {
-            "type": params.get("type", "object"),
-            "properties": {}
-        }
-        
+        harmony_params = {"type": params.get("type", "object"), "properties": {}}
+
         # Process each property
         if "properties" in params:
             for prop_name, prop_def in params["properties"].items():
                 # Ensure Type is a string, not an array
                 harmony_prop = {}
-                
+
                 # Handle the type field specially for Harmony format
                 if "type" in prop_def:
                     # If type is an array (e.g., ["string", "null"]), take the first non-null type
@@ -343,7 +340,7 @@ def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
                 else:
                     # Default type if not specified
                     harmony_prop["type"] = "string"
-                
+
                 # Copy other properties
                 if "description" in prop_def:
                     harmony_prop["description"] = prop_def["description"]
@@ -351,15 +348,15 @@ def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
                     harmony_prop["enum"] = prop_def["enum"]
                 if "default" in prop_def:
                     harmony_prop["default"] = prop_def["default"]
-                
+
                 harmony_params["properties"][prop_name] = harmony_prop
-        
+
         # Handle required fields
         if "required" in params:
             harmony_params["required"] = params["required"]
-        
+
         harmony_tool["function"]["parameters"] = harmony_params
-    
+
     return harmony_tool
 
 
@@ -401,12 +398,12 @@ class ChatOllama(BaseChatModel):
     See full list of supported init args and their descriptions in the params section.
 
     .. note::
-        **GPT-OSS Model Support**: This integration includes special support for gpt-oss 
+        **GPT-OSS Model Support**: This integration includes special support for gpt-oss
         models (e.g., ``gpt-oss:20b``, ``gpt-oss:7b``) which use the Harmony response format.
         When using gpt-oss models with tools, the integration automatically converts tool
         definitions to the Harmony format, ensuring compatibility. Tool parameter types are
         properly formatted as strings rather than arrays to avoid template parsing errors.
-        
+
         If you encounter issues with tool calling on gpt-oss models, ensure you're using
         the latest version of this integration which includes Harmony format support.
 
@@ -889,7 +886,7 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
-        
+
         # Remove internal _harmony_format parameter before calling Ollama client
         chat_params.pop("_harmony_format", None)
 
@@ -906,7 +903,7 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
-        
+
         # Remove internal _harmony_format parameter before calling Ollama client
         chat_params.pop("_harmony_format", None)
 
@@ -1219,7 +1216,7 @@ class ChatOllama(BaseChatModel):
             kwargs["_harmony_format"] = True
         else:
             formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        
+
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -1573,17 +1570,3 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
-
-
-
-
-
-
-
-
-
-
-
-
-
-
