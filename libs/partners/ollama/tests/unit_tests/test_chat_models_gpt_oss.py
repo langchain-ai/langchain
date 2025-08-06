@@ -1,5 +1,7 @@
 """Unit tests for gpt-oss model support in ChatOllama."""
 
+from __future__ import annotations
+
 from typing import Any
 
 from langchain_core.messages import HumanMessage
@@ -394,3 +396,4 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
