@@ -293,8 +293,7 @@ class TestGptOssIntegration:
         # Create ChatOllama with gpt-oss model
         llm = ChatOllama(model="gpt-oss:20b")
         
-        # Define multiple tools
-        @tool
+        # Define multiple tools using function definitions
         def search_web(query: str) -> str:
             """Search the web for information.
             
@@ -303,7 +302,6 @@ class TestGptOssIntegration:
             """
             return f"Results for {query}"
         
-        @tool
         def calculate(expression: str) -> str:
             """Calculate a mathematical expression.
             
@@ -311,6 +309,10 @@ class TestGptOssIntegration:
                 expression: The math expression to evaluate.
             """
             return "42"
+        
+        # Convert functions to tools
+        search_tool = tool(search_web)
+        calc_tool = tool(calculate)
         
         # Bind multiple tools
         llm_with_tools = llm.bind_tools([get_weather, search_web, calculate])
@@ -394,6 +396,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
