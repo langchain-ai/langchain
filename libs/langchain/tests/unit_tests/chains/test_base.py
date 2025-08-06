@@ -7,6 +7,7 @@ import pytest
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.memory import BaseMemory
 from langchain_core.tracers.context import collect_runs
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.schema import RUN_KEY
@@ -21,6 +22,7 @@ class FakeMemory(BaseMemory):
         """Return baz variable."""
         return ["baz"]
 
+    @override
     def load_memory_variables(
         self,
         inputs: Optional[dict[str, Any]] = None,
@@ -52,6 +54,7 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],

@@ -145,11 +145,12 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
-    "B",      # flake8-bugbear
+    "ARG",    # flake8-unused-arguments
     "ASYNC",  # flake8-async
+    "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
-    "D",      # pydocstyle
+    "D1",     # pydocstyle: missing docstring
     "DTZ",    # flake8-datetimez
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
@@ -174,11 +175,12 @@ select = [
     "RSE",    # flake8-rst-docstrings
     "RUF",    # ruff
     "S",      # flake8-bandit
-    "SLOT",   # flake8-slots
     "SIM",    # flake8-simplify
     "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
     "T10",    # flake8-debugger
     "T20",    # flake8-print
+    "TC",     # flake8-type-checking
     "TID",    # flake8-tidy-imports
     "TRY",    # tryceratops
     "UP",     # pyupgrade
@@ -186,24 +188,20 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (args, statements, etc)
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
-    "SLF001",  # Private member access
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
     "UP007",   # pyupgrade: non-pep604-annotation-union
 
     # TODO rules
+    "D100",    # pydocstyle: missing docstring in public module
+    "D104",    # pydocstyle: missing docstring in public package
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try
 ]
@@ -212,12 +210,9 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]
-"!langchain/indexes/vectorstore.py" = ["D"]
-
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
+    "D1",      # Docstrings not mandatory in tests
     "S101",    # Tests need assertions
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001",  # Private member access in tests

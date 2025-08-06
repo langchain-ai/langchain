@@ -191,6 +191,7 @@ try:
             )
             async for event in events:
                 event["messages"][-1].pretty_print()
+
         """  # noqa: E501
 
         api_request_chain: LLMChain
@@ -386,7 +387,10 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an ImportError if APIChain is used without langchain_community."""
+
+        def __init__(self, *_: Any, **__: Any) -> None:
+            """Raise an ImportError if APIChain is used without langchain_community."""
             msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"

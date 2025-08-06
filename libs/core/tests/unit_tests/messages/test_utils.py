@@ -1121,6 +1121,33 @@ def test_convert_to_openai_messages_tool_use() -> None:
     assert result[0]["tool_calls"][0]["function"]["arguments"] == json.dumps({"a": "b"})
 
 
+def test_convert_to_openai_messages_tool_use_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "tool_use",
+                    "id": "123",
+                    "name": "create_customer",
+                    "input": {"customer_name": "你好啊集团"},
+                }
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["id"] == "123"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "create_customer"
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result[0]["tool_calls"][0]["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
 def test_convert_to_openai_messages_json() -> None:
     json_data = {"key": "value"}
     messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]

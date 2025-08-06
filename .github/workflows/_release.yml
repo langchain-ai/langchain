@@ -1,5 +1,5 @@
-name: Release
-run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
+name: '🚀 Package Release'
+run-name: 'Release ${{ inputs.working-directory }} ${{ inputs.release-version }}'
 on:
   workflow_call:
     inputs:
@@ -14,11 +14,16 @@ on:
         type: string
         description: "From which folder this pipeline executes"
         default: 'libs/langchain'
+      release-version:
+        required: true
+        type: string
+        default: '0.1.0'
+        description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
         type: boolean
         default: false
-        description: "Release from a non-master branch (danger!)"
+        description: "Release from a non-master branch (danger!) - Only use for hotfixes"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -26,6 +31,8 @@ env:
   UV_NO_SYNC: "true"
 
 jobs:
+  # Build the distribution package and extract version info
+  # Runs in isolated environment with minimal permissions for security
   build:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
@@ -109,7 +116,7 @@ jobs:
             # Look for the latest release of the same base version
             REGEX="^$PKG_NAME==$BASE_VERSION\$"
             PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
-            
+
             # If no exact base version match, look for the latest release of any kind
             if [ -z "$PREV_TAG" ]; then
               REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
@@ -120,7 +127,7 @@ jobs:
             PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
 
             # backup case if releasing e.g. 0.3.0, looks up last release
-            # note if last release (chronologically) was e.g. 0.1.47 it will get 
+            # note if last release (chronologically) was e.g. 0.1.47 it will get
             # that instead of the last 0.2 release
             if [ -z "$PREV_TAG" ]; then
               REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
@@ -482,7 +489,7 @@ jobs:
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-          
+
       - name: Create Tag
         uses: ncipollo/release-action@v1
         with:

@@ -13,10 +13,7 @@ from typing import (
     overload,
 )
 
-from langchain_core.language_models import (
-    BaseChatModel,
-    LanguageModelInput,
-)
+from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import TypeAlias, override
@@ -177,7 +174,7 @@ def init_chat_model(
 
             o3_mini = init_chat_model("openai:o3-mini", temperature=0)
             claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
-            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.0-flash", temperature=0)
+            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
 
             o3_mini.invoke("what's your name")
             claude_sonnet.invoke("what's your name")
