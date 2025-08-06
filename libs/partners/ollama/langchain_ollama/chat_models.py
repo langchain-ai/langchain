@@ -1122,7 +1122,9 @@ class ChatOllama(BaseChatModel):
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
+                        tool_calls=_get_tool_calls_from_response(
+                            stream_resp, model_name=self.model
+                        ),
                     ),
                     generation_info=generation_info,
                 )
@@ -1555,6 +1557,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
