@@ -2,7 +2,7 @@
 
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Generator, Iterator
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -242,8 +242,9 @@ class TestChatOllama(ChatModelV1UnitTests):
         """
         return False
 
+    # TODO: investigate type ignore, this feels hacky
     @pytest.fixture
-    def model(self) -> Iterator[ChatOllama]:
+    def model(self) -> Generator[ChatOllama, None, None]:  # type: ignore[override]
         """Create a ChatOllama instance for testing."""
         sync_patcher = patch("langchain_ollama.chat_models_v1.Client")
         async_patcher = patch("langchain_ollama.chat_models_v1.AsyncClient")
