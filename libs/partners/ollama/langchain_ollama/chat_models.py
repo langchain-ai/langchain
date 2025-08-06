@@ -165,7 +165,7 @@ def _parse_arguments_from_tool_call(
 
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
-    model_name: Optional[str] = None,
+    model_name: str = "",
 ) -> list[ToolCall]:
     """Get tool calls from ollama response.
     
@@ -1553,6 +1553,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
