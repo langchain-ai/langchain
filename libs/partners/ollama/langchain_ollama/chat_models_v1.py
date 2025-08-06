@@ -153,7 +153,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 class ChatOllama(BaseChatModel):
-    r"""Ollama chat model with native v1 message/content block support.
+    r"""Ollama chat model with v1 message/content block support.
 
     This implementation provides native support for structured content blocks.
 
