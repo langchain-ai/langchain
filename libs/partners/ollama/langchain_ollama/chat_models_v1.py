@@ -593,7 +593,7 @@ class ChatOllama(BaseChatModel):
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            async for part in self._async_client.chat(**chat_params):  # type: ignore[attr-defined]
+            async for part in await self._async_client.chat(**chat_params):
                 if not isinstance(part, str):
                     # Skip empty load responses
                     if (
