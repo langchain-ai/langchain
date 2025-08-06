@@ -699,3 +699,6 @@ packages:
 - name: langchain-cloudsway
   repo: Cloudsway-AI/langchain-cloudsway
   path: .
+- name: langchain-gradient
+  path: .
+  repo: digitalocean/langchain-gradient

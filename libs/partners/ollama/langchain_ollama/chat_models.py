@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import logging
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -57,6 +59,8 @@ from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
 
+log = logging.getLogger(__name__)
+
 
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
@@ -77,33 +81,45 @@ def _get_usage_metadata_from_generation_info(
 
 def _parse_json_string(
     json_string: str,
+    *,
     raw_tool_call: dict[str, Any],
-    skip: bool,  # noqa: FBT001
+    skip: bool,
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
+    It first tries to use the standard json.loads. If that fails, it falls
+    back to ast.literal_eval to safely parse Python literals, which is more
+    robust against models using single quotes or containing apostrophes.
+
     Args:
         json_string: JSON string to parse.
-        skip: Whether to ignore parsing errors and return the value anyways.
         raw_tool_call: Raw tool call to include in error message.
+        skip: Whether to ignore parsing errors and return the value anyways.
 
     Returns:
-        The parsed JSON string.
+        The parsed JSON string or Python literal.
 
     Raises:
-        OutputParserException: If the JSON string wrong invalid and skip=False.
+        OutputParserException: If the string is invalid and skip=False.
     """
     try:
         return json.loads(json_string)
-    except json.JSONDecodeError as e:
-        if skip:
-            return json_string
-        msg = (
-            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-            f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
-            f"Received JSONDecodeError {e}"
-        )
-        raise OutputParserException(msg) from e
+    except json.JSONDecodeError:
+        try:
+            # Use ast.literal_eval to safely parse Python-style dicts
+            # (e.g. with single quotes)
+            return ast.literal_eval(json_string)
+        except (SyntaxError, ValueError) as e:
+            # If both fail, and we're not skipping, raise an informative error.
+            if skip:
+                return json_string
+            msg = (
+                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                f"{raw_tool_call['function']['arguments']}"
+                "\n\nare not valid JSON or a Python literal. "
+                f"Received error: {e}"
+            )
+            raise OutputParserException(msg) from e
     except TypeError as e:
         if skip:
             return json_string
@@ -402,7 +418,6 @@ class ChatOllama(BaseChatModel):
 
             AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
 
-
     """  # noqa: E501, pylint: disable=line-too-long
 
     model: str
@@ -424,7 +439,10 @@ class ChatOllama(BaseChatModel):
       unless you set ``reasoning`` to ``True``."""
 
     validate_model_on_init: bool = False
-    """Whether to validate the model exists in Ollama locally on initialization."""
+    """Whether to validate the model exists in Ollama locally on initialization.
+
+    .. versionadded:: 0.3.4
+    """
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -821,6 +839,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'."
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -828,12 +868,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -881,6 +915,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'. "
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -888,12 +944,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -993,8 +1043,7 @@ class ChatOllama(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - a Pydantic class,
                 - a JSON schema
@@ -1010,11 +1059,11 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Ollama's `structured output API <https://ollama.com/blog/structured-outputs>`__
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Ollama's tool-calling API
-                - "json_mode":
+                - ``'json_mode'``:
                     Specifies ``format="json"``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.
@@ -1025,20 +1074,20 @@ class ChatOllama(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         .. versionchanged:: 0.2.2
 
@@ -1046,7 +1095,7 @@ class ChatOllama(BaseChatModel):
 
         .. versionchanged:: 0.3.0
 
-            Updated default ``method`` to ``"json_schema"``.
+            Updated default ``method`` to ``'json_schema'``.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
 
@@ -1232,6 +1281,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501, D301
         _ = kwargs.pop("strict", None)
         if kwargs:

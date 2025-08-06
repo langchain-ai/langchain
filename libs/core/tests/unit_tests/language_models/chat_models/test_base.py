@@ -467,6 +467,55 @@ def test_trace_images_in_openai_format() -> None:
     ]
 
 
+def test_trace_content_blocks_with_no_type_key() -> None:
+    """Test that we add a ``type`` key to certain content blocks that don't have one."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello",
+                },
+                {
+                    "cachePoint": {"type": "default"},
+                },
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "text",
+                            "text": "Hello",
+                        },
+                        {
+                            "type": "cachePoint",
+                            "cachePoint": {"type": "default"},
+                        },
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Test no mutation
+    assert response.content == [
+        {
+            "type": "text",
+            "text": "Hello",
+        },
+        {
+            "cachePoint": {"type": "default"},
+        },
+    ]
+
+
 def test_extend_support_to_openai_multimodal_formats() -> None:
     """Test that chat models normalize OpenAI file and audio inputs."""
     llm = ParrotFakeChatModel()
