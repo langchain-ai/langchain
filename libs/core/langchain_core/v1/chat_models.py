@@ -710,16 +710,13 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
 
     def _get_invocation_params(
         self,
-        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
         params = self.dump()
-        params["stop"] = stop
         return {**params, **kwargs}
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
@@ -732,8 +729,6 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
         default_provider = default_provider.lower()
 
         ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="chat")
-        if stop:
-            ls_params["ls_stop"] = stop
 
         # model
         model = getattr(self, "model", None) or getattr(self, "model_name", None)
@@ -752,8 +747,8 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
 
         return ls_params
 
-    def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
-        params = self._get_invocation_params(stop=stop, **kwargs)
+    def _get_llm_string(self, **kwargs: Any) -> str:
+        params = self._get_invocation_params(**kwargs)
         params = {**params, **kwargs}
         return str(sorted(params.items()))
 
