@@ -356,7 +356,7 @@ def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
         if "required" in params:
             harmony_params["required"] = params["required"]
 
-        harmony_tool["function"]["parameters"] = harmony_params
+        harmony_tool["function"]["parameters"] = harmony_params  # type: ignore[index]
 
     return harmony_tool
 
@@ -1571,3 +1571,4 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
