@@ -379,7 +379,7 @@ class TestChatParamsWithGptOss:
         assert "tools" in llm_with_tools.kwargs  # type: ignore[attr-defined]
 
         # When _chat_params is called, it should include the tools from kwargs
-        params = llm_with_tools._chat_params(messages, **llm_with_tools.kwargs)
+        params = llm_with_tools._chat_params(messages, **llm_with_tools.kwargs)  # type: ignore[attr-defined]
 
         # Check that tools are included and in Harmony format
         assert "tools" in params
@@ -396,4 +396,5 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
