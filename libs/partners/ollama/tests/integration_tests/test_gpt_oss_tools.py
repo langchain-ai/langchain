@@ -161,7 +161,7 @@ class TestGptOssToolCallingIntegration:
             HumanMessage(content="Hi, I need help with two things."),
             AIMessage(content="Hello! I'd be happy to help. What do you need?"),
             HumanMessage(
-                content="First, what's the weather in Paris? Second, calculate 15 * 28. "
+                content="First, what's the weather in Paris? Second, calculate 15*28. "
                 "Please use the available tools for both tasks."
             ),
         ]
@@ -359,4 +359,5 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
 
