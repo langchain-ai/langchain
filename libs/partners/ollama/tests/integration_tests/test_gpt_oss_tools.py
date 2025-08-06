@@ -9,8 +9,10 @@ To run these tests:
 Note: These tests will be skipped if Ollama is not available or the model is not installed.
 """
 
+from __future__ import annotations
+
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
@@ -357,3 +359,4 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
