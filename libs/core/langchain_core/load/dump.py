@@ -1,11 +1,14 @@
 """Dump objects to json."""
 
+import dataclasses
+import inspect
 import json
 from typing import Any
 
 from pydantic import BaseModel
 
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
+from langchain_core.v1.messages import MessageV1Types
 
 
 def default(obj: Any) -> Any:
@@ -21,17 +24,12 @@ def default(obj: Any) -> Any:
         return obj.to_json()
 
     # Handle v1 message classes
-    from langchain_core.v1.messages import MessageV1Types
-
     if type(obj) in MessageV1Types:
-        import dataclasses
-        import inspect
-
         # Get the constructor signature to only include valid parameters
         init_sig = inspect.signature(type(obj).__init__)
         valid_params = set(init_sig.parameters.keys()) - {"self"}
 
-        # Filter the dataclass fields to only include constructor parameters
+        # Filter dataclass fields to only include constructor params
         all_fields = dataclasses.asdict(obj)
         kwargs = {k: v for k, v in all_fields.items() if k in valid_params}
 
