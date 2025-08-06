@@ -736,11 +736,7 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
             ls_params["ls_stop"] = stop
 
         # model
-        model = (
-            kwargs.get("model")
-            or getattr(self, "model", None)
-            or getattr(self, "model_name", None)
-        )
+        model = getattr(self, "model", None) or getattr(self, "model_name", None)
         if isinstance(model, str):
             ls_params["ls_model_name"] = model
 
