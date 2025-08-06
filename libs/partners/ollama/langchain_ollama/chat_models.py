@@ -325,7 +325,8 @@ def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
 
                 # Handle the type field specially for Harmony format
                 if "type" in prop_def:
-                    # If type is an array (e.g., ["string", "null"]), take the first non-null type
+                    # If type is an array (e.g., ["string", "null"]), 
+                    # take the first non-null type
                     if isinstance(prop_def["type"], list):
                         # Find the first non-null type
                         for t in prop_def["type"]:
@@ -1570,3 +1571,4 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
