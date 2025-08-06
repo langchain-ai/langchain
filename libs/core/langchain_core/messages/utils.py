@@ -484,11 +484,45 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
     """Convert a v0 message to a v1 message."""
+    if isinstance(message, HumanMessage):  # Checking for v0 HumanMessage
+        return HumanMessageV1(message.content, id=message.id, name=message.name)  # type: ignore[arg-type]
+    if isinstance(message, AIMessage):  # Checking for v0 AIMessage
+        return AIMessageV1(
+            content=message.content,  # type: ignore[arg-type]
+            id=message.id,
+            name=message.name,
+            lc_version="v1",
+            response_metadata=message.response_metadata,  # type: ignore[arg-type]
+            usage_metadata=message.usage_metadata,
+            tool_calls=message.tool_calls,
+            invalid_tool_calls=message.invalid_tool_calls,
+        )
+    if isinstance(message, SystemMessage):  # Checking for v0 SystemMessage
+        return SystemMessageV1(
+            message.content,  # type: ignore[arg-type]
+            id=message.id,
+            name=message.name,
+        )
+    if isinstance(message, ToolMessage):  # Checking for v0 ToolMessage
+        return ToolMessageV1(
+            message.content,  # type: ignore[arg-type]
+            message.tool_call_id,
+            id=message.id,
+            name=message.name,
+            artifact=message.artifact,
+            status=message.status,
+        )
+    msg = f"Unsupported v0 message type for conversion to v1: {type(message)}"
+    raise NotImplementedError(msg)
+
+
+def _safe_convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
+    """Convert a v0 message to a v1 message."""
     from langchain_core.messages.content_blocks import create_text_block
 
     if isinstance(message, HumanMessage):  # Checking for v0 HumanMessage
         content: list[ContentBlock] = [create_text_block(str(message.content))]
-        return HumanMessageV1(content, name=message.name)
+        return HumanMessageV1(content, id=message.id, name=message.name)
     if isinstance(message, AIMessage):  # Checking for v0 AIMessage
         content = [create_text_block(str(message.content))]
 
@@ -497,20 +531,25 @@ def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
         response_metadata = cast("ResponseMetadata", message.response_metadata or {})
         return AIMessageV1(
             content=content,
+            id=message.id,
             name=message.name,
-            usage_metadata=message.usage_metadata,
+            lc_version="v1",
             response_metadata=response_metadata,
+            usage_metadata=message.usage_metadata,
             tool_calls=message.tool_calls,
+            invalid_tool_calls=message.invalid_tool_calls,
         )
     if isinstance(message, SystemMessage):  # Checking for v0 SystemMessage
         content = [create_text_block(str(message.content))]
-        return SystemMessageV1(content=content, name=message.name)
+        return SystemMessageV1(content=content, id=message.id, name=message.name)
     if isinstance(message, ToolMessage):  # Checking for v0 ToolMessage
         content = [create_text_block(str(message.content))]
         return ToolMessageV1(
-            content=content,
+            content,
+            message.tool_call_id,
+            id=message.id,
             name=message.name,
-            tool_call_id=message.tool_call_id,
+            artifact=message.artifact,
             status=message.status,
         )
     msg = f"Unsupported v0 message type for conversion to v1: {type(message)}"
@@ -553,49 +592,23 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
         message_type_str, template = message  # type: ignore[misc]
         message_ = _create_message_from_message_type_v1(message_type_str, template)
     elif isinstance(message, dict):
-        # Handle ToolCall content blocks passed as messages
-        if (
-            message.get("type") == "tool_call"
-            and "name" in message
-            and "args" in message
-            and "id" in message
-            and "content" not in message
-        ):
-            # Convert ToolCall content block to an AIMessage with the tool call
-            from langchain_core.messages.content_blocks import (
-                ToolCall,
-                create_text_block,
-            )
-            from langchain_core.v1.messages import AIMessage
-
-            tool_call = ToolCall(
-                type="tool_call",
-                name=message["name"],
-                args=message["args"],
-                id=message["id"],
-            )
-            message_ = AIMessage(content=[create_text_block(""), tool_call])
-        else:
-            msg_kwargs = message.copy()
+        msg_kwargs = message.copy()
+        try:
             try:
-                try:
-                    msg_type = msg_kwargs.pop("role")
-                except KeyError:
-                    msg_type = msg_kwargs.pop("type")
-                # None msg content is not allowed
-                msg_content = msg_kwargs.pop("content") or ""
-            except KeyError as e:
-                msg = (
-                    "Message dict must contain 'role' and 'content' "
-                    f"keys, got {message}"
-                )
-                msg = create_message(
-                    message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
-                )
-                raise ValueError(msg) from e
-            message_ = _create_message_from_message_type_v1(
-                msg_type, msg_content, **msg_kwargs
+                msg_type = msg_kwargs.pop("role")
+            except KeyError:
+                msg_type = msg_kwargs.pop("type")
+            # None msg content is not allowed
+            msg_content = msg_kwargs.pop("content") or ""
+        except KeyError as e:
+            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
+            msg = create_message(
+                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
             )
+            raise ValueError(msg) from e
+        message_ = _create_message_from_message_type_v1(
+            msg_type, msg_content, **msg_kwargs
+        )
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
