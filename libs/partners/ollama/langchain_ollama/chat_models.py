@@ -165,22 +165,69 @@ def _parse_arguments_from_tool_call(
 
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
+    model_name: Optional[str] = None,
 ) -> list[ToolCall]:
-    """Get tool calls from ollama response."""
+    """Get tool calls from ollama response.
+    
+    Args:
+        response: The response from Ollama.
+        model_name: Optional model name to determine if special parsing is needed.
+    
+    Returns:
+        List of tool calls extracted from the response.
+    """
     tool_calls = []
-    if "message" in response and (
-        raw_tool_calls := response["message"].get("tool_calls")
-    ):
-        tool_calls.extend(
-            [
-                tool_call(
-                    id=str(uuid4()),
-                    name=tc["function"]["name"],
-                    args=_parse_arguments_from_tool_call(tc) or {},
-                )
-                for tc in raw_tool_calls
-            ]
-        )
+    
+    # Check if this is a gpt-oss model that might have different response format
+    is_gpt_oss = model_name and _is_gpt_oss_model(model_name)
+    
+    if "message" in response:
+        raw_tool_calls = response["message"].get("tool_calls")
+        
+        if raw_tool_calls:
+            for tc in raw_tool_calls:
+                try:
+                    # For gpt-oss models, handle potential format differences
+                    if is_gpt_oss:
+                        # gpt-oss models might structure tool calls differently
+                        # Handle both standard and Harmony format responses
+                        if "function" in tc:
+                            # Standard format
+                            name = tc["function"].get("name", "")
+                            args = _parse_arguments_from_tool_call(tc) or {}
+                        elif "name" in tc:
+                            # Possible direct format
+                            name = tc.get("name", "")
+                            args = tc.get("arguments", {})
+                            if isinstance(args, str):
+                                args = _parse_json_string(
+                                    args, skip=False, raw_tool_call=tc
+                                )
+                        else:
+                            # Unknown format, try to extract what we can
+                            name = tc.get("function", {}).get("name", "")
+                            args = _parse_arguments_from_tool_call(tc) or {}
+                    else:
+                        # Standard OpenAI format for non-gpt-oss models
+                        name = tc["function"]["name"]
+                        args = _parse_arguments_from_tool_call(tc) or {}
+                    
+                    if name:  # Only add if we have a valid name
+                        tool_calls.append(
+                            tool_call(
+                                id=str(uuid4()),
+                                name=name,
+                                args=args,
+                            )
+                        )
+                except (KeyError, TypeError) as e:
+                    # Log the error but continue processing other tool calls
+                    log.warning(
+                        f"Failed to parse tool call from response: {e}. "
+                        f"Tool call data: {tc}"
+                    )
+                    continue
+    
     return tool_calls
 
 
@@ -1506,6 +1553,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
