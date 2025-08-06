@@ -947,8 +947,11 @@ def convert_to_openai_data_block(block: dict) -> dict:
             file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
                 file["filename"] = filename
-            elif (metadata := block.get("metadata")) and ("filename" in metadata):
-                file["filename"] = metadata["filename"]
+            elif (extras := block.get("extras")) and ("filename" in extras):
+                file["filename"] = extras["filename"]
+            elif (extras := block.get("metadata")) and ("filename" in extras):
+                # Backward compat
+                file["filename"] = extras["filename"]
             else:
                 warnings.warn(
                     "OpenAI may require a filename for file inputs. Specify a filename "
