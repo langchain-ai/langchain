@@ -130,11 +130,7 @@ class TestHarmonyToolConversion:
 class TestGptOssToolBinding:
     """Test tool binding for gpt-oss models."""
     
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat_stream")
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat")
-    def test_bind_tools_with_gpt_oss(
-        self, mock_create_chat: MagicMock, mock_create_stream: MagicMock
-    ) -> None:
+    def test_bind_tools_with_gpt_oss(self) -> None:
         """Test that tools are correctly bound for gpt-oss models."""
         # Create ChatOllama instance with gpt-oss model
         llm = ChatOllama(model="gpt-oss:20b")
@@ -160,11 +156,7 @@ class TestGptOssToolBinding:
             if "type" in prop:
                 assert isinstance(prop["type"], str)
     
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat_stream")
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat")
-    def test_bind_tools_with_non_gpt_oss(
-        self, mock_create_chat: MagicMock, mock_create_stream: MagicMock
-    ) -> None:
+    def test_bind_tools_with_non_gpt_oss(self) -> None:
         """Test that tools use standard format for non-gpt-oss models."""
         # Create ChatOllama instance with non-gpt-oss model
         llm = ChatOllama(model="llama2")
@@ -408,3 +400,4 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
