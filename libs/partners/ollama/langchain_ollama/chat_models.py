@@ -224,6 +224,98 @@ def _is_gpt_oss_model(model_name: str) -> bool:
     return model_name.lower().startswith("gpt-oss")
 
 
+def _convert_to_harmony_tool(tool: dict[str, Any]) -> dict[str, Any]:
+    """Convert an OpenAI-format tool to Harmony format for gpt-oss models.
+    
+    The Harmony format differs from OpenAI format in how it structures tool
+    definitions, particularly in parameter type specifications. The error
+    "index $prop.Type 0: error calling index: reflect: slice index out of range"
+    suggests that Ollama's gpt-oss template expects Type to be a string, not an array.
+    
+    Args:
+        tool: Tool in OpenAI format with structure:
+            {
+                "type": "function",
+                "function": {
+                    "name": "...",
+                    "description": "...",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {...},
+                        "required": [...]
+                    }
+                }
+            }
+    
+    Returns:
+        Tool in Harmony format compatible with gpt-oss models.
+    """
+    if not tool or "function" not in tool:
+        return tool
+    
+    # Extract the function definition
+    function = tool.get("function", {})
+    
+    # Create Harmony-compatible format
+    harmony_tool = {
+        "type": "function",
+        "function": {
+            "name": function.get("name", ""),
+            "description": function.get("description", ""),
+        }
+    }
+    
+    # Convert parameters to Harmony format
+    if "parameters" in function:
+        params = function["parameters"]
+        harmony_params = {
+            "type": params.get("type", "object"),
+            "properties": {}
+        }
+        
+        # Process each property
+        if "properties" in params:
+            for prop_name, prop_def in params["properties"].items():
+                # Ensure Type is a string, not an array
+                harmony_prop = {}
+                
+                # Handle the type field specially for Harmony format
+                if "type" in prop_def:
+                    # If type is an array (e.g., ["string", "null"]), take the first non-null type
+                    if isinstance(prop_def["type"], list):
+                        # Find the first non-null type
+                        for t in prop_def["type"]:
+                            if t != "null":
+                                harmony_prop["type"] = t
+                                break
+                        else:
+                            # Default to string if all types are null
+                            harmony_prop["type"] = "string"
+                    else:
+                        harmony_prop["type"] = prop_def["type"]
+                else:
+                    # Default type if not specified
+                    harmony_prop["type"] = "string"
+                
+                # Copy other properties
+                if "description" in prop_def:
+                    harmony_prop["description"] = prop_def["description"]
+                if "enum" in prop_def:
+                    harmony_prop["enum"] = prop_def["enum"]
+                if "default" in prop_def:
+                    harmony_prop["default"] = prop_def["default"]
+                
+                harmony_params["properties"][prop_name] = harmony_prop
+        
+        # Handle required fields
+        if "required" in params:
+            harmony_params["required"] = params["required"]
+        
+        harmony_tool["function"]["parameters"] = harmony_params
+    
+    return harmony_tool
+
+
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
@@ -1415,6 +1507,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
