@@ -201,7 +201,7 @@ class TestGptOssToolCallingIntegration:
         # Combine chunks to get the full response
         final_message = chunks[0]
         for chunk in chunks[1:]:
-            final_message += chunk
+            final_message += chunk  # type: ignore[assignment]
 
         # Check if tool calls were made in the final combined message
         if hasattr(final_message, "tool_calls") and final_message.tool_calls:
@@ -357,5 +357,6 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
 
 
