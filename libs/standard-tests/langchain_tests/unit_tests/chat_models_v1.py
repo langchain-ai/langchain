@@ -84,12 +84,22 @@ class ChatModelV1Tests(BaseStandardTests):
     @property
     @abstractmethod
     def chat_model_class(self) -> type[BaseChatModel]:
-        """The chat model class to test, e.g., ``ChatParrotLink``."""
+        """The chat model class to test, e.g., ``ChatParrotLink``.
+
+        .. important::
+            Test subclasses **must** implement this property.
+
+        """
         ...
 
     @property
     def chat_model_params(self) -> dict:
-        """Initialization parameters for the chat model."""
+        """Initialization parameters for the chat model to test.
+
+        .. important::
+            Test subclasses **must** implement this property.
+
+        """
         return {}
 
     @property
@@ -131,7 +141,11 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def tool_choice_value(self) -> Optional[str]:
-        """(None or str) To use for tool choice when used in tests."""
+        """(None or str) To use for tool choice when used in tests.
+
+        Not required.
+
+        """
         return None
 
     @property
@@ -152,12 +166,22 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def structured_output_kwargs(self) -> dict:
-        """Additional kwargs for ``with_structured_output``."""
+        """Additional kwargs for ``with_structured_output``.
+
+        Example: ``{"method": "json_schema", "strict": True}``
+
+        """
         return {}
 
     @property
     def supports_json_mode(self) -> bool:
-        """Whether the model supports JSON mode."""
+        """Whether the model supports JSON mode.
+
+        TODO: clarify what this means exactly.
+
+        Defaults to False.
+
+        """
         return False
 
     # Content Block Support Properties
@@ -165,9 +189,13 @@ class ChatModelV1Tests(BaseStandardTests):
     def supports_content_blocks_v1(self) -> bool:
         """Whether the model supports content blocks v1 format.
 
-        Defualts to True. This should not be overridden by a ChatV1 subclass. You may
-        override the following properties to enable specific content block support.
-        Each defaults to False:
+        **Defaults to True.**
+
+        .. important::
+            This should not be overridden by a ChatV1 subclass.
+
+        You may override the following properties to enable specific content block
+        support. Each defaults to False:
 
         - ``supports_reasoning_content_blocks``
         - ``supports_plaintext_content_blocks``
@@ -186,26 +214,39 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def supports_non_standard_blocks(self) -> bool:
-        """Whether the model supports ``NonStandardContentBlock``."""
+        """Whether the model supports ``NonStandardContentBlock``.
+
+        Defaults to True.
+
+        """
         return True
 
     @property
     def supports_text_content_blocks(self) -> bool:
         """Whether the model supports ``TextContentBlock``.
 
-        This is a minimum requirement for v1 chat models.
+        .. important::
+            This is a minimum requirement for v1 chat models.
 
         """
         return self.supports_content_blocks_v1
 
     @property
     def supports_reasoning_content_blocks(self) -> bool:
-        """Whether the model supports ``ReasoningContentBlock``."""
+        """Whether the model supports ``ReasoningContentBlock``.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
     def supports_plaintext_content_blocks(self) -> bool:
-        """Whether the model supports ``PlainTextContentBlock``."""
+        """Whether the model supports ``PlainTextContentBlock``.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
@@ -213,6 +254,8 @@ class ChatModelV1Tests(BaseStandardTests):
         """Whether the model supports ``FileContentBlock``.
 
         Replaces ``supports_pdf_inputs`` from v0.
+
+        Defaults to False.
 
         """
         return False
@@ -223,6 +266,8 @@ class ChatModelV1Tests(BaseStandardTests):
 
         Replaces ``supports_image_inputs`` from v0.
 
+        Defaults to False.
+
         """
         return False
 
@@ -232,6 +277,8 @@ class ChatModelV1Tests(BaseStandardTests):
 
         Replaces ``supports_audio_inputs`` from v0.
 
+        Defaults to False.
+
         """
         return False
 
@@ -240,6 +287,8 @@ class ChatModelV1Tests(BaseStandardTests):
         """Whether the model supports ``VideoContentBlock``.
 
         Replaces ``supports_video_inputs`` from v0.
+
+        Defaults to False.
 
         """
         return False
@@ -254,7 +303,11 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def supports_citations(self) -> bool:
-        """Whether the model supports ``Citation`` annotations."""
+        """Whether the model supports ``Citation`` annotations.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
@@ -264,27 +317,47 @@ class ChatModelV1Tests(BaseStandardTests):
 
     @property
     def supports_web_search_blocks(self) -> bool:
-        """Whether the model supports ``WebSearchCall``/``WebSearchResult`` blocks."""
+        """Whether the model supports ``WebSearchCall``/``WebSearchResult`` blocks.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
     def supports_code_interpreter(self) -> bool:
-        """Whether the model supports code interpreter blocks."""
+        """Whether the model supports code interpreter blocks.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
     def supports_invalid_tool_calls(self) -> bool:
-        """Whether the model can handle ``InvalidToolCall`` blocks."""
+        """Whether the model can handle ``InvalidToolCall`` blocks.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
-        """Whether the model returns usage metadata on invoke and streaming."""
+        """Whether the model returns usage metadata on invoke and streaming.
+
+        Defaults to True.
+
+        """
         return True
 
     @property
     def supports_anthropic_inputs(self) -> bool:
-        """Whether the model supports Anthropic-style inputs."""
+        """Whether the model supports Anthropic-style inputs.
+
+        Defaults to False.
+
+        """
         return False
 
     @property
@@ -294,6 +367,8 @@ class ChatModelV1Tests(BaseStandardTests):
         .. important::
             See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
             information.
+
+        Defaults to False.
 
         """
         return False
@@ -351,30 +426,30 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
     .. note::
           API references for individual test methods include troubleshooting tips.
 
+    .. important::
+        Test subclasses **must** implement the following two properties:
 
-    Test subclasses **must** implement the following two properties:
+        chat_model_class
+            The chat model class to test, e.g., ``ChatParrotLinkV1``.
 
-    chat_model_class
-        The chat model class to test, e.g., ``ChatParrotLinkV1``.
+            Example:
 
-        Example:
+            .. code-block:: python
 
-        .. code-block:: python
+                @property
+                def chat_model_class(self) -> Type[ChatParrotLinkV1]:
+                    return ChatParrotLinkV1
 
-            @property
-            def chat_model_class(self) -> Type[ChatParrotLinkV1]:
-                return ChatParrotLinkV1
+        chat_model_params
+            Initialization parameters for the chat model.
 
-    chat_model_params
-        Initialization parameters for the chat model.
+            Example:
 
-        Example:
+            .. code-block:: python
 
-        .. code-block:: python
-
-            @property
-            def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
+                @property
+                def chat_model_params(self) -> dict:
+                    return {"model": "bird-brain-001", "temperature": 0}
 
     In addition, test subclasses can control what features are tested (such as tool
     calling or multi-modality) by selectively overriding the following properties.
@@ -601,6 +676,8 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """Environment variables, additional initialization args, and expected
         instance attributes for testing initialization from environment variables.
+
+        Not required.
 
         """
         return {}, {}, {}
