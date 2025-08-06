@@ -629,15 +629,16 @@ def tool_example_to_messages(
 
     The list of messages per example by default corresponds to:
 
-    1) HumanMessage: contains the content from which content should be extracted.
-    2) AIMessage: contains the extracted information from the model
-    3) ToolMessage: contains confirmation to the model that the model requested a tool
-       correctly.
+    1. ``HumanMessage``: contains the content from which content should be extracted.
+    2. ``AIMessage``: contains the extracted information from the model
+    3. ``ToolMessage``: contains confirmation to the model that the model requested a
+       tool correctly.
 
-    If `ai_response` is specified, there will be a final AIMessage with that response.
+    If ``ai_response`` is specified, there will be a final ``AIMessage`` with that
+    response.
 
-    The ToolMessage is required because some chat models are hyper-optimized for agents
-    rather than for an extraction use case.
+    The ``ToolMessage`` is required because some chat models are hyper-optimized for
+    agents rather than for an extraction use case.
 
     Arguments:
         input: string, the user input
@@ -646,7 +647,7 @@ def tool_example_to_messages(
         tool_outputs: Optional[list[str]], a list of tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
-        ai_response: Optional[str], if provided, content for a final AIMessage.
+        ai_response: Optional[str], if provided, content for a final ``AIMessage``.
 
     Returns:
         A list of messages
@@ -728,6 +729,7 @@ def _parse_google_docstring(
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
+
     """
     if docstring:
         docstring_blocks = docstring.split("\n\n")

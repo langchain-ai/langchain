@@ -374,11 +374,6 @@ class TestFakeChatModelV1Integration(ChatModelV1IntegrationTests):
         """Enable non-standard blocks support."""
         return True
 
-    @property
-    def requires_api_key(self) -> bool:
-        """This fake model doesn't require an API key."""
-        return False
-
 
 # Example of a more realistic integration test configuration
 # that would require API keys and external services

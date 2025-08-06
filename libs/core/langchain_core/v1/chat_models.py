@@ -190,7 +190,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
 
 
 class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
-    """Base class for chat models.
+    """Base class for v1 chat models.
 
     Key imperative methods:
         Methods that actually call the underlying model.
