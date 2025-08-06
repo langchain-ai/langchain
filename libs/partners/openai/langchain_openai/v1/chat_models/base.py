@@ -186,7 +186,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> MessageV1:
         raise ValueError(error_message)
 
 
-def _format_message_content(content: Any, responses_api: bool = False) -> Any:
+def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
         formatted_content = []
@@ -201,7 +201,9 @@ def _format_message_content(content: Any, responses_api: bool = False) -> Any:
             elif (
                 isinstance(block, dict)
                 and is_data_content_block(block)
-                and not responses_api
+                # Responses API messages handled separately in _compat (parsed into
+                # image generation calls)
+                and not responses_ai_msg
             ):
                 formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
@@ -235,7 +237,9 @@ def _format_message_content(content: Any, responses_api: bool = False) -> Any:
     return formatted_content
 
 
-def _convert_message_to_dict(message: MessageV1, responses_api: bool = False) -> dict:
+def _convert_message_to_dict(
+    message: MessageV1, responses_ai_msg: bool = False
+) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -245,7 +249,9 @@ def _convert_message_to_dict(message: MessageV1, responses_api: bool = False) ->
         The dictionary.
     """
     message_dict: dict[str, Any] = {
-        "content": _format_message_content(message.content, responses_api=responses_api)
+        "content": _format_message_content(
+            message.content, responses_ai_msg=responses_ai_msg
+        )
     }
     if name := message.name:
         message_dict["name"] = name
@@ -273,7 +279,7 @@ def _convert_message_to_dict(message: MessageV1, responses_api: bool = False) ->
             if (
                 block.get("type") == "audio"
                 and (id_ := block.get("id"))
-                and not responses_api
+                and not responses_ai_msg
             ):
                 # openai doesn't support passing the data back - only the id
                 # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
@@ -3245,12 +3251,13 @@ def _construct_responses_api_input(messages: Sequence[MessageV1]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
-        msg = _convert_message_to_dict(lc_msg, responses_api=True)
         if isinstance(lc_msg, AIMessageV1):
+            msg = _convert_message_to_dict(lc_msg, responses_ai_msg=True)
             msg["content"] = _convert_from_v1_to_responses(
                 msg["content"], lc_msg.tool_calls
             )
         else:
+            msg = _convert_message_to_dict(lc_msg)
             # Get content from non-standard content blocks
             for i, block in enumerate(msg["content"]):
                 if block.get("type") == "non_standard":
