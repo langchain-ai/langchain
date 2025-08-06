@@ -383,8 +383,7 @@ class TestGptOssIntegration:
 class TestChatParamsWithGptOss:
     """Test _chat_params method with gpt-oss models."""
     
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat")
-    def test_chat_params_with_harmony_tools(self, mock_create_chat: MagicMock) -> None:
+    def test_chat_params_with_harmony_tools(self) -> None:
         """Test that _chat_params correctly formats tools for gpt-oss."""
         llm = ChatOllama(model="gpt-oss:20b")
         llm_with_tools = llm.bind_tools([get_weather])
@@ -408,5 +407,6 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
