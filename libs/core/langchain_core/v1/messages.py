@@ -561,10 +561,9 @@ class HumanMessage:
         Returns:
             Concatenated string of all text blocks in the message.
         """
-        text_parts = [
+        return "".join(
             block["text"] for block in self.content if types.is_text_block(block)
-        ]
-        return "".join(text_parts)
+        )
 
 
 @dataclass
@@ -641,10 +640,9 @@ class SystemMessage:
 
     def text(self) -> str:
         """Extract all text content from the system message."""
-        text_parts = [
+        return "".join(
             block["text"] for block in self.content if types.is_text_block(block)
-        ]
-        return "".join(text_parts)
+        )
 
 
 @dataclass
@@ -734,10 +732,9 @@ class ToolMessage(ToolOutputMixin):
     @property
     def text(self) -> str:
         """Extract all text content from the tool message."""
-        text_parts = [
+        return "".join(
             block["text"] for block in self.content if types.is_text_block(block)
-        ]
-        return "".join(text_parts)
+        )
 
     def __post_init__(self) -> None:
         """Initialize computed fields after dataclass creation.
