@@ -329,7 +329,7 @@ class TestGptOssIntegration:
         assert result.tool_calls[0]["name"] == "get_weather"
         assert result.tool_calls[0]["args"] == {"location": "Berlin", "unit": "celsius"}
     
-    @patch("ollama.Client")
+    @patch("langchain_ollama.chat_models.Client")
     def test_stream_with_tools(self, mock_client_class: MagicMock) -> None:
         """Test streaming gpt-oss model with tools."""
         # Create mock client instance
@@ -407,6 +407,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
