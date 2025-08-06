@@ -212,6 +212,18 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
+def _is_gpt_oss_model(model_name: str) -> bool:
+    """Check if the model is a gpt-oss variant that requires Harmony format.
+    
+    Args:
+        model_name: The name of the model.
+        
+    Returns:
+        True if the model is a gpt-oss variant, False otherwise.
+    """
+    return model_name.lower().startswith("gpt-oss")
+
+
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
@@ -1383,3 +1395,4 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
