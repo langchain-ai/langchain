@@ -284,7 +284,7 @@ class TestGptOssModelCompatibility:
                 llm_with_tools = llm.bind_tools([get_weather])
 
                 # Tools should still be bound
-                tools = llm_with_tools.kwargs["tools"]
+                tools = llm_with_tools.kwargs["tools"]  # type: ignore[attr-defined]
                 assert len(tools) == 1
 
                 # Should use standard OpenAI format
@@ -357,3 +357,4 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
