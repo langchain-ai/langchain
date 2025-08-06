@@ -508,7 +508,7 @@ def test_load_response_with_empty_content_is_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_only_response)
 
-        llm = ChatOllama(model="test-model")
+        llm = ChatOllama(model="test-model", streaming=True)
 
         with (
             caplog.at_level(logging.WARNING),
@@ -539,7 +539,7 @@ def test_load_response_with_whitespace_content_is_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_whitespace_response)
 
-        llm = ChatOllama(model="test-model")
+        llm = ChatOllama(model="test-model", streaming=True)
 
         with (
             caplog.at_level(logging.WARNING),
@@ -579,7 +579,7 @@ def test_load_followed_by_content_response(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_then_content_response)
 
-        llm = ChatOllama(model="test-model")
+        llm = ChatOllama(model="test-model", streaming=True)
 
         with caplog.at_level(logging.WARNING):
             result = llm.invoke([HumanMessage("Hello")])
@@ -610,7 +610,7 @@ def test_load_response_with_actual_content_is_not_skipped(
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_with_content_response)
 
-        llm = ChatOllama(model="test-model")
+        llm = ChatOllama(model="test-model", streaming=True)
 
         with caplog.at_level(logging.WARNING):
             result = llm.invoke([HumanMessage("Hello")])
