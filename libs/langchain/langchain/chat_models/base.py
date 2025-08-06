@@ -651,6 +651,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (

@@ -12,7 +12,7 @@ from langchain.evaluation.scoring.eval_chain import (
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def test_PairwiseStringResultOutputParser_parse() -> None:
+def test_pairwise_string_result_output_parser_parse() -> None:
     output_parser = ScoreStringResultOutputParser()
     text = """This answer is really good.
 Rating: [[10]]"""
