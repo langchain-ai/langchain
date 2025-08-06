@@ -6,7 +6,7 @@ To run these tests:
 2. Pull a gpt-oss model: `ollama pull gpt-oss:20b`
 3. Run these tests with: `pytest tests/integration_tests/test_gpt_oss_tools.py`
 
-Note: These tests will be skipped if Ollama is not available or the model is not installed.
+Note: Tests will be skipped if Ollama is not available or model is not installed.
 """
 
 from __future__ import annotations
@@ -359,3 +359,4 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
