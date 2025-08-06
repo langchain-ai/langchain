@@ -1031,6 +1031,7 @@ class ChatOllama(BaseChatModel):
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
+        For gpt-oss models, tools are converted to Harmony format.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
@@ -1041,7 +1042,16 @@ class ChatOllama(BaseChatModel):
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        # Check if this is a gpt-oss model that needs Harmony format
+        if _is_gpt_oss_model(self.model):
+            # For gpt-oss models, we'll need special handling
+            # We'll implement the conversion in the next task
+            formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+            # Mark that we need Harmony format conversion
+            kwargs["_harmony_format"] = True
+        else:
+            formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -1395,4 +1405,5 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
