@@ -246,8 +246,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     @pytest.fixture
     def model(self) -> Generator[ChatOllama, None, None]:  # type: ignore[override]
         """Create a ChatOllama instance for testing."""
-        sync_patcher = patch("langchain_ollama.v1.chat_models.Client")
-        async_patcher = patch("langchain_ollama.v1.chat_models.AsyncClient")
+        sync_patcher = patch("langchain_ollama.v1.chat_models.base.Client")
+        async_patcher = patch("langchain_ollama.v1.chat_models.base.AsyncClient")
 
         mock_sync_client_class = sync_patcher.start()
         mock_async_client_class = async_patcher.start()
@@ -328,8 +328,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_initialization(self) -> None:
         """Test `ChatOllama` initialization."""
         with (
-            patch("langchain_ollama.v1.chat_models.Client"),
-            patch("langchain_ollama.v1.chat_models.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.base.Client"),
+            patch("langchain_ollama.v1.chat_models.base.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME)
 
@@ -339,8 +339,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_chat_params(self) -> None:
         """Test `_chat_params()`."""
         with (
-            patch("langchain_ollama.v1.chat_models.Client"),
-            patch("langchain_ollama.v1.chat_models.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.base.Client"),
+            patch("langchain_ollama.v1.chat_models.base.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME, temperature=0.7)
 
@@ -359,8 +359,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_ls_params(self) -> None:
         """Test LangSmith parameters."""
         with (
-            patch("langchain_ollama.v1.chat_models.Client"),
-            patch("langchain_ollama.v1.chat_models.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.base.Client"),
+            patch("langchain_ollama.v1.chat_models.base.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME, temperature=0.5)
 
@@ -374,8 +374,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_bind_tools_basic(self) -> None:
         """Test basic tool binding functionality."""
         with (
-            patch("langchain_ollama.v1.chat_models.Client"),
-            patch("langchain_ollama.v1.chat_models.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.base.Client"),
+            patch("langchain_ollama.v1.chat_models.base.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME)
 
@@ -394,8 +394,9 @@ class TestChatOllama(ChatModelV1UnitTests):
 # But can be added if needed in the future.
 
 
-@patch("langchain_ollama.v1.chat_models.validate_model")
-@patch("langchain_ollama.v1.chat_models.Client")
+@pytest.mark.allow_socket
+@patch("langchain_ollama.v1.chat_models.base.validate_model")
+@patch("langchain_ollama.v1.chat_models.base.Client")
 def test_validate_model_on_init(
     mock_client_class: Any, mock_validate_model: Any
 ) -> None:
@@ -487,6 +488,7 @@ def test__parse_arguments_from_tool_call() -> None:
     assert isinstance(response["arg_1"], str)
 
 
+@pytest.mark.allow_socket
 def test_load_response_with_empty_content_is_skipped(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -501,7 +503,7 @@ def test_load_response_with_empty_content_is_skipped(
         }
     ]
 
-    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.base.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_only_response)
@@ -514,9 +516,10 @@ def test_load_response_with_empty_content_is_skipped(
         ):
             llm.invoke([HumanMessage("Hello")])
 
-        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+        assert "Ollama returned empty response with `done_reason='load'`" in caplog.text
 
 
+@pytest.mark.allow_socket
 def test_load_response_with_whitespace_content_is_skipped(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -531,7 +534,7 @@ def test_load_response_with_whitespace_content_is_skipped(
         }
     ]
 
-    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.base.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_whitespace_response)
@@ -543,9 +546,10 @@ def test_load_response_with_whitespace_content_is_skipped(
             pytest.raises(ValueError, match="No generations found in stream"),
         ):
             llm.invoke([HumanMessage("Hello")])
-        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+        assert "Ollama returned empty response with `done_reason='load'`" in caplog.text
 
 
+@pytest.mark.allow_socket
 def test_load_followed_by_content_response(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -570,7 +574,7 @@ def test_load_followed_by_content_response(
         },
     ]
 
-    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.base.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_then_content_response)
@@ -580,12 +584,13 @@ def test_load_followed_by_content_response(
         with caplog.at_level(logging.WARNING):
             result = llm.invoke([HumanMessage("Hello")])
 
-        assert "Ollama returned empty response with done_reason='load'" in caplog.text
+        assert "Ollama returned empty response with `done_reason='load'`" in caplog.text
         assert len(result.content) == 1
         assert result.text == "Hello! How can I help you today?"
         assert result.response_metadata.get("done_reason") == "stop"
 
 
+@pytest.mark.allow_socket
 def test_load_response_with_actual_content_is_not_skipped(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -600,7 +605,7 @@ def test_load_response_with_actual_content_is_not_skipped(
         }
     ]
 
-    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.base.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_with_content_response)

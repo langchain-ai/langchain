@@ -1,10 +1,7 @@
-from langchain_ollama import __all__
+from langchain_ollama.v1 import __all__
 
 EXPECTED_ALL = [
-    "OllamaLLM",
     "ChatOllama",
-    "OllamaEmbeddings",
-    "__version__",
 ]
 
 
