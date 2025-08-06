@@ -879,6 +879,9 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
+        
+        # Remove internal _harmony_format parameter before calling Ollama client
+        chat_params.pop("_harmony_format", None)
 
         if chat_params["stream"]:
             async for part in await self._async_client.chat(**chat_params):
@@ -1560,6 +1563,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
