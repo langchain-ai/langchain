@@ -12,6 +12,7 @@ from langchain_core.messages.content_blocks import (
     ReasoningContentBlock,
     TextContentBlock,
     ToolCall,
+    ToolCallChunk,
 )
 from langchain_core.v1.messages import (
     AIMessage,
@@ -104,6 +105,12 @@ def _convert_content_blocks_to_ollama_format(
                     },
                 }
             )
+        elif block_type == "invalid_tool_call":
+            # InvalidToolCall blocks are handled by converting to text
+            # May revisit this in the future
+            name = block.get("name", "unknown")
+            error = block.get("error", "unknown error")
+            text_content += f"[Invalid tool call: {name} - {error}]"
         else:
             # Skip other content block types that aren't supported
             msg = f"Unsupported content block type: {block_type}"
@@ -246,6 +253,7 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessage:
 def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunk:
     """Convert Ollama streaming chunk to AIMessageChunk."""
     content: list[types.ContentBlock] = []
+    tool_call_chunks: list[ToolCallChunk] = []
 
     # Handle reasoning content first in chunks
     if "message" in chunk and "thinking" in chunk["message"]:
@@ -267,17 +275,31 @@ def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunk:
     # Handle streaming tool calls
     if "message" in chunk and "tool_calls" in chunk["message"]:
         tool_calls = chunk["message"]["tool_calls"]
-        content.extend(
-            [
+        for i, tool_call in enumerate(tool_calls):
+            tool_call_id = tool_call.get("id", f"lc_{uuid4()}")
+            tool_name = tool_call.get("function", {}).get("name", "")
+            tool_args = tool_call.get("function", {}).get("arguments", {})
+
+            # Add to content blocks for final representation
+            content.append(
                 ToolCall(
                     type="tool_call",
-                    id=tool_call.get("id", str(uuid4())),
-                    name=tool_call.get("function", {}).get("name", ""),
-                    args=tool_call.get("function", {}).get("arguments", {}),
+                    id=tool_call_id,
+                    name=tool_name,
+                    args=tool_args,
                 )
-                for tool_call in tool_calls
-            ]
-        )
+            )
+
+            # Add to tool call chunks for streaming
+            tool_call_chunks.append(
+                ToolCallChunk(
+                    type="tool_call_chunk",
+                    id=tool_call_id,
+                    name=tool_name,
+                    args=tool_args,
+                    index=i,
+                )
+            )
 
     # Build response metadata for final chunks
     response_metadata = None
@@ -312,4 +334,5 @@ def _convert_chunk_to_v1(chunk: dict[str, Any]) -> AIMessageChunk:
         content=content,
         response_metadata=response_metadata or ResponseMetadata(),
         usage_metadata=usage_metadata,
+        tool_call_chunks=tool_call_chunks,
     )
