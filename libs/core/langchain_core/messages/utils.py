@@ -35,6 +35,8 @@ from langchain_core.messages import convert_to_openai_data_block, is_data_conten
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content_blocks import ContentBlock
+from langchain_core.messages.content_blocks import ToolCall as ToolCallV1
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -43,7 +45,7 @@ from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 from langchain_core.v1.messages import AIMessage as AIMessageV1
 from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from langchain_core.v1.messages import HumanMessage as HumanMessageV1
-from langchain_core.v1.messages import MessageV1, MessageV1Types
+from langchain_core.v1.messages import MessageV1, MessageV1Types, ResponseMetadata
 from langchain_core.v1.messages import SystemMessage as SystemMessageV1
 from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
@@ -385,20 +387,28 @@ def convert_from_v1_message(message: MessageV1) -> BaseMessage:
     """
     content = cast("Union[str, list[str | dict]]", message.content)
     if isinstance(message, AIMessageV1):
+        response_metadata: dict[str, Any] = {}
+        if message.response_metadata:
+            # Copy all fields from the v1 ResponseMetadata to a plain dict
+            response_metadata.update(message.response_metadata)
         return AIMessage(
             content=content,
             id=message.id,
             name=message.name,
             tool_calls=message.tool_calls,
-            response_metadata=cast("dict", message.response_metadata),
+            response_metadata=response_metadata,
         )
     if isinstance(message, AIMessageChunkV1):
+        response_metadata_chunk: dict[str, Any] = {}
+        if message.response_metadata:
+            # Copy all fields from the v1 ResponseMetadata to a plain dict
+            response_metadata_chunk.update(message.response_metadata)
         return AIMessageChunk(
             content=content,
             id=message.id,
             name=message.name,
             tool_call_chunks=message.tool_call_chunks,
-            response_metadata=cast("dict", message.response_metadata),
+            response_metadata=response_metadata_chunk,
         )
     if isinstance(message, HumanMessageV1):
         return HumanMessage(
@@ -481,6 +491,53 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     return message_
 
 
+def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
+    """Convert a v0 message to a v1 message."""
+    from langchain_core.messages.content_blocks import create_text_block
+
+    if isinstance(message, HumanMessage):  # Checking for v0 HumanMessage
+        content: list[ContentBlock] = [create_text_block(str(message.content))]
+        return HumanMessageV1(content, name=message.name)
+    if isinstance(message, AIMessage):  # Checking for v0 AIMessage
+        content = [create_text_block(str(message.content))]
+        # Handle tool calls from v0 messages
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                content.append(
+                    ToolCallV1(
+                        type="tool_call",
+                        name=tool_call[
+                            "name"  # TODO: this is the name of the message, not the tool, so remove?  # noqa: E501
+                        ],
+                        args=tool_call["args"],
+                        id=tool_call.get("id", ""),
+                    )
+                )
+
+        # Construct ResponseMetadata TypedDict from v0 response_metadata dict
+        # Since ResponseMetadata has total=False, we can safely cast the dict
+        response_metadata = cast("ResponseMetadata", message.response_metadata or {})
+        return AIMessageV1(
+            content=content,
+            name=message.name,
+            usage_metadata=message.usage_metadata,
+            response_metadata=response_metadata,
+        )
+    if isinstance(message, SystemMessage):  # Checking for v0 SystemMessage
+        content = [create_text_block(str(message.content))]
+        return SystemMessageV1(content=content, name=message.name)
+    if isinstance(message, ToolMessage):  # Checking for v0 ToolMessage
+        content = [create_text_block(str(message.content))]
+        return ToolMessageV1(
+            content=content,
+            name=message.name,  # TODO: this is the name of the message, not the tool, so remove?  # noqa: E501
+            tool_call_id=message.tool_call_id,
+            status=message.status,
+        )
+    msg = f"Unsupported v0 message type for conversion to v1: {type(message)}"
+    raise NotImplementedError(msg)
+
+
 def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
     """Instantiate a message from a variety of message formats.
 
@@ -507,6 +564,9 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
             message_: MessageV1 = message.to_message()
         else:
             message_ = message
+    elif isinstance(message, BaseMessage):
+        # Convert v0 messages to v1 messages
+        message_ = _convert_from_v0_to_v1(message)
     elif isinstance(message, str):
         message_ = _create_message_from_message_type_v1("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
@@ -514,23 +574,51 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
         message_type_str, template = message  # type: ignore[misc]
         message_ = _create_message_from_message_type_v1(message_type_str, template)
     elif isinstance(message, dict):
-        msg_kwargs = message.copy()
-        try:
-            try:
-                msg_type = msg_kwargs.pop("role")
-            except KeyError:
-                msg_type = msg_kwargs.pop("type")
-            # None msg content is not allowed
-            msg_content = msg_kwargs.pop("content") or ""
-        except KeyError as e:
-            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
-            msg = create_message(
-                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
+        # Handle ToolCall content blocks passed as messages
+        if (
+            message.get("type") == "tool_call"
+            and "name" in message
+            and "args" in message
+            and "id" in message
+            and "content" not in message
+        ):
+            # Convert ToolCall content block to an AIMessage with the tool call
+            from langchain_core.messages.content_blocks import (
+                ToolCall,
+                create_text_block,
             )
-            raise ValueError(msg) from e
-        message_ = _create_message_from_message_type_v1(
-            msg_type, msg_content, **msg_kwargs
-        )
+            from langchain_core.v1.messages import AIMessage
+
+            tool_call = ToolCall(
+                type="tool_call",
+                name=message[
+                    "name"
+                ],  # TODO: revisit, this is the name of the message, not the tool
+                args=message["args"],
+                id=message["id"],
+            )
+            message_ = AIMessage(content=[create_text_block(""), tool_call])
+        else:
+            msg_kwargs = message.copy()
+            try:
+                try:
+                    msg_type = msg_kwargs.pop("role")
+                except KeyError:
+                    msg_type = msg_kwargs.pop("type")
+                # None msg content is not allowed
+                msg_content = msg_kwargs.pop("content") or ""
+            except KeyError as e:
+                msg = (
+                    "Message dict must contain 'role' and 'content' "
+                    f"keys, got {message}"
+                )
+                msg = create_message(
+                    message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
+                )
+                raise ValueError(msg) from e
+            message_ = _create_message_from_message_type_v1(
+                msg_type, msg_content, **msg_kwargs
+            )
     else:
         msg = f"Unsupported message type: {type(message)}"
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
