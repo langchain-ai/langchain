@@ -2997,14 +2997,13 @@ def _oai_structured_outputs_parser(
         else:
             return parsed
     elif any(
-        block["type"] == "non_standard" and block["value"].get("type") == "refusal"
+        block["type"] == "non_standard" and "refusal" in block["value"]
         for block in ai_msg.content
     ):
         refusal = next(
-            block["value"]["text"]
+            block["value"]["refusal"]
             for block in ai_msg.content
-            if block["type"] == "non_standard"
-            and block["value"].get("type") == "refusal"
+            if block["type"] == "non_standard" and "refusal" in block["value"]
         )
         raise OpenAIRefusalError(refusal)
     elif ai_msg.tool_calls:
