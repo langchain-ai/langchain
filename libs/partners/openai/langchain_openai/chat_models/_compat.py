@@ -212,7 +212,7 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         function_call = {
             "type": "function_call",
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"] or {}, ensure_ascii=False),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             "call_id": tool_call["id"],
         }
         if function_call_ids is not None and (

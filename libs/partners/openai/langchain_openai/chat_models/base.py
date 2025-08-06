@@ -3182,7 +3182,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"] or {}, ensure_ascii=False),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 
