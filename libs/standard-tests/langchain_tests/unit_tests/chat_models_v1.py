@@ -205,9 +205,7 @@ class ChatModelV1Tests(BaseStandardTests):
         - ``supports_video_content_blocks``
         - ``supports_citations``
         - ``supports_web_search_blocks``
-        - ``supports_enhanced_tool_calls``
         - ``supports_invalid_tool_calls``
-        - ``supports_tool_call_chunks``
 
         """
         return True
