@@ -98,7 +98,7 @@ class TestHarmonyToolConversion:
         def complex_tool(
             numbers: list[int],
             data: dict[str, Any],
-            optional: str = None,
+            optional: str | None = None,
         ) -> str:
             """A tool with complex types.
 
@@ -394,3 +394,4 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
