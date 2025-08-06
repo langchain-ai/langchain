@@ -48,6 +48,7 @@ from langchain_core.messages import (
     get_buffer_string,
     is_data_content_block,
 )
+from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.messages.utils import (
     convert_from_v1_message,
     convert_to_messages_v1,
@@ -471,6 +472,9 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                 run_manager.on_llm_error(e)
                 raise
 
+        if run_manager and full_message.id and full_message.id.startswith("lc_"):
+            full_message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
         run_manager.on_llm_end(full_message)
         return full_message
 
@@ -541,6 +545,9 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                     e, response=_generate_response_from_error(e)
                 )
                 raise
+
+        if run_manager and full_message.id and full_message.id.startswith("lc_"):
+            full_message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
 
         await run_manager.on_llm_end(full_message)
         return full_message
@@ -613,6 +620,10 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                 raise
 
             msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+
+            if run_manager and msg.id and msg.id.startswith("lc_"):
+                msg.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
             run_manager.on_llm_end(msg)
 
     @override
@@ -686,6 +697,10 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
             raise
 
         msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+
+        if run_manager and msg.id and msg.id.startswith("lc_"):
+            msg.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
         await run_manager.on_llm_end(msg)
 
     # --- Custom methods ---

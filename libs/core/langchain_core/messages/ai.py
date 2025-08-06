@@ -25,8 +25,10 @@ from langchain_core.utils.usage import _dict_int_op
 
 logger = logging.getLogger(__name__)
 
+_LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
 
-_LC_ID_PREFIX = "run-"
+_LC_ID_PREFIX = f"{_LC_AUTO_PREFIX}run-"
 """Internal tracing/callback system identifier.
 
 Used for:
@@ -34,9 +36,6 @@ Used for:
   gets a unique run_id (UUID)
 - Enables tracking parent-child relationships between operations
 """
-
-_LC_AUTO_PREFIX = "lc_"
-"""LangChain auto-generated ID prefix for messages and content blocks."""
 
 
 class InputTokenDetails(TypedDict, total=False):
