@@ -84,6 +84,11 @@ module.exports = {
       items: [
         {
           type: 'doc',
+          id: 'versions/v0_4/index',
+          label: "v0.4",
+        },
+        {
+          type: 'doc',
           id: 'versions/v0_3/index',
           label: "v0.3",
         },
@@ -418,7 +423,7 @@ module.exports = {
             },
           ],
         },
-        
+
       ],
       link: {
         type: "generated-index",
