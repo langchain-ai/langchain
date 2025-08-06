@@ -106,7 +106,7 @@ import warnings
 from typing import Any, Literal, Optional, Union
 from uuid import uuid4
 
-from typing_extensions import NotRequired, TypedDict, TypeGuard, get_args, get_origin
+from typing_extensions import NotRequired, TypedDict, TypeGuard
 
 
 def _ensure_id(id_val: Optional[str]) -> str:
@@ -850,36 +850,6 @@ ContentBlock = Union[
     DataContentBlock,
     ToolContentBlock,
 ]
-
-
-def _extract_typedict_type_values(union_type: Any) -> set[str]:
-    """Extract the values of the ``'type'`` field from a TypedDict union type."""
-    result: set[str] = set()
-
-    def _extract_from_type(type_arg: Any) -> None:
-        # If it's a Union, recursively extract from its args
-        if get_origin(type_arg) is Union:
-            for sub_type in get_args(type_arg):
-                _extract_from_type(sub_type)
-        # If it's a TypedDict with a type annotation, extract the literal values
-        elif (
-            hasattr(type_arg, "__annotations__") and "type" in type_arg.__annotations__
-        ):
-            annotation = type_arg.__annotations__["type"]
-            # Handle NotRequired[Literal[...]] annotations
-            if get_origin(annotation) is not None and "NotRequired" in str(
-                get_origin(annotation)
-            ):
-                inner_annotation = get_args(annotation)[0]
-                if get_origin(inner_annotation) is Literal:
-                    result.update(get_args(inner_annotation))
-            elif get_origin(annotation) is Literal:
-                result.update(get_args(annotation))
-
-    for value in get_args(union_type):
-        _extract_from_type(value)
-
-    return result
 
 
 KNOWN_BLOCK_TYPES = {
