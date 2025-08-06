@@ -310,9 +310,10 @@ class TestGptOssIntegration:
             """
             return "42"
         
-        # Convert functions to tools
-        search_tool = tool(search_web)
-        calc_tool = tool(calculate)
+        # Convert functions to tools using the imported tool decorator
+        from langchain_core.tools import tool as create_tool
+        search_tool = create_tool(search_web)
+        calc_tool = create_tool(calculate)
         
         # Bind multiple tools
         llm_with_tools = llm.bind_tools([get_weather, search_tool, calc_tool])
@@ -396,6 +397,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
