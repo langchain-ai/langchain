@@ -400,6 +400,16 @@ class ChatOllama(BaseChatModel):
 
     See full list of supported init args and their descriptions in the params section.
 
+    .. note::
+        **GPT-OSS Model Support**: This integration includes special support for gpt-oss 
+        models (e.g., ``gpt-oss:20b``, ``gpt-oss:7b``) which use the Harmony response format.
+        When using gpt-oss models with tools, the integration automatically converts tool
+        definitions to the Harmony format, ensuring compatibility. Tool parameter types are
+        properly formatted as strings rather than arrays to avoid template parsing errors.
+        
+        If you encounter issues with tool calling on gpt-oss models, ensure you're using
+        the latest version of this integration which includes Harmony format support.
+
     Instantiate:
         .. code-block:: python
 
@@ -1563,6 +1573,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
