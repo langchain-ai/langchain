@@ -192,9 +192,7 @@ class TestGptOssToolCallingIntegration:
 
         # Stream a response
         chunks = list(
-            llm_with_tools.stream(
-                "What's the weather in Tokyo? Use the weather tool."
-            )
+            llm_with_tools.stream("What's the weather in Tokyo? Use the weather tool.")
         )
 
         # Should have received chunks
@@ -359,4 +357,3 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
-
