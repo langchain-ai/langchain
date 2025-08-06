@@ -7,6 +7,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_ollama.llms import OllamaLLM
 
 MODEL_NAME = "llama3.1"
+REASONING_MODEL_NAME = "deepseek-r1:1.5b"
 SAMPLE = "What is 3^3?"
 
 
@@ -18,7 +19,7 @@ def test_stream_text_tokens() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 def test__stream_no_reasoning(model: str) -> None:
     """Test low-level chunk streaming of a simple prompt with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
@@ -39,7 +40,7 @@ def test__stream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 def test__stream_with_reasoning(model: str) -> None:
     """Test low-level chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
@@ -71,7 +72,7 @@ async def test_astream_text_tokens() -> None:
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 async def test__astream_no_reasoning(model: str) -> None:
     """Test low-level async chunk streaming with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
@@ -89,7 +90,7 @@ async def test__astream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 async def test__astream_with_reasoning(model: str) -> None:
     """Test low-level async chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)

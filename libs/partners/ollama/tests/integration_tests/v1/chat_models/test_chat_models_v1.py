@@ -9,12 +9,17 @@ from __future__ import annotations
 from typing import Annotated, Optional
 
 import pytest
+from langchain_core.messages.content_blocks import is_reasoning_block
+from langchain_core.v1.messages import AIMessageChunk, HumanMessage
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain_ollama.v1.chat_models import ChatOllama
 
 DEFAULT_MODEL_NAME = "llama3.1"
+REASONING_MODEL_NAME = "deepseek-r1:1.5b"
+
+SAMPLE = "What is 3^3?"
 
 
 @pytest.mark.parametrize(("method"), [("function_calling"), ("json_schema")])
@@ -104,50 +109,335 @@ def test_structured_output_deeply_nested(model: str) -> None:
         assert isinstance(chunk, Data)
 
 
-# def test_reasoning_content_blocks() -> None:
-#     """Test that the model supports reasoning content blocks."""
-#     llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0)
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_stream_no_reasoning(model: str) -> None:
+    """Test streaming with `reasoning=False`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
+    result = None
+    for chunk in llm.stream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
 
-#     # Test with a reasoning prompt
-#     messages = [HumanMessage("Think step by step and solve: What is 2 + 2?")]
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
 
-#     result = llm.invoke(messages)
-
-#     # Check that we get an AIMessage with content blocks
-#     assert isinstance(result, AIMessage)
-#     assert len(result.content) > 0
-
-#     # For streaming, check that reasoning blocks are properly handled
-#     chunks = []
-#     for chunk in llm.stream(messages):
-#         chunks.append(chunk)
-#         assert isinstance(chunk, AIMessageChunk)
-
-#     assert len(chunks) > 0
+    assert "reasoning" not in content_types, (
+        f"Expected no reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
 
 
-# def test_multimodal_support() -> None:
-#     """Test that the model supports image content blocks."""
-#     llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0)
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_astream_no_reasoning(model: str) -> None:
+    """Test async streaming with `reasoning=False`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
+    result = None
+    async for chunk in llm.astream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
 
-#     # Create a message with image content block
-#     from langchain_core.messages.content_blocks import (
-#         create_image_block,
-#         create_text_block,
-#     )
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
 
-#     # Test with a simple base64 placeholder (real integration would use actual image)
-#     message = HumanMessage(
-#         content=[
-#             create_text_block("Describe this image:"),
-#             create_image_block(
-#                 base64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="  # noqa: E501
-#             ),
-#         ]
-#     )
+    assert "reasoning" not in content_types, (
+        f"Expected no reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
 
-#     result = llm.invoke([message])
 
-#     # Check that we get a response (even if it's just acknowledging the image)
-#     assert isinstance(result, AIMessage)
-#     assert len(result.content) > 0
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_stream_reasoning_none(model: str) -> None:
+    """Test streaming with `reasoning=None`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
+    result = None
+    for chunk in llm.stream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
+
+    assert "<think>" in result.text and "</think>" in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_astream_reasoning_none(model: str) -> None:
+    """Test async streaming with `reasoning=None`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
+    result = None
+    async for chunk in llm.astream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
+
+    assert "<think>" in result.text and "</think>" in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_reasoning_stream(model: str) -> None:
+    """Test streaming with `reasoning=True`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
+    result = None
+    for chunk in llm.stream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" in content_types, (
+        f"Expected reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+    # Assert non-empty reasoning content in ReasoningContentBlock
+    reasoning_blocks = [block for block in result.content if is_reasoning_block(block)]
+    for block in reasoning_blocks:
+        assert block.get("reasoning"), "Expected non-empty reasoning content"
+        assert len(block.get("reasoning", "")) > 0, (
+            "Expected reasoning content to be non-empty"
+        )
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_reasoning_astream(model: str) -> None:
+    """Test async streaming with `reasoning=True`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
+    result = None
+    async for chunk in llm.astream(SAMPLE):
+        assert isinstance(chunk, AIMessageChunk)
+        if result is None:
+            result = chunk
+            continue
+        result += chunk
+    assert isinstance(result, AIMessageChunk)
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" in content_types, (
+        f"Expected reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+    # Assert non-empty reasoning content in ReasoningContentBlock
+    reasoning_blocks = [block for block in result.content if is_reasoning_block(block)]
+    for block in reasoning_blocks:
+        assert block.get("reasoning"), "Expected non-empty reasoning content"
+        assert len(block.get("reasoning", "")) > 0, (
+            "Expected reasoning content to be non-empty"
+        )
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_invoke_no_reasoning(model: str) -> None:
+    """Test using invoke with `reasoning=False`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
+    message = HumanMessage(SAMPLE)
+    result = llm.invoke([message])
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" not in content_types, (
+        f"Expected no reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_ainvoke_no_reasoning(model: str) -> None:
+    """Test using async invoke with `reasoning=False`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
+    message = HumanMessage(content=SAMPLE)
+    result = await llm.ainvoke([message])
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" not in content_types, (
+        f"Expected no reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_invoke_reasoning_none(model: str) -> None:
+    """Test using invoke with `reasoning=None`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
+    message = HumanMessage(content=SAMPLE)
+    result = llm.invoke([message])
+    assert result.content
+
+    assert "<think>" in result.text and "</think>" in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_ainvoke_reasoning_none(model: str) -> None:
+    """Test using async invoke with `reasoning=None`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
+    message = HumanMessage(content=SAMPLE)
+    result = await llm.ainvoke([message])
+    assert result.content
+
+    assert "<think>" in result.text and "</think>" in result.text
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_reasoning_invoke(model: str) -> None:
+    """Test invoke with `reasoning=True`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
+    message = HumanMessage(content=SAMPLE)
+    result = llm.invoke([message])
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" in content_types, (
+        f"Expected reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+    # Assert non-empty reasoning content in ReasoningContentBlock
+    reasoning_blocks = [block for block in result.content if is_reasoning_block(block)]
+    for block in reasoning_blocks:
+        assert block.get("reasoning"), "Expected non-empty reasoning content"
+        assert len(block.get("reasoning", "")) > 0, (
+            "Expected reasoning content to be non-empty"
+        )
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test_reasoning_ainvoke(model: str) -> None:
+    """Test invoke with `reasoning=True`"""
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
+    message = HumanMessage(content=SAMPLE)
+    result = await llm.ainvoke([message])
+    assert result.content
+
+    content_types = set()
+    for content_block in result.content:
+        type_ = content_block.get("type")
+        if type_:
+            content_types.add(type_)
+
+    assert "reasoning" in content_types, (
+        f"Expected reasoning content, got types: {content_types}"
+    )
+    assert "non_standard" not in content_types, (
+        f"Expected no non-standard content, got types: {content_types}"
+    )
+    assert "<think>" not in result.text and "</think>" not in result.text
+
+    # Assert non-empty reasoning content in ReasoningContentBlock
+    reasoning_blocks = [block for block in result.content if is_reasoning_block(block)]
+    for block in reasoning_blocks:
+        assert block.get("reasoning"), "Expected non-empty reasoning content"
+        assert len(block.get("reasoning", "")) > 0, (
+            "Expected reasoning content to be non-empty"
+        )
+
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test_think_tag_stripping_necessity(model: str) -> None:
+    """Test that demonstrates why ``_strip_think_tags`` is necessary.
+
+    DeepSeek R1 models include reasoning/thinking as their default behavior.
+    When ``reasoning=False`` is set, the user explicitly wants no reasoning content,
+    but Ollama cannot disable thinking at the API level for these models.
+    Therefore, post-processing is required to strip the ``<think>`` tags.
+
+    This test documents the specific behavior that necessitates the
+    ``_strip_think_tags`` function in the chat_models.py implementation.
+    """
+    # Test with reasoning=None (default behavior - should include think tags)
+    llm_default = ChatOllama(model=model, reasoning=None, num_ctx=2**12)
+    message = HumanMessage(content=SAMPLE)
+
+    result_default = llm_default.invoke([message])
+
+    # With reasoning=None, the model's default behavior includes <think> tags
+    # This demonstrates why we need the stripping logic
+    assert "<think>" in result_default.text
+    assert "</think>" in result_default.text
+
+    # Test with reasoning=False (explicit disable - should NOT include think tags)
+    llm_disabled = ChatOllama(model=model, reasoning=False, num_ctx=2**12)
+
+    result_disabled = llm_disabled.invoke([message])
+
+    # With reasoning=False, think tags should be stripped from content
+    # This verifies that _strip_think_tags is working correctly
+    assert "<think>" not in result_disabled.text
+    assert "</think>" not in result_disabled.text
+
+    # Verify the difference: same model, different reasoning settings
+    # Default includes tags, disabled strips them
+    assert result_default.content != result_disabled.content

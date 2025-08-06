@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from langchain_ollama.v1.chat_models import ChatOllama
 
 DEFAULT_MODEL_NAME = "llama3.1"
+REASONING_MODEL_NAME = "deepseek-r1:1.5b"
 
 
 @tool
@@ -219,8 +220,8 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
 
     @pytest.mark.xfail(
         reason=(
-            "Default llama3.1 model does not support reasoning. Override uses "
-            "reasoning-capable model with reasoning=True enabled."
+            f"{DEFAULT_MODEL_NAME} does not support reasoning. Override uses "
+            "reasoning-capable model with `reasoning=True` enabled."
         ),
         strict=False,
     )
@@ -234,7 +235,7 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
             pytest.skip("Model does not support ReasoningContentBlock.")
 
         reasoning_enabled_model = ChatOllama(
-            model="deepseek-r1:1.5b", reasoning=True, validate_model_on_init=True
+            model=REASONING_MODEL_NAME, reasoning=True, validate_model_on_init=True
         )
 
         message = HumanMessage("Think step by step: What is 2 + 2?")
@@ -250,6 +251,8 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
                 "Expected reasoning content blocks but found none. "
                 f"Content blocks: {[block.get('type') for block in result.content]}"
             )
+
+    # Additional Ollama reasoning tests in v1/chat_models/test_chat_models_v1.py
 
     @patch("langchain_ollama.v1.chat_models.Client.list")
     def test_init_model_not_found(self, mock_list: MagicMock) -> None:

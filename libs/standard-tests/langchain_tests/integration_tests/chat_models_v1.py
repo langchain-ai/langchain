@@ -3188,7 +3188,12 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         assert result.content is not None
 
     def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``ReasoningContentBlock``."""
+        """Test that the model can generate ``ReasoningContentBlock``.
+
+        If your integration requires a reasoning parameter to be explicitly set, you
+        will need to override this test to set it appropriately.
+
+        """
         if not self.supports_reasoning_content_blocks:
             pytest.skip("Model does not support ReasoningContentBlock.")
 
@@ -3202,7 +3207,10 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 for block in result.content
                 if isinstance(block, dict) and is_reasoning_block(block)
             ]
-            assert len(reasoning_blocks) > 0
+            assert len(reasoning_blocks) > 0, (
+                "Expected reasoning content blocks but found none. "
+                f"Content blocks: {[block.get('type') for block in result.content]}"
+            )
 
     def test_non_standard_content_blocks_basic(self, model: BaseChatModel) -> None:
         """Test that the model can handle ``NonStandardContentBlock``."""
