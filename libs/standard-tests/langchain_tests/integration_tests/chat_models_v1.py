@@ -1355,7 +1355,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                     super().test_tool_message_histories_list_content(*args)
 
         """  # noqa: E501
-        pytest.fail("Test not implemented yet.")
+        pytest.xfail("Test not implemented yet.")
 
         # TODO
         # if not self.has_tool_calling:
@@ -2032,7 +2032,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             the ``supports_pdf_inputs`` property to False.
 
         """
-        pytest.fail("Test not implemented yet.")
+        pytest.xfail("Test not implemented yet.")
 
         # TODO
         # if not self.supports_pdf_inputs:
@@ -2328,7 +2328,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             False.
 
         """
-        pytest.fail("Test not implemented yet.")
+        pytest.xfail("Test not implemented yet.")
 
         # TODO
         # if not self.supports_image_tool_message:
@@ -2504,7 +2504,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             set the ``supports_anthropic_inputs`` property to False.
 
         """  # noqa: E501
-        pytest.fail("Test not implemented yet.")
+        pytest.xfail("Test not implemented yet.")
 
         # TODO
         # if not self.supports_anthropic_inputs:
