@@ -2,7 +2,6 @@ from importlib import metadata
 
 from langchain_superlinked.retrievers import SuperlinkedRetriever
 
-
 try:
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:

@@ -6,16 +6,18 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import Field, root_validator
 
 
 class SuperlinkedRetriever(BaseRetriever):
     """
-    Retriever for Superlinked, a library for building context-aware search and retrieval systems.
+    Retriever for Superlinked, a library for building context-aware search and
+    retrieval systems.
 
     Setup:
-        Install the ``langchain-superlinked`` package and its peer ``superlinked`` dependency.
+        Install the ``langchain-superlinked`` package and its peer ``superlinked``
+        dependency.
 
         .. code-block:: bash
 
@@ -23,12 +25,14 @@ class SuperlinkedRetriever(BaseRetriever):
 
     Key init args:
         sl_client: An instance of a Superlinked App (e.g., ``sl.InMemoryApp``).
-        sl_query: A pre-constructed Superlinked QueryDescriptor object (from ``sl.Query(...).find(...).similar(...)`` chain).
+        sl_query: A pre-constructed Superlinked QueryDescriptor object (from
+                  ``sl.Query(...).find(...).similar(...)`` chain).
         page_content_field: The name of the field in a Superlinked result entry
                             that should be used as the ``page_content`` of a
                             LangChain Document.
         k: int
-            Number of documents to return. Defaults to 4. Can be overridden at query time.
+            Number of documents to return. Defaults to 4. Can be overridden at
+            query time.
         query_text_param: Optional[str]
             The name of the parameter in the Superlinked Query to which the
             user's text query should be passed. Defaults to "query_text".
@@ -137,15 +141,19 @@ class SuperlinkedRetriever(BaseRetriever):
     sl_query: Any = Field(..., description="A Superlinked QueryDescriptor object.")
     query_text_param: str = Field(
         "query_text",
-        description="The name of the parameter in the Superlinked Query to which the user's text query is passed.",
+        description="The name of the parameter in the Superlinked Query to which "
+        "the user's text query is passed.",
     )
     page_content_field: str = Field(
         ...,
-        description="The name of the field in a Superlinked result entry that should be used as the page_content of a LangChain Document.",
+        description="The name of the field in a Superlinked result entry that "
+        "should be used as the page_content of a LangChain Document.",
     )
     metadata_fields: Optional[List[str]] = Field(
         None,
-        description="A list of field names from a Superlinked result entry to be included in the metadata of a LangChain Document. If None, all fields except the page_content_field are included.",
+        description="A list of field names from a Superlinked result entry to be "
+        "included in the metadata of a LangChain Document. If None, all fields "
+        "except the page_content_field are included.",
     )
     k: int = Field(
         4,
@@ -154,6 +162,7 @@ class SuperlinkedRetriever(BaseRetriever):
 
     class Config:
         """Configuration for this pydantic object."""
+
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
@@ -170,7 +179,9 @@ class SuperlinkedRetriever(BaseRetriever):
 
         if "sl_client" not in values or not isinstance(values.get("sl_client"), App):
             raise TypeError("sl_client must be a Superlinked App instance.")
-        if "sl_query" not in values or not isinstance(values.get("sl_query"), QueryDescriptor):
+        if "sl_query" not in values or not isinstance(
+            values.get("sl_query"), QueryDescriptor
+        ):
             raise TypeError("sl_query must be a Superlinked QueryDescriptor instance.")
 
         return values
@@ -190,7 +201,7 @@ class SuperlinkedRetriever(BaseRetriever):
             A list of relevant LangChain Documents.
         """
         # Extract k parameter before building query_params
-        k = kwargs.pop('k', self.k)
+        k = kwargs.pop("k", self.k)
 
         query_params = kwargs.copy()
         query_params[self.query_text_param] = query
@@ -199,9 +210,9 @@ class SuperlinkedRetriever(BaseRetriever):
             results = self.sl_client.query(
                 query_descriptor=self.sl_query, **query_params
             )
-        except Exception as e:
+        except Exception:
             # Consider using proper logging in a production environment
-            print(f"Error executing Superlinked query: {e}")
+            # Silently return empty list for now - in production, use proper logging
             return []
 
         documents: List[Document] = []
