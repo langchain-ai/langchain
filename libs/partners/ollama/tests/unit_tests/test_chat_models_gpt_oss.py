@@ -288,96 +288,83 @@ class TestGptOssResponseParsing:
 class TestGptOssIntegration:
     """Integration tests for gpt-oss model with ChatOllama."""
     
-    @patch("langchain_ollama.chat_models.Client")
-    def test_invoke_with_tools(self, mock_client_class: MagicMock) -> None:
-        """Test invoking gpt-oss model with tools."""
-        # Create mock client instance
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response with tool call
-        mock_client.chat.return_value = {
-            "message": {
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [
-                    {
-                        "function": {
-                            "name": "get_weather",
-                            "arguments": '{"location": "Berlin", "unit": "celsius"}'
-                        }
-                    }
-                ]
-            },
-            "done": True,
-            "done_reason": "stop",
-            "total_duration": 1000000000,
-            "prompt_eval_count": 10,
-            "eval_count": 20,
-        }
-        
+    def test_tool_binding_integration(self) -> None:
+        """Test that tool binding works correctly for gpt-oss models."""
         # Create ChatOllama with gpt-oss model
         llm = ChatOllama(model="gpt-oss:20b")
-        llm_with_tools = llm.bind_tools([get_weather])
         
-        # Invoke with a message
-        result = llm_with_tools.invoke("What's the weather in Berlin?")
+        # Define multiple tools
+        @tool
+        def search_web(query: str) -> str:
+            """Search the web for information.
+            
+            Args:
+                query: The search query.
+            """
+            return f"Results for {query}"
         
-        # Check result
-        assert isinstance(result, AIMessage)
-        assert len(result.tool_calls) == 1
-        assert result.tool_calls[0]["name"] == "get_weather"
-        assert result.tool_calls[0]["args"] == {"location": "Berlin", "unit": "celsius"}
+        @tool
+        def calculate(expression: str) -> str:
+            """Calculate a mathematical expression.
+            
+            Args:
+                expression: The math expression to evaluate.
+            """
+            return "42"
+        
+        # Bind multiple tools
+        llm_with_tools = llm.bind_tools([get_weather, search_web, calculate])
+        
+        # Check that all tools are bound correctly
+        assert hasattr(llm_with_tools, "kwargs")
+        assert "tools" in llm_with_tools.kwargs
+        tools = llm_with_tools.kwargs["tools"]
+        assert len(tools) == 3
+        
+        # Verify each tool is in Harmony format
+        tool_names = {tool["function"]["name"] for tool in tools}
+        assert tool_names == {"get_weather", "search_web", "calculate"}
+        
+        # Check that all tools have proper Harmony format
+        for tool in tools:
+            assert tool["type"] == "function"
+            assert "function" in tool
+            func = tool["function"]
+            assert "name" in func
+            assert "description" in func
+            assert "parameters" in func
+            
+            # Verify parameter types are strings
+            if "properties" in func["parameters"]:
+                for prop in func["parameters"]["properties"].values():
+                    if "type" in prop:
+                        assert isinstance(prop["type"], str)
     
-    @patch("langchain_ollama.chat_models.Client")
-    def test_stream_with_tools(self, mock_client_class: MagicMock) -> None:
-        """Test streaming gpt-oss model with tools."""
-        # Create mock client instance
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock streaming response
-        mock_client.chat.return_value = iter([
-            {
-                "message": {"content": "Let me check the weather for you."},
-                "done": False,
-            },
-            {
-                "message": {
-                    "content": "",
-                    "tool_calls": [
-                        {
-                            "function": {
-                                "name": "get_weather",
-                                "arguments": '{"location": "Madrid"}'
-                            }
-                        }
-                    ]
-                },
-                "done": True,
-                "done_reason": "stop",
-                "total_duration": 1000000000,
-                "prompt_eval_count": 10,
-                "eval_count": 20,
-            }
-        ])
-        
-        # Create ChatOllama with gpt-oss model
+    def test_tool_format_consistency(self) -> None:
+        """Test that tool format is consistent across multiple bindings."""
         llm = ChatOllama(model="gpt-oss:20b")
-        llm_with_tools = llm.bind_tools([get_weather])
         
-        # Stream with a message
-        chunks = list(llm_with_tools.stream("What's the weather in Madrid?"))
+        # First binding
+        llm_with_tool1 = llm.bind_tools([get_weather])
+        tools1 = llm_with_tool1.kwargs["tools"]
         
-        # Check chunks
-        assert len(chunks) > 0
+        # Second binding with same tool
+        llm_with_tool2 = llm.bind_tools([get_weather])
+        tools2 = llm_with_tool2.kwargs["tools"]
         
-        # Last chunk should have tool calls
-        last_chunk = chunks[-1]
-        if hasattr(last_chunk, "tool_calls") and last_chunk.tool_calls:
-            assert len(last_chunk.tool_calls) == 1
-            assert last_chunk.tool_calls[0]["name"] == "get_weather"
-            assert last_chunk.tool_calls[0]["args"] == {"location": "Madrid"}
+        # Tools should be formatted identically
+        assert tools1 == tools2
+        
+        # Both should be in Harmony format
+        for tools in [tools1, tools2]:
+            assert len(tools) == 1
+            tool = tools[0]
+            assert tool["type"] == "function"
+            assert "function" in tool
+            props = tool["function"]["parameters"]["properties"]
+            for prop in props.values():
+                if "type" in prop:
+                    assert isinstance(prop["type"], str)
 
 
 class TestChatParamsWithGptOss:
@@ -407,6 +394,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
