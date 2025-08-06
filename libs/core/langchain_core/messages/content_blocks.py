@@ -8,22 +8,42 @@ This module provides a standardized data structure for representing inputs to an
 outputs from LLMs. The core abstraction is the **Content Block**, a ``TypedDict`` that
 can represent a piece of text, an image, a tool call, or other structured data.
 
+**Rationale**
+
+Different LLM providers use distinct and incompatible API schemas. This module
+introduces a unified, provider-agnostic format to standardize these interactions. A
+message to or from a model is simply a ``list`` of ``ContentBlock`` objects, allowing
+for the natural interleaving of text, images, and other content in a single, ordered
+sequence.
+
+An adapter for a specific provider is responsible for translating this standard list of
+blocks into the format required by its API.
+
+**Extensibility**
+
 Data **not yet mapped** to a standard block may be represented using the
 ``NonStandardContentBlock``, which allows for provider-specific data to be included
 without losing the benefits of type checking and validation.
 
 Furthermore, provider-specific fields **within** a standard block are fully supported
-by default. However, since current type checkers do not recognize this, we are temporarily
-applying type ignore comments to suppress warnings. In the future,
-`PEP 728 <https://peps.python.org/pep-0728/>`__ will add an extra param, ``extra_items=Any``.
-When this is supported, we will apply it to block signatures to signify to type checkers
-that additional provider-specific fields are allowed.
+by default in the ``extras`` field of each block. This allows for additional metadata
+to be included without breaking the standard structure.
+
+Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we will add
+``extra_items=Any`` as a param to Content Blocks. This will signify to type checkers
+that additional provider-specific fields are allowed outside of the ``extras`` field,
+and that will become the new standard approach to adding provider-specific metadata.
+
+.. warning::
+    Do not heavily rely on the ``extras`` field for provider-specific data! This field
+    is subject to deprecation in future releases as we move towards PEP 728.
 
 **Example with PEP 728 provider-specific fields:**
 
 .. code-block:: python
 
-    # Note `extra_items=Any`
+    # Content block definition
+    # NOTE: `extra_items=Any`
     class TextContentBlock(TypedDict, extra_items=Any):
         type: Literal["text"]
         id: NotRequired[str]
@@ -35,6 +55,7 @@ that additional provider-specific fields are allowed.
 
     from langchain_core.messages.content_blocks import TextContentBlock
 
+    # Create a text content block with provider-specific fields
     my_block: TextContentBlock = {
         # Add required fields
         "type": "text",
@@ -46,23 +67,13 @@ that additional provider-specific fields are allowed.
         "custom_field": "any value",
     }
 
+    # Mutating an existing block to add provider-specific fields
     openai_data = my_block["openai_metadata"]  # Type: Any
 
 .. note::
     PEP 728 is enabled with ``# type: ignore[call-arg]`` comments to suppress warnings
     from type checkers that don't yet support it. The functionality works correctly
     in Python 3.13+ and will be fully supported as the ecosystem catches up.
-
-**Rationale**
-
-Different LLM providers use distinct and incompatible API schemas. This module
-introduces a unified, provider-agnostic format to standardize these interactions. A
-message to or from a model is simply a ``list`` of ``ContentBlock`` objects, allowing
-for the natural interleaving of text, images, and other content in a single, ordered
-sequence.
-
-An adapter for a specific provider is responsible for translating this standard list of
-blocks into the format required by its API.
 
 **Key Block Types**
 
@@ -100,6 +111,12 @@ The module defines several types of content blocks, including:
             mime_type="image/png",
         ),
     ]
+
+Factory functions like ``create_text_block`` and ``create_image_block`` are provided
+and offer benefits such as:
+- Automatic ID generation (when not provided)
+- No need to manually specify the ``type`` field
+
 """  # noqa: E501
 
 import warnings
@@ -237,7 +254,7 @@ class TextContentBlock(TypedDict):
     """Block text."""
 
     annotations: NotRequired[list[Annotation]]
-    """Citations and other annotations."""
+    """``Citation``s and other annotations."""
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
@@ -900,29 +917,29 @@ def is_data_content_block(block: dict) -> bool:
 
 
 def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
-    """Type guard to check if a content block is a tool call."""
+    """Type guard to check if a content block is a ``ToolCall``."""
     return block.get("type") == "tool_call"
 
 
 def is_tool_call_chunk(block: ContentBlock) -> TypeGuard[ToolCallChunk]:
-    """Type guard to check if a content block is a tool call chunk."""
+    """Type guard to check if a content block is a ``ToolCallChunk``."""
     return block.get("type") == "tool_call_chunk"
 
 
 def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
-    """Type guard to check if a content block is a text block."""
+    """Type guard to check if a content block is a ``TextContentBlock``."""
     return block.get("type") == "text"
 
 
 def is_reasoning_block(block: ContentBlock) -> TypeGuard[ReasoningContentBlock]:
-    """Type guard to check if a content block is a reasoning block."""
+    """Type guard to check if a content block is a ``ReasoningContentBlock``."""
     return block.get("type") == "reasoning"
 
 
 def is_invalid_tool_call_block(
     block: ContentBlock,
 ) -> TypeGuard[InvalidToolCall]:
-    """Type guard to check if a content block is an invalid tool call."""
+    """Type guard to check if a content block is an ``InvalidToolCall``."""
     return block.get("type") == "invalid_tool_call"
 
 
@@ -1009,7 +1026,7 @@ def create_text_block(
     Args:
         text: The text content of the block.
         id: Content block identifier. Generated automatically if not provided.
-        annotations: Citations and other annotations for the text.
+        annotations: ``Citation``s and other annotations for the text.
         index: Index of block in aggregate response. Used during streaming.
 
     Returns:
