@@ -1,11 +1,11 @@
-"""Utility functions for validating Ollama models."""
+"""Utility function to validate Ollama models."""
 
 from httpx import ConnectError
 from ollama import Client, ResponseError
 
 
 def validate_model(client: Client, model_name: str) -> None:
-    """Validate that a model exists in the Ollama instance.
+    """Validate that a model exists in the local Ollama instance.
 
     Args:
         client: The Ollama client.

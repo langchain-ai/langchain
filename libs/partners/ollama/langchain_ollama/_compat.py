@@ -1,4 +1,4 @@
-"""V1 message conversion utilities for Ollama."""
+"""LangChain v1 message conversion utilities for Ollama."""
 
 from __future__ import annotations
 

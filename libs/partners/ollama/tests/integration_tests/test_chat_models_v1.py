@@ -12,7 +12,7 @@ import pytest
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
-from langchain_ollama.chat_models_v1 import ChatOllama
+from langchain_ollama.v1.chat_models import ChatOllama
 
 DEFAULT_MODEL_NAME = "llama3.1"
 

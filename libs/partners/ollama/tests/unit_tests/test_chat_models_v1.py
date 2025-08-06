@@ -20,7 +20,7 @@ from langchain_ollama._compat import (
     _convert_from_v1_to_ollama_format,
     _convert_to_v1_from_ollama_format,
 )
-from langchain_ollama.chat_models_v1 import (
+from langchain_ollama.v1.chat_models import (
     ChatOllama,
     _parse_arguments_from_tool_call,
     _parse_json_string,
@@ -246,8 +246,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     @pytest.fixture
     def model(self) -> Generator[ChatOllama, None, None]:  # type: ignore[override]
         """Create a ChatOllama instance for testing."""
-        sync_patcher = patch("langchain_ollama.chat_models_v1.Client")
-        async_patcher = patch("langchain_ollama.chat_models_v1.AsyncClient")
+        sync_patcher = patch("langchain_ollama.v1.chat_models.Client")
+        async_patcher = patch("langchain_ollama.v1.chat_models.AsyncClient")
 
         mock_sync_client_class = sync_patcher.start()
         mock_async_client_class = async_patcher.start()
@@ -328,8 +328,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_initialization(self) -> None:
         """Test `ChatOllama` initialization."""
         with (
-            patch("langchain_ollama.chat_models_v1.Client"),
-            patch("langchain_ollama.chat_models_v1.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.Client"),
+            patch("langchain_ollama.v1.chat_models.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME)
 
@@ -339,8 +339,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_chat_params(self) -> None:
         """Test `_chat_params()`."""
         with (
-            patch("langchain_ollama.chat_models_v1.Client"),
-            patch("langchain_ollama.chat_models_v1.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.Client"),
+            patch("langchain_ollama.v1.chat_models.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME, temperature=0.7)
 
@@ -359,8 +359,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_ls_params(self) -> None:
         """Test LangSmith parameters."""
         with (
-            patch("langchain_ollama.chat_models_v1.Client"),
-            patch("langchain_ollama.chat_models_v1.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.Client"),
+            patch("langchain_ollama.v1.chat_models.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME, temperature=0.5)
 
@@ -374,8 +374,8 @@ class TestChatOllama(ChatModelV1UnitTests):
     def test_bind_tools_basic(self) -> None:
         """Test basic tool binding functionality."""
         with (
-            patch("langchain_ollama.chat_models_v1.Client"),
-            patch("langchain_ollama.chat_models_v1.AsyncClient"),
+            patch("langchain_ollama.v1.chat_models.Client"),
+            patch("langchain_ollama.v1.chat_models.AsyncClient"),
         ):
             llm = ChatOllama(model=MODEL_NAME)
 
@@ -394,8 +394,8 @@ class TestChatOllama(ChatModelV1UnitTests):
 # But can be added if needed in the future.
 
 
-@patch("langchain_ollama.chat_models_v1.validate_model")
-@patch("langchain_ollama.chat_models_v1.Client")
+@patch("langchain_ollama.v1.chat_models.validate_model")
+@patch("langchain_ollama.v1.chat_models.Client")
 def test_validate_model_on_init(
     mock_client_class: Any, mock_validate_model: Any
 ) -> None:
@@ -501,7 +501,7 @@ def test_load_response_with_empty_content_is_skipped(
         }
     ]
 
-    with patch("langchain_ollama.chat_models_v1.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_only_response)
@@ -531,7 +531,7 @@ def test_load_response_with_whitespace_content_is_skipped(
         }
     ]
 
-    with patch("langchain_ollama.chat_models_v1.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_whitespace_response)
@@ -570,7 +570,7 @@ def test_load_followed_by_content_response(
         },
     ]
 
-    with patch("langchain_ollama.chat_models_v1.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_then_content_response)
@@ -600,7 +600,7 @@ def test_load_response_with_actual_content_is_not_skipped(
         }
     ]
 
-    with patch("langchain_ollama.chat_models_v1.Client") as mock_client_class:
+    with patch("langchain_ollama.v1.chat_models.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(load_with_content_response)

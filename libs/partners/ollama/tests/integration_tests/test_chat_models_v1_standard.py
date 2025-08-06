@@ -12,7 +12,7 @@ from langchain_tests.integration_tests.chat_models_v1 import ChatModelV1Integrat
 from ollama import ResponseError
 from pydantic import ValidationError
 
-from langchain_ollama.chat_models_v1 import ChatOllama
+from langchain_ollama.v1.chat_models import ChatOllama
 
 DEFAULT_MODEL_NAME = "llama3.1"
 
@@ -251,7 +251,7 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
                 f"Content blocks: {[block.get('type') for block in result.content]}"
             )
 
-    @patch("langchain_ollama.chat_models_v1.Client.list")
+    @patch("langchain_ollama.v1.chat_models.Client.list")
     def test_init_model_not_found(self, mock_list: MagicMock) -> None:
         """Test that a ValueError is raised when the model is not found."""
         mock_list.side_effect = ValueError("Test model not found")
@@ -259,7 +259,7 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
             ChatOllama(model="non-existent-model", validate_model_on_init=True)
         assert "Test model not found" in str(excinfo.value)
 
-    @patch("langchain_ollama.chat_models_v1.Client.list")
+    @patch("langchain_ollama.v1.chat_models.Client.list")
     def test_init_connection_error(self, mock_list: MagicMock) -> None:
         """Test that a ValidationError is raised on connect failure during init."""
         mock_list.side_effect = ConnectError("Test connection error")
@@ -268,7 +268,7 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
             ChatOllama(model="any-model", validate_model_on_init=True)
         assert "Failed to connect to Ollama" in str(excinfo.value)
 
-    @patch("langchain_ollama.chat_models_v1.Client.list")
+    @patch("langchain_ollama.v1.chat_models.Client.list")
     def test_init_response_error(self, mock_list: MagicMock) -> None:
         """Test that a ResponseError is raised."""
         mock_list.side_effect = ResponseError("Test response error")
