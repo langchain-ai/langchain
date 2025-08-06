@@ -67,7 +67,7 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
     @property
     def has_tool_choice(self) -> bool:
         # TODO: update after Ollama implements
-        # https://github.com/ollama/ollama/blob/main/docs/openai.md
+        # https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         return False
 
     def test_tool_streaming(self, model: BaseChatModel) -> None:

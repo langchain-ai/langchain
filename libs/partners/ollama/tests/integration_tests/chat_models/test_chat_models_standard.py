@@ -40,7 +40,7 @@ class TestChatOllama(ChatModelIntegrationTests):
     @property
     def has_tool_choice(self) -> bool:
         # TODO: update after Ollama implements
-        # https://github.com/ollama/ollama/blob/main/docs/openai.md
+        # https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         return False
 
     @property
