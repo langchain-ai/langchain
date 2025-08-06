@@ -168,7 +168,7 @@ class AIMessage:
             content_tool_calls = {
                 block["id"]
                 for block in self.content
-                if block["type"] == "tool_call" and "id" in block
+                if block.get("type") == "tool_call" and "id" in block
             }
             for tool_call in tool_calls:
                 if "id" in tool_call and tool_call["id"] in content_tool_calls:
@@ -178,7 +178,7 @@ class AIMessage:
             content_tool_calls = {
                 block["id"]
                 for block in self.content
-                if block["type"] == "invalid_tool_call" and "id" in block
+                if block.get("type") == "invalid_tool_call" and "id" in block
             }
             for invalid_tool_call in invalid_tool_calls:
                 if (
@@ -188,10 +188,14 @@ class AIMessage:
                     continue
                 self.content.append(invalid_tool_call)
         self._tool_calls = [
-            block for block in self.content if block["type"] == "tool_call"
+            cast("types.ToolCall", block)
+            for block in self.content
+            if block.get("type") == "tool_call"
         ]
         self._invalid_tool_calls = [
-            block for block in self.content if block["type"] == "invalid_tool_call"
+            cast("types.InvalidToolCall", block)
+            for block in self.content
+            if block.get("type") == "invalid_tool_call"
         ]
 
     @property
