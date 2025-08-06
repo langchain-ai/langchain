@@ -55,7 +55,7 @@ select = [
     "ASYNC",  # flake8-async
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
-    "D",      # pydocstyle
+    "D1",      # pydocstyle
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -88,17 +88,13 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
     "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
 ]
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1"]
 
 [tool.mypy]
 exclude = [

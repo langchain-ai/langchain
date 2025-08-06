@@ -1,9 +1,12 @@
+"""GitHub utilities."""
+
 import http.client
 import json
 from typing import Optional
 
 
 def list_packages(*, contains: Optional[str] = None) -> list[str]:
+    """List all packages in the langchain repository templates directory."""
     conn = http.client.HTTPSConnection("api.github.com")
     try:
         headers = {
