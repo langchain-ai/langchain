@@ -319,8 +319,8 @@ class TestGptOssIntegration:
 
         # Check that all tools have proper Harmony format
         for tool_def in tools:
-            assert tool["type"] == "function"
-            assert "function" in tool
+            assert tool_def["type"] == "function"
+            assert "function" in tool_def
             func = tool["function"]
             assert "name" in func
             assert "description" in func
@@ -394,5 +394,6 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
