@@ -288,7 +288,7 @@ class TestGptOssResponseParsing:
 class TestGptOssIntegration:
     """Integration tests for gpt-oss model with ChatOllama."""
     
-    @patch("ollama.Client")
+    @patch("langchain_ollama.chat_models.Client")
     def test_invoke_with_tools(self, mock_client_class: MagicMock) -> None:
         """Test invoking gpt-oss model with tools."""
         # Create mock client instance
@@ -407,6 +407,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
