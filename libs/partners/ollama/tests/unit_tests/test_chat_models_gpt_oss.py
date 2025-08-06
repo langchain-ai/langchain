@@ -288,11 +288,15 @@ class TestGptOssResponseParsing:
 class TestGptOssIntegration:
     """Integration tests for gpt-oss model with ChatOllama."""
     
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat")
-    def test_invoke_with_tools(self, mock_create_chat: MagicMock) -> None:
+    @patch("ollama.Client")
+    def test_invoke_with_tools(self, mock_client_class: MagicMock) -> None:
         """Test invoking gpt-oss model with tools."""
+        # Create mock client instance
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
         # Mock response with tool call
-        mock_create_chat.return_value = {
+        mock_client.chat.return_value = {
             "message": {
                 "role": "assistant",
                 "content": "",
@@ -325,11 +329,15 @@ class TestGptOssIntegration:
         assert result.tool_calls[0]["name"] == "get_weather"
         assert result.tool_calls[0]["args"] == {"location": "Berlin", "unit": "celsius"}
     
-    @patch("langchain_ollama.chat_models.ChatOllama._create_chat_stream")
-    def test_stream_with_tools(self, mock_create_stream: MagicMock) -> None:
+    @patch("ollama.Client")
+    def test_stream_with_tools(self, mock_client_class: MagicMock) -> None:
         """Test streaming gpt-oss model with tools."""
+        # Create mock client instance
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
         # Mock streaming response
-        mock_create_stream.return_value = iter([
+        mock_client.chat.return_value = iter([
             {
                 "message": {"content": "Let me check the weather for you."},
                 "done": False,
@@ -400,4 +408,5 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
