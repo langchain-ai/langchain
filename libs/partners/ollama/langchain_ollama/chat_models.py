@@ -704,10 +704,9 @@ class ChatOllama(BaseChatModel):
         if tools := kwargs.get("tools"):
             # Check if we need Harmony format conversion for gpt-oss models
             if _is_gpt_oss_model(self.model) or kwargs.get("_harmony_format"):
-                # For gpt-oss models, we need to convert tools to Harmony format
-                # The actual conversion will be implemented with _convert_to_harmony_tool
-                # TODO: Apply Harmony format conversion here
-                params["tools"] = tools
+                # For gpt-oss models, convert tools to Harmony format
+                harmony_tools = [_convert_to_harmony_tool(tool) for tool in tools]
+                params["tools"] = harmony_tools
                 # Remove the internal flag if present
                 if "_harmony_format" in kwargs:
                     kwargs.pop("_harmony_format")
@@ -1507,6 +1506,7 @@ class ChatOllama(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
 
 
 
