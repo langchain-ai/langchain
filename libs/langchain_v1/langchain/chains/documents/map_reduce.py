@@ -10,7 +10,6 @@ from typing import (
     Callable,
     Generic,
     Literal,
-    NotRequired,
     Optional,
     Union,
     cast,
@@ -18,7 +17,7 @@ from typing import (
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from langchain._internal._documents import format_document_xml
 from langchain._internal._prompts import aresolve_prompt, resolve_prompt
