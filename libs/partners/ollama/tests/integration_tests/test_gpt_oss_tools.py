@@ -128,8 +128,8 @@ class TestGptOssToolCallingIntegration:
 
         # Test that tools are properly bound
         assert hasattr(llm_with_tools, "kwargs")
-        assert "tools" in llm_with_tools.kwargs
-        tools = llm_with_tools.kwargs["tools"]
+        assert "tools" in llm_with_tools.kwargs  # type: ignore[attr-defined]
+        tools = llm_with_tools.kwargs["tools"]  # type: ignore[attr-defined]
         assert len(tools) == 3
 
         # Verify tool names
@@ -357,3 +357,4 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
