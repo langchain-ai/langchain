@@ -1,3 +1,5 @@
+"""HTML text splitters."""
+
 from __future__ import annotations
 
 import copy
@@ -18,8 +20,31 @@ from typing import (
 import requests
 from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
+from typing_extensions import override
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
+
+try:
+    import nltk
+
+    _HAS_NLTK = True
+except ImportError:
+    _HAS_NLTK = False
+
+try:
+    from bs4 import BeautifulSoup, Tag
+    from bs4.element import PageElement
+
+    _HAS_BS4 = True
+except ImportError:
+    _HAS_BS4 = False
+
+try:
+    from lxml import etree
+
+    _HAS_LXML = True
+except ImportError:
+    _HAS_LXML = False
 
 
 class ElementType(TypedDict):
@@ -158,8 +183,7 @@ class HTMLHeaderTextSplitter:
         Raises:
             requests.RequestException: If the HTTP request fails.
         """
-        kwargs.setdefault("timeout", timeout)
-        response = requests.get(url, **kwargs)
+        response = requests.get(url, timeout=timeout, **kwargs)
         response.raise_for_status()
         return self.split_text(response.text)
 
@@ -173,8 +197,7 @@ class HTMLHeaderTextSplitter:
             A list of split Document objects.
         """
         if isinstance(file, str):
-            with open(file, encoding="utf-8") as f:
-                html_content = f.read()
+            html_content = pathlib.Path(file).read_text(encoding="utf-8")
         else:
             html_content = file.read()
         return list(self._generate_documents(html_content))
@@ -192,20 +215,18 @@ class HTMLHeaderTextSplitter:
         Yields:
             Document objects as they are created.
         """
-        try:
-            from bs4 import BeautifulSoup
-        except ImportError as e:
+        if not _HAS_BS4:
             msg = (
                 "Unable to import BeautifulSoup. Please install via `pip install bs4`."
             )
-            raise ImportError(msg) from e
+            raise ImportError(msg)
 
         soup = BeautifulSoup(html_content, "html.parser")
         body = soup.body if soup.body else soup
 
         # Dictionary of active headers:
         #   key = user-defined header name (e.g. "Header 1")
-        #   value = (header_text, level, dom_depth)
+        #   value = tuple of header_text, level, dom_depth
         active_headers: dict[str, tuple[str, int, int]] = {}
         current_chunk: list[str] = []
 
@@ -227,11 +248,10 @@ class HTMLHeaderTextSplitter:
         while stack:
             node = stack.pop()
             children = list(node.children)
-            from bs4.element import Tag
 
-            for child in reversed(children):
-                if isinstance(child, Tag):
-                    stack.append(child)
+            stack.extend(
+                child for child in reversed(children) if isinstance(child, Tag)
+            )
 
             tag = getattr(node, "name", None)
             if not tag:
@@ -380,23 +400,20 @@ class HTMLSectionSplitter:
                 - 'content': The content under the header.
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
-        try:
-            from bs4 import BeautifulSoup
-            from bs4.element import PageElement
-        except ImportError as e:
+        if not _HAS_BS4:
             msg = "Unable to import BeautifulSoup/PageElement, \
                     please install with `pip install \
                     bs4`."
-            raise ImportError(msg) from e
+            raise ImportError(msg)
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections: list[dict[str, str | None]] = []
 
-        headers = soup.find_all(["body", *headers])  # type: ignore[assignment]
+        headers = soup.find_all(["body", *headers])
 
         for i, header in enumerate(headers):
-            header_element = cast(PageElement, header)
+            header_element = cast("PageElement", header)
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
@@ -406,7 +423,7 @@ class HTMLSectionSplitter:
                 current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
-                if i + 1 < len(headers) and element == headers[i + 1]:  # type: ignore[comparison-overlap]
+                if i + 1 < len(headers) and element == headers[i + 1]:
                     break
                 if isinstance(element, str):
                     section_content.append(element)
@@ -439,11 +456,9 @@ class HTMLSectionSplitter:
         if self.xslt_path is None:
             return html_content
 
-        try:
-            from lxml import etree
-        except ImportError as e:
+        if not _HAS_LXML:
             msg = "Unable to import lxml, please install with `pip install lxml`."
-            raise ImportError(msg) from e
+            raise ImportError(msg)
         # use lxml library to parse html document and return xml ElementTree
         # Create secure parsers to prevent XXE attacks
         html_parser = etree.HTMLParser(no_network=True)
@@ -477,7 +492,7 @@ class HTMLSectionSplitter:
 
         return [
             Document(
-                cast(str, section["content"]),
+                cast("str", section["content"]),
                 metadata={
                     self.headers_to_split_on[str(section["tag_name"])]: section[
                         "header"
@@ -589,12 +604,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         keep_separator: Union[bool, Literal["start", "end"]] = True,
     ):
         """Initialize splitter."""
-        try:
-            from bs4 import BeautifulSoup, Tag
-
-            self._BeautifulSoup = BeautifulSoup
-            self._Tag = Tag
-        except ImportError:
+        if not _HAS_BS4:
             msg = (
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
@@ -642,16 +652,13 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             )
 
         if self._stopword_removal:
-            try:
-                import nltk
-
-                nltk.download("stopwords")
-                self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
-            except ImportError:
+            if not _HAS_NLTK:
                 msg = (
                     "Could not import nltk. Please install it with 'pip install nltk'."
                 )
                 raise ImportError(msg)
+            nltk.download("stopwords")
+            self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
 
     def split_text(self, text: str) -> list[Document]:
         """Splits the provided HTML text into smaller chunks based on the configuration.
@@ -662,7 +669,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             List[Document]: A list of Document objects containing the split content.
         """
-        soup = self._BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "html.parser")
 
         self._process_media(soup)
 
@@ -674,6 +681,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return self._process_html(soup)
 
+    @override
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> list[Document]:

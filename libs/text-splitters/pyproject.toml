@@ -24,6 +24,7 @@ typing = [
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.8.0",
+    "types-beautifulsoup4"
 ]
 dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
 test = [
@@ -60,10 +61,52 @@ ignore_missing_imports = "True"
 [tool.ruff]
 target-version = "py39"
 
+
 [tool.ruff.lint]
-select = ["E", "F", "FBT", "I", "UP", "PGH003", "T201", "D"]
-ignore = ["D100",]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FA100",   # Can't activate since we exclude UP007 for now
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",  # flake8-annotations: Any type
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = [
+    "D1",      # Docstrings not mandatory in scripts
+    "INP001",  # Not a package
+    "S311"     # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"tests/**" = [
+    "D1",      # Docstrings not mandatory in tests
+    "PLR2004", # Magic value comparisons
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001"   # Private member access in tests
+]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -75,9 +118,3 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
