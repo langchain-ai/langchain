@@ -1,3 +1,5 @@
+"""OpenAI tools extraction chain."""
+
 from typing import Union
 
 from langchain_core._api import deprecated

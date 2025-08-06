@@ -1,3 +1,5 @@
+"""Init chat model."""
+
 from __future__ import annotations
 
 import warnings

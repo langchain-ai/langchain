@@ -1,3 +1,5 @@
+"""OpenAI functions QA with structure chain."""
+
 from typing import Any, Optional, Union, cast
 
 from langchain_core._api import deprecated

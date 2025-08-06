@@ -1,4 +1,7 @@
-# Credit to https://github.com/openai/evals/tree/main
+"""Evaluation criteria prompt.
+
+Credit to https://github.com/openai/evals/tree/main
+"""
 
 from langchain_core.prompts import PromptTemplate
 

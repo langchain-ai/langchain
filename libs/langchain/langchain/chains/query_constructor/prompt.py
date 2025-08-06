@@ -1,3 +1,5 @@
+"""Query constructor prompts."""
+
 from langchain_core.prompts import PromptTemplate
 
 SONG_DATA_SOURCE = """\

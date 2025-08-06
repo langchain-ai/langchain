@@ -1,3 +1,5 @@
+"""Summarize chains."""
+
 from langchain.chains.summarize.chain import (
     LoadingCallable,
     load_summarize_chain,
