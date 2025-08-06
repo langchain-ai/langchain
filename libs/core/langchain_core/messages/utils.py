@@ -36,7 +36,6 @@ from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.content_blocks import ContentBlock
-from langchain_core.messages.content_blocks import ToolCall as ToolCallV1
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -492,17 +491,6 @@ def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
         return HumanMessageV1(content, name=message.name)
     if isinstance(message, AIMessage):  # Checking for v0 AIMessage
         content = [create_text_block(str(message.content))]
-        # Handle tool calls from v0 messages
-        if message.tool_calls:
-            for tool_call in message.tool_calls:
-                content.append(
-                    ToolCallV1(
-                        type="tool_call",
-                        name=tool_call["name"],
-                        args=tool_call["args"],
-                        id=tool_call.get("id", ""),
-                    )
-                )
 
         # Construct ResponseMetadata TypedDict from v0 response_metadata dict
         # Since ResponseMetadata has total=False, we can safely cast the dict
@@ -512,6 +500,7 @@ def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
             name=message.name,
             usage_metadata=message.usage_metadata,
             response_metadata=response_metadata,
+            tool_calls=message.tool_calls,
         )
     if isinstance(message, SystemMessage):  # Checking for v0 SystemMessage
         content = [create_text_block(str(message.content))]
