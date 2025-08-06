@@ -67,8 +67,6 @@ class ChatParrotLinkV1(BaseChatModel):
         for block in last_message.content:
             if isinstance(block, dict) and block.get("type") == "text":
                 text_content += str(block.get("text", ""))
-            # elif isinstance(block, str):
-            #     text_content += block
 
         # Echo the first parrot_buffer_length characters
         echoed_text = text_content[: self.parrot_buffer_length]
@@ -136,8 +134,6 @@ class ChatParrotLinkV1(BaseChatModel):
         for block in last_message.content:
             if isinstance(block, dict) and block.get("type") == "text":
                 text_content += str(block.get("text", ""))
-            # elif isinstance(block, str):
-            #     text_content += block
 
         # Echo the first parrot_buffer_length characters
         echoed_text = text_content[: self.parrot_buffer_length]

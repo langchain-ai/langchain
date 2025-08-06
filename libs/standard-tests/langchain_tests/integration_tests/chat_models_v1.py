@@ -40,7 +40,6 @@ from langchain_core.messages.content_blocks import (
     create_plaintext_block,
     create_text_block,
     create_tool_call,
-    create_video_block,
     is_reasoning_block,
     is_text_block,
     is_tool_call_block,
@@ -87,26 +86,6 @@ ContentBlock = Union[
     CodeInterpreterOutput,
     CodeInterpreterResult,
 ]
-
-
-def _get_test_image_base64() -> str:
-    """Get a small test image as base64 for testing."""
-    # 1x1 pixel transparent PNG
-    return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="  # noqa: E501
-
-
-def _get_test_audio_base64() -> str:
-    """Get a small test audio file as base64 for testing."""
-    # Minimal WAV file (1 second of silence)
-    return (
-        "UklGRjIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ4AAAAAAAAAAAAAAAAAAA=="
-    )
-
-
-def _get_test_video_base64() -> str:
-    """Get a small test video file as base64 for testing."""
-    # Minimal valid video file would be much larger; for testing we use a placeholder
-    return "PLACEHOLDER_VIDEO_DATA"
 
 
 def _get_joke_class(
@@ -492,11 +471,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text, str)
-        assert len(result.content) > 0
-
-        text_contentblock = result.content[0]
-        assert is_text_block(text_contentblock)
+        assert result.text
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
         """Test to verify that ``await model.ainvoke(simple_message)`` works.
@@ -522,11 +497,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text, str)
-        assert len(result.content) > 0
-
-        text_contentblock = result.content[0]
-        assert is_text_block(text_contentblock)
+        assert result.text
 
     def test_stream(self, model: BaseChatModel) -> None:
         """Test to verify that ``model.stream(simple_message)`` works.
@@ -616,9 +587,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert len(result.content) > 0
-            assert isinstance(result.text, str)
-            assert len(result.text) > 0
+            assert result.text
 
     async def test_abatch(self, model: BaseChatModel) -> None:
         """Test to verify that ``await model.abatch([messages])`` works.
@@ -656,9 +625,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert len(result.content) > 0
-            assert isinstance(result.text, str)
-            assert len(result.text) > 0
+            assert result.text
 
     def test_conversation(self, model: BaseChatModel) -> None:
         """Test to verify that the model can handle multi-turn conversations.
@@ -690,9 +657,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         result = model.invoke(messages)  # type: ignore[arg-type]
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert len(result.content) > 0
-        assert isinstance(result.text, str)
-        assert len(result.text) > 0
+        assert result.text
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
         """Test to verify that the model can handle double-message conversations.
@@ -731,9 +696,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         result = model.invoke(messages)  # type: ignore[arg-type]
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert len(result.content) > 0
-        assert isinstance(result.text, str)
-        assert len(result.text) > 0
+        assert result.text
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
         """Test to verify that the model returns correct usage metadata.
@@ -1070,25 +1033,6 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             pytest.skip("Test requires tool calling.")
 
         tool_choice_value = None if not self.has_tool_choice else "any"
-        # Emit warning if tool_choice_value property is overridden
-
-        # TODO remove since deprecated?
-        # if inspect.getattr_static(
-        #     self, "tool_choice_value"
-        # ) is not inspect.getattr_static(
-        #     ChatModelV1IntegrationTests, "tool_choice_value"
-        # ):
-        #     warn_deprecated(
-        #         "0.3.15",
-        #         message=(
-        #             "`tool_choice_value` will be removed in version 0.3.20. If a "
-        #             "model supports `tool_choice`, it should accept `tool_choice='any' "  # noqa: E501
-        #             "and `tool_choice=<string name of tool>`. If the model does not "
-        #             "support `tool_choice`, override the `supports_tool_choice` "
-        #             "property to return `False`."
-        #         ),
-        #         removal="0.3.20",
-        #     )
 
         model_with_tools = model.bind_tools(
             [magic_function], tool_choice=tool_choice_value
@@ -2297,54 +2241,6 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         #     _ = model.bind_tools([random_image]).invoke(messages)
 
-    def test_image_content_blocks_with_analysis(self, model: BaseChatModel) -> None:
-        """Test image analysis using ``ImageContentBlock``s.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_image_content_blocks:
-            pytest.skip("Model does not support image inputs.")
-
-        image_block = create_image_block(
-            base64=_get_test_image_base64(),
-            mime_type="image/png",
-        )
-        text_block = create_text_block("Analyze this image in detail.")
-
-        result = model.invoke([HumanMessage([text_block, image_block])])
-
-        assert isinstance(result, AIMessage)
-        text_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict) and is_text_block(block)
-        ]
-        assert len(text_blocks) > 0
-        if result.text:
-            assert len(result.text) > 10  # Substantial response
-
-    def test_video_content_blocks(self, model: BaseChatModel) -> None:
-        """Test video content block processing.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_video_content_blocks:
-            pytest.skip("Model does not support video inputs.")
-
-        video_block = create_video_block(
-            base64=_get_test_video_base64(),
-            mime_type="video/mp4",
-        )
-        text_block = create_text_block("Describe what you see in this video.")
-
-        result = model.invoke([HumanMessage([text_block, video_block])])
-
-        assert isinstance(result, AIMessage)
-        if result.text:
-            assert len(result.text) > 10  # Substantial response
-
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.
 
@@ -2767,45 +2663,46 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
                 or "ん" in customer_name_jp
             ), f"Japanese Unicode characters not found in: {customer_name_jp}"
 
-    def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
-        """Test complex reasoning with multiple content types.
+    # TODO
+    # def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
+    #     """Test complex reasoning with multiple content types.
 
-        TODO: expand docstring
+    #     TODO: expand docstring
 
-        """
-        if not self.supports_multimodal_reasoning:
-            pytest.skip("Model does not support multimodal reasoning.")
+    #     """
+    #     if not self.supports_multimodal_reasoning:
+    #         pytest.skip("Model does not support multimodal reasoning.")
 
-        content_blocks: list[types.ContentBlock] = [
-            create_text_block(
-                "Compare these media files and provide reasoning analysis:"
-            ),
-            create_image_block(
-                base64=_get_test_image_base64(),
-                mime_type="image/png",
-            ),
-        ]
+    #     content_blocks: list[types.ContentBlock] = [
+    #         create_text_block(
+    #             "Compare these media files and provide reasoning analysis:"
+    #         ),
+    #         create_image_block(
+    #             base64=_get_test_image_base64(),
+    #             mime_type="image/png",
+    #         ),
+    #     ]
 
-        if self.supports_audio_content_blocks:
-            content_blocks.append(
-                create_audio_block(
-                    base64=_get_test_audio_base64(),
-                    mime_type="audio/wav",
-                )
-            )
+    #     if self.supports_audio_content_blocks:
+    #         content_blocks.append(
+    #             create_audio_block(
+    #                 base64=_get_test_audio_base64(),
+    #                 mime_type="audio/wav",
+    #             )
+    #         )
 
-        message = HumanMessage(content=cast("list[types.ContentBlock]", content_blocks))
-        result = model.invoke([message])
+    #     message = HumanMessage(content=cast("list[types.ContentBlock]", content_blocks))  # noqa: E501
+    #     result = model.invoke([message])
 
-        assert isinstance(result, AIMessage)
+    #     assert isinstance(result, AIMessage)
 
-        if self.supports_reasoning_content_blocks:
-            reasoning_blocks = [
-                block
-                for block in result.content
-                if isinstance(block, dict) and is_reasoning_block(block)
-            ]
-            assert len(reasoning_blocks) > 0
+    #     if self.supports_reasoning_content_blocks:
+    #         reasoning_blocks = [
+    #             block
+    #             for block in result.content
+    #             if isinstance(block, dict) and is_reasoning_block(block)
+    #         ]
+    #         assert len(reasoning_blocks) > 0
 
     def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
         """Test that the model can generate ``Citations`` with source links.

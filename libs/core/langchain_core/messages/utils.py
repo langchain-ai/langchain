@@ -570,9 +570,7 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
 
             tool_call = ToolCall(
                 type="tool_call",
-                name=message[
-                    "name"
-                ],  # TODO: revisit, this is the name of the message, not the tool
+                name=message["name"],
                 args=message["args"],
                 id=message["id"],
             )

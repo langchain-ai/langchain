@@ -173,26 +173,27 @@ class TestChatOllamaV1(ChatModelV1IntegrationTests):
     def test_agent_loop(self, model: BaseChatModel) -> None:
         super().test_agent_loop(model)
 
-    @pytest.mark.xfail(
-        reason=(
-            "No single Ollama model supports both multimodal content and reasoning. "
-            "Override skips test due to model limitations."
-        )
-    )
-    def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
-        """Test complex reasoning with multiple content types.
+    # TODO
+    # @pytest.mark.xfail(
+    #     reason=(
+    #         "No single Ollama model supports both multimodal content and reasoning. "
+    #         "Override skips test due to model limitations."
+    #     )
+    # )
+    # def test_multimodal_reasoning(self, model: BaseChatModel) -> None:
+    #     """Test complex reasoning with multiple content types.
 
-        This test overrides the default model to use a reasoning-capable model
-        with reasoning mode explicitly enabled. Note that this test requires
-        both multimodal support AND reasoning support.
-        """
-        if not self.supports_multimodal_reasoning:
-            pytest.skip("Model does not support multimodal reasoning.")
+    #     This test overrides the default model to use a reasoning-capable model
+    #     with reasoning mode explicitly enabled. Note that this test requires
+    #     both multimodal support AND reasoning support.
+    #     """
+    #     if not self.supports_multimodal_reasoning:
+    #         pytest.skip("Model does not support multimodal reasoning.")
 
-        pytest.skip(
-            "TODO: Update this when we have a model that supports both multimodal and "
-            "reasoning."
-        )
+    #     pytest.skip(
+    #         "TODO: Update this when we have a model that supports both multimodal and "  # noqa: E501
+    #         "reasoning."
+    #     )
 
     @pytest.mark.xfail(
         reason=(

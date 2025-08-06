@@ -1,4 +1,4 @@
-"""Test the standard v1 tests on the ChatParrotLinkV1 custom chat model."""
+"""Test the standard v1 tests on the ``ChatParrotLinkV1`` custom chat model."""
 
 import pytest
 
