@@ -318,8 +318,8 @@ class TestGptOssErrorHandling:
         # Create a tool that might cause parsing issues
         @tool
         def complex_tool(
-            data: Dict[str, Any],
-            nested: Optional[Dict[str, Any]] = None,
+            data: dict[str, Any],
+            nested: dict[str, Any] | None = None,
         ) -> str:
             """A complex tool with nested parameters.
 
@@ -359,4 +359,5 @@ class TestGptOssErrorHandling:
 
         # Should have no tool calls
         assert not response.tool_calls or len(response.tool_calls) == 0
+
 
