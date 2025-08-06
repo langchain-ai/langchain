@@ -498,9 +498,7 @@ def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
                 content.append(
                     ToolCallV1(
                         type="tool_call",
-                        name=tool_call[
-                            "name"  # TODO: this is the name of the message, not the tool, so remove?  # noqa: E501
-                        ],
+                        name=tool_call["name"],
                         args=tool_call["args"],
                         id=tool_call.get("id", ""),
                     )
@@ -522,7 +520,7 @@ def _convert_from_v0_to_v1(message: BaseMessage) -> MessageV1:
         content = [create_text_block(str(message.content))]
         return ToolMessageV1(
             content=content,
-            name=message.name,  # TODO: this is the name of the message, not the tool, so remove?  # noqa: E501
+            name=message.name,
             tool_call_id=message.tool_call_id,
             status=message.status,
         )
