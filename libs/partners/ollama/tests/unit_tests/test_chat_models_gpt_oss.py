@@ -376,11 +376,19 @@ class TestChatParamsWithGptOss:
     def test_chat_params_with_harmony_tools(self) -> None:
         """Test that _chat_params correctly formats tools for gpt-oss."""
         llm = ChatOllama(model="gpt-oss:20b")
+        
+        # Bind tools - this adds tools to kwargs
         llm_with_tools = llm.bind_tools([get_weather])
         
-        # Get chat params
+        # Get chat params - tools are passed through kwargs
         messages = [HumanMessage(content="What's the weather?")]
-        params = llm_with_tools._chat_params(messages)
+        
+        # The tools are in the bound model's kwargs
+        assert hasattr(llm_with_tools, "kwargs")
+        assert "tools" in llm_with_tools.kwargs
+        
+        # When _chat_params is called, it should include the tools from kwargs
+        params = llm_with_tools._chat_params(messages, **llm_with_tools.kwargs)
         
         # Check that tools are included and in Harmony format
         assert "tools" in params
@@ -397,6 +405,7 @@ class TestChatParamsWithGptOss:
         for prop in props.values():
             if "type" in prop:
                 assert isinstance(prop["type"], str)
+
 
 
 
