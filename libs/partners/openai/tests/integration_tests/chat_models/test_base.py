@@ -875,7 +875,7 @@ def test_audio_output_modality() -> None:
 
 def test_audio_input_modality() -> None:
     llm = ChatOpenAI(
-        model="gpt-5",
+        model="gpt-4o-audio-preview",
         temperature=0,
         model_kwargs={
             "modalities": ["text", "audio"],
