@@ -1131,6 +1131,12 @@ def test_init_o1() -> None:
     assert len(record) == 0
 
 
+def test_init_minimal_reasoning_effort() -> None:
+    with pytest.warns(None) as record:  # type: ignore[call-overload]
+        ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
+    assert len(record) == 0
+
+
 def test_structured_output_old_model() -> None:
     class Output(TypedDict):
         """output."""

@@ -458,8 +458,7 @@ class BaseChatOpenAI(BaseChatModel):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
@@ -507,8 +506,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
-    Currently supported values are low, medium, and high. Reducing reasoning effort
-    can result in faster responses and fewer tokens used on reasoning in a response.
+    Currently supported values are ``'minimal'``, ``'low'``, ``'medium'``, and
+    ``'high'``. Reducing reasoning effort can result in faster responses and fewer
+    tokens used on reasoning in a response.
 
     .. versionadded:: 0.2.14
     """
@@ -526,6 +526,17 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     .. versionadded:: 0.3.24
+
+    """
+    verbosity: Optional[str] = None
+    """Controls the verbosity level of responses for reasoning models. For use with the
+    Responses API.
+
+    Currently supported values are ``'low'``, ``'medium'``, and ``'high'``.
+
+    Controls how detailed the model's responses are.
+
+    .. versionadded:: 0.3.28
 
     """
     tiktoken_model_name: Optional[str] = None
@@ -805,6 +816,7 @@ class BaseChatOpenAI(BaseChatModel):
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
+            "verbosity": self.verbosity,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
