@@ -23,6 +23,73 @@ def _make_wrapped_coroutine(
 
 
 def custom_tool(*args: Any, **kwargs: Any) -> Any:
+    """Decorator to create an OpenAI custom tool.
+
+    Custom tools allow for tools with (potentially long) freeform string inputs.
+
+    See below for an example using LangGraph:
+
+    .. code-block:: python
+
+        @custom_tool
+        def execute_code(code: str) -> str:
+            \"\"\"Execute python code.\"\"\"
+            return "27"
+
+
+        llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+
+        agent = create_react_agent(llm, [execute_code])
+
+        input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
+        for step in agent.stream(
+            {"messages": [input_message]},
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+
+    You can also specify a format for a corresponding context-free grammar using the
+    ``format`` kwarg:
+
+    .. code-block:: python
+
+        from langchain_openai import ChatOpenAI, custom_tool
+        from langgraph.prebuilt import create_react_agent
+
+        grammar = \"\"\"
+        start: expr
+        expr: term (SP ADD SP term)* -> add
+        | term
+        term: factor (SP MUL SP factor)* -> mul
+        | factor
+        factor: INT
+        SP: " "
+        ADD: "+"
+        MUL: "*"
+        %import common.INT
+        \"\"\"
+
+        format = {"type": "grammar", "syntax": "lark", "definition": grammar}
+
+        # highlight-next-line
+        @custom_tool(format=format)
+        def do_math(input_string: str) -> str:
+            \"\"\"Do a mathematical operation.\"\"\"
+            return "27"
+
+
+        llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+
+        agent = create_react_agent(llm, [do_math])
+
+        input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
+        for step in agent.stream(
+            {"messages": [input_message]},
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+    """
+
     def decorator(func: Callable[..., Any]) -> Any:
         metadata = {"type": "custom_tool"}
         if "format" in kwargs:
