@@ -1395,34 +1395,34 @@ def test_v1_text_accessor() -> None:
     # Test HumanMessage
     human_msg = HumanMessageV1(content="Hello world")
     assert human_msg.text == "Hello world"
-    assert human_msg.text() == "Hello world"
-    assert str(human_msg.text) == human_msg.text()
+    assert human_msg.text() == "Hello world"  # type: ignore[operator]
+    assert str(human_msg.text) == human_msg.text()  # type: ignore[operator]
 
     # Test SystemMessage
     system_msg = SystemMessageV1(content="You are a helpful assistant")
     assert system_msg.text == "You are a helpful assistant"
-    assert system_msg.text() == "You are a helpful assistant"
-    assert str(system_msg.text) == system_msg.text()
+    assert system_msg.text() == "You are a helpful assistant"  # type: ignore[operator]
+    assert str(system_msg.text) == system_msg.text()  # type: ignore[operator]
 
     # Test AIMessage
     ai_msg = AIMessageV1(content="I can help you with that")
     assert ai_msg.text == "I can help you with that"
-    assert ai_msg.text() == "I can help you with that"
-    assert str(ai_msg.text) == ai_msg.text()
+    assert ai_msg.text() == "I can help you with that"  # type: ignore[operator]
+    assert str(ai_msg.text) == ai_msg.text()  # type: ignore[operator]
 
     # Test ToolMessage
     tool_msg = ToolMessageV1(content="Task completed", tool_call_id="tool_1")
     assert tool_msg.text == "Task completed"
-    assert tool_msg.text() == "Task completed"
-    assert str(tool_msg.text) == tool_msg.text()
+    assert tool_msg.text() == "Task completed"  # type: ignore[operator]
+    assert str(tool_msg.text) == tool_msg.text()  # type: ignore[operator]
 
     # Test with complex content (list of content blocks)
     complex_msg = HumanMessageV1(
         content=[{"type": "text", "text": "Hello "}, {"type": "text", "text": "world"}]
     )
     assert complex_msg.text == "Hello world"
-    assert complex_msg.text() == "Hello world"
-    assert str(complex_msg.text) == complex_msg.text()
+    assert complex_msg.text() == "Hello world"  # type: ignore[operator]
+    assert str(complex_msg.text) == complex_msg.text()  # type: ignore[operator]
 
     # Test with mixed content (text and non-text blocks)
     mixed_msg = AIMessageV1(
@@ -1433,11 +1433,11 @@ def test_v1_text_accessor() -> None:
         ]
     )
     assert mixed_msg.text == "The answer is 42"
-    assert mixed_msg.text() == "The answer is 42"
-    assert str(mixed_msg.text) == mixed_msg.text()
+    assert mixed_msg.text() == "The answer is 42"  # type: ignore[operator]
+    assert str(mixed_msg.text) == mixed_msg.text()  # type: ignore[operator]
 
     # Test empty content
     empty_msg = HumanMessageV1(content=[])
     assert empty_msg.text == ""
-    assert empty_msg.text() == ""
-    assert str(empty_msg.text) == empty_msg.text()
+    assert empty_msg.text() == ""  # type: ignore[operator]
+    assert str(empty_msg.text) == empty_msg.text()  # type: ignore[operator]

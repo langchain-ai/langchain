@@ -213,7 +213,7 @@ class AIMessage:
         ]
 
     @property
-    def text(self) -> TextAccessor:
+    def text(self) -> str:
         """Extract all text content from the AI message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
@@ -221,7 +221,7 @@ class AIMessage:
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
-        return TextAccessor(text_value)
+        return cast("str", TextAccessor(text_value))
 
     @property
     def tool_calls(self) -> list[types.ToolCall]:
@@ -578,7 +578,7 @@ class HumanMessage:
         self.name = name
 
     @property
-    def text(self) -> TextAccessor:
+    def text(self) -> str:
         """Extract all text content from the message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
@@ -586,7 +586,7 @@ class HumanMessage:
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
-        return TextAccessor(text_value)
+        return cast("str", TextAccessor(text_value))
 
 
 @dataclass
@@ -662,7 +662,7 @@ class SystemMessage:
         self.name = name
 
     @property
-    def text(self) -> TextAccessor:
+    def text(self) -> str:
         """Extract all text content from the system message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
@@ -670,7 +670,7 @@ class SystemMessage:
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
-        return TextAccessor(text_value)
+        return cast("str", TextAccessor(text_value))
 
 
 @dataclass
@@ -758,7 +758,7 @@ class ToolMessage(ToolOutputMixin):
         self.status = status
 
     @property
-    def text(self) -> TextAccessor:
+    def text(self) -> str:
         """Extract all text content from the tool message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
@@ -766,7 +766,7 @@ class ToolMessage(ToolOutputMixin):
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
-        return TextAccessor(text_value)
+        return cast("str", TextAccessor(text_value))
 
     def __post_init__(self) -> None:
         """Initialize computed fields after dataclass creation.
