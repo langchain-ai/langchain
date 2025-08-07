@@ -1134,3 +1134,46 @@ def test_tools_and_structured_output() -> None:
     assert isinstance(aggregated["raw"], AIMessage)
     assert aggregated["raw"].tool_calls
     assert aggregated["parsed"] is None
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_invoke() -> None:
+    """Test that prompt_cache_key works with invoke calls."""
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=20)
+    messages = [HumanMessage("Say hello")]
+
+    # Test that invoke works with prompt_cache_key parameter
+    response = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+
+    # Test that subsequent call with same cache key also works
+    response2 = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response2, AIMessage)
+    assert isinstance(response2.content, str)
+    assert len(response2.content) > 0
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_usage_methods_integration() -> None:
+    """Integration test for prompt_cache_key usage methods."""
+    messages = [HumanMessage("Say hi")]
+
+    # Test keyword argument method
+    chat = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=10)
+    response = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+    # Test model-level via model_kwargs
+    chat_model_level = ChatOpenAI(
+        model="gpt-4o-mini",
+        max_completion_tokens=10,
+        model_kwargs={"prompt_cache_key": "integration-model-level-v1"},
+    )
+    response_model_level = chat_model_level.invoke(messages)
+    assert isinstance(response_model_level, AIMessage)
+    assert isinstance(response_model_level.content, str)
