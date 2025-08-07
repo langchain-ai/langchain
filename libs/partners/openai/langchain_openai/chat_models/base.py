@@ -4042,12 +4042,28 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
-        "custom_tool_call",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
         tool_output["index"] = current_index
         content.append(tool_output)
+    elif (
+        chunk.type == "response.output_item.done"
+        and chunk.item.type == "custom_tool_call"
+    ):
+        _advance(chunk.output_index)
+        tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
+        tool_output["index"] = current_index
+        content.append(tool_output)
+        tool_call_chunks.append(
+            {
+                "type": "tool_call_chunk",
+                "name": chunk.item.name,
+                "args": json.dumps({"__arg1": chunk.item.input}),
+                "id": chunk.item.call_id,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.function_call_arguments.delta":
         _advance(chunk.output_index)
         tool_call_chunks.append(
