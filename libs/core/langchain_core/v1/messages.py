@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 import langchain_core.messages.content_blocks as types
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.messages.ai import (
     _LC_AUTO_PREFIX,
     _LC_ID_PREFIX,
@@ -27,10 +28,22 @@ from langchain_core.utils.json import parse_partial_json
 
 
 class TextAccessor(str):
-    """String-like object that's also callable for backward compatibility.
+    """String-like object that supports both property and method access patterns.
 
-    Allows both property access (``message.text``) and method access
-    (``message.text()``).
+    Exists to maintain backward compatibility while transitioning from method-based to
+    property-based text access in message objects. In LangChain <v0.4, message text was
+    accessed via ``.text()`` method calls. In v0.4=<, the preferred pattern is property
+    access via ``.text``.
+
+    Rather than breaking existing code immediately, ``TextAccessor`` allows both
+    patterns:
+    - Modern property access: ``message.text`` (returns string directly)
+    - Legacy method access: ``message.text()`` (callable, emits deprecation warning)
+
+    Examples:
+        >>> msg = AIMessage("Hello world")
+        >>> text = msg.text  # Preferred: property access
+        >>> text = msg.text()  # Deprecated: method access (shows warning)
     """
 
     __slots__ = ()
@@ -40,7 +53,26 @@ class TextAccessor(str):
         return str.__new__(cls, value)
 
     def __call__(self) -> str:
-        """Allow method-style access for backward compatibility."""
+        """Enable method-style text access for backward compatibility.
+
+        This method exists solely to support legacy code that calls ``.text()``
+        as a method. New code should use property access (``.text``) instead.
+
+        .. deprecated:: 0.4.0
+            Calling .text() as a method is deprecated. Use .text as a property instead.
+            This method will be removed in 2.0.0.
+
+        Returns:
+            The string content, identical to property access.
+        """
+        warn_deprecated(
+            since="0.4.0",
+            message=(
+                "Calling .text() as a method is deprecated. "
+                "Use .text as a property instead (e.g., message.text)."
+            ),
+            removal="2.0.0",
+        )
         return str(self)
 
 
