@@ -17,7 +17,7 @@ from langchain_core.messages import (
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, custom_tool
 
 MODEL_NAME = "gpt-4o-mini"
 
@@ -672,3 +672,32 @@ def test_image_generation_multi_turn() -> None:
     _check_response(ai_message2)
     tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
     assert set(tool_output2.keys()).issubset(expected_keys)
+
+
+@pytest.mark.vcr()
+def test_custom_tool() -> None:
+    @custom_tool
+    def execute_code(code: str) -> str:
+        """Execute python code."""
+        return "27"
+
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1").bind_tools(
+        [execute_code]
+    )
+
+    input_message = {"role": "user", "content": "Use the tool to evaluate 3^3."}
+    tool_call_message = llm.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    assert len(tool_call_message.tool_calls) == 1
+    tool_call = tool_call_message.tool_calls[0]
+    tool_message = execute_code.invoke(tool_call)
+    response = llm.invoke([input_message, tool_call_message, tool_message])
+    assert isinstance(response, AIMessage)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
