@@ -26,6 +26,24 @@ from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.json import parse_partial_json
 
 
+class TextAccessor(str):
+    """String-like object that's also callable for backward compatibility.
+
+    Allows both property access (``message.text``) and method access
+    (``message.text()``).
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, value: str) -> "TextAccessor":
+        """Create new TextAccessor instance."""
+        return str.__new__(cls, value)
+
+    def __call__(self) -> str:
+        """Allow method-style access for backward compatibility."""
+        return str(self)
+
+
 def _ensure_id(id_val: Optional[str]) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
@@ -195,11 +213,15 @@ class AIMessage:
         ]
 
     @property
-    def text(self) -> str:
-        """Extract all text content from the AI message as a string."""
-        return "".join(
+    def text(self) -> TextAccessor:
+        """Extract all text content from the AI message as a string.
+
+        Can be used as both property (``message.text``) and method (``message.text()``).
+        """
+        text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
+        return TextAccessor(text_value)
 
     @property
     def tool_calls(self) -> list[types.ToolCall]:
@@ -555,15 +577,16 @@ class HumanMessage:
             self.content = content
         self.name = name
 
-    def text(self) -> str:
-        """Extract all text content from the message.
+    @property
+    def text(self) -> TextAccessor:
+        """Extract all text content from the message as a string.
 
-        Returns:
-            Concatenated string of all text blocks in the message.
+        Can be used as both property (``message.text``) and method (``message.text()``).
         """
-        return "".join(
+        text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
+        return TextAccessor(text_value)
 
 
 @dataclass
@@ -638,11 +661,16 @@ class SystemMessage:
         self.custom_role = custom_role
         self.name = name
 
-    def text(self) -> str:
-        """Extract all text content from the system message."""
-        return "".join(
+    @property
+    def text(self) -> TextAccessor:
+        """Extract all text content from the system message as a string.
+
+        Can be used as both property (``message.text``) and method (``message.text()``).
+        """
+        text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
+        return TextAccessor(text_value)
 
 
 @dataclass
@@ -730,11 +758,15 @@ class ToolMessage(ToolOutputMixin):
         self.status = status
 
     @property
-    def text(self) -> str:
-        """Extract all text content from the tool message."""
-        return "".join(
+    def text(self) -> TextAccessor:
+        """Extract all text content from the tool message as a string.
+
+        Can be used as both property (``message.text``) and method (``message.text()``).
+        """
+        text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
         )
+        return TextAccessor(text_value)
 
     def __post_init__(self) -> None:
         """Initialize computed fields after dataclass creation.
