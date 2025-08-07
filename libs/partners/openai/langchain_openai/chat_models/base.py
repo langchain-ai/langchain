@@ -458,7 +458,7 @@ class BaseChatOpenAI(BaseChatModel):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
@@ -489,7 +489,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Whether to return logprobs."""
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
-     an associated log probability. `logprobs` must be set to true 
+     an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
     logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -507,7 +507,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
-    Currently supported values are low, medium, and high. Reducing reasoning effort 
+    Currently supported values are low, medium, and high. Reducing reasoning effort
     can result in faster responses and fewer tokens used on reasoning in a response.
 
     .. versionadded:: 0.2.14
@@ -529,26 +529,26 @@ class BaseChatOpenAI(BaseChatModel):
 
     """
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
@@ -556,40 +556,40 @@ class BaseChatOpenAI(BaseChatModel):
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
     providers.
-    
+
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
-    
+
     Examples:
         - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
         - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
         - Any other provider-specific parameters
-        
+
     .. note::
-    
+
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
-        standard OpenAI API, as this will cause errors when making API calls. Use 
+        standard OpenAI API, as this will cause errors when making API calls. Use
         ``extra_body`` instead.
     """
 
     include_response_headers: bool = False
     """Whether to include response headers in the output message ``response_metadata``."""  # noqa: E501
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
-    
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
-    
+
     For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed
     in.
-    
+
     If a parameter is disabled then it will not be used by default in any methods, e.g.
     in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
-    invocation. 
+    invocation.
     """
 
     include: Optional[list[str]] = None
@@ -3557,6 +3557,20 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     return computer_call_output
 
 
+def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict]:
+    custom_tool_output = None
+    for block in message.content:
+        if isinstance(block, dict) and block.get("type") == "custom_tool_call_output":
+            custom_tool_output = {
+                "type": "custom_tool_call_output",
+                "call_id": message.tool_call_id,
+                "output": block.get("output") or "",
+            }
+            break
+
+    return custom_tool_output
+
+
 def _pop_index_and_sub_index(block: dict) -> dict:
     """When streaming, langchain-core uses the ``index`` key to aggregate
     text blocks. OpenAI API does not support this key, so we need to remove it.
@@ -3583,7 +3597,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
-            if lc_msg.additional_kwargs.get("type") == "computer_call_output":
+            custom_tool_output = _make_custom_tool_output_from_message(lc_msg)  # type: ignore[arg-type]
+            if custom_tool_output:
+                input_.append(custom_tool_output)
+            elif lc_msg.additional_kwargs.get("type") == "computer_call_output":
                 computer_call_output = _make_computer_call_output_from_message(
                     cast(ToolMessage, lc_msg)
                 )
@@ -3638,6 +3655,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "file_search_call",
                             "function_call",
                             "computer_call",
+                            "custom_tool_call",
                             "code_interpreter_call",
                             "mcp_call",
                             "mcp_list_tools",
@@ -3665,7 +3683,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 content_call_ids = {
                     block["call_id"]
                     for block in input_
-                    if block.get("type") == "function_call" and "call_id" in block
+                    if block.get("type") in ("function_call", "custom_tool_call")
+                    and "call_id" in block
                 }
                 for tool_call in tool_calls:
                     if tool_call["id"] not in content_call_ids:
@@ -3802,6 +3821,15 @@ def _construct_lc_result_from_responses_api(
                     "error": error,
                 }
                 invalid_tool_calls.append(tool_call)
+        elif output.type == "custom_tool_call":
+            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            tool_call = {
+                "type": "tool_call",
+                "name": output.name,
+                "args": {"__arg1": output.input},
+                "id": output.call_id,
+            }
+            tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
             "web_search_call",
@@ -3999,6 +4027,7 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
+        "custom_tool_call",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
