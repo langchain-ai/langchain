@@ -1447,8 +1447,10 @@ class BaseChatOpenAI(BaseChatModel):
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
             encoder = "cl100k_base"
-            if self.model_name.startswith("gpt-4o") or self.model_name.startswith(
-                "gpt-4.1"
+            if (
+                self.model_name.startswith("gpt-4o")
+                or self.model_name.startswith("gpt-4.1")
+                or self.model_name.startswith("gpt-5")
             ):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
@@ -1499,7 +1501,11 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
+        elif (
+            model.startswith("gpt-3.5-turbo")
+            or model.startswith("gpt-4")
+            or model.startswith("gpt-5")
+        ):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
