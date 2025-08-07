@@ -269,7 +269,7 @@ if __name__ == "__main__":
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
-            # note: won't run on external repo partners
+            # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/standard-tests")
             dirs_to_run["lint"].add("libs/cli")
