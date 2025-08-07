@@ -53,9 +53,6 @@ class DaytonaSandboxToolkit:
         self.sandbox = sandbox
         self._default_language = default_language
 
-    def get_tools(self) -> List[BaseException]:
-        """Get the tools for the given sandbox."""
-
     def list_files(self, path: str) -> List[FileInfo]:
         """List files in the specified path."""
         return self.sandbox.fs.list_files(path)
@@ -119,12 +116,45 @@ class DaytonaSandboxToolkit:
             "supported_languages": ["python"],
         }
 
+
 class Adapter:
     """An adapter to integrate responses from a sandbox toolkit to an LLM."""
+
     @staticmethod
     def format_response(response: ExecuteResponse) -> str:
-        """Format the response from code execution."""
+        """Format the response for code execution."""
         return f"Result: {response['result']}\nExit Code: {response.get('exit_code', 'N/A')}"
+
+    @staticmethod
+    def format_list_files(files: List[FileInfo]) -> str:
+        """Format the response for a list of files."""
+        if not files:
+            return "No files found."
+        return "\n".join(
+            f"{'[DIR]' if f['is_dir'] else '[FILE]'} {f['name']}" for f in files
+        )
+
+    @staticmethod
+    def format_upload_file(_: None) -> str:
+        """Format the response for an uploaded file."""
+        return "File uploaded successfully."
+
+    @staticmethod
+    def format_download_file(_: bytes) -> str:
+        """Format the response for a downloaded file."""
+        return "File downloaded successfully. (Binary content omitted)"
+
+    @staticmethod
+    def format_default(obj: object) -> str:
+        return str(obj)
+
+
+def _wrap_tool(func, formatter):
+    def wrapped(*args, **kwargs):
+        raw = func(*args, **kwargs)
+        return formatter(raw)
+
+    return wrapped
 
 
 def create_tools(
