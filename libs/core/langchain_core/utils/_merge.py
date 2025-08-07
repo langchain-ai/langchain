@@ -97,7 +97,7 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
-                        if e_left["index"] == e["index"]
+                        if "index" in e_left and e_left["index"] == e["index"]
                     ]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
@@ -108,39 +108,6 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                             else e
                         )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
-                    # Special handling for tool call chunks: if this chunk appears to be
-                    # a continuation of a prior chunk (has None name/id) and no matching
-                    # index was found, try to merge with the most recent tool call chunk
-                    # that has a name/id.
-                    # Fixes issues with models that send inconsistent indices.
-                    # See #31511 for more.
-                    elif (
-                        e.get("type") == "tool_call_chunk"
-                        and e.get("name") is None
-                        and e.get("id") is None
-                        and merged
-                    ):
-                        # Find the most recent tool call chunk with a valid name or id
-                        for i in reversed(range(len(merged))):
-                            if (
-                                isinstance(merged[i], dict)
-                                and merged[i].get("type") == "tool_call_chunk"
-                                and (
-                                    merged[i].get("name") is not None
-                                    or merged[i].get("id") is not None
-                                )
-                            ):
-                                # Merge with this chunk
-                                new_e = (
-                                    {k: v for k, v in e.items() if k != "type"}
-                                    if "type" in e
-                                    else e
-                                )
-                                merged[i] = merge_dicts(merged[i], new_e)
-                                break
-                        else:
-                            # No suitable chunk found, append as new
-                            merged.append(e)
                     else:
                         merged.append(e)
                 else:
