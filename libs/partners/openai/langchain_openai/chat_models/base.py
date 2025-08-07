@@ -515,7 +515,6 @@ class BaseChatOpenAI(BaseChatModel):
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
      an associated log probability. `logprobs` must be set to true
-     an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
     logit_bias: Optional[dict[int, int]] = None
     """Modify the likelihood of specified tokens appearing in the completion."""
