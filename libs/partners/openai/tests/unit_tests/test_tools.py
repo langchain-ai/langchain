@@ -31,6 +31,24 @@ def test_custom_tool() -> None:
     )
 
     # Test tool schema
+    ## Test with format
+    @custom_tool(format={"type": "grammar", "syntax": "lark", "definition": "..."})
+    def another_tool(x: str) -> None:
+        """Do thing."""
+        pass
+
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True).bind_tools([another_tool])
+    assert llm.kwargs == {  # type: ignore[attr-defined]
+        "tools": [
+            {
+                "type": "custom",
+                "name": "another_tool",
+                "description": "Do thing.",
+                "format": {"type": "grammar", "syntax": "lark", "definition": "..."},
+            }
+        ]
+    }
+
     llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True).bind_tools([my_tool])
     assert llm.kwargs == {  # type: ignore[attr-defined]
         "tools": [{"type": "custom", "name": "my_tool", "description": "Do thing."}]
