@@ -417,7 +417,7 @@ class AIMessageChunk(AIMessage):
             self._tool_call_chunks = [
                 block for block in self.content if types.is_tool_call_chunk(block)
             ]
-        return cast("list[types.ToolCallChunk]", self._tool_call_chunks)
+        return self._tool_call_chunks
 
     @property
     def tool_calls(self) -> list[types.ToolCall]:
