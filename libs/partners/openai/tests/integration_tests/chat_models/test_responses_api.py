@@ -674,6 +674,7 @@ def test_image_generation_multi_turn() -> None:
     assert set(tool_output2.keys()).issubset(expected_keys)
 
 
+@pytest.mark.vcr()
 def test_custom_tool() -> None:
     @custom_tool
     def execute_code(code: str) -> str:
@@ -692,3 +693,11 @@ def test_custom_tool() -> None:
     tool_message = execute_code.invoke(tool_call)
     response = llm.invoke([input_message, tool_call_message, tool_message])
     assert isinstance(response, AIMessage)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
