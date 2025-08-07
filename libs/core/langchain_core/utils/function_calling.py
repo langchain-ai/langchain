@@ -589,7 +589,7 @@ def convert_to_openai_tool(
             "name": tool.name,
             "description": tool.description,
         }
-        if "format" in tool.metadata:
+        if tool.metadata is not None and "format" in tool.metadata:
             oai_tool["format"] = tool.metadata["format"]
         return oai_tool
     oai_function = convert_to_openai_function(tool, strict=strict)
