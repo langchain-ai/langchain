@@ -19,6 +19,7 @@ from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
+from langchain_core.v1.chat_models import BaseChatModel as BaseChatModelV1
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, override
 
@@ -39,8 +40,21 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Literal[None] = None,
     config_prefix: Optional[str] = None,
+    message_version: Literal["v0"] = "v0",
     **kwargs: Any,
 ) -> BaseChatModel: ...
+
+
+@overload
+def init_chat_model(
+    model: str,
+    *,
+    model_provider: Optional[str] = None,
+    configurable_fields: Literal[None] = None,
+    config_prefix: Optional[str] = None,
+    message_version: Literal["v1"] = "v1",
+    **kwargs: Any,
+) -> BaseChatModelV1: ...
 
 
 @overload
@@ -50,6 +64,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Literal[None] = None,
     config_prefix: Optional[str] = None,
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
 
@@ -61,6 +76,7 @@ def init_chat_model(
     model_provider: Optional[str] = None,
     configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
     config_prefix: Optional[str] = None,
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
 
@@ -76,8 +92,9 @@ def init_chat_model(
         Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
-) -> Union[BaseChatModel, _ConfigurableModel]:
+) -> Union[BaseChatModel, BaseChatModelV1, _ConfigurableModel]:
     """Initialize a ChatModel in a single line using the model's name and provider.
 
     .. note::
@@ -128,6 +145,20 @@ def init_chat_model(
             - ``deepseek...``                     -> ``deepseek``
             - ``grok...``                         -> ``xai``
             - ``sonar...``                        -> ``perplexity``
+
+        message_version: The version of the BaseChatModel to return. Either ``"v0"`` for
+            a v0 :class:`~langchain_core.language_models.chat_models.BaseChatModel` or
+            ``"v1"`` for a v1 :class:`~langchain_core.v1.chat_models.BaseChatModel`. The
+            output version determines what type of message objects the model will
+            generate.
+
+            .. note::
+                Currently supported for these providers:
+
+                - ``openai``
+
+            .. versionadded:: 0.4.0
+
         configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
@@ -316,6 +347,7 @@ def init_chat_model(
         return _init_chat_model_helper(
             cast("str", model),
             model_provider=model_provider,
+            message_version=message_version,
             **kwargs,
         )
     if model:
@@ -333,14 +365,27 @@ def _init_chat_model_helper(
     model: str,
     *,
     model_provider: Optional[str] = None,
+    message_version: Literal["v0", "v1"] = "v0",
     **kwargs: Any,
-) -> BaseChatModel:
+) -> Union[BaseChatModel, BaseChatModelV1]:
     model, model_provider = _parse_model(model, model_provider)
+    if message_version != "v0" and model_provider not in ("openai",):
+        warnings.warn(
+            f"Model provider {model_provider} does not support "
+            f"message_version={message_version}. Defaulting to v0.",
+            stacklevel=2,
+        )
     if model_provider == "openai":
         _check_pkg("langchain_openai")
-        from langchain_openai import ChatOpenAI
+        if message_version == "v0":
+            from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=model, **kwargs)
+            return ChatOpenAI(model=model, **kwargs)
+        # v1
+        from langchain_openai.v1 import ChatOpenAI as ChatOpenAIV1
+
+        return ChatOpenAIV1(model=model, **kwargs)
+
     if model_provider == "anthropic":
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic

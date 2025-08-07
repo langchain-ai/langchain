@@ -31,6 +31,7 @@ from langchain_core.messages import (
 from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
@@ -85,7 +86,9 @@ def _get_token_ids_default_method(text: str) -> list[int]:
 LanguageModelInput = Union[PromptValue, str, Sequence[MessageLikeRepresentation]]
 LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
-LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
+LanguageModelOutputVar = TypeVar(
+    "LanguageModelOutputVar", BaseMessage, str, AIMessageV1
+)
 
 
 def _get_verbosity() -> bool:

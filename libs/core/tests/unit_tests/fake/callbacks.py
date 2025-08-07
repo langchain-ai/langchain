@@ -9,6 +9,7 @@ from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
+from langchain_core.v1.messages import MessageV1
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -285,7 +286,7 @@ class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

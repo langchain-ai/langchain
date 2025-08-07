@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
 from typing_extensions import override
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
@@ -75,7 +76,9 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.answer_reached = False
 
     @override
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         if self.answer_reached:
             self.done.set()
 

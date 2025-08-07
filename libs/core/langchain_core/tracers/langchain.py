@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from uuid import UUID
 
 from langsmith import Client
@@ -21,12 +21,15 @@ from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import MessageV1Types
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+    from langchain_core.v1.messages import AIMessageChunk, MessageV1
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
@@ -113,7 +116,7 @@ class LangChainTracer(BaseTracer):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,
@@ -140,6 +143,12 @@ class LangChainTracer(BaseTracer):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
+        if isinstance(messages[0], MessageV1Types):
+            # Convert from v1 messages to BaseMessage
+            messages = [
+                [convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
+            ]
+        messages = cast("list[list[BaseMessage]]", messages)
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -232,7 +241,9 @@ class LangChainTracer(BaseTracer):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
         """Append token event to LLM run and return the run."""

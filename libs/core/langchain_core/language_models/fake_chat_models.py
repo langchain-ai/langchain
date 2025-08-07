@@ -3,7 +3,7 @@
 import asyncio
 import re
 import time
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterable, Iterator
 from typing import Any, Optional, Union, cast
 
 from typing_extensions import override
@@ -16,6 +16,10 @@ from langchain_core.language_models.chat_models import BaseChatModel, SimpleChat
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableConfig
+from langchain_core.v1.chat_models import BaseChatModel as BaseChatModelV1
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import MessageV1
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -363,6 +367,72 @@ class ParrotFakeChatModel(BaseChatModel):
     ) -> ChatResult:
         """Top Level call."""
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
+
+    @property
+    def _llm_type(self) -> str:
+        return "parrot-fake-chat-model"
+
+
+class GenericFakeChatModelV1(BaseChatModelV1):
+    """Generic fake chat model that can be used to test the chat model interface."""
+
+    messages: Optional[Iterator[Union[AIMessageV1, str]]] = None
+    message_chunks: Optional[Iterable[Union[AIMessageChunkV1, str]]] = None
+
+    @override
+    def _invoke(
+        self,
+        messages: list[MessageV1],
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AIMessageV1:
+        """Top Level call."""
+        if self.messages is None:
+            error_msg = "Messages iterator is not set."
+            raise ValueError(error_msg)
+        message = next(self.messages)
+        return AIMessageV1(content=message) if isinstance(message, str) else message
+
+    @override
+    def _stream(
+        self,
+        messages: list[MessageV1],
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[AIMessageChunkV1]:
+        """Top Level call."""
+        if self.message_chunks is None:
+            error_msg = "Message chunks iterator is not set."
+            raise ValueError(error_msg)
+        for chunk in self.message_chunks:
+            if isinstance(chunk, str):
+                yield AIMessageChunkV1(chunk)
+            else:
+                yield chunk
+
+    @property
+    def _llm_type(self) -> str:
+        return "generic-fake-chat-model"
+
+
+class ParrotFakeChatModelV1(BaseChatModelV1):
+    """Generic fake chat model that can be used to test the chat model interface.
+
+    * Chat model should be usable in both sync and async tests
+    """
+
+    @override
+    def _invoke(
+        self,
+        messages: list[MessageV1],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AIMessageV1:
+        """Top Level call."""
+        if isinstance(messages[-1], AIMessageV1):
+            return messages[-1]
+        return AIMessageV1(content=messages[-1].content)
 
     @property
     def _llm_type(self) -> str:

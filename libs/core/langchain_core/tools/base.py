@@ -68,6 +68,7 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
 if TYPE_CHECKING:
     import uuid
@@ -498,6 +499,15 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
+    message_version: Literal["v0", "v1"] = "v0"
+    """Version of ToolMessage to return given
+    :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+    If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+    If ``"v1"``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
+
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool."""
         if (
@@ -835,7 +845,7 @@ class ChildTool(BaseTool):
 
         content = None
         artifact = None
-        status = "success"
+        status: Literal["success", "error"] = "success"
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -879,7 +889,14 @@ class ChildTool(BaseTool):
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        output = _format_output(
+            content,
+            artifact,
+            tool_call_id,
+            self.name,
+            status,
+            message_version=self.message_version,
+        )
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -945,7 +962,7 @@ class ChildTool(BaseTool):
         )
         content = None
         artifact = None
-        status = "success"
+        status: Literal["success", "error"] = "success"
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
@@ -993,7 +1010,14 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        output = _format_output(
+            content,
+            artifact,
+            tool_call_id,
+            self.name,
+            status,
+            message_version=self.message_version,
+        )
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -1131,7 +1155,9 @@ def _format_output(
     artifact: Any,
     tool_call_id: Optional[str],
     name: str,
-    status: str,
+    status: Literal["success", "error"],
+    *,
+    message_version: Literal["v0", "v1"] = "v0",
 ) -> Union[ToolOutputMixin, Any]:
     """Format tool output as a ToolMessage if appropriate.
 
@@ -1141,6 +1167,7 @@ def _format_output(
         tool_call_id: The ID of the tool call.
         name: The name of the tool.
         status: The execution status.
+        message_version: The version of the ToolMessage to return.
 
     Returns:
         The formatted output, either as a ToolMessage or the original content.
@@ -1149,7 +1176,15 @@ def _format_output(
         return content
     if not _is_message_content_type(content):
         content = _stringify(content)
-    return ToolMessage(
+    if message_version == "v0":
+        return ToolMessage(
+            content,
+            artifact=artifact,
+            tool_call_id=tool_call_id,
+            name=name,
+            status=status,
+        )
+    return ToolMessageV1(
         content,
         artifact=artifact,
         tool_call_id=tool_call_id,
