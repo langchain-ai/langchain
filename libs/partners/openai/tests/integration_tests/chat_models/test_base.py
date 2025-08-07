@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
-MAX_TOKEN_COUNT = 16
+MAX_TOKEN_COUNT = 100
 
 
 @pytest.mark.scheduled
@@ -1051,7 +1051,7 @@ def test_minimal_reasoning_effort(
     else:
         kwargs = {"max_tokens": MAX_TOKEN_COUNT}
     response = ChatOpenAI(
-        model="gpt-5-nano",
+        model="gpt-5",
         reasoning_effort="minimal",
         use_responses_api=use_responses_api,
         **kwargs,
@@ -1139,7 +1139,7 @@ def test_tools_and_structured_output() -> None:
 @pytest.mark.scheduled
 def test_prompt_cache_key_invoke() -> None:
     """Test that `prompt_cache_key` works with invoke calls."""
-    chat = ChatOpenAI(model="gpt-5-nano", max_completion_tokens=20)
+    chat = ChatOpenAI(model="gpt-5-nano", max_completion_tokens=500)
     messages = [HumanMessage("Say hello")]
 
     # Test that invoke works with prompt_cache_key parameter
