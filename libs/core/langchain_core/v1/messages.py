@@ -2,6 +2,7 @@
 
 Each message has content that may be comprised of content blocks, defined under
 ``langchain_core.messages.content_blocks``.
+
 """
 
 import uuid
@@ -44,6 +45,7 @@ class TextAccessor(str):
         >>> msg = AIMessage("Hello world")
         >>> text = msg.text  # Preferred: property access
         >>> text = msg.text()  # Deprecated: method access (shows warning)
+
     """
 
     __slots__ = ()
@@ -64,6 +66,7 @@ class TextAccessor(str):
 
         Returns:
             The string content, identical to property access.
+
         """
         warn_deprecated(
             since="0.4.0",
@@ -87,6 +90,7 @@ def _ensure_id(id_val: Optional[str]) -> str:
 
     Returns:
         A valid string ID, either the provided value or a new UUID.
+
     """
     return id_val or str(f"{_LC_AUTO_PREFIX}{uuid.uuid4()}")
 
@@ -97,9 +101,18 @@ class ResponseMetadata(TypedDict, total=False):
     Contains additional information returned by the provider, such as
     response headers, service tiers, log probabilities, system fingerprints, etc.
 
-    Extra keys are permitted from what is typed here (via ``total=False``), allowing
-    for provider-specific metadata to be included without breaking the type
-    definition.
+    **Extensibility Design:**
+
+    This uses ``total=False`` to allow arbitrary additional keys beyond the typed
+    fields below. This enables provider-specific metadata without breaking type safety:
+
+    - OpenAI might include: ``{"system_fingerprint": "fp_123", "logprobs": {...}}``
+    - Anthropic might include: ``{"stop_reason": "stop_sequence", "usage": {...}}``
+    - Custom providers can add their own fields
+
+    The common fields (``model_provider``, ``model_name``) provide a baseline
+    contract while preserving flexibility for provider innovations.
+
     """
 
     model_provider: str
@@ -125,6 +138,7 @@ class AIMessage:
         tool_calls: Optional list of tool calls made by the AI.
         invalid_tool_calls: Optional list of tool calls that failed validation.
         usage: Optional dictionary containing usage statistics.
+
     """
 
     type: Literal["ai"] = "ai"
@@ -132,6 +146,7 @@ class AIMessage:
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     name: Optional[str] = None
@@ -141,6 +156,7 @@ class AIMessage:
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
     """
 
     id: Optional[str] = None
@@ -148,6 +164,7 @@ class AIMessage:
 
     If the provider assigns a meaningful ID, it should be used here. Otherwise, a
     LangChain-generated ID will be used.
+
     """
 
     lc_version: str = "v1"
@@ -166,6 +183,7 @@ class AIMessage:
 
     This field should include non-standard data returned by the provider, such as
     response headers, service tiers, or log probabilities.
+
     """
 
     parsed: Optional[Union[dict[str, Any], BaseModel]] = None
@@ -197,6 +215,7 @@ class AIMessage:
                 be added to the content list.
             invalid_tool_calls: Optional list of tool calls that failed validation.
             parsed: Optional auto-parsed message contents, if applicable.
+
         """
         if isinstance(content, str):
             self.content = [types.create_text_block(content)]
@@ -249,6 +268,11 @@ class AIMessage:
         """Extract all text content from the AI message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 0.4.0
+            Calling .text() as a method is deprecated. Use .text as a property instead.
+            This method will be removed in 2.0.0.
+
         """
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
@@ -286,7 +310,26 @@ class AIMessageChunk(AIMessage):
     """A partial chunk of an AI message during streaming.
 
     Represents a portion of an AI response that is delivered incrementally
-    during streaming generation. Contains partial content and metadata.
+    during streaming generation. When AI providers stream responses token-by-token,
+    each chunk contains partial content that gets accumulated into a complete message.
+
+    **Streaming Workflow:**
+
+    1. Provider streams partial responses as ``AIMessageChunk`` objects
+    2. Chunks are accumulated: ``chunk1 + chunk2 + ...``
+    3. Final accumulated chunk can be converted to ``AIMessage`` via ``.to_message()``
+
+    **Tool Call Handling:**
+
+    During streaming, tool calls arrive as ``ToolCallChunk`` objects with partial
+    JSON. When chunks are accumulated, the final chunk (marked with
+    ``chunk_position="last"``) triggers parsing of complete tool calls from the
+    accumulated JSON strings.
+
+    **Content Merging:**
+
+    Content blocks are merged intelligently - text blocks combine their strings,
+    tool call chunks accumulate arguments, and other blocks are concatenated.
 
     Attributes:
         type: Message type identifier, always ``'ai_chunk'``.
@@ -295,6 +338,7 @@ class AIMessageChunk(AIMessage):
         content: List of content blocks containing partial message data.
         tool_call_chunks: Optional list of partial tool call data.
         usage_metadata: Optional metadata about token usage and costs.
+
     """
 
     type: Literal["ai_chunk"] = "ai_chunk"  # type: ignore[assignment]
@@ -302,6 +346,7 @@ class AIMessageChunk(AIMessage):
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     def __init__(
@@ -328,8 +373,9 @@ class AIMessageChunk(AIMessage):
             usage_metadata: Optional metadata about token usage.
             tool_call_chunks: Optional list of partial tool call data.
             parsed: Optional auto-parsed message contents, if applicable.
-            chunk_position: Optional position of the chunk in the stream. If "last",
+            chunk_position: Optional position of the chunk in the stream. If ``'last'``,
                 tool calls will be parsed when aggregated into a stream.
+
         """
         if isinstance(content, str):
             self.content = [{"type": "text", "text": content, "index": 0}]
@@ -560,6 +606,7 @@ class HumanMessage:
         id: Unique identifier for the message.
         content: List of content blocks containing the user's input.
         name: Optional human-readable name for the message.
+
     """
 
     id: str
@@ -567,6 +614,7 @@ class HumanMessage:
 
     If the provider assigns a meaningful ID, it should be used here. Otherwise, a
     LangChain-generated ID will be used.
+
     """
 
     content: list[types.ContentBlock]
@@ -577,6 +625,7 @@ class HumanMessage:
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     name: Optional[str] = None
@@ -586,6 +635,7 @@ class HumanMessage:
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
     """
 
     def __init__(
@@ -601,6 +651,7 @@ class HumanMessage:
             content: Message content as string or list of content blocks.
             id: Optional unique identifier for the message.
             name: Optional human-readable name for the message.
+
         """
         self.id = _ensure_id(id)
         if isinstance(content, str):
@@ -614,6 +665,11 @@ class HumanMessage:
         """Extract all text content from the message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 0.4.0
+            Calling .text() as a method is deprecated. Use .text as a property instead.
+            This method will be removed in 2.0.0.
+
         """
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
@@ -632,6 +688,7 @@ class SystemMessage:
         type: Message type identifier, always ``'system'``.
         id: Unique identifier for the message.
         content: List of content blocks containing system instructions.
+
     """
 
     id: str
@@ -639,6 +696,7 @@ class SystemMessage:
 
     If the provider assigns a meaningful ID, it should be used here. Otherwise, a
     LangChain-generated ID will be used.
+
     """
 
     content: list[types.ContentBlock]
@@ -649,6 +707,7 @@ class SystemMessage:
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     name: Optional[str] = None
@@ -658,6 +717,7 @@ class SystemMessage:
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
     """
 
     custom_role: Optional[str] = None
@@ -667,6 +727,7 @@ class SystemMessage:
 
     Integration packages may use this field to assign the system message role if it
     contains a recognized value.
+
     """
 
     def __init__(
@@ -684,6 +745,7 @@ class SystemMessage:
             id: Optional unique identifier for the message.
             custom_role: If provided, a custom role for the system message.
             name: Optional human-readable name for the message.
+
         """
         self.id = _ensure_id(id)
         if isinstance(content, str):
@@ -698,6 +760,11 @@ class SystemMessage:
         """Extract all text content from the system message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 0.4.0
+            Calling .text() as a method is deprecated. Use .text as a property instead.
+            This method will be removed in 2.0.0.
+
         """
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
@@ -719,6 +786,7 @@ class ToolMessage(ToolOutputMixin):
         content: The result content from tool execution.
         artifact: Optional app-side payload not intended for the model.
         status: Execution status ("success" or "error").
+
     """
 
     id: str
@@ -728,6 +796,7 @@ class ToolMessage(ToolOutputMixin):
     """ID of the tool call this message responds to.
 
     This should match the ID of the tool call that this message is responding to.
+
     """
 
     content: list[types.ContentBlock]
@@ -738,10 +807,21 @@ class ToolMessage(ToolOutputMixin):
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     artifact: Optional[Any] = None
-    """App-side payload not for the model."""
+    """App-side payload not intended for the model.
+
+    Artifacts contain data that your application needs but should not be sent
+    to the AI model. Example use cases:
+
+    - File handles or database connections used by the tool
+    - Raw binary data (images, documents) alongside text summaries
+    - Internal debugging information or execution traces
+    - Computed results that supplement the text content
+
+    """
 
     name: Optional[str] = None
     """An optional name for the message.
@@ -750,6 +830,7 @@ class ToolMessage(ToolOutputMixin):
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
     """
 
     status: Literal["success", "error"] = "success"
@@ -757,6 +838,7 @@ class ToolMessage(ToolOutputMixin):
 
     Indicates whether the tool call was successful or encountered an error.
     Defaults to "success".
+
     """
 
     def __init__(
@@ -778,6 +860,7 @@ class ToolMessage(ToolOutputMixin):
             name: Optional human-readable name for the message.
             artifact: Optional app-side payload not intended for the model.
             status: Execution status (``'success'`` or ``'error'``).
+
         """
         self.id = _ensure_id(id)
         self.tool_call_id = tool_call_id
@@ -794,6 +877,11 @@ class ToolMessage(ToolOutputMixin):
         """Extract all text content from the tool message as a string.
 
         Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 0.4.0
+            Calling .text() as a method is deprecated. Use .text as a property instead.
+            This method will be removed in 2.0.0.
+
         """
         text_value = "".join(
             block["text"] for block in self.content if types.is_text_block(block)
@@ -804,6 +892,7 @@ class ToolMessage(ToolOutputMixin):
         """Initialize computed fields after dataclass creation.
 
         Ensures the tool message has a valid ID.
+
         """
         self.id = _ensure_id(self.id)
 
