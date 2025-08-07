@@ -1,10 +1,9 @@
 """Temporary wrapper for sandbox integrations."""
 
-from typing import List, Optional, Literal, Sequence
-from typing import TypedDict, NotRequired
+from collections.abc import Sequence
+from typing import Callable, List, Literal, NotRequired, Optional, TypedDict
 
 from daytona import Sandbox
-
 from langchain_core.tools import BaseTool, StructuredTool
 
 
@@ -88,7 +87,7 @@ class DaytonaSandboxToolkit:
 
     def repl(self, code: str, timeout: int = 30 * 60) -> ExecuteResponse:
         """Support for REPL execution in the sandbox."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def exec(
         self, command: str, cwd: Optional[str] = None, timeout: int = 30 * 60
@@ -123,35 +122,73 @@ class Adapter:
     @staticmethod
     def format_response(response: ExecuteResponse) -> str:
         """Format the response for code execution."""
-        return f"Result: {response['result']}\nExit Code: {response.get('exit_code', 'N/A')}"
+        result = f"<execute_result>\n<output>{response['result']}</output>"
+
+        if "exit_code" in response and response["exit_code"] is not None:
+            result += f"\n<exit_code>{response['exit_code']}</exit_code>"
+
+        result += "\n</execute_result>"
+        return result
 
     @staticmethod
     def format_list_files(files: List[FileInfo]) -> str:
         """Format the response for a list of files."""
         if not files:
-            return "No files found."
-        return "\n".join(
-            f"{'[DIR]' if f['is_dir'] else '[FILE]'} {f['name']}" for f in files
+            return "<file_list>\n<message>No files found</message>\n</file_list>"
+
+        result = "<file_list>\n"
+        for file_info in files:
+            file_type = "directory" if file_info["is_dir"] else "file"
+            result += f'<item type="{file_type}">\n<name>{file_info["name"]}</name>\n'
+
+            if "size" in file_info:
+                result += f"<size>{file_info['size']}</size>\n"
+            if "mod_time" in file_info:
+                result += f"<modified>{file_info['mod_time']}</modified>\n"
+            if "permissions" in file_info:
+                result += f"<permissions>{file_info['permissions']}</permissions>\n"
+            if "owner" in file_info:
+                result += f"<owner>{file_info['owner']}</owner>\n"
+            if "group" in file_info:
+                result += f"<group>{file_info['group']}</group>\n"
+
+            result += "</item>\n"
+        result += "</file_list>"
+        return result
+
+    @staticmethod
+    def format_upload_file() -> str:
+        """Format the response for an uploaded file."""
+        return (
+            "<upload_result>\n"
+            "<status>success</status>\n"
+            "<message>File uploaded successfully</message>\n"
+            "</upload_result>"
         )
 
     @staticmethod
-    def format_upload_file(_: None) -> str:
-        """Format the response for an uploaded file."""
-        return "File uploaded successfully."
-
-    @staticmethod
-    def format_download_file(_: bytes) -> str:
+    def format_download_file(size: int) -> str:
         """Format the response for a downloaded file."""
-        return "File downloaded successfully. (Binary content omitted)"
+        return (
+            "<download_result>\n"
+            "<status>success</status>\n"
+            "<message>File downloaded successfully</message>\n"
+            f"<size_bytes>{size}</size_bytes>\n"
+            "<note>Binary content omitted from display</note>\n"
+            "</download_result>"
+        )
 
     @staticmethod
     def format_default(obj: object) -> str:
-        return str(obj)
+        """Default formatter for objects."""
+        return f"<result>\n<content>{obj!s}</content>\n</result>"
 
 
-def _wrap_tool(func, formatter):
+def _wrap_tool(func, formatter, *, no_return: bool = False) -> Callable:
     def wrapped(*args, **kwargs):
         raw = func(*args, **kwargs)
+        if no_return:
+            return formatter(None)
         return formatter(raw)
 
     return wrapped
@@ -182,7 +219,7 @@ def create_tools(
                 StructuredTool(
                     description="Run code in the sandbox.",
                     name="run_code",
-                    func=toolkit.run_code,
+                    func=_wrap_tool(toolkit.run_code, Adapter.format_response),
                 )
             )
         elif tool_name == "list_files":
@@ -192,7 +229,7 @@ def create_tools(
                 StructuredTool(
                     description="List files in the sandbox.",
                     name="list_files",
-                    func=toolkit.list_files,
+                    func=_wrap_tool(toolkit.list_files, Adapter.format_list_files),
                 )
             )
         elif tool_name == "upload_file":
@@ -202,7 +239,9 @@ def create_tools(
                 StructuredTool(
                     description="Upload a file to the sandbox.",
                     name="upload_file",
-                    func=toolkit.upload_file,
+                    func=_wrap_tool(
+                        toolkit.upload_file, Adapter.format_upload_file, no_return=True
+                    ),
                 )
             )
         elif tool_name == "download_file":
@@ -212,7 +251,9 @@ def create_tools(
                 StructuredTool(
                     description="Download a file from the sandbox.",
                     name="download_file",
-                    func=toolkit.download_file,
+                    func=_wrap_tool(
+                        toolkit.download_file, Adapter.format_download_file
+                    ),
                 )
             )
         elif tool_name == "repl":
@@ -222,7 +263,7 @@ def create_tools(
                 StructuredTool(
                     description="Run code in a REPL environment in the sandbox.",
                     name="repl",
-                    func=toolkit.repl,
+                    func=_wrap_tool(toolkit.repl, Adapter.format_response),
                 )
             )
         elif tool_name == "exec":
@@ -232,7 +273,7 @@ def create_tools(
                 StructuredTool(
                     description="Execute a command in the sandbox.",
                     name="exec",
-                    func=toolkit.exec,
+                    func=_wrap_tool(toolkit.exec, Adapter.format_response),
                 )
             )
         else:
