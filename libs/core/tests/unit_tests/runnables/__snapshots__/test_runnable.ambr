@@ -10444,9 +10444,17 @@
           Contains additional information returned by the provider, such as
           response headers, service tiers, log probabilities, system fingerprints, etc.
           
-          Extra keys are permitted from what is typed here (via ``total=False``), allowing
-          for provider-specific metadata to be included without breaking the type
-          definition.
+          **Extensibility Design:**
+          
+          This uses ``total=False`` to allow arbitrary additional keys beyond the typed
+          fields below. This enables provider-specific metadata without breaking type safety:
+          
+          - OpenAI might include: ``{"system_fingerprint": "fp_123", "logprobs": {...}}``
+          - Anthropic might include: ``{"stop_reason": "stop_sequence", "usage": {...}}``
+          - Custom providers can add their own fields
+          
+          The common fields (``model_provider``, ``model_name``) provide a baseline
+          contract while preserving flexibility for provider innovations.
         ''',
         'properties': dict({
           'model_name': dict({
