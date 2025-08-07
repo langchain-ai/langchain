@@ -3741,6 +3741,20 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     return input_
 
 
+def _get_output_text(response: Response) -> str:
+    """OpenAI SDK deleted response.output_text in 1.99.2"""
+    if hasattr(response, "output_text"):
+        return response.output_text
+    texts: list[str] = []
+    for output in response.output:
+        if output.type == "message":
+            for content in output.content:
+                if content.type == "output_text":
+                    texts.append(content.text)
+
+    return "".join(texts)
+
+
 def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
@@ -3855,17 +3869,18 @@ def _construct_lc_result_from_responses_api(
     #        text_format=Foo,
     #        stream=True,  # <-- errors
     #    )
+    output_text = _get_output_text(response)
     if (
         schema is not None
         and "parsed" not in additional_kwargs
-        and response.output_text  # tool calls can generate empty output text
+        and output_text  # tool calls can generate empty output text
         and response.text
         and (text_config := response.text.model_dump())
         and (format_ := text_config.get("format", {}))
         and (format_.get("type") == "json_schema")
     ):
         try:
-            parsed_dict = json.loads(response.output_text)
+            parsed_dict = json.loads(output_text)
             if schema and _is_pydantic_class(schema):
                 parsed = schema(**parsed_dict)
             else:
