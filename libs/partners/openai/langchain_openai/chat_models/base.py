@@ -712,10 +712,24 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """Validate temperature parameter for different models.
+
+        - o1 models only allow temperature=1
+        - gpt-5 models only allow temperature=1 or unset (defaults to 1)
+        """
         model = values.get("model_name") or values.get("model") or ""
+
+        # For o1 models, set temperature=1 if not provided
         if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
+
+        # For gpt-5 models, handle temperature restrictions
+        if model.startswith("gpt-5"):
+            temperature = values.get("temperature")
+            if temperature is not None and temperature != 1:
+                # For gpt-5, only temperature=1 is supported, so remove non-defaults
+                values.pop("temperature", None)
+
         return values
 
     @model_validator(mode="after")
@@ -829,6 +843,12 @@ class BaseChatOpenAI(BaseChatModel):
             **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
+
+        if self.model_name.startswith("gpt-5"):
+            # gpt-5 models don't support these parameters
+            params.pop("audio", None)
+            params.pop("modalities", None)
+            params.pop("prediction", None)
 
         return params
 
@@ -1190,6 +1210,13 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+
+        if self.model_name.startswith("gpt-5"):
+            # gpt-5 models don't support these parameters
+            payload.pop("audio", None)
+            payload.pop("modalities", None)
+            payload.pop("prediction", None)
+
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
@@ -3497,6 +3524,11 @@ def _construct_responses_api_payload(
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+
+    # Remove temperature parameter for models that don't support it in responses API
+    model = payload.get("model", "")
+    if model.startswith("gpt-5"):
+        payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):
