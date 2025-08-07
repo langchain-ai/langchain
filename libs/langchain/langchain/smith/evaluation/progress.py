@@ -2,12 +2,14 @@
 
 import threading
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
+from typing_extensions import override
 
 
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
@@ -18,7 +20,6 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         total: int,
         ncols: int = 50,
         end_with: str = "\n",
-        **kwargs: Any,
     ):
         """Initialize the progress bar.
 
@@ -48,6 +49,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         end = "" if self.counter < self.total else self.end_with
         print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end=end)  # noqa: T201
 
+    @override
     def on_chain_error(
         self,
         error: BaseException,
@@ -59,6 +61,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_chain_end(
         self,
         outputs: dict[str, Any],
@@ -70,6 +73,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_retriever_error(
         self,
         error: BaseException,
@@ -81,6 +85,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_retriever_end(
         self,
         documents: Sequence[Document],
@@ -92,6 +97,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_llm_error(
         self,
         error: BaseException,
@@ -103,9 +109,10 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: Union[LLMResult, AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -114,6 +121,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_tool_error(
         self,
         error: BaseException,
@@ -125,6 +133,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         if parent_run_id is None:
             self.increment()
 
+    @override
     def on_tool_end(
         self,
         output: str,

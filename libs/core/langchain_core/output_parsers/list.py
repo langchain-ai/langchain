@@ -13,6 +13,7 @@ from typing_extensions import override
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+from langchain_core.v1.messages import AIMessage
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -71,7 +72,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
 
     @override
     def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
+        self, input: Iterator[Union[str, BaseMessage, AIMessage]]
     ) -> Iterator[list[str]]:
         buffer = ""
         for chunk in input:
@@ -81,6 +82,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 if not isinstance(chunk_content, str):
                     continue
                 buffer += chunk_content
+            elif isinstance(chunk, AIMessage):
+                buffer += chunk.text
             else:
                 # add current chunk to buffer
                 buffer += chunk
@@ -105,7 +108,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[Union[str, BaseMessage, AIMessage]]
     ) -> AsyncIterator[list[str]]:
         buffer = ""
         async for chunk in input:
@@ -115,6 +118,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 if not isinstance(chunk_content, str):
                     continue
                 buffer += chunk_content
+            elif isinstance(chunk, AIMessage):
+                buffer += chunk.text
             else:
                 # add current chunk to buffer
                 buffer += chunk

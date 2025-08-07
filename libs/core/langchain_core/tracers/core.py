@@ -18,6 +18,7 @@ from typing import (
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -25,6 +26,12 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import (
+    AIMessage,
+    AIMessageChunk,
+    MessageV1,
+    MessageV1Types,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -156,7 +163,7 @@ class _TracerCore(ABC):
     def _create_chat_model_run(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: UUID,
         tags: Optional[list[str]] = None,
         parent_run_id: Optional[UUID] = None,
@@ -181,6 +188,12 @@ class _TracerCore(ABC):
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
+        if isinstance(messages[0], MessageV1Types):
+            # Convert from v1 messages to BaseMessage
+            messages = [
+                [convert_from_v1_message(msg) for msg in messages]  # type: ignore[arg-type]
+            ]
+        messages = cast("list[list[BaseMessage]]", messages)
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -230,7 +243,9 @@ class _TracerCore(ABC):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         parent_run_id: Optional[UUID] = None,  # noqa: ARG002
     ) -> Run:
         """Append token event to LLM run and return the run."""
@@ -276,7 +291,15 @@ class _TracerCore(ABC):
         )
         return llm_run
 
-    def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
+    def _complete_llm_run(
+        self, response: Union[LLMResult, AIMessage], run_id: UUID
+    ) -> Run:
+        if isinstance(response, AIMessage):
+            response = LLMResult(
+                generations=[
+                    [ChatGeneration(message=convert_from_v1_message(response))]
+                ]
+            )
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         if getattr(llm_run, "outputs", None) is None:
             llm_run.outputs = {}
@@ -558,7 +581,7 @@ class _TracerCore(ABC):
         self,
         run: Run,  # noqa: ARG002
         token: str,  # noqa: ARG002
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],  # noqa: ARG002
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]],  # noqa: ARG002
     ) -> Union[None, Coroutine[Any, Any, None]]:
         """Process new LLM token."""
         return None

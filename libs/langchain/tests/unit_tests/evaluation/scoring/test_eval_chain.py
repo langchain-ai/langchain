@@ -26,13 +26,15 @@ Rating: [[10]]"""
 
     text = """This answer is really good.
 Rating: 10"""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Output must contain a double bracketed string"
+    ):
         output_parser.parse(text)
 
     text = """This answer is really good.
 Rating: [[0]]"""
     # Not in range [1, 10]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="with the verdict between 1 and 10"):
         output_parser.parse(text)
 
 
@@ -69,7 +71,9 @@ def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
         sequential_responses=True,
     )
     chain = LabeledScoreStringEvalChain.from_llm(llm=llm)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="LabeledScoreStringEvalChain requires a reference string."
+    ):
         chain.evaluate_strings(
             prediction="I like pie.",
             input="What is your favorite food?",

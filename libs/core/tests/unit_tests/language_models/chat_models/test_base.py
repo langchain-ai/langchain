@@ -14,7 +14,10 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.fake_chat_models import FakeListChatModelError
+from langchain_core.language_models.fake_chat_models import (
+    FakeListChatModelError,
+    GenericFakeChatModelV1,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -29,6 +32,7 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -467,6 +471,55 @@ def test_trace_images_in_openai_format() -> None:
     ]
 
 
+def test_trace_content_blocks_with_no_type_key() -> None:
+    """Test that we add a ``type`` key to certain content blocks that don't have one."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello",
+                },
+                {
+                    "cachePoint": {"type": "default"},
+                },
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "text",
+                            "text": "Hello",
+                        },
+                        {
+                            "type": "cachePoint",
+                            "cachePoint": {"type": "default"},
+                        },
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Test no mutation
+    assert response.content == [
+        {
+            "type": "text",
+            "text": "Hello",
+        },
+        {
+            "cachePoint": {"type": "default"},
+        },
+    ]
+
+
 def test_extend_support_to_openai_multimodal_formats() -> None:
     """Test that chat models normalize OpenAI file and audio inputs."""
     llm = ParrotFakeChatModel()
@@ -605,3 +658,93 @@ def test_normalize_messages_edge_cases() -> None:
         )
     ]
     assert messages == _normalize_messages(messages)
+
+
+def test_streaming_v1() -> None:
+    chunks = [
+        AIMessageChunkV1(
+            [
+                {
+                    "type": "reasoning",
+                    "reasoning": "Let's call a tool.",
+                    "index": 0,
+                }
+            ]
+        ),
+        AIMessageChunkV1(
+            [],
+            tool_call_chunks=[
+                {
+                    "type": "tool_call_chunk",
+                    "args": "",
+                    "name": "tool_name",
+                    "id": "call_123",
+                    "index": 1,
+                },
+            ],
+        ),
+        AIMessageChunkV1(
+            [],
+            tool_call_chunks=[
+                {
+                    "type": "tool_call_chunk",
+                    "args": '{"a',
+                    "name": "",
+                    "id": "",
+                    "index": 1,
+                },
+            ],
+        ),
+        AIMessageChunkV1(
+            [],
+            tool_call_chunks=[
+                {
+                    "type": "tool_call_chunk",
+                    "args": '": 1}',
+                    "name": "",
+                    "id": "",
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+    full: Optional[AIMessageChunkV1] = None
+    for chunk in chunks:
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunkV1)
+    assert full.content == [
+        {
+            "type": "reasoning",
+            "reasoning": "Let's call a tool.",
+            "index": 0,
+        },
+        {
+            "type": "tool_call_chunk",
+            "args": '{"a": 1}',
+            "name": "tool_name",
+            "id": "call_123",
+            "index": 1,
+        },
+    ]
+
+    llm = GenericFakeChatModelV1(message_chunks=chunks)
+
+    full = None
+    for chunk in llm.stream("anything"):
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunkV1)
+    assert full.content == [
+        {
+            "type": "reasoning",
+            "reasoning": "Let's call a tool.",
+            "index": 0,
+        },
+        {
+            "type": "tool_call",
+            "args": {"a": 1},
+            "name": "tool_name",
+            "id": "call_123",
+        },
+    ]

@@ -129,6 +129,7 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
+        message_version: Literal["v0", "v1"] = "v0",
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -157,6 +158,12 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
+            message_version: Version of ToolMessage to return given
+                :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+                If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+                If ``"v1"``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
+
             kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -174,7 +181,8 @@ class StructuredTool(BaseTool):
                     return a + b
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
-        """
+
+        """  # noqa: E501
         if func is not None:
             source_function = func
         elif coroutine is not None:
@@ -197,7 +205,14 @@ class StructuredTool(BaseTool):
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                description_ = args_schema.__doc__ or None
+                description_ = args_schema.__doc__
+                if (
+                    description_
+                    and "A base class for creating Pydantic models" in description_
+                ):
+                    description_ = ""
+                elif not description_:
+                    description_ = None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:
@@ -224,6 +239,7 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
+            message_version=message_version,
             **kwargs,
         )
 

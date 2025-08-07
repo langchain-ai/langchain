@@ -37,8 +37,16 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.messages.utils import convert_from_v1_message
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
+from langchain_core.v1.messages import (
+    AIMessage,
+    AIMessageChunk,
+    MessageV1,
+    MessageV1Types,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
@@ -47,7 +55,7 @@ if TYPE_CHECKING:
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
-    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.outputs import GenerationChunk
     from langchain_core.runnables.config import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -105,6 +113,7 @@ def trace_as_chain_group(
                 # Use the callback manager for the chain group
                 res = llm.invoke(llm_input, {"callbacks": manager})
                 manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -186,6 +195,7 @@ async def atrace_as_chain_group(
                 # Use the async callback manager for the chain group
                 res = await llm.ainvoke(llm_input, {"callbacks": manager})
                 await manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -241,6 +251,46 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+def _convert_llm_events(
+    event_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    args_list = list(args)
+    if (
+        event_name == "on_chat_model_start"
+        and isinstance(args_list[1], list)
+        and args_list[1]
+        and isinstance(args_list[1][0], MessageV1Types)
+    ):
+        batch = [
+            convert_from_v1_message(item)
+            for item in args_list[1]
+            if isinstance(item, MessageV1Types)
+        ]
+        args_list[1] = [batch]
+    elif (
+        event_name == "on_llm_new_token"
+        and "chunk" in kwargs
+        and isinstance(kwargs["chunk"], MessageV1Types)
+    ):
+        chunk = kwargs["chunk"]
+        kwargs["chunk"] = ChatGenerationChunk(text=chunk.text, message=chunk)
+    elif event_name == "on_llm_end" and isinstance(args_list[0], MessageV1Types):
+        args_list[0] = LLMResult(
+            generations=[
+                [
+                    ChatGeneration(
+                        text=args_list[0].text,
+                        message=convert_from_v1_message(args_list[0]),
+                    )
+                ]
+            ]
+        )
+    else:
+        pass
+
+    return tuple(args_list), kwargs
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -269,6 +319,8 @@ def handle_event(
                 if ignore_condition_name is None or not getattr(
                     handler, ignore_condition_name
                 ):
+                    if not handler.accepts_new_messages:
+                        args, kwargs = _convert_llm_events(event_name, args, kwargs)
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
                         coros.append(event)
@@ -363,6 +415,8 @@ async def _ahandle_event_for_handler(
 ) -> None:
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
+            if not handler.accepts_new_messages:
+                args, kwargs = _convert_llm_events(event_name, args, kwargs)
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
@@ -672,7 +726,9 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -697,11 +753,11 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(self, response: Union[LLMResult, AIMessage], **kwargs: Any) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -727,8 +783,8 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
@@ -768,7 +824,9 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -794,11 +852,13 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
     @shielded
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The LLM result.
+            response (LLMResult | AIMessage): The LLM result.
             **kwargs (Any): Additional keyword arguments.
         """
         if not self.handlers:
@@ -825,11 +885,8 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             kwargs (Any): Additional keyword arguments.
-                - response (LLMResult): The response which was generated before
-                    the error occurred.
-
-
-
+                - response (LLMResult | AIMessage): The response which was generated
+                  before the error occurred.
         """
         if not self.handlers:
             return
@@ -1352,7 +1409,7 @@ class CallbackManager(BaseCallbackManager):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
@@ -1360,7 +1417,7 @@ class CallbackManager(BaseCallbackManager):
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
-            messages (list[list[BaseMessage]]): The list of messages.
+            messages (list[list[BaseMessage | MessageV1]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
 
@@ -1368,6 +1425,32 @@ class CallbackManager(BaseCallbackManager):
             list[CallbackManagerForLLMRun]: A callback manager for each
                 list of messages as an LLM run.
         """
+        if messages and isinstance(messages[0], MessageV1Types):
+            run_id_ = run_id if run_id is not None else uuid.uuid4()
+            handle_event(
+                self.handlers,
+                "on_chat_model_start",
+                "ignore_chat_model",
+                serialized,
+                messages,
+                run_id=run_id_,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+            return [
+                CallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            ]
         managers = []
         for message_list in messages:
             if run_id is not None:
@@ -1862,7 +1945,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[AsyncCallbackManagerForLLMRun]:
@@ -1870,7 +1953,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Args:
             serialized (dict[str, Any]): The serialized LLM.
-            messages (list[list[BaseMessage]]): The list of messages.
+            messages (list[list[BaseMessage | MessageV1]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
 
@@ -1879,10 +1962,51 @@ class AsyncCallbackManager(BaseCallbackManager):
                 async callback managers, one for each LLM Run
                 corresponding to each inner  message list.
         """
+        if messages and isinstance(messages[0], MessageV1Types):
+            run_id_ = run_id if run_id is not None else uuid.uuid4()
+            inline_tasks = []
+            non_inline_tasks = []
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
+                    "on_chat_model_start",
+                    "ignore_chat_model",
+                    serialized,
+                    messages,
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
+                )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
+            managers = [
+                AsyncCallbackManagerForLLMRun(
+                    run_id=run_id_,
+                    handlers=self.handlers,
+                    inheritable_handlers=self.inheritable_handlers,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    inheritable_tags=self.inheritable_tags,
+                    metadata=self.metadata,
+                    inheritable_metadata=self.inheritable_metadata,
+                )
+            ]
+            # Run inline tasks sequentially
+            for task in inline_tasks:
+                await task
+
+            # Run non-inline tasks concurrently
+            if non_inline_tasks:
+                await asyncio.gather(*non_inline_tasks)
+
+            return managers
         inline_tasks = []
         non_inline_tasks = []
         managers = []
-
         for message_list in messages:
             if run_id is not None:
                 run_id_ = run_id
@@ -2575,6 +2699,7 @@ async def adispatch_custom_event(
         behalf.
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2645,6 +2770,7 @@ def dispatch_custom_event(
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,
