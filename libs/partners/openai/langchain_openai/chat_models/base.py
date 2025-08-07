@@ -69,7 +69,7 @@ from langchain_core.messages.ai import (
     OutputTokenDetails,
     UsageMetadata,
 )
-from langchain_core.messages.tool import ToolCallChunk, tool_call_chunk
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -157,21 +157,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
-                    if raw_tool_call.get("type") == "custom":
-                        # Custom tool call uses text_input instead of args
-                        tool_calls.append(
-                            {
-                                "name": raw_tool_call.get("name", ""),
-                                "args": {},
-                                "text_input": raw_tool_call.get("input", ""),
-                                "id": raw_tool_call.get("id"),
-                                "type": "tool_call",
-                            }
-                        )
-                    else:
-                        parsed = parse_tool_call(raw_tool_call, return_id=True)
-                        if parsed:
-                            tool_calls.append(parsed)
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
@@ -344,30 +330,19 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    tool_call_chunks: list[ToolCallChunk] = []
+    tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
-            tool_call_chunks = []
-            for rtc in raw_tool_calls:
-                if rtc.get("type") == "custom":
-                    tool_call_chunks.append(
-                        tool_call_chunk(
-                            name=rtc.get("name"),
-                            text_input=rtc.get("input", ""),
-                            id=rtc.get("id"),
-                            index=rtc.get("index"),
-                        )
-                    )
-                else:
-                    tool_call_chunks.append(
-                        tool_call_chunk(
-                            name=rtc["function"].get("name"),
-                            args=rtc["function"].get("arguments"),
-                            id=rtc.get("id"),
-                            index=rtc["index"],
-                        )
-                    )
+            tool_call_chunks = [
+                tool_call_chunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc["index"],
+                )
+                for rtc in raw_tool_calls
+            ]
         except KeyError:
             pass
 
@@ -483,8 +458,7 @@ class BaseChatOpenAI(BaseChatModel):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service
-    emulator."""
+    """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
@@ -4118,27 +4092,6 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         content.append(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
-        )
-    elif chunk.type == "response.custom_tool_call_input.delta":
-        _advance(chunk.output_index)
-        tool_call_chunks.append(
-            {
-                "type": "tool_call_chunk",
-                "text_input": chunk.delta,
-                "index": current_index,
-            }
-        )
-        content.append(
-            {"type": "custom_tool_call", "input": chunk.delta, "index": current_index}
-        )
-    elif chunk.type == "response.custom_tool_call_input.done":
-        content.append(
-            {
-                "type": "custom_tool_call_done",
-                "input": chunk.input,
-                "item_id": chunk.item_id,
-                "index": current_index,
-            }
         )
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})

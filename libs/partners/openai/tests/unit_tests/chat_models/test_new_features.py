@@ -11,9 +11,8 @@ class TestResponseFormats:
 
     def test_grammar_response_format(self):
         """Test grammar response format configuration."""
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
-        # Test grammar format in Responses API
         grammar_format = {
             "type": "grammar",
             "grammar": """
@@ -31,9 +30,8 @@ class TestResponseFormats:
 
     def test_python_response_format(self):
         """Test python response format configuration."""
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
-        # Test python format in Responses API
         python_format = {"type": "python"}
 
         # This should not raise an error during bind
@@ -42,16 +40,12 @@ class TestResponseFormats:
 
     def test_grammar_format_validation(self):
         """Test that grammar format requires grammar field."""
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         # Test missing grammar field
         invalid_format = {"type": "grammar"}
 
         bound_llm = llm.bind(response_format=invalid_format)
-
-        # The error should be raised when trying to create the payload
-        # not during bind, so we can't easily test this in unit tests
-        # without mocking the actual API call
         assert bound_llm is not None
 
 
@@ -71,7 +65,7 @@ class TestAllowedToolsChoice:
             """Get current time."""
             return "12:00 PM"
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         allowed_tools_choice = {
             "type": "allowed_tools",
@@ -97,7 +91,7 @@ class TestAllowedToolsChoice:
             """Calculate mathematical expression."""
             return f"Result: {eval(expression)}"  # noqa: S307
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         allowed_tools_choice = {
             "type": "allowed_tools",
@@ -118,7 +112,7 @@ class TestAllowedToolsChoice:
             """Test tool."""
             return "test"
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         invalid_choice = {
             "type": "allowed_tools",
@@ -134,7 +128,7 @@ class TestVerbosityParameter:
 
     def test_verbosity_parameter_low(self):
         """Test verbosity parameter with low value."""
-        llm = ChatOpenAI(model="gpt-4o-mini", verbosity="low")
+        llm = ChatOpenAI(model="gpt-5", verbosity="low")
 
         assert llm.verbosity == "low"
         assert "verbosity" in llm._default_params
@@ -142,21 +136,21 @@ class TestVerbosityParameter:
 
     def test_verbosity_parameter_medium(self):
         """Test verbosity parameter with medium value."""
-        llm = ChatOpenAI(model="gpt-4o-mini", verbosity="medium")
+        llm = ChatOpenAI(model="gpt-5", verbosity="medium")
 
         assert llm.verbosity == "medium"
         assert llm._default_params["verbosity"] == "medium"
 
     def test_verbosity_parameter_high(self):
         """Test verbosity parameter with high value."""
-        llm = ChatOpenAI(model="gpt-4o-mini", verbosity="high")
+        llm = ChatOpenAI(model="gpt-5", verbosity="high")
 
         assert llm.verbosity == "high"
         assert llm._default_params["verbosity"] == "high"
 
     def test_verbosity_parameter_none(self):
         """Test verbosity parameter with None (default)."""
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        llm = ChatOpenAI(model="gpt-5")
 
         assert llm.verbosity is None
         # When verbosity is None, it may not be included in _default_params
@@ -195,7 +189,7 @@ class TestMinimalReasoningEffort:
 
     def test_minimal_reasoning_effort(self):
         """Test reasoning_effort parameter supports 'minimal'."""
-        llm = ChatOpenAI(model="gpt-4o-mini", reasoning_effort="minimal")
+        llm = ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
 
         assert llm.reasoning_effort == "minimal"
         assert llm._default_params["reasoning_effort"] == "minimal"
@@ -205,7 +199,7 @@ class TestMinimalReasoningEffort:
         supported_values = ["minimal", "low", "medium", "high"]
 
         for value in supported_values:
-            llm = ChatOpenAI(model="gpt-4o-mini", reasoning_effort=value)
+            llm = ChatOpenAI(model="gpt-5", reasoning_effort=value)
             assert llm.reasoning_effort == value
             assert llm._default_params["reasoning_effort"] == value
 
@@ -215,7 +209,7 @@ class TestBackwardCompatibility:
 
     def test_existing_response_formats(self):
         """Test that existing response formats still work."""
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         # JSON object format should still work
         json_llm = llm.bind(response_format={"type": "json_object"})
@@ -245,7 +239,7 @@ class TestBackwardCompatibility:
             """Test tool."""
             return x * 2
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
         # String tool choice should still work
         bound_llm = llm.bind_tools([test_tool], tool_choice="test_tool")

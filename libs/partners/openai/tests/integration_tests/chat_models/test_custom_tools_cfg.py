@@ -2,7 +2,6 @@
 
 import pytest
 from langchain_core.messages import AIMessage
-from langchain_core.tools import tool
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.cfg_grammar import (
@@ -11,7 +10,7 @@ from langchain_openai.chat_models.cfg_grammar import (
 )
 
 
-@tool(custom=True)
+@custom_tool
 def execute_math_expression(expression: str) -> str:
     """Execute a mathematical expression with CFG validation.
 
@@ -50,7 +49,7 @@ def execute_math_expression(expression: str) -> str:
         return f"Execution error: {e}"
 
 
-@tool(custom=True)
+@custom_tool
 def generate_sql_query(query: str) -> str:
     """Generate and validate SQL SELECT queries with CFG validation.
 
@@ -230,10 +229,6 @@ class TestCFGCustomToolsIntegration:
             assert result == should_be_valid, f"Failed for expression: {expression}"
 
 
-# Note: The following tests would require actual model integration
-# which isn't fully implemented yet.
-
-
 class TestCFGModelIntegration:
     """Integration tests for CFG validation with actual OpenAI models."""
 
@@ -241,10 +236,8 @@ class TestCFGModelIntegration:
     @pytest.mark.scheduled
     def test_model_with_cfg_tools_valid_output(self) -> None:
         """Test that model generates valid CFG-compliant outputs."""
-        # This would test the full integration once implemented
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="gpt-5", temperature=0)
 
-        # This syntax doesn't exist yet - placeholder for future implementation
         llm_with_cfg_tools = llm.bind_tools(
             [execute_math_expression],
             tool_format={
@@ -259,11 +252,9 @@ class TestCFGModelIntegration:
 
         assert isinstance(response, AIMessage)
         assert response.tool_calls
-        # Would verify the tool call output matches the CFG grammar
 
     @pytest.mark.skip(reason="CFG model integration not yet implemented")
     @pytest.mark.scheduled
     def test_model_cfg_validation_rejection(self) -> None:
         """Test that model tool calls are rejected if they don't match CFG."""
-        # This would test rejection of invalid outputs once implemented
         pass

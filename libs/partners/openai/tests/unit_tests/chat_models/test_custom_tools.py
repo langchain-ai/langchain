@@ -19,7 +19,7 @@ from langchain_openai.chat_models.cfg_grammar import (
 def test_custom_tool_decorator():
     """Test that custom tools can be created with the `@tool` decorator."""
 
-    @tool(custom=True)
+    @custom_tool
     def execute_code(code: str) -> str:
         """Execute arbitrary Python code."""
         return f"Executed: {code}"

@@ -22,7 +22,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    custom: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -38,7 +37,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    custom: bool = False,
 ) -> BaseTool: ...
 
 
@@ -53,7 +51,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    custom: bool = False,
 ) -> BaseTool: ...
 
 
@@ -68,7 +65,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    custom: bool = False,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -83,7 +79,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    custom: bool = False,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -123,9 +118,6 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
-        custom: Whether this is a custom tool that accepts plaintext input
-            instead of structured arguments. Custom tools are used with
-            OpenAI's custom tool calling feature. Defaults to False.
 
     Returns:
         The tool.
@@ -282,7 +274,6 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
-                    custom_tool=custom,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -299,7 +290,6 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
-                custom_tool=custom,
             )
 
         return _tool_factory
