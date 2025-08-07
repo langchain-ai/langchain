@@ -825,14 +825,14 @@ const FEATURE_TABLES = {
             {
                 name: "Spider",
                 link: "spider",
-                source: "The fastest and most affordable crawler and scraper that returns LLM-ready data. Hosted version has free credits.",
+                source: "Crawler and scraper that returns LLM-ready data.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.spider.SpiderLoader.html"
             },
             {
                 name: "Firecrawl",
                 link: "firecrawl",
-                source: "API service that can be deployed locally, hosted version has free credits.",
+                source: "API service that can be deployed locally.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
             },
