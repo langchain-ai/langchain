@@ -5,6 +5,8 @@ from typing import TypedDict, NotRequired
 
 from daytona import Sandbox
 
+from langchain_core.tools import BaseTool, StructuredTool
+
 
 class FileInfo(TypedDict):
     """Metadata of a file in the sandbox."""
@@ -43,15 +45,13 @@ class ExecuteResponse(TypedDict):
     """The ID of the session in which the code was executed."""
 
 
-CODE_TOOLS = Literal["run_code", "list_files", "upload_file", "download_file"]
-
-
 class DaytonaSandboxToolkit:
     """A toolkit for interacting with sandboxes."""
 
-    def __init__(self, sandbox: Sandbox) -> None:
+    def __init__(self, sandbox: Sandbox, *, default_language: str | None) -> None:
         """Initialize the SandboxToolkit with a DaytonSandbox instance."""
         self.sandbox = sandbox
+        self._default_language = default_language
 
     def get_tools(self) -> List[BaseException]:
         """Get the tools for the given sandbox."""
@@ -59,6 +59,10 @@ class DaytonaSandboxToolkit:
     def list_files(self, path: str) -> List[FileInfo]:
         """List files in the specified path."""
         return self.sandbox.fs.list_files(path)
+
+    def move_files(self, source: str, destination: str) -> None:
+        """Move a file from source to destination."""
+        return self.sandbox.fs.move_files(source, destination)
 
     def upload_file(
         self, file: bytes, remote_path: str, timeout: int = 30 * 60
@@ -100,6 +104,11 @@ class DaytonaSandboxToolkit:
             session_id=execute_response.session_id,
         )
 
+    @property
+    def default_language(self) -> str | None:
+        """Get the default language for code execution."""
+        return self._default_language
+
     def get_capabilities(self) -> SandboxCapabilities:
         """Get the capabilities of the sandbox."""
         return {
@@ -110,14 +119,103 @@ class DaytonaSandboxToolkit:
             "supported_languages": ["python"],
         }
 
+class Adapter:
+    """An adapter to integrate responses from a sandbox toolkit to an LLM."""
+    @staticmethod
+    def format_response(response: ExecuteResponse) -> str:
+        """Format the response from code execution."""
+        return f"Result: {response['result']}\nExit Code: {response.get('exit_code', 'N/A')}"
+
 
 def create_tools(
-    sandbox: Sandbox,
+    toolkit: DaytonaSandboxToolkit,
     tool_selection: Sequence[
         Literal["run_code", "list_files", "upload_file", "download_file"]
     ],
-) -> List[BaseException]:
-    """Create tools for the given sandbox."""
-    toolkit = DaytonaSandboxToolkit(sandbox)
+) -> List[BaseTool]:
+    """Create tools for the given sandbox.
+
+    Args:
+        toolkit: The SandboxToolkit to use for creating tools.
+        tool_selection: A sequence of tool names to create.
+    """
+    requested_tools = set(tool_selection)
     capabilities = toolkit.get_capabilities()
-    return toolkit.get_tools()
+
+    # Let's create each tool now
+    tools: list[BaseTool] = []
+    for tool_name in requested_tools:
+        if tool_name == "run_code":
+            if not capabilities["can_run_code"]:
+                raise ValueError("Sandbox does not support running code.")
+            tools.append(
+                StructuredTool(
+                    description="Run code in the sandbox.",
+                    name="run_code",
+                    func=toolkit.run_code,
+                )
+            )
+        elif tool_name == "list_files":
+            if not capabilities["can_list_files"]:
+                raise ValueError("Sandbox does not support listing files.")
+            tools.append(
+                StructuredTool(
+                    description="List files in the sandbox.",
+                    name="list_files",
+                    func=toolkit.list_files,
+                )
+            )
+        elif tool_name == "upload_file":
+            if not capabilities["can_upload"]:
+                raise ValueError("Sandbox does not support uploading files.")
+            tools.append(
+                StructuredTool(
+                    description="Upload a file to the sandbox.",
+                    name="upload_file",
+                    func=toolkit.upload_file,
+                )
+            )
+        elif tool_name == "download_file":
+            if not capabilities["can_download"]:
+                raise ValueError("Sandbox does not support downloading files.")
+            tools.append(
+                StructuredTool(
+                    description="Download a file from the sandbox.",
+                    name="download_file",
+                    func=toolkit.download_file,
+                )
+            )
+        elif tool_name == "repl":
+            if not capabilities["can_run_code"]:
+                raise ValueError("Sandbox does not support REPL execution.")
+            tools.append(
+                StructuredTool(
+                    description="Run code in a REPL environment in the sandbox.",
+                    name="repl",
+                    func=toolkit.repl,
+                )
+            )
+        elif tool_name == "exec":
+            if not capabilities["can_run_code"]:
+                raise ValueError("Sandbox does not support executing commands.")
+            tools.append(
+                StructuredTool(
+                    description="Execute a command in the sandbox.",
+                    name="exec",
+                    func=toolkit.exec,
+                )
+            )
+        else:
+            known_tools = {
+                "run_code",
+                "list_files",
+                "upload_file",
+                "download_file",
+            }
+            msg = (
+                f"Unsupported tool: {tool_name}. "
+                f"Supported tools are: {', '.join(known_tools)}."
+            )
+            raise NotImplementedError(msg)
+
+    return tools
