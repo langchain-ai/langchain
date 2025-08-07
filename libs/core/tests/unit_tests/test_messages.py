@@ -38,6 +38,9 @@ from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chu
 from langchain_core.utils._merge import merge_lists
 from langchain_core.v1.messages import AIMessage as AIMessageV1
 from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
+from langchain_core.v1.messages import SystemMessage as SystemMessageV1
+from langchain_core.v1.messages import ToolMessage as ToolMessageV1
 
 
 def test_message_init() -> None:
@@ -1385,3 +1388,56 @@ def test_known_block_types() -> None:
         for t in expected
     }
     assert expected == KNOWN_BLOCK_TYPES
+
+
+def test_v1_text_accessor() -> None:
+    """Test that v1 message.text property and .text() method return the same value."""
+    # Test HumanMessage
+    human_msg = HumanMessageV1(content="Hello world")
+    assert human_msg.text == "Hello world"
+    assert human_msg.text() == "Hello world"  # type: ignore[operator]
+    assert str(human_msg.text) == human_msg.text()  # type: ignore[operator]
+
+    # Test SystemMessage
+    system_msg = SystemMessageV1(content="You are a helpful assistant")
+    assert system_msg.text == "You are a helpful assistant"
+    assert system_msg.text() == "You are a helpful assistant"  # type: ignore[operator]
+    assert str(system_msg.text) == system_msg.text()  # type: ignore[operator]
+
+    # Test AIMessage
+    ai_msg = AIMessageV1(content="I can help you with that")
+    assert ai_msg.text == "I can help you with that"
+    assert ai_msg.text() == "I can help you with that"  # type: ignore[operator]
+    assert str(ai_msg.text) == ai_msg.text()  # type: ignore[operator]
+
+    # Test ToolMessage
+    tool_msg = ToolMessageV1(content="Task completed", tool_call_id="tool_1")
+    assert tool_msg.text == "Task completed"
+    assert tool_msg.text() == "Task completed"  # type: ignore[operator]
+    assert str(tool_msg.text) == tool_msg.text()  # type: ignore[operator]
+
+    # Test with complex content (list of content blocks)
+    complex_msg = HumanMessageV1(
+        content=[{"type": "text", "text": "Hello "}, {"type": "text", "text": "world"}]
+    )
+    assert complex_msg.text == "Hello world"
+    assert complex_msg.text() == "Hello world"  # type: ignore[operator]
+    assert str(complex_msg.text) == complex_msg.text()  # type: ignore[operator]
+
+    # Test with mixed content (text and non-text blocks)
+    mixed_msg = AIMessageV1(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "tool_call", "name": "calculate", "args": {"x": 2}, "id": "1"},
+            {"type": "text", "text": "42"},
+        ]
+    )
+    assert mixed_msg.text == "The answer is 42"
+    assert mixed_msg.text() == "The answer is 42"  # type: ignore[operator]
+    assert str(mixed_msg.text) == mixed_msg.text()  # type: ignore[operator]
+
+    # Test empty content
+    empty_msg = HumanMessageV1(content=[])
+    assert empty_msg.text == ""
+    assert empty_msg.text() == ""  # type: ignore[operator]
+    assert str(empty_msg.text) == empty_msg.text()  # type: ignore[operator]
