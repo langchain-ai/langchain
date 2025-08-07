@@ -5,26 +5,45 @@
     change in future releases.
 
 This module provides a standardized data structure for representing inputs to and
-outputs from Large Language Models. The core abstraction is the **Content Block**, a
-``TypedDict`` that can represent a piece of text, an image, a tool call, or other
-structured data.
+outputs from LLMs. The core abstraction is the **Content Block**, a ``TypedDict`` that
+can represent a piece of text, an image, a tool call, or other structured data.
+
+**Rationale**
+
+Different LLM providers use distinct and incompatible API schemas. This module
+introduces a unified, provider-agnostic format to standardize these interactions. A
+message to or from a model is simply a ``list`` of ``ContentBlock`` objects, allowing
+for the natural interleaving of text, images, and other content in a single, ordered
+sequence.
+
+An adapter for a specific provider is responsible for translating this standard list of
+blocks into the format required by its API.
+
+**Extensibility**
 
 Data **not yet mapped** to a standard block may be represented using the
 ``NonStandardContentBlock``, which allows for provider-specific data to be included
 without losing the benefits of type checking and validation.
 
 Furthermore, provider-specific fields **within** a standard block are fully supported
-by default. However, since current type checkers do not recognize this, we are temporarily
-applying type ignore comments to suppress warnings. In the future,
-`PEP 728 <https://peps.python.org/pep-0728/>`__ will add an extra param, ``extra_items=Any``.
-When this is supported, we will apply it to block signatures to signify to type checkers
-that additional provider-specific fields are allowed.
+by default in the ``extras`` field of each block. This allows for additional metadata
+to be included without breaking the standard structure.
+
+Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we will add
+``extra_items=Any`` as a param to Content Blocks. This will signify to type checkers
+that additional provider-specific fields are allowed outside of the ``extras`` field,
+and that will become the new standard approach to adding provider-specific metadata.
+
+.. warning::
+    Do not heavily rely on the ``extras`` field for provider-specific data! This field
+    is subject to deprecation in future releases as we move towards PEP 728.
 
 **Example with PEP 728 provider-specific fields:**
 
 .. code-block:: python
 
-    # Note `extra_items=Any`
+    # Content block definition
+    # NOTE: `extra_items=Any`
     class TextContentBlock(TypedDict, extra_items=Any):
         type: Literal["text"]
         id: NotRequired[str]
@@ -36,6 +55,7 @@ that additional provider-specific fields are allowed.
 
     from langchain_core.messages.content_blocks import TextContentBlock
 
+    # Create a text content block with provider-specific fields
     my_block: TextContentBlock = {
         # Add required fields
         "type": "text",
@@ -47,6 +67,7 @@ that additional provider-specific fields are allowed.
         "custom_field": "any value",
     }
 
+    # Mutating an existing block to add provider-specific fields
     openai_data = my_block["openai_metadata"]  # Type: Any
 
 .. note::
@@ -54,24 +75,13 @@ that additional provider-specific fields are allowed.
     from type checkers that don't yet support it. The functionality works correctly
     in Python 3.13+ and will be fully supported as the ecosystem catches up.
 
-**Rationale**
-
-Different LLM providers use distinct and incompatible API schemas. This module
-introduces a unified, provider-agnostic format to standardize these interactions. A
-message to or from a model is simply a `list` of `ContentBlock` objects, allowing for
-the natural interleaving of text, images, and other content in a single, ordered
-sequence.
-
-An adapter for a specific provider is responsible for translating this standard list of
-blocks into the format required by its API.
-
 **Key Block Types**
 
 The module defines several types of content blocks, including:
 
 - ``TextContentBlock``: Standard text.
 - ``ImageContentBlock``, ``Audio...``, ``Video...``, ``PlainText...``, ``File...``: For multimodal data.
-- ``ToolCallContentBlock``, ``ToolOutputContentBlock``: For function calling.
+- ``ToolCallContentBlock``: For function calling.
 - ``ReasoningContentBlock``: To capture a model's thought process.
 - ``Citation``: For annotations that link generated text to a source document.
 
@@ -101,13 +111,19 @@ The module defines several types of content blocks, including:
             mime_type="image/png",
         ),
     ]
+
+Factory functions like ``create_text_block`` and ``create_image_block`` are provided
+and offer benefits such as:
+- Automatic ID generation (when not provided)
+- No need to manually specify the ``type`` field
+
 """  # noqa: E501
 
 import warnings
 from typing import Any, Literal, Optional, Union
 from uuid import uuid4
 
-from typing_extensions import NotRequired, TypedDict, get_args, get_origin
+from typing_extensions import NotRequired, TypedDict, TypeGuard
 
 
 def _ensure_id(id_val: Optional[str]) -> str:
@@ -129,7 +145,7 @@ class Citation(TypedDict):
     """Annotation for citing data from a document.
 
     .. note::
-        ``start/end`` indices refer to the **response text**,
+        ``start``/``end`` indices refer to the **response text**,
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the ``url``).
 
@@ -157,7 +173,7 @@ class Citation(TypedDict):
 
     # For future consideration, if needed:
     # provenance: NotRequired[str]
-    # """Provenance of the document, e.g., "Wikipedia", "arXiv", etc.
+    # """Provenance of the document, e.g., ``'Wikipedia'``, ``'arXiv'``, etc.
 
     # Included for future compatibility; not currently implemented.
     # """
@@ -238,7 +254,7 @@ class TextContentBlock(TypedDict):
     """Block text."""
 
     annotations: NotRequired[list[Annotation]]
-    """Citations and other annotations."""
+    """``Citation``s and other annotations."""
 
     index: NotRequired[int]
     """Index of block in aggregate response. Used during streaming."""
@@ -299,7 +315,7 @@ class ToolCall(TypedDict):
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
-    When merging ToolCallChunks (e.g., via ``AIMessageChunk.__add__``),
+    When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
     values of ``index`` are equal and not ``None``.
 
@@ -637,7 +653,6 @@ class AudioContentBlock(TypedDict):
     .. note::
         ``create_audio_block`` may also be used as a factory to create an
         ``AudioContentBlock``. Benefits include:
-
         * Automatic ID generation (when not provided)
         * Required arguments strictly validated at creation time
 
@@ -660,6 +675,7 @@ class AudioContentBlock(TypedDict):
     """MIME type of the audio. Required for base64.
 
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
+
     """
 
     index: NotRequired[int]
@@ -765,6 +781,7 @@ class FileContentBlock(TypedDict):
     """MIME type of the file. Required for base64.
 
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
+
     """
 
     index: NotRequired[int]
@@ -793,7 +810,7 @@ class NonStandardContentBlock(TypedDict):
     The purpose of this block should be to simply hold a provider-specific payload.
     If a provider's non-standard output includes reasoning and tool calls, it should be
     the adapter's job to parse that payload and emit the corresponding standard
-    ReasoningContentBlock and ToolCallContentBlocks.
+    ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
 
     .. note::
         ``create_non_standard_block`` may also be used as a factory to create a
@@ -832,6 +849,7 @@ DataContentBlock = Union[
 
 ToolContentBlock = Union[
     ToolCall,
+    ToolCallChunk,
     CodeInterpreterCall,
     CodeInterpreterOutput,
     CodeInterpreterResult,
@@ -842,26 +860,13 @@ ToolContentBlock = Union[
 ContentBlock = Union[
     TextContentBlock,
     ToolCall,
-    InvalidToolCall,
     ToolCallChunk,
+    InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,
     DataContentBlock,
     ToolContentBlock,
 ]
-
-
-def _extract_typedict_type_values(union_type: Any) -> set[str]:
-    """Extract the values of the 'type' field from a TypedDict union type."""
-    result: set[str] = set()
-    for value in get_args(union_type):
-        annotation = value.__annotations__["type"]
-        if get_origin(annotation) is Literal:
-            result.update(get_args(annotation))
-        else:
-            msg = f"{value} 'type' is not a Literal"
-            raise ValueError(msg)
-    return result
 
 
 KNOWN_BLOCK_TYPES = {
@@ -909,6 +914,33 @@ def is_data_content_block(block: dict) -> bool:
             "source_type",  # backwards compatibility
         )
     )
+
+
+def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
+    """Type guard to check if a content block is a ``ToolCall``."""
+    return block.get("type") == "tool_call"
+
+
+def is_tool_call_chunk(block: ContentBlock) -> TypeGuard[ToolCallChunk]:
+    """Type guard to check if a content block is a ``ToolCallChunk``."""
+    return block.get("type") == "tool_call_chunk"
+
+
+def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
+    """Type guard to check if a content block is a ``TextContentBlock``."""
+    return block.get("type") == "text"
+
+
+def is_reasoning_block(block: ContentBlock) -> TypeGuard[ReasoningContentBlock]:
+    """Type guard to check if a content block is a ``ReasoningContentBlock``."""
+    return block.get("type") == "reasoning"
+
+
+def is_invalid_tool_call_block(
+    block: ContentBlock,
+) -> TypeGuard[InvalidToolCall]:
+    """Type guard to check if a content block is an ``InvalidToolCall``."""
+    return block.get("type") == "invalid_tool_call"
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
@@ -997,7 +1029,7 @@ def create_text_block(
     Args:
         text: The text content of the block.
         id: Content block identifier. Generated automatically if not provided.
-        annotations: Citations and other annotations for the text.
+        annotations: ``Citation``s and other annotations for the text.
         index: Index of block in aggregate response. Used during streaming.
 
     Returns:
@@ -1053,10 +1085,6 @@ def create_image_block(
     """
     if not any([url, base64, file_id]):
         msg = "Must provide one of: url, base64, or file_id"
-        raise ValueError(msg)
-
-    if base64 and not mime_type:
-        msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
     block = ImageContentBlock(type="image", id=_ensure_id(id))
@@ -1241,8 +1269,7 @@ def create_file_block(
 
 
 def create_plaintext_block(
-    text: str,
-    *,
+    text: Optional[str] = None,
     url: Optional[str] = None,
     base64: Optional[str] = None,
     file_id: Optional[str] = None,
@@ -1274,10 +1301,11 @@ def create_plaintext_block(
     block = PlainTextContentBlock(
         type="text-plain",
         mime_type="text/plain",
-        text=text,
         id=_ensure_id(id),
     )
 
+    if text is not None:
+        block["text"] = text
     if url is not None:
         block["url"] = url
     if base64 is not None:

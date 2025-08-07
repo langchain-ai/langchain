@@ -156,8 +156,13 @@ class Reviver:
 
             cls = getattr(mod, name)
 
-            # The class must be a subclass of Serializable.
-            if not issubclass(cls, Serializable):
+            # Import MessageV1Types lazily to avoid circular import:
+            # load.load -> v1.messages -> messages.ai -> messages.base ->
+            #   load.serializable -> load.__init__ -> load.load
+            from langchain_core.v1.messages import MessageV1Types
+
+            # The class must be a subclass of Serializable or a v1 message class.
+            if not (issubclass(cls, Serializable) or cls in MessageV1Types):
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 

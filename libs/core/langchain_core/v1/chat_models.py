@@ -25,7 +25,7 @@ from pydantic import (
     Field,
     field_validator,
 )
-from typing_extensions import TypeAlias, override
+from typing_extensions import override
 
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -49,6 +49,7 @@ from langchain_core.messages import (
     get_buffer_string,
     is_data_content_block,
 )
+from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.messages.utils import (
     convert_from_v1_message,
     convert_to_messages_v1,
@@ -80,8 +81,8 @@ if TYPE_CHECKING:
 
 
 def _generate_response_from_error(error: BaseException) -> list[AIMessageV1]:
-    if hasattr(error, "response"):
-        response = error.response
+    response = getattr(error, "response", None)
+    if response is not None:
         metadata: dict = {}
         if hasattr(response, "headers"):
             try:
@@ -117,9 +118,7 @@ def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
     for message in messages:
         message_to_trace = message
         for idx, block in enumerate(message.content):
-            # Update image content blocks to OpenAI # Chat Completions format.
-            # Note that we type ignore here, allowing non-standard content blocks
-            # to be passed through for tracing.
+            # Update image content blocks to OpenAI Chat Completions format.
             if (
                 block.get("type") == "image"
                 and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
@@ -217,7 +216,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
 
 
 class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
-    """Base class for chat models.
+    """Base class for v1 chat models.
 
     Key imperative methods:
         Methods that actually call the underlying model.
@@ -365,7 +364,7 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
 
     @property
     @override
-    def InputType(self) -> TypeAlias:
+    def InputType(self) -> Any:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (
             ChatPromptValueConcrete,
@@ -498,6 +497,9 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                 run_manager.on_llm_error(e)
                 raise
 
+        if run_manager and full_message.id and full_message.id.startswith("lc_"):
+            full_message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
         run_manager.on_llm_end(full_message)
         return full_message
 
@@ -568,6 +570,9 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                     e, response=_generate_response_from_error(e)
                 )
                 raise
+
+        if run_manager and full_message.id and full_message.id.startswith("lc_"):
+            full_message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
 
         await run_manager.on_llm_end(full_message)
         return full_message
@@ -640,6 +645,10 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
                 raise
 
             msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+
+            if run_manager and msg.id and msg.id.startswith("lc_"):
+                msg.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
             run_manager.on_llm_end(msg)
 
     @override
@@ -713,6 +722,10 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
             raise
 
         msg = add_ai_message_chunks(chunks[0], *chunks[1:])
+
+        if run_manager and msg.id and msg.id.startswith("lc_"):
+            msg.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-0"
+
         await run_manager.on_llm_end(msg)
 
     # --- Custom methods ---
@@ -722,16 +735,13 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
 
     def _get_invocation_params(
         self,
-        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict:
         params = self.dump()
-        params["stop"] = stop
         return {**params, **kwargs}
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
@@ -744,31 +754,26 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
         default_provider = default_provider.lower()
 
         ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="chat")
-        if stop:
-            ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
-            ls_params["ls_model_name"] = self.model
-        elif hasattr(self, "model_name") and isinstance(self.model_name, str):
-            ls_params["ls_model_name"] = self.model_name
+        model = getattr(self, "model", None) or getattr(self, "model_name", None)
+        if isinstance(model, str):
+            ls_params["ls_model_name"] = model
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
-            ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
-            ls_params["ls_temperature"] = self.temperature
+        temperature = kwargs.get("temperature") or getattr(self, "temperature", None)
+        if isinstance(temperature, (int, float)):
+            ls_params["ls_temperature"] = temperature
 
         # max_tokens
-        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
-            ls_params["ls_max_tokens"] = kwargs["max_tokens"]
-        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
-            ls_params["ls_max_tokens"] = self.max_tokens
+        max_tokens = kwargs.get("max_tokens") or getattr(self, "max_tokens", None)
+        if isinstance(max_tokens, int):
+            ls_params["ls_max_tokens"] = max_tokens
 
         return ls_params
 
-    def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
-        params = self._get_invocation_params(stop=stop, **kwargs)
+    def _get_llm_string(self, **kwargs: Any) -> str:
+        params = self._get_invocation_params(**kwargs)
         params = {**params, **kwargs}
         return str(sorted(params.items()))
 
@@ -838,7 +843,7 @@ class BaseChatModel(RunnableSerializable[LanguageModelInput, AIMessageV1], ABC):
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
         *,
-        tool_choice: Optional[Union[str]] = None,
+        tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessageV1]:
         """Bind tools to the model.
