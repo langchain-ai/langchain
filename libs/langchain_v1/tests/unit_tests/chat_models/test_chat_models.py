@@ -125,6 +125,7 @@ def test_configurable() -> None:
             "presence_penalty": None,
             "reasoning": None,
             "reasoning_effort": None,
+            "verbosity": None,
             "frequency_penalty": None,
             "include": None,
             "seed": None,
