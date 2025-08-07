@@ -101,7 +101,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         the number of documents to return.
 
         By default, the parameter is named ``k``, but it can be overridden by
-        setting the ``num_result_arg_name`` property.
+        setting the ``num_results_arg_name`` property.
 
         .. note::
             If the retriever doesn't support configuring the number of results returned
