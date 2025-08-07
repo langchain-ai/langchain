@@ -24,7 +24,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
     @property
     @abstractmethod
     def retriever_query_example(self) -> str:
-        """Returns a str representing the "query" of an example retriever call."""
+        """Returns a str representing the ``query`` of an example retriever call."""
 
     @property
     def num_results_arg_name(self) -> str:
@@ -65,7 +65,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             If this test fails, the retriever constructor does not accept a number
             of results parameter, or the retriever does not return the correct number
-            of documents (`k` of the one set in ``num_results_arg_name``) when it is
+            of documents ( of the one set in ``num_results_arg_name``) when it is
             set.
 
             For example, a retriever like
@@ -95,12 +95,12 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_1)
 
     def test_invoke_with_k_kwarg(self, retriever: BaseRetriever) -> None:
-        """Test the number of results parameter in invoke method.
+        """Test the number of results parameter in ``invoke()``.
 
         Test that the invoke method accepts a parameter representing
         the number of documents to return.
 
-        By default, the parameter is named ``k``, but it can be overridden by
+        By default, the parameter is named ``, but it can be overridden by
         setting the ``num_results_arg_name`` property.
 
         .. note::
@@ -121,7 +121,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             If this test fails, the retriever's invoke method does not accept a number
             of results parameter, or the retriever does not return the correct number
-            of documents (`k` of the one set in ``num_results_arg_name``) when it is
+            of documents (``k`` of the one set in ``num_results_arg_name``) when it is
             set.
 
             For example, a retriever like
@@ -152,8 +152,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, the retriever's invoke method does not return a list of
-            `langchain_core.document.Document` objects. Please confirm that your
-            `_get_relevant_documents` method returns a list of `Document` objects.
+            ``langchain_core.document.Document`` objects. Please confirm that your
+            ``_get_relevant_documents`` method returns a list of ``Document`` objects.
         """
         result = retriever.invoke(self.retriever_query_example)
 
