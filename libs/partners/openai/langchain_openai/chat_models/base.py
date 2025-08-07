@@ -2731,6 +2731,31 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 
+    .. dropdown:: Prompt caching optimization
+
+        For high-volume applications with repetitive prompts, use ``prompt_cache_key``
+        per-invocation to improve cache hit rates and reduce costs:
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(model="gpt-4o-mini")
+
+            response = llm.invoke(
+                messages,
+                prompt_cache_key="example-key-a",  # Routes to same machine for cache hits
+            )
+
+            customer_response = llm.invoke(messages, prompt_cache_key="example-key-b")
+            support_response = llm.invoke(messages, prompt_cache_key="example-key-c")
+
+            # Dynamic cache keys based on context
+            cache_key = f"example-key-{dynamic_suffix}"
+            response = llm.invoke(messages, prompt_cache_key=cache_key)
+
+        Cache keys help ensure requests with the same prompt prefix are routed to
+        machines with existing cache, providing cost reduction and latency improvement on
+        cached tokens.
+
     """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
