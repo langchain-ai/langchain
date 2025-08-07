@@ -8,7 +8,10 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
+from langchain_core.messages.utils import convert_from_v1_message
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 
@@ -30,7 +33,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return "openai-functions-agent"
 
     @staticmethod
-    def _parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
+    def parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
         """Parse an AI message."""
         if not isinstance(message, AIMessage):
             msg = f"Expected an AI message got {type(message)}"
@@ -79,18 +82,22 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
             log=str(message.content),
         )
 
+    @override
     def parse_result(
         self,
-        result: list[Generation],
+        result: Union[list[Generation], AIMessageV1],
         *,
         partial: bool = False,
     ) -> Union[AgentAction, AgentFinish]:
+        if isinstance(result, AIMessageV1):
+            result = [ChatGeneration(message=convert_from_v1_message(result))]
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
-        return self._parse_ai_message(message)
+        return self.parse_ai_message(message)
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         msg = "Can only parse messages"
         raise ValueError(msg)

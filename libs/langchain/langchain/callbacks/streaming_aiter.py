@@ -6,6 +6,8 @@ from typing import Any, Literal, Union, cast
 
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.v1.messages import AIMessage
+from typing_extensions import override
 
 # TODO If used by two LLM runs in parallel this won't work as expected
 
@@ -19,12 +21,15 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
 
     @property
     def always_verbose(self) -> bool:
+        """Always verbose."""
         return True
 
     def __init__(self) -> None:
+        """Instantiate AsyncIteratorCallbackHandler."""
         self.queue = asyncio.Queue()
         self.done = asyncio.Event()
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -34,19 +39,25 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         # If two calls are made in a row, this resets the state
         self.done.clear()
 
+    @override
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         if token is not None and token != "":
             self.queue.put_nowait(token)
 
-    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    @override
+    async def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], **kwargs: Any
+    ) -> None:
         self.done.set()
 
+    @override
     async def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         self.done.set()
 
     # TODO implement the other methods
 
     async def aiter(self) -> AsyncIterator[str]:
+        """Asynchronous iterator that yields tokens."""
         while not self.queue.empty() or not self.done.is_set():
             # Wait for the next token in the queue,
             # but stop waiting if the done event is set
@@ -65,7 +76,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
                 other.pop().cancel()
 
             # Extract the value of the first completed task
-            token_or_done = cast(Union[str, Literal[True]], done.pop().result())
+            token_or_done = cast("Union[str, Literal[True]]", done.pop().result())
 
             # If the extracted value is the boolean True, the done event was set
             if token_or_done is True:

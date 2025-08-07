@@ -221,6 +221,7 @@ def test_openai_invoke() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
         service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
     )
 
     result = llm.invoke("Hello", config=dict(tags=["foo"]))
@@ -473,6 +474,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
                     name="GenerateUsername",
                     args={"name": "Sally", "hair_color": "green"},
                     id="foo",
+                    type="tool_call",
                 )
             ],
         ),
@@ -494,6 +496,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
                     name="GenerateUsername",
                     args={"name": "Sally", "hair_color": "green"},
                     id="bar",
+                    type="tool_call",
                 )
             ],
         ),

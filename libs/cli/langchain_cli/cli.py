@@ -67,12 +67,11 @@ def serve(
     ] = None,
 ) -> None:
     """Start the LangServe app, whether it's a template or an app."""
-    # see if is a template
     try:
         project_dir = get_package_root()
         pyproject = project_dir / "pyproject.toml"
         get_langserve_export(pyproject)
-    except KeyError:
+    except (KeyError, FileNotFoundError):
         # not a template
         app_namespace.serve(port=port, host=host)
     else:

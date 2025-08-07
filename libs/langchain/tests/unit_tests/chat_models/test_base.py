@@ -6,6 +6,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
+from langchain_core.v1.chat_models import BaseChatModel as BaseChatModelV1
 from pydantic import SecretStr
 
 from langchain.chat_models.base import __all__, init_chat_model
@@ -30,7 +31,7 @@ def test_all_imports() -> None:
     "langchain_groq",
 )
 @pytest.mark.parametrize(
-    ["model_name", "model_provider"],
+    ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
         ("claude-3-opus-20240229", "anthropic"),
@@ -51,13 +52,29 @@ def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None
     assert llm1.dict() == llm2.dict()
 
 
+@pytest.mark.requires("langchain_openai")
+def test_message_version() -> None:
+    model = init_chat_model("openai:gpt-4.1", api_key="foo")
+    assert isinstance(model, BaseChatModel)
+
+    model_v1 = init_chat_model("openai:gpt-4.1", api_key="foo", message_version="v1")
+    assert isinstance(model_v1, BaseChatModelV1)
+
+    # Test we emit a warning for unsupported providers
+    with (
+        pytest.warns(match="Model provider bar does not support message_version=v1"),
+        pytest.raises(ValueError, match="Unsupported model_provider='bar'."),
+    ):
+        init_chat_model("foo", model_provider="bar", message_version="v1")
+
+
 def test_init_missing_dep() -> None:
     with pytest.raises(ImportError):
         init_chat_model("mixtral-8x7b-32768", model_provider="groq")
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
         init_chat_model("foo", model_provider="bar")
 
 
@@ -196,17 +213,17 @@ def test_configurable_with_default() -> None:
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-sonnet-20240229"},
+        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
     )
 
-    assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
+    assert model_with_config.model == "claude-3-7-sonnet-20250219"  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "model": "claude-3-sonnet-20240229",
+            "model": "claude-3-7-sonnet-20250219",
             "mcp_servers": None,
             "max_tokens": 1024,
             "temperature": None,

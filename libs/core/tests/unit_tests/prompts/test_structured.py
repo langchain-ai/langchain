@@ -2,6 +2,7 @@ from functools import partial
 from inspect import isclass
 from typing import Any, Union, cast
 
+import pytest
 from pydantic import BaseModel
 
 from langchain_core.language_models import FakeListChatModel
@@ -10,6 +11,7 @@ from langchain_core.load.load import loads
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
+from langchain_core.utils.mustache import ChevronError
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
@@ -83,7 +85,7 @@ def test_structured_prompt_dict() -> None:
 
     chain = loads(dumps(prompt)) | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}  # type: ignore[comparison-overlap]
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
 
 def test_structured_prompt_kwargs() -> None:
@@ -106,7 +108,7 @@ def test_structured_prompt_kwargs() -> None:
     assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
     chain = loads(dumps(prompt)) | model
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
 
     class OutputSchema(BaseModel):
         name: str
@@ -132,3 +134,8 @@ def test_structured_prompt_template_format() -> None:
     assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
         HumanMessage("hi foo")
     ]
+
+
+def test_structured_prompt_template_empty_vars() -> None:
+    with pytest.raises(ChevronError, match="empty tag"):
+        StructuredPrompt([("human", "hi {{}}")], schema={}, template_format="mustache")

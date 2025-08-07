@@ -4,7 +4,7 @@ import copy
 import json
 import logging
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import SkipValidation, ValidationError
 
@@ -16,6 +16,7 @@ from langchain_core.output_parsers.transform import BaseCumulativeTransformOutpu
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     If no tool calls are found, None will be returned.
     """
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessageV1], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -173,31 +176,45 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-        generation = result[0]
-        if not isinstance(generation, ChatGeneration):
-            msg = "This output parser can only be used with a chat generation."
-            raise OutputParserException(msg)
-        message = generation.message
-        if isinstance(message, AIMessage) and message.tool_calls:
-            tool_calls = [dict(tc) for tc in message.tool_calls]
+        if isinstance(result, list):
+            generation = result[0]
+            if not isinstance(generation, ChatGeneration):
+                msg = (
+                    "This output parser can only be used with a chat generation or "
+                    "v1 AIMessage."
+                )
+                raise OutputParserException(msg)
+            message = generation.message
+            if isinstance(message, AIMessage) and message.tool_calls:
+                tool_calls = [dict(tc) for tc in message.tool_calls]
+                for tool_call in tool_calls:
+                    if not self.return_id:
+                        _ = tool_call.pop("id")
+            else:
+                try:
+                    raw_tool_calls = copy.deepcopy(
+                        message.additional_kwargs["tool_calls"]
+                    )
+                except KeyError:
+                    return []
+                tool_calls = parse_tool_calls(
+                    raw_tool_calls,
+                    partial=partial,
+                    strict=self.strict,
+                    return_id=self.return_id,
+                )
+        elif result.tool_calls:
+            # v1 message
+            tool_calls = [dict(tc) for tc in result.tool_calls]
             for tool_call in tool_calls:
                 if not self.return_id:
                     _ = tool_call.pop("id")
         else:
-            try:
-                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
-            except KeyError:
-                return []
-            tool_calls = parse_tool_calls(
-                raw_tool_calls,
-                partial=partial,
-                strict=self.strict,
-                return_id=self.return_id,
-            )
+            return []
+
         # for backwards compatibility
         for tc in tool_calls:
             tc["type"] = tc.pop("name")
-
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
         return tool_calls
@@ -220,7 +237,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessageV1], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -234,12 +253,54 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Returns:
             The parsed tool calls.
         """
-        parsed_result = super().parse_result(result, partial=partial)
+        if isinstance(result, list):
+            generation = result[0]
+            if not isinstance(generation, ChatGeneration):
+                msg = "This output parser can only be used with a chat generation."
+                raise OutputParserException(msg)
+            message = generation.message
+            if isinstance(message, AIMessage) and message.tool_calls:
+                parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
+                for tool_call in parsed_tool_calls:
+                    if not self.return_id:
+                        _ = tool_call.pop("id")
+            else:
+                try:
+                    raw_tool_calls = copy.deepcopy(
+                        message.additional_kwargs["tool_calls"]
+                    )
+                except KeyError:
+                    if self.first_tool_only:
+                        return None
+                    return []
+                parsed_tool_calls = parse_tool_calls(
+                    raw_tool_calls,
+                    partial=partial,
+                    strict=self.strict,
+                    return_id=self.return_id,
+                )
+        elif result.tool_calls:
+            # v1 message
+            parsed_tool_calls = [dict(tc) for tc in result.tool_calls]
+            for tool_call in parsed_tool_calls:
+                if not self.return_id:
+                    _ = tool_call.pop("id")
+        else:
+            if self.first_tool_only:
+                return None
+            return []
+
+        # For backwards compatibility
+        for tc in parsed_tool_calls:
+            tc["type"] = tc.pop("name")
 
         if self.first_tool_only:
+            parsed_result = list(
+                filter(lambda x: x["type"] == self.key_name, parsed_tool_calls)
+            )
             single_result = (
-                parsed_result
-                if parsed_result and parsed_result["type"] == self.key_name
+                parsed_result[0]
+                if parsed_result and parsed_result[0]["type"] == self.key_name
                 else None
             )
             if self.return_id:
@@ -247,10 +308,13 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             if single_result:
                 return single_result["args"]
             return None
-        parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
-        if not self.return_id:
-            parsed_result = [res["args"] for res in parsed_result]
-        return parsed_result
+        return (
+            [res for res in parsed_tool_calls if res["type"] == self.key_name]
+            if self.return_id
+            else [
+                res["args"] for res in parsed_tool_calls if res["type"] == self.key_name
+            ]
+        )
 
 
 # Common cause of ValidationError is truncated output due to max_tokens.
@@ -269,7 +333,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
 
     # TODO: Support more granular streaming of objects. Currently only streams once all
     # Pydantic object fields are present.
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessageV1], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a list of Pydantic objects.
 
         Args:
@@ -307,12 +373,19 @@ class PydanticToolsParser(JsonOutputToolsParser):
             except (ValidationError, ValueError):
                 if partial:
                     continue
-                has_max_tokens_stop_reason = any(
-                    generation.message.response_metadata.get("stop_reason")
-                    == "max_tokens"
-                    for generation in result
-                    if isinstance(generation, ChatGeneration)
-                )
+                has_max_tokens_stop_reason = False
+                if isinstance(result, list):
+                    has_max_tokens_stop_reason = any(
+                        generation.message.response_metadata.get("stop_reason")
+                        == "max_tokens"
+                        for generation in result
+                        if isinstance(generation, ChatGeneration)
+                    )
+                else:
+                    # v1 message
+                    has_max_tokens_stop_reason = (
+                        result.response_metadata.get("stop_reason") == "max_tokens"
+                    )
                 if has_max_tokens_stop_reason:
                     logger.exception(_MAX_TOKENS_ERROR)
                 raise

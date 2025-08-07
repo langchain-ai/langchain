@@ -13,6 +13,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -55,7 +56,7 @@ class ChatAgent(Agent):
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
             msg = "agent_scratchpad should be of type string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         if agent_scratchpad:
             return (
                 f"This was your previous work "
@@ -65,6 +66,7 @@ class ChatAgent(Agent):
         return agent_scratchpad
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
 

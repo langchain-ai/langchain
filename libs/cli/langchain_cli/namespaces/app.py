@@ -334,8 +334,8 @@ def remove(
 
             shutil.rmtree(package_dir)
             remove_deps.append(api_path)
-        except Exception:  # noqa: S110
-            pass
+        except OSError as exc:
+            typer.echo(f"Failed to remove {api_path}: {exc}")
 
     try:
         remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)

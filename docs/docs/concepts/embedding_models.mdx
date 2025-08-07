@@ -15,9 +15,9 @@ Embedding models can also be [multimodal](/docs/concepts/multimodality) though s
 
 Imagine being able to capture the essence of any text - a tweet, document, or book - in a single, compact representation.
 This is the power of embedding models, which lie at the heart of many retrieval systems.
-Embedding models transform human language into a format that machines can understand and compare with speed and accuracy. 
+Embedding models transform human language into a format that machines can understand and compare with speed and accuracy.
 These models take text as input and produce a fixed-length array of numbers, a numerical fingerprint of the text's semantic meaning.
-Embeddings allow search system to find relevant documents not just based on keyword matches, but on semantic understanding. 
+Embeddings allow search system to find relevant documents not just based on keyword matches, but on semantic understanding.
 
 ## Key concepts
 
@@ -27,16 +27,16 @@ Embeddings allow search system to find relevant documents not just based on keyw
 
 (2) **Measure similarity**: Embedding vectors can be compared using simple mathematical operations.
 
-## Embedding 
+## Embedding
 
-### Historical context 
+### Historical context
 
-The landscape of embedding models has evolved significantly over the years. 
-A pivotal moment came in 2018 when Google introduced [BERT (Bidirectional Encoder Representations from Transformers)](https://www.nvidia.com/en-us/glossary/bert/). 
+The landscape of embedding models has evolved significantly over the years.
+A pivotal moment came in 2018 when Google introduced [BERT (Bidirectional Encoder Representations from Transformers)](https://www.nvidia.com/en-us/glossary/bert/).
 BERT applied transformer models to embed text as a simple vector representation, which lead to unprecedented performance across various NLP tasks.
-However, BERT wasn't optimized for generating sentence embeddings efficiently. 
+However, BERT wasn't optimized for generating sentence embeddings efficiently.
 This limitation spurred the creation of [SBERT (Sentence-BERT)](https://www.sbert.net/examples/training/sts/README.html), which adapted the BERT architecture to generate semantically rich sentence embeddings, easily comparable via similarity metrics like cosine similarity, dramatically reduced the computational overhead for tasks like finding similar sentences.
-Today, the embedding model ecosystem is diverse, with numerous providers offering their own implementations. 
+Today, the embedding model ecosystem is diverse, with numerous providers offering their own implementations.
 To navigate this variety, researchers and practitioners often turn to benchmarks like the Massive Text Embedding Benchmark (MTEB) [here](https://huggingface.co/blog/mteb) for objective comparisons.
 
 :::info[Further reading]
@@ -93,9 +93,9 @@ LangChain offers many embedding model integrations which you can find [on the em
 
 ## Measure similarity
 
-Each embedding is essentially a set of coordinates, often in a high-dimensional space. 
+Each embedding is essentially a set of coordinates, often in a high-dimensional space.
 In this space, the position of each point (embedding) reflects the meaning of its corresponding text.
-Just as similar words might be close to each other in a thesaurus, similar concepts end up close to each other in this embedding space. 
+Just as similar words might be close to each other in a thesaurus, similar concepts end up close to each other in this embedding space.
 This allows for intuitive comparisons between different pieces of text.
 By reducing text to these numerical representations, we can use simple mathematical operations to quickly measure how alike two pieces of text are, regardless of their original length or structure.
 Some common similarity metrics include:
@@ -118,7 +118,7 @@ def cosine_similarity(vec1, vec2):
 
 similarity = cosine_similarity(query_result, document_result)
 print("Cosine Similarity:", similarity)
-```  
+```
 
 :::info[Further reading]
 
@@ -127,4 +127,4 @@ print("Cosine Similarity:", similarity)
 * See Pinecone's [blog post](https://www.pinecone.io/learn/vector-similarity/) on similarity metrics.
 * See OpenAI's [FAQ](https://platform.openai.com/docs/guides/embeddings/faq) on what similarity metric to use with OpenAI embeddings.
 
-::: 
+:::

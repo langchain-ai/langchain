@@ -2,6 +2,7 @@ from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -37,6 +38,7 @@ from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
+from langchain_openai.v1 import ChatOpenAI as ChatOpenAIV1
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
 responses_stream = [
@@ -237,6 +239,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=16,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -245,6 +248,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=17,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -253,6 +257,7 @@ responses_stream = [
         output_index=1,
         sequence_number=18,
         text="text block one",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -279,6 +284,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=21,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -287,6 +293,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=22,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -295,6 +302,7 @@ responses_stream = [
         output_index=1,
         sequence_number=23,
         text="another text block",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -331,7 +339,7 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -410,7 +418,7 @@ responses_stream = [
                 Summary(text="still more reasoning", type="summary_text"),
             ],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -443,6 +451,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=38,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -451,6 +460,7 @@ responses_stream = [
         output_index=3,
         sequence_number=39,
         text="more",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -475,6 +485,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=42,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -483,6 +494,7 @@ responses_stream = [
         output_index=3,
         sequence_number=43,
         text="text",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -552,7 +564,7 @@ responses_stream = [
                         Summary(text="still more reasoning", type="summary_text"),
                     ],
                     type="reasoning",
-                    encrypted_content=None,
+                    encrypted_content="encrypted-content",
                     status=None,
                 ),
                 ResponseOutputMessage(
@@ -611,7 +623,9 @@ def _strip_none(obj: Any) -> Any:
 
 
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -620,10 +634,12 @@ def test_responses_stream() -> None:
     mock_client.responses.create = mock_create
 
     full: Optional[BaseMessageChunk] = None
+    chunks = []
     with patch.object(llm, "root_client", mock_client):
         for chunk in llm.stream("test"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
+            chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
 
     expected_content = [
@@ -644,6 +660,7 @@ def test_responses_stream() -> None:
                 {"index": 0, "type": "summary_text", "text": "more reasoning"},
                 {"index": 1, "type": "summary_text", "text": "still more reasoning"},
             ],
+            "encrypted_content": "encrypted-content",
             "type": "reasoning",
             "index": 3,
         },
@@ -652,6 +669,75 @@ def test_responses_stream() -> None:
     ]
     assert full.content == expected_content
     assert full.additional_kwargs == {}
+    assert full.id == "resp_123"
+
+    # Test reconstruction
+    payload = llm._get_request_payload([full])
+    completed = [
+        item
+        for item in responses_stream
+        if item.type == "response.completed"  # type: ignore[attr-defined]
+    ]
+    assert len(completed) == 1
+    response = completed[0].response  # type: ignore[attr-defined]
+
+    assert len(response.output) == len(payload["input"])
+    for idx, item in enumerate(response.output):
+        dumped = _strip_none(item.model_dump())
+        _ = dumped.pop("status", None)
+        assert dumped == payload["input"][idx]
+
+
+def test_responses_stream_v1() -> None:
+    llm = ChatOpenAIV1(model="o4-mini", use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: Optional[AIMessageChunkV1] = None
+    chunks = []
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunkV1)
+            full = chunk if full is None else full + chunk
+            chunks.append(chunk)
+    assert isinstance(full, AIMessageChunkV1)
+
+    expected_content = [
+        {
+            "type": "reasoning",
+            "reasoning": "reasoning block one",
+            "id": "rs_123",
+            "index": 0,
+        },
+        {
+            "type": "reasoning",
+            "reasoning": "another reasoning block",
+            "id": "rs_123",
+            "index": 1,
+        },
+        {"type": "text", "text": "text block one", "index": 2, "id": "msg_123"},
+        {"type": "text", "text": "another text block", "index": 3, "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "reasoning": "more reasoning",
+            "id": "rs_234",
+            "extras": {"encrypted_content": "encrypted-content"},
+            "index": 4,
+        },
+        {
+            "type": "reasoning",
+            "reasoning": "still more reasoning",
+            "id": "rs_234",
+            "index": 5,
+        },
+        {"type": "text", "text": "more", "index": 6, "id": "msg_234"},
+        {"type": "text", "text": "text", "index": 7, "id": "msg_234"},
+    ]
+    assert full.content == expected_content
     assert full.id == "resp_123"
 
     # Test reconstruction

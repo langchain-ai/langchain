@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from json import JSONDecodeError
 from typing import Any, Literal, Optional, TypeVar, Union
@@ -218,6 +219,19 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        for message in payload["messages"]:
+            if message["role"] == "tool" and isinstance(message["content"], list):
+                message["content"] = json.dumps(message["content"])
+        return payload
+
     def _create_chat_result(
         self,
         response: Union[dict, openai.BaseModel],
@@ -339,8 +353,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
@@ -356,14 +369,14 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
-                - "json_mode":
+                - ``'json_mode'``:
                     Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
 
                 .. versionchanged:: 0.1.3
 
-                    Added support for ``"json_mode"``.
+                    Added support for ``'json_mode'``.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -371,7 +384,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
@@ -385,13 +398,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

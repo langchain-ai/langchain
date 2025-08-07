@@ -61,6 +61,7 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
         .. code-block:: python
 
             # TODO: output of invocation
+
     """  # noqa: E501
 
     # TODO: Set tool name and description

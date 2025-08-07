@@ -17,6 +17,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.v1.messages import AIMessage
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -26,7 +27,9 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Whether to only return the arguments to the function call."""
 
     @override
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -39,6 +42,12 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
+        if isinstance(result, AIMessage):
+            msg = (
+                "This output parser does not support v1 AIMessages. Use "
+                "JsonOutputToolsParser instead."
+            )
+            raise TypeError(msg)
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
@@ -77,7 +86,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -90,6 +101,12 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
+        if isinstance(result, AIMessage):
+            msg = (
+                "This output parser does not support v1 AIMessages. Use "
+                "JsonOutputToolsParser instead."
+            )
+            raise TypeError(msg)
         if len(result) != 1:
             msg = f"Expected exactly one result, but got {len(result)}"
             raise OutputParserException(msg)
@@ -160,7 +177,9 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -214,6 +233,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 pydantic_schema={"cookie": Cookie, "dog": Dog}
             )
             result = parser.parse_result([chat_generation])
+
     """
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
@@ -253,7 +273,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         return values
 
     @override
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -293,7 +315,9 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     """The name of the attribute to return."""
 
     @override
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:

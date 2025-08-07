@@ -7,7 +7,7 @@ from langchain_core._api import warn_deprecated
 # attempt to import pydantic since it adds pydantic_v1 and pydantic_v2 to sys.modules.
 #
 # This hack is done for the following reasons:
-# * Langchain will attempt to remain compatible with both pydantic v1 and v2 since
+# * LangChain will attempt to remain compatible with both pydantic v1 and v2 since
 #   both dependencies and dependents may be stuck on either version of v1 or v2.
 # * Creating namespaces for pydantic v1 and v2 should allow us to write code that
 #   unambiguously uses either v1 or v2 API.

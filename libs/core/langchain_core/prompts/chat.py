@@ -123,6 +123,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             # -> [
             #     HumanMessage(content="Hello!"),
             # ]
+
     """
 
     variable_name: str
@@ -1161,6 +1162,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Returns:
             a chat prompt template.
+
         """
         return cls(messages, template_format=template_format)
 
@@ -1245,6 +1247,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 template2 = template.partial(user="Lucy", name="R2D2")
 
                 template2.format_messages(input="hello")
+
         """
         prompt_dict = self.__dict__.copy()
         prompt_dict["input_variables"] = list(

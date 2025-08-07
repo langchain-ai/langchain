@@ -5,6 +5,7 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS
@@ -46,9 +47,11 @@ class ReActJsonSingleInputOutputParser(AgentOutputParser):
     pattern: Pattern = re.compile(r"^.*?`{3}(?:json)?\n?(.*?)`{3}.*?$", re.DOTALL)
     """Regex pattern to parse the output."""
 
+    @override
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text
         try:

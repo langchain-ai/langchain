@@ -10,6 +10,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
@@ -74,6 +75,7 @@ def create_stuff_documents_chain(
             ]
 
             chain.invoke({"context": docs})
+
     """  # noqa: E501
 
     _validate_prompt(prompt, document_variable_name)
@@ -141,6 +143,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
+
     """
 
     llm_chain: LLMChain
@@ -180,16 +183,16 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         extra_keys = [
             k for k in self.llm_chain.input_keys if k != self.document_variable_name
@@ -240,7 +243,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain._get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)  # noqa: SLF001
 
     def combine_docs(
         self,

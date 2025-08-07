@@ -33,11 +33,8 @@ class JsonSchemaEvaluator(StringEvaluator):
 
     """  # noqa: E501
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **_: Any) -> None:
         """Initializes the JsonSchemaEvaluator.
-
-        Args:
-            kwargs: Additional keyword arguments.
 
         Raises:
             ImportError: If the jsonschema package is not installed.
@@ -70,8 +67,11 @@ class JsonSchemaEvaluator(StringEvaluator):
     def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(node, str):
             return parse_json_markdown(node)
+        if hasattr(node, "model_json_schema") and callable(node.model_json_schema):
+            # Pydantic v2 model
+            return node.model_json_schema()
         if hasattr(node, "schema") and callable(node.schema):
-            # Pydantic model
+            # Pydantic v1 model
             return node.schema()
         return node
 
@@ -80,11 +80,9 @@ class JsonSchemaEvaluator(StringEvaluator):
 
         try:
             validate(instance=prediction, schema=schema)
-            return {
-                "score": True,
-            }
         except ValidationError as e:
             return {"score": False, "reasoning": repr(e)}
+        return {"score": True}
 
     @override
     def _evaluate_strings(

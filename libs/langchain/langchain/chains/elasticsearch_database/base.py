@@ -34,6 +34,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             database = Elasticsearch("http://localhost:9200")
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
+
     """
 
     query_chain: Runnable
@@ -58,7 +59,7 @@ class ElasticsearchDatabaseChain(Chain):
     )
 
     @model_validator(mode="after")
-    def validate_indices(self) -> Self:
+    def _validate_indices(self) -> Self:
         if self.include_indices and self.ignore_indices:
             msg = "Cannot specify both 'include_indices' and 'ignore_indices'."
             raise ValueError(msg)
@@ -164,12 +165,13 @@ class ElasticsearchDatabaseChain(Chain):
             chain_result: dict[str, Any] = {self.output_key: final_result}
             if self.return_intermediate_steps:
                 chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
-            return chain_result
         except Exception as exc:
             # Append intermediate steps to exception, to aid in logging and later
             # improvement of few shot prompt seeds
             exc.intermediate_steps = intermediate_steps  # type: ignore[attr-defined]
-            raise exc
+            raise
+
+        return chain_result
 
     @property
     def _chain_type(self) -> str:

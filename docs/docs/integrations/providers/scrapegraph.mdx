@@ -27,8 +27,8 @@ There are four tools available:
 ```python
 from langchain_scrapegraph.tools import (
     SmartScraperTool,    # Extract structured data from websites
+    SmartCrawlerTool,    # Extract data from multiple pages with crawling
     MarkdownifyTool,     # Convert webpages to markdown
-    LocalScraperTool,    # Process local HTML content
     GetCreditsTool,      # Check remaining API credits
 )
 ```
@@ -36,6 +36,6 @@ from langchain_scrapegraph.tools import (
 Each tool serves a specific purpose:
 
 - `SmartScraperTool`: Extract structured data from websites given a URL, prompt and optional output schema
+- `SmartCrawlerTool`: Extract data from multiple pages with advanced crawling options like depth control, page limits, and domain restrictions
 - `MarkdownifyTool`: Convert any webpage to clean markdown format
-- `LocalScraperTool`: Extract structured data from a local HTML file given a prompt and optional output schema
-- `GetCreditsTool`: Check your remaining ScrapeGraph AI credits 
+- `GetCreditsTool`: Check your remaining ScrapeGraph AI credits

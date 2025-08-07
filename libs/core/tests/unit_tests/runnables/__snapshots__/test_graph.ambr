@@ -405,229 +405,61 @@
       dict({
         'data': dict({
           '$defs': dict({
-            'AIMessage': dict({
-              'additionalProperties': True,
+            'AudioContentBlock': dict({
               'description': '''
-                Message from an AI.
+                Audio data.
                 
-                AIMessage is returned from a chat model as a response to a prompt.
-                
-                This message represents the output of the model and consists of both
-                the raw output as returned by the model together standardized fields
-                (e.g., tool calls, usage metadata) added by the LangChain framework.
+                .. note::
+                    ``create_audio_block`` may also be used as a factory to create an
+                    ``AudioContentBlock``. Benefits include:
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
-                'additional_kwargs': dict({
-                  'title': 'Additional Kwargs',
+                'base64': dict({
+                  'title': 'Base64',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
                   'type': 'object',
                 }),
-                'content': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'items': dict({
-                        'anyOf': list([
-                          dict({
-                            'type': 'string',
-                          }),
-                          dict({
-                            'type': 'object',
-                          }),
-                        ]),
-                      }),
-                      'type': 'array',
-                    }),
-                  ]),
-                  'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
+                'file_id': dict({
+                  'title': 'File Id',
+                  'type': 'string',
                 }),
                 'id': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
                   'title': 'Id',
+                  'type': 'string',
                 }),
-                'invalid_tool_calls': dict({
-                  'default': list([
-                  ]),
-                  'items': dict({
-                    '$ref': '#/$defs/InvalidToolCall',
-                  }),
-                  'title': 'Invalid Tool Calls',
-                  'type': 'array',
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
                 }),
-                'name': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Name',
-                }),
-                'response_metadata': dict({
-                  'title': 'Response Metadata',
-                  'type': 'object',
-                }),
-                'tool_calls': dict({
-                  'default': list([
-                  ]),
-                  'items': dict({
-                    '$ref': '#/$defs/ToolCall',
-                  }),
-                  'title': 'Tool Calls',
-                  'type': 'array',
+                'mime_type': dict({
+                  'title': 'Mime Type',
+                  'type': 'string',
                 }),
                 'type': dict({
-                  'const': 'ai',
-                  'default': 'ai',
+                  'const': 'audio',
                   'title': 'Type',
                   'type': 'string',
                 }),
-                'usage_metadata': dict({
-                  'anyOf': list([
-                    dict({
-                      '$ref': '#/$defs/UsageMetadata',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
                 }),
               }),
               'required': list([
-                'content',
+                'type',
               ]),
-              'title': 'AIMessage',
+              'title': 'AudioContentBlock',
               'type': 'object',
             }),
-            'AIMessageChunk': dict({
-              'additionalProperties': True,
-              'description': 'Message chunk from an AI.',
+            'BaseModel': dict({
               'properties': dict({
-                'additional_kwargs': dict({
-                  'title': 'Additional Kwargs',
-                  'type': 'object',
-                }),
-                'content': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'items': dict({
-                        'anyOf': list([
-                          dict({
-                            'type': 'string',
-                          }),
-                          dict({
-                            'type': 'object',
-                          }),
-                        ]),
-                      }),
-                      'type': 'array',
-                    }),
-                  ]),
-                  'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
-                'id': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Id',
-                }),
-                'invalid_tool_calls': dict({
-                  'default': list([
-                  ]),
-                  'items': dict({
-                    '$ref': '#/$defs/InvalidToolCall',
-                  }),
-                  'title': 'Invalid Tool Calls',
-                  'type': 'array',
-                }),
-                'name': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Name',
-                }),
-                'response_metadata': dict({
-                  'title': 'Response Metadata',
-                  'type': 'object',
-                }),
-                'tool_call_chunks': dict({
-                  'default': list([
-                  ]),
-                  'items': dict({
-                    '$ref': '#/$defs/ToolCallChunk',
-                  }),
-                  'title': 'Tool Call Chunks',
-                  'type': 'array',
-                }),
-                'tool_calls': dict({
-                  'default': list([
-                  ]),
-                  'items': dict({
-                    '$ref': '#/$defs/ToolCall',
-                  }),
-                  'title': 'Tool Calls',
-                  'type': 'array',
-                }),
-                'type': dict({
-                  'const': 'AIMessageChunk',
-                  'default': 'AIMessageChunk',
-                  'title': 'Type',
-                  'type': 'string',
-                }),
-                'usage_metadata': dict({
-                  'anyOf': list([
-                    dict({
-                      '$ref': '#/$defs/UsageMetadata',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                }),
               }),
-              'required': list([
-                'content',
-              ]),
-              'title': 'AIMessageChunk',
+              'title': 'BaseModel',
               'type': 'object',
             }),
             'ChatMessage': dict({
@@ -780,6 +612,243 @@
               'title': 'ChatMessageChunk',
               'type': 'object',
             }),
+            'Citation': dict({
+              'description': '''
+                Annotation for citing data from a document.
+                
+                .. note::
+                    ``start``/``end`` indices refer to the **response text**,
+                    not the source text. This means that the indices are relative to the model's
+                    response, not the original document (as specified in the ``url``).
+                
+                .. note::
+                    ``create_citation`` may also be used as a factory to create a ``Citation``.
+                    Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'cited_text': dict({
+                  'title': 'Cited Text',
+                  'type': 'string',
+                }),
+                'end_index': dict({
+                  'title': 'End Index',
+                  'type': 'integer',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'start_index': dict({
+                  'title': 'Start Index',
+                  'type': 'integer',
+                }),
+                'title': dict({
+                  'title': 'Title',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'citation',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'Citation',
+              'type': 'object',
+            }),
+            'CodeInterpreterCall': dict({
+              'description': 'Built-in code interpreter tool call.',
+              'properties': dict({
+                'code': dict({
+                  'title': 'Code',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'language': dict({
+                  'title': 'Language',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'code_interpreter_call',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'CodeInterpreterCall',
+              'type': 'object',
+            }),
+            'CodeInterpreterOutput': dict({
+              'description': '''
+                Output of a singular code interpreter tool call.
+                
+                Full output of a code interpreter tool call is represented by
+                ``CodeInterpreterResult`` which is a list of these blocks.
+              ''',
+              'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'file_ids': dict({
+                  'items': dict({
+                    'type': 'string',
+                  }),
+                  'title': 'File Ids',
+                  'type': 'array',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'return_code': dict({
+                  'title': 'Return Code',
+                  'type': 'integer',
+                }),
+                'stderr': dict({
+                  'title': 'Stderr',
+                  'type': 'string',
+                }),
+                'stdout': dict({
+                  'title': 'Stdout',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'code_interpreter_output',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'CodeInterpreterOutput',
+              'type': 'object',
+            }),
+            'CodeInterpreterResult': dict({
+              'description': 'Result of a code interpreter tool call.',
+              'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'output': dict({
+                  'items': dict({
+                    '$ref': '#/$defs/CodeInterpreterOutput',
+                  }),
+                  'title': 'Output',
+                  'type': 'array',
+                }),
+                'type': dict({
+                  'const': 'code_interpreter_result',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+                'output',
+              ]),
+              'title': 'CodeInterpreterResult',
+              'type': 'object',
+            }),
+            'FileContentBlock': dict({
+              'description': '''
+                File data that doesn't fit into other multimodal blocks.
+                
+                This block is intended for files that are not images, audio, or plaintext. For
+                example, it can be used for PDFs, Word documents, etc.
+                
+                If the file is an image, audio, or plaintext, you should use the corresponding
+                content block type (e.g., ``ImageContentBlock``, ``AudioContentBlock``,
+                ``PlainTextContentBlock``).
+                
+                .. note::
+                    ``create_file_block`` may also be used as a factory to create a
+                    ``FileContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'base64': dict({
+                  'title': 'Base64',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'file_id': dict({
+                  'title': 'File Id',
+                  'type': 'string',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'mime_type': dict({
+                  'title': 'Mime Type',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'file',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'FileContentBlock',
+              'type': 'object',
+            }),
             'FunctionMessage': dict({
               'additionalProperties': True,
               'description': '''
@@ -915,104 +984,6 @@
               'title': 'FunctionMessageChunk',
               'type': 'object',
             }),
-            'HumanMessage': dict({
-              'additionalProperties': True,
-              'description': '''
-                Message from a human.
-                
-                HumanMessages are messages that are passed in from a human to the model.
-                
-                Example:
-                
-                    .. code-block:: python
-                
-                        from langchain_core.messages import HumanMessage, SystemMessage
-                
-                        messages = [
-                            SystemMessage(
-                                content="You are a helpful assistant! Your name is Bob."
-                            ),
-                            HumanMessage(
-                                content="What is your name?"
-                            )
-                        ]
-                
-                        # Instantiate a chat model and invoke it with the messages
-                        model = ...
-                        print(model.invoke(messages))
-              ''',
-              'properties': dict({
-                'additional_kwargs': dict({
-                  'title': 'Additional Kwargs',
-                  'type': 'object',
-                }),
-                'content': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'items': dict({
-                        'anyOf': list([
-                          dict({
-                            'type': 'string',
-                          }),
-                          dict({
-                            'type': 'object',
-                          }),
-                        ]),
-                      }),
-                      'type': 'array',
-                    }),
-                  ]),
-                  'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
-                'id': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Id',
-                }),
-                'name': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Name',
-                }),
-                'response_metadata': dict({
-                  'title': 'Response Metadata',
-                  'type': 'object',
-                }),
-                'type': dict({
-                  'const': 'human',
-                  'default': 'human',
-                  'title': 'Type',
-                  'type': 'string',
-                }),
-              }),
-              'required': list([
-                'content',
-              ]),
-              'title': 'HumanMessage',
-              'type': 'object',
-            }),
             'HumanMessageChunk': dict({
               'additionalProperties': True,
               'description': 'Human Message chunk.',
@@ -1088,6 +1059,58 @@
               'title': 'HumanMessageChunk',
               'type': 'object',
             }),
+            'ImageContentBlock': dict({
+              'description': '''
+                Image data.
+                
+                .. note::
+                    ``create_image_block`` may also be used as a factory to create a
+                    ``ImageContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'base64': dict({
+                  'title': 'Base64',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'file_id': dict({
+                  'title': 'File Id',
+                  'type': 'string',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'mime_type': dict({
+                  'title': 'Mime Type',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'image',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'ImageContentBlock',
+              'type': 'object',
+            }),
             'InputTokenDetails': dict({
               'description': '''
                 Breakdown of input token counts.
@@ -1129,7 +1152,7 @@
               'description': '''
                 Allowance for errors made by LLM.
                 
-                Here we add an `error` key to surface errors made during generation
+                Here we add an ``error`` key to surface errors made during generation
                 (e.g., invalid JSON arguments.)
               ''',
               'properties': dict({
@@ -1155,6 +1178,10 @@
                   ]),
                   'title': 'Error',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1165,6 +1192,10 @@
                     }),
                   ]),
                   'title': 'Id',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
                 }),
                 'name': dict({
                   'anyOf': list([
@@ -1184,12 +1215,81 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
                 'error',
               ]),
               'title': 'InvalidToolCall',
+              'type': 'object',
+            }),
+            'NonStandardAnnotation': dict({
+              'description': 'Provider-specific annotation format.',
+              'properties': dict({
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'non_standard_annotation',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'value': dict({
+                  'title': 'Value',
+                  'type': 'object',
+                }),
+              }),
+              'required': list([
+                'type',
+                'value',
+              ]),
+              'title': 'NonStandardAnnotation',
+              'type': 'object',
+            }),
+            'NonStandardContentBlock': dict({
+              'description': '''
+                Provider-specific data.
+                
+                This block contains data for which there is not yet a standard type.
+                
+                The purpose of this block should be to simply hold a provider-specific payload.
+                If a provider's non-standard output includes reasoning and tool calls, it should be
+                the adapter's job to parse that payload and emit the corresponding standard
+                ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
+                
+                .. note::
+                    ``create_non_standard_block`` may also be used as a factory to create a
+                    ``NonStandardContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'type': dict({
+                  'const': 'non_standard',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'value': dict({
+                  'title': 'Value',
+                  'type': 'object',
+                }),
+              }),
+              'required': list([
+                'type',
+                'value',
+              ]),
+              'title': 'NonStandardContentBlock',
               'type': 'object',
             }),
             'OutputTokenDetails': dict({
@@ -1222,97 +1322,146 @@
               'title': 'OutputTokenDetails',
               'type': 'object',
             }),
-            'SystemMessage': dict({
-              'additionalProperties': True,
+            'PlainTextContentBlock': dict({
               'description': '''
-                Message for priming AI behavior.
+                Plaintext data (e.g., from a document).
                 
-                The system message is usually passed in as the first of a sequence
-                of input messages.
+                .. note::
+                    Title and context are optional fields that may be passed to the model. See
+                    Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
                 
-                Example:
+                .. note::
+                    ``create_plaintext_block`` may also be used as a factory to create a
+                    ``PlainTextContentBlock``. Benefits include:
                 
-                    .. code-block:: python
-                
-                        from langchain_core.messages import HumanMessage, SystemMessage
-                
-                        messages = [
-                            SystemMessage(
-                                content="You are a helpful assistant! Your name is Bob."
-                            ),
-                            HumanMessage(
-                                content="What is your name?"
-                            )
-                        ]
-                
-                        # Define a chat model and invoke it with the messages
-                        print(model.invoke(messages))
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
-                'additional_kwargs': dict({
-                  'title': 'Additional Kwargs',
+                'base64': dict({
+                  'title': 'Base64',
+                  'type': 'string',
+                }),
+                'context': dict({
+                  'title': 'Context',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
                   'type': 'object',
                 }),
-                'content': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'items': dict({
-                        'anyOf': list([
-                          dict({
-                            'type': 'string',
-                          }),
-                          dict({
-                            'type': 'object',
-                          }),
-                        ]),
-                      }),
-                      'type': 'array',
-                    }),
-                  ]),
-                  'title': 'Content',
+                'file_id': dict({
+                  'title': 'File Id',
+                  'type': 'string',
                 }),
                 'id': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
                   'title': 'Id',
+                  'type': 'string',
                 }),
-                'name': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Name',
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
                 }),
-                'response_metadata': dict({
-                  'title': 'Response Metadata',
-                  'type': 'object',
+                'mime_type': dict({
+                  'const': 'text/plain',
+                  'title': 'Mime Type',
+                  'type': 'string',
+                }),
+                'text': dict({
+                  'title': 'Text',
+                  'type': 'string',
+                }),
+                'title': dict({
+                  'title': 'Title',
+                  'type': 'string',
                 }),
                 'type': dict({
-                  'const': 'system',
-                  'default': 'system',
+                  'const': 'text-plain',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+                'mime_type',
+              ]),
+              'title': 'PlainTextContentBlock',
+              'type': 'object',
+            }),
+            'ReasoningContentBlock': dict({
+              'description': '''
+                Reasoning output from a LLM.
+                
+                .. note::
+                    ``create_reasoning_block`` may also be used as a factory to create a
+                    ``ReasoningContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'reasoning': dict({
+                  'title': 'Reasoning',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'reasoning',
                   'title': 'Type',
                   'type': 'string',
                 }),
               }),
               'required': list([
-                'content',
+                'type',
               ]),
-              'title': 'SystemMessage',
+              'title': 'ReasoningContentBlock',
+              'type': 'object',
+            }),
+            'ResponseMetadata': dict({
+              'description': '''
+                Metadata about the response from the AI provider.
+                
+                Contains additional information returned by the provider, such as
+                response headers, service tiers, log probabilities, system fingerprints, etc.
+                
+                **Extensibility Design:**
+                
+                This uses ``total=False`` to allow arbitrary additional keys beyond the typed
+                fields below. This enables provider-specific metadata without breaking type safety:
+                
+                - OpenAI might include: ``{"system_fingerprint": "fp_123", "logprobs": {...}}``
+                - Anthropic might include: ``{"stop_reason": "stop_sequence", "usage": {...}}``
+                - Custom providers can add their own fields
+                
+                The common fields (``model_provider``, ``model_name``) provide a baseline
+                contract while preserving flexibility for provider innovations.
+              ''',
+              'properties': dict({
+                'model_name': dict({
+                  'title': 'Model Name',
+                  'type': 'string',
+                }),
+                'model_provider': dict({
+                  'title': 'Model Provider',
+                  'type': 'string',
+                }),
+              }),
+              'title': 'ResponseMetadata',
               'type': 'object',
             }),
             'SystemMessageChunk': dict({
@@ -1385,6 +1534,64 @@
               'title': 'SystemMessageChunk',
               'type': 'object',
             }),
+            'TextContentBlock': dict({
+              'description': '''
+                Text output from a LLM.
+                
+                This typically represents the main text content of a message, such as the response
+                from a language model or the text of a user message.
+                
+                .. note::
+                    ``create_text_block`` may also be used as a factory to create a
+                    ``TextContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'annotations': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/Citation',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardAnnotation',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Annotations',
+                  'type': 'array',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'text': dict({
+                  'title': 'Text',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'text',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+                'text',
+              ]),
+              'title': 'TextContentBlock',
+              'type': 'object',
+            }),
             'ToolCall': dict({
               'description': '''
                 Represents a request to call a tool.
@@ -1401,10 +1608,21 @@
                 
                     This represents a request to call the tool named "foo" with arguments {"a": 1}
                     and an identifier of "123".
+                
+                .. note::
+                    ``create_tool_call`` may also be used as a factory to create a
+                    ``ToolCall``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
               ''',
               'properties': dict({
                 'args': dict({
                   'title': 'Args',
+                  'type': 'object',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
                   'type': 'object',
                 }),
                 'id': dict({
@@ -1418,6 +1636,10 @@
                   ]),
                   'title': 'Id',
                 }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
                 'name': dict({
                   'title': 'Name',
                   'type': 'string',
@@ -1429,9 +1651,10 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
               ]),
               'title': 'ToolCall',
               'type': 'object',
@@ -1440,9 +1663,9 @@
               'description': '''
                 A chunk of a tool call (e.g., as part of a stream).
                 
-                When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+                When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
                 all string attributes are concatenated. Chunks are only merged if their
-                values of `index` are equal and not None.
+                values of ``index`` are equal and not ``None``.
                 
                 Example:
                 
@@ -1467,6 +1690,10 @@
                     }),
                   ]),
                   'title': 'Args',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -1508,133 +1735,12 @@
                 }),
               }),
               'required': list([
+                'id',
                 'name',
                 'args',
-                'id',
                 'index',
               ]),
               'title': 'ToolCallChunk',
-              'type': 'object',
-            }),
-            'ToolMessage': dict({
-              'additionalProperties': True,
-              'description': '''
-                Message for passing the result of executing a tool back to a model.
-                
-                ToolMessages contain the result of a tool invocation. Typically, the result
-                is encoded inside the `content` field.
-                
-                Example: A ToolMessage representing a result of 42 from a tool call with id
-                
-                    .. code-block:: python
-                
-                        from langchain_core.messages import ToolMessage
-                
-                        ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
-                
-                
-                Example: A ToolMessage where only part of the tool output is sent to the model
-                    and the full output is passed in to artifact.
-                
-                    .. versionadded:: 0.2.17
-                
-                    .. code-block:: python
-                
-                        from langchain_core.messages import ToolMessage
-                
-                        tool_output = {
-                            "stdout": "From the graph we can see that the correlation between x and y is ...",
-                            "stderr": None,
-                            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-                        }
-                
-                        ToolMessage(
-                            content=tool_output["stdout"],
-                            artifact=tool_output,
-                            tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
-                        )
-                
-                The tool_call_id field is used to associate the tool call request with the
-                tool call response. This is useful in situations where a chat model is able
-                to request multiple tool calls in parallel.
-              ''',
-              'properties': dict({
-                'additional_kwargs': dict({
-                  'title': 'Additional Kwargs',
-                  'type': 'object',
-                }),
-                'artifact': dict({
-                  'title': 'Artifact',
-                }),
-                'content': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'items': dict({
-                        'anyOf': list([
-                          dict({
-                            'type': 'string',
-                          }),
-                          dict({
-                            'type': 'object',
-                          }),
-                        ]),
-                      }),
-                      'type': 'array',
-                    }),
-                  ]),
-                  'title': 'Content',
-                }),
-                'id': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Id',
-                }),
-                'name': dict({
-                  'anyOf': list([
-                    dict({
-                      'type': 'string',
-                    }),
-                    dict({
-                      'type': 'null',
-                    }),
-                  ]),
-                  'default': None,
-                  'title': 'Name',
-                }),
-                'response_metadata': dict({
-                  'title': 'Response Metadata',
-                  'type': 'object',
-                }),
-                'status': dict({
-                  'default': 'success',
-                  'title': 'Status',
-                }),
-                'tool_call_id': dict({
-                  'title': 'Tool Call Id',
-                  'type': 'string',
-                }),
-                'type': dict({
-                  'const': 'tool',
-                  'default': 'tool',
-                  'title': 'Type',
-                  'type': 'string',
-                }),
-              }),
-              'required': list([
-                'content',
-                'tool_call_id',
-              ]),
-              'title': 'ToolMessage',
               'type': 'object',
             }),
             'ToolMessageChunk': dict({
@@ -1776,6 +1882,1208 @@
               'title': 'UsageMetadata',
               'type': 'object',
             }),
+            'VideoContentBlock': dict({
+              'description': '''
+                Video data.
+                
+                .. note::
+                    ``create_video_block`` may also be used as a factory to create a
+                    ``VideoContentBlock``. Benefits include:
+                
+                    * Automatic ID generation (when not provided)
+                    * Required arguments strictly validated at creation time
+              ''',
+              'properties': dict({
+                'base64': dict({
+                  'title': 'Base64',
+                  'type': 'string',
+                }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'file_id': dict({
+                  'title': 'File Id',
+                  'type': 'string',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'mime_type': dict({
+                  'title': 'Mime Type',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'video',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'url': dict({
+                  'title': 'Url',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'VideoContentBlock',
+              'type': 'object',
+            }),
+            'WebSearchCall': dict({
+              'description': 'Built-in web search tool call.',
+              'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'query': dict({
+                  'title': 'Query',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'web_search_call',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'WebSearchCall',
+              'type': 'object',
+            }),
+            'WebSearchResult': dict({
+              'description': 'Result of a built-in web search tool call.',
+              'properties': dict({
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'index': dict({
+                  'title': 'Index',
+                  'type': 'integer',
+                }),
+                'type': dict({
+                  'const': 'web_search_result',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'urls': dict({
+                  'items': dict({
+                    'type': 'string',
+                  }),
+                  'title': 'Urls',
+                  'type': 'array',
+                }),
+              }),
+              'required': list([
+                'type',
+              ]),
+              'title': 'WebSearchResult',
+              'type': 'object',
+            }),
+            'langchain_core__messages__ai__AIMessage': dict({
+              'additionalProperties': True,
+              'description': '''
+                Message from an AI.
+                
+                AIMessage is returned from a chat model as a response to a prompt.
+                
+                This message represents the output of the model and consists of both
+                the raw output as returned by the model together standardized fields
+                (e.g., tool calls, usage metadata) added by the LangChain framework.
+              ''',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'example': dict({
+                  'default': False,
+                  'title': 'Example',
+                  'type': 'boolean',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'invalid_tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/InvalidToolCall',
+                  }),
+                  'title': 'Invalid Tool Calls',
+                  'type': 'array',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/ToolCall',
+                  }),
+                  'title': 'Tool Calls',
+                  'type': 'array',
+                }),
+                'type': dict({
+                  'const': 'ai',
+                  'default': 'ai',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'usage_metadata': dict({
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'AIMessage',
+              'type': 'object',
+            }),
+            'langchain_core__messages__ai__AIMessageChunk': dict({
+              'additionalProperties': True,
+              'description': 'Message chunk from an AI.',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'example': dict({
+                  'default': False,
+                  'title': 'Example',
+                  'type': 'boolean',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'invalid_tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/InvalidToolCall',
+                  }),
+                  'title': 'Invalid Tool Calls',
+                  'type': 'array',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'tool_call_chunks': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/ToolCallChunk',
+                  }),
+                  'title': 'Tool Call Chunks',
+                  'type': 'array',
+                }),
+                'tool_calls': dict({
+                  'default': list([
+                  ]),
+                  'items': dict({
+                    '$ref': '#/$defs/ToolCall',
+                  }),
+                  'title': 'Tool Calls',
+                  'type': 'array',
+                }),
+                'type': dict({
+                  'const': 'AIMessageChunk',
+                  'default': 'AIMessageChunk',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'usage_metadata': dict({
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'AIMessageChunk',
+              'type': 'object',
+            }),
+            'langchain_core__messages__human__HumanMessage': dict({
+              'additionalProperties': True,
+              'description': '''
+                Message from a human.
+                
+                HumanMessages are messages that are passed in from a human to the model.
+                
+                Example:
+                
+                    .. code-block:: python
+                
+                        from langchain_core.messages import HumanMessage, SystemMessage
+                
+                        messages = [
+                            SystemMessage(
+                                content="You are a helpful assistant! Your name is Bob."
+                            ),
+                            HumanMessage(
+                                content="What is your name?"
+                            )
+                        ]
+                
+                        # Instantiate a chat model and invoke it with the messages
+                        model = ...
+                        print(model.invoke(messages))
+              ''',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'example': dict({
+                  'default': False,
+                  'title': 'Example',
+                  'type': 'boolean',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'type': dict({
+                  'const': 'human',
+                  'default': 'human',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'HumanMessage',
+              'type': 'object',
+            }),
+            'langchain_core__messages__system__SystemMessage': dict({
+              'additionalProperties': True,
+              'description': '''
+                Message for priming AI behavior.
+                
+                The system message is usually passed in as the first of a sequence
+                of input messages.
+                
+                Example:
+                
+                    .. code-block:: python
+                
+                        from langchain_core.messages import HumanMessage, SystemMessage
+                
+                        messages = [
+                            SystemMessage(
+                                content="You are a helpful assistant! Your name is Bob."
+                            ),
+                            HumanMessage(
+                                content="What is your name?"
+                            )
+                        ]
+                
+                        # Define a chat model and invoke it with the messages
+                        print(model.invoke(messages))
+              ''',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'type': dict({
+                  'const': 'system',
+                  'default': 'system',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'content',
+              ]),
+              'title': 'SystemMessage',
+              'type': 'object',
+            }),
+            'langchain_core__messages__tool__ToolMessage': dict({
+              'additionalProperties': True,
+              'description': '''
+                Message for passing the result of executing a tool back to a model.
+                
+                ToolMessages contain the result of a tool invocation. Typically, the result
+                is encoded inside the `content` field.
+                
+                Example: A ToolMessage representing a result of 42 from a tool call with id
+                
+                    .. code-block:: python
+                
+                        from langchain_core.messages import ToolMessage
+                
+                        ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                
+                
+                Example: A ToolMessage where only part of the tool output is sent to the model
+                    and the full output is passed in to artifact.
+                
+                    .. versionadded:: 0.2.17
+                
+                    .. code-block:: python
+                
+                        from langchain_core.messages import ToolMessage
+                
+                        tool_output = {
+                            "stdout": "From the graph we can see that the correlation between x and y is ...",
+                            "stderr": None,
+                            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                        }
+                
+                        ToolMessage(
+                            content=tool_output["stdout"],
+                            artifact=tool_output,
+                            tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                        )
+                
+                The tool_call_id field is used to associate the tool call request with the
+                tool call response. This is useful in situations where a chat model is able
+                to request multiple tool calls in parallel.
+              ''',
+              'properties': dict({
+                'additional_kwargs': dict({
+                  'title': 'Additional Kwargs',
+                  'type': 'object',
+                }),
+                'artifact': dict({
+                  'title': 'Artifact',
+                }),
+                'content': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'items': dict({
+                        'anyOf': list([
+                          dict({
+                            'type': 'string',
+                          }),
+                          dict({
+                            'type': 'object',
+                          }),
+                        ]),
+                      }),
+                      'type': 'array',
+                    }),
+                  ]),
+                  'title': 'Content',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'response_metadata': dict({
+                  'title': 'Response Metadata',
+                  'type': 'object',
+                }),
+                'status': dict({
+                  'default': 'success',
+                  'title': 'Status',
+                }),
+                'tool_call_id': dict({
+                  'title': 'Tool Call Id',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'tool',
+                  'default': 'tool',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'content',
+                'tool_call_id',
+              ]),
+              'title': 'ToolMessage',
+              'type': 'object',
+            }),
+            'langchain_core__v1__messages__AIMessage': dict({
+              'properties': dict({
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'lc_version': dict({
+                  'default': 'v1',
+                  'title': 'Lc Version',
+                  'type': 'string',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'parsed': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'object',
+                    }),
+                    dict({
+                      '$ref': '#/$defs/BaseModel',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Parsed',
+                }),
+                'response_metadata': dict({
+                  '$ref': '#/$defs/ResponseMetadata',
+                }),
+                'type': dict({
+                  'const': 'ai',
+                  'default': 'ai',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'usage_metadata': dict({
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                }),
+              }),
+              'title': 'AIMessage',
+              'type': 'object',
+            }),
+            'langchain_core__v1__messages__AIMessageChunk': dict({
+              'properties': dict({
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
+                'id': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Id',
+                }),
+                'lc_version': dict({
+                  'default': 'v1',
+                  'title': 'Lc Version',
+                  'type': 'string',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'parsed': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'object',
+                    }),
+                    dict({
+                      '$ref': '#/$defs/BaseModel',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Parsed',
+                }),
+                'response_metadata': dict({
+                  '$ref': '#/$defs/ResponseMetadata',
+                }),
+                'type': dict({
+                  'const': 'ai_chunk',
+                  'default': 'ai_chunk',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+                'usage_metadata': dict({
+                  'anyOf': list([
+                    dict({
+                      '$ref': '#/$defs/UsageMetadata',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                }),
+              }),
+              'title': 'AIMessageChunk',
+              'type': 'object',
+            }),
+            'langchain_core__v1__messages__HumanMessage': dict({
+              'properties': dict({
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'type': dict({
+                  'const': 'human',
+                  'default': 'human',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'id',
+                'content',
+              ]),
+              'title': 'HumanMessage',
+              'type': 'object',
+            }),
+            'langchain_core__v1__messages__SystemMessage': dict({
+              'properties': dict({
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
+                'custom_role': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Custom Role',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'type': dict({
+                  'const': 'system',
+                  'default': 'system',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'id',
+                'content',
+              ]),
+              'title': 'SystemMessage',
+              'type': 'object',
+            }),
+            'langchain_core__v1__messages__ToolMessage': dict({
+              'properties': dict({
+                'artifact': dict({
+                  'anyOf': list([
+                    dict({
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Artifact',
+                }),
+                'content': dict({
+                  'items': dict({
+                    'anyOf': list([
+                      dict({
+                        '$ref': '#/$defs/TextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ToolCallChunk',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/InvalidToolCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ReasoningContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/NonStandardContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/ImageContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/VideoContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/AudioContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/PlainTextContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/FileContentBlock',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterOutput',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/CodeInterpreterResult',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchCall',
+                      }),
+                      dict({
+                        '$ref': '#/$defs/WebSearchResult',
+                      }),
+                    ]),
+                  }),
+                  'title': 'Content',
+                  'type': 'array',
+                }),
+                'id': dict({
+                  'title': 'Id',
+                  'type': 'string',
+                }),
+                'name': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Name',
+                }),
+                'status': dict({
+                  'default': 'success',
+                  'title': 'Status',
+                }),
+                'tool_call_id': dict({
+                  'title': 'Tool Call Id',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'const': 'tool',
+                  'default': 'tool',
+                  'title': 'Type',
+                  'type': 'string',
+                }),
+              }),
+              'required': list([
+                'id',
+                'tool_call_id',
+                'content',
+              ]),
+              'title': 'ToolMessage',
+              'type': 'object',
+            }),
           }),
           'anyOf': list([
             dict({
@@ -1784,25 +3092,25 @@
             dict({
               'oneOf': list([
                 dict({
-                  '$ref': '#/$defs/AIMessage',
+                  '$ref': '#/$defs/langchain_core__messages__ai__AIMessage',
                 }),
                 dict({
-                  '$ref': '#/$defs/HumanMessage',
+                  '$ref': '#/$defs/langchain_core__messages__human__HumanMessage',
                 }),
                 dict({
                   '$ref': '#/$defs/ChatMessage',
                 }),
                 dict({
-                  '$ref': '#/$defs/SystemMessage',
+                  '$ref': '#/$defs/langchain_core__messages__system__SystemMessage',
                 }),
                 dict({
                   '$ref': '#/$defs/FunctionMessage',
                 }),
                 dict({
-                  '$ref': '#/$defs/ToolMessage',
+                  '$ref': '#/$defs/langchain_core__messages__tool__ToolMessage',
                 }),
                 dict({
-                  '$ref': '#/$defs/AIMessageChunk',
+                  '$ref': '#/$defs/langchain_core__messages__ai__AIMessageChunk',
                 }),
                 dict({
                   '$ref': '#/$defs/HumanMessageChunk',
@@ -1820,6 +3128,21 @@
                   '$ref': '#/$defs/ToolMessageChunk',
                 }),
               ]),
+            }),
+            dict({
+              '$ref': '#/$defs/langchain_core__v1__messages__AIMessage',
+            }),
+            dict({
+              '$ref': '#/$defs/langchain_core__v1__messages__AIMessageChunk',
+            }),
+            dict({
+              '$ref': '#/$defs/langchain_core__v1__messages__HumanMessage',
+            }),
+            dict({
+              '$ref': '#/$defs/langchain_core__v1__messages__SystemMessage',
+            }),
+            dict({
+              '$ref': '#/$defs/langchain_core__v1__messages__ToolMessage',
             }),
           ]),
           'title': 'RunnableParallel<as_list,as_str>Input',

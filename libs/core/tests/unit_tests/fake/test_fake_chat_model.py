@@ -1,5 +1,6 @@
 """Tests for verifying that testing utility code works as expected."""
 
+import time
 from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -9,11 +10,14 @@ from typing_extensions import override
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import (
     FakeListChatModel,
+    FakeMessagesListChatModel,
     GenericFakeChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import MessageV1
 from tests.unit_tests.stubs import (
     _any_id_ai_message,
     _any_id_ai_message_chunk,
@@ -155,13 +159,13 @@ async def test_callback_handlers() -> None:
     """Verify that model is implemented correctly with handlers working."""
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
-        def __init__(self, store: list[str]) -> None:
+        def __init__(self, store: list[Union[str, AIMessageChunkV1]]) -> None:
             self.store = store
 
         async def on_chat_model_start(
             self,
             serialized: dict[str, Any],
-            messages: list[list[BaseMessage]],
+            messages: Union[list[list[BaseMessage]], list[MessageV1]],
             *,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
@@ -176,9 +180,11 @@ async def test_callback_handlers() -> None:
         @override
         async def on_llm_new_token(
             self,
-            token: str,
+            token: Union[str, AIMessageChunkV1],
             *,
-            chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+            chunk: Optional[
+                Union[GenerationChunk, ChatGenerationChunk, AIMessageChunkV1]
+            ] = None,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
             tags: Optional[list[str]] = None,
@@ -192,7 +198,7 @@ async def test_callback_handlers() -> None:
         ]
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
-    tokens: list[str] = []
+    tokens: list[Union[str, AIMessageChunkV1]] = []
     # New model
     results = [
         chunk
@@ -230,3 +236,18 @@ def test_fake_list_chat_model_batch() -> None:
         fake = FakeListChatModel(responses=["a", "b", "c"])
         resp = fake.batch(["1", "2", "3"])
         assert resp == expected
+
+
+def test_fake_messages_list_chat_model_sleep_delay() -> None:
+    sleep_time = 0.1
+    model = FakeMessagesListChatModel(
+        responses=[AIMessage(content="A"), AIMessage(content="B")],
+        sleep=sleep_time,
+    )
+    messages = [HumanMessage(content="C")]
+
+    start = time.time()
+    model.invoke(messages)
+    elapsed = time.time() - start
+
+    assert elapsed >= sleep_time

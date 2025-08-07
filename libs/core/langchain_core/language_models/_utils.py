@@ -1,8 +1,10 @@
+import copy
 import re
 from collections.abc import Sequence
 from typing import Optional
 
 from langchain_core.messages import BaseMessage
+from langchain_core.v1.messages import MessageV1
 
 
 def _is_openai_data_block(block: dict) -> bool:
@@ -51,6 +53,7 @@ def _parse_data_uri(uri: str) -> Optional[dict]:
                 "mime_type": "image/jpeg",
                 "data": "/9j/4AAQSkZJRg...",
             }
+
     """
     regex = r"^data:(?P<mime_type>[^;]+);base64,(?P<data>.+)$"
     match = re.match(regex, uri)
@@ -133,6 +136,40 @@ def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
 
                     formatted_message.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
                         _convert_openai_format_to_data_block(block)
+                    )
+        formatted_messages.append(formatted_message)
+
+    return formatted_messages
+
+
+def _normalize_messages_v1(messages: Sequence[MessageV1]) -> list[MessageV1]:
+    """Extend support for message formats.
+
+    Chat models implement support for images in OpenAI Chat Completions format, as well
+    as other multimodal data as standard data blocks. This function extends support to
+    audio and file data in OpenAI Chat Completions format by converting them to standard
+    data blocks.
+    """
+    formatted_messages = []
+    for message in messages:
+        formatted_message = message
+        if isinstance(message.content, list):
+            for idx, block in enumerate(message.content):
+                if (
+                    isinstance(block, dict)
+                    # Subset to (PDF) files and audio, as most relevant chat models
+                    # support images in OAI format (and some may not yet support the
+                    # standard data block format)
+                    and block.get("type") in {"file", "input_audio"}
+                    and _is_openai_data_block(block)  # type: ignore[arg-type]
+                ):
+                    if formatted_message is message:
+                        formatted_message = copy.copy(message)
+                        # Also shallow-copy content
+                        formatted_message.content = list(formatted_message.content)
+
+                    formatted_message.content[idx] = (  # type: ignore[call-overload]
+                        _convert_openai_format_to_data_block(block)  # type: ignore[arg-type]
                     )
         formatted_messages.append(formatted_message)
 

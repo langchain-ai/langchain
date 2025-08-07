@@ -1,4 +1,4 @@
-def __getattr__(name: str = "") -> None:
+def __getattr__(_: str = "") -> None:
     """Raise an error on import since is deprecated."""
     msg = (
         "This module has been moved to langchain-experimental. "

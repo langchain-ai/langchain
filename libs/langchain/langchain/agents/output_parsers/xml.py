@@ -3,6 +3,7 @@ from typing import Literal, Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents import AgentOutputParser
 
@@ -65,6 +66,7 @@ class XMLAgentOutputParser(AgentOutputParser):
     None - no escaping is applied, which may lead to parsing conflicts.
     """
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         # Check for tool invocation first
         tool_matches = re.findall(r"<tool>(.*?)</tool>", text, re.DOTALL)
@@ -115,6 +117,7 @@ class XMLAgentOutputParser(AgentOutputParser):
         )
         raise ValueError(msg)
 
+    @override
     def get_format_instructions(self) -> str:
         raise NotImplementedError
 

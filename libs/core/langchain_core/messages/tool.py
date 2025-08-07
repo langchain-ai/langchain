@@ -5,9 +5,12 @@ from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import override
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages.content_blocks import InvalidToolCall as InvalidToolCall
+from langchain_core.messages.content_blocks import ToolCall as ToolCall
+from langchain_core.messages.content_blocks import ToolCallChunk as ToolCallChunk
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -59,6 +62,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
+
     """  # noqa: E501
 
     tool_call_id: str
@@ -176,41 +180,11 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-class ToolCall(TypedDict):
-    """Represents a request to call a tool.
-
-    Example:
-
-        .. code-block:: python
-
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
-
-        This represents a request to call the tool named "foo" with arguments {"a": 1}
-        and an identifier of "123".
-    """
-
-    name: str
-    """The name of the tool to be called."""
-    args: dict[str, Any]
-    """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call.
-
-    An identifier is needed to associate a tool call request with a tool
-    call result in events when multiple concurrent tool calls are made.
-    """
-    type: NotRequired[Literal["tool_call"]]
-
-
 def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],  # noqa: A002
+    id: Optional[str],
 ) -> ToolCall:
     """Create a tool call.
 
@@ -222,42 +196,11 @@ def tool_call(
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
-class ToolCallChunk(TypedDict):
-    """A chunk of a tool call (e.g., as part of a stream).
-
-    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
-    all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
-
-    Example:
-
-    .. code-block:: python
-
-        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
-
-        (
-            AIMessageChunk(content="", tool_call_chunks=left_chunks)
-            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
-    """
-
-    name: Optional[str]
-    """The name of the tool to be called."""
-    args: Optional[str]
-    """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call."""
-    index: Optional[int]
-    """The index of the tool call in a sequence."""
-    type: NotRequired[Literal["tool_call_chunk"]]
-
-
 def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
@@ -273,29 +216,11 @@ def tool_call_chunk(
     )
 
 
-class InvalidToolCall(TypedDict):
-    """Allowance for errors made by LLM.
-
-    Here we add an `error` key to surface errors made during generation
-    (e.g., invalid JSON arguments.)
-    """
-
-    name: Optional[str]
-    """The name of the tool to be called."""
-    args: Optional[str]
-    """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call."""
-    error: Optional[str]
-    """An error message associated with the tool call."""
-    type: NotRequired[Literal["invalid_tool_call"]]
-
-
 def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.

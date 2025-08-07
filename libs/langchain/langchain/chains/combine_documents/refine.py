@@ -79,6 +79,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                 document_variable_name=document_variable_name,
                 initial_response_name=initial_response_name,
             )
+
     """
 
     initial_llm_chain: LLMChain
@@ -140,13 +141,12 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     def combine_docs(

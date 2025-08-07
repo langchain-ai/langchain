@@ -201,6 +201,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 combine_documents_chain=combine_documents_chain,
                 collapse_documents_chain=collapse_documents_chain,
             )
+
     """
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -325,10 +326,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 _token_max,
                 **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                collapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
@@ -364,10 +365,10 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 _token_max,
                 **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = await acollapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                await acollapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:

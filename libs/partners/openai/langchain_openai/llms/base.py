@@ -98,7 +98,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     logit_bias: Optional[dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
@@ -289,6 +289,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 response = openai.generate(["Tell me a joke."])
+
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -508,6 +509,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -572,6 +574,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -685,7 +688,7 @@ class OpenAI(BaseOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @property

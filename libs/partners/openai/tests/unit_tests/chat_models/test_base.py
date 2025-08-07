@@ -20,11 +20,13 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.v1.messages import AIMessage as AIMessageV1
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
 from openai.types.responses.response_error import ResponseError
@@ -44,14 +46,17 @@ from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
     _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _convert_to_v1_from_responses,
 )
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
@@ -2297,7 +2302,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2356,6 +2361,258 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessageV1(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+            AIMessageV1(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessageV1, expected: AIMessageV1
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessageV1(
+                [
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessageV1, expected: AIMessageV1
+) -> None:
+    result = _convert_from_v1_to_responses(message_v1.content, message_v1.tool_calls)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "responses_content, tool_calls, expected_content",
+    [
+        (
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {"type": "something_else", "foo": "bar"},
+            ],
+            [
+                {
+                    "type": "tool_call",
+                    "id": "call_123",
+                    "name": "get_weather",
+                    "args": {"location": "San Francisco"},
+                },
+                {
+                    "type": "tool_call",
+                    "id": "call_234",
+                    "name": "get_weather_2",
+                    "args": {"location": "New York"},
+                },
+            ],
+            [
+                {"type": "reasoning", "id": "abc123"},
+                {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                {
+                    "type": "tool_call",
+                    "id": "call_123",
+                    "name": "get_weather",
+                    "args": {"location": "San Francisco"},
+                },
+                {
+                    "type": "tool_call",
+                    "id": "call_234",
+                    "name": "get_weather_2",
+                    "args": {"location": "New York"},
+                    "extras": {"item_id": "fc_123"},
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "citation", "url": "https://example.com"},
+                        {
+                            "type": "citation",
+                            "title": "my doc",
+                            "extras": {"file_id": "file_123", "index": 1},
+                        },
+                        {"type": "non_standard_annotation", "value": {"bar": "baz"}},
+                    ],
+                },
+                {"type": "image", "base64": "...", "id": "ig_123"},
+                {
+                    "type": "non_standard",
+                    "value": {"type": "something_else", "foo": "bar"},
+                },
+            ],
+        )
+    ],
+)
+def test_convert_to_v1_from_responses(
+    responses_content: list[dict[str, Any]],
+    tool_calls: list[ToolCall],
+    expected_content: list[types.ContentBlock],
+) -> None:
+    result = _convert_to_v1_from_responses(responses_content, tool_calls)
+    assert result == expected_content
 
 
 def test_get_last_messages() -> None:
@@ -2528,3 +2785,69 @@ def test_make_computer_call_output_from_message() -> None:
             }
         ],
     }
+
+
+def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call
+
+    tool_call = ToolCall(
+        id="call_123",
+        name="create_customer",
+        args={"customer_name": "你好啊集团"},
+        type="tool_call",
+    )
+
+    result = _lc_tool_call_to_openai_tool_call(tool_call)
+
+    assert result["type"] == "function"
+    assert result["id"] == "call_123"
+    assert result["function"]["name"] == "create_customer"
+
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
+def test_extra_body_parameter() -> None:
+    """Test that extra_body parameter is properly included in request payload."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        extra_body={"ttl": 300, "custom_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify extra_body is included in the payload
+    assert "extra_body" in payload
+    assert payload["extra_body"]["ttl"] == 300
+    assert payload["extra_body"]["custom_param"] == "test_value"
+
+
+def test_extra_body_with_model_kwargs() -> None:
+    """Test that extra_body and model_kwargs work together correctly."""
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        temperature=0.5,
+        extra_body={"ttl": 600},
+        model_kwargs={"custom_non_openai_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify both extra_body and model_kwargs are in payload
+    assert payload["extra_body"]["ttl"] == 600
+    assert payload["custom_non_openai_param"] == "test_value"
+    assert payload["temperature"] == 0.5

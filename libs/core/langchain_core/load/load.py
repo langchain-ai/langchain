@@ -56,6 +56,8 @@ class Reviver:
         additional_import_mappings: Optional[
             dict[tuple[str, ...], tuple[str, ...]]
         ] = None,
+        *,
+        ignore_unserializable_fields: bool = False,
     ) -> None:
         """Initialize the reviver.
 
@@ -70,6 +72,8 @@ class Reviver:
             additional_import_mappings: A dictionary of additional namespace mappings
                 You can use this to override default mappings or add new mappings.
                 Defaults to None.
+            ignore_unserializable_fields: Whether to ignore unserializable fields.
+                Defaults to False.
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
@@ -88,6 +92,7 @@ class Reviver:
             if self.additional_import_mappings
             else ALL_SERIALIZABLE_MAPPINGS
         )
+        self.ignore_unserializable_fields = ignore_unserializable_fields
 
     def __call__(self, value: dict[str, Any]) -> Any:
         """Revive the value."""
@@ -108,6 +113,8 @@ class Reviver:
             and value.get("type") == "not_implemented"
             and value.get("id") is not None
         ):
+            if self.ignore_unserializable_fields:
+                return None
             msg = (
                 "Trying to load an object that doesn't implement "
                 f"serialization: {value}"
@@ -149,8 +156,13 @@ class Reviver:
 
             cls = getattr(mod, name)
 
-            # The class must be a subclass of Serializable.
-            if not issubclass(cls, Serializable):
+            # Import MessageV1Types lazily to avoid circular import:
+            # load.load -> v1.messages -> messages.ai -> messages.base ->
+            #   load.serializable -> load.__init__ -> load.load
+            from langchain_core.v1.messages import MessageV1Types
+
+            # The class must be a subclass of Serializable or a v1 message class.
+            if not (issubclass(cls, Serializable) or cls in MessageV1Types):
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 
@@ -170,6 +182,7 @@ def loads(
     valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
     additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
 
@@ -187,6 +200,8 @@ def loads(
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
             Defaults to None.
+        ignore_unserializable_fields: Whether to ignore unserializable fields.
+            Defaults to False.
 
     Returns:
         Revived LangChain objects.
@@ -194,7 +209,11 @@ def loads(
     return json.loads(
         text,
         object_hook=Reviver(
-            secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+            secrets_map,
+            valid_namespaces,
+            secrets_from_env,
+            additional_import_mappings,
+            ignore_unserializable_fields=ignore_unserializable_fields,
         ),
     )
 
@@ -207,6 +226,7 @@ def load(
     valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
     additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON object.
 
@@ -225,12 +245,18 @@ def load(
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
             Defaults to None.
+        ignore_unserializable_fields: Whether to ignore unserializable fields.
+            Defaults to False.
 
     Returns:
         Revived LangChain objects.
     """
     reviver = Reviver(
-        secrets_map, valid_namespaces, secrets_from_env, additional_import_mappings
+        secrets_map,
+        valid_namespaces,
+        secrets_from_env,
+        additional_import_mappings,
+        ignore_unserializable_fields=ignore_unserializable_fields,
     )
 
     def _load(obj: Any) -> Any:

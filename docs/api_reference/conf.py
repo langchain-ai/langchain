@@ -262,6 +262,8 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+# Don't fail on autosummary import warnings
+autosummary_ignore_module_all = False
 
 html_copy_source = False
 html_show_sourcelink = False

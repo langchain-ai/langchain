@@ -11,6 +11,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 from typing_extensions import override
@@ -20,19 +21,22 @@ from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.v1.messages import AIMessage, MessageV1, MessageV1Types
 
 if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
-OutputParserLike = Runnable[LanguageModelOutput, T]
+OutputParserLike = Runnable[Union[LanguageModelOutput, AIMessage], T]
 
 
 class BaseLLMOutputParser(ABC, Generic[T]):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
@@ -46,7 +50,7 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """
 
     async def aparse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 
@@ -71,7 +75,7 @@ class BaseGenerationOutputParser(
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return Union[str, AnyMessage, MessageV1]
 
     @property
     @override
@@ -84,7 +88,7 @@ class BaseGenerationOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
+        input: Union[str, BaseMessage, MessageV1],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> T:
@@ -97,9 +101,16 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
+        if isinstance(input, MessageV1Types):
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(inner_input),
+                input,
+                config,
+                run_type="parser",
+            )
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-            input,
+            cast("str", input),
             config,
             run_type="parser",
         )
@@ -120,6 +131,13 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
+        if isinstance(input, MessageV1Types):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(inner_input),
+                input,
+                config,
+                run_type="parser",
+            )
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
             input,
@@ -129,7 +147,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser, RunnableSerializable[Union[LanguageModelOutput, AIMessage], T]
 ):
     """Base class to parse the output of an LLM call.
 
@@ -155,13 +173,14 @@ class BaseOutputParser(
                 @property
                 def _type(self) -> str:
                     return "boolean_output_parser"
+
     """  # noqa: E501
 
     @property
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return Union[str, AnyMessage, MessageV1]
 
     @property
     @override
@@ -188,7 +207,7 @@ class BaseOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
+        input: Union[str, BaseMessage, MessageV1],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> T:
@@ -201,9 +220,16 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
+        if isinstance(input, MessageV1Types):
+            return self._call_with_config(
+                lambda inner_input: self.parse_result(inner_input),
+                input,
+                config,
+                run_type="parser",
+            )
         return self._call_with_config(
             lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-            input,
+            cast("str", input),
             config,
             run_type="parser",
         )
@@ -211,7 +237,7 @@ class BaseOutputParser(
     @override
     async def ainvoke(
         self,
-        input: Union[str, BaseMessage],
+        input: Union[str, BaseMessage, MessageV1],
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> T:
@@ -224,15 +250,24 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
+        if isinstance(input, MessageV1Types):
+            return await self._acall_with_config(
+                lambda inner_input: self.aparse_result(inner_input),
+                input,
+                config,
+                run_type="parser",
+            )
         return await self._acall_with_config(
             lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
-            input,
+            cast("str", input),
             config,
             run_type="parser",
         )
 
     @override
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
@@ -247,6 +282,8 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
+        if isinstance(result, AIMessage):
+            return self.parse(result.text)
         return self.parse(result[0].text)
 
     @abstractmethod
@@ -261,7 +298,7 @@ class BaseOutputParser(
         """
 
     async def aparse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
     ) -> T:
         """Async parse a list of candidate model Generations into a specific format.
 

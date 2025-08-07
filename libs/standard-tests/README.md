@@ -13,26 +13,32 @@ Not pinning your version will ensure you always have the latest tests, but it ma
 also break your CI if we introduce tests that your integration doesn't pass.
 
 Pip:
-    
-    ```bash
-    pip install -U langchain-tests
-    ```
+
+```bash
+pip install -U langchain-tests
+```
 
 Poetry:
-    
-    ```bash
-    poetry add langchain-tests
-    ```
+
+```bash
+poetry add langchain-tests
+```
+
+uv:
+
+```bash
+uv add langchain-tests
+```
 
 ## Usage
 
-To add standard tests to an integration package's e.g. ChatModel, you need to create
+To add standard tests to an integration package (e.g., for a ChatModel), you need to create
 
-1. A unit test class that inherits from ChatModelUnitTests
-2. An integration test class that inherits from ChatModelIntegrationTests
+1. A unit test class that inherits from `ChatModelUnitTests`
+2. An integration test class that inherits from `ChatModelIntegrationTests`
 
 `tests/unit_tests/test_standard.py`:
-    
+
 ```python
 """Standard LangChain interface tests"""
 
@@ -52,7 +58,7 @@ class TestParrotChainStandard(ChatModelUnitTests):
 ```
 
 `tests/integration_tests/test_standard.py`:
-    
+
 ```python
 """Standard LangChain interface tests"""
 
@@ -80,3 +86,10 @@ as required is optional.
 - `chat_model_params`: The keyword arguments to pass to the chat model constructor
 - `chat_model_has_tool_calling`: Whether the chat model can call tools. By default, this is set to `hasattr(chat_model_class, 'bind_tools)`
 - `chat_model_has_structured_output`: Whether the chat model can structured output. By default, this is set to `hasattr(chat_model_class, 'with_structured_output')`
+
+## Content Blocks V1 Support
+
+For chat models that support the new content blocks v1 format (multimodal content, reasoning blocks, citations, etc.), use the v1 test suite instead:
+
+- See `QUICK_START.md` and `README_V1.md` for v1 testing documentation
+- Use `ChatModelV1Tests` from `langchain_tests.unit_tests.chat_models_v1`

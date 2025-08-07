@@ -17,6 +17,7 @@ from typing_extensions import override
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.exceptions import TracerException  # noqa: F401
 from langchain_core.tracers.core import _TracerCore
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -54,7 +55,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         tags: Optional[list[str]] = None,
@@ -138,7 +139,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -190,7 +193,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         )
 
     @override
-    def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
+    def on_llm_end(
+        self, response: Union[LLMResult, AIMessage], *, run_id: UUID, **kwargs: Any
+    ) -> Run:
         """End a trace for an LLM run.
 
         Args:
@@ -562,7 +567,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
+        messages: Union[list[list[BaseMessage]], list[MessageV1]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -617,7 +622,9 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: Optional[
+            Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+        ] = None,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
@@ -646,7 +653,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     @override
     async def on_llm_end(
         self,
-        response: LLMResult,
+        response: Union[LLMResult, AIMessage],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -882,7 +889,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self,
         run: Run,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]],
     ) -> None:
         """Process new LLM token."""
 

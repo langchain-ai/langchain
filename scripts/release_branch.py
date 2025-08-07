@@ -3,10 +3,12 @@ python scripts/release_branch.py anthropic bagatur
 """
 
 import glob
-import tomllib
-import toml
 import subprocess
 import sys
+
+# Ignoring errors since this script is run in a controlled environment
+import toml  # type: ignore # pyright: ignore[reportMissingModuleSource]
+import tomllib  # type: ignore # pyright: ignore[reportMissingImports]
 
 
 def main(*args):

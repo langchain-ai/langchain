@@ -127,8 +127,6 @@ If you'd like to contribute an integration, see [Contributing integrations](/doc
 
 :::
 
-LangChain integrates with many providers.
-
 ## Integration Packages
 
 These providers have standalone `langchain-{{provider}}` packages for improved versioning, dependency management and testing.

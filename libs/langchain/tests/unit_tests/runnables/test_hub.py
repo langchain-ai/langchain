@@ -38,7 +38,7 @@ repo_dict = {
 }
 
 
-def repo_lookup(owner_repo_commit: str, **kwargs: Any) -> ChatPromptTemplate:
+def repo_lookup(owner_repo_commit: str, **_: Any) -> ChatPromptTemplate:
     return repo_dict[owner_repo_commit]
 
 

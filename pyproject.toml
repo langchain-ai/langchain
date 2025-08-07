@@ -12,7 +12,10 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = [
+    "ruff<0.13,>=0.12.2",
+    "types-toml",
+]
 dev = [
     "langchain-core",
     "langchain-text-splitters",
@@ -21,7 +24,10 @@ dev = [
     "langchain-openai",
     "ipykernel<7.0.0,>=6.29.2",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
+codespell = [
+    "codespell<3.0.0,>=2.2.0",
+    "tomli>=2.2.1",
+]
 typing = []
 test = [
     "langchain-experimental @ git+https://github.com/langchain-ai/langchain-experimental.git#subdirectory=libs/experimental",
@@ -37,6 +43,7 @@ test = [
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
     "langgraph",
+    "msgpack",
     "jupyter<2.0.0,>=1.1.1",
     "click<9.0.0,>=8.1.7",
     "aiofiles<25.0.0,>=24.1.0",
@@ -50,8 +57,22 @@ test = [
     "wikipedia<2.0.0,>=1.4.0",
     "pypdf<6.0.0,>=5.0.0",
     "vcrpy<7.0.0,>=6.0.1",
+    "linkchecker>=10.5.0",
 ]
-
+docs = [
+    "toml>=0.10.2",
+    "autodoc-pydantic>=2,<3",
+    "sphinx>=6,<8",
+    "myst-parser>=3",
+    "sphinx-autobuild>=2024",
+    "pydata-sphinx-theme>=0.15",
+    "myst-nb>=1.1.1",
+    "pyyaml",
+    "sphinx-design",
+    "sphinx-copybutton",
+    "beautifulsoup4",
+    "sphinxcontrib-googleanalytics",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "./libs/core", editable = true }
@@ -71,7 +92,7 @@ build-backend = "pdm.backend"
 
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig,*cache*,*.msgpack.zlib,*.csv,*.lock,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.ico,*.webp,*.tiff,*.mp4,*.mp3,*.wav,*.avi,*.mov,*.zip,*.tar,*.gz,*.rar,*.7z,*.exe,*.dll,*.so,*.dylib,*.bin,*.dat,*.db,*.sqlite'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is

@@ -1,12 +1,6 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: 🤔 Question
-    about: Ask a question in the LangChain forums
-    url: https://forum.langchain.com/c/help/langchain/14
-  - name: Feature Request
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/ideas
-    about: Suggest a feature or an idea
-  - name: Show and tell
-    about: Show what you built with LangChain
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/show-and-tell
+  - name: LangChain Forum
+    url: https://forum.langchain.com/
+    about: General community discussions, support, and feature requests

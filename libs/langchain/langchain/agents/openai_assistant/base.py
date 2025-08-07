@@ -229,7 +229,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
     @model_validator(mode="after")
-    def validate_async_client(self) -> Self:
+    def _validate_async_client(self) -> Self:
         if self.async_client is None:
             import openai
 
@@ -358,12 +358,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = self._wait_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -494,12 +494,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = await self._await_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -582,7 +582,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = self.client.beta.threads.messages.list(
@@ -739,7 +739,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = await self.async_client.beta.threads.messages.list(

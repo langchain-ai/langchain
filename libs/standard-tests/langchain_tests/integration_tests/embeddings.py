@@ -32,7 +32,8 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
                 return {"model": "model-001"}
 
     .. note::
-          API references for individual test methods include troubleshooting tips.
+        API references for individual test methods include troubleshooting tips.
+
     """
 
     def test_embed_query(self, model: Embeddings) -> None:
