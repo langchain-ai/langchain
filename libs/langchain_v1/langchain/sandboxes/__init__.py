@@ -1,10 +1,22 @@
 """Temporary wrapper for sandbox integrations."""
+from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Callable, List, Literal, NotRequired, Optional, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    List,
+    Literal,
+    NotRequired,
+    Optional,
+    TypedDict,
+)
 
-from daytona import Sandbox
 from langchain_core.tools import BaseTool, StructuredTool
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from daytona import Sandbox
 
 
 class FileInfo(TypedDict):
@@ -27,7 +39,7 @@ class SandboxCapabilities(TypedDict):
     can_download: bool
     can_list_files: bool
     can_run_code: bool
-    supported_languages: List[str]
+    supported_languages: list[str]
 
 
 class ExecuteResponse(TypedDict):
@@ -52,7 +64,7 @@ class DaytonaSandboxToolkit:
         self.sandbox = sandbox
         self._default_language = default_language
 
-    def list_files(self, path: str) -> List[FileInfo]:
+    def list_files(self, path: str) -> list[FileInfo]:
         """List files in the specified path."""
         return self.sandbox.fs.list_files(path)
 
@@ -67,7 +79,7 @@ class DaytonaSandboxToolkit:
         return self.sandbox.fs.upload_file(file, remote_path, timeout=timeout)
 
     def upload_files(
-        self, files: List[str | bytes], remote_path: str, timeout: int = 30 * 60
+        self, files: list[str | bytes], remote_path: str, timeout: int = 30 * 60
     ):
         """Upload one or more files to the sandbox."""
         return self.sandbox.fs.upload_files(files, remote_path, timeout=timeout)
@@ -131,7 +143,7 @@ class Adapter:
         return result
 
     @staticmethod
-    def format_list_files(files: List[FileInfo]) -> str:
+    def format_list_files(files: list[FileInfo]) -> str:
         """Format the response for a list of files."""
         if not files:
             return "<file_list>\n<message>No files found</message>\n</file_list>"
@@ -199,7 +211,7 @@ def create_tools(
     tool_selection: Sequence[
         Literal["run_code", "list_files", "upload_file", "download_file"]
     ],
-) -> List[BaseTool]:
+) -> list[BaseTool]:
     """Create tools for the given sandbox.
 
     Args:
@@ -214,7 +226,8 @@ def create_tools(
     for tool_name in requested_tools:
         if tool_name == "run_code":
             if not capabilities["can_run_code"]:
-                raise ValueError("Sandbox does not support running code.")
+                msg = "Sandbox does not support running code."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="Run code in the sandbox.",
@@ -224,7 +237,8 @@ def create_tools(
             )
         elif tool_name == "list_files":
             if not capabilities["can_list_files"]:
-                raise ValueError("Sandbox does not support listing files.")
+                msg = "Sandbox does not support listing files."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="List files in the sandbox.",
@@ -234,7 +248,8 @@ def create_tools(
             )
         elif tool_name == "upload_file":
             if not capabilities["can_upload"]:
-                raise ValueError("Sandbox does not support uploading files.")
+                msg = "Sandbox does not support uploading files."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="Upload a file to the sandbox.",
@@ -246,7 +261,8 @@ def create_tools(
             )
         elif tool_name == "download_file":
             if not capabilities["can_download"]:
-                raise ValueError("Sandbox does not support downloading files.")
+                msg = "Sandbox does not support downloading files."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="Download a file from the sandbox.",
@@ -258,7 +274,8 @@ def create_tools(
             )
         elif tool_name == "repl":
             if not capabilities["can_run_code"]:
-                raise ValueError("Sandbox does not support REPL execution.")
+                msg = "Sandbox does not support REPL execution."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="Run code in a REPL environment in the sandbox.",
@@ -268,7 +285,8 @@ def create_tools(
             )
         elif tool_name == "exec":
             if not capabilities["can_run_code"]:
-                raise ValueError("Sandbox does not support executing commands.")
+                msg = "Sandbox does not support executing commands."
+                raise ValueError(msg)
             tools.append(
                 StructuredTool(
                     description="Execute a command in the sandbox.",
