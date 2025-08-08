@@ -567,7 +567,7 @@ def create_map_reduce_chain(
         A LangGraph that can be invoked with documents to get map-reduce
         extraction results.
 
-    Note:
+    .. note::
         This implementation is well-suited for large document collections as it
         processes documents in parallel during the map phase. The Send API enables
         efficient parallelization while maintaining clean state management.
