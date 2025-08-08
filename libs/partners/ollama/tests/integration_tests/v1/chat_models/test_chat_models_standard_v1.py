@@ -8,7 +8,7 @@ from langchain_core.messages.content_blocks import ToolCallChunk, is_reasoning_b
 from langchain_core.tools import tool
 from langchain_core.v1.chat_models import BaseChatModel
 from langchain_core.v1.messages import AIMessage, AIMessageChunk, HumanMessage
-from langchain_tests.integration_tests.chat_models_v1 import ChatModelV1IntegrationTests
+from langchain_tests.v1.integration_tests.chat_models import ChatModelIntegrationTests
 from ollama import ResponseError
 from pydantic import ValidationError
 
@@ -26,7 +26,7 @@ def get_current_weather(location: str) -> dict:
     return {"temperature": "unknown", "conditions": "unknown"}
 
 
-class TestChatOllamaV1(ChatModelV1IntegrationTests):
+class TestChatOllamaV1(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> type[ChatOllama]:
         return ChatOllama
