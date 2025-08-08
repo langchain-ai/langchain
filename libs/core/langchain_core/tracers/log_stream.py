@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
     from langchain_core.runnables.utils import Input, Output
     from langchain_core.tracers.schemas import Run
+    from langchain_core.v1.messages import AIMessageChunk
 
 
 class LogEntry(TypedDict):
@@ -176,7 +177,7 @@ class RunLog(RunLogPatch):
         # Then compare that the ops are the same
         return super().__eq__(other)
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 T = TypeVar("T")
@@ -485,7 +486,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self,
         run: Run,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]],
     ) -> None:
         """Process new LLM token."""
         index = self._key_map_by_run_id.get(run.id)

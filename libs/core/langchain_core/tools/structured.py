@@ -129,6 +129,7 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
+        message_version: Literal["v0", "v1"] = "v0",
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -157,6 +158,12 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
+            message_version: Version of ToolMessage to return given
+                :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+                If ``"v0"``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+                If ``"v1"``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
+
             kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -175,7 +182,7 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
 
-        """
+        """  # noqa: E501
         if func is not None:
             source_function = func
         elif coroutine is not None:
@@ -232,6 +239,7 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
+            message_version=message_version,
             **kwargs,
         )
 

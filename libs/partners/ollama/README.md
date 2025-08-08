@@ -32,6 +32,14 @@ llm = ChatOllama(model="llama3.1")
 llm.invoke("Sing a ballad of LangChain.")
 ```
 
+### v1 Chat Models
+
+For v1 chat models, you can use the `ChatOllama` class with the `v1` namespace.
+
+```python
+from langchain_ollama.v1.chat_models import ChatOllama
+```
+
 ## [Embeddings](https://python.langchain.com/api_reference/ollama/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html#ollamaembeddings)
 
 `OllamaEmbeddings` class exposes embeddings from Ollama.

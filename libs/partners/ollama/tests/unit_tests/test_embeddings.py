@@ -32,7 +32,7 @@ def test_validate_model_on_init(mock_validate_model: Any) -> None:
 
 @patch("langchain_ollama.embeddings.Client")
 def test_embed_documents_passes_options(mock_client_class: Any) -> None:
-    """Test that embed_documents method passes options including num_gpu."""
+    """Test that `embed_documents()` passes options, including `num_gpu`."""
     # Create a mock client instance
     mock_client = Mock()
     mock_client_class.return_value = mock_client

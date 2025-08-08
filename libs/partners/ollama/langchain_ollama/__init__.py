@@ -10,6 +10,7 @@ service.
     exist locally. This is useful for ensuring that the model is available before
     attempting to use it, especially in environments where models may not be
     pre-downloaded.
+
 """
 
 from importlib import metadata
@@ -19,6 +20,8 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 
 try:
+    if __package__ is None:
+        raise metadata.PackageNotFoundError
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.

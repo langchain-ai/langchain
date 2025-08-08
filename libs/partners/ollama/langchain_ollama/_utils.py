@@ -1,11 +1,11 @@
-"""Utility functions for validating Ollama models."""
+"""Utility function to validate Ollama models."""
 
 from httpx import ConnectError
 from ollama import Client, ResponseError
 
 
 def validate_model(client: Client, model_name: str) -> None:
-    """Validate that a model exists in the Ollama instance.
+    """Validate that a model exists in the local Ollama instance.
 
     Args:
         client: The Ollama client.
@@ -29,7 +29,10 @@ def validate_model(client: Client, model_name: str) -> None:
             )
             raise ValueError(msg)
     except ConnectError as e:
-        msg = "Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"  # noqa: E501
+        msg = (
+            "Failed to connect to Ollama. Please check that Ollama is downloaded, "
+            "running and accessible. https://ollama.com/download"
+        )
         raise ValueError(msg) from e
     except ResponseError as e:
         msg = (

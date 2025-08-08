@@ -16,6 +16,8 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration
+from langchain_core.v1.messages import AIMessage as AIMessageV1
+from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),
@@ -331,6 +333,14 @@ for message in STREAMED_MESSAGES:
         STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
 
 
+STREAMED_MESSAGES_V1 = [
+    AIMessageChunkV1(
+        content=[],
+        tool_call_chunks=chunk.tool_call_chunks,
+    )
+    for chunk in STREAMED_MESSAGES_WITH_TOOL_CALLS
+]
+
 EXPECTED_STREAMED_JSON = [
     {},
     {"names": ["suz"]},
@@ -398,9 +408,36 @@ def test_partial_json_output_parser(*, use_tool_calls: bool) -> None:
     assert actual == expected
 
 
+def test_partial_json_output_parser_v1() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunkV1]:
+        yield from STREAMED_MESSAGES_V1
+
+    chain = input_iter | JsonOutputToolsParser()
+
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [
+        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 async def test_partial_json_output_parser_async(*, use_tool_calls: bool) -> None:
     input_iter = _get_aiter(use_tool_calls=use_tool_calls)
+    chain = input_iter | JsonOutputToolsParser()
+
+    actual = [p async for p in chain.astream(None)]
+    expected: list = [[]] + [
+        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
+
+
+async def test_partial_json_output_parser_async_v1() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunkV1]:
+        for msg in STREAMED_MESSAGES_V1:
+            yield msg
+
     chain = input_iter | JsonOutputToolsParser()
 
     actual = [p async for p in chain.astream(None)]
@@ -429,6 +466,26 @@ def test_partial_json_output_parser_return_id(*, use_tool_calls: bool) -> None:
     assert actual == expected
 
 
+def test_partial_json_output_parser_return_id_v1() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunkV1]:
+        yield from STREAMED_MESSAGES_V1
+
+    chain = input_iter | JsonOutputToolsParser(return_id=True)
+
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [
+        [
+            {
+                "type": "NameCollector",
+                "args": chunk,
+                "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
+            }
+        ]
+        for chunk in EXPECTED_STREAMED_JSON
+    ]
+    assert actual == expected
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
     input_iter = _get_iter(use_tool_calls=use_tool_calls)
@@ -439,9 +496,32 @@ def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
     assert actual == expected
 
 
+def test_partial_json_output_key_parser_v1() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunkV1]:
+        yield from STREAMED_MESSAGES_V1
+
+    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+
+    actual = list(chain.stream(None))
+    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    assert actual == expected
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 async def test_partial_json_output_parser_key_async(*, use_tool_calls: bool) -> None:
     input_iter = _get_aiter(use_tool_calls=use_tool_calls)
+
+    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+
+    actual = [p async for p in chain.astream(None)]
+    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    assert actual == expected
+
+
+async def test_partial_json_output_parser_key_async_v1() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunkV1]:
+        for msg in STREAMED_MESSAGES_V1:
+            yield msg
 
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
@@ -461,12 +541,35 @@ def test_partial_json_output_key_parser_first_only(*, use_tool_calls: bool) -> N
     assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
 
+def test_partial_json_output_key_parser_first_only_v1() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunkV1]:
+        yield from STREAMED_MESSAGES_V1
+
+    chain = input_iter | JsonOutputKeyToolsParser(
+        key_name="NameCollector", first_tool_only=True
+    )
+
+    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 async def test_partial_json_output_parser_key_async_first_only(
     *,
     use_tool_calls: bool,
 ) -> None:
     input_iter = _get_aiter(use_tool_calls=use_tool_calls)
+
+    chain = input_iter | JsonOutputKeyToolsParser(
+        key_name="NameCollector", first_tool_only=True
+    )
+
+    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+
+
+async def test_partial_json_output_parser_key_async_first_only_v1() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunkV1]:
+        for msg in STREAMED_MESSAGES_V1:
+            yield msg
 
     chain = input_iter | JsonOutputKeyToolsParser(
         key_name="NameCollector", first_tool_only=True
@@ -531,6 +634,42 @@ def test_json_output_key_tools_parser_multiple_tools_first_only(
     assert output_no_id == {"a": 1}
 
 
+def test_json_output_key_tools_parser_multiple_tools_first_only_v1() -> None:
+    message = AIMessageV1(
+        content=[],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "call_other",
+                "name": "other",
+                "args": {"b": 2},
+            },
+            {"type": "tool_call", "id": "call_func", "name": "func", "args": {"a": 1}},
+        ],
+    )
+
+    # Test with return_id=True
+    parser = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=True
+    )
+    output = parser.parse_result(message)
+
+    # Should return the func tool call, not None
+    assert output is not None
+    assert output["type"] == "func"
+    assert output["args"] == {"a": 1}
+    assert "id" in output
+
+    # Test with return_id=False
+    parser_no_id = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=False
+    )
+    output_no_id = parser_no_id.parse_result(message)
+
+    # Should return just the args
+    assert output_no_id == {"a": 1}
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 def test_json_output_key_tools_parser_multiple_tools_no_match(
     *, use_tool_calls: bool
@@ -578,6 +717,44 @@ def test_json_output_key_tools_parser_multiple_tools_no_match(
         key_name="nonexistent", first_tool_only=True, return_id=False
     )
     output_no_id = parser_no_id.parse_result(result)  # type: ignore[arg-type]
+
+    # Should return None when no matches
+    assert output_no_id is None
+
+
+def test_json_output_key_tools_parser_multiple_tools_no_match_v1() -> None:
+    message = AIMessageV1(
+        content=[],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "call_other",
+                "name": "other",
+                "args": {"b": 2},
+            },
+            {
+                "type": "tool_call",
+                "id": "call_another",
+                "name": "another",
+                "args": {"c": 3},
+            },
+        ],
+    )
+
+    # Test with return_id=True, first_tool_only=True
+    parser = JsonOutputKeyToolsParser(
+        key_name="nonexistent", first_tool_only=True, return_id=True
+    )
+    output = parser.parse_result(message)
+
+    # Should return None when no matches
+    assert output is None
+
+    # Test with return_id=False, first_tool_only=True
+    parser_no_id = JsonOutputKeyToolsParser(
+        key_name="nonexistent", first_tool_only=True, return_id=False
+    )
+    output_no_id = parser_no_id.parse_result(message)
 
     # Should return None when no matches
     assert output_no_id is None
@@ -643,6 +820,42 @@ def test_json_output_key_tools_parser_multiple_matching_tools(
     assert output_all[1]["args"] == {"a": 3}
 
 
+def test_json_output_key_tools_parser_multiple_matching_tools_v1() -> None:
+    message = AIMessageV1(
+        content=[],
+        tool_calls=[
+            {"type": "tool_call", "id": "call_func1", "name": "func", "args": {"a": 1}},
+            {
+                "type": "tool_call",
+                "id": "call_other",
+                "name": "other",
+                "args": {"b": 2},
+            },
+            {"type": "tool_call", "id": "call_func2", "name": "func", "args": {"a": 3}},
+        ],
+    )
+
+    # Test with first_tool_only=True - should return first matching
+    parser = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=True
+    )
+    output = parser.parse_result(message)
+
+    assert output is not None
+    assert output["type"] == "func"
+    assert output["args"] == {"a": 1}  # First matching tool call
+
+    # Test with first_tool_only=False - should return all matching
+    parser_all = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=False, return_id=True
+    )
+    output_all = parser_all.parse_result(message)
+
+    assert len(output_all) == 2
+    assert output_all[0]["args"] == {"a": 1}
+    assert output_all[1]["args"] == {"a": 3}
+
+
 @pytest.mark.parametrize("use_tool_calls", [False, True])
 def test_json_output_key_tools_parser_empty_results(*, use_tool_calls: bool) -> None:
     def create_message() -> AIMessage:
@@ -666,6 +879,35 @@ def test_json_output_key_tools_parser_empty_results(*, use_tool_calls: bool) -> 
         key_name="func", first_tool_only=False, return_id=True
     )
     output_all = parser_all.parse_result(result)  # type: ignore[arg-type]
+
+    # Should return empty list for empty results
+    assert output_all == []
+
+
+@pytest.mark.parametrize(
+    "empty_message",
+    [
+        AIMessageV1(content=[], tool_calls=[]),
+        AIMessageV1(content="", tool_calls=[]),
+    ],
+)
+def test_json_output_key_tools_parser_empty_results_v1(
+    empty_message: AIMessageV1,
+) -> None:
+    # Test with first_tool_only=True
+    parser = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=True
+    )
+    output = parser.parse_result(empty_message)
+
+    # Should return None for empty results
+    assert output is None
+
+    # Test with first_tool_only=False
+    parser_all = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=False, return_id=True
+    )
+    output_all = parser_all.parse_result(empty_message)
 
     # Should return empty list for empty results
     assert output_all == []
@@ -746,6 +988,56 @@ def test_json_output_key_tools_parser_parameter_combinations(
     assert output4 == [{"a": 1}, {"a": 3}]
 
 
+def test_json_output_key_tools_parser_parameter_combinations_v1() -> None:
+    """Test all parameter combinations of JsonOutputKeyToolsParser."""
+    result = AIMessageV1(
+        content=[],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "call_other",
+                "name": "other",
+                "args": {"b": 2},
+            },
+            {"type": "tool_call", "id": "call_func1", "name": "func", "args": {"a": 1}},
+            {"type": "tool_call", "id": "call_func2", "name": "func", "args": {"a": 3}},
+        ],
+    )
+
+    # Test: first_tool_only=True, return_id=True
+    parser1 = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=True
+    )
+    output1 = parser1.parse_result(result)
+    assert output1["type"] == "func"
+    assert output1["args"] == {"a": 1}
+    assert "id" in output1
+
+    # Test: first_tool_only=True, return_id=False
+    parser2 = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=True, return_id=False
+    )
+    output2 = parser2.parse_result(result)
+    assert output2 == {"a": 1}
+
+    # Test: first_tool_only=False, return_id=True
+    parser3 = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=False, return_id=True
+    )
+    output3 = parser3.parse_result(result)
+    assert len(output3) == 2
+    assert all("id" in item for item in output3)
+    assert output3[0]["args"] == {"a": 1}
+    assert output3[1]["args"] == {"a": 3}
+
+    # Test: first_tool_only=False, return_id=False
+    parser4 = JsonOutputKeyToolsParser(
+        key_name="func", first_tool_only=False, return_id=False
+    )
+    output4 = parser4.parse_result(result)
+    assert output4 == [{"a": 1}, {"a": 3}]
+
+
 class Person(BaseModel):
     age: int
     hair_color: str
@@ -788,6 +1080,18 @@ def test_partial_pydantic_output_parser() -> None:
         assert actual == EXPECTED_STREAMED_PYDANTIC
 
 
+def test_partial_pydantic_output_parser_v1() -> None:
+    def input_iter(_: Any) -> Iterator[AIMessageChunkV1]:
+        yield from STREAMED_MESSAGES_V1
+
+    chain = input_iter | PydanticToolsParser(
+        tools=[NameCollector], first_tool_only=True
+    )
+
+    actual = list(chain.stream(None))
+    assert actual == EXPECTED_STREAMED_PYDANTIC
+
+
 async def test_partial_pydantic_output_parser_async() -> None:
     for use_tool_calls in [False, True]:
         input_iter = _get_aiter(use_tool_calls=use_tool_calls)
@@ -798,6 +1102,19 @@ async def test_partial_pydantic_output_parser_async() -> None:
 
         actual = [p async for p in chain.astream(None)]
         assert actual == EXPECTED_STREAMED_PYDANTIC
+
+
+async def test_partial_pydantic_output_parser_async_v1() -> None:
+    async def input_iter(_: Any) -> AsyncIterator[AIMessageChunkV1]:
+        for msg in STREAMED_MESSAGES_V1:
+            yield msg
+
+    chain = input_iter | PydanticToolsParser(
+        tools=[NameCollector], first_tool_only=True
+    )
+
+    actual = [p async for p in chain.astream(None)]
+    assert actual == EXPECTED_STREAMED_PYDANTIC
 
 
 def test_parse_with_different_pydantic_2_v1() -> None:
@@ -870,20 +1187,22 @@ def test_parse_with_different_pydantic_2_proper() -> None:
 
 def test_max_tokens_error(caplog: Any) -> None:
     parser = PydanticToolsParser(tools=[NameCollector], first_tool_only=True)
-    message = AIMessage(
-        content="",
-        tool_calls=[
-            {
-                "id": "call_OwL7f5PE",
-                "name": "NameCollector",
-                "args": {"names": ["suz", "jerm"]},
-            }
-        ],
-        response_metadata={"stop_reason": "max_tokens"},
-    )
-    with pytest.raises(ValidationError):
-        _ = parser.invoke(message)
-    assert any(
-        "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
-        for record, msg in zip(caplog.records, caplog.messages)
-    )
+    for msg_class in [AIMessage, AIMessageV1]:
+        message = msg_class(
+            content="",
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "id": "call_OwL7f5PE",
+                    "name": "NameCollector",
+                    "args": {"names": ["suz", "jerm"]},
+                }
+            ],
+            response_metadata={"stop_reason": "max_tokens"},
+        )
+        with pytest.raises(ValidationError):
+            _ = parser.invoke(message)
+        assert any(
+            "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
+            for record, msg in zip(caplog.records, caplog.messages)
+        )

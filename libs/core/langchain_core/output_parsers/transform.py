@@ -20,6 +20,7 @@ from langchain_core.outputs import (
     GenerationChunk,
 )
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.v1.messages import AIMessage, AIMessageChunk
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -32,23 +33,27 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     def _transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],  # noqa: A002
+        input: Iterator[Union[str, BaseMessage, AIMessage]],
     ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 yield self.parse_result([ChatGeneration(message=chunk)])
+            elif isinstance(chunk, AIMessage):
+                yield self.parse_result(chunk)
             else:
                 yield self.parse_result([Generation(text=chunk)])
 
     async def _atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],  # noqa: A002
+        input: AsyncIterator[Union[str, BaseMessage, AIMessage]],
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
                 yield await run_in_executor(
                     None, self.parse_result, [ChatGeneration(message=chunk)]
                 )
+            elif isinstance(chunk, AIMessage):
+                yield await run_in_executor(None, self.parse_result, chunk)
             else:
                 yield await run_in_executor(
                     None, self.parse_result, [Generation(text=chunk)]
@@ -57,7 +62,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
     @override
     def transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],
+        input: Iterator[Union[str, BaseMessage, AIMessage]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[T]:
@@ -78,7 +83,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
     @override
     async def atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],
+        input: AsyncIterator[Union[str, BaseMessage, AIMessage]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[T]:
@@ -125,23 +130,42 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
         raise NotImplementedError
 
     @override
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+    def _transform(
+        self, input: Iterator[Union[str, BaseMessage, AIMessage]]
+    ) -> Iterator[Any]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk, None] = (
+            None
+        )
         for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
                     message=BaseMessageChunk(**chunk.model_dump())
                 )
+            elif isinstance(chunk, AIMessageChunk):
+                chunk_gen = chunk
+            elif isinstance(chunk, AIMessage):
+                chunk_gen = AIMessageChunk(
+                    content=chunk.content,
+                    id=chunk.id,
+                    name=chunk.name,
+                    lc_version=chunk.lc_version,
+                    response_metadata=chunk.response_metadata,
+                    usage_metadata=chunk.usage_metadata,
+                    parsed=chunk.parsed,
+                )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
 
             acc_gen = chunk_gen if acc_gen is None else acc_gen + chunk_gen  # type: ignore[operator]
 
-            parsed = self.parse_result([acc_gen], partial=True)
+            if isinstance(acc_gen, AIMessageChunk):
+                parsed = self.parse_result(acc_gen, partial=True)
+            else:
+                parsed = self.parse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
                     yield self._diff(prev_parsed, parsed)
@@ -151,24 +175,41 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[Union[str, BaseMessage, AIMessage]]
     ) -> AsyncIterator[T]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk, None] = (
+            None
+        )
         async for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
                     message=BaseMessageChunk(**chunk.model_dump())
                 )
+            elif isinstance(chunk, AIMessageChunk):
+                chunk_gen = chunk
+            elif isinstance(chunk, AIMessage):
+                chunk_gen = AIMessageChunk(
+                    content=chunk.content,
+                    id=chunk.id,
+                    name=chunk.name,
+                    lc_version=chunk.lc_version,
+                    response_metadata=chunk.response_metadata,
+                    usage_metadata=chunk.usage_metadata,
+                    parsed=chunk.parsed,
+                )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
 
             acc_gen = chunk_gen if acc_gen is None else acc_gen + chunk_gen  # type: ignore[operator]
 
-            parsed = await self.aparse_result([acc_gen], partial=True)
+            if isinstance(acc_gen, AIMessageChunk):
+                parsed = await self.aparse_result(acc_gen, partial=True)
+            else:
+                parsed = await self.aparse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
                     yield await run_in_executor(None, self._diff, prev_parsed, parsed)
