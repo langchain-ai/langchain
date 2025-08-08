@@ -20,7 +20,7 @@ from langchain_core.v1.messages import HumanMessage as HumanMessageV1
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, custom_tool
 from langchain_openai.v1 import ChatOpenAI as ChatOpenAIV1
 
 MODEL_NAME = "gpt-4o-mini"
@@ -1130,3 +1130,56 @@ def test_image_generation_multi_turn_v1() -> None:
         if isinstance(block, dict) and block["type"] == "image"
     )
     assert set(expected_keys).issubset(tool_output.keys())
+
+
+@pytest.mark.xfail(
+    reason="verbosity parameter not yet supported by OpenAI Responses API"
+)
+def test_verbosity_parameter() -> None:
+    """Test verbosity parameter with Responses API.
+
+    TODO: This test is expected to fail until OpenAI enables verbosity support
+    in the Responses API for available models. The parameter is properly implemented
+    in the codebase but the API currently returns 'Unknown parameter: verbosity'.
+    Remove @pytest.mark.xfail when OpenAI adds support.
+    """
+    llm = ChatOpenAI(
+        model=MODEL_NAME,
+        verbosity="medium",
+        use_responses_api=True,
+        output_version="responses/v1",
+    )
+    response = llm.invoke([HumanMessage(content="Hello, explain quantum computing.")])
+
+    assert isinstance(response, AIMessage)
+    assert response.content
+    # When verbosity works, we expect the response to respect the verbosity level
+
+
+@pytest.mark.vcr()
+def test_custom_tool() -> None:
+    @custom_tool
+    def execute_code(code: str) -> str:
+        """Execute python code."""
+        return "27"
+
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1").bind_tools(
+        [execute_code]
+    )
+
+    input_message = {"role": "user", "content": "Use the tool to evaluate 3^3."}
+    tool_call_message = llm.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    assert len(tool_call_message.tool_calls) == 1
+    tool_call = tool_call_message.tool_calls[0]
+    tool_message = execute_code.invoke(tool_call)
+    response = llm.invoke([input_message, tool_call_message, tool_message])
+    assert isinstance(response, AIMessage)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
