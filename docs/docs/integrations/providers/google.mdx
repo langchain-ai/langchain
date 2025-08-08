@@ -929,6 +929,50 @@ from langchain_google_community.gmail.search import GmailSearch
 from langchain_google_community.gmail.send_message import GmailSendMessage
 ```
 
+### MCP Toolbox
+
+[MCP Toolbox](https://github.com/googleapis/genai-toolbox) provides a simple and efficient way to connect to your databases, including those on Google Cloud like [Cloud SQL](https://cloud.google.com/sql/docs) and [AlloyDB](https://cloud.google.com/alloydb/docs/overview). With MCP Toolbox, you can seamlessly integrate your database with LangChain to build powerful, data-driven applications.
+
+#### Installation
+
+To get started, install the Toolbox server and client:
+
+```bash
+# see releases page for other versions
+export VERSION=0.10.0
+curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
+chmod +x toolbox
+```
+
+[Configure](https://googleapis.github.io/genai-toolbox/getting-started/configure/) a `tools.yaml` to define your tools, and then execute toolbox to start the server:
+
+```bash
+./toolbox --tools-file "tools.yaml"
+```
+
+Then, install the Toolbox client using `pip`:
+
+```bash
+pip install toolbox-langchain
+```
+
+#### Getting Started
+
+Here is a quick example of how to use MCP Toolbox to connect to your database:
+
+```python
+from toolbox_langchain import ToolboxClient
+
+# update the url to point to your server
+
+async with ToolboxClient("http://127.0.0.1:5000") as client:
+
+    # these tools can be passed to your application!
+    tools = client.load_toolset()
+```
+
+See [usage example and setup instructions](/docs/integrations/tools/toolbox).
+
 ### Memory
 
 Store conversation history using Google Cloud databases.
