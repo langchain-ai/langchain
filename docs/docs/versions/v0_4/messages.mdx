@@ -75,6 +75,84 @@ stores them in an `"extras"` key (see below for examples).
 
 #### Reasoning
 
+<div style={{ display: "flex", gap: "1rem" }}>
+  <div style={{ flex: 1 }}>
+    **Before**
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    output_version="responses/v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": [
+      {
+        "text": "The user is asking about...",
+        "type": "summary_text"
+      },
+      {
+        "text": "We should consider...",
+        "type": "summary_text"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
+    "id": "msg_abc123"
+  }
+]
+```
+  </div>
+
+  <div style={{ flex: 1 }}>
+    **After**
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    message_version="v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "reasoning": "The user is asking about...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "reasoning",
+    "reasoning": "We should consider...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
+    "id": "msg_abc123"
+  }
+]
+```
+  </div>
+</div>
+
 <details Before>
 ```python
 from langchain.chat_models import init_chat_model
