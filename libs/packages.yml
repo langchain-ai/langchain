@@ -699,3 +699,6 @@ packages:
 - name: langchain-gradient
   path: .
   repo: digitalocean/langchain-gradient
+- name: langchain-aimlapi
+  path: libs/aimlapi
+  repo: D1m7asis/langchain-aimlapi
